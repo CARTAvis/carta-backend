@@ -279,6 +279,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -291,6 +293,7 @@ pipeline {
                                 sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -298,6 +301,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -310,6 +315,7 @@ pipeline {
                                 sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -317,6 +323,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -328,6 +336,7 @@ pipeline {
                                 sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 4 of 5"
                                 sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
                             }
+                        }
                         }
                     }
                 }     
@@ -340,6 +349,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -350,6 +361,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -357,6 +369,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -367,6 +381,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -374,6 +389,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -383,6 +400,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts # test 2 of 3"
                                 sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
                             }
+                        }
                         }
                     }
                 }
@@ -395,6 +413,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -415,6 +435,7 @@ pipeline {
                                 sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -422,6 +443,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -442,6 +465,7 @@ pipeline {
                                 sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -449,6 +473,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -468,6 +494,7 @@ pipeline {
                                 sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
                                 sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
                             }
+                        }
                         }
                     }
                 }
@@ -480,6 +507,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -493,6 +522,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -500,6 +530,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -513,6 +545,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -520,6 +553,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -532,6 +567,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 6"
                                 sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
                             }
+                        }
                         }
                     }
                 }
@@ -544,6 +580,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -554,6 +592,7 @@ pipeline {
                                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -561,6 +600,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -571,6 +612,7 @@ pipeline {
                                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -578,6 +620,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -587,6 +631,7 @@ pipeline {
                                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
                                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
                             }
+                        }
                         }
                     }
                 }
@@ -599,6 +644,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -608,6 +655,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -615,6 +663,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -624,6 +674,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -631,6 +682,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -639,6 +692,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts # test 1 of 2"
                                 sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
                             }
+                        }
                         }
                     }
                 }
@@ -651,6 +705,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -660,6 +716,7 @@ pipeline {
                                 sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -667,6 +724,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -676,6 +735,7 @@ pipeline {
                                 sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -683,6 +743,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -691,6 +753,7 @@ pipeline {
                                 sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts # test 1 of 2"
                                 sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
                             }
+                        }
                         }
                     }
                 }
@@ -703,6 +766,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -712,6 +777,7 @@ pipeline {
                                 sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts # test 2 of 2"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -719,6 +785,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -728,6 +796,7 @@ pipeline {
                                 sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts # test 2 of 2"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -735,6 +804,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -743,6 +814,7 @@ pipeline {
                                 sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts # test 1 of 2"
                                 sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts # test 2 of 2"
                             }
+                        }
                         }
                     }
                 }
@@ -755,6 +827,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -769,6 +843,7 @@ pipeline {
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -776,6 +851,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -790,6 +867,7 @@ pipeline {
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -797,6 +875,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -810,6 +890,7 @@ pipeline {
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                             }
+                        }
                         }
                     }
                 }
@@ -822,6 +903,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -833,6 +916,7 @@ pipeline {
                                 sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -840,6 +924,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -851,6 +937,7 @@ pipeline {
                                 sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -858,6 +945,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -868,6 +957,7 @@ pipeline {
                                 sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
                                 sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
                             }
+                        }
                         }
                     }
                 }
