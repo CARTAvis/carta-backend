@@ -15,7 +15,11 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-void InitLogger(bool no_log_file, int verbosity) {
+static bool log_protocol_messages(false);
+
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_) {
+    log_protocol_messages = log_protocol_messages_;
+
     // Set the stdout console
     auto stdout_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     stdout_console_sink->set_pattern(STDOUT_PATTERN);
@@ -36,7 +40,10 @@ void InitLogger(bool no_log_file, int verbosity) {
     // Create the stdout logger
     auto stdout_logger = std::make_shared<spdlog::logger>(STDOUT_TAG, std::begin(stdout_sinks), std::end(stdout_sinks));
 
-    // Set logger's level according to the verbosity number
+    // Set flush policy on severity
+    stdout_logger->flush_on(spdlog::level::err);
+
+    // Set the stdout logger level according to the verbosity number
     switch (verbosity) {
         case 0:
             stdout_logger->set_level(spdlog::level::off);
@@ -50,11 +57,11 @@ void InitLogger(bool no_log_file, int verbosity) {
         case 3:
             stdout_logger->set_level(spdlog::level::warn);
             break;
+        case 4:
+            stdout_logger->set_level(spdlog::level::info);
+            break;
         case 5:
             stdout_logger->set_level(spdlog::level::debug);
-            break;
-        case 6:
-            stdout_logger->set_level(spdlog::level::trace);
             break;
         default: {
             stdout_logger->set_level(spdlog::level::info);
@@ -62,20 +69,69 @@ void InitLogger(bool no_log_file, int verbosity) {
         }
     }
 
-    // Set flush policy on severity
-    stdout_logger->flush_on(spdlog::level::err);
-
     // Register the stdout logger
-    if (!spdlog::get(STDOUT_TAG)) {
-        spdlog::register_logger(stdout_logger);
-    } else {
-        spdlog::critical("Duplicate registration of the logger: {}!", STDOUT_TAG);
-    }
+    spdlog::register_logger(stdout_logger);
 
-    // Set the default logger
+    // Set as the default logger
     spdlog::set_default_logger(stdout_logger);
 
     if (!no_log_file) {
         spdlog::info("Writing to the log file: {}", log_fullname);
+    }
+
+    if (log_performance) {
+        // Set the performance console
+        auto perf_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        perf_console_sink->set_pattern(PERF_PATTERN);
+
+        // Set performance sinks
+        std::vector<spdlog::sink_ptr> perf_sinks;
+        perf_sinks.push_back(perf_console_sink);
+
+        // Set a log file with its full name, maximum size and the number of rotated files
+        if (!no_log_file) {
+            auto perf_log_file_sink =
+                std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
+            perf_log_file_sink->set_pattern(PERF_PATTERN);
+            perf_sinks.push_back(perf_log_file_sink);
+        }
+
+        // Create the performance logger
+        auto perf_logger = std::make_shared<spdlog::logger>(PERF_TAG, std::begin(perf_sinks), std::end(perf_sinks));
+
+        // Set the performance logger level same with the stdout logger
+        perf_logger->set_level(stdout_logger->level());
+
+        // Register the performance logger
+        spdlog::register_logger(perf_logger);
+    }
+}
+
+void LogReceivedEventType(const CARTA::EventType& event_type) {
+    if (log_protocol_messages) {
+        auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+        if (!event_name.empty()) {
+            spdlog::debug("[protocol] <== {}", event_name);
+        } else {
+            spdlog::debug("[protocol] <== unknown event type: {}!", event_type);
+        }
+    }
+}
+
+void LogSentEventType(const CARTA::EventType& event_type) {
+    if (log_protocol_messages) {
+        auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+        if (!event_name.empty()) {
+            spdlog::debug("[protocol] ==> {}", event_name);
+        } else {
+            spdlog::debug("[protocol] ==> unknown event type: {}!", event_type);
+        }
+    }
+}
+
+void FlushLogFile() {
+    spdlog::default_logger()->flush();
+    if (spdlog::get(PERF_TAG)) {
+        spdlog::get(PERF_TAG)->flush();
     }
 }
