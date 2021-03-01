@@ -282,8 +282,8 @@ bool Frame::FillImageCache() {
     auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
     auto dt_set_image_cache =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-        (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _image_shape(0), _image_shape(1),
+        dt_set_image_cache * 1e-3, (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
 
     return true;
 }
@@ -405,8 +405,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_compress_tile_data =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                (float)(tile_width * tile_height) / dt_compress_tile_data);
+            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height,
+                dt_compress_tile_data * 1e-3, (float)(tile_width * tile_height) / dt_compress_tile_data);
 
             return !(ChannelsChanged(channel, stokes));
         }
@@ -596,8 +596,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
-                spdlog::performance(
-                    "Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt_image_histogram * 1e-3, (float)stats.num_pixels / dt_image_histogram);
+                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt_image_histogram * 1e-3,
+                    (float)stats.num_pixels / dt_image_histogram);
             }
         }
         have_valid_histogram |= histogram_filled;

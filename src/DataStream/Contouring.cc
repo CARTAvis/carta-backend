@@ -246,7 +246,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
             segment_count += indices.size();
         }
 
-        spdlog::performance("Contoured {}x{} image in {:.3f} ms at {:.3f} MPix/s. Found {} vertices in {} segments across {} levels", width, height,
-            dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
+        spdlog::performance("Contoured {}x{} image in {:.3f} ms at {:.3f} MPix/s. Found {} vertices in {} segments across {} levels", width,
+            height, dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
     }
 }
