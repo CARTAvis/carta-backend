@@ -36,7 +36,7 @@ public:
     json example_layout;
 
     RestApiTest() {
-        InitLogger(true, 0);
+        // InitLogger(true, 0, false, false);
         preferences_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/preferences.json";
         layouts_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/layouts";
         example_options = R"({
@@ -63,7 +63,7 @@ public:
         })"_json;
     }
     void SetUp() {
-        _frontend_server.reset(new carta::SimpleFrontendServer("/"));
+        _frontend_server.reset(new carta::SimpleFrontendServer("/", "my_test_key"));
         fs::remove(preferences_path);
         fs::remove_all(layouts_path);
     }

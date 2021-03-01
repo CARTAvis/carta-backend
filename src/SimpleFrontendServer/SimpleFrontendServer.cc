@@ -7,6 +7,7 @@
 #include "SimpleFrontendServer.h"
 
 #include <fstream>
+#include <regex>
 #include <vector>
 
 #include "Constants.h"
@@ -20,8 +21,8 @@ namespace carta {
 
 const string success_string = json({{"success", true}}).dump();
 
-SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
-    _http_root_folder = root_folder;
+SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token)
+    : _http_root_folder(root_folder), _auth_token(auth_token) {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
@@ -117,9 +118,18 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
 }
 
 bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* _req) {
-    // Not currently implemented
-    // TODO: compare request header access token to auth token
-    return true;
+    // Always allow if the auth token is empty
+    if (_auth_token.empty()) {
+        return true;
+    }
+
+    string auth_header(_req->getHeader("authorization"));
+    regex auth_regex(R"(^Bearer\s+(\S+)$)");
+    smatch sm;
+    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2) {
+        return sm[1].str() == _auth_token;
+    }
+    return false;
 }
 
 json SimpleFrontendServer::GetExistingPreferences() {
