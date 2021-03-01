@@ -174,7 +174,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
     auto rate = dest_width * dest_height / (double)dt;
     spdlog::performance(
-        "Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s", smoothing_factor, mask_size, dt * 1e-3, rate);
+        "Smoothed with smoothing factor of {} and kernel size of {} in {:.3f} ms at {:.3f} MPix/s", smoothing_factor, mask_size, dt * 1e-3, rate);
 
     return true;
 }
