@@ -105,7 +105,7 @@ Session::~Session() {
             alarm(1);
         }
     }
-    spdlog::default_logger()->flush(); // flush the log file while on Session's destruction
+    FlushLogFile();
 }
 
 void Session::SetInitExitTimeout(int secs) {
@@ -547,7 +547,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         // Measure duration for get tile data
         auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
         auto dt_get_tile_data = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
-        spdlog::trace("Get tile data group in {} ms", dt_get_tile_data * 1e-3);
+        spdlog::performance("Get tile data group in {} ms", dt_get_tile_data * 1e-3);
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
         CARTA::RasterTileSync final_message;
@@ -708,7 +708,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         // Measure duration for get tile data
         auto t_end_import_region = std::chrono::high_resolution_clock::now();
         auto dt_import_region = std::chrono::duration_cast<std::chrono::microseconds>(t_end_import_region - t_start_import_region).count();
-        spdlog::trace("Import region in {} ms", dt_import_region * 1e-3);
+        spdlog::performance("Import region in {} ms", dt_import_region * 1e-3);
 
         // send any errors to log
         std::string ack_message(import_ack.message());
@@ -1000,7 +1000,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     // Measure duration for resume
     auto t_end_resume = std::chrono::high_resolution_clock::now();
     auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
-    spdlog::trace("Resume in {} ms", dt_resume * 1e-3);
+    spdlog::performance("Resume in {} ms", dt_resume * 1e-3);
 
     // RESPONSE
     CARTA::ResumeSessionAck ack;
@@ -1249,7 +1249,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                     auto dt_cube_histogram =
                         std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
-                    spdlog::trace("Fill cube histogram in {} ms at {} MPix/s", dt_cube_histogram * 1e-3,
+                    spdlog::performance("Fill cube histogram in {} ms at {} MPix/s", dt_cube_histogram * 1e-3,
                         (float)cube_stats.num_pixels / dt_cube_histogram);
 
                     calculated = true;
@@ -1541,6 +1541,8 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
+    LogSentEventType(event_type);
+
     size_t message_length = message.ByteSizeLong();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::pair<std::vector<char>, bool> msg_vs_compress;
@@ -1728,7 +1730,7 @@ void Session::ExecuteAnimationFrameInner() {
             auto t_end_change_frame = std::chrono::high_resolution_clock::now();
             auto dt_change_frame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
             if (channel_changed || stokes_changed) {
-                spdlog::trace("Animator: Change frame in {} ms", dt_change_frame * 1e-3);
+                spdlog::performance("Animator: Change frame in {} ms", dt_change_frame * 1e-3);
             }
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", active_file_id);
