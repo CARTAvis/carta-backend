@@ -51,7 +51,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "ImageData/ConcatStokesFiles.h"
+#include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -265,7 +265,7 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
-    std::unique_ptr<ConcatStokesFiles> _concat_stokes_files;
+    std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
 
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;

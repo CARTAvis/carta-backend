@@ -1116,15 +1116,15 @@ void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_req
 }
 
 void Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id) {
-    if (!_concat_stokes_files) {
-        _concat_stokes_files = std::make_unique<ConcatStokesFiles>(_top_level_folder);
+    if (!_stokes_files_connector) {
+        _stokes_files_connector = std::make_unique<StokesFilesConnector>(_top_level_folder);
     }
 
     CARTA::ConcatStokesFilesAck response;
     std::shared_ptr<casacore::ImageConcat<float>> concatenate_image;
     string concatenate_name;
 
-    if (_concat_stokes_files->DoConcat(message, response, concatenate_image, concatenate_name)) {
+    if (_stokes_files_connector->DoConcat(message, response, concatenate_image, concatenate_name)) {
         auto* open_file_ack = response.mutable_open_file_ack();
         OnOpenFile(message.file_id(), concatenate_name, concatenate_image, open_file_ack);
     } else {
