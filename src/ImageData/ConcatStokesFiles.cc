@@ -10,7 +10,7 @@ using namespace carta;
 
 using ImageTypes = casacore::ImageOpener::ImageTypes;
 
-ConcatStokesFiles::ConcatStokesFiles(const std::string& root_folder) : _root_folder(root_folder) {}
+ConcatStokesFiles::ConcatStokesFiles(const std::string& _top_level_folder) : _top_level_folder(_top_level_folder) {}
 
 ConcatStokesFiles::~ConcatStokesFiles() {
     ClearCache();
@@ -166,7 +166,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
         auto stokes_file = message.stokes_files(i);
         auto stokes_type = message.stokes_files(i).stokes_type();
         casacore::String hdu(stokes_file.hdu());
-        casacore::String full_name(GetResolvedFilename(_root_folder, stokes_file.directory(), stokes_file.file()));
+        casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 
         _file_name += CARTA::StokesType_Name(stokes_type);
 
@@ -199,7 +199,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
         }
 
         if (_loaders.count(stokes_type)) {
-            err = "Stokes type for a loader is duplicate!\n";
+            err = "Stokes type for is duplicate!\n";
             return false;
         }
 
