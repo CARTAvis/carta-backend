@@ -535,7 +535,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
                             compression_type == CARTA::CompressionType::NONE);
                     } else {
-                        spdlog::error("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                        spdlog::error("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
                     }
                 }
             }
@@ -1116,20 +1116,21 @@ void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_req
 }
 
 void Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id) {
-    CARTA::ConcatStokesFilesAck response;
-    carta::ConcatStokesFiles concat(_top_level_folder);
-    std::shared_ptr<casacore::ImageConcat<float>> concatenate_image;
-    string concatenate_filename;
+    if (!_concat_stokes_files) {
+        _concat_stokes_files = std::make_unique<ConcatStokesFiles>(_top_level_folder);
+    }
 
-    if (concat.DoConcat(message, response, concatenate_image, concatenate_filename)) {
-        // Open the concatenate image
+    CARTA::ConcatStokesFilesAck response;
+    std::shared_ptr<casacore::ImageConcat<float>> concatenate_image;
+    string concatenate_name;
+
+    if (_concat_stokes_files->DoConcat(message, response, concatenate_image, concatenate_name)) {
         auto* open_file_ack = response.mutable_open_file_ack();
-        OnOpenFile(message.file_id(), concatenate_filename, concatenate_image, open_file_ack);
+        OnOpenFile(message.file_id(), concatenate_name, concatenate_image, open_file_ack);
     } else {
         spdlog::error("Concatenate stokes files failed!");
     }
 
-    // Send response message
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
 }
 

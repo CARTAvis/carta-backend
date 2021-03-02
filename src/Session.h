@@ -265,6 +265,8 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
+    std::unique_ptr<ConcatStokesFiles> _concat_stokes_files;
+
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
