@@ -19,7 +19,7 @@ StokesFilesConnector::~StokesFilesConnector() {
 bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
     std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenate_name) {
     ClearCache();
-    int stokes_axis;
+    int stokes_axis(-1);
 
     // open files and check are they valid
     std::string err;
@@ -152,7 +152,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
     std::string postfix_file_name;                                     // the common file name start from the last char
     _concatenate_name = "hypercube_";                                  // name of the concatenate file
     ImageTypes image_types;                                            // used to check whether the file type is the same
-    std::unordered_map<CARTA::StokesType, casacore::String> filenames; // used to check the duplication of stokes types assignments
+    std::unordered_map<CARTA::StokesType, casacore::String> filenames; // used to check whether the stokes type assignment is duplicate
 
     for (int i = 0; i < message.stokes_files_size(); ++i) {
         auto stokes_file = message.stokes_files(i);
@@ -212,7 +212,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             return false;
         }
 
-        // check the duplication of stokes types assignments
+        // check whether the stokes type assignment is duplicate
         if (filenames.count(stokes_type)) {
             err = "Stokes type is duplicate!\n";
             return false;
@@ -225,7 +225,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
     std::reverse(postfix_file_name.begin(), postfix_file_name.end());
     _concatenate_name = prefix_file_name + _concatenate_name + postfix_file_name;
 
-    // check the duplication of file names
+    // check whether the file name is duplicate
     std::set<casacore::String> filenames_set;
     for (auto filename : filenames) {
         filenames_set.insert(filename.second);
@@ -300,7 +300,6 @@ void StokesFilesConnector::ClearCache() {
         loader.second.reset();
     }
     _loaders.clear();
-
     _concatenate_name = "";
 }
 
