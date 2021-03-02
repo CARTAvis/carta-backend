@@ -578,6 +578,7 @@ int main(int argc, char* argv[]) {
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
+            FlushLogFile();
             return 1;
         }
 
@@ -604,6 +605,7 @@ int main(int argc, char* argv[]) {
         if (settings.grpc_port >= 0) {
             int grpc_status = StartGrpcService(settings.grpc_port);
             if (grpc_status) {
+                FlushLogFile();
                 return 1;
             }
         }
@@ -726,11 +728,14 @@ int main(int argc, char* argv[]) {
         }
     } catch (exception& e) {
         spdlog::critical("{}", e.what());
+        FlushLogFile();
         return 1;
     } catch (...) {
         spdlog::critical("Unknown error");
+        FlushLogFile();
         return 1;
     }
 
+    FlushLogFile();
     return 0;
 }
