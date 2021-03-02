@@ -45,7 +45,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("verbosity", "display verbose logging from this level",
          cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
-        ("log_performance", "enable performance info logs", cxxopts::value<bool>())
+        ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
@@ -100,7 +100,8 @@ in the user's home directory. Possible log levels are:{}
 
 Performance and protocol message logging is disabled by default, but can be 
 enabled with flags. The verbosity takes precedence: the additional log messages 
-will only be visible if the level is high enough.
+will only be visible if the level is set to 5 (debug). Performance logs are 
+written to a separate log file, '.carta/log/performance.log'.
 
 Options are provided to shut the backend down automatically if it is idle (if no 
 clients are connected), and to kill frontend sessions that are idle (no longer 
