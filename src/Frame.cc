@@ -1384,7 +1384,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     auto image_shape = image->shape();
     if (image_shape.size() > 2) {
         // Validate channels & stokes
-        int channels_max = image_shape[_spectral_axis];
+        int channels_max = _spectral_axis > -1 ? image_shape[_spectral_axis] : 1;
         int channels_start = 0;
         int channels_stride = 1;
         int channels_end = channels_max - 1;
@@ -1392,7 +1392,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             channels_start = std::min(save_file_msg.channels(0), channels_max - 1);
             channels_end = std::min(std::max(save_file_msg.channels(1), channels_start), channels_max - 1);
         }
-        int stokes_max = image_shape[_stokes_axis];
+        int stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
         int stokes_start = 0;
         int stokes_stride = 1;
         int stokes_end = stokes_max - 1;
@@ -1512,7 +1512,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     auto image_shape = image->shape();
     // Validate channels & stokes
-    int channels_max = image_shape[_spectral_axis];
+    int channels_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
     int channels_start = 0;
     int channels_stride = 1;
     int channels_end = channels_max - 1;
@@ -1521,7 +1521,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         channels_start = std::min(save_file_msg.channels(0), channels_max - 1);
         channels_end = std::min(std::max(save_file_msg.channels(1), channels_start), channels_max - 1);
     }
-    int stokes_max = image_shape[_stokes_axis];
+    int stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
     int stokes_start = 0;
     int stokes_stride = 1;
     int stokes_end = stokes_max - 1;
