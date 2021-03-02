@@ -18,11 +18,6 @@
 #include <casacore/casa/OS/File.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
-#if _ARM_ // defined in cmake files
-#include "../third-party/sse2neon/sse2neon.h"
-#else
-#include <xmmintrin.h>
-#endif // _ARM_
 #include <zstd.h>
 
 #include <carta-protobuf/contour_image.pb.h>
@@ -42,6 +37,12 @@
 #include "Threading.h"
 #include "Timer/Timer.h"
 #include "Util.h"
+
+#ifdef _ARM_ARCH_
+#include <sse2neon/sse2neon.h>
+#else
+#include <xmmintrin.h>
+#endif
 
 int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;

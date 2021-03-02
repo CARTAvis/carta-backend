@@ -30,7 +30,7 @@ option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 # https://github.com/DLTcollab/sse2neon, redistributable under the MIT License.
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ -march=armv8-a")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
 elseif (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 else ()
