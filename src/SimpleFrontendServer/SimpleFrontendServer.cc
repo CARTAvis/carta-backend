@@ -180,7 +180,6 @@ void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<v
 }
 
 void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
-    // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -280,7 +279,6 @@ std::string_view SimpleFrontendServer::ClearPreferencesFromString(const string& 
 }
 
 void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
-    // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -298,17 +296,22 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
 }
 
 void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
-    // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
-    // Send
-    res->writeStatus(HTTP_501)->end();
+
+    json existing_layouts = GetExistingLayouts();
+    if (!existing_layouts.empty()) {
+        res->writeHeader("Content-Type", "application/json");
+        json body = {{"success", true}, {"layouts", existing_layouts}};
+        res->writeStatus(HTTP_200)->end(body.dump());
+    } else {
+        res->writeStatus(HTTP_500)->end();
+    }
 }
 
 void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
-    // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -319,7 +322,6 @@ void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
 }
 
 void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
-    // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -330,7 +332,27 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
 }
 
 nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
-    return nlohmann::json({{"not", "implemented"}});
+    auto layout_folder = _config_folder / "layouts";
+    json layouts = json::object();
+    if (fs::exists(layout_folder)) {
+        for (auto& p : fs::directory_iterator(layout_folder)) {
+            try {
+                string filename = p.path().filename().string();
+                regex layout_regex(R"(^(.+)\.json$)");
+                smatch sm;
+                if (p.is_regular_file() && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
+                    string layout_name = sm[1];
+                    ifstream file(p.path());
+                    string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+                    json layout = json::parse(json_string);
+                    layouts[layout_name] = layout;
+                }
+            } catch (exception e) {
+                spdlog::warn(e.what());
+            }
+        }
+    }
+    return layouts;
 }
 
 std::string_view SimpleFrontendServer::UpdateLayoutFromString(const string& buffer) {

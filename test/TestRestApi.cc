@@ -70,16 +70,15 @@ public:
 
     void WriteDefaultPrefs() {
         fs::create_directories(preferences_path.parent_path());
-        ofstream f(preferences_path);
-        f << example_options.dump(4);
+        ofstream(preferences_path) << example_options.dump(4);
     }
 
     void WriteDefaultLayouts() {
         fs::create_directories(layouts_path);
-        ofstream f1(layouts_path / "test_layout.json");
-        f1 << example_options.dump(4);
-        ofstream f2(layouts_path / "test_layout2.json");
-        f2 << example_options.dump(4);
+        ofstream(layouts_path / "test_layout.json") << example_options.dump(4);
+        ofstream(layouts_path / "test_layout2.json") << example_options.dump();
+        ofstream(layouts_path / "test_layout3.json") << "this is not a json file!";
+        ofstream(layouts_path / "bad_layout_name") << example_options.dump(4);
     }
 
     void TearDown() {
