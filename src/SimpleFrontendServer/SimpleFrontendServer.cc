@@ -13,6 +13,7 @@
 #include "Constants.h"
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
+#include "Util.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -42,9 +43,16 @@ void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
     app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetLayouts(res, req); });
     app.put("/api/database/layout", [&](auto res, auto req) { HandleSetLayout(res, req); });
     app.del("/api/database/layout", [&](auto res, auto req) { HandleClearLayout(res, req); });
+    app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
 
     // Static routes for all other files
     app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
+}
+
+void SimpleFrontendServer::HandleGetConfig(Res* res, Req* _req) {
+    json runtime_config = {{"apiAddress", "/api"}};
+    res->writeHeader("Content-Type", "application/json");
+    res->writeStatus(HTTP_200)->end(runtime_config.dump());
 }
 
 void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
@@ -117,19 +125,13 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
     return index_file.good();
 }
 
-bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* _req) {
+bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* req) {
     // Always allow if the auth token is empty
     if (_auth_token.empty()) {
         return true;
     }
 
-    string auth_header(_req->getHeader("authorization"));
-    regex auth_regex(R"(^Bearer\s+(\S+)$)");
-    smatch sm;
-    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2) {
-        return sm[1].str() == _auth_token;
-    }
-    return false;
+    return _auth_token == GetAuthToken(req);
 }
 
 json SimpleFrontendServer::GetExistingPreferences() {
@@ -330,9 +332,11 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
 nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
     return nlohmann::json({{"not", "implemented"}});
 }
+
 std::string_view SimpleFrontendServer::UpdateLayoutFromString(const string& buffer) {
     return HTTP_501;
 }
+
 std::string_view SimpleFrontendServer::ClearLayoutFromString(const string& buffer) {
     return HTTP_501;
 }
