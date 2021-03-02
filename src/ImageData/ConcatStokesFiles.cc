@@ -17,7 +17,7 @@ ConcatStokesFiles::~ConcatStokesFiles() {
 }
 
 bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
-    std::shared_ptr<casacore::ImageConcat<float>>& concat_image, std::string& file_name) {
+    std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenate_filename) {
     ClearCache();
     int stokes_axis;
 
@@ -99,13 +99,13 @@ bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA:
         stokes_axis = _coord_sys[carta_stokes_type].polarizationAxisNumber();
 
         // concat images along the stokes axis
-        concat_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
+        concatenate_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
             if (_extended_images.count(stokes_type)) {
                 try {
-                    concat_image->setImage(*_extended_images[stokes_type], casacore::False);
+                    concatenate_image->setImage(*_extended_images[stokes_type], casacore::False);
                 } catch (const casacore::AipsError& error) {
                     err = "Fail to concat images:\n" + error.getMesg() + " \n";
                     success = false;
@@ -115,7 +115,7 @@ bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA:
         }
     } else {
         // concat images along the stokes axis
-        concat_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
+        concatenate_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
@@ -128,7 +128,7 @@ bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA:
                     vec(0) = stokes_type;
                     stokes_coord.setStokes(vec);
 
-                    concat_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
+                    concatenate_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
                 } catch (const casacore::AipsError& error) {
                     err = "Fail to concat images:\n" + error.getMesg() + " \n";
                     success = false;
@@ -139,7 +139,7 @@ bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA:
     }
 
     if (success) { // set concatenate file name
-        file_name = _file_name;
+        concatenate_filename = _concatenate_filename;
     }
 
     response.set_success(success);
@@ -158,7 +158,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
     int pos1 = std::numeric_limits<int>::max();                        // max length of the file names in common start from the last char
     std::string prefix_file_name;                                      // the common file name start from the first char
     std::string postfix_file_name;                                     // the common file name start from the last char
-    _file_name = "hypercube_";                                         // name of the concatenate file
+    _concatenate_filename = "hypercube_";                              // name of the concatenate file
     ImageTypes image_types = ImageTypes::UNKNOWN;                      // used to check whether the file type is the same
     std::unordered_map<CARTA::StokesType, casacore::String> filenames; // used to check the duplication of stokes types assignments
 
@@ -168,7 +168,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
         casacore::String hdu(stokes_file.hdu());
         casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 
-        _file_name += CARTA::StokesType_Name(stokes_type);
+        _concatenate_filename += CARTA::StokesType_Name(stokes_type);
 
         if (i == 0) {
             image_types = CasacoreImageType(full_name);
@@ -231,7 +231,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
 
     // concatenate as a new file name
     std::reverse(postfix_file_name.begin(), postfix_file_name.end());
-    _file_name = prefix_file_name + _file_name + postfix_file_name;
+    _concatenate_filename = prefix_file_name + _concatenate_filename + postfix_file_name;
 
     // check the duplication of file names
     std::set<casacore::String> filenames_set;
