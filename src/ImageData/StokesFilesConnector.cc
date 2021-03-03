@@ -56,10 +56,10 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                     tmp_coord_sys.addCoordinate(stokes_coord);    // add stokes coordinate to the coordinate system
                     coord_sys[carta_stokes_type] = tmp_coord_sys; // fill the new coordinate system map
                 } else {
-                    return fail_exit("Fail to set the stokes coordinate system!");
+                    return fail_exit("Failed to set the stokes coordinate system!");
                 }
             } else {
-                return fail_exit("Fail to get the coordinate system!");
+                return fail_exit("Failed to get the coordinate system!");
             }
         }
 
@@ -75,7 +75,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 new_image_shape(i) = old_image_shape(i);
             }
         } else {
-            return fail_exit("Fail to extend the image shape!");
+            return fail_exit("Failed to extend the image shape!");
         }
 
         // modify the original image and extend the image coordinate system with a stokes coordinate
@@ -86,7 +86,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 extended_images[stokes_type] =
                     std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, coord_sys[stokes_type]);
             } catch (const casacore::AipsError& error) {
-                return fail_exit(fmt::format("Fail to extend the image: {}", error.getMesg()));
+                return fail_exit(fmt::format("Failed to extend the image: {}", error.getMesg()));
             }
         }
 
@@ -102,7 +102,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 try {
                     concatenate_image->setImage(*extended_images[stokes_type], casacore::False);
                 } catch (const casacore::AipsError& error) {
-                    return fail_exit(fmt::format("Fail to concatenate images: {}", error.getMesg()));
+                    return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
                 }
             }
         }
@@ -126,7 +126,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 try {
                     concatenate_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
                 } catch (const casacore::AipsError& error) {
-                    return fail_exit(fmt::format("Fail to concatenate images: {}", error.getMesg()));
+                    return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
                 }
             }
         }
@@ -172,7 +172,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
                 _loaders[stokes_type].reset(carta::FileLoader::GetLoader(full_name));
                 _loaders[stokes_type]->OpenFile(hdu);
             } catch (casacore::AipsError& ex) {
-                err = fmt::format("Fail to open the file: {}", ex.getMesg());
+                err = fmt::format("Failed to open the file: {}", ex.getMesg());
                 return false;
             }
         } else {
