@@ -43,7 +43,7 @@ public:
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
     nlohmann::json GetExistingLayouts();
-    std::string_view UpdateLayoutFromString(const std::string& buffer);
+    std::string_view SetLayoutFromString(const std::string& buffer);
     std::string_view ClearLayoutFromString(const std::string& buffer);
 
 private:
@@ -51,6 +51,7 @@ private:
     bool IsAuthenticated(Req* req);
 
     bool WritePreferencesFile(nlohmann::json& obj);
+    bool WriteLayoutFile(const std::string& layout_name, nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
 
     void HandleStaticRequest(Res* res, Req* req);

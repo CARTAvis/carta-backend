@@ -50,6 +50,7 @@ public:
         })"_json;
 
         example_layout = R"({
+            "$schema": "https://cartavis.github.io/schemas/layout_schema_2.json",
             "layoutVersion": 2,
                 "docked": {
                 "type": "stack",
@@ -164,7 +165,64 @@ TEST_F(RestApiTest, EmptyStartingLayouts) {
 
 TEST_F(RestApiTest, GetExistingLayouts) {
     WriteDefaultLayouts();
-    auto existing_preferences = _frontend_server->GetExistingLayouts();
-    EXPECT_EQ(existing_preferences["test_layout"], example_options);
-    EXPECT_EQ(existing_preferences["test_layout2"], example_options);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_layouts["test_layout"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+}
+
+TEST_F(RestApiTest, DeleteLayout) {
+    WriteDefaultLayouts();
+    json body = {{"layoutName", "test_layout"}};
+    auto status = _frontend_server->ClearLayoutFromString(body.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_TRUE(existing_layouts["test_layout"].is_null());
+    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+}
+
+TEST_F(RestApiTest, DeleteLayoutEmpty) {
+    WriteDefaultLayouts();
+    auto status = _frontend_server->ClearLayoutFromString("");
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_layouts["test_layout"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+}
+
+TEST_F(RestApiTest, DeleteLayoutInvalid) {
+    WriteDefaultLayouts();
+    auto status = _frontend_server->ClearLayoutFromString("this_is_not_a_json_string");
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_layouts["test_layout"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+}
+
+TEST_F(RestApiTest, DeleteLayoutIgnoresInvalidKeys) {
+    WriteDefaultLayouts();
+    json body = {{"another_weird_key", "hello"}};
+    auto status = _frontend_server->ClearLayoutFromString(body.dump());
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_layouts["test_layout"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+}
+
+TEST_F(RestApiTest, DeleteLayoutMissingName) {
+    WriteDefaultLayouts();
+    json body = {{"layoutName", "thisLayoutIsDefinitelyMissing"}};
+    auto status = _frontend_server->ClearPreferencesFromString(body.dump());
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_layouts["test_layout"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+}
+
+TEST_F(RestApiTest, SetLayout) {
+    json body = {{"layoutName", "created_layout"}, {"layout", example_layout}};
+    auto status = _frontend_server->SetLayoutFromString(body.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_layouts["created_layout"], example_layout);
+    EXPECT_TRUE(existing_layouts["test_layout2"].is_null());
 }

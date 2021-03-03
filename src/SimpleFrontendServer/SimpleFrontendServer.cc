@@ -153,6 +153,7 @@ bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
+        fs::create_directories(preferences_path.parent_path());
         ofstream file(preferences_path);
         // Ensure correct schema and version values are written
         obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
@@ -274,7 +275,7 @@ std::string_view SimpleFrontendServer::ClearPreferencesFromString(const string& 
         return HTTP_500;
     } catch (json::exception e) {
         spdlog::warn(e.what());
-        return HTTP_500;
+        return HTTP_400;
     }
 }
 
@@ -317,8 +318,15 @@ void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
         return;
     }
 
-    // Send
-    res->writeStatus(HTTP_501)->end();
+    WaitForData(res, req, [this, res](const string& buffer) {
+        auto status = SetLayoutFromString(buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
+        }
+    });
 }
 
 void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
@@ -327,8 +335,15 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
         return;
     }
 
-    // Send
-    res->writeStatus(HTTP_501)->end();
+    WaitForData(res, req, [this, res](const string& buffer) {
+        auto status = ClearLayoutFromString(buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
+        }
+    });
 }
 
 nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
@@ -340,7 +355,7 @@ nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
                 string filename = p.path().filename().string();
                 regex layout_regex(R"(^(.+)\.json$)");
                 smatch sm;
-                if (p.is_regular_file() && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
+                if (fs::is_regular_file(p) && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
                     string layout_name = sm[1];
                     ifstream file(p.path());
                     string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -355,12 +370,64 @@ nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
     return layouts;
 }
 
-std::string_view SimpleFrontendServer::UpdateLayoutFromString(const string& buffer) {
-    return HTTP_501;
+bool SimpleFrontendServer::WriteLayoutFile(const string& layout_name, nlohmann::json& obj) {
+    auto layout_path = _config_folder / "layouts" / (layout_name + ".json");
+
+    try {
+        fs::create_directories(layout_path.parent_path());
+        ofstream file(layout_path);
+        // Ensure correct schema value is written
+        obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
+        auto json_string = obj.dump(4);
+        file << json_string;
+        return true;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return false;
+    }
+}
+
+std::string_view SimpleFrontendServer::SetLayoutFromString(const string& buffer) {
+    try {
+        json post_data = json::parse(buffer);
+        if (post_data["layoutName"].is_string()) {
+            string layout_name = post_data["layoutName"];
+            auto layout = post_data["layout"];
+            if (!layout_name.empty() && layout.is_object()) {
+                return WriteLayoutFile(layout_name, layout) ? HTTP_200 : HTTP_400;
+            }
+        }
+        return HTTP_400;
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return HTTP_500;
+    }
 }
 
 std::string_view SimpleFrontendServer::ClearLayoutFromString(const string& buffer) {
-    return HTTP_501;
+    try {
+        json post_data = json::parse(buffer);
+        if (post_data["layoutName"].is_string()) {
+            string layout_name = post_data["layoutName"];
+            if (!layout_name.empty()) {
+                auto layout_path = _config_folder / "layouts" / (layout_name + ".json");
+                if (fs::exists(layout_path) && fs::is_regular_file(layout_path)) {
+                    fs::remove(layout_path);
+                    return HTTP_200;
+                }
+            }
+        }
+        return HTTP_400;
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return HTTP_500;
+    }
 }
 
 } // namespace carta
