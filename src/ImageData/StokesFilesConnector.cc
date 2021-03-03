@@ -21,7 +21,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
     ClearCache();
     int stokes_axis(-1);
 
-    // open files and check are they valid
+    // open files and check their validity
     std::string err;
     if (!OpenStokesFiles(message, err) || !StokesFilesValid(err, stokes_axis)) {
         response.set_success(false);
@@ -142,7 +142,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
 
 bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err) {
     if (message.stokes_files_size() < 2) {
-        err = "Needs at least two files to concatenate!\n";
+        err = "Need at least two files to concatenate!\n";
         return false;
     }
 
@@ -174,7 +174,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             }
 
             // get the common file name start from the head
-            int tmp_pos_head = StringComparison(prefix_file_name, stokes_file.file());
+            int tmp_pos_head = StrCmp(prefix_file_name, stokes_file.file());
             if (tmp_pos_head < pos_head) {
                 pos_head = tmp_pos_head;
             }
@@ -183,7 +183,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             // get the common file name start from the tail
             std::string tmp_reverse_filename = stokes_file.file();
             std::reverse(tmp_reverse_filename.begin(), tmp_reverse_filename.end());
-            int tmp_pos_tail = StringComparison(postfix_file_name, tmp_reverse_filename);
+            int tmp_pos_tail = StrCmp(postfix_file_name, tmp_reverse_filename);
             if (tmp_pos_tail < pos_tail) {
                 pos_tail = tmp_pos_tail;
             }
@@ -241,7 +241,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
 
 bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) {
     if (_loaders.size() < 2) {
-        err = "Needs at least two files to concatenate!\n";
+        err = "Need at least two files to concatenate!\n";
         return false;
     }
 
@@ -303,7 +303,7 @@ void StokesFilesConnector::ClearCache() {
     _concatenate_name = "";
 }
 
-int StokesFilesConnector::StringComparison(const std::string& str1, const std::string& str2) {
+int StokesFilesConnector::StrCmp(const std::string& str1, const std::string& str2) {
     int pos(0);
     if (!str1.empty() && !str2.empty()) {
         if (str1.size() < str2.size()) {
