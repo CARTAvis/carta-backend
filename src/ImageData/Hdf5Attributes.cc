@@ -53,7 +53,7 @@ std::string Hdf5Attributes::ReadScalar(hid_t attr_id, hid_t data_type_id, const 
     int sz = H5Tget_size(data_type_id);
     switch (H5Tget_class(data_type_id)) {
         case H5T_INTEGER: {
-            if ((sz == 4) && (H5Tget_sign(data_type_id) == H5T_SGN_2)) {
+            if ((sz == 1) && (H5Tget_sign(data_type_id) == H5T_SGN_NONE)) {
                 casacore::Bool value;
                 casacore::HDF5DataType data_type((casacore::Bool*)0);
                 H5Aread(attr_id, data_type.getHidMem(), &value);
@@ -72,10 +72,7 @@ std::string Hdf5Attributes::ReadScalar(hid_t attr_id, hid_t data_type_id, const 
             casacore::Double value;
             casacore::HDF5DataType data_type((casacore::Double*)0);
             H5Aread(attr_id, data_type.getHidMem(), &value);
-            std::ostringstream ostream;
-            ostream.precision(13);
-            ostream << value;
-            std::string key_value = fmt::format("{:<8}= {}", name, ostream.str());
+            std::string key_value = fmt::format("{:<8}= {:#.13G}", name, value);
             return fmt::format("{:<80}", key_value);
         } break;
         case H5T_STRING: {
