@@ -36,6 +36,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         std::unordered_map<CARTA::StokesType, casacore::CoordinateSystem> coord_sys;
         CARTA::StokesType carta_stokes_type;
 
+        // modify the coordinate system and add a stokes coordinate
         for (auto& loader : _loaders) {
             carta_stokes_type = loader.first;
             casacore::CoordinateSystem tmp_coord_sys;
@@ -75,23 +76,31 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 new_image_shape(i) = old_image_shape(i);
             }
         } else {
-            err = "Fail to set the new image shape!\n";
+            err = "Fail to extend the image shape!\n";
             response.set_success(false);
             response.set_message(err);
             return false;
         }
 
-        // extend the image coordinate system with a stokes coordinate
+        // modify the original image and extend the image coordinate system with a stokes coordinate
         for (auto& loader : _loaders) {
             auto stokes_type = loader.first;
             auto* image = loader.second->GetImage();
-            extended_images[stokes_type] = std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, coord_sys[stokes_type]);
+            try {
+                extended_images[stokes_type] =
+                    std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, coord_sys[stokes_type]);
+            } catch (const casacore::AipsError& error) {
+                err = "Fail to extend the image: " + error.getMesg() + "\n";
+                response.set_success(false);
+                response.set_message(err);
+                return false;
+            }
         }
 
         // get stokes axis
         stokes_axis = coord_sys[carta_stokes_type].polarizationAxisNumber();
 
-        // concat images along the stokes axis
+        // concatenate images along the stokes axis
         concatenate_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
@@ -106,20 +115,20 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 }
             }
         }
-    } else { // concat images along the stokes axis
+    } else { // concatenate images along the stokes axis
         concatenate_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
             if (_loaders.count(stokes_type)) {
-                try {
-                    // change the original stokes types
-                    casacore::StokesCoordinate& stokes_coord =
-                        const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
-                    casacore::Vector<casacore::Int> vec(1);
-                    vec(0) = stokes_type;
-                    stokes_coord.setStokes(vec);
+                // set the stokes type in the stokes coordinate
+                casacore::StokesCoordinate& stokes_coord =
+                    const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
+                casacore::Vector<casacore::Int> vec(1);
+                vec(0) = stokes_type;
+                stokes_coord.setStokes(vec);
 
+                try {
                     concatenate_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
                 } catch (const casacore::AipsError& error) {
                     err = "Fail to concatenate images: " + error.getMesg() + "\n";
@@ -130,14 +139,14 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         }
     }
 
-    if (success) { // set concatenate file name
+    if (success) { // set concatenated image name
         concatenate_name = _concatenate_name;
     }
 
     response.set_success(success);
     response.set_message(err);
 
-    return true;
+    return success;
 }
 
 bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err) {
@@ -146,13 +155,12 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         return false;
     }
 
-    int pos_head = std::numeric_limits<int>::max();                    // max length of the file names in common start from the first char
-    int pos_tail = std::numeric_limits<int>::max();                    // max length of the file names in common start from the last char
-    std::string prefix_file_name;                                      // the common file name start from the first char
-    std::string postfix_file_name;                                     // the common file name start from the last char
-    _concatenate_name = "hypercube_";                                  // name of the concatenate file
-    ImageTypes image_types;                                            // used to check whether the file type is the same
-    std::unordered_map<CARTA::StokesType, casacore::String> filenames; // used to check whether the stokes type assignment is duplicate
+    int pos_head = std::numeric_limits<int>::max(); // max length of the file names in common start from the first char
+    int pos_tail = std::numeric_limits<int>::max(); // max length of the file names in common start from the last char
+    std::string prefix_file_name;                   // the common file name start from the first char
+    std::string postfix_file_name;                  // the common file name start from the last char
+    _concatenate_name = "hypercube_";               // initialize the name of concatenated image
+    ImageTypes image_types;                         // used to check whether the file type is the same
 
     for (int i = 0; i < message.stokes_files_size(); ++i) {
         auto stokes_file = message.stokes_files(i);
@@ -160,8 +168,32 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         casacore::String hdu(stokes_file.hdu());
         casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 
+        if (_loaders.count(stokes_type)) {
+            err = "Stokes type for is duplicate!\n";
+            return false;
+        }
+
+        // open an image file
+        if (!full_name.empty()) {
+            try {
+                if (hdu.empty()) { // use first when required
+                    hdu = "0";
+                }
+                _loaders[stokes_type].reset(carta::FileLoader::GetLoader(full_name));
+                _loaders[stokes_type]->OpenFile(hdu);
+            } catch (casacore::AipsError& ex) {
+                err = "Fail to open the file: " + ex.getMesg();
+                return false;
+            }
+        } else {
+            err = "File name is empty or does not exist!\n";
+            return false;
+        }
+
+        // update the concatenated image name and insert a new stokes type
         _concatenate_name += CARTA::StokesType_Name(stokes_type);
 
+        // update the common file name starts from the head or tail
         if (i == 0) {
             image_types = CasacoreImageType(full_name);
             prefix_file_name = stokes_file.file();
@@ -189,52 +221,11 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             }
             postfix_file_name = postfix_file_name.substr(0, pos_tail);
         }
-
-        if (_loaders.count(stokes_type)) {
-            err = "Stokes type for is duplicate!\n";
-            return false;
-        }
-
-        // open the file
-        if (!full_name.empty()) {
-            try {
-                if (hdu.empty()) { // use first when required
-                    hdu = "0";
-                }
-                _loaders[stokes_type].reset(carta::FileLoader::GetLoader(full_name));
-                _loaders[stokes_type]->OpenFile(hdu);
-            } catch (casacore::AipsError& ex) {
-                err = "Fail to open the file: " + ex.getMesg();
-                return false;
-            }
-        } else {
-            err = "File name is empty or does not exist!\n";
-            return false;
-        }
-
-        // check whether the stokes type assignment is duplicate
-        if (filenames.count(stokes_type)) {
-            err = "Stokes type is duplicate!\n";
-            return false;
-        }
-
-        filenames[stokes_type] = full_name;
     }
 
-    // set the name of concatenated image
+    // set the final name of concatenated image
     std::reverse(postfix_file_name.begin(), postfix_file_name.end());
     _concatenate_name = prefix_file_name + _concatenate_name + postfix_file_name;
-
-    // check whether the file name is duplicate
-    std::set<casacore::String> filenames_set;
-    for (auto filename : filenames) {
-        filenames_set.insert(filename.second);
-    }
-
-    if (filenames_set.size() != filenames.size()) {
-        err = "File name is duplicate!\n";
-        return false;
-    }
 
     return true;
 }
@@ -266,7 +257,6 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
         }
         ++ref_index;
     }
-
     return true;
 }
 
@@ -295,14 +285,6 @@ bool StokesFilesConnector::GetStokesType(const CARTA::StokesType& in_stokes_type
     return success;
 }
 
-void StokesFilesConnector::ClearCache() {
-    for (auto& loader : _loaders) {
-        loader.second.reset();
-    }
-    _loaders.clear();
-    _concatenate_name = "";
-}
-
 int StokesFilesConnector::StrCmp(const std::string& str1, const std::string& str2) {
     int pos(0);
     if (!str1.empty() && !str2.empty()) {
@@ -325,4 +307,12 @@ int StokesFilesConnector::StrCmp(const std::string& str1, const std::string& str
         }
     }
     return pos;
+}
+
+void StokesFilesConnector::ClearCache() {
+    for (auto& loader : _loaders) {
+        loader.second.reset();
+    }
+    _loaders.clear();
+    _concatenate_name = "";
 }
