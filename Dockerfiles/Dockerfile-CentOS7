@@ -23,15 +23,6 @@ RUN \
   make -j 2 && make install && \
   cd /root && rm -rf CMake
 
-# Install newer fmt
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/fmtlib/fmt && \
-  mkdir -p fmt/build && cd fmt/build && \
-  cmake .. && make && make install && \
-  cd /root && rm -rf fmt
-
 # CASA needs wcslib 4.7 but CentOS6 and CentOS7 provide 4.3, so install newer wcslib from source
 RUN \
   source /etc/bashrc && \

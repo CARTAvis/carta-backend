@@ -19,10 +19,10 @@
 #include <utility>
 #include <vector>
 
-#include <App.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
+#include <uWebSockets/App.h>
 
 #include <casacore/casa/aips.h>
 
@@ -57,8 +57,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-        FileListHandler* file_list_handler, int grpc_port = -1);
+    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD
@@ -157,7 +157,7 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
-    void DisconnectCalled();
+    void WaitForTaskCancellation();
     void ConnectCalled();
     static int NumberOfSessions() {
         return _num_sessions;
@@ -200,6 +200,9 @@ public:
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
+    void UpdateLastMessageTimestamp();
+    std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
+
 private:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
@@ -238,8 +241,8 @@ private:
 
     uint32_t _id;
     std::string _address;
-    std::string _root_folder;
-    std::string _base_folder;
+    std::string _top_level_folder;
+    std::string _starting_folder;
     int _grpc_port;
 
     // File browser
@@ -288,6 +291,9 @@ private:
     // Scripting responses from the client
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
     std::mutex _scripting_mutex;
+
+    // Timestamp for the last protobuf message
+    std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

@@ -207,7 +207,7 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
     return (channel != _channel_index || stokes != _stokes_index);
 }
 
-void Frame::DisconnectCalled() {
+void Frame::WaitForTaskCancellation() {
     _connected = false;      // file closed
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
@@ -282,8 +282,8 @@ bool Frame::FillImageCache() {
     auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
     auto dt_set_image_cache =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-    spdlog::trace("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-        (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _image_shape(0), _image_shape(1),
+        dt_set_image_cache * 1e-3, (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
 
     return true;
 }
@@ -344,9 +344,9 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
     auto dt_raster_data_filter =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
-    spdlog::trace("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
-        req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
-        (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
+    spdlog::performance("{} filter {}x{} raster data to {}x{} in {:.3f} ms at {:.3f} MPix/s",
+        (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region,
+        dt_raster_data_filter * 1e-3, (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
 
     return true;
 }
@@ -405,8 +405,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_compress_tile_data =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-            spdlog::trace("Compress {}x{} tile data in {} ms at {} MPix/s", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                (float)(tile_width * tile_height) / dt_compress_tile_data);
+            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height,
+                dt_compress_tile_data * 1e-3, (float)(tile_width * tile_height) / dt_compress_tile_data);
 
             return !(ChannelsChanged(channel, stokes));
         }
@@ -585,10 +585,10 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
             // calculate image histogram
             BasicStats<float> stats;
             if (GetBasicStats(channel, stokes, stats)) {
-                HistogramResults results;
-                histogram_filled = CalculateHistogram(region_id, channel, stokes, num_bins, stats, results);
+                carta::Histogram hist;
+                histogram_filled = CalculateHistogram(region_id, channel, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
-                    FillHistogramFromResults(histogram, stats, results);
+                    FillHistogramFromResults(histogram, stats, hist);
                 }
             }
 
@@ -596,8 +596,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
-                spdlog::trace(
-                    "Fill image histogram in {} ms at {} MPix/s", dt_image_histogram * 1e-3, (float)stats.num_pixels / dt_image_histogram);
+                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt_image_histogram * 1e-3,
+                    (float)stats.num_pixels / dt_image_histogram);
             }
         }
         have_valid_histogram |= histogram_filled;
@@ -651,18 +651,18 @@ bool Frame::FillHistogramFromFrameCache(int channel, int stokes, int num_bins, C
     }
 
     bool have_histogram(false);
-    HistogramResults histogram_results;
+    carta::Histogram hist;
     if (channel == CURRENT_CHANNEL) {
-        have_histogram = GetCachedImageHistogram(channel, stokes, num_bins, histogram_results);
+        have_histogram = GetCachedImageHistogram(channel, stokes, num_bins, hist);
     } else if (channel == ALL_CHANNELS) {
-        have_histogram = GetCachedCubeHistogram(stokes, num_bins, histogram_results);
+        have_histogram = GetCachedCubeHistogram(stokes, num_bins, hist);
     }
 
     if (have_histogram) {
         // add stats to message
         BasicStats<float> stats;
         if (GetBasicStats(channel, stokes, stats)) {
-            FillHistogramFromResults(histogram, stats, histogram_results);
+            FillHistogramFromResults(histogram, stats, hist);
         }
     }
     return have_histogram;
@@ -706,7 +706,7 @@ bool Frame::GetBasicStats(int channel, int stokes, carta::BasicStats<float>& sta
     return false;
 }
 
-bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, HistogramResults& histogram_results) {
+bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::Histogram& hist) {
     // Get image histogram results from cache
     int cache_key(CacheKey(channel, stokes));
     if (_image_histograms.count(cache_key)) {
@@ -714,8 +714,8 @@ bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, Histo
         auto results_for_key = _image_histograms[cache_key];
 
         for (auto& result : results_for_key) {
-            if (result.num_bins == num_bins) {
-                histogram_results = result;
+            if (result.GetNbins() == num_bins) {
+                hist = result;
                 return true;
             }
         }
@@ -723,13 +723,13 @@ bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, Histo
     return false;
 }
 
-bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, HistogramResults& histogram_results) {
+bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, Histogram& hist) {
     // Get cube histogram results from cache
     if (_cube_histograms.count(stokes)) {
         for (auto& result : _cube_histograms[stokes]) {
             // get from cache if correct num_bins
-            if (result.num_bins == num_bins) {
-                histogram_results = result;
+            if (result.GetNbins() == num_bins) {
+                hist = result;
                 return true;
             }
         }
@@ -737,7 +737,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, HistogramResults& h
     return false;
 }
 
-bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_bins, BasicStats<float>& stats, HistogramResults& results) {
+bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_bins, BasicStats<float>& stats, Histogram& hist) {
     // Calculate histogram for given parameters, return results
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -758,18 +758,18 @@ bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_b
         }
         bool write_lock(false);
         tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-        CalcHistogram(num_bins, stats, _image_cache, results);
+        hist = CalcHistogram(num_bins, stats, _image_cache);
     } else {
         // calculate histogram for chan/stokes data
         std::vector<float> data;
         GetChannelMatrix(data, channel, stokes);
-        CalcHistogram(num_bins, stats, data, results);
+        hist = CalcHistogram(num_bins, stats, data);
     }
 
     // cache image histogram
     if ((region_id == IMAGE_REGION_ID) || (NumChannels() == 1)) {
         int cache_key(CacheKey(channel, stokes));
-        _image_histograms[cache_key].push_back(results);
+        _image_histograms[cache_key].push_back(hist);
     }
 
     return true;
@@ -787,8 +787,8 @@ void Frame::CacheCubeStats(int stokes, carta::BasicStats<float>& stats) {
     _cube_basic_stats[stokes] = stats;
 }
 
-void Frame::CacheCubeHistogram(int stokes, carta::HistogramResults& results) {
-    _cube_histograms[stokes].push_back(results);
+void Frame::CacheCubeHistogram(int stokes, carta::Histogram& hist) {
+    _cube_histograms[stokes].push_back(hist);
 }
 
 // ****************************************************
@@ -853,7 +853,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 
         auto t_end_image_stats = std::chrono::high_resolution_clock::now();
         auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
-        spdlog::trace("Fill image stats in {} ms", dt_image_stats * 1e-3);
+        spdlog::performance("Fill image stats in {:.3f} ms", dt_image_stats * 1e-3);
 
         return true;
     }
@@ -953,7 +953,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
     auto dt_spatial_profile =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-    spdlog::trace("Fill spatial profile in {} ms", dt_spatial_profile * 1e-3);
+    spdlog::performance("Fill spatial profile in {:.3f} ms", dt_spatial_profile * 1e-3);
 
     return true;
 }
@@ -1173,7 +1173,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
     auto dt_spectral_profile =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-    spdlog::trace("Fill cursor spectral profile in {} ms", dt_spectral_profile * 1e-3);
+    spdlog::performance("Fill cursor spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
     DecreaseZProfileCount();
     return true;
@@ -1272,7 +1272,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
         auto dt_get_subimage_data =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-        spdlog::trace("Get region subimage data in {} ms", dt_get_subimage_data * 1e-3);
+        spdlog::performance("Get region subimage data in {:.3f} ms", dt_get_subimage_data * 1e-3);
 
         return true;
     } catch (casacore::AipsError& err) {

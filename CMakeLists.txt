@@ -6,7 +6,7 @@ include_directories(src)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
 
@@ -25,7 +25,13 @@ endif ()
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 
-if (EnableAvx)
+# Automatically detect if building on an ARM based system such as the Apple M1.
+# It will replace SSE functions with ARM NEON functions using sse2neon.h from 
+# https://github.com/DLTcollab/sse2neon, redistributable under the MIT License.
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
+elseif (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
@@ -37,7 +43,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
-FIND_PACKAGE(spdlog REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
@@ -95,14 +100,15 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 # Include uWebSockets headers and build the uSockets lib
+include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
+add_subdirectory(third-party/spdlog)
 
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
-        fmt
         uSockets
         uuid
         z
@@ -112,7 +118,6 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
-        spdlog
         casa_casa
         casa_coordinates
         casa_tables
@@ -161,6 +166,7 @@ set(SOURCE_FILES
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
         src/Timer/Timer.cc
+        src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
@@ -179,6 +185,9 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
+
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
+    DESTINATION bin)
 
 # Tests
 option(test "Build tests." OFF)

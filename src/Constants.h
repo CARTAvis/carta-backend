@@ -14,7 +14,7 @@
 
 // thread counts
 #define OMP_THREAD_COUNT -1
-#define THREAD_COUNT 3
+#define TBB_TASK_THREAD_COUNT 3
 
 // file ids
 #define ALL_FILES -1
@@ -78,5 +78,7 @@
 #define ROTATED_LOG_FILES 5
 #define STDOUT_TAG "stdout"
 #define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+#define PERF_TAG "performance"
+#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

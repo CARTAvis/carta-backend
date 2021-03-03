@@ -9,8 +9,13 @@
 #include <array>
 #include <cmath>
 
-#include <x86intrin.h>
 #include <zfp.h>
+
+#ifdef _ARM_ARCH_
+#include <sse2neon/sse2neon.h>
+#else
+#include <x86intrin.h>
+#endif
 
 using namespace std;
 

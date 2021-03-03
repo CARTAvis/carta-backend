@@ -79,11 +79,11 @@ void RegionHandler::RemoveRegion(int region_id) {
 
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
-            region.second->DisconnectCalled();
+            region.second->WaitForTaskCancellation();
         }
         _regions.clear();
     } else if (_regions.count(region_id)) {
-        _regions.at(region_id)->DisconnectCalled();
+        _regions.at(region_id)->WaitForTaskCancellation();
         _regions.erase(region_id);
     }
     RemoveRegionRequirementsCache(region_id);
@@ -863,11 +863,11 @@ bool RegionHandler::GetRegionHistogramData(
         if (_histogram_cache.count(cache_id)) {
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
-                carta::HistogramResults results;
-                if (_histogram_cache[cache_id].GetHistogram(num_bins, results)) {
+                carta::Histogram hist;
+                if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto histogram = histogram_message.add_histograms();
                     histogram->set_channel(channel);
-                    FillHistogramFromResults(histogram, stats, results);
+                    FillHistogramFromResults(histogram, stats, hist);
                     continue;
                 }
             }
@@ -890,20 +890,20 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Calculate and cache histogram for number of bins
-        HistogramResults results;
-        CalcHistogram(num_bins, stats, data, results);
-        _histogram_cache[cache_id].SetHistogram(num_bins, results);
+        Histogram histo = CalcHistogram(num_bins, stats, data);
+        _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
         auto histogram = histogram_message.add_histograms();
         histogram->set_channel(channel);
-        FillHistogramFromResults(histogram, stats, results);
+        FillHistogramFromResults(histogram, stats, histo);
     }
 
     auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
     auto dt_region_histogram =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-    spdlog::trace("Fill region histogram in {} ms at {} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
+    spdlog::performance(
+        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
 
     return true;
 }
@@ -1143,7 +1143,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
             auto dt_spectral_profile =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-            spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
+            spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
             _frames.at(file_id)->DecreaseZProfileCount();
             _regions.at(region_id)->DecreaseZProfileCount();
@@ -1254,7 +1254,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
     auto dt_spectral_profile =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-    spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
+    spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
     _frames.at(file_id)->DecreaseZProfileCount();
     _regions.at(region_id)->DecreaseZProfileCount();
@@ -1380,7 +1380,7 @@ bool RegionHandler::GetRegionStatsData(
 
         auto t_end_region_stats = std::chrono::high_resolution_clock::now();
         auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-        spdlog::trace("Fill region stats in {} ms", dt_region_stats * 1e-3);
+        spdlog::performance("Fill region stats in {:.3f} ms", dt_region_stats * 1e-3);
 
         return true;
     }
