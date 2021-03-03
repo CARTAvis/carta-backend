@@ -132,10 +132,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         }
     }
 
-    if (success) { // set concatenated image name
-        concatenate_name = _concatenate_name;
-    }
-
+    concatenate_name = _concatenate_name;
     response.set_success(success);
     response.set_message(err);
 
