@@ -152,6 +152,14 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
     _concatenated_name = "hypercube_";              // initialize the name of concatenated image
     ImageTypes image_types;                         // used to check whether the file type is the same
 
+    // get the common prefix string
+    auto common_prefix = [](std::string a, std::string b) {
+        if (a.size() > b.size()) {
+            std::swap(a, b);
+        }
+        return std::string(a.begin(), std::mismatch(a.begin(), a.end(), b.begin()).first);
+    };
+
     for (int i = 0; i < message.stokes_files_size(); ++i) {
         auto stokes_file = message.stokes_files(i);
         auto stokes_type = message.stokes_files(i).stokes_type();
@@ -196,7 +204,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             }
 
             // get the common file name start from the head
-            int tmp_pos_head = StrCmp(prefix_file_name, stokes_file.file());
+            int tmp_pos_head = common_prefix(prefix_file_name, stokes_file.file()).size();
             if (tmp_pos_head < pos_head) {
                 pos_head = tmp_pos_head;
             }
@@ -205,7 +213,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             // get the common file name start from the tail
             std::string tmp_reverse_filename = stokes_file.file();
             std::reverse(tmp_reverse_filename.begin(), tmp_reverse_filename.end());
-            int tmp_pos_tail = StrCmp(postfix_file_name, tmp_reverse_filename);
+            int tmp_pos_tail = common_prefix(postfix_file_name, tmp_reverse_filename).size();
             if (tmp_pos_tail < pos_tail) {
                 pos_tail = tmp_pos_tail;
             }
@@ -273,30 +281,6 @@ bool StokesFilesConnector::GetStokesType(const CARTA::StokesType& in_stokes_type
             break;
     }
     return success;
-}
-
-int StokesFilesConnector::StrCmp(const std::string& str1, const std::string& str2) {
-    int pos(0);
-    if (!str1.empty() && !str2.empty()) {
-        if (str1.size() < str2.size()) {
-            for (int i = 0; i < str1.size(); ++i) {
-                if (str1.at(pos) == str2.at(pos)) {
-                    ++pos;
-                } else {
-                    break;
-                }
-            }
-        } else {
-            for (int i = 0; i < str2.size(); ++i) {
-                if (str1.at(pos) == str2.at(pos)) {
-                    ++pos;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-    return pos;
 }
 
 void StokesFilesConnector::ClearCache() {
