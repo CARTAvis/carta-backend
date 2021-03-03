@@ -159,7 +159,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 
         if (_loaders.count(stokes_type)) {
-            err = "Stokes type for is duplicate!";
+            err = "Duplicate Stokes type found!";
             return false;
         }
 
@@ -241,7 +241,7 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
             loader.second->FindCoordinateAxes(shape, spectral_axis, stokes_axis, err);
             if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
                 (ref_stokes_axis != stokes_axis)) {
-                err = "Images shapes or axes are not consistent!";
+                err = "Image shapes or axes are not consistent!";
                 return false;
             }
         }
