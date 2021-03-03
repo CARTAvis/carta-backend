@@ -115,7 +115,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 casacore::StokesCoordinate& stokes_coord =
                     const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
                 if (stokes_coord.stokes().size() != 1) {
-                    return fail_exit("Stokes coordinate has non or multiple stokes types!");
+                    return fail_exit("Stokes coordinate has no or multiple stokes types!");
                 }
 
                 // set stokes type in the stokes coordinate
