@@ -45,6 +45,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("verbosity", "display verbose logging from this level",
          cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
+        ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
+        ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
@@ -75,8 +77,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
  2   error
  3   warning
  4   info
- 5   debug
- 6   trace)");
+ 5   debug)");
 
     std::string extra = fmt::format(R"(
 By default the CARTA backend uses the current directory as the starting data 
@@ -97,6 +98,11 @@ OpenMP threads is automatically set to the detected number of logical cores.
 Logs are written both to the terminal and to a log file, '.carta/log/carta.log' 
 in the user's home directory. Possible log levels are:{}
 
+Performance and protocol message logging is disabled by default, but can be 
+enabled with flags. The verbosity takes precedence: the additional log messages 
+will only be visible if the level is set to 5 (debug). Performance logs are 
+written to a separate log file, '.carta/log/performance.log'.
+
 Options are provided to shut the backend down automatically if it is idle (if no 
 clients are connected), and to kill frontend sessions that are idle (no longer 
 sending messages to the backend).
@@ -115,6 +121,8 @@ sending messages to the backend).
 
     verbosity = result["verbosity"].as<int>();
     no_log = result["no_log"].as<bool>();
+    log_performance = result["log_performance"].as<bool>();
+    log_protocol_messages = result["log_protocol_messages"].as<bool>();
 
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();

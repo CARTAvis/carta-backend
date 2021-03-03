@@ -902,7 +902,8 @@ bool RegionHandler::GetRegionHistogramData(
     auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
     auto dt_region_histogram =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-    spdlog::trace("Fill region histogram in {} ms at {} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
+    spdlog::performance(
+        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
 
     return true;
 }
@@ -1142,7 +1143,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
             auto dt_spectral_profile =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-            spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
+            spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
             _frames.at(file_id)->DecreaseZProfileCount();
             _regions.at(region_id)->DecreaseZProfileCount();
@@ -1253,7 +1254,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
     auto dt_spectral_profile =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-    spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
+    spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
     _frames.at(file_id)->DecreaseZProfileCount();
     _regions.at(region_id)->DecreaseZProfileCount();
@@ -1379,7 +1380,7 @@ bool RegionHandler::GetRegionStatsData(
 
         auto t_end_region_stats = std::chrono::high_resolution_clock::now();
         auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-        spdlog::trace("Fill region stats in {} ms", dt_region_stats * 1e-3);
+        spdlog::performance("Fill region stats in {:.3f} ms", dt_region_stats * 1e-3);
 
         return true;
     }

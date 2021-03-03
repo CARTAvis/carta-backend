@@ -282,8 +282,8 @@ bool Frame::FillImageCache() {
     auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
     auto dt_set_image_cache =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-    spdlog::trace("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-        (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _image_shape(0), _image_shape(1),
+        dt_set_image_cache * 1e-3, (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
 
     return true;
 }
@@ -344,9 +344,9 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
     auto dt_raster_data_filter =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
-    spdlog::trace("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
-        req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
-        (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
+    spdlog::performance("{} filter {}x{} raster data to {}x{} in {:.3f} ms at {:.3f} MPix/s",
+        (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region,
+        dt_raster_data_filter * 1e-3, (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
 
     return true;
 }
@@ -405,8 +405,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_compress_tile_data =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-            spdlog::trace("Compress {}x{} tile data in {} ms at {} MPix/s", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                (float)(tile_width * tile_height) / dt_compress_tile_data);
+            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height,
+                dt_compress_tile_data * 1e-3, (float)(tile_width * tile_height) / dt_compress_tile_data);
 
             return !(ChannelsChanged(channel, stokes));
         }
@@ -596,8 +596,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
-                spdlog::trace(
-                    "Fill image histogram in {} ms at {} MPix/s", dt_image_histogram * 1e-3, (float)stats.num_pixels / dt_image_histogram);
+                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt_image_histogram * 1e-3,
+                    (float)stats.num_pixels / dt_image_histogram);
             }
         }
         have_valid_histogram |= histogram_filled;
@@ -853,7 +853,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 
         auto t_end_image_stats = std::chrono::high_resolution_clock::now();
         auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
-        spdlog::trace("Fill image stats in {} ms", dt_image_stats * 1e-3);
+        spdlog::performance("Fill image stats in {:.3f} ms", dt_image_stats * 1e-3);
 
         return true;
     }
@@ -953,7 +953,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
     auto dt_spatial_profile =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-    spdlog::trace("Fill spatial profile in {} ms", dt_spatial_profile * 1e-3);
+    spdlog::performance("Fill spatial profile in {:.3f} ms", dt_spatial_profile * 1e-3);
 
     return true;
 }
@@ -1173,7 +1173,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
     auto dt_spectral_profile =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-    spdlog::trace("Fill cursor spectral profile in {} ms", dt_spectral_profile * 1e-3);
+    spdlog::performance("Fill cursor spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
     DecreaseZProfileCount();
     return true;
@@ -1272,7 +1272,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
         auto dt_get_subimage_data =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-        spdlog::trace("Get region subimage data in {} ms", dt_get_subimage_data * 1e-3);
+        spdlog::performance("Get region subimage data in {:.3f} ms", dt_get_subimage_data * 1e-3);
 
         return true;
     } catch (casacore::AipsError& err) {

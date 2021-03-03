@@ -13,3 +13,6 @@
 [submodule "spdlog"]
 	path = third-party/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "sse2neon"]
+        path = third-party/sse2neon
+        url = https://github.com/DLTcollab/sse2neon.git
