@@ -39,6 +39,8 @@ public:
     }
 
     void RegisterRoutes(uWS::App& app);
+
+protected:
     nlohmann::json GetExistingPreferences();
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);

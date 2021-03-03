@@ -27,9 +27,32 @@ namespace fs = std::filesystem;
 using namespace std;
 using json = nlohmann::json;
 
+// Allows testing of protected methods in SimpleFrontendServer without polluting the original class
+class TestSimpleFrontendServer : public carta::SimpleFrontendServer {
+public:
+    TestSimpleFrontendServer(fs::path root_folder, std::string auth_token) : carta::SimpleFrontendServer(root_folder, auth_token) {}
+    FRIEND_TEST(RestApiTest, UpdatePreferencesFromString);
+    FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
+    FRIEND_TEST(RestApiTest, GetExistingPrefs);
+    FRIEND_TEST(RestApiTest, DeletePrefsEmpty);
+    FRIEND_TEST(RestApiTest, DeletePrefsInvalid);
+    FRIEND_TEST(RestApiTest, DeletePrefsIgnoresInvalidKeys);
+    FRIEND_TEST(RestApiTest, DeletePrefsHandlesMissingKeys);
+    FRIEND_TEST(RestApiTest, DeletePrefsSingleKey);
+    FRIEND_TEST(RestApiTest, DeletePrefsKeyList);
+    FRIEND_TEST(RestApiTest, EmptyStartingLayouts);
+    FRIEND_TEST(RestApiTest, GetExistingLayouts);
+    FRIEND_TEST(RestApiTest, DeleteLayout);
+    FRIEND_TEST(RestApiTest, DeleteLayoutEmpty);
+    FRIEND_TEST(RestApiTest, DeleteLayoutInvalid);
+    FRIEND_TEST(RestApiTest, DeleteLayoutIgnoresInvalidKeys);
+    FRIEND_TEST(RestApiTest, DeleteLayoutMissingName);
+    FRIEND_TEST(RestApiTest, SetLayout);
+};
+
 class RestApiTest : public ::testing::Test {
 public:
-    std::unique_ptr<carta::SimpleFrontendServer> _frontend_server;
+    std::unique_ptr<TestSimpleFrontendServer> _frontend_server;
     fs::path preferences_path;
     fs::path layouts_path;
     json example_options;
@@ -64,7 +87,7 @@ public:
         })"_json;
     }
     void SetUp() {
-        _frontend_server.reset(new carta::SimpleFrontendServer("/", "my_test_key"));
+        _frontend_server.reset(new TestSimpleFrontendServer("/", "my_test_key"));
         fs::remove(preferences_path);
         fs::remove_all(layouts_path);
     }
