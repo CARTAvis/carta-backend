@@ -6,6 +6,8 @@
 
 #include "StokesFilesConnector.h"
 
+#include <spdlog/fmt/fmt.h>
+
 using namespace carta;
 
 using ImageTypes = casacore::ImageOpener::ImageTypes;
@@ -19,14 +21,17 @@ StokesFilesConnector::~StokesFilesConnector() {
 bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
     std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenate_name) {
     ClearCache();
-    int stokes_axis(-1);
-
-    // open files and check their validity
-    std::string err;
-    if (!OpenStokesFiles(message, err) || !StokesFilesValid(err, stokes_axis)) {
+    auto fail_exit = [&](std::string err) {
         response.set_success(false);
         response.set_message(err);
         return false;
+    };
+
+    // open files and check their validity
+    int stokes_axis(-1);
+    std::string err;
+    if (!OpenStokesFiles(message, err) || !StokesFilesValid(err, stokes_axis)) {
+        return fail_exit(err);
     }
 
     bool success(true);
@@ -51,16 +56,10 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                     tmp_coord_sys.addCoordinate(stokes_coord);    // add stokes coordinate to the coordinate system
                     coord_sys[carta_stokes_type] = tmp_coord_sys; // fill the new coordinate system map
                 } else {
-                    err = "Fail to set the stokes coordinate system!\n";
-                    response.set_success(false);
-                    response.set_message(err);
-                    return false;
+                    return fail_exit("Fail to set the stokes coordinate system!");
                 }
             } else {
-                err = "Fail to get the coordinate system!\n";
-                response.set_success(false);
-                response.set_message(err);
-                return false;
+                return fail_exit("Fail to get the coordinate system!");
             }
         }
 
@@ -76,10 +75,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 new_image_shape(i) = old_image_shape(i);
             }
         } else {
-            err = "Fail to extend the image shape!\n";
-            response.set_success(false);
-            response.set_message(err);
-            return false;
+            return fail_exit("Fail to extend the image shape!");
         }
 
         // modify the original image and extend the image coordinate system with a stokes coordinate
@@ -90,10 +86,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 extended_images[stokes_type] =
                     std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, coord_sys[stokes_type]);
             } catch (const casacore::AipsError& error) {
-                err = "Fail to extend the image: " + error.getMesg() + "\n";
-                response.set_success(false);
-                response.set_message(err);
-                return false;
+                return fail_exit(fmt::format("Fail to extend the image: {}", error.getMesg()));
             }
         }
 
@@ -109,9 +102,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 try {
                     concatenate_image->setImage(*extended_images[stokes_type], casacore::False);
                 } catch (const casacore::AipsError& error) {
-                    err = "Fail to concatenate images: " + error.getMesg() + "\n";
-                    success = false;
-                    break;
+                    return fail_exit(fmt::format("Fail to concatenate images: {}", error.getMesg()));
                 }
             }
         }
@@ -124,9 +115,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 casacore::StokesCoordinate& stokes_coord =
                     const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
                 if (stokes_coord.stokes().size() != 1) {
-                    err = "Stokes coordinate has non or multiple stokes types!\n";
-                    success = false;
-                    break;
+                    return fail_exit("Stokes coordinate has non or multiple stokes types!");
                 }
 
                 // set stokes type in the stokes coordinate
@@ -137,9 +126,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 try {
                     concatenate_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
                 } catch (const casacore::AipsError& error) {
-                    err = "Fail to concatenate images: " + error.getMesg() + "\n";
-                    success = false;
-                    break;
+                    return fail_exit(fmt::format("Fail to concatenate images: {}", error.getMesg()));
                 }
             }
         }
@@ -157,7 +144,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
 
 bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err) {
     if (message.stokes_files_size() < 2) {
-        err = "Need at least two files to concatenate!\n";
+        err = "Need at least two files to concatenate!";
         return false;
     }
 
@@ -175,7 +162,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 
         if (_loaders.count(stokes_type)) {
-            err = "Stokes type for is duplicate!\n";
+            err = "Stokes type for is duplicate!";
             return false;
         }
 
@@ -188,11 +175,11 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
                 _loaders[stokes_type].reset(carta::FileLoader::GetLoader(full_name));
                 _loaders[stokes_type]->OpenFile(hdu);
             } catch (casacore::AipsError& ex) {
-                err = "Fail to open the file: " + ex.getMesg();
+                err = fmt::format("Fail to open the file: {}", ex.getMesg());
                 return false;
             }
         } else {
-            err = "File name is empty or does not exist!\n";
+            err = "File name is empty or does not exist!";
             return false;
         }
 
@@ -207,7 +194,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             std::reverse(postfix_file_name.begin(), postfix_file_name.end());
         } else {
             if (image_types != CasacoreImageType(full_name)) {
-                err = "Different file types can not be concatenated!\n";
+                err = "Different file types can not be concatenated!";
                 return false;
             }
 
@@ -238,7 +225,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
 
 bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) {
     if (_loaders.size() < 2) {
-        err = "Need at least two files to concatenate!\n";
+        err = "Need at least two files to concatenate!";
         return false;
     }
 
@@ -257,7 +244,7 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
             loader.second->FindCoordinateAxes(shape, spectral_axis, stokes_axis, err);
             if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
                 (ref_stokes_axis != stokes_axis)) {
-                err = "Images shapes or axes are not consistent!\n";
+                err = "Images shapes or axes are not consistent!";
                 return false;
             }
         }
