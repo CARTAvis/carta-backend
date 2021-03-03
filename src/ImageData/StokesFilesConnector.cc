@@ -100,7 +100,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 try {
                     concatenate_image->setImage(*extended_images[stokes_type], casacore::False);
                 } catch (const casacore::AipsError& error) {
-                    err = "Fail to concat images: " + error.getMesg() + "\n";
+                    err = "Fail to concatenate images: " + error.getMesg() + "\n";
                     success = false;
                     break;
                 }
@@ -122,7 +122,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
 
                     concatenate_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
                 } catch (const casacore::AipsError& error) {
-                    err = "Fail to concat images: " + error.getMesg() + "\n";
+                    err = "Fail to concatenate images: " + error.getMesg() + "\n";
                     success = false;
                     break;
                 }
@@ -146,8 +146,8 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         return false;
     }
 
-    int pos0 = std::numeric_limits<int>::max();                        // max length of the file names in common start from the first char
-    int pos1 = std::numeric_limits<int>::max();                        // max length of the file names in common start from the last char
+    int pos_head = std::numeric_limits<int>::max();                    // max length of the file names in common start from the first char
+    int pos_tail = std::numeric_limits<int>::max();                    // max length of the file names in common start from the last char
     std::string prefix_file_name;                                      // the common file name start from the first char
     std::string postfix_file_name;                                     // the common file name start from the last char
     _concatenate_name = "hypercube_";                                  // name of the concatenate file
@@ -174,20 +174,20 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             }
 
             // get the common file name start from the head
-            int tmp_pos0 = StringComparison(prefix_file_name, stokes_file.file());
-            if (tmp_pos0 < pos0) {
-                pos0 = tmp_pos0;
+            int tmp_pos_head = StringComparison(prefix_file_name, stokes_file.file());
+            if (tmp_pos_head < pos_head) {
+                pos_head = tmp_pos_head;
             }
-            prefix_file_name = prefix_file_name.substr(0, pos0);
+            prefix_file_name = prefix_file_name.substr(0, pos_head);
 
             // get the common file name start from the tail
             std::string tmp_reverse_filename = stokes_file.file();
             std::reverse(tmp_reverse_filename.begin(), tmp_reverse_filename.end());
-            int tmp_pos1 = StringComparison(postfix_file_name, tmp_reverse_filename);
-            if (tmp_pos1 < pos1) {
-                pos1 = tmp_pos1;
+            int tmp_pos_tail = StringComparison(postfix_file_name, tmp_reverse_filename);
+            if (tmp_pos_tail < pos_tail) {
+                pos_tail = tmp_pos_tail;
             }
-            postfix_file_name = postfix_file_name.substr(0, pos1);
+            postfix_file_name = postfix_file_name.substr(0, pos_tail);
         }
 
         if (_loaders.count(stokes_type)) {
