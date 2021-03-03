@@ -121,9 +121,15 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
             if (_loaders.count(stokes_type)) {
-                // set the stokes type in the stokes coordinate
                 casacore::StokesCoordinate& stokes_coord =
                     const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
+                if (stokes_coord.stokes().size() != 1) {
+                    err = "Stokes coordinate has non or multiple stokes types!\n";
+                    success = false;
+                    break;
+                }
+
+                // set stokes type in the stokes coordinate
                 casacore::Vector<casacore::Int> vec(1);
                 vec(0) = stokes_type;
                 stokes_coord.setStokes(vec);
