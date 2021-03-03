@@ -19,7 +19,7 @@ StokesFilesConnector::~StokesFilesConnector() {
 }
 
 bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
-    std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenate_name) {
+    std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenated_name) {
     ClearCache();
     auto fail_exit = [&](std::string err) {
         response.set_success(false);
@@ -132,7 +132,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         }
     }
 
-    concatenate_name = _concatenate_name;
+    concatenated_name = _concatenated_name;
     response.set_success(success);
     response.set_message(err);
 
@@ -149,7 +149,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
     int pos_tail = std::numeric_limits<int>::max(); // max length of the file names in common start from the last char
     std::string prefix_file_name;                   // the common file name start from the first char
     std::string postfix_file_name;                  // the common file name start from the last char
-    _concatenate_name = "hypercube_";               // initialize the name of concatenated image
+    _concatenated_name = "hypercube_";              // initialize the name of concatenated image
     ImageTypes image_types;                         // used to check whether the file type is the same
 
     for (int i = 0; i < message.stokes_files_size(); ++i) {
@@ -181,7 +181,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         }
 
         // update the concatenated image name and insert a new stokes type
-        _concatenate_name += CARTA::StokesType_Name(stokes_type);
+        _concatenated_name += CARTA::StokesType_Name(stokes_type);
 
         // update the common file name starts from the head or tail
         if (i == 0) {
@@ -215,7 +215,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
 
     // set the final name of concatenated image
     std::reverse(postfix_file_name.begin(), postfix_file_name.end());
-    _concatenate_name = prefix_file_name + _concatenate_name + postfix_file_name;
+    _concatenated_name = prefix_file_name + _concatenated_name + postfix_file_name;
 
     return true;
 }
@@ -304,5 +304,5 @@ void StokesFilesConnector::ClearCache() {
         loader.second.reset();
     }
     _loaders.clear();
-    _concatenate_name = "";
+    _concatenated_name = "";
 }

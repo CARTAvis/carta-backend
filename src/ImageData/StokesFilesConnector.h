@@ -21,7 +21,7 @@ public:
     ~StokesFilesConnector();
 
     bool DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
-        std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenate_name);
+        std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenated_name);
 
 private:
     bool OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err);
@@ -31,7 +31,7 @@ private:
     void ClearCache();
 
     std::string _top_level_folder;
-    std::string _concatenate_name;
+    std::string _concatenated_name;
     std::unordered_map<CARTA::StokesType, std::unique_ptr<carta::FileLoader>> _loaders;
 };
 
