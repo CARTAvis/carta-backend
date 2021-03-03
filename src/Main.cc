@@ -179,10 +179,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
     if (op_code == uWS::OpCode::BINARY) {
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
             session->UpdateLastMessageTimestamp();
+
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
+
+            CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
+            LogReceivedEventType(event_type);
+
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
@@ -532,7 +537,7 @@ void ExitBackend(int s) {
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
-    spdlog::default_logger()->flush(); // flush the log file while exiting backend
+    FlushLogFile();
     exit(0);
 }
 
@@ -552,7 +557,7 @@ int main(int argc, char* argv[]) {
             exit(0);
         }
 
-        InitLogger(settings.no_log, settings.verbosity);
+        InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages);
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
@@ -573,6 +578,7 @@ int main(int argc, char* argv[]) {
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
+            FlushLogFile();
             return 1;
         }
 
@@ -599,6 +605,7 @@ int main(int argc, char* argv[]) {
         if (settings.grpc_port >= 0) {
             int grpc_status = StartGrpcService(settings.grpc_port);
             if (grpc_status) {
+                FlushLogFile();
                 return 1;
             }
         }
@@ -725,11 +732,14 @@ int main(int argc, char* argv[]) {
         }
     } catch (exception& e) {
         spdlog::critical("{}", e.what());
+        FlushLogFile();
         return 1;
     } catch (...) {
         spdlog::critical("Unknown error");
+        FlushLogFile();
         return 1;
     }
 
+    FlushLogFile();
     return 0;
 }

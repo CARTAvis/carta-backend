@@ -233,7 +233,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
     }
 
-    if (spdlog::default_logger()->level() >= spdlog::level::trace) {
+    if (spdlog::get(PERF_TAG)) {
         auto t_end_contours = std::chrono::high_resolution_clock::now();
         auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
         auto rate_contours = width * height / (double)dt_contours;
@@ -246,7 +246,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
             segment_count += indices.size();
         }
 
-        spdlog::trace("Contoured {}x{} image in {} ms at {} MPix/s. Found {} vertices in {} segments across {} levels", width, height,
-            dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
+        spdlog::performance("Contoured {}x{} image in {:.3f} ms at {:.3f} MPix/s. Found {} vertices in {} segments across {} levels", width,
+            height, dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
     }
 }
