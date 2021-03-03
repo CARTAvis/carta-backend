@@ -80,7 +80,10 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     return true;
 }
 
-bool IsSubdirectory(const string& folder, const string& top_folder) {
+bool IsSubdirectory(string folder, string top_folder) {
+    folder = casacore::Path(folder).absoluteName();
+    top_folder = casacore::Path(top_folder).absoluteName();
+
     if (folder == top_folder) {
         return true;
     }

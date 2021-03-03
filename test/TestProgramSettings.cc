@@ -70,7 +70,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_EQ(settings.verbosity, 4);
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
-    EXPECT_EQ(settings.idle_session_timeout, -1);
+    EXPECT_EQ(settings.idle_session_wait_time, -1);
 }
 
 TEST_F(ProgramSettingsTest, EmptyArugments) {
@@ -84,7 +84,7 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
-        " --top_level_folder /tmp --frontend_folder /var --exit_after 10 --init_exit_after 11 --debug_no_auth");
+        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth");
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
