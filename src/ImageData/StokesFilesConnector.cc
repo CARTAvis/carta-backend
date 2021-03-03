@@ -12,6 +12,9 @@ using namespace carta;
 
 using ImageTypes = casacore::ImageOpener::ImageTypes;
 
+std::unordered_map<CARTA::StokesType, casacore::Stokes::StokesTypes> stokes_type = {{CARTA::StokesType::I, casacore::Stokes::I},
+    {CARTA::StokesType::Q, casacore::Stokes::Q}, {CARTA::StokesType::U, casacore::Stokes::U}, {CARTA::StokesType::V, casacore::Stokes::V}};
+
 StokesFilesConnector::StokesFilesConnector(const std::string& _top_level_folder) : _top_level_folder(_top_level_folder) {}
 
 StokesFilesConnector::~StokesFilesConnector() {
@@ -259,28 +262,11 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
 }
 
 bool StokesFilesConnector::GetStokesType(const CARTA::StokesType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
-    bool success(false);
-    switch (in_stokes_type) {
-        case CARTA::StokesType::I:
-            out_stokes_type = casacore::Stokes::I;
-            success = true;
-            break;
-        case CARTA::StokesType::Q:
-            out_stokes_type = casacore::Stokes::Q;
-            success = true;
-            break;
-        case CARTA::StokesType::U:
-            out_stokes_type = casacore::Stokes::U;
-            success = true;
-            break;
-        case CARTA::StokesType::V:
-            out_stokes_type = casacore::Stokes::V;
-            success = true;
-            break;
-        default:
-            break;
+    if (stokes_type.count(in_stokes_type)) {
+        out_stokes_type = stokes_type[in_stokes_type];
+        return true;
     }
-    return success;
+    return false;
 }
 
 void StokesFilesConnector::ClearCache() {
