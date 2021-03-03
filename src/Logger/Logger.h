@@ -19,8 +19,9 @@
 // customize the log function for performance
 namespace spdlog {
 constexpr auto performance = [](auto&&... args) {
-    if (spdlog::get(PERF_TAG)) {
-        return spdlog::get(PERF_TAG)->info(std::forward<decltype(args)>(args)...);
+    auto perf_log = spdlog::get(PERF_TAG);
+    if (perf_log) {
+        perf_log->debug(std::forward<decltype(args)>(args)...);
     }
 };
 } // namespace spdlog
