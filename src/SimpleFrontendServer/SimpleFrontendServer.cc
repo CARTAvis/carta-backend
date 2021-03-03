@@ -204,7 +204,7 @@ std::string_view SimpleFrontendServer::UpdatePreferencesFromString(const string&
 
         // Update each preference key-value pair
         int modified_key_count = 0;
-        for (auto& [key, value] : update_data.items()) {
+        for (auto&[key, value] : update_data.items()) {
             existing_data[key] = value;
             modified_key_count++;
         }
@@ -303,13 +303,9 @@ void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
     }
 
     json existing_layouts = GetExistingLayouts();
-    if (!existing_layouts.empty()) {
-        res->writeHeader("Content-Type", "application/json");
-        json body = {{"success", true}, {"layouts", existing_layouts}};
-        res->writeStatus(HTTP_200)->end(body.dump());
-    } else {
-        res->writeStatus(HTTP_500)->end();
-    }
+    res->writeHeader("Content-Type", "application/json");
+    json body = {{"success", true}, {"layouts", existing_layouts}};
+    res->writeStatus(HTTP_200)->end(body.dump());
 }
 
 void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
