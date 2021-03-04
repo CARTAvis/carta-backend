@@ -821,7 +821,7 @@ pipeline {
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
+                                sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                             }
                         }
@@ -845,7 +845,7 @@ pipeline {
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
+                                sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                             }
                         }
@@ -869,7 +869,7 @@ pipeline {
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
+                                sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                             }
                         }
