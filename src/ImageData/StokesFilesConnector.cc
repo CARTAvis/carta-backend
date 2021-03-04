@@ -10,9 +10,7 @@
 
 using namespace carta;
 
-using ImageTypes = casacore::ImageOpener::ImageTypes;
-
-std::unordered_map<CARTA::StokesType, casacore::Stokes::StokesTypes> stokes_type = {{CARTA::StokesType::I, casacore::Stokes::I},
+std::unordered_map<CARTA::StokesType, casacore::Stokes::StokesTypes> stokes_type_map = {{CARTA::StokesType::I, casacore::Stokes::I},
     {CARTA::StokesType::Q, casacore::Stokes::Q}, {CARTA::StokesType::U, casacore::Stokes::U}, {CARTA::StokesType::V, casacore::Stokes::V}};
 
 StokesFilesConnector::StokesFilesConnector(const std::string& _top_level_folder) : _top_level_folder(_top_level_folder) {}
@@ -22,7 +20,7 @@ StokesFilesConnector::~StokesFilesConnector() {
 }
 
 bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
-    std::shared_ptr<casacore::ImageConcat<float>>& concatenate_image, std::string& concatenated_name) {
+    std::shared_ptr<casacore::ImageConcat<float>>& concatenated_image, std::string& concatenated_name) {
     ClearCache();
     auto fail_exit = [&](std::string err) {
         response.set_success(false);
@@ -97,20 +95,20 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         stokes_axis = coord_sys[carta_stokes_type].polarizationAxisNumber();
 
         // concatenate images along the stokes axis
-        concatenate_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
+        concatenated_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
             if (extended_images.count(stokes_type)) {
                 try {
-                    concatenate_image->setImage(*extended_images[stokes_type], casacore::False);
+                    concatenated_image->setImage(*extended_images[stokes_type], casacore::False);
                 } catch (const casacore::AipsError& error) {
                     return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
                 }
             }
         }
     } else { // concatenate images along the stokes axis
-        concatenate_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
+        concatenated_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
@@ -127,7 +125,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 stokes_coord.setStokes(vec);
 
                 try {
-                    concatenate_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
+                    concatenated_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
                 } catch (const casacore::AipsError& error) {
                     return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
                 }
@@ -153,7 +151,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
     std::string prefix_file_name;                   // the common file name start from the first char
     std::string postfix_file_name;                  // the common file name start from the last char
     _concatenated_name = "hypercube_";              // initialize the name of concatenated image
-    ImageTypes image_types;                         // used to check whether the file type is the same
+    casacore::ImageOpener::ImageTypes image_types;  // used to check whether the file type is the same
 
     // get the common prefix string
     auto common_prefix = [](std::string a, std::string b) {
@@ -262,8 +260,8 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
 }
 
 bool StokesFilesConnector::GetStokesType(const CARTA::StokesType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
-    if (stokes_type.count(in_stokes_type)) {
-        out_stokes_type = stokes_type[in_stokes_type];
+    if (stokes_type_map.count(in_stokes_type)) {
+        out_stokes_type = stokes_type_map[in_stokes_type];
         return true;
     }
     return false;

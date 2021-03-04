@@ -1128,12 +1128,12 @@ void Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
     }
 
     CARTA::ConcatStokesFilesAck response;
-    std::shared_ptr<casacore::ImageConcat<float>> concatenate_image;
-    string concatenate_name;
+    std::shared_ptr<casacore::ImageConcat<float>> concatenated_image;
+    string concatenated_name;
 
-    if (_stokes_files_connector->DoConcat(message, response, concatenate_image, concatenate_name)) {
+    if (_stokes_files_connector->DoConcat(message, response, concatenated_image, concatenated_name)) {
         auto* open_file_ack = response.mutable_open_file_ack();
-        OnOpenFile(message.file_id(), concatenate_name, concatenate_image, open_file_ack);
+        OnOpenFile(message.file_id(), concatenated_name, concatenated_image, open_file_ack);
     } else {
         spdlog::error("Fail to concatenate stokes files!");
     }
