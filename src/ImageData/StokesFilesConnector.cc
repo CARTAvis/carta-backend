@@ -146,11 +146,11 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         return false;
     }
 
+    _concatenated_name = "hypercube_";              // initialize the name of concatenated image
     int len_head = std::numeric_limits<int>::max(); // max length of the file names in common start from the first char
     int len_tail = std::numeric_limits<int>::max(); // max length of the file names in common start from the last char
     std::string prefix_file_name;                   // the common file name start from the first char
     std::string postfix_file_name;                  // the common file name start from the last char
-    _concatenated_name = "hypercube_";              // initialize the name of concatenated image
     casacore::ImageOpener::ImageTypes image_types;  // used to check whether the file type is the same
 
     // get the common prefix string
@@ -189,9 +189,6 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             return false;
         }
 
-        // update the concatenated image name and insert a new stokes type
-        _concatenated_name += CARTA::StokesType_Name(stokes_type);
-
         // update the common file name starts from the head or tail
         if (i == 0) {
             image_types = CasacoreImageType(full_name);
@@ -219,6 +216,14 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
                 len_tail = tmp_len_tail;
             }
             postfix_file_name = postfix_file_name.substr(0, len_tail);
+        }
+    }
+
+    for (int i = 1; i <= 4; ++i) { // get stokes type in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+        auto stokes_type = static_cast<CARTA::StokesType>(i);
+        if (_loaders.count(stokes_type)) {
+            // update the concatenated image name and insert a new stokes type
+            _concatenated_name += CARTA::StokesType_Name(stokes_type);
         }
     }
 
