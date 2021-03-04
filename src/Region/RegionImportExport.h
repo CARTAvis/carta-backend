@@ -57,7 +57,7 @@ protected:
     // Convert wcs -> pixel
     bool ConvertPointToPixels(
         std::string& region_frame, std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords);
-    double WorldToPixelLength(casacore::Quantity world_length, unsigned int pixel_axis);
+    double WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis);
 
     // Format hex string e.g. "10161a" -> "#10161A"
     std::string FormatColor(const std::string& color);

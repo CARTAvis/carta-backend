@@ -52,6 +52,8 @@ private:
     // Import RegionTextList Annotation regions to RegionState vector
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
     RegionState ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnLine(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnPolyline(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     RegionState ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     RegionState ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     RegionState ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
@@ -61,10 +63,11 @@ private:
     // Manual region import to RegionState
     // (workaround for imageanalysis RegionTextList exception for linear coord sys)
     void ProcessFileLines(std::vector<std::string>& lines);
-    RegionState ImportAnnSymbol(std::vector<std::string>& parameters);
-    RegionState ImportAnnBox(std::vector<std::string>& parameters);
-    RegionState ImportAnnEllipse(std::vector<std::string>& parameters);
-    RegionState ImportAnnPolygon(std::vector<std::string>& parameters);
+    casacore::String GetRegionDirectionFrame(std::unordered_map<std::string, std::string>& properties);
+    RegionState ImportAnnSymbol(std::vector<std::string>& parameters, casacore::String& coord_frame);
+    RegionState ImportAnnBox(std::vector<std::string>& parameters, casacore::String& coord_frame);
+    RegionState ImportAnnEllipse(std::vector<std::string>& parameters, casacore::String& coord_frame);
+    RegionState ImportAnnPolygonLine(std::vector<std::string>& parameters, casacore::String& coord_frame);
     RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
     void ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties);
 

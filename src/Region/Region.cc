@@ -83,6 +83,14 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             points_ok = (npoints == 1) && PointsFinite(points);
             break;
         }
+        case CARTA::LINE: { // [(x, y), (x, y)] end points
+            points_ok = (npoints == 2) && PointsFinite(points);
+            break;
+        }
+        case CARTA::POLYLINE: { // any npoints > 2
+            points_ok = (npoints > 2) && PointsFinite(points);
+            break;
+        }
         case CARTA::RECTANGLE: { // [(cx,cy), (width,height)], width/height > 0
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
             break;
@@ -91,12 +99,8 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             points_ok = (npoints == 2) && PointsFinite(points);
             break;
         }
-        case CARTA::POLYGON: { // any number of (x, y) greater than 2, which is a line
+        case CARTA::POLYGON: { // any npoints > 2
             points_ok = (npoints > 2) && PointsFinite(points);
-            break;
-        }
-        case CARTA::LINE: { // [(x, y), (x, y)] end points
-            points_ok = (npoints == 2) && PointsFinite(points);
             break;
         }
         default:
