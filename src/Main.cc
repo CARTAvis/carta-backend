@@ -611,7 +611,7 @@ int main(int argc, char* argv[]) {
                 frontend_path = settings.frontend_folder;
             } else if (have_executable_path) {
                 fs::path executable_parent = fs::path(executable_path).parent_path();
-                frontend_path = executable_parent / "../share/carta/frontend";
+                frontend_path = executable_parent / CARTA_DEFAULT_FRONTEND_FOLDER;
             } else {
                 spdlog::warn(
                     "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "

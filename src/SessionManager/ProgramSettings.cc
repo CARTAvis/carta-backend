@@ -85,7 +85,7 @@ folder, and uses the root of the filesystem (/) as the top-level data folder. If
 a custom top-level folder is set, the backend will be restricted from accessing 
 files outside this directory.
 
-Frontend files are served from '../share/carta/frontend' (relative to the 
+Frontend files are served from '{}' (relative to the 
 location of the backend executable). By default the backend listens for HTTP and 
 WebSocket connections on all available interfaces, and automatically selects the 
 first available port starting from {}.  On startup the backend prints out a URL 
@@ -107,7 +107,7 @@ Options are provided to shut the backend down automatically if it is idle (if no
 clients are connected), and to kill frontend sessions that are idle (no longer 
 sending messages to the backend).
 )",
-        DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
+        CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
     if (result.count("version")) {
         cout << VERSION_ID << endl;

@@ -187,6 +187,10 @@ if (CartaUserFolderPrefix)
     add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
 endif (CartaUserFolderPrefix)
 
+if (CartaDefaultFrontendFolder)
+    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+endif (CartaDefaultFrontendFolder)
+
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
 
