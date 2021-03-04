@@ -82,19 +82,7 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 
     // Check if there's a token to be matched
     if (!auth_token.empty()) {
-        string req_token;
-        // First try the cookie auth token
-        auto cookie_header = http_request->getHeader("cookie");
-        if (!cookie_header.empty()) {
-            auto cookie_auth_value = GetAuthTokenFromCookie(string(cookie_header));
-            if (!cookie_auth_value.empty()) {
-                req_token = cookie_auth_value;
-            }
-        }
-        // Then try the auth header
-        if (req_token.empty()) {
-            req_token = http_request->getHeader("carta-auth-token");
-        }
+        string req_token = GetAuthToken(http_request);
 
         if (!req_token.empty()) {
             if (req_token != auth_token) {
@@ -631,13 +619,9 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token);
                 if (http_server->CanServeFrontend()) {
-                    app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
-                        if (http_server && http_server->CanServeFrontend()) {
-                            http_server->HandleRequest(res, req);
-                        }
-                    });
+                    http_server->RegisterRoutes(app);
                 } else {
                     spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
                 }

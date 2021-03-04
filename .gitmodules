@@ -16,3 +16,6 @@
 [submodule "sse2neon"]
         path = third-party/sse2neon
         url = https://github.com/DLTcollab/sse2neon.git
+[submodule "third-party/json"]
+	path = third-party/json
+	url = https://github.com/astoeckel/json.git

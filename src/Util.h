@@ -10,6 +10,8 @@
 #include <cassert>
 #include <string>
 
+#include <uWebSockets/HttpContext.h>
+
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/region_stats.pb.h>
@@ -51,7 +53,7 @@ void FillStatisticsValuesFromMap(
 
 std::string IPAsText(std::string_view binary);
 
-std::string GetAuthTokenFromCookie(const std::string& header);
+std::string GetAuthToken(uWS::HttpRequest* http_request);
 
 // ************ structs *************
 //
