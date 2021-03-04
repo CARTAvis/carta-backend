@@ -148,8 +148,8 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         return false;
     }
 
-    int pos_head = std::numeric_limits<int>::max(); // max length of the file names in common start from the first char
-    int pos_tail = std::numeric_limits<int>::max(); // max length of the file names in common start from the last char
+    int len_head = std::numeric_limits<int>::max(); // max length of the file names in common start from the first char
+    int len_tail = std::numeric_limits<int>::max(); // max length of the file names in common start from the last char
     std::string prefix_file_name;                   // the common file name start from the first char
     std::string postfix_file_name;                  // the common file name start from the last char
     _concatenated_name = "hypercube_";              // initialize the name of concatenated image
@@ -207,20 +207,20 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
             }
 
             // get the common file name start from the head
-            int tmp_pos_head = common_prefix(prefix_file_name, stokes_file.file()).size();
-            if (tmp_pos_head < pos_head) {
-                pos_head = tmp_pos_head;
+            int tmp_len_head = common_prefix(prefix_file_name, stokes_file.file()).size();
+            if (tmp_len_head < len_head) {
+                len_head = tmp_len_head;
             }
-            prefix_file_name = prefix_file_name.substr(0, pos_head);
+            prefix_file_name = prefix_file_name.substr(0, len_head);
 
             // get the common file name start from the tail
             std::string tmp_reverse_filename = stokes_file.file();
             std::reverse(tmp_reverse_filename.begin(), tmp_reverse_filename.end());
-            int tmp_pos_tail = common_prefix(postfix_file_name, tmp_reverse_filename).size();
-            if (tmp_pos_tail < pos_tail) {
-                pos_tail = tmp_pos_tail;
+            int tmp_len_tail = common_prefix(postfix_file_name, tmp_reverse_filename).size();
+            if (tmp_len_tail < len_tail) {
+                len_tail = tmp_len_tail;
             }
-            postfix_file_name = postfix_file_name.substr(0, pos_tail);
+            postfix_file_name = postfix_file_name.substr(0, len_tail);
         }
     }
 
