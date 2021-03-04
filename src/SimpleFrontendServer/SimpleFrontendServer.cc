@@ -141,7 +141,7 @@ json SimpleFrontendServer::GetExistingPreferences() {
     }
 
     try {
-        ifstream file(preferences_path);
+        ifstream file(preferences_path.string());
         string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return json::parse(json_string);
     } catch (exception) {
@@ -153,8 +153,8 @@ bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
-        fs::create_directories(preferences_path.parent_path());
-        ofstream file(preferences_path);
+        fs::create_directories(preferences_path.parent_path().string());
+        ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
         obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
         obj["version"] = 1;
@@ -353,7 +353,7 @@ nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
                 smatch sm;
                 if (fs::is_regular_file(p) && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
                     string layout_name = sm[1];
-                    ifstream file(p.path());
+                    ifstream file(p.path().string());
                     string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
                     json layout = json::parse(json_string);
                     layouts[layout_name] = layout;
@@ -371,7 +371,7 @@ bool SimpleFrontendServer::WriteLayoutFile(const string& layout_name, nlohmann::
 
     try {
         fs::create_directories(layout_path.parent_path());
-        ofstream file(layout_path);
+        ofstream file(layout_path.string());
         // Ensure correct schema value is written
         obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
         auto json_string = obj.dump(4);
