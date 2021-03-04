@@ -27,7 +27,7 @@ pipeline {
                            sh "make -j\$(nproc)"
                            echo "Preparing for upcoming ICD tests"
                            sh "rm -rf carta-backend-ICD-test"
-                           sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                           sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                            dir ('carta-backend-ICD-test') {
                               sh "git submodule init && git submodule update && npm install"
                               dir ('protobuf') {
@@ -61,7 +61,7 @@ pipeline {
                            sh "make -j\$(nproc)"
                            echo "Preparing for upcoming ICD tests"
                            sh "rm -rf carta-backend-ICD-test"
-                           sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                           sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                            dir ('carta-backend-ICD-test') {
                               sh "git submodule init && git submodule update && npm install"
                               dir ('protobuf') {
@@ -95,7 +95,7 @@ pipeline {
                            sh "make -j\$(nproc)"
                            echo "Preparing for upcoming ICD tests"
                            sh "rm -rf carta-backend-ICD-test"
-                           sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                           sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                            dir ('carta-backend-ICD-test') {
                               sh "git submodule init && git submodule update && npm install"
                               dir ('protobuf') {
@@ -420,19 +420,9 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 13"
-                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 13"
-                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 13"
-                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 4 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 5 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 6 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 3"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 3"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 3"
                             }
                         }
                         }
@@ -450,19 +440,9 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 13"
-                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 13"
-                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 13"
-                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 4 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 5 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 6 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 3"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 3"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 3"
                             }
                         }
                         }
@@ -480,19 +460,9 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 13"
-                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 13"
-                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 13"
-                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 4 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 5 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 6 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
-                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 3"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 3"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 3"
                             }
                         }
                         }
@@ -514,12 +484,16 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
                             }
                         }
                         }
@@ -537,12 +511,16 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
                             }
                         }
                         }
@@ -560,12 +538,16 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 6"
-                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 10"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
+                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
                             }
                         }
                         }
