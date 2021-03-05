@@ -155,6 +155,17 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
     ws->close();
 }
 
+void OnDrain(uWS::WebSocket<false, true>* ws) {
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    Session* session = sessions[session_id];
+    if (session) {
+        spdlog::warn("Client {} [{}] WebSocket backpressure drains, remaining buffer amount: {} (bytes)", session->GetId(),
+            session->GetAddress(), ws->getBufferedAmount());
+    } else {
+        spdlog::warn("Unknown client WebSocket backpressure drains, remaining buffer amount: {} (bytes)", ws->getBufferedAmount());
+    }
+}
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
@@ -708,9 +719,11 @@ int main(int argc, char* argv[]) {
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
+                                            .maxBackpressure = 256 * 1024 * 1024,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
+                                            .drain = OnDrain,
                                             .close = OnDisconnect})
                 .run();
         }
