@@ -5,6 +5,7 @@
 */
 
 #include "Logger.h"
+#include "Constants.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -30,7 +31,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     // Set a log file with its full name, maximum size and the number of rotated files
     std::string log_fullname;
     if (!no_log_file) {
-        log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
+        log_fullname = (fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_pattern(STDOUT_PATTERN);
         stdout_sinks.push_back(stdout_log_file_sink);
@@ -90,7 +91,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
         // Set a log file with its full name, maximum size and the number of rotated files
         std::string perf_log_fullname;
         if (!no_log_file) {
-            perf_log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/performance.log";
+            perf_log_fullname = (fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "log/performance.log").string();
             auto perf_log_file_sink =
                 std::make_shared<spdlog::sinks::rotating_file_sink_mt>(perf_log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
             perf_log_file_sink->set_pattern(PERF_PATTERN);

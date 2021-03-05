@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(carta_backend_test)
 
+add_compile_definitions(CARTA_USER_FOLDER_PREFIX=".carta-unit-tests")
+
 # Performance tests should not be run by default, since they need to be run in isolation
 option(performance_tests "Build performance tests." OFF)
 if (performance_tests)
@@ -31,10 +33,10 @@ set(TEST_SOURCES
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc
+        TestRestApi.cc
         TestVOTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
-set(SOURCES "")
 foreach(src_file ${SOURCE_FILES})
     list(APPEND SOURCES ../${src_file})
 endforeach()
