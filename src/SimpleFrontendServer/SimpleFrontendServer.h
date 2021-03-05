@@ -51,6 +51,7 @@ protected:
 private:
     static bool IsValidFrontendFolder(fs::path folder);
     bool IsAuthenticated(Req* req);
+    void AddNoCacheHeaders(Res* res);
 
     bool WritePreferencesFile(nlohmann::json& obj);
     bool WriteLayoutFile(const std::string& layout_name, nlohmann::json& obj);

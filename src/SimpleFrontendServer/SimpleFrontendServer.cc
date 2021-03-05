@@ -134,6 +134,12 @@ bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* req) {
     return _auth_token == GetAuthToken(req);
 }
 
+void SimpleFrontendServer::AddNoCacheHeaders(Res* res) {
+    res->writeHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
+    res->writeHeader("Expires", "-1");
+    res->writeHeader("Pragma", "no-cache");
+}
+
 json SimpleFrontendServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
     if (!fs::exists(preferences_path)) {
@@ -185,6 +191,7 @@ void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
+    AddNoCacheHeaders(res);
 
     // Read layout JSON file
     json existing_preferences = GetExistingPreferences();
@@ -231,6 +238,7 @@ void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
+    AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
         auto status = UpdatePreferencesFromString(buffer);
@@ -284,6 +292,7 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
+    AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
         auto status = ClearPreferencesFromString(buffer);
@@ -301,6 +310,7 @@ void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
+    AddNoCacheHeaders(res);
 
     json existing_layouts = GetExistingLayouts();
     res->writeHeader("Content-Type", "application/json");
@@ -313,6 +323,7 @@ void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
+    AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
         auto status = SetLayoutFromString(buffer);
@@ -330,6 +341,7 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
+    AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
         auto status = ClearLayoutFromString(buffer);
