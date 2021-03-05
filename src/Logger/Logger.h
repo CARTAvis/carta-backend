@@ -7,13 +7,30 @@
 #ifndef CARTA_BACKEND_LOGGER_LOGGER_H_
 #define CARTA_BACKEND_LOGGER_LOGGER_H_
 
-#include <spdlog/spdlog.h>
-
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
+
+#include <carta-protobuf/enums.pb.h>
 
 #include "Constants.h"
 
-void InitLogger(bool no_log_file, int verbosity);
+// customize the log function for performance
+namespace spdlog {
+constexpr auto performance = [](auto&&... args) {
+    auto perf_log = spdlog::get(PERF_TAG);
+    if (perf_log) {
+        perf_log->debug(std::forward<decltype(args)>(args)...);
+    }
+};
+} // namespace spdlog
+
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_);
+
+void LogReceivedEventType(const CARTA::EventType& event_type);
+
+void LogSentEventType(const CARTA::EventType& event_type);
+
+void FlushLogFile();
 
 #endif // CARTA_BACKEND_LOGGER_LOGGER_H_

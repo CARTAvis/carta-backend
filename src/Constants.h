@@ -10,7 +10,7 @@
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // version
-#define VERSION_ID "2.0.0-dev.21.02.09"
+#define VERSION_ID "2.0.0-dev.21.03.04"
 
 // thread counts
 #define OMP_THREAD_COUNT -1
@@ -78,5 +78,16 @@
 #define ROTATED_LOG_FILES 5
 #define STDOUT_TAG "stdout"
 #define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+#define PERF_TAG "performance"
+#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
+
+// User preferences
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
+// Schema URLs
+#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
+#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
