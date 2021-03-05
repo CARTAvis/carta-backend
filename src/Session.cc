@@ -1573,8 +1573,9 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
             while (_out_msgs.try_pop(msg)) {
                 auto expected_buffered_amount = msg.first.size() + _socket->getBufferedAmount();
                 if (expected_buffered_amount > MAX_BACKPRESSURE) {
-                    spdlog::warn("WebSocket buffered amount {} (bytes) exceeds the max backpressure! May losing some messages..",
-                        expected_buffered_amount);
+                    spdlog::warn(
+                        "Client {} [{}] WebSocket buffered amount {} (bytes) exceeds the max backpressure! May losing some messages..",
+                        GetId(), GetAddress(), expected_buffered_amount);
                 }
                 std::string_view sv(msg.first.data(), msg.first.size());
                 _socket->send(sv, uWS::OpCode::BINARY, msg.second);
