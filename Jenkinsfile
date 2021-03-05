@@ -29,7 +29,7 @@ pipeline {
                            sh "rm -rf carta-backend-ICD-test"
                            sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                            dir ('carta-backend-ICD-test') {
-                              sh "git submodule init && git submodule update && npm install"
+                              sh "git submodule init && git submodule update && yarn install"
                               dir ('protobuf') {
                                  sh "./build_proto.sh"
                               }
@@ -63,7 +63,7 @@ pipeline {
                            sh "rm -rf carta-backend-ICD-test"
                            sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                            dir ('carta-backend-ICD-test') {
-                              sh "git submodule init && git submodule update && npm install"
+                              sh "git submodule init && git submodule update && yarn install"
                               dir ('protobuf') {
                                  sh "./build_proto.sh"
                               }
@@ -97,7 +97,7 @@ pipeline {
                            sh "rm -rf carta-backend-ICD-test"
                            sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                            dir ('carta-backend-ICD-test') {
-                              sh "git submodule init && git submodule update && npm install"
+                              sh "git submodule init && git submodule update && yarn install"
                               dir ('protobuf') {
                                  sh "./build_proto.sh"
                               }
@@ -112,6 +112,52 @@ pipeline {
                         }
                         failure {
                             setBuildStatus("MacOS build failed", "FAILURE");
+                        }
+                    }
+                }
+            }
+        }
+        stage('Unit Tests') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build/test') {
+                            sh "./carta_backend_tests"
+                        }
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build/test') {
+                            sh "./carta_backend_tests"
+                        }
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build/test') {
+                            sh "./carta_backend_tests"
+                        }
                         }
                     }
                 }
