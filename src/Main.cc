@@ -159,10 +159,10 @@ void OnDrain(uWS::WebSocket<false, true>* ws) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (session) {
-        spdlog::debug("Client {} [{}] WebSocket backpressure drains, remaining buffered amount: {} (bytes)", session->GetId(),
+        spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
             session->GetAddress(), ws->getBufferedAmount());
     } else {
-        spdlog::debug("Unknown client WebSocket backpressure drains, remaining buffered amount: {} (bytes)", ws->getBufferedAmount());
+        spdlog::debug("Draining WebSocket backpressure: unknown client. Remaining buffered amount: {} (bytes).", ws->getBufferedAmount());
     }
 }
 
