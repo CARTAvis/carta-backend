@@ -86,6 +86,11 @@
 #define CARTA_USER_FOLDER_PREFIX ".carta"
 #endif
 
+// Frontend folder
+#ifndef CARTA_DEFAULT_FRONTEND_FOLDER
+#define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
+#endif
+
 // Schema URLs
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
 #define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"

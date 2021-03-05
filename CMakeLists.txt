@@ -183,6 +183,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
+if (CartaUserFolderPrefix)
+    add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
+endif (CartaUserFolderPrefix)
+
+if (CartaDefaultFrontendFolder)
+    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+endif (CartaDefaultFrontendFolder)
+
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
 
