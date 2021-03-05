@@ -6,6 +6,8 @@ include_directories(src)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
@@ -182,6 +184,14 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+if (CartaUserFolderPrefix)
+    add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
+endif (CartaUserFolderPrefix)
+
+if (CartaDefaultFrontendFolder)
+    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+endif (CartaDefaultFrontendFolder)
 
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)

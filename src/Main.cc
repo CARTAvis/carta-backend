@@ -82,19 +82,7 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 
     // Check if there's a token to be matched
     if (!auth_token.empty()) {
-        string req_token;
-        // First try the cookie auth token
-        auto cookie_header = http_request->getHeader("cookie");
-        if (!cookie_header.empty()) {
-            auto cookie_auth_value = GetAuthTokenFromCookie(string(cookie_header));
-            if (!cookie_auth_value.empty()) {
-                req_token = cookie_auth_value;
-            }
-        }
-        // Then try the auth header
-        if (req_token.empty()) {
-            req_token = http_request->getHeader("carta-auth-token");
-        }
+        string req_token = GetAuthToken(http_request);
 
         if (!req_token.empty()) {
             if (req_token != auth_token) {
@@ -165,6 +153,17 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
 
     // Close the websockets
     ws->close();
+}
+
+void OnDrain(uWS::WebSocket<false, true>* ws) {
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    Session* session = sessions[session_id];
+    if (session) {
+        spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
+            session->GetAddress(), ws->getBufferedAmount());
+    } else {
+        spdlog::debug("Draining WebSocket backpressure: unknown client. Remaining buffered amount: {} (bytes).", ws->getBufferedAmount());
+    }
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
@@ -604,7 +603,7 @@ int main(int argc, char* argv[]) {
                 frontend_path = settings.frontend_folder;
             } else if (have_executable_path) {
                 fs::path executable_parent = fs::path(executable_path).parent_path();
-                frontend_path = executable_parent / "../share/carta/frontend";
+                frontend_path = executable_parent / CARTA_DEFAULT_FRONTEND_FOLDER;
             } else {
                 spdlog::warn(
                     "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
@@ -612,13 +611,9 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token);
                 if (http_server->CanServeFrontend()) {
-                    app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
-                        if (http_server && http_server->CanServeFrontend()) {
-                            http_server->HandleRequest(res, req);
-                        }
-                    });
+                    http_server->RegisterRoutes(app);
                 } else {
                     spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
                 }
@@ -705,9 +700,11 @@ int main(int argc, char* argv[]) {
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
+                                            .maxBackpressure = MAX_BACKPRESSURE,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
+                                            .drain = OnDrain,
                                             .close = OnDisconnect})
                 .run();
         }

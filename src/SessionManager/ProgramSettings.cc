@@ -85,7 +85,7 @@ folder, and uses the root of the filesystem (/) as the top-level data folder. If
 a custom top-level folder is set, the backend will be restricted from accessing 
 files outside this directory.
 
-Frontend files are served from '../share/carta/frontend' (relative to the 
+Frontend files are served from '{}' (relative to the 
 location of the backend executable). By default the backend listens for HTTP and 
 WebSocket connections on all available interfaces, and automatically selects the 
 first available port starting from {}.  On startup the backend prints out a URL 
@@ -95,19 +95,19 @@ default browser.
 The gRPC service is disabled unless a gRPC port is set. By default the number of 
 OpenMP threads is automatically set to the detected number of logical cores.
 
-Logs are written both to the terminal and to a log file, '.carta/log/carta.log' 
+Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Possible log levels are:{}
 
 Performance and protocol message logging is disabled by default, but can be 
 enabled with flags. The verbosity takes precedence: the additional log messages 
 will only be visible if the level is set to 5 (debug). Performance logs are 
-written to a separate log file, '.carta/log/performance.log'.
+written to a separate log file, '{}/log/performance.log'.
 
 Options are provided to shut the backend down automatically if it is idle (if no 
 clients are connected), and to kill frontend sessions that are idle (no longer 
 sending messages to the backend).
 )",
-        DEFAULT_SOCKET_PORT, log_levels);
+        CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
     if (result.count("version")) {
         cout << VERSION_ID << endl;
