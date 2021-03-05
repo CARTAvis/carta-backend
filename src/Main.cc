@@ -159,10 +159,10 @@ void OnDrain(uWS::WebSocket<false, true>* ws) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (session) {
-        spdlog::warn("Client {} [{}] WebSocket backpressure drains, remaining buffer amount: {} (bytes)", session->GetId(),
+        spdlog::debug("Client {} [{}] WebSocket backpressure drains, remaining buffered amount: {} (bytes)", session->GetId(),
             session->GetAddress(), ws->getBufferedAmount());
     } else {
-        spdlog::warn("Unknown client WebSocket backpressure drains, remaining buffer amount: {} (bytes)", ws->getBufferedAmount());
+        spdlog::debug("Unknown client WebSocket backpressure drains, remaining buffered amount: {} (bytes)", ws->getBufferedAmount());
     }
 }
 
@@ -719,7 +719,7 @@ int main(int argc, char* argv[]) {
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
-                                            .maxBackpressure = 256 * 1024 * 1024,
+                                            .maxBackpressure = MAX_BACKPRESSURE,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
