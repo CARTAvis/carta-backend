@@ -26,6 +26,9 @@
 //   
 //#include <imageanalysis/ImageAnalysis/Image2DConvolver.h>
 
+#ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
+#define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
+
 #include <casa/aips.h>
 #include <casa/Arrays/IPosition.h>
 #include <casa/Arrays/Array.h>
@@ -59,7 +62,7 @@
 
 #include <memory>
 
-namespace casa {
+using namespace carta;
 
 template <class T> const casacore::String Image2DConvolver<T>::CLASS_NAME
     = "Image2DConvolver";
@@ -68,7 +71,7 @@ template <class T> Image2DConvolver<T>::Image2DConvolver(
     const SPCIIT image, const casacore::Record *const &region,
     const casacore::String& mask, const casacore::String& outname,
     const casacore::Bool overwrite
-) : ImageTask<T>(image, "", region, "", "", "", mask, outname, overwrite),
+) : casa::ImageTask<T>(image, "", region, "", "", "", mask, outname, overwrite),
     _type(casacore::VectorKernel::GAUSSIAN),  _scale(0), _major(), _minor(),
     _pa(), _axes(image->coordinates().directionAxesNumbers()) {
     this->_construct(true);
@@ -88,7 +91,7 @@ std::vector<casacore::Quantity> Image2DConvolver<T>::_getConvolvingBeamForTarget
     );
     try {
         if(
-            GaussianDeconvolver::deconvolve(
+            casa::GaussianDeconvolver::deconvolve(
                 convolvingBeam, targetBeam, inputBeam
             )
         ) {
@@ -151,7 +154,7 @@ template <class T> SPIIT Image2DConvolver<T>::convolve() {
         ),
         "Pixels must be square, please regrid your image so that they are"
     );
-    auto subImage = SubImageFactory<T>::createImage(
+    auto subImage = casa::SubImageFactory<T>::createImage(
         *this->_getImage(), "", *this->_getRegion(), this->_getMask(),
         this->_getDropDegen(), false, false, this->_getStretch()
     );
@@ -174,7 +177,7 @@ template <class T> SPIIT Image2DConvolver<T>::convolve() {
     );
     if (subImage->isMasked()) {
         TempLattice<Bool> mask(outImage->shape());
-        ImageTask<T>::_copyMask(mask, *subImage);
+        casa::ImageTask<T>::_copyMask(mask, *subImage);
         outImage->attachMask(mask);
     }
     return this->_prepareOutputImage(*outImage);
@@ -358,12 +361,12 @@ template <class T> void Image2DConvolver<T>::_doSingleBeam(
     }
     // Convolve.  We have already scaled the convolution kernel (with some
     // trickery cleverer than what ImageConvolver can do) so no more scaling
-    ImageConvolver<T> aic;
+    casa::ImageConvolver<T> aic;
     Array<T> modKernel(kernel.shape());
     casacore::convertArray(modKernel, scaleFactor*kernel);
     aic.convolve(
         *this->_getLog(), *imageOut, imageIn, modKernel,
-        ImageConvolver<T>::NONE, 1.0, true
+        casa::ImageConvolver<T>::NONE, 1.0, true
     );
     // Overwrite some bits and pieces in the output image to do with the
     // restoring beam  and image units
@@ -394,7 +397,7 @@ template <class T> void Image2DConvolver<T>::_doMultipleBeams(
     vector<Quantity>& kernelParms, Array<Double>& kernel,
     VectorKernel::KernelTypes kernelType, Bool logFactors, Double pixelArea
 ) const {
-    ImageMetaData<T> md(imageOut);
+    casa::ImageMetaData<T> md(imageOut);
     auto nChan = md.nChannels();
     auto nPol = md.nStokes();
     // initialize all beams to be null
@@ -523,10 +526,10 @@ template <class T> void Image2DConvolver<T>::_doMultipleBeams(
             }
             Array<T> modKernel(kernel.shape());
             casacore::convertArray(modKernel, scaleFactor*kernel);
-            ImageConvolver<T> aic;
+            casa::ImageConvolver<T> aic;
             aic.convolve(
                 *this->_getLog(), subImageOut, subImage, modKernel,
-                ImageConvolver<T>::NONE, 1.0, true
+                casa::ImageConvolver<T>::NONE, 1.0, true
             );
 
             // _doImageConvolver(subImageOut, subImage, scaleFactor*kernel);
@@ -599,7 +602,7 @@ template <class T> Double Image2DConvolver<T>::_makeKernel(
    wParameters(0) = casacore::Quantity(refVal(wAxis), units(wAxis));
    wAxis = cSys.pixelAxisToWorldAxis(_axes(1));
    wParameters(1) = casacore::Quantity(refVal(wAxis), units(wAxis));
-   SkyComponentFactory::worldWidthsToPixel(
+   casa::SkyComponentFactory::worldWidthsToPixel(
        dParameters, wParameters, cSys, _axes, false
    );
 
@@ -620,8 +623,8 @@ template <class T> Double Image2DConvolver<T>::_makeKernel(
 }
 
 template <class T> Double Image2DConvolver<T>::_dealWithRestoringBeam(
-    String& brightnessUnitOut,
-    GaussianBeam& beamOut, const casacore::Array<Double>& kernelArray,
+    casacore::String& brightnessUnitOut,
+    casacore::GaussianBeam& beamOut, const casacore::Array<Double>& kernelArray,
     Double kernelVolume, const casacore::VectorKernel::KernelTypes,
     const casacore::Vector<casacore::Quantity>& parameters,
     const casacore::CoordinateSystem& cSys,
@@ -705,7 +708,7 @@ template <class T> Double Image2DConvolver<T>::_dealWithRestoringBeam(
             pixelParameters(3) = parameters(1).getValue();
             pixelParameters(4) = parameters(2).getValue(casacore::Unit("rad"));
             casacore::GaussianBeam worldParameters;
-            SkyComponentFactory::pixelWidthsToWorld(
+            casa::SkyComponentFactory::pixelWidthsToWorld(
                 worldParameters, pixelParameters,
                 cSys, _axes, false
             );
@@ -741,7 +744,7 @@ template <class T> Double Image2DConvolver<T>::_dealWithRestoringBeam(
             wParameters(3) = beamIn.getMinor();
             wParameters(4) = beamIn.getPA(true);
             casacore::Vector<casacore::Double> dParameters;
-            SkyComponentFactory::worldWidthsToPixel(
+            casa::SkyComponentFactory::worldWidthsToPixel(
                 dParameters, wParameters, cSys, _axes, false
             );
             // Create 2-D beam array shape
@@ -800,7 +803,7 @@ template <class T> Double Image2DConvolver<T>::_dealWithRestoringBeam(
             pixelParameters(2) = bSolution(3);
             pixelParameters(3) = bSolution(4);
             pixelParameters(4) = bSolution(5);
-            SkyComponentFactory::pixelWidthsToWorld(
+            casa::SkyComponentFactory::pixelWidthsToWorld(
                 beamOut, pixelParameters, cSys, _axes, false
             );
             if (
@@ -972,4 +975,4 @@ template <class T> void Image2DConvolver<T>::_fillGaussian(
    } 
 }
 
-}
+#endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_

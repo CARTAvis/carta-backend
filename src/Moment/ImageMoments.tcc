@@ -61,7 +61,7 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         os_p << casacore::LogIO::NORMAL << "The input image has multiple beams so each "
              << "plane will be convolved to the largest beam size " << max_beam << " prior to calculating moments" << casacore::LogIO::POST;
 
-        casa::Image2DConvolver<casacore::Float> convolver(_image, nullptr, "", "", false);
+        carta::Image2DConvolver<casacore::Float> convolver(_image, nullptr, "", "", false);
         auto dir_axes = _image->coordinates().directionAxesNumbers();
         convolver.setAxes(std::make_pair(dir_axes[0], dir_axes[1]));
         convolver.setKernel("gaussian", max_beam.getMajor(), max_beam.getMinor(), max_beam.getPA(true));

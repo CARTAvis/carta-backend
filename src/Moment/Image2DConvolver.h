@@ -25,8 +25,8 @@
 //#
 //# $Id: Image2DConvolver.h 20229 2008-01-29 15:19:06Z gervandiepen $
 
-#ifndef IMAGES_IMAGE2DCONVOLVER_H
-#define IMAGES_IMAGE2DCONVOLVER_H
+#ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
+#define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
 
 #include <imageanalysis/ImageAnalysis/ImageTask.h>
 
@@ -48,7 +48,7 @@ class Unit;
 class GaussianBeam;
 }
 
-namespace casa {
+namespace carta {
 
 // <summary>
 // This class does 2D convolution of an image by a functional form
@@ -91,7 +91,7 @@ namespace casa {
 //   <li> 
 // </todo>
 
-template <class T> class Image2DConvolver : public ImageTask<T> {
+template <class T> class Image2DConvolver : public casa::ImageTask<T> {
 public:
 
     const static casacore::String CLASS_NAME;
@@ -133,8 +133,8 @@ public:
 
 protected:
 
-       CasacRegionManager::StokesControl _getStokesControl() const {
-           return CasacRegionManager::USE_ALL_STOKES;
+       casa::CasacRegionManager::StokesControl _getStokesControl() const {
+           return casa::CasacRegionManager::USE_ALL_STOKES;
        }
 
     std::vector<casacore::Coordinate::Type> _getNecessaryCoordinates() const {
@@ -236,7 +236,7 @@ private:
 
 }
 
-#ifndef CASACORE_NO_AUTO_TEMPLATES
 #include "Image2DConvolver.tcc"
-#endif //# CASACORE_NO_AUTO_TEMPLATES
-#endif
+
+#endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
+
