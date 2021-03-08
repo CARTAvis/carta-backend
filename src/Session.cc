@@ -418,8 +418,6 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
 bool Session::OnOpenFile(
     int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image, CARTA::OpenFileAck* open_file_ack) {
-    // Set an image moment file id, name and its image interface
-
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;
@@ -449,6 +447,10 @@ bool Session::OnOpenFile(
             *open_file_ack->mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
             open_file_ack->set_file_feature_flags(feature_flags);
+            std::vector<CARTA::Beam> beams;
+            if (_frames.at(file_id)->GetBeams(beams)) {
+                *open_file_ack->mutable_beam_table() = {beams.begin(), beams.end()};
+            }
             success = true;
         } else {
             err_message = frame->GetErrorMessage();
