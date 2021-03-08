@@ -151,9 +151,13 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 // Create header entry for each FitsKeyword
                 fhi.kw.first(); // go to first card
                 casacore::FitsKeyword* fkw = fhi.kw.next();
+                std::set<casacore::String> name_set; // used to check the repetition of name
+                casacore::Regex underscore_suffix(casacore::Regex::fromPattern("*_"));
                 while (fkw) {
                     casacore::String name(fkw->name());
                     casacore::String comment(fkw->comm());
+                    name_set.insert(name);
+                    bool fill(true);
 
                     // Strangely, the FitsKeyword does not append axis/coord number
                     if ((name == "NAXIS")) {
@@ -181,9 +185,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         name = "HDF5_CONVERTER_VERSION";
                     } else if (name == "H5DATE") { // was shortened to FITS length 8
                         name = "HDF5_DATE";
+                    } else if (casacore::String(name).matches(underscore_suffix) && name_set.count(name.substr(0, name.size() - 1))) {
+                        fill = false; // don't fill the name which is repeated after removing the underscore suffix
                     }
 
-                    if (name != "END") {
+                    if (name != "END" && fill) {
                         switch (fkw->type()) {
                             case casacore::FITS::LOGICAL: {
                                 bool value(fkw->asBool());
