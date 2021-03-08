@@ -155,6 +155,17 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
     ws->close();
 }
 
+void OnDrain(uWS::WebSocket<false, true>* ws) {
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    Session* session = sessions[session_id];
+    if (session) {
+        spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
+            session->GetAddress(), ws->getBufferedAmount());
+    } else {
+        spdlog::debug("Draining WebSocket backpressure: unknown client. Remaining buffered amount: {} (bytes).", ws->getBufferedAmount());
+    }
+}
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
@@ -611,7 +622,7 @@ int main(int argc, char* argv[]) {
                 frontend_path = settings.frontend_folder;
             } else if (have_executable_path) {
                 fs::path executable_parent = fs::path(executable_path).parent_path();
-                frontend_path = executable_parent / "../share/carta/frontend";
+                frontend_path = executable_parent / CARTA_DEFAULT_FRONTEND_FOLDER;
             } else {
                 spdlog::warn(
                     "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
@@ -708,9 +719,11 @@ int main(int argc, char* argv[]) {
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
+                                            .maxBackpressure = MAX_BACKPRESSURE,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
+                                            .drain = OnDrain,
                                             .close = OnDisconnect})
                 .run();
         }

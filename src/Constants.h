@@ -69,6 +69,9 @@
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
 
+// uWebSockets setting
+#define MAX_BACKPRESSURE 256 * 1024 * 1024
+
 // socket port
 #define DEFAULT_SOCKET_PORT 3002
 #define MAX_SOCKET_PORT_TRIALS 100
@@ -84,6 +87,11 @@
 // User preferences
 #ifndef CARTA_USER_FOLDER_PREFIX
 #define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
+// Frontend folder
+#ifndef CARTA_DEFAULT_FRONTEND_FOLDER
+#define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
 #endif
 
 // Schema URLs
