@@ -181,8 +181,7 @@ public:
     void IncreaseMomentsCount();
     void DecreaseMomentsCount();
 
-    // Save as a new file or convert it between CASA/FITS formats
-    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
+    // Save as a new file or export sub-image to CASA/FITS format
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
         std::shared_ptr<Region> image_region);
 
@@ -219,6 +218,9 @@ private:
     bool ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
     bool ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
     void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
+    casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
+    casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
+        casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
 
     // For convenience, create int map key for storing cache by channel and stokes
     inline int CacheKey(int channel, int stokes) {

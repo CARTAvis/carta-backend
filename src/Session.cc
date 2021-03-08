@@ -1118,7 +1118,8 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
                 save_file_ack.set_message("The selected region is entirely outside the image.");
             }
         } else {
-            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
+            // Save full image
+            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack, nullptr);
         }
 
         // Send response message
