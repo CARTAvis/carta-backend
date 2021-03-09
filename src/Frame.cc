@@ -1432,7 +1432,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 success = ExportFITSImage(*image, output_filename, message);
                 break;
             default:
-                message = "Could not export file. Unknown file type";
+                message = "Could not export file. Unknown file type \'" + FileTypeString[output_file_type] + "\'";
                 break;
         }
         ulock.unlock(); // Unlock the image
@@ -1443,7 +1443,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
     if (success) {
-        spdlog::info("Exported a {} file \'{}\'.", ExportTypeToString[output_file_type], output_filename.string());
+        spdlog::info("Exported a {} file \'{}\'.", FileTypeString[output_file_type], output_filename.string());
     }
 
     // Remove the root folder from the ack message
