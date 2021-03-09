@@ -19,7 +19,6 @@
 #include <casacore/lattices/LRegions/LCRegion.h>
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 #include <casacore/tables/Tables/TableRecord.h>
-#include <imageanalysis/Annotations/AnnotationBase.h>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
@@ -122,10 +121,6 @@ public:
     casacore::TableRecord GetImageRegionRecord(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
 
-    // Annotation region
-    casa::AnnotationBase* GetAnnotationRegion(
-        int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
-
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
 
@@ -170,6 +165,8 @@ private:
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
+    casacore::TableRecord GetAnnotationRegionRecord(
+        int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
 
     // Utilities to convert control points
     // Input: CARTA::Point. Returns: point (x, y) in reference world coords

@@ -30,9 +30,11 @@ public:
     // Retrieve imported regions as RegionState vector
     std::vector<RegionProperties> GetImportedRegions(std::string& error);
 
-    // Add region to export: RegionState for pixel coords in reference image,
-    // Quantities for world coordinates or for either coordinate type applied to another image
+    // Add region to export:
+    // RegionState control points for pixel coords in reference image
     virtual bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) = 0;
+
+    // Record for LCRegion in pixel coords
     bool AddExportRegion(
         const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord);
 
@@ -51,7 +53,8 @@ protected:
     virtual void ParseRegionParameters(
         std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
 
-    virtual bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+    // Quantities for converted control points
+    virtual bool AddExportRegion(CARTA::RegionType region_type, const RegionStyle& region_style,
         const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) = 0;
 
     // Convert wcs -> pixel
@@ -81,7 +84,7 @@ private:
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
     bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
-    bool ConvertRecordToPolygon(
+    bool ConvertRecordToPolygonLine(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
 };
 

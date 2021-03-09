@@ -142,16 +142,16 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+bool Ds9ImportExport::AddExportRegion(const CARTA::RegionType region_type, const RegionStyle& region_style,
     const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
-    // Add region using values from LCRegion Record (pixel or converted to world)
+    // Add region using Quantities
     float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
     std::string region_line;
     if (_pixel_coord) {
-        region_line = AddExportRegionPixel(region_state.type, control_points, angle);
+        region_line = AddExportRegionPixel(region_type, control_points, angle);
     } else {
-        region_line = AddExportRegionWorld(region_state.type, control_points, angle);
+        region_line = AddExportRegionWorld(region_type, control_points, angle);
     }
 
     // Add region style and add to list
@@ -871,7 +871,7 @@ void Ds9ImportExport::AddHeader() {
 }
 
 std::string Ds9ImportExport::AddExportRegionPixel(
-    CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle) {
+    const CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle) {
     // Add region using Record (pixel or world)
     std::string region;
 

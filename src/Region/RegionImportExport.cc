@@ -46,11 +46,11 @@ bool RegionImportExport::AddExportRegion(
     if (pixel_coord) {
         casa::AnnotationBase::unitInit(); // enable "pix" unit
     }
-
-    bool converted(false);
-    // Return control points and rotation as Quantity; rotation updated for ellipse only
-    std::vector<casacore::Quantity> control_points;
     casacore::Quantity rotation(region_state.rotation, "deg");
+
+    // Convert control points and rotation to Quantity; rotation updated for ellipse only
+    std::vector<casacore::Quantity> control_points;
+    bool converted(false);
     switch (region_state.type) {
         case CARTA::RegionType::POINT:
             converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
@@ -62,14 +62,17 @@ bool RegionImportExport::AddExportRegion(
             converted = ConvertRecordToEllipse(region_state, region_record, pixel_coord, control_points, rotation);
             break;
         case CARTA::RegionType::POLYGON:
-            converted = ConvertRecordToPolygon(region_record, pixel_coord, control_points);
+        case CARTA::RegionType::LINE:
+        case CARTA::RegionType::POLYLINE: {
+            converted = ConvertRecordToPolygonLine(region_record, pixel_coord, control_points);
             break;
+        }
         default:
             break;
     }
 
     if (converted) {
-        return AddExportRegion(region_state, region_style, control_points, rotation); // add to CRTF or DS9 export
+        return AddExportRegion(region_state.type, region_style, control_points, rotation); // CRTF or DS9 export
     }
 
     return converted;
@@ -459,14 +462,18 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     return false;
 }
 
-bool RegionImportExport::ConvertRecordToPolygon(
+bool RegionImportExport::ConvertRecordToPolygonLine(
     const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
     // Convert casacore Record to polygon Quantity control points
     // Polygon is an LCPolygon with x, y arrays in pixel coordinates
+    casacore::String region_name = region_record.asString("name");
     casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
     casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
-    size_t npoints(x.size() - 1); // remove last point, same as the first to enclose region
-    size_t naxes(_image_shape.size());
+    size_t npoints(x.size());
+    if (region_name == "LCPolygon") {
+        // ignore last point, same as the first to enclose region
+        npoints -= 1;
+    }
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
@@ -492,6 +499,7 @@ bool RegionImportExport::ConvertRecordToPolygon(
     }
 
     // Convert pixel coords to world coords
+    size_t naxes(_image_shape.size());
     casacore::Matrix<casacore::Double> world_coords(naxes, npoints);
     casacore::Matrix<casacore::Double> pixel_coords(naxes, npoints);
     pixel_coords = 0.0;

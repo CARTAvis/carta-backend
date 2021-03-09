@@ -21,8 +21,6 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/MCDirection.h>
-#include <imageanalysis/Annotations/AnnLine.h>
-#include <imageanalysis/Annotations/AnnPolyline.h>
 
 #include "../Constants.h"
 #include "../Logger/Logger.h"
@@ -354,7 +352,7 @@ bool Region::EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::
 casacore::LCRegion* Region::GetImageRegion(
     int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
     // Apply region to non-reference image as converted polygon vertices
-    // Will return nullptr if outside image or is not an LCRegion
+    // Will return nullptr if outside image or is not a closed LCRegion (line or polyline)
     casacore::LCRegion* lc_region(nullptr);
     if (IsAnnotation()) {
         return lc_region;
@@ -591,18 +589,18 @@ bool Region::ConvertPointsToImagePixels(const std::vector<CARTA::Point>& points,
                     x(i) = pixel_point(0);
                     y(i) = pixel_point(1);
                 } else { // world to pixel failed
-                    spdlog::error("Error converting polygon to output pixel coords.");
+                    spdlog::error("Error converting region to output image pixel coords.");
                     converted = false;
                     break;
                 }
             } else { // pixel to world failed
-                spdlog::error("Error converting polygon to reference world coords.");
+                spdlog::error("Error converting region to reference image world coords.");
                 converted = false;
                 break;
             }
         }
     } catch (const casacore::AipsError& err) {
-        spdlog::error("Error converting polygon region to image: {}", err.getMesg());
+        spdlog::error("Error converting region to output image: {}", err.getMesg());
         converted = false;
     }
 
@@ -657,7 +655,7 @@ casacore::TableRecord Region::GetImageRegionRecord(
     casacore::TableRecord record;
 
     if (IsAnnotation()) {
-        return record;
+        return GetAnnotationRegionRecord(file_id, output_csys, output_shape);
     }
 
     // Get converted LCRegion
@@ -766,15 +764,15 @@ casacore::TableRecord Region::GetRegionPointsRecord(
         record.define("isRegion", 1);
         record.define("comment", "");
         record.define("oneRel", false);
-        casacore::Vector<casacore::Int> region_shape;
+        casacore::Vector<casacore::Int> record_shape;
         if (_region_state.type == CARTA::RegionType::POINT) {
-            region_shape = output_shape.asVector(); // LCBox uses entire image shape
+            record_shape = output_shape.asVector(); // LCBox uses entire image shape
         } else {
-            region_shape.resize(2);
-            region_shape(0) = output_shape(0);
-            region_shape(1) = output_shape(1);
+            record_shape.resize(2);
+            record_shape(0) = output_shape(0);
+            record_shape(1) = output_shape(1);
         }
-        record.define("shape", region_shape);
+        record.define("shape", record_shape);
     }
 
     return record;
@@ -782,10 +780,12 @@ casacore::TableRecord Region::GetRegionPointsRecord(
 
 casacore::TableRecord Region::GetControlPointsRecord(int ndim) {
     // Return region Record in pixel coords in format of LCRegion::toRecord(); no conversion (for reference image)
+    // ndim needed for LCBox Record for point region
     casacore::TableRecord record;
 
     switch (_region_state.type) {
         case CARTA::RegionType::POINT: {
+            // Box with blc=trc
             casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim, 0.0);
             blc(0) = _region_state.control_points[0].x();
             blc(1) = _region_state.control_points[0].y();
@@ -824,18 +824,32 @@ casacore::TableRecord Region::GetControlPointsRecord(int ndim) {
             record.define("y", y);
             break;
         }
+        case CARTA::RegionType::LINE:
+        case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
+            // Define "x" and "y" pixel values
             size_t npoints(_region_state.control_points.size());
-            casacore::Vector<casacore::Float> x(npoints + 1), y(npoints + 1);
+            casacore::Vector<casacore::Float> x(npoints), y(npoints);
             for (size_t i = 0; i < npoints; ++i) {
                 x(i) = _region_state.control_points[i].x();
                 y(i) = _region_state.control_points[i].y();
             }
-            // LCPolygon::toRecord includes first point as last point to close region
-            x(npoints) = _region_state.control_points[0].x();
-            y(npoints) = _region_state.control_points[0].y();
 
-            record.define("name", "LCPolygon");
+            if (_region_state.type == CARTA::RegionType::POLYGON) {
+                // LCPolygon::toRecord includes first point as last point to close region
+                x.resize(npoints + 1, true);
+                x(npoints) = _region_state.control_points[0].x();
+                y.resize(npoints + 1, true);
+                y(npoints) = _region_state.control_points[0].y();
+
+                record.define("name", "LCPolygon");
+            } else if (_region_state.type == CARTA::RegionType::LINE) {
+                // CARTA USE ONLY, name not implemented in casacore
+                record.define("name", "Line");
+            } else {
+                // CARTA USE ONLY, name not implemented in casacore
+                record.define("name", "Polyline");
+            }
             record.define("x", x);
             record.define("y", y);
             break;
@@ -1058,38 +1072,46 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
 }
 
 // ***************************************************************
-// Annotation regions
+// Annotation regions (not closed LCRegion) as Record
 
-casa::AnnotationBase* Region::GetAnnotationRegion(
+casacore::TableRecord Region::GetAnnotationRegionRecord(
     int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape) {
-    // Return annotation region for region applied to input csys
-    casa::AnnotationBase* annotation_region(nullptr);
+    // Return annotation region in pixel coords for region applied to input csys
+    casacore::TableRecord record;
     if (!IsAnnotation()) {
-        return annotation_region;
+        return record;
     }
 
-    std::vector<CARTA::Point> line_points = _region_state.control_points;
-    casacore::Vector<casacore::Double> x, y;
-    if (ConvertPointsToImagePixels(line_points, image_csys, x, y)) {
-        casa::AnnotationBase::unitInit();
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes; // all selected
+    if (file_id == _region_state.reference_file_id) {
+        record = GetControlPointsRecord(image_shape.size());
+    } else {
+        std::vector<CARTA::Point> line_points = _region_state.control_points;
+        casacore::Vector<casacore::Double> x, y;
+        if (ConvertPointsToImagePixels(line_points, image_csys, x, y)) {
+            // CARTA USE ONLY, names not implemented in casacore
+            if (_region_state.type == CARTA::RegionType::LINE) {
+                record.define("name", "Line");
+            } else {
+                record.define("name", "Polyline");
+            }
 
-        /// Make point Quantities
-        size_t npoints(line_points.size());
-        casacore::Vector<casacore::Quantity> xq(npoints), yq(npoints);
-        for (size_t i = 0; i < npoints; ++i) {
-            xq(i) = casacore::Quantity(x(i), "pix");
-            yq(i) = casacore::Quantity(y(i), "pix");
-        }
-
-        if (_region_state.type == CARTA::RegionType::LINE) {
-            annotation_region = new casa::AnnLine(xq(0), yq(0), xq(1), yq(1), image_csys, stokes);
-        } else if (_region_state.type == CARTA::RegionType::POLYLINE) {
-            annotation_region = new casa::AnnPolyline(xq, yq, image_csys, image_shape, stokes, false);
+            record.define("x", x);
+            record.define("y", y);
         }
     }
 
-    return annotation_region;
+    if (!record.empty()) {
+        // Complete Record with common fields
+        record.define("isRegion", 1);
+        record.define("comment", "");
+        record.define("oneRel", false);
+        casacore::Vector<casacore::Int> record_shape(2);
+        record_shape(0) = image_shape(0);
+        record_shape(1) = image_shape(1);
+        record.define("shape", record_shape);
+    }
+
+    return record;
 }
 
 // ***************************************************************
