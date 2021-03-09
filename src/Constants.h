@@ -10,7 +10,7 @@
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // version
-#define VERSION_ID "2.0.0-dev.21.02.09"
+#define VERSION_ID "2.0.0-dev.21.03.04"
 
 // thread counts
 #define OMP_THREAD_COUNT -1
@@ -69,6 +69,9 @@
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
 
+// uWebSockets setting
+#define MAX_BACKPRESSURE 256 * 1024 * 1024
+
 // socket port
 #define DEFAULT_SOCKET_PORT 3002
 #define MAX_SOCKET_PORT_TRIALS 100
@@ -80,5 +83,19 @@
 #define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
 #define PERF_TAG "performance"
 #define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
+
+// User preferences
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
+// Frontend folder
+#ifndef CARTA_DEFAULT_FRONTEND_FOLDER
+#define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
+#endif
+
+// Schema URLs
+#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
+#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

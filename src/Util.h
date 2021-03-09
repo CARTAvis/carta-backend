@@ -10,6 +10,8 @@
 #include <cassert>
 #include <string>
 
+#include <uWebSockets/HttpContext.h>
+
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/region_stats.pb.h>
@@ -21,7 +23,7 @@
 
 // ************ Utilities *************
 bool FindExecutablePath(std::string& path);
-bool IsSubdirectory(const std::string& folder, const std::string& top_folder);
+bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 
@@ -51,7 +53,7 @@ void FillStatisticsValuesFromMap(
 
 std::string IPAsText(std::string_view binary);
 
-std::string GetAuthTokenFromCookie(const std::string& header);
+std::string GetAuthToken(uWS::HttpRequest* http_request);
 
 // ************ structs *************
 //
