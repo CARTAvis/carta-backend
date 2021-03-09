@@ -126,7 +126,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
                         dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH ./carta_backend_tests --gtest_output=xml"
+                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml"
                         }
                         junit 'test-results.xml'
                         }
@@ -140,7 +140,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
                         dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH ./carta_backend_tests --gtest_output=xml"
+                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml"
                         }
                         junit 'test-results.xml'
                         }
@@ -154,7 +154,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
                         dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH ./carta_backend_tests --gtest_output=xml"
+                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml"
                         }
                         junit 'test-results.xml'
                         }
