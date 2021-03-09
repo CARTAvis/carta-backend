@@ -1442,6 +1442,10 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         save_file_ack.set_message(message);
         return;
     }
+    if (success) {
+        spdlog::info(
+            "Exported a {} file \'{}\'.", ExportTypeToString[output_file_type], output_filename.string());
+    }
 
     // Remove the root folder from the ack message
     if (!root_folder.empty()) {
