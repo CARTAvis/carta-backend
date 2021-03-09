@@ -1432,7 +1432,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 success = ExportFITSImage(*image, output_filename, message);
                 break;
             default:
-                message = "Could not export file. Unknown file type \'" + FileTypeString[output_file_type] + "\'";
+                message = fmt::format("Could not export file. Unknown file type {}.", FileTypeString[output_file_type]);
                 break;
         }
         ulock.unlock(); // Unlock the image
