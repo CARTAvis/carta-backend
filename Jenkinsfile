@@ -127,8 +127,8 @@ pipeline {
                         {
                         dir ('build/test') {
                             sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml"
+                            junit 'test_detail.xml'
                         }
-                        junit 'test_detail.xml'
                         }
                     }
                 }
@@ -141,8 +141,8 @@ pipeline {
                         {
                         dir ('build/test') {
                             sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml"
+                            junit 'test_detail.xml'
                         }
-                        junit 'test_detail.xml'
                         }
                     }
                 }
@@ -155,8 +155,8 @@ pipeline {
                         {
                         dir ('build/test') {
                             sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml"
+                            junit 'test_detail.xml'
                         }
-                        junit 'test_detail.xml'
                         }
                     }
                 }
