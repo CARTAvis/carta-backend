@@ -65,7 +65,7 @@ private:
     RegionState ImportCircleRegion(std::vector<std::string>& parameters);
     RegionState ImportEllipseRegion(std::vector<std::string>& parameters);
     RegionState ImportRectangleRegion(std::vector<std::string>& parameters);
-    RegionState ImportPolygonRegion(std::vector<std::string>& parameters);
+    RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters);
     RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Convert DS9 syntax -> CASA

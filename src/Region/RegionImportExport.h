@@ -76,6 +76,9 @@ protected:
     std::vector<RegionProperties> _import_regions;
     std::vector<std::string> _export_regions;
 
+    std::unordered_map<CARTA::RegionType, std::string> _region_names = {
+        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::POLYGON, "polygon"}};
+
 private:
     // Return control_points and qrotation Quantity for region type
     bool ConvertRecordToPoint(

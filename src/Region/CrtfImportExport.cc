@@ -114,12 +114,6 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
             region_line = fmt::format("symbol [[{:.4f}pix, {:.4f}pix], .]", points[0].x(), points[0].y());
             break;
         }
-        case CARTA::RegionType::LINE: {
-            // line [[x, y], [x, y]]
-            region_line = fmt::format(
-                "line [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", points[0].x(), points[0].y(), points[1].x(), points[1].y());
-            break;
-        }
         case CARTA::RegionType::RECTANGLE: {
             if (angle == 0.0) {
                 // centerbox [[x, y], [width, height]]
@@ -138,18 +132,15 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
                 points[1].x(), points[1].y(), angle);
             break;
         }
+        case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
-            // poly [[x1, y1], [x2, y2], [x3, y3],...]
-            std::ostringstream os; // format varies based on npoints
-            std::string region = (region_state.type == CARTA::RegionType::POLYGON ? "poly [" : "polyline [");
-            os << region;
-            os << "[" << std::fixed << std::setprecision(4) << points[0].x() << "pix, " << points[0].y() << "pix]";
+            // e.g. poly [[x1, y1], [x2, y2], [x3, y3],...]
+            region_line = _region_names[region_state.type] + fmt::format(" [[{:.4f}pix, {:.4f}pix]", points[0].x(), points[0].y());
             for (size_t i = 1; i < points.size(); ++i) {
-                os << ", [" << points[i].x() << "pix, " << points[i].y() << "pix]";
+                region_line += fmt::format(", [{:.4f}pix, {:.4f}pix]", points[i].x(), points[i].y());
             }
-            os << "]";
-            region_line = os.str();
+            region_line += "]";
             break;
         }
         default:
@@ -283,8 +274,7 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
                 if (rotangle.getValue() < 0.0) {
                     rotangle += 360.0;
                 }
-                ann_region =
-                    new casa::AnnEllipse(cx, cy, bmaj, bmin, rotangle, *_coord_sys, _image_shape, stokes_types, require_region);
+                ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, rotangle, *_coord_sys, _image_shape, stokes_types, require_region);
                 break;
             }
             case CARTA::RegionType::POLYGON:
@@ -298,11 +288,9 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
                     y_coords(index++) = control_points[i + 1];
                 }
                 if (region_type == CARTA::RegionType::POLYGON) {
-                    ann_region =
-                        new casa::AnnPolygon(x_coords, y_coords, *_coord_sys, _image_shape, stokes_types, require_region);
+                    ann_region = new casa::AnnPolygon(x_coords, y_coords, *_coord_sys, _image_shape, stokes_types, require_region);
                 } else {
-                    ann_region =
-                        new casa::AnnPolyline(x_coords, y_coords, *_coord_sys, _image_shape, stokes_types, require_region);
+                    ann_region = new casa::AnnPolyline(x_coords, y_coords, *_coord_sys, _image_shape, stokes_types, require_region);
                 }
                 break;
             }
