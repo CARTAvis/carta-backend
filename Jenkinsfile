@@ -1,3 +1,12 @@
+void setBuildStatus(String message, String state) {
+  step([
+      $class: "GitHubCommitStatusSetter",
+      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/CARTAvis/carta-backend"],
+      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
+      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
+      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
+  ]);
+}
 pipeline {
     agent none
     stages {
@@ -116,9 +125,8 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
-                        sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build/test') {
-                            sh "./carta_backend_tests --gtest_output=xml"
+                            sh "export PATH=/usr/local/bin:$PATH ./carta_backend_tests --gtest_output=xml"
                         }
                         junit 'test-results.xml'
                         }
@@ -131,9 +139,8 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
-                        sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build/test') {
-                            sh "./carta_backend_tests --gtest_output=xml"
+                            sh "export PATH=/usr/local/bin:$PATH ./carta_backend_tests --gtest_output=xml"
                         }
                         junit 'test-results.xml'
                         }
@@ -146,9 +153,8 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
-                        sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build/test') {
-                            sh "./carta_backend_tests --gtest_output=xml"
+                            sh "export PATH=/usr/local/bin:$PATH ./carta_backend_tests --gtest_output=xml"
                         }
                         junit 'test-results.xml'
                         }
