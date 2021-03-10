@@ -1,11 +1,14 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 #include "Timer.h"
-#include <iostream>
+
+#include <spdlog/fmt/fmt.h>
+
+#include "Logger/Logger.h"
 
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {
@@ -71,7 +74,7 @@ void Timer::Print(const std::string& timer_name, bool clear_after_fetch) {
     } else {
         output = GetMeasurementString(timer_name, clear_after_fetch) + "\n";
     }
-    std::cout << output;
+    spdlog::info(output);
 }
 void Timer::Clear(const std::string& timer_name) {
     // Clear all entries if no name passed in

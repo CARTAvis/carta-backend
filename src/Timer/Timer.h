@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -8,9 +8,8 @@
 #define CARTA_BACKEND_TIMER_TIMER_H_
 
 #include <chrono>
+#include <string>
 #include <unordered_map>
-
-#include <fmt/format.h>
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> timer_entry;
 typedef std::chrono::duration<double, std::milli> timer_duration;

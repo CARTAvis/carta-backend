@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -22,17 +22,18 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
+#include "Constants.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "InterfaceConstants.h"
 #include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
@@ -73,8 +74,7 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog,
-        int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -123,11 +123,10 @@ public:
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& histogram_data);
     bool FillHistogram(int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int channel, int stokes, carta::BasicStats<float>& stats);
-    bool CalculateHistogram(
-        int region_id, int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::HistogramResults& results);
+    bool CalculateHistogram(int region_id, int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
     void CacheCubeStats(int stokes, carta::BasicStats<float>& stats);
-    void CacheCubeHistogram(int stokes, carta::HistogramResults& results);
+    void CacheCubeHistogram(int stokes, carta::Histogram& hist);
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types);
@@ -144,7 +143,7 @@ public:
     void DecreaseZProfileCount();
 
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
-    void DisconnectCalled();
+    void WaitForTaskCancellation();
     // Check flag if Frame is to be destroyed
     bool IsConnected();
 
@@ -197,11 +196,11 @@ private:
 
     // Histograms: channel is single channel number or ALL_CHANNELS for cube
     int AutoBinSize();
-    bool FillHistogramFromCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);
-    bool FillHistogramFromLoaderCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);
-    bool FillHistogramFromFrameCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);
-    bool GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::HistogramResults& histogram_results);
-    bool GetCachedCubeHistogram(int stokes, int num_bins, carta::HistogramResults& histogram_results);
+    bool FillHistogramFromCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);       // histogram message
+    bool FillHistogramFromLoaderCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
+    bool FillHistogramFromFrameCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);  // histogram message
+    bool GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::Histogram& hist);           // internal histogram
+    bool GetCachedCubeHistogram(int stokes, int num_bins, carta::Histogram& hist);                         // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
@@ -222,8 +221,6 @@ private:
 
     // Setup
     uint32_t _session_id;
-    bool _verbose;
-    bool _perflog;
 
     // Image opened
     bool _valid;
@@ -276,7 +273,7 @@ private:
 
     // Cache maps
     // For image, key is cache key (channel/stokes); for cube, key is stokes.
-    std::unordered_map<int, std::vector<carta::HistogramResults>> _image_histograms, _cube_histograms;
+    std::unordered_map<int, std::vector<carta::Histogram>> _image_histograms, _cube_histograms;
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
 

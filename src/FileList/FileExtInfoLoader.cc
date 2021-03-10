@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -8,8 +8,9 @@
 
 #include "FileExtInfoLoader.h"
 
-#include <fmt/format.h>
-#include <fmt/ostream.h> // not needed here but *must* include before miriad.h
+#include <spdlog/fmt/fmt.h>
+// not needed here but *must* include before miriad.h
+#include <spdlog/fmt/ostr.h>
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>
@@ -315,6 +316,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     int stokes_axis, const std::vector<int>& display_axes) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
+<<<<<<< HEAD
 
     // Determine depth and stokes
     int depth(1);

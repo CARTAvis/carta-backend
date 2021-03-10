@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -19,7 +19,7 @@
 
 class CartaGrpcService : public CARTA::script::CartaBackend::Service {
 public:
-    CartaGrpcService(bool verbose);
+    CartaGrpcService();
     void AddSession(Session* session);
     void RemoveSession(Session* session);
 
@@ -28,7 +28,6 @@ public:
 private:
     // Map session_id to <Session*, connected>
     std::unordered_map<int, std::pair<Session*, bool>> _sessions;
-    bool _verbose;
 
     static uint32_t _scripting_request_id;
 };
