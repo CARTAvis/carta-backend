@@ -11,7 +11,12 @@ jobs:
             git submodule update --init --recursive
       - run:
           name: "build ubuntu carta_backend"
-          command: mkdir build && cd build && cmake .. && make -j2 && ls && cp /scripts/package_ubuntu.sh . && ./package_ubuntu.sh carta_backend && ls -sort
+          command: mkdir build && cd build && cmake .. -Dtest=on && make -j2 && ls && cp /scripts/package_ubuntu.sh . && ./package_ubuntu.sh carta_backend && ls -sort
+      - run:
+          name: "run the unit tests"
+          command: cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml  
+      - store_test_results:
+            path: /root/project/build/test
       - run:
           name: "run Xvfb"
           command: Xvfb -ac :99 -screen 0 1280x1024x16 +extension RANDR > /dev/null 2>&1
