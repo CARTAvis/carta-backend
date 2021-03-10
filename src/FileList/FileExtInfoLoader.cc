@@ -14,6 +14,7 @@
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>
+#include <casacore/casa/Utilities/Regex.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/fits/FITS/hdu.h>
