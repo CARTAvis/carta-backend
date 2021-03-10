@@ -81,7 +81,12 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     return true;
 }
 
-bool IsSubdirectory(const string& folder, const string& top_folder) {
+bool IsSubdirectory(string folder, string top_folder) {
+    folder = casacore::Path(folder).absoluteName();
+    top_folder = casacore::Path(top_folder).absoluteName();
+    if (top_folder.empty()) {
+        return true;
+    }
     if (folder == top_folder) {
         return true;
     }
@@ -306,13 +311,30 @@ string IPAsText(string_view binary) {
 
     return result;
 }
-string GetAuthTokenFromCookie(const string& header) {
-    regex header_regex("carta-auth-token=(.+?)(?:;|$)");
-    smatch sm;
-    if (regex_search(header, sm, header_regex) && sm.size() == 2) {
-        return sm[1];
+
+string GetAuthToken(uWS::HttpRequest* http_request) {
+    string req_token;
+    // First try the cookie auth token
+    string cookie_header = string(http_request->getHeader("cookie"));
+    if (!cookie_header.empty()) {
+        regex header_regex("carta-auth-token=(.+?)(?:;|$)");
+        smatch sm;
+        if (regex_search(cookie_header, sm, header_regex) && sm.size() == 2) {
+            return sm[1];
+        }
     }
-    return string();
+
+    // Try the standard authorization bearer token approach
+    string auth_header = string(http_request->getHeader("authorization"));
+    regex auth_regex(R"(^Bearer\s+(\S+)$)");
+    smatch sm;
+    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2) {
+        return sm[1].str();
+    }
+
+    // Finally, fall back to the non-standard auth token header
+    // TODO: Should this be supported any more? Where is it used?
+    return string(http_request->getHeader("carta-auth-token"));
 }
 
 bool FindExecutablePath(string& path) {

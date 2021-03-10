@@ -7,10 +7,9 @@
 #ifndef CARTA_BACKEND_LOGGER_LOGGER_H_
 #define CARTA_BACKEND_LOGGER_LOGGER_H_
 
-#include <spdlog/spdlog.h>
-
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 #include <carta-protobuf/enums.pb.h>
 

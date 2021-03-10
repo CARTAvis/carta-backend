@@ -58,3 +58,9 @@ TEST(UtilTest, ParentNotSubdirectory) {
     EXPECT_FALSE(IsSubdirectory((pwd / "..").string(), pwd.string()));
     EXPECT_FALSE(IsSubdirectory("../", "./"));
 }
+
+TEST(UtilTest, TopIsRoot) {
+    auto pwd = fs::current_path();
+    EXPECT_TRUE(IsSubdirectory(pwd.string(), "/"));
+    EXPECT_TRUE(IsSubdirectory("./", "/"));
+}
