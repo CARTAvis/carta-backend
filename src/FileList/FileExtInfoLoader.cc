@@ -14,7 +14,6 @@
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>
-#include <casacore/casa/Utilities/Regex.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/fits/FITS/hdu.h>
@@ -153,7 +152,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 fhi.kw.first(); // go to first card
                 casacore::FitsKeyword* fkw = fhi.kw.next();
                 std::set<casacore::String> name_set; // used to check the repetition of name
-                casacore::Regex underscore_suffix(casacore::Regex::fromPattern("*_"));
                 casacore::String stokes_coord_type_num;
                 while (fkw) {
                     casacore::String name(fkw->name());
@@ -190,7 +188,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
 
                     // Don't fill the name which is repeated after removing the underscore suffix
-                    if (casacore::String(name).matches(underscore_suffix) && name_set.count(name.substr(0, name.size() - 1))) {
+                    if (!name.empty() && (name.back() == '_') && name_set.count(name.substr(0, name.size() - 1))) {
                         fill = false;
                     }
 
