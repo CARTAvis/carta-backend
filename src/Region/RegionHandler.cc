@@ -365,7 +365,8 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     for (auto& profile : spectral_profiles) {
         // check stokes coordinate
         std::string profile_coordinate(profile.coordinate());
-        if (!SpectralCoordinateValid(profile_coordinate, nstokes)) {
+        int stokes_index;
+        if (!frame->GetStokesTypeIndex(profile_coordinate, stokes_index)) {
             continue;
         }
 
@@ -424,17 +425,6 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     ulock.unlock();
 
     return true;
-}
-
-bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes) {
-    // Check stokes coordinate is valid for image
-    int axis_index, stokes_index;
-    ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
-    bool valid(stokes_index < nstokes);
-    if (!valid) {
-        spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
-    }
-    return valid;
 }
 
 bool RegionHandler::HasSpectralRequirements(
@@ -967,8 +957,10 @@ bool RegionHandler::FillSpectralProfileData(
                 }
 
                 // Get index into stokes axis for data message
-                int axis_index, stokes_index;
-                ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
+                int stokes_index;
+                if (!_frames.at(config_file_id)->GetStokesTypeIndex(coordinate, stokes_index)) {
+                    continue;
+                }
                 if (stokes_index < 0) {
                     stokes_index = _frames.at(config_file_id)->CurrentStokes();
                 }

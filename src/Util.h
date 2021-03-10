@@ -37,10 +37,11 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
+// stokes types and value conversion
+int GetStokesValue(const CARTA::StokesType& stokes_type);
+CARTA::StokesType GetStokesType(int stokes_value);
+
 // ************ Data Stream Helpers *************
-
-void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
-
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,

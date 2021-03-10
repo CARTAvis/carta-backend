@@ -975,10 +975,8 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     std::vector<SpectralConfig> new_configs;
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
-        int axis, stokes;
-        ConvertCoordinateToAxes(coordinate, axis, stokes);
-        if (stokes >= nstokes) {
-            spdlog::warn("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+        int stokes;
+        if (!GetStokesTypeIndex(coordinate, stokes)) {
             continue;
         }
 
@@ -1061,9 +1059,11 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             cb(profile_message);
         } else {
-            int axis, stokes;
-            ConvertCoordinateToAxes(coordinate, axis, stokes);
-            if (coordinate == "z") {
+            int stokes;
+            if (!GetStokesTypeIndex(coordinate, stokes)) {
+                continue;
+            }
+            if (stokes < 0) {
                 stokes = CurrentStokes();
             }
 
@@ -1447,4 +1447,34 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     save_file_ack.set_success(success);
     save_file_ack.set_message(message);
+}
+
+bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
+    if (coordinate.size() == 2) {
+        bool stokes_ok(false);
+        char stokes_char(coordinate.front());
+        switch (stokes_char) {
+            case 'I':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::I, stokes_index);
+                break;
+            case 'Q':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::Q, stokes_index);
+                break;
+            case 'U':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::U, stokes_index);
+                break;
+            case 'V':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::V, stokes_index);
+                break;
+            default:
+                break;
+        }
+        if (!stokes_ok) {
+            spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+            return false;
+        }
+    } else {
+        stokes_index = -1; // current stokes
+    }
+    return true;
 }
