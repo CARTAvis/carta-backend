@@ -120,7 +120,7 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region_line = _region_names[region_state.type] + "(" + fmt::format("{:.2f}, {:.2f}", points[0].x(), points[0].y());
+            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_state.type], points[0].x(), points[0].y());
             for (size_t i = 1; i < points.size(); ++i) {
                 region_line += fmt::format(", {:.2f}, {:.2f}", points[i].x(), points[i].y());
             }
@@ -912,7 +912,7 @@ std::string Ds9ImportExport::AddExportRegionPixel(
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region = _region_names[type] + "(" + fmt::format("{:.4f}", control_points[0].getValue());
+            region = fmt::format("{}({:.4f}", _region_names[type], control_points[0].getValue());
             for (size_t i = 1; i < control_points.size(); ++i) {
                 region += fmt::format(", {:.4f}", control_points[i].getValue());
             }
@@ -982,7 +982,7 @@ std::string Ds9ImportExport::AddExportRegionWorld(
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region = _region_names[type] + "(";
+            region = fmt::format("{}(", _region_names[type]);
             if (_file_ref_frame.empty()) { // linear coordinates
                 region += fmt::format("{:.4f}", control_points[0].getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {

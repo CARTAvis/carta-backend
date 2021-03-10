@@ -655,23 +655,23 @@ casacore::TableRecord Region::GetImageRegionRecord(
     casacore::TableRecord record;
 
     if (IsAnnotation()) {
-        return GetAnnotationRegionRecord(file_id, output_csys, output_shape);
-    }
+        record = GetAnnotationRegionRecord(file_id, output_csys, output_shape);
+    } else {
+        // Get converted LCRegion
+        // Check applied regions cache
+        casacore::LCRegion* lc_region = GetCachedLCRegion(file_id);
 
-    // Get converted LCRegion
-    // Check applied regions cache
-    casacore::LCRegion* lc_region = GetCachedLCRegion(file_id);
+        if (!lc_region) {
+            // Apply reference region to output image
+            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+        }
 
-    if (!lc_region) {
-        // Apply reference region to output image
-        lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
-    }
-
-    if (lc_region) {
-        // Convert LCRegion to Record
-        record = lc_region->toRecord("region");
-        if (record.isDefined("region")) {
-            record = record.asRecord("region");
+        if (lc_region) {
+            // Convert LCRegion to Record
+            record = lc_region->toRecord("region");
+            if (record.isDefined("region")) {
+                record = record.asRecord("region");
+            }
         }
     }
 
@@ -759,21 +759,7 @@ casacore::TableRecord Region::GetRegionPointsRecord(
         }
     }
 
-    if (!record.empty()) {
-        // Complete Record with common fields
-        record.define("isRegion", 1);
-        record.define("comment", "");
-        record.define("oneRel", false);
-        casacore::Vector<casacore::Int> record_shape;
-        if (_region_state.type == CARTA::RegionType::POINT) {
-            record_shape = output_shape.asVector(); // LCBox uses entire image shape
-        } else {
-            record_shape.resize(2);
-            record_shape(0) = output_shape(0);
-            record_shape(1) = output_shape(1);
-        }
-        record.define("shape", record_shape);
-    }
+    CompleteRegionRecord(record, output_shape);
 
     return record;
 }
@@ -1071,12 +1057,10 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
     return record;
 }
 
-// ***************************************************************
-// Annotation regions (not closed LCRegion) as Record
-
 casacore::TableRecord Region::GetAnnotationRegionRecord(
     int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape) {
-    // Return annotation region in pixel coords for region applied to input csys
+    // Return annotation region (not closed LCRegion) in pixel coords
+    // for region applied to input image_csys with input image_shape
     casacore::TableRecord record;
     if (!IsAnnotation()) {
         return record;
@@ -1100,18 +1084,30 @@ casacore::TableRecord Region::GetAnnotationRegionRecord(
         }
     }
 
+    CompleteRegionRecord(record, image_shape);
+
+    return record;
+}
+
+void Region::CompleteRegionRecord(casacore::TableRecord& record, const casacore::IPosition& image_shape) {
     if (!record.empty()) {
         // Complete Record with common fields
         record.define("isRegion", 1);
         record.define("comment", "");
         record.define("oneRel", false);
-        casacore::Vector<casacore::Int> record_shape(2);
-        record_shape(0) = image_shape(0);
-        record_shape(1) = image_shape(1);
+
+        casacore::Vector<casacore::Int> record_shape;
+        if (_region_state.type == CARTA::RegionType::POINT) {
+            // LCBox uses entire image shape
+            record_shape = image_shape.asVector();
+        } else {
+            // Other regions use 2D shape
+            record_shape.resize(2);
+            record_shape(0) = image_shape(0);
+            record_shape(1) = image_shape(1);
+        }
         record.define("shape", record_shape);
     }
-
-    return record;
 }
 
 // ***************************************************************

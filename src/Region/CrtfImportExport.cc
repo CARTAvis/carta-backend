@@ -136,7 +136,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // e.g. poly [[x1, y1], [x2, y2], [x3, y3],...]
-            region_line = _region_names[region_state.type] + fmt::format(" [[{:.4f}pix, {:.4f}pix]", points[0].x(), points[0].y());
+            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix]", _region_names[region_state.type], points[0].x(), points[0].y());
             for (size_t i = 1; i < points.size(); ++i) {
                 region_line += fmt::format(", [{:.4f}pix, {:.4f}pix]", points[i].x(), points[i].y());
             }

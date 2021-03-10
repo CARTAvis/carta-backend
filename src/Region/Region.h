@@ -167,6 +167,7 @@ private:
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetAnnotationRegionRecord(
         int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
+    void CompleteRegionRecord(casacore::TableRecord& record, const casacore::IPosition& image_shape);
 
     // Utilities to convert control points
     // Input: CARTA::Point. Returns: point (x, y) in reference world coords
