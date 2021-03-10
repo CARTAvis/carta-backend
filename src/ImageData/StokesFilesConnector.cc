@@ -13,6 +13,8 @@ using namespace carta;
 std::unordered_map<CARTA::StokesType, casacore::Stokes::StokesTypes> stokes_type_map = {{CARTA::StokesType::I, casacore::Stokes::I},
     {CARTA::StokesType::Q, casacore::Stokes::Q}, {CARTA::StokesType::U, casacore::Stokes::U}, {CARTA::StokesType::V, casacore::Stokes::V}};
 
+std::set<std::string> allowed_hypercube_stokes = {"IQUV", "IQU", "QU", "QUV", "IV"};
+
 StokesFilesConnector::StokesFilesConnector(const std::string& _top_level_folder) : _top_level_folder(_top_level_folder) {}
 
 StokesFilesConnector::~StokesFilesConnector() {
@@ -146,7 +148,6 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         return false;
     }
 
-    _concatenated_name = "hypercube_";              // initialize the name of concatenated image
     int len_head = std::numeric_limits<int>::max(); // max length of the file names in common start from the first char
     int len_tail = std::numeric_limits<int>::max(); // max length of the file names in common start from the last char
     std::string prefix_file_name;                   // the common file name start from the first char
@@ -219,6 +220,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         }
     }
 
+    _concatenated_name = "";       // reset the name of concatenated image
     for (int i = 1; i <= 4; ++i) { // get stokes type in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
         auto stokes_type = static_cast<CARTA::StokesType>(i);
         if (_loaders.count(stokes_type)) {
@@ -227,9 +229,14 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         }
     }
 
+    if (allowed_hypercube_stokes.find(_concatenated_name) == allowed_hypercube_stokes.end()) {
+        err = fmt::format("Hypercube stokes {} is not allowed!", _concatenated_name);
+        return false;
+    }
+
     // set the final name of concatenated image
     std::reverse(postfix_file_name.begin(), postfix_file_name.end());
-    _concatenated_name = prefix_file_name + _concatenated_name + postfix_file_name;
+    _concatenated_name = prefix_file_name + "hypercube_" + _concatenated_name + postfix_file_name;
 
     return true;
 }
