@@ -1397,21 +1397,23 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             image = sub_image.cloneII();
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
-        bool keep_degenerate = false;
-        if (save_file_msg.keep_degenerate()) {
-            keep_degenerate = true;
-        }
-
         try {
+            // If apply region
             if (region) {
                 auto latt_region_holder = LattRegionHolder(image_region);
                 auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);
-                _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image, keep_degenerate);
+                _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
             } else {
                 auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
-                _loader->GetSubImage(slice_sub_image, sub_image, keep_degenerate);
+                _loader->GetSubImage(slice_sub_image, sub_image);
             }
-            image = sub_image.cloneII();
+
+            // If keep degenerated axes
+            if (save_file_msg.keep_degenerate()) {
+                image = sub_image.cloneII();
+            } else {
+                image = casacore::SubImage<float>(sub_image, casacore::AxesSpecifier(false), true).cloneII();
+            }
         } catch (casacore::AipsError error) {
             message = error.getMesg();
             save_file_ack.set_success(false);
