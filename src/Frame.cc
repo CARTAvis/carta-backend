@@ -338,7 +338,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t num_rows_region = std::ceil((float)req_height / mip);
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
-<<<<<<< HEAD
     int num_image_columns = _image_shape(_xaxis);
     int num_image_rows = _image_shape(_yaxis);
 

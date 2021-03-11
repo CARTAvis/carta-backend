@@ -316,7 +316,6 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     int stokes_axis, const std::vector<int>& display_axes) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
-<<<<<<< HEAD
 
     // Determine depth and stokes
     int depth(1);
