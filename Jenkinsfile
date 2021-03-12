@@ -873,13 +873,7 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 1 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 2 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-                                sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
+                                moment_tests()
                             }
                         }
                         }
@@ -897,13 +891,7 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 1 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 2 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-                                sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
+                                moment_tests()
                             }
                         }
                         }
@@ -921,13 +909,7 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 1 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 2 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-                                sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
+                                moment_tests()
                             }
                         }
                         }
@@ -944,7 +926,14 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
-                            resume_tests()
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                resume_tests()
+                            }
+                        }
                         }
                     }
                 }
@@ -955,7 +944,14 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
-                            resume_tests()
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                resume_tests()
+                            }
+                        }
                         }
                     }
                 }
@@ -966,7 +962,14 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
-                            resume_tests()
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                resume_tests()
+                            }
+                        }
                         }
                     }
                 }
@@ -975,16 +978,18 @@ pipeline {
     }
 }
 
+def moment_tests(){
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 1 of 7"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 2 of 7"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
+    sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
+}
 def resume_tests(){
-    sh "export PATH=/usr/local/bin:$PATH"
-    dir ('build') {
-        unstash "ubuntu-1_carta_backend_icd"
-        sh "./run.sh # run carta_backend in the background"
-        dir ('carta-backend-ICD-test') {
-            sh "CI=true npm test src/test/RESUME_CATALOG.test.ts # test 1 of 4"
-            sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
-            sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
-            sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
-        }
-    }
+    sh "CI=true npm test src/test/RESUME_CATALOG.test.ts # test 1 of 4"
+    sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
+    sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
+    sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
 }
