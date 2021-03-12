@@ -127,8 +127,12 @@ pipeline {
                         {
                         dir ('build/test') {
                             sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml:centos7_test_detail.xml"
-                            junit 'centos7_test_detail.xml'
                         }
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'build/test/centos7_test_detail.xml'
                         }
                     }
                 }
@@ -141,8 +145,12 @@ pipeline {
                         {
                         dir ('build/test') {
                             sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml:ubuntu_test_detail.xml"
-                            junit 'ubuntu_test_detail.xml'
                         }
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'build/test/ubuntu_test_detail.xml'
                         }
                     }
                 }
@@ -155,8 +163,12 @@ pipeline {
                         {
                         dir ('build/test') {
                             sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml"
-                            junit 'macos_test_detail.xml'
                         }
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'build/test/macos_test_detail.xml'
                         }
                     }
                 }
