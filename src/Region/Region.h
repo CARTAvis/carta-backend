@@ -10,6 +10,7 @@
 #define CARTA_BACKEND_REGION_REGION_H_
 
 #include <atomic>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -102,8 +103,6 @@ public:
     // Communication
     bool IsConnected();
     void WaitForTaskCancellation();
-    void IncreaseZProfileCount();
-    void DecreaseZProfileCount();
 
     // Converted region as approximate LCPolygon and its mask
     casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
@@ -112,6 +111,8 @@ public:
     // Converted region in Record for export
     casacore::TableRecord GetImageRegionRecord(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+
+    mutable std::shared_mutex _life_mutex;
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -191,7 +192,6 @@ private:
     bool _reference_region_set; // indicates attempt was made; may be null wcregion outside image
 
     // Communication
-    std::atomic<int> _z_profile_count;
     volatile bool _connected = true;
 };
 

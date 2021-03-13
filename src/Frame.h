@@ -14,6 +14,7 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 
 #include <tbb/queuing_rw_mutex.h>
@@ -139,8 +140,6 @@ public:
     // Spectral: cursor
     bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);
     bool FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed);
-    void IncreaseZProfileCount();
-    void DecreaseZProfileCount();
 
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void WaitForTaskCancellation();
@@ -170,11 +169,11 @@ public:
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<carta::CollapseResult>& collapse_results);
     void StopMomentCalc();
-    void IncreaseMomentsCount();
-    void DecreaseMomentsCount();
 
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
+
+    mutable std::shared_mutex _life_mutex;
 
 private:
     // Validate channel, stokes index values
@@ -252,12 +251,6 @@ private:
     std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex
     tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;            // only one disk access at a time
-
-    // Spectral profile counter, so Frame is not destroyed until finished
-    std::atomic<int> _z_profile_count;
-
-    // Moments counter, so Frame is not destroyed until finished
-    std::atomic<int> _moments_count;
 
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;

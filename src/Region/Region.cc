@@ -28,7 +28,7 @@
 using namespace carta;
 
 Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
-    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false), _z_profile_count(0) {
+    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false) {
     _valid = UpdateRegion(state);
 }
 
@@ -120,17 +120,7 @@ bool Region::IsConnected() {
 
 void Region::WaitForTaskCancellation() { // to interrupt the running jobs in the Region
     _connected = false;
-    while (_z_profile_count > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-}
-
-void Region::IncreaseZProfileCount() {
-    ++_z_profile_count;
-}
-
-void Region::DecreaseZProfileCount() {
-    --_z_profile_count;
+    std::unique_lock lock(_life_mutex);
 }
 
 // ******************************************************************************************
