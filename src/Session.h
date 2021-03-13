@@ -157,6 +157,9 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
+    int GetRefCount() {
+        return _ref_count;
+    }
     void WaitForTaskCancellation();
     void ConnectCalled();
     static int NumberOfSessions() {
