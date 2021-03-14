@@ -173,6 +173,7 @@ public:
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
 
+    // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _life_mutex;
 
 private:
