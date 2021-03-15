@@ -252,10 +252,10 @@ void TableController::OnFileListRequest(
                 file_info->set_date(file_stats.st_mtim.tv_sec);
             }
 
-            // report the progress if conditions
             ++num_of_files_done;
             percentage = (float)num_of_files_done / (float)total_files;
             auto current_time = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double>(current_time - start_time).count();
 
             auto report_progress = [&]() {
                 CARTA::Progress progress;
@@ -266,7 +266,7 @@ void TableController::OnFileListRequest(
                 start_time = current_time;
             };
 
-            auto dt = std::chrono::duration<double>(current_time - start_time).count();
+            // report the progress if it fits the conditions
             if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
                 report_progress();
                 _first_report = true;
