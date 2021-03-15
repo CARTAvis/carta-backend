@@ -42,7 +42,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler(){};
+    RegionHandler() = default;
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
