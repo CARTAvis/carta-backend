@@ -1074,8 +1074,6 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             casacore::ImageRegion image_region;
             int chan_min(moment_request.spectral_range().min());
             int chan_max(moment_request.spectral_range().max());
-
-            std::shared_lock frame_lock(frame->life_mutex);
             if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
                 frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }

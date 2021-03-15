@@ -727,7 +727,6 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
     // Do calculations
     if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-        std::shared_lock frame_lock(frame->life_mutex);
         frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
     }
     return !collapse_results.empty();
