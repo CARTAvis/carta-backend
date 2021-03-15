@@ -210,7 +210,7 @@ void Frame::WaitForTaskCancellation() {
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
     }
-    std::unique_lock lock(_life_mutex);
+    std::unique_lock lock(life_mutex);
 }
 
 bool Frame::IsConnected() {
@@ -999,7 +999,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
-    std::shared_lock lock(_life_mutex);
+    std::shared_lock lock(life_mutex);
 
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 

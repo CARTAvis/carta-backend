@@ -174,7 +174,7 @@ public:
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
-    mutable std::shared_mutex _life_mutex;
+    mutable std::shared_mutex life_mutex;
 
 private:
     // Validate channel, stokes index values

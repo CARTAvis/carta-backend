@@ -113,7 +113,7 @@ public:
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
-    mutable std::shared_mutex _life_mutex;
+    mutable std::shared_mutex life_mutex;
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);

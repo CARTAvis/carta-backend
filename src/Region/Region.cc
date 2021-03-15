@@ -120,7 +120,7 @@ bool Region::IsConnected() {
 
 void Region::WaitForTaskCancellation() { // to interrupt the running jobs in the Region
     _connected = false;
-    std::unique_lock lock(_life_mutex);
+    std::unique_lock lock(life_mutex);
 }
 
 // ******************************************************************************************
