@@ -1313,7 +1313,7 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
-    std::shared_lock frame_lock(life_mutex);
+    std::shared_lock lock(life_mutex);
 
     if (!_moment_generator) {
         _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
