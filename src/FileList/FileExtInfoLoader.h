@@ -30,8 +30,8 @@ private:
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
     void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);
     // Image shape, nchannels, nstokes
-    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis,
-        const std::vector<int>& display_axes);
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
+        int stokes_axis, const std::vector<int>& render_axes);
     // Info about xy axes
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
         const std::vector<int>& display_axes, casacore::String& radesys, bool use_fits_header);

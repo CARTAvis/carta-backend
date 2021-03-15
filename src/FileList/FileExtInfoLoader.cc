@@ -286,11 +286,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     entry->set_entry_type(CARTA::EntryType::STRING);
                 }
 
-                int spectral_axis, stokes_axis;
-                if (_loader->FindCoordinateAxes(image_shape, spectral_axis, stokes_axis, message)) {
-                    std::vector<int> display_axes = _loader->GetDisplayAxes();
-                    AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis, display_axes);
-                    AddComputedEntries(extended_info, image, display_axes, radesys, use_fits_header);
+                int spectral_axis, depth_axis, stokes_axis;
+                if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
+                    std::vector<int> render_axes;
+                    _loader->GetRenderAxes(render_axes);
+                    AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
+                    AddComputedEntries(extended_info, image, render_axes, radesys, use_fits_header);
                     file_ok = true;
                 }
             } else { // image failed
@@ -313,21 +314,17 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 // ***** Computed entries *****
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,
-    int stokes_axis, const std::vector<int>& display_axes) {
+    int depth_axis, int stokes_axis, const std::vector<int>& render_axes) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
-
-    // Determine depth and stokes
-    int depth(1);
-    bool spectral_is_display((chan_axis == display_axes[0]) || (chan_axis == display_axes[1])); // PV image
-    if (!spectral_is_display && (chan_axis >= 0)) {
-        depth = shape(chan_axis);
-    }
+    int width(shape(render_axes[0]));
+    int height(shape(render_axes[1]));
+    int depth(depth_axis >= 0 ? shape(depth_axis) : 1);
     int stokes(stokes_axis >= 0 ? shape(stokes_axis) : 1);
 
     extended_info.set_dimensions(num_dims);
-    extended_info.set_width(shape(display_axes[0]));
-    extended_info.set_height(shape(display_axes[1]));
+    extended_info.set_width(width);
+    extended_info.set_height(height);
     extended_info.set_depth(depth);
     extended_info.set_stokes(stokes);
 
@@ -411,9 +408,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
 
         if (!reference_pixels.empty()) {
             auto entry = extended_info.add_computed_entries();
-            entry->set_name("Reference pixels");
-            std::string ref_pix =
-                fmt::format("[{:.6g}, {:.6g}]", reference_pixels(display_axis0) + 1.0, reference_pixels(display_axis1) + 1.0);
+            entry->set_name("Image reference pixels");
+            std::string ref_pix = fmt::format("[{}, {}]", reference_pixels(display_axis0) + 1.0, reference_pixels(display_axis1) + 1.0);
             entry->set_value(ref_pix);
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
@@ -432,7 +428,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             std::string format_coords = fmt::format("[{}, {}]", coord1angle, coord2angle);
             // Add reference coords (angle format if possible)
             auto entry = extended_info.add_computed_entries();
-            entry->set_name("Reference coords");
+            entry->set_name("Image reference coords");
             entry->set_value(format_coords);
             entry->set_entry_type(CARTA::EntryType::STRING);
 
@@ -442,7 +438,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
                 std::string ref_coords_deg = ConvertCoordsToDeg(coord0, coord1);
                 // Add ref coords in deg
                 entry = extended_info.add_computed_entries();
-                entry->set_name("Reference coords (deg)");
+                entry->set_name("Image ref coords (deg)");
                 entry->set_value(ref_coords_deg);
                 entry->set_entry_type(CARTA::EntryType::STRING);
             }
@@ -522,7 +518,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
 void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, std::string& radesys) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
-    // For images with missing headers or headers which casacore/wcslib cannot process
+    // For images with missing headers or headers which casacore/wcslib cannot process.
+    // Axes are 1-based for header names (ctype, cunit, etc.), 0-based for display axes
     casacore::String suffix1(std::to_string(display_axes[0] + 1));
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
@@ -649,9 +646,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
     }
     if (!need_crpix) {
-        std::string ref_pix = fmt::format("[{:.6g}, {:.6g}]", crpix1, crpix2);
+        std::string ref_pix = fmt::format("[{}, {}]", crpix1, crpix2);
         auto comp_entry = extended_info.add_computed_entries();
-        comp_entry->set_name("Reference pixels");
+        comp_entry->set_name("Image reference pixels");
         comp_entry->set_value(ref_pix);
         comp_entry->set_entry_type(CARTA::EntryType::STRING);
     }
@@ -662,7 +659,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         std::string format_coord2 = MakeAngleString(coord_name2, crval2, cunit2);
         std::string ref_coords = fmt::format("[{}, {}]", format_coord1, format_coord2);
         auto entry = extended_info.add_computed_entries();
-        entry->set_name("Reference coords");
+        entry->set_name("Image reference coords");
         entry->set_value(ref_coords);
         entry->set_entry_type(CARTA::EntryType::STRING);
 
@@ -675,7 +672,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
                 // Reference coord(s) converted to deg
                 std::string ref_coords_deg = ConvertCoordsToDeg(q1, q2);
                 auto comp_entry = extended_info.add_computed_entries();
-                comp_entry->set_name("Reference coords (deg)");
+                comp_entry->set_name("Image ref coords (deg)");
                 comp_entry->set_value(ref_coords_deg);
                 comp_entry->set_entry_type(CARTA::EntryType::STRING);
             }

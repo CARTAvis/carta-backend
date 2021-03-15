@@ -7,6 +7,7 @@
 #include "Util.h"
 
 #include <climits>
+#include <cmath>
 #include <fstream>
 #include <regex>
 
@@ -193,7 +194,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = numeric_limits<double>::quiet_NaN();
+            double nan_value = nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -211,7 +212,7 @@ void FillStatisticsValuesFromMap(
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = numeric_limits<double>::quiet_NaN();
+                value = nan("");
             }
         }
 
