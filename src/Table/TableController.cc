@@ -256,22 +256,22 @@ void TableController::OnFileListRequest(
             ++num_of_files_done;
             percentage = (float)num_of_files_done / (float)total_files;
             auto current_time = std::chrono::high_resolution_clock::now();
+
+            auto report_progress = [&]() {
+                CARTA::Progress progress;
+                progress.set_percentage(percentage);
+                progress.set_checked_count(num_of_files_done);
+                progress.set_total_count(total_files);
+                _progress_callback(progress);
+                start_time = current_time;
+            };
+
             auto dt = std::chrono::duration<double>(current_time - start_time).count();
             if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
-                CARTA::Progress progress;
-                progress.set_percentage(percentage);
-                progress.set_checked_count(num_of_files_done);
-                progress.set_total_count(total_files);
-                _progress_callback(progress);
-                start_time = current_time;
+                report_progress();
                 _first_report = true;
             } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
-                CARTA::Progress progress;
-                progress.set_percentage(percentage);
-                progress.set_checked_count(num_of_files_done);
-                progress.set_total_count(total_files);
-                _progress_callback(progress);
-                start_time = current_time;
+                report_progress();
             }
         }
         file_list_response.set_success(true);

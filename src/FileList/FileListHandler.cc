@@ -154,14 +154,16 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
-                                case casacore::ImageOpener::COMPLISTIMAGE:
-                                    add_image = true;
+                                case casacore::ImageOpener::COMPLISTIMAGE: {
                                     file_type = CARTA::FileType::CASA;
-                                    break;
-                                case casacore::ImageOpener::MIRIAD:
                                     add_image = true;
-                                    file_type = CARTA::FileType::MIRIAD;
                                     break;
+                                }
+                                case casacore::ImageOpener::MIRIAD: {
+                                    file_type = CARTA::FileType::MIRIAD;
+                                    add_image = true;
+                                    break;
+                                }
                                 case casacore::ImageOpener::UNKNOWN: {
                                     // Check if it is a directory and the user has permission to access it
                                     casacore::String dir_name(cc_file.path().baseName());
@@ -177,14 +179,16 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
                             switch (image_type) {
-                                case casacore::ImageOpener::FITS:
-                                    add_image = true;
+                                case casacore::ImageOpener::FITS: {
                                     file_type = CARTA::FileType::FITS;
-                                    break;
-                                case casacore::ImageOpener::HDF5:
                                     add_image = true;
-                                    file_type = CARTA::FileType::HDF5;
                                     break;
+                                }
+                                case casacore::ImageOpener::HDF5: {
+                                    file_type = CARTA::FileType::HDF5;
+                                    add_image = true;
+                                    break;
+                                }
                                 default: {
                                     file_type = CARTA::FileType::UNKNOWN;
                                     break;
@@ -208,22 +212,22 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             ++num_of_files_done;
             percentage = (float)num_of_files_done / (float)total_files;
             auto current_time = std::chrono::high_resolution_clock::now();
+
+            auto report_progress = [&]() {
+                CARTA::Progress progress;
+                progress.set_percentage(percentage);
+                progress.set_checked_count(num_of_files_done);
+                progress.set_total_count(total_files);
+                _progress_callback(progress);
+                start_time = current_time;
+            };
+
             auto dt = std::chrono::duration<double>(current_time - start_time).count();
             if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
-                CARTA::Progress progress;
-                progress.set_percentage(percentage);
-                progress.set_checked_count(num_of_files_done);
-                progress.set_total_count(total_files);
-                _progress_callback(progress);
-                start_time = current_time;
+                report_progress();
                 _first_report = true;
             } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
-                CARTA::Progress progress;
-                progress.set_percentage(percentage);
-                progress.set_checked_count(num_of_files_done);
-                progress.set_total_count(total_files);
-                _progress_callback(progress);
-                start_time = current_time;
+                report_progress();
             }
         }
     } catch (casacore::AipsError& err) {
