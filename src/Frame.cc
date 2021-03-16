@@ -1053,12 +1053,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         // point spectral profiles only have one stats type
         spectral_profile->set_stats_type(config.all_stats[0]);
 
-        // Send NaN if cursor outside image
-        if (!start_cursor.InImage(_image_shape(0), _image_shape(1))) {
-            double nan_value = std::numeric_limits<double>::quiet_NaN();
-            spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
-            cb(profile_message);
-        } else {
+        // Send spectral profile data if cursor inside image
+        if (start_cursor.InImage(_image_shape(0), _image_shape(1))) {
             int stokes;
             if (!GetStokesTypeIndex(coordinate, stokes)) {
                 continue;

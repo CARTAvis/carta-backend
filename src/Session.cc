@@ -1349,7 +1349,6 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
 
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region spectral profile
-        CARTA::SpectralProfileData profile_data;
         data_sent = _region_handler->FillSpectralProfileData(
             [&](CARTA::SpectralProfileData profile_data) {
                 if (profile_data.profiles_size() > 0) {
@@ -1361,7 +1360,6 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
     } else if (region_id == CURSOR_REGION_ID) {
         // Cursor spectral profile
         if (_frames.count(file_id)) {
-            CARTA::SpectralProfileData profile_data;
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {
