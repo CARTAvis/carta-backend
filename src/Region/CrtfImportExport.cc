@@ -1193,8 +1193,13 @@ void CrtfImportExport::ExportStyleParameters(const RegionStyle& region_style, st
     oss << "symsize=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLSIZE) << ", ";
     oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
 
-    // color: lowercase, no leading #
-    oss << "color=" << region_style.color << ", ";
+    // color: lowercase with no leading #
+    std::string hex_color = region_style.color;
+    if (hex_color[0] == '#') {
+        hex_color = hex_color.substr(1);
+    }
+    std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::tolower);
+    oss << "color=" << hex_color << ", ";
 
     // font, fontsize, fontstyle, usetex
     oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
