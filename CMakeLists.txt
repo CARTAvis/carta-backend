@@ -44,6 +44,16 @@ endif ()
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+FIND_PACKAGE(TBB REQUIRED)
+FIND_PACKAGE(PUGIXML REQUIRED)
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_SEARCH_MODULE(UUID REQUIRED uuid)
+if (UUID_FOUND)
+    message(STATUS "uuid found using pkg-config")
+else ()
+    message(FATAL_ERROR "Could not find uuid")
+endif ()
+
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
