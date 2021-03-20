@@ -11,6 +11,7 @@
 #include <chrono>
 #include <thread>
 
+#include <casacore/casa/Quanta/QLogical.h>
 #include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/images/Regions/WCBox.h>
@@ -24,6 +25,7 @@
 
 #include "../Constants.h"
 #include "../Logger/Logger.h"
+#include "../Util.h"
 
 using namespace carta;
 
@@ -205,7 +207,6 @@ void Region::SetReferenceRegion() {
                     // control points are in order: xcenter, ycenter, major axis, minor axis
                     casacore::Quantity theta(ellipse_rotation, "deg");
                     theta.convert("rad");
-
                     std::lock_guard<std::mutex> guard(_region_mutex);
                     region = new casacore::WCEllipsoid(_wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[2],
                         _wcs_control_points[3], theta, 0, 1, *_coord_sys);
@@ -216,7 +217,7 @@ void Region::SetReferenceRegion() {
                 break;
         }
     } catch (casacore::AipsError& err) { // region failed
-        spdlog::error("Region type {} failed: {}", type, err.getMesg());
+        spdlog::error("{} region failed: {}", RegionName(type), err.getMesg());
     }
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
@@ -324,19 +325,23 @@ bool Region::EllipsePointsToWorld(
     // Store center point quantities
     wcs_points = center_world;
 
-    // Convert bmaj, bmin from pixel length to world length; bmaj > bmin for WCEllipsoid and adjust rotation angle
-    ellipse_rotation = _region_state.rotation;
+    // Convert bmaj, bmin from pixel length to world length
     float bmaj(pixel_points[1].x()), bmin(pixel_points[1].y());
-    if (bmaj > bmin) {
+    casacore::Quantity bmaj_world = _coord_sys->toWorldLength(bmaj, 0);
+    casacore::Quantity bmin_world = _coord_sys->toWorldLength(bmin, 1);
+    ellipse_rotation = _region_state.rotation;
+
+    // bmaj > bmin (world coords) required for WCEllipsoid; adjust rotation angle
+    if (bmaj_world > bmin_world) {
         // carta rotation is from y-axis, ellipse rotation is from x-axis
         ellipse_rotation += 90.0;
     } else {
-        // bmaj > bmin required, swapping takes care of 90 deg adjustment
-        std::swap(bmaj, bmin);
+        // swapping takes care of 90 deg adjustment
+        std::swap(bmaj_world, bmin_world);
     }
-    // Convert pixel length to world length (nPixels, pixelAxis), set wcs_points
-    wcs_points.push_back(_coord_sys->toWorldLength(bmaj, 0));
-    wcs_points.push_back(_coord_sys->toWorldLength(bmin, 1));
+
+    wcs_points.push_back(bmaj_world);
+    wcs_points.push_back(bmin_world);
     return true;
 }
 
@@ -355,8 +360,18 @@ casacore::LCRegion* Region::GetImageRegion(
             // Convert reference WCRegion to LCRegion and cache it
             lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
         } else {
-            if (DoApproximatePolygon(output_csys, output_shape)) { // check ellipse distortion
+            bool use_polygon = UseApproximatePolygon(output_csys, output_shape); // check ellipse distortion
+
+            if (!use_polygon) {
+                // No distortion, do direct region conversion if possible.
+                // Convert reference WCRegion to LCRegion in output image and cache it.
+                spdlog::debug("Using region conversion for {}", RegionName(_region_state.type));
+                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+            }
+
+            if (!lc_region) {
                 // Use polygon approximation of reference region to translate to another image
+                spdlog::debug("Region conversion failed or distorted, using polygon approximation for {}", RegionName(_region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
                 // Cache converted polygon
@@ -365,10 +380,6 @@ casacore::LCRegion* Region::GetImageRegion(
                     auto polygon_region = std::shared_ptr<casacore::LCRegion>(region_copy);
                     _polygon_regions[file_id] = std::move(polygon_region);
                 }
-            } else {
-                // No distortion, do direct region conversion.
-                // Convert reference WCRegion to LCRegion in output image and cache it.
-                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
             }
         }
     }
@@ -376,9 +387,10 @@ casacore::LCRegion* Region::GetImageRegion(
     return lc_region;
 }
 
-bool Region::DoApproximatePolygon(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
-    // Check ellipse distortion; always return true for other types
+bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    // Default is true; check ellipse distortion.
     if (_region_state.type != CARTA::RegionType::ELLIPSE) {
+        // Always use polygon for other region types
         return true;
     }
 
@@ -390,31 +402,36 @@ bool Region::DoApproximatePolygon(const casacore::CoordinateSystem& output_csys,
     std::vector<CARTA::Point> points = GetApproximateEllipsePoints(4);
     points.push_back(center_point);
     casacore::Vector<casacore::Double> x, y;
+
     if (ConvertPolygonToImage(points, output_csys, x, y)) {
-        // Check if converted length ratio is "close to" ref length ratio
         // vector0 is (center, p0), vector1 is (center, p1)
         auto v0_delta_x = x[0] - x[4];
         auto v0_delta_y = y[0] - y[4];
-        auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
         auto v1_delta_x = x[1] - x[4];
         auto v1_delta_y = y[1] - y[4];
-        auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
-        // Compare converted length ratio to reference length ratio
-        double converted_length_ratio = v1_length / v0_length;
-        // TODO: compare length ratios
-        // std::cout << "length ratio ref=" << ref_length_ratio << " converted=" << converted_length_ratio << std::endl;
 
-        // Check if dot product "close to" zero
-        // Get angle theta between vectors
-        double v0_slope = v0_delta_y / v0_delta_x;
-        double v1_slope = v1_delta_y / v1_delta_x;
-        double theta = atan(fabs((v1_slope - v0_slope) / (1 + (v0_slope * v1_slope))));
-        double converted_dot_product = v0_length * v1_length * cos(theta);
-        // TODO: check dot product
-        // std::cout << "converted dot product=" << converted_dot_product << std::endl;
+        auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
+        auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
+        double converted_length_ratio = v1_length / v0_length;
+
+        // Compare converted to reference length ratio
+        double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
+        spdlog::debug("Ellipse distortion check: length ratio difference={:.3e}", length_ratio_difference);
+        if (length_ratio_difference > 1e-4) {
+            return true;
+        }
+
+        // Check dot product
+        double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
+        spdlog::debug("Ellipse distortion check: dot product={:.3e}", converted_dot_product);
+        if (fabs(converted_dot_product) > 1e-4) {
+            return true;
+        }
+
+        return false;
     }
 
-    return true;
+    return false;
 }
 
 casacore::LCRegion* Region::GetCachedPolygonRegion(int file_id) {
@@ -466,10 +483,10 @@ casacore::LCRegion* Region::GetAppliedPolygonRegion(
                 lc_region = new casacore::LCPolygon(x, y, region_shape);
             }
         } catch (const casacore::AipsError& err) {
-            spdlog::error("Cannot apply region to file {}: {}", file_id, err.getMesg());
+            spdlog::error("Cannot apply {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
         }
     } else {
-        spdlog::error("Error approximating region as polygon in matched image.");
+        spdlog::error("Error approximating {} as polygon in matched image.", RegionName(_region_state.type));
     }
 
     return lc_region;
@@ -516,7 +533,7 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
     } else if (region_type == CARTA::RegionType::POLYGON) {
         region_points = _region_state.control_points;
     } else {
-        spdlog::error("Error approximating region as polygon: region type not supported");
+        spdlog::error("Error approximating {} as polygon: region type not supported", RegionName(_region_state.type));
         return polygon_points;
     }
 
@@ -633,7 +650,7 @@ bool Region::ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_poin
             }
         }
     } catch (const casacore::AipsError& err) {
-        spdlog::error("Error converting polygon region to image: {}", err.getMesg());
+        spdlog::error("Error converting polygon to image: {}", err.getMesg());
         converted = false;
     }
 
@@ -745,7 +762,7 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
             lc_region = reference_region->toLCRegion(output_csys, output_shape);
         }
     } catch (const casacore::AipsError& err) {
-        spdlog::error("Error converting region to file {}: {}", file_id, err.getMesg());
+        spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
     }
 
     if (lc_region) {
@@ -936,7 +953,7 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
                 x(index) = pixel_point(0);
                 y(index) = pixel_point(1);
             } else {
-                spdlog::error("Error converting rectangle/polygon to image.");
+                spdlog::error("Error converting {} to image pixels.", RegionName(_region_state.type));
                 return record;
             }
         }
@@ -954,7 +971,7 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
         record.define("x", x);
         record.define("y", y);
     } catch (const casacore::AipsError& err) {
-        spdlog::error("Error converting rectangle/polygon to image: {}", err.getMesg());
+        spdlog::error("Error converting () to image: {}", RegionName(_region_state.type), err.getMesg());
     }
 
     return record;
