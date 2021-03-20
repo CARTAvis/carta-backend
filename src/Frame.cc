@@ -1448,3 +1448,14 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     save_file_ack.set_success(success);
     save_file_ack.set_message(message);
 }
+
+void Frame::VerifyCompressionQuality(int channel, int stokes, float& compression_quality) {
+    int cache_key(CacheKey(channel, stokes));
+    for (auto& image_histogram : _image_histograms[cache_key]) {
+        if (compression_quality < HIGH_COMPRESSION_QUALITY && image_histogram.HasDominantBin()) {
+            compression_quality = HIGH_COMPRESSION_QUALITY; // overwrite the compression quality with higher precision
+            spdlog::warn("Pixel histogram has a dominant bin. Use high compression quality instead of the default one.");
+            break;
+        }
+    }
+}

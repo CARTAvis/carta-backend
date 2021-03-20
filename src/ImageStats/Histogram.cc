@@ -94,3 +94,18 @@ void Histogram::SetHistogramBins(const std::vector<int>& bins) {
     }
     _histogram_bins = bins;
 }
+
+bool Histogram::HasDominantBin() {
+    if (_has_dominant_bin < 0) {
+        int max_bin = std::numeric_limits<int>::min();
+        int sum = 0;
+        for (auto& bin : _histogram_bins) {
+            if (bin > max_bin) {
+                max_bin = bin;
+            }
+            sum += bin;
+        }
+        _has_dominant_bin = ((float(max_bin) / (float)sum) >= 0.9);
+    }
+    return _has_dominant_bin;
+}

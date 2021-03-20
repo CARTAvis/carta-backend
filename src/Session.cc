@@ -524,6 +524,9 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
 
+        // check do we need to increase the compression quality
+        _frames.at(file_id)->VerifyCompressionQuality(channel, stokes, compression_quality);
+
         auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
 
         ThreadManager::ApplyThreadLimit();
@@ -1351,7 +1354,6 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
 
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region histogram
-        CARTA::RegionHistogramData histogram_data;
         data_sent = _region_handler->FillRegionHistogramData(
             [&](CARTA::RegionHistogramData histogram_data) {
                 if (histogram_data.histograms_size() > 0) {

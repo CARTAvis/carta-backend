@@ -176,6 +176,8 @@ public:
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
 
+    void VerifyCompressionQuality(int channel, int stokes, float& compression_quality);
+
 private:
     // Validate channel, stokes index values
     bool CheckChannel(int channel);

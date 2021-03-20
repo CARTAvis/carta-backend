@@ -20,6 +20,7 @@ class Histogram {
     float _bin_width;                 // bin width
     float _bin_center;                // bin center
     std::vector<int> _histogram_bins; // histogram bin counts
+    int _has_dominant_bin = -1;       // -1: undetermined, 0: false, 1: true
 
     void Fill(const std::vector<float>&);
     static bool ConsistencyCheck(const Histogram&, const Histogram&);
@@ -52,6 +53,8 @@ public:
     }
 
     void SetHistogramBins(const std::vector<int>&);
+
+    bool HasDominantBin();
 };
 
 } // namespace carta
