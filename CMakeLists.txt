@@ -46,12 +46,21 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FIND_PACKAGE(CURL REQUIRED)
 FIND_PACKAGE(PUGIXML REQUIRED)
+FIND_PACKAGE(ZFP REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
+
 PKG_SEARCH_MODULE(UUID REQUIRED uuid)
 if (UUID_FOUND)
     message(STATUS "Found uuid using pkg-config")
 else ()
     message(FATAL_ERROR "Could not find uuid")
+endif ()
+
+PKG_SEARCH_MODULE(ZSTD REQUIRED libzstd)
+if (ZSTD_FOUND)
+    message(STATUS "zstd found using pkg-config")
+else ()
+    message(FATAL_ERROR "Could not find zstd")
 endif ()
 
 FIND_PACKAGE(TBB QUIET)
