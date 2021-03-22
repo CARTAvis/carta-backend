@@ -573,14 +573,14 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
 
         // Get stokes index
         std::string coordinate = histogram_config.coordinate;
-        int axis, stokes;
-        ConvertCoordinateToAxes(coordinate, axis, stokes);
+        int stokes;
+        GetStokesTypeIndex(coordinate, stokes);
 
         if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();
         }
 
-        histogram_data.set_stokes(stokes); // Todo: stokes info should not be unique one if there are multiple requirements
+        histogram_data.set_stokes(stokes);
 
         // fill histogram submessage from cache (loader or local)
         bool histogram_filled = FillHistogramFromCache(channel, stokes, num_bins, histogram);
@@ -828,8 +828,8 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
         std::string coordinate = stats_config.coordinate();
-        int axis, stokes;
-        ConvertCoordinateToAxes(coordinate, axis, stokes);
+        int stokes;
+        GetStokesTypeIndex(coordinate, stokes);
 
         if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();
@@ -1009,8 +1009,8 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     std::vector<SpectralConfig> new_configs;
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
-        int axis, stokes;
-        ConvertCoordinateToAxes(coordinate, axis, stokes);
+        int stokes;
+        GetStokesTypeIndex(coordinate, stokes);
         if (stokes >= nstokes) {
             spdlog::warn("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
             continue;
@@ -1095,8 +1095,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             cb(profile_message);
         } else {
-            int axis, stokes;
-            ConvertCoordinateToAxes(coordinate, axis, stokes);
+            int stokes;
+            GetStokesTypeIndex(coordinate, stokes);
             if (coordinate == "z") {
                 stokes = CurrentStokes();
             }

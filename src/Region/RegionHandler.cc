@@ -428,8 +428,8 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
 
 bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes) {
     // Check stokes coordinate is valid for image
-    int axis_index, stokes_index;
-    ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
+    int stokes_index;
+    GetStokesTypeIndex(coordinate, stokes_index);
     bool valid(stokes_index < nstokes);
     if (!valid) {
         spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
@@ -835,8 +835,8 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Get stokes index
         std::string coordinate = hist_config.coordinate;
-        int axis, stokes;
-        ConvertCoordinateToAxes(coordinate, axis, stokes);
+        int stokes;
+        GetStokesTypeIndex(coordinate, stokes);
 
         if (stokes == CURRENT_STOKES) {
             stokes = _frames.at(file_id)->CurrentStokes();
@@ -983,8 +983,8 @@ bool RegionHandler::FillSpectralProfileData(
                 }
 
                 // Get index into stokes axis for data message
-                int axis_index, stokes_index;
-                ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
+                int stokes_index;
+                GetStokesTypeIndex(coordinate, stokes_index);
                 if (stokes_index < 0) {
                     stokes_index = _frames.at(config_file_id)->CurrentStokes();
                 }
@@ -1303,8 +1303,8 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 for (auto stats_config : region_config.second.stats_configs) {
                     // Get stokes index
                     std::string coordinate = stats_config.coordinate();
-                    int axis, stokes;
-                    ConvertCoordinateToAxes(coordinate, axis, stokes);
+                    int stokes;
+                    GetStokesTypeIndex(coordinate, stokes);
 
                     // Set required stats types
                     std::vector<CARTA::StatsType> required_stats;
@@ -1339,8 +1339,8 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 for (auto stats_config : region_config.second.stats_configs) {
                     // Get stokes index
                     std::string coordinate = stats_config.coordinate();
-                    int axis, stokes;
-                    ConvertCoordinateToAxes(coordinate, axis, stokes);
+                    int stokes;
+                    GetStokesTypeIndex(coordinate, stokes);
 
                     // Set required stats types
                     std::vector<CARTA::StatsType> required_stats;

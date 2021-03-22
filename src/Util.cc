@@ -222,19 +222,7 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-void ConvertCoordinateToAxes(const string& coordinate, int& axis_index, int& stokes_index) {
-    // converts profile string into axis, stokes index into image shape
-    // axis
-    char axis_char(coordinate.back());
-    if (axis_char == 'x') {
-        axis_index = 0;
-    } else if (axis_char == 'y') {
-        axis_index = 1;
-    } else if (axis_char == 'z') {
-        axis_index = -1; // not used
-    }
-
-    // stokes
+void GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     if (coordinate.size() == 2) {
         char stokes_char(coordinate.front());
         if (stokes_char == 'I') {

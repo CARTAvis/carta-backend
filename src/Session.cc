@@ -1144,8 +1144,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // Get stokes index
             std::string coordinate = cube_histogram_config.coordinate;
-            int axis, stokes;
-            ConvertCoordinateToAxes(coordinate, axis, stokes);
+            int stokes;
+            GetStokesTypeIndex(coordinate, stokes);
 
             if (stokes == CURRENT_STOKES) {
                 stokes = _frames.at(file_id)->CurrentStokes();

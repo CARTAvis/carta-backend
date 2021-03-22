@@ -63,7 +63,7 @@ struct HistogramConfig {
     int num_bins;
 
     HistogramConfig() {}
-    HistogramConfig(std::string coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
+    HistogramConfig(const std::string& coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
 };
 
 struct RegionHistogramConfig {
