@@ -1453,8 +1453,9 @@ void Frame::VerifyCompressionQuality(int channel, int stokes, float& compression
     int cache_key(CacheKey(channel, stokes));
     for (auto& image_histogram : _image_histograms[cache_key]) {
         if (compression_quality < HIGH_COMPRESSION_QUALITY && image_histogram.HasDominantBin()) {
-            compression_quality = HIGH_COMPRESSION_QUALITY; // overwrite the compression quality with higher precision
-            spdlog::warn("Pixel histogram has a dominant bin. Use high compression quality instead of the default one.");
+            spdlog::warn("Pixel histogram has a dominant bin. Change to higher ZFP compression quality: {}->{}", compression_quality,
+                HIGH_COMPRESSION_QUALITY);
+            compression_quality = HIGH_COMPRESSION_QUALITY;
             break;
         }
     }
