@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -14,15 +14,16 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
+#include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
-#include "../InterfaceConstants.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
 
 namespace carta {
 
-RegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
+RegionHandler::RegionHandler() : _z_profile_count(0) {}
 
 // ********************************************************************
 // Region handling
@@ -78,11 +79,11 @@ void RegionHandler::RemoveRegion(int region_id) {
 
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
-            region.second->DisconnectCalled();
+            region.second->WaitForTaskCancellation();
         }
         _regions.clear();
     } else if (_regions.count(region_id)) {
-        _regions.at(region_id)->DisconnectCalled();
+        _regions.at(region_id)->WaitForTaskCancellation();
         _regions.erase(region_id);
     }
     RemoveRegionRequirementsCache(region_id);
@@ -244,7 +245,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
-                    std::cerr << "Export region record failed: " << err.getMesg() << std::endl;
+                    spdlog::error("Export region record failed: {}", err.getMesg());
                 }
             }
 
@@ -340,7 +341,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     }
 
     if (!_regions.count(region_id)) {
-        std::cerr << "Spectral requirements failed: no region with id " << region_id << std::endl;
+        spdlog::error("Spectral requirements failed: no region with id {}", region_id);
         return false;
     }
 
@@ -431,7 +432,7 @@ bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes
     ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
     bool valid(stokes_index < nstokes);
     if (!valid) {
-        std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
+        spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
     }
     return valid;
 }
@@ -711,9 +712,9 @@ bool RegionHandler::ApplyRegionToFile(
 
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Error applying region " << region_id << " to file " << file_id << ": " << err.getMesg() << std::endl;
+        spdlog::error("Error applying region {} to file {}: {}", region_id, file_id, err.getMesg());
     } catch (std::out_of_range& range_error) {
-        std::cerr << "Cannot apply region " << region_id << " to closed file " << file_id << std::endl;
+        spdlog::error("Cannot apply region {} to closed file {}", region_id, file_id);
     }
 
     return false;
@@ -878,11 +879,11 @@ bool RegionHandler::GetRegionHistogramData(
         if (_histogram_cache.count(cache_id)) {
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
-                carta::HistogramResults results;
-                if (_histogram_cache[cache_id].GetHistogram(num_bins, results)) {
+                carta::Histogram hist;
+                if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto histogram = histogram_message.add_histograms();
                     histogram->set_channel(channel);
-                    FillHistogramFromResults(histogram, stats, results);
+                    FillHistogramFromResults(histogram, stats, hist);
                     continue;
                 }
             }
@@ -905,23 +906,20 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Calculate and cache histogram for number of bins
-        HistogramResults results;
-        CalcHistogram(num_bins, stats, data, results);
-        _histogram_cache[cache_id].SetHistogram(num_bins, results);
+        Histogram histo = CalcHistogram(num_bins, stats, data);
+        _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
         auto histogram = histogram_message.add_histograms();
         histogram->set_channel(channel);
-        FillHistogramFromResults(histogram, stats, results);
+        FillHistogramFromResults(histogram, stats, histo);
     }
 
-    if (_perflog) {
-        auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
-        auto dt_region_histogram =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-        fmt::print(
-            "Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
-    }
+    auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
+    auto dt_region_histogram =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
+    spdlog::performance(
+        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
 
     return true;
 }
@@ -1158,12 +1156,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            if (_perflog) {
-                auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-                auto dt_spectral_profile =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
-            }
+            auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+            auto dt_spectral_profile =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+            spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
             _frames.at(file_id)->DecreaseZProfileCount();
             _regions.at(region_id)->DecreaseZProfileCount();
@@ -1271,12 +1267,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    if (_perflog) {
-        auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-        auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
-    }
+    auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+    auto dt_spectral_profile =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+    spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
     _frames.at(file_id)->DecreaseZProfileCount();
     _regions.at(region_id)->DecreaseZProfileCount();
@@ -1428,11 +1422,10 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        if (_perflog) {
-            auto t_end_region_stats = std::chrono::high_resolution_clock::now();
-            auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-            fmt::print("Fill region stats in {} ms\n", dt_region_stats * 1e-3);
-        }
+        auto t_end_region_stats = std::chrono::high_resolution_clock::now();
+        auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
+        spdlog::performance("Fill region stats in {:.3f} ms", dt_region_stats * 1e-3);
+
         return true;
     }
 

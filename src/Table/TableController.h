@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -39,7 +39,7 @@ struct TableViewCache {
 
 class TableController {
 public:
-    TableController(const std::string& root, const std::string& base);
+    TableController(const std::string& top_level_folder, const std::string& starting_folder);
     void OnFileListRequest(const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response);
     void OnFileInfoRequest(const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response);
     void OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
@@ -53,8 +53,8 @@ protected:
     static bool FilterParamsChanged(const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column,
         CARTA::SortingType sorting_type, const TableViewCache& cached_config);
     fs::path GetPath(std::string directory, std::string name = "");
-    std::string _root_folder;
-    std::string _base_folder;
+    std::string _top_level_folder;
+    std::string _starting_folder;
     std::unordered_map<int, Table> _tables;
     std::unordered_map<int, TableViewCache> _view_cache;
 };

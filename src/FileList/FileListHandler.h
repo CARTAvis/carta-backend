@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -12,8 +12,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include <fmt/format.h>
-
 #include <casacore/casa/aips.h>
 
 #include <carta-protobuf/file_list.pb.h>
@@ -24,7 +22,7 @@
 
 class FileListHandler {
 public:
-    FileListHandler(const std::string& root, const std::string& base);
+    FileListHandler(const std::string& top_level_folder, const std::string& starting_folder);
 
     struct ResultMsg {
         std::string message;
@@ -56,10 +54,7 @@ private:
     std::mutex _region_list_mutex;
     std::string _filelist_folder;
     std::string _regionlist_folder;
-
-    bool _verbose_logging;
-    bool _performance_logging;
-    std::string _root_folder, _base_folder;
+    std::string _top_level_folder, _starting_folder;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_

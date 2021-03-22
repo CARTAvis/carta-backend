@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -8,12 +8,12 @@
 
 #include "Ds9ImportExport.h"
 
-#include <casacore/casa/Quanta/QMath.h>
-#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-
 #include <iomanip>
 
-#include "../Util.h"
+#include <spdlog/fmt/fmt.h>
+
+#include <casacore/casa/Quanta/QMath.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
 using namespace carta;
 
@@ -732,6 +732,8 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
         style.color = FormatColor(properties["color"]);
     } else if (_global_properties.count("color")) {
         style.color = FormatColor(_global_properties["color"]);
+    } else {
+        style.color = REGION_COLOR;
     }
 
     // width
@@ -739,6 +741,8 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
         style.line_width = std::stoi(properties["width"]);
     } else if (_global_properties.count("width")) {
         style.line_width = std::stoi(_global_properties["width"]);
+    } else {
+        style.line_width = REGION_LINE_WIDTH;
     }
 
     // dash
