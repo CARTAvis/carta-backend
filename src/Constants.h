@@ -98,7 +98,4 @@
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
 #define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
 
-// ZFP compression
-#define HIGH_COMPRESSION_QUALITY 20
-
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

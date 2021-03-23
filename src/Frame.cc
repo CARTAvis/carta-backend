@@ -33,6 +33,8 @@ namespace fs = std::filesystem;
 
 using namespace carta;
 
+static int high_compression_quality(20);
+
 Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_channel)
     : _session_id(session_id),
       _valid(true),
@@ -1452,10 +1454,10 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 void Frame::VerifyCompressionQuality(int channel, int stokes, float& compression_quality) {
     int cache_key(CacheKey(channel, stokes));
     for (auto& image_histogram : _image_histograms[cache_key]) {
-        if (compression_quality < HIGH_COMPRESSION_QUALITY && image_histogram.HasDominantBin()) {
+        if (compression_quality < high_compression_quality && image_histogram.HasDominantBin()) {
             spdlog::warn("Pixel histogram has a dominant bin. Change to higher ZFP compression quality: {}->{}", compression_quality,
-                HIGH_COMPRESSION_QUALITY);
-            compression_quality = HIGH_COMPRESSION_QUALITY;
+                high_compression_quality);
+            compression_quality = high_compression_quality;
             break;
         }
     }
