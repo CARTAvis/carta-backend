@@ -450,9 +450,8 @@ bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys
             }
             return true;
         }
-        default: {
+        default:
             return true;
-        }
     }
 }
 
