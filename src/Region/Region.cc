@@ -371,7 +371,8 @@ casacore::LCRegion* Region::GetImageRegion(
 
             if (!lc_region) {
                 // Use polygon approximation of reference region to translate to another image
-                spdlog::debug("Region conversion failed or distorted, using polygon approximation for {}", RegionName(_region_state.type));
+                spdlog::debug(
+                    "Region conversion failed or was distorted, using polygon approximation for {}", RegionName(_region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
                 // Cache converted polygon
@@ -388,50 +389,94 @@ casacore::LCRegion* Region::GetImageRegion(
 }
 
 bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
-    // Default is true; check ellipse distortion.
-    if (_region_state.type != CARTA::RegionType::ELLIPSE) {
-        // Always use polygon for other region types
-        return true;
+    // Default is true; check ellipse and rectangle distortion.
+    CARTA::RegionType region_type = _region_state.type;
+    switch (region_type) {
+        case CARTA::RegionType::ELLIPSE:
+        case CARTA::RegionType::RECTANGLE: {
+            CARTA::Point center_point = _region_state.control_points[0];
+            double x_length(_region_state.control_points[1].x()), y_length(_region_state.control_points[1].y());
+
+            double ref_length_ratio;
+            if (region_type == CARTA::RegionType::ELLIPSE) {
+                ref_length_ratio = x_length / y_length;
+            } else {
+                ref_length_ratio = y_length / x_length;
+            }
+
+            std::vector<CARTA::Point> points;
+            if (region_type == CARTA::RegionType::ELLIPSE) {
+                // Make polygon with 4 points
+                points = GetApproximateEllipsePoints(4);
+            } else {
+                // Get midpoints of 4 sides of rectangle
+                points = GetRectangleMidpoints();
+            }
+
+            // add center point; points = [p0, p1, p2, p3, center]
+            points.push_back(center_point);
+
+            // convert points to output image pixels
+            casacore::Vector<casacore::Double> x, y;
+            if (ConvertPolygonToImage(points, output_csys, x, y)) {
+                // vector0 is (center, p0), vector1 is (center, p1)
+                auto v0_delta_x = x[0] - x[4];
+                auto v0_delta_y = y[0] - y[4];
+                auto v1_delta_x = x[1] - x[4];
+                auto v1_delta_y = y[1] - y[4];
+
+                auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
+                auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
+                double converted_length_ratio = v1_length / v0_length;
+
+                // Compare converted to reference length ratio
+                double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
+                spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
+                if (length_ratio_difference < 1e-4) {
+                    // Passed ratio check; check dot product
+                    double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
+                    spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
+
+                    if (fabs(converted_dot_product) < 1e-4) {
+                        // passed distortion tests, convert region directly
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        default: {
+            return true;
+        }
     }
+}
 
-    CARTA::Point center_point = _region_state.control_points[0];
-    double ref_length_ratio = _region_state.control_points[1].x() / _region_state.control_points[1].y();
-
-    // Make 4-point polygon, add center point, then convert them all to output image pixels
-    // points = [p0, p1, p2, p3, center]
-    std::vector<CARTA::Point> points = GetApproximateEllipsePoints(4);
-    points.push_back(center_point);
+std::vector<CARTA::Point> Region::GetRectangleMidpoints() {
+    // Return midpoints of 4 sides of rectangle
+    // Find corners with rotation: blc, brc, trc, tlc
     casacore::Vector<casacore::Double> x, y;
+    RectanglePointsToCorners(_region_state.control_points, _region_state.rotation, x, y);
 
-    if (ConvertPolygonToImage(points, output_csys, x, y)) {
-        // vector0 is (center, p0), vector1 is (center, p1)
-        auto v0_delta_x = x[0] - x[4];
-        auto v0_delta_y = y[0] - y[4];
-        auto v1_delta_x = x[1] - x[4];
-        auto v1_delta_y = y[1] - y[4];
+    std::vector<CARTA::Point> midpoints;
+    CARTA::Point midpoint;
+    // start with right side brc, trc
+    midpoint.set_x((x[1] + x[2]) / 2.0);
+    midpoint.set_y((y[1] + y[2]) / 2.0);
+    midpoints.push_back(midpoint);
 
-        auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
-        auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
-        double converted_length_ratio = v1_length / v0_length;
+    midpoint.set_x((x[2] + x[3]) / 2.0);
+    midpoint.set_y((y[2] + y[3]) / 2.0);
+    midpoints.push_back(midpoint);
 
-        // Compare converted to reference length ratio
-        double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
-        spdlog::debug("Ellipse distortion check: length ratio difference={:.3e}", length_ratio_difference);
-        if (length_ratio_difference > 1e-4) {
-            return true;
-        }
+    midpoint.set_x((x[3] + x[0]) / 2.0);
+    midpoint.set_y((y[3] + y[0]) / 2.0);
+    midpoints.push_back(midpoint);
 
-        // Check dot product
-        double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
-        spdlog::debug("Ellipse distortion check: dot product={:.3e}", converted_dot_product);
-        if (fabs(converted_dot_product) > 1e-4) {
-            return true;
-        }
+    midpoint.set_x((x[0] + x[1]) / 2.0);
+    midpoint.set_y((y[0] + y[1]) / 2.0);
+    midpoints.push_back(midpoint);
 
-        return false;
-    }
-
-    return false;
+    return midpoints;
 }
 
 casacore::LCRegion* Region::GetCachedPolygonRegion(int file_id) {

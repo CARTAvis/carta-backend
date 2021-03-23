@@ -135,6 +135,7 @@ private:
 
     // Reference region as approximate polygon converted to image coordinates; used for data streams
     bool UseApproximatePolygon(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+    std::vector<CARTA::Point> GetRectangleMidpoints();
     casacore::LCRegion* GetCachedPolygonRegion(int file_id);
     casacore::LCRegion* GetAppliedPolygonRegion(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
