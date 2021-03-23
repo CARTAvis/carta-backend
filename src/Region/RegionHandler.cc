@@ -811,7 +811,7 @@ bool RegionHandler::GetRegionHistogramData(
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
 
-    // Set channel range
+    // Set channel range is the current channel
     int channel(_frames.at(file_id)->CurrentChannel());
     ChannelRange chan_range(channel);
 
@@ -826,7 +826,7 @@ bool RegionHandler::GetRegionHistogramData(
     std::vector<float> data;
     BasicStats<float> stats;
 
-    // Calculate histogram for each requirement
+    // Calculate histogram for different stokes and number of bins
     for (auto& hist_config : configs) {
         // check for cancel
         if (!RegionFileIdsValid(region_id, file_id)) {
@@ -912,6 +912,9 @@ bool RegionHandler::GetRegionHistogramData(
         auto histogram = histogram_message.add_histograms();
         histogram->set_channel(channel);
         FillHistogramFromResults(histogram, stats, histo);
+
+        // Fill in the final result
+        histogram_messages.emplace_back(histogram_message);
     }
 
     auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
