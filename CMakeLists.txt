@@ -235,5 +235,6 @@ install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
 # Tests
 option(test "Build tests." OFF)
 if (test)
+    FIND_PACKAGE(GTest REQUIRED)
     add_subdirectory(test)
 endif ()
