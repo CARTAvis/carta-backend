@@ -54,7 +54,7 @@ public:
 
     void SetHistogramBins(const std::vector<int>&);
 
-    bool HasDominantBin();
+    bool CheckForDominantBin();
 };
 
 } // namespace carta

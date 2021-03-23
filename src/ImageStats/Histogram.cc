@@ -95,7 +95,7 @@ void Histogram::SetHistogramBins(const std::vector<int>& bins) {
     _histogram_bins = bins;
 }
 
-bool Histogram::HasDominantBin() {
+bool Histogram::CheckForDominantBin() {
     if (_has_dominant_bin < 0) {
         int max_bin = std::numeric_limits<int>::min();
         int sum = 0;

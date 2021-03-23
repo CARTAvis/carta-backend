@@ -1454,7 +1454,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 void Frame::VerifyCompressionQuality(int channel, int stokes, float& compression_quality) {
     int cache_key(CacheKey(channel, stokes));
     for (auto& image_histogram : _image_histograms[cache_key]) {
-        if (compression_quality < high_compression_quality && image_histogram.HasDominantBin()) {
+        if (compression_quality < high_compression_quality && image_histogram.CheckForDominantBin()) {
             spdlog::warn("Pixel histogram has a dominant bin. Change to higher ZFP compression quality: {}->{}", compression_quality,
                 high_compression_quality);
             compression_quality = high_compression_quality;
