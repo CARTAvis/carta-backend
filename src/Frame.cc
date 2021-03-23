@@ -572,9 +572,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
         histogram->set_channel(channel);
 
         // Get stokes index
-        std::string coordinate = histogram_config.coordinate;
         int stokes;
-        GetStokesTypeIndex(coordinate, stokes);
+        GetStokesTypeIndex(histogram_config.coordinate, stokes);
 
         if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();
@@ -827,9 +826,8 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
 
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
-        std::string coordinate = stats_config.coordinate();
         int stokes;
-        GetStokesTypeIndex(coordinate, stokes);
+        GetStokesTypeIndex(stats_config.coordinate(), stokes);
 
         if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();

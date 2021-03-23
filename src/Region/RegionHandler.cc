@@ -426,7 +426,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     return true;
 }
 
-bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes) {
+bool RegionHandler::SpectralCoordinateValid(const std::string& coordinate, int nstokes) {
     // Check stokes coordinate is valid for image
     int stokes_index;
     GetStokesTypeIndex(coordinate, stokes_index);
@@ -834,9 +834,8 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Get stokes index
-        std::string coordinate = hist_config.coordinate;
         int stokes;
-        GetStokesTypeIndex(coordinate, stokes);
+        GetStokesTypeIndex(hist_config.coordinate, stokes);
 
         if (stokes == CURRENT_STOKES) {
             stokes = _frames.at(file_id)->CurrentStokes();
@@ -1302,9 +1301,8 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 // return stats for this requirement
                 for (auto stats_config : region_config.second.stats_configs) {
                     // Get stokes index
-                    std::string coordinate = stats_config.coordinate();
                     int stokes;
-                    GetStokesTypeIndex(coordinate, stokes);
+                    GetStokesTypeIndex(stats_config.coordinate(), stokes);
 
                     // Set required stats types
                     std::vector<CARTA::StatsType> required_stats;
@@ -1338,9 +1336,8 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 // return stats for this requirement
                 for (auto stats_config : region_config.second.stats_configs) {
                     // Get stokes index
-                    std::string coordinate = stats_config.coordinate();
                     int stokes;
-                    GetStokesTypeIndex(coordinate, stokes);
+                    GetStokesTypeIndex(stats_config.coordinate(), stokes);
 
                     // Set required stats types
                     std::vector<CARTA::StatsType> required_stats;
