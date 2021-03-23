@@ -360,7 +360,7 @@ casacore::LCRegion* Region::GetImageRegion(
             // Convert reference WCRegion to LCRegion and cache it
             lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
         } else {
-            bool use_polygon = UseApproximatePolygon(output_csys, output_shape); // check ellipse distortion
+            bool use_polygon = UseApproximatePolygon(output_csys); // check region distortion
 
             if (!use_polygon) {
                 // No distortion, do direct region conversion if possible.
@@ -388,15 +388,18 @@ casacore::LCRegion* Region::GetImageRegion(
     return lc_region;
 }
 
-bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
-    // Default is true; check ellipse and rectangle distortion.
+bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys) {
+    // Determine whether to convert region directly, or approximate it as a polygon in the output image.
     CARTA::RegionType region_type = _region_state.type;
+
+    // Check ellipse and rectangle distortion; always true for other regions.
     switch (region_type) {
         case CARTA::RegionType::ELLIPSE:
         case CARTA::RegionType::RECTANGLE: {
             CARTA::Point center_point = _region_state.control_points[0];
             double x_length(_region_state.control_points[1].x()), y_length(_region_state.control_points[1].y());
 
+            // Ratio of vector lengths in reference image region
             double ref_length_ratio;
             if (region_type == CARTA::RegionType::ELLIPSE) {
                 ref_length_ratio = x_length / y_length;
@@ -425,20 +428,22 @@ bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys
                 auto v1_delta_x = x[1] - x[4];
                 auto v1_delta_y = y[1] - y[4];
 
+                // Ratio of vector lengths in converted region
                 auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
                 auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
                 double converted_length_ratio = v1_length / v0_length;
 
-                // Compare converted to reference length ratio
+                // Compare reference to converted length ratio
                 double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
                 spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
+
                 if (length_ratio_difference < 1e-4) {
-                    // Passed ratio check; check dot product
+                    // Passed ratio check; check dot product of converted region
                     double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
                     spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
 
-                    if (fabs(converted_dot_product) < 1e-4) {
-                        // passed distortion tests, convert region directly
+                    if (fabs(converted_dot_product) < 1e-2) {
+                        // passed distortion tests, do not use polygon approximation
                         return false;
                     }
                 }
