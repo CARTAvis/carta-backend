@@ -135,16 +135,15 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         }
     }
 
-    // reset the beam information
+    // reset the beam information if it has
     if (concatenated_image->imageInfo().hasBeam()) {
         try {
             casacore::ImageInfo image_info = concatenated_image->imageInfo();
             int stokes_size = concatenated_image->shape()[stokes_axis];
             image_info.setAllBeams(image_info.nChannels(), stokes_size, casacore::GaussianBeam());
-            unsigned int stokes(0);
-            for (int i = 1; i <= 4; ++i) { // set beam information through stokes types I, Q, U, V (i.e., 1, 2, 3 ,4)
+            for (int i = 1, stokes = 0; i <= 4; ++i, ++stokes) { // set beam information through stokes types I, Q, U, V (i.e., 1, 2, 3 ,4)
                 auto stokes_type = static_cast<CARTA::StokesType>(i);
-                if (_loaders.count(stokes_type) && _loaders[stokes_type]->GetImage()->imageInfo().hasBeam()) {
+                if (_loaders.count(stokes_type) && _loaders[stokes_type]->GetImage()->imageInfo().hasBeam() && stokes < stokes_size) {
                     casacore::ImageBeamSet beam_set = _loaders[stokes_type]->GetImage()->imageInfo().getBeamSet();
                     casacore::GaussianBeam gaussian_beam;
                     for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
@@ -154,7 +153,6 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                         casacore::Quantity pa(gaussian_beam.getPA("deg").getValue(), "deg");
                         image_info.setBeam(chan, stokes, major_ax, minor_ax, pa);
                     }
-                    ++stokes;
                 }
             }
             concatenated_image->setImageInfo(image_info);
