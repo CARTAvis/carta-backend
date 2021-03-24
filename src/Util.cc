@@ -222,7 +222,8 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-void GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
+int GetStokesTypeIndex(const string& coordinate) {
+    int stokes_index(-1);
     if (coordinate.size() == 2) {
         char stokes_char(coordinate.front());
         if (stokes_char == 'I') {
@@ -234,9 +235,8 @@ void GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
         } else if (stokes_char == 'V') {
             stokes_index = 3;
         }
-    } else {
-        stokes_index = -1;
     }
+    return stokes_index;
 }
 
 string IPAsText(string_view binary) {

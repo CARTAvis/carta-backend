@@ -428,8 +428,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
 
 bool RegionHandler::SpectralCoordinateValid(const std::string& coordinate, int nstokes) {
     // Check stokes coordinate is valid for image
-    int stokes_index;
-    GetStokesTypeIndex(coordinate, stokes_index);
+    int stokes_index = GetStokesTypeIndex(coordinate);
     bool valid(stokes_index < nstokes);
     if (!valid) {
         spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
@@ -834,9 +833,7 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Get stokes index
-        int stokes;
-        GetStokesTypeIndex(hist_config.coordinate, stokes);
-
+        int stokes = GetStokesTypeIndex(hist_config.coordinate);
         if (stokes == CURRENT_STOKES) {
             stokes = _frames.at(file_id)->CurrentStokes();
         }
@@ -985,8 +982,7 @@ bool RegionHandler::FillSpectralProfileData(
                 }
 
                 // Get index into stokes axis for data message
-                int stokes_index;
-                GetStokesTypeIndex(coordinate, stokes_index);
+                int stokes_index = GetStokesTypeIndex(coordinate);
                 if (stokes_index < 0) {
                     stokes_index = _frames.at(config_file_id)->CurrentStokes();
                 }
@@ -1304,8 +1300,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 // return stats for this requirement
                 for (auto stats_config : region_config.second.stats_configs) {
                     // Get stokes index
-                    int stokes;
-                    GetStokesTypeIndex(stats_config.coordinate(), stokes);
+                    int stokes = GetStokesTypeIndex(stats_config.coordinate());
 
                     // Set required stats types
                     std::vector<CARTA::StatsType> required_stats;
@@ -1339,8 +1334,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 // return stats for this requirement
                 for (auto stats_config : region_config.second.stats_configs) {
                     // Get stokes index
-                    int stokes;
-                    GetStokesTypeIndex(stats_config.coordinate(), stokes);
+                    int stokes = GetStokesTypeIndex(stats_config.coordinate());
 
                     // Set required stats types
                     std::vector<CARTA::StatsType> required_stats;
@@ -1367,7 +1361,6 @@ bool RegionHandler::GetRegionStatsData(
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 
     int channel(_frames.at(file_id)->CurrentChannel());
-
     if (stokes == CURRENT_STOKES) {
         stokes = _frames.at(file_id)->CurrentStokes();
     }

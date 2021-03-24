@@ -572,9 +572,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
         histogram->set_channel(channel);
 
         // Get stokes index
-        int stokes;
-        GetStokesTypeIndex(histogram_config.coordinate, stokes);
-
+        int stokes = GetStokesTypeIndex(histogram_config.coordinate);
         if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();
         }
@@ -826,9 +824,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
 
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
-        int stokes;
-        GetStokesTypeIndex(stats_config.coordinate(), stokes);
-
+        int stokes = GetStokesTypeIndex(stats_config.coordinate());
         if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();
         }
@@ -1007,8 +1003,7 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     std::vector<SpectralConfig> new_configs;
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
-        int stokes;
-        GetStokesTypeIndex(coordinate, stokes);
+        int stokes = GetStokesTypeIndex(coordinate);
         if (stokes >= nstokes) {
             spdlog::warn("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
             continue;
@@ -1093,8 +1088,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             cb(profile_message);
         } else {
-            int stokes;
-            GetStokesTypeIndex(coordinate, stokes);
+            int stokes = GetStokesTypeIndex(coordinate);
             if (coordinate == "z") {
                 stokes = CurrentStokes();
             }

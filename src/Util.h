@@ -42,7 +42,7 @@ CARTA::FileType GetCartaFileType(const std::string& filename);
 // ************ Data Stream Helpers *************
 
 // TODO: this function is not correct if an image has stokes axis that not start from I
-void GetStokesTypeIndex(const std::string& coordinate, int& stokes_index);
+int GetStokesTypeIndex(const std::string& coordinate);
 
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
