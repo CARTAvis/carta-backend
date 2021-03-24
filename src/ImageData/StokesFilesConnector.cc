@@ -5,6 +5,7 @@
 */
 
 #include "StokesFilesConnector.h"
+#include "Logger/Logger.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -144,15 +145,19 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
             unsigned int stokes(0);
             for (int i = 1; i <= 4; ++i) { // set beam information through stokes types I, Q, U, V (i.e., 1, 2, 3 ,4)
                 auto stokes_type = static_cast<CARTA::StokesType>(i);
-                if (_loaders.count(stokes_type) && _loaders[stokes_type]->GetImage()->imageInfo().hasBeam()) {
-                    casacore::ImageBeamSet beam_set = _loaders[stokes_type]->GetImage()->imageInfo().getBeamSet();
-                    casacore::GaussianBeam gaussian_beam;
-                    for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
-                        gaussian_beam = beam_set.getBeam(chan, stokes);
-                        casacore::Quantity major_ax(gaussian_beam.getMajor("arcsec"), "arcsec");
-                        casacore::Quantity minor_ax(gaussian_beam.getMinor("arcsec"), "arcsec");
-                        casacore::Quantity pa(gaussian_beam.getPA("deg").getValue(), "deg");
-                        image_info.setBeam(chan, stokes, major_ax, minor_ax, pa);
+                if (_loaders.count(stokes_type)) {
+                    if (_loaders[stokes_type]->GetImage()->imageInfo().hasBeam() && stokes < stokes_size) {
+                        casacore::ImageBeamSet beam_set = _loaders[stokes_type]->GetImage()->imageInfo().getBeamSet();
+                        casacore::GaussianBeam gaussian_beam;
+                        for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
+                            gaussian_beam = beam_set.getBeam(chan, stokes);
+                            casacore::Quantity major_ax(gaussian_beam.getMajor("arcsec"), "arcsec");
+                            casacore::Quantity minor_ax(gaussian_beam.getMinor("arcsec"), "arcsec");
+                            casacore::Quantity pa(gaussian_beam.getPA("deg").getValue(), "deg");
+                            image_info.setBeam(chan, stokes, major_ax, minor_ax, pa);
+                        }
+                    } else {
+                        spdlog::warn("Stokes type {} has no beam information!", CARTA::StokesType_Name(stokes_type));
                     }
                     ++stokes;
                 }
