@@ -819,8 +819,8 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
         return false; // not requested
     }
 
-    int channel(CurrentChannel());
-    bool message_filled(false); // At least one of the messages filled
+    int channel(CurrentChannel()); // Use current channel
+    bool message_filled(false);    // At least one of the messages filled
 
     for (auto stats_config : _image_required_stats) {
         // Get stokes index

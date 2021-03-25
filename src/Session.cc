@@ -1407,7 +1407,7 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
         if (_frames.count(file_id)) {
             std::vector<CARTA::RegionStatsData> region_stats_data_vec;
             if (_frames.at(file_id)->FillRegionStatsData(region_id, region_stats_data_vec)) {
-                for (auto region_stats_data : region_stats_data_vec) {
+                for (auto region_stats_data : region_stats_data_vec) { // send region stats data with respect to stokes
                     region_stats_data.set_file_id(file_id);
                     region_stats_data.set_region_id(region_id);
                     SendFileEvent(file_id, CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);

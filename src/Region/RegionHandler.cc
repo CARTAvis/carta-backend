@@ -771,7 +771,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
                 if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_messages)) {
                     for (const auto& histogram_message : histogram_messages) {
-                        cb(histogram_message); // send data
+                        cb(histogram_message); // send histogram data with respect to stokes
                     }
                     message_filled = true;
                 }
@@ -795,7 +795,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 std::vector<CARTA::RegionHistogramData> histogram_messages;
                 if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_messages)) {
                     for (const auto& histogram_message : histogram_messages) {
-                        cb(histogram_message); // send data
+                        cb(histogram_message); // send histogram data with respect to stokes
                     }
                     message_filled = true;
                 }
