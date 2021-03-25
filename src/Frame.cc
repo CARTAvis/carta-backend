@@ -820,7 +820,6 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
     }
 
     int channel(CurrentChannel()); // Use current channel
-    bool message_filled(false);    // At least one of the messages filled
 
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
@@ -845,7 +844,6 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
         if (image_stats.full) {
             FillStatisticsValuesFromMap(stats_data, required_stats, image_stats.basic_stats);
             stats_data_vec.push_back(stats_data);
-            message_filled = true;
             continue;
         }
 
@@ -855,7 +853,6 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
             auto stats_map = _image_stats[cache_key];
             FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
             stats_data_vec.push_back(stats_data);
-            message_filled = true;
             continue;
         }
 
@@ -882,11 +879,10 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();
             auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
             spdlog::performance("Fill image stats in {:.3f} ms", dt_image_stats * 1e-3);
-            message_filled = true;
         }
     }
 
-    return message_filled;
+    return stats_data_vec.size();
 }
 
 // ****************************************************
