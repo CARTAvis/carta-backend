@@ -1284,6 +1284,27 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
     }
 
     bool message_filled(false);
+
+    auto send_stats_results = [&](int region_id, int file_id, std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs) {
+        for (auto stats_config : stats_configs) {
+            // Get stokes index
+            int stokes = GetStokesTypeIndex(stats_config.coordinate());
+
+            // Set required stats types
+            std::vector<CARTA::StatsType> required_stats;
+            for (int i = 0; i < stats_config.stats_types_size(); ++i) {
+                required_stats.push_back(stats_config.stats_types(i));
+            }
+
+            // Send stats results
+            CARTA::RegionStatsData stats_message;
+            if (GetRegionStatsData(region_id, file_id, stokes, required_stats, stats_message)) {
+                cb(stats_message); // send data
+                message_filled = true;
+            }
+        }
+    };
+
     if (region_id > 0) {
         // Fill stats data for specific region with file_id requirement (specific file_id or all files)
         std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
@@ -1298,23 +1319,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // return stats for this requirement
-                for (auto stats_config : region_config.second.stats_configs) {
-                    // Get stokes index
-                    int stokes = GetStokesTypeIndex(stats_config.coordinate());
-
-                    // Set required stats types
-                    std::vector<CARTA::StatsType> required_stats;
-                    for (int i = 0; i < stats_config.stats_types_size(); ++i) {
-                        required_stats.push_back(stats_config.stats_types(i));
-                    }
-
-                    // Send stats results
-                    CARTA::RegionStatsData stats_message;
-                    if (GetRegionStatsData(region_id, config_file_id, stokes, required_stats, stats_message)) {
-                        cb(stats_message); // send data
-                        message_filled = true;
-                    }
-                }
+                send_stats_results(region_id, config_file_id, region_config.second.stats_configs);
             }
         }
     } else {
@@ -1332,23 +1337,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // return stats for this requirement
-                for (auto stats_config : region_config.second.stats_configs) {
-                    // Get stokes index
-                    int stokes = GetStokesTypeIndex(stats_config.coordinate());
-
-                    // Set required stats types
-                    std::vector<CARTA::StatsType> required_stats;
-                    for (int i = 0; i < stats_config.stats_types_size(); ++i) {
-                        required_stats.push_back(stats_config.stats_types(i));
-                    }
-
-                    // Send stats results
-                    CARTA::RegionStatsData stats_message;
-                    if (GetRegionStatsData(config_region_id, file_id, stokes, required_stats, stats_message)) {
-                        cb(stats_message); // send data
-                        message_filled = true;
-                    }
-                }
+                send_stats_results(config_region_id, file_id, region_config.second.stats_configs);
             }
         }
     }
