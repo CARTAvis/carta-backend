@@ -573,9 +573,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
 
         // Get stokes index
         int stokes = GetStokesTypeIndex(histogram_config.coordinate);
-        if (stokes == CURRENT_STOKES) {
-            stokes = CurrentStokes();
-        }
+        stokes = (stokes == CURRENT_STOKES) ? CurrentStokes() : stokes;
 
         histogram_data.set_stokes(stokes);
 
@@ -824,9 +822,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
         int stokes = GetStokesTypeIndex(stats_config.coordinate());
-        if (stokes == CURRENT_STOKES) {
-            stokes = CurrentStokes();
-        }
+        stokes = (stokes == CURRENT_STOKES) ? CurrentStokes() : stokes;
 
         // Set response message
         CARTA::RegionStatsData stats_data;
@@ -1085,9 +1081,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             cb(profile_message);
         } else {
             int stokes = GetStokesTypeIndex(coordinate);
-            if (coordinate == "z") {
-                stokes = CurrentStokes();
-            }
+            stokes = (stokes == CURRENT_STOKES) ? CurrentStokes() : stokes;
 
             std::vector<float> spectral_data;
             int xy_count(1);

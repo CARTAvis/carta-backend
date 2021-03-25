@@ -1144,9 +1144,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // Get stokes index
             int stokes = GetStokesTypeIndex(cube_histogram_config.coordinate);
-            if (stokes == CURRENT_STOKES) {
-                stokes = _frames.at(file_id)->CurrentStokes();
-            }
+            stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
 
             // To send periodic updates
             _histogram_progress = HISTOGRAM_START;

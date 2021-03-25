@@ -834,9 +834,7 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Get stokes index
         int stokes = GetStokesTypeIndex(hist_config.coordinate);
-        if (stokes == CURRENT_STOKES) {
-            stokes = _frames.at(file_id)->CurrentStokes();
-        }
+        stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
 
         // Set histogram fields
         CARTA::RegionHistogramData histogram_message;
@@ -983,9 +981,7 @@ bool RegionHandler::FillSpectralProfileData(
 
                 // Get index into stokes axis for data message
                 int stokes_index = GetStokesTypeIndex(coordinate);
-                if (stokes_index < 0) {
-                    stokes_index = _frames.at(config_file_id)->CurrentStokes();
-                }
+                stokes_index = (stokes_index == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes_index;
 
                 // Return spectral profile for this requirement
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
@@ -1350,9 +1346,7 @@ bool RegionHandler::GetRegionStatsData(
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 
     int channel(_frames.at(file_id)->CurrentChannel());
-    if (stokes == CURRENT_STOKES) {
-        stokes = _frames.at(file_id)->CurrentStokes();
-    }
+    stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
 
     // Start filling message
     stats_message.set_file_id(file_id);
