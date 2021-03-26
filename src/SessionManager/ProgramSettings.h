@@ -7,10 +7,12 @@
 #ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 
+#include <iostream>
 #include <string>
 #include <tuple>
 #include <vector>
 
+#include <nlohmann/json.hpp>
 #include "Constants.h"
 
 namespace carta {
@@ -43,6 +45,7 @@ struct ProgramSettings {
     ProgramSettings(int argc, char** argv);
     void CommandLineSettings(int argc, char** argv);
     void JSONConfigSettings(const std::string& fsp);
+    void SetSettingsFromJSON(const nlohmann::json& j);
 
     auto GetTuple() const {
         return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
