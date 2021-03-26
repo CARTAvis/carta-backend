@@ -806,7 +806,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 }
 
 bool RegionHandler::GetRegionHistogramData(
-    int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
+    int region_id, int file_id, const std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
 
@@ -1295,7 +1295,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
             // Send stats results
             CARTA::RegionStatsData stats_message;
             if (GetRegionStatsData(region_id, file_id, stokes, required_stats, stats_message)) {
-                cb(stats_message); // send data
+                cb(stats_message); // send stats data with respect to stokes
                 message_filled = true;
             }
         }
@@ -1341,7 +1341,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 }
 
 bool RegionHandler::GetRegionStatsData(
-    int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
+    int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 

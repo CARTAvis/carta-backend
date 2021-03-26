@@ -1308,7 +1308,7 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& da
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
+bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_channel,
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;

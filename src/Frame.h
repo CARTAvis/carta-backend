@@ -155,7 +155,7 @@ public:
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const casacore::LattRegionHolder& region, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
+    bool GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);

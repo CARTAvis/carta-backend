@@ -103,13 +103,13 @@ private:
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
-    bool GetRegionHistogramData(
-        int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages);
+    bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
+        std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
-        int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
+        int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Trigger job cancellation when true
     volatile bool _cancel_all_jobs = false;

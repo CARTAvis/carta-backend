@@ -202,7 +202,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
 }
 
 void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
+    CARTA::RegionStatsData& stats_data, const vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {
         double value(0.0); // default
