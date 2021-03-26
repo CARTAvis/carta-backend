@@ -217,3 +217,41 @@ TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
     EXPECT_EQ(settings.files[1], fits_image.string().substr(1));
     EXPECT_EQ(settings.files[2], hdf5_image.string().substr(1));
 }
+
+TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
+    // auto settings = SettingsFromString(
+    //     "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
+    //     " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth");
+    auto json_string = R"(
+    {
+        "verbosity": 6,
+        "no_log": true,
+        "no_http": true,
+        "no_browser": true,
+        "host": "helloworld",
+        "port": 1234,
+        "grpc_port": 5678,
+        "omp_threads": 10,
+        "top_level_folder": "/tmp",
+        "frontend_folder": "/var",
+        "exit_timeout": 10,
+        "initial_timeout": 11
+    })";
+    nlohmann::json j = nlohmann::json::parse(json_string);
+
+    carta::ProgramSettings settings;
+    settings.SetSettingsFromJSON(j);
+
+    EXPECT_EQ(settings.verbosity, 6);
+    EXPECT_EQ(settings.no_log, true);
+    EXPECT_EQ(settings.no_http, true);
+    EXPECT_EQ(settings.no_browser, true);
+    EXPECT_EQ(settings.host, "helloworld");
+    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.grpc_port, 5678);
+    EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.top_level_folder, "/tmp");
+    EXPECT_EQ(settings.frontend_folder, "/var");
+    EXPECT_EQ(settings.wait_time, 10);
+    EXPECT_EQ(settings.init_wait_time, 11);
+}
