@@ -33,7 +33,9 @@ public:
         for (auto& s : argVector) {
             cstrings.push_back(&s[0]);
         }
-        carta::ProgramSettings settings(argVector.size(), cstrings.data());
+
+        carta::ProgramSettings settings;
+        settings.CommandLineSettings(argVector.size(), cstrings.data());
         return std::move(settings);
     }
 
