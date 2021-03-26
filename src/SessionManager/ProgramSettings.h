@@ -36,6 +36,9 @@ struct ProgramSettings {
     int init_wait_time = -1;
     int idle_session_wait_time = -1;
 
+    bool no_user_config = false;
+    bool no_system_config = false;
+
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
     void CommandLineSettings(int argc, char** argv);

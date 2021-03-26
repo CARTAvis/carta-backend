@@ -43,12 +43,12 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         CommandLineSettings(argc, argv);
     }
     fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
-    if (fs::exists(user_settings_path)) {
+    if (fs::exists(user_settings_path) && !no_user_config) {
         spdlog::info("Using user defined settings");
         JSONConfigSettings(user_settings_path.string());
     }
     fs::path system_settings_path = "/etc/carta/backend.json";
-    if (fs::exists(system_settings_path)) {
+    if (fs::exists(system_settings_path) && !no_system_config) {
         spdlog::info("Using system settings");
         JSONConfigSettings(system_settings_path.string());
     }
@@ -134,7 +134,9 @@ void ProgramSettings::CommandLineSettings(int argc, char** argv) {
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
-        ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
+        ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
+        ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
+        ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port (not secure; use with caution!)", cxxopts::value<bool>())
@@ -203,6 +205,9 @@ sending messages to the backend).
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
+
+    no_user_config = result.count("no_user_config") ? result["no_user_config"].as<bool>() : false;
+    no_system_config = result.count("no_system_config") ? result["no_user_config"].as<bool>() : false;
 
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument
