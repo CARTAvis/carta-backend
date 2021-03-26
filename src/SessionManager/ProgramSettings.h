@@ -38,6 +38,8 @@ struct ProgramSettings {
 
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
+    void CommandLineSettings(int argc, char** argv);
+    void JSONConfigSettings(const std::string& fsp);
 
     auto GetTuple() const {
         return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,

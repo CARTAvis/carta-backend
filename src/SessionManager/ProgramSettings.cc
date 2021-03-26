@@ -6,12 +6,15 @@
 
 #include "ProgramSettings.h"
 
+#include <fstream>
 #include <iostream>
 
+#include <images/Images/ImageOpener.h>
 #include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
+#include <nlohmann/json.hpp>
 
-#include <images/Images/ImageOpener.h>
+#include "Logger/Logger.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -23,6 +26,7 @@ namespace fs = std::filesystem;
 #endif
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace carta {
 
@@ -34,6 +38,90 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 }
 
 ProgramSettings::ProgramSettings(int argc, char** argv) {
+    if (argc > 1) {
+        spdlog::info("Using command-line defined settings");
+        CommandLineSettings(argc, argv);
+    }
+    fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
+    if (fs::exists(user_settings_path)) {
+        spdlog::info("Using user defined settings");
+        JSONConfigSettings(user_settings_path.string());
+    }
+    fs::path system_settings_path = "/etc/carta/backend.json";
+    if (fs::exists(system_settings_path)) {
+        spdlog::info("Using system settings");
+        JSONConfigSettings(system_settings_path.string());
+    }
+}
+
+void ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
+    std::ifstream ifs(json_file_path, std::ifstream::in);
+    json j;
+    try {
+        j = json::parse(ifs);
+        if (j.contains("version")) {
+            version = j.at("version");
+        }
+        if (j.contains("help")) {
+            help = j.at("help");
+        }
+        if (j.contains("verbosity")) {
+            verbosity = j.at("verbosity");
+        }
+        if (j.contains("no_log")) {
+            no_log = j.at("no_log");
+        }
+        if (j.contains("log_performance")) {
+            log_performance = j.at("log_performance");
+        }
+        if (j.contains("log_protocol_messages")) {
+            log_protocol_messages = j.at("log_protocol_messages");
+        }
+        if (j.contains("no_http")) {
+            no_http = j.at("no_http");
+        }
+        if (j.contains("no_browser")) {
+            no_browser = j.at("no_browser");
+        }
+        if (j.contains("host")) {
+            host = j.at("host");
+        }
+        if (j.contains("port")) {
+            port = j.at("port");
+        }
+        if (j.contains("grpc_port")) {
+            grpc_port = j.at("grpc_port");
+        }
+        if (j.contains("omp_threads")) {
+            omp_thread_count = j.at("omp_threads");
+        }
+        if (j.contains("top_level_folder")) {
+            top_level_folder = j.at("top_level_folder");
+        }
+        if (j.contains("frontend_folder")) {
+            frontend_folder = j.at("frontend_folder");
+        }
+        if (j.contains("exit_timeout")) {
+            wait_time = j.at("exit_timeout");
+        }
+        if (j.contains("initial_timeout")) {
+            init_wait_time = j.at("initial_timeout");
+        }
+        if (j.contains("idle_timeout")) {
+            idle_session_wait_time = j.at("idle_timeout");
+        }
+        if (j.contains("files")) {
+            const auto json_files = j["files"];
+            for (const auto& f : json_files) {
+                files.push_back(f);
+            }
+        }
+    } catch (json::parse_error& err) {
+        spdlog::warn("JSON parse error at {}", err.byte);
+    }
+}
+
+void ProgramSettings::CommandLineSettings(int argc, char** argv) {
     vector<string> positional_arguments;
 
     cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");
