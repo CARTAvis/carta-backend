@@ -15,14 +15,16 @@ FitsHduList::FitsHduList(const std::string& filename) {
 void FitsHduList::GetHduList(std::vector<std::string>& hdu_list) {
     casacore::FitsInput fits_input(_filename.c_str(), casacore::FITS::Disk, 10, FitsInfoErrHandler);
 
-    if (fits_input.err() == casacore::FitsIO::OK) { // check for cfitsio error
+    auto input_error = fits_input.err();
+    if (input_error == casacore::FitsIO::OK) {
         // iterate through each header data unit
         for (int hdu = 0; hdu < fits_input.getnumhdu(); ++hdu) {
             if (fits_input.rectype() == casacore::FITS::HDURecord) {
+                std::string hdu_name = std::to_string(hdu);
                 casacore::FITS::HDUType hdu_type = fits_input.hdutype();
+
                 if (IsImageHdu(hdu_type)) {
                     // add hdu to list
-                    std::string hdu_name = std::to_string(hdu);
                     int ndim(0);
                     std::string ext_name;
                     GetFitsHduInfo(fits_input, ndim, ext_name);
@@ -33,18 +35,55 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list) {
                         hdu_list.push_back(hdu_name);
                     }
                     fits_input.skip_all(hdu_type); // skip data to next hdu
+                } else if (hdu_type == casacore::FITS::BinaryTableHDU) {
+                    // Check for FITS compressed fz: ZIMAGE = T
+                    casacore::BinaryTableExtension header_unit = casacore::BinaryTableExtension(fits_input, FitsInfoErrHandler);
+                    const casacore::FitsKeyword* zimage = header_unit.kw("ZIMAGE");
+
+                    if (zimage && zimage->asBool()) {
+                        // is fz file, check naxis
+                        const casacore::FitsKeyword* znaxis = header_unit.kw("ZNAXIS");
+                        if (znaxis && (znaxis->asInt() > 0)) {
+                            // add ext name if any
+                            std::string ext_name = header_unit.extname();
+                            if (!ext_name.empty()) {
+                                hdu_name += ":" + ext_name; // delimiter :
+                            }
+                            hdu_list.push_back(hdu_name);
+                        }
+                        fits_input.skip_all(hdu_type); // skip data to next hdu
+                    } else {
+                        fits_input.skip_hdu();
+                    }
                 } else {
                     fits_input.skip_hdu();
                 }
             }
+        }
+    } else {
+        switch (input_error) {
+            case casacore::FitsIO::EMPTYFILE:
+                FitsInfoErrHandler("FITS file is empty", casacore::FITSError::SEVERE);
+                break;
+            case casacore::FitsIO::IOERR:
+                FitsInfoErrHandler("FITS read error", casacore::FITSError::SEVERE);
+                break;
+            case casacore::FitsIO::BADBEGIN:
+                FitsInfoErrHandler(
+                    "FITS invalid/unsupported primary header (SIMPLE, XTENSION, BITPIX, NAXIS, or NAXIS1).", casacore::FITSError::SEVERE);
+                break;
+            case casacore::FitsIO::NOPRIMARY:
+                FitsInfoErrHandler("FITS missing primary HDU", casacore::FITSError::SEVERE);
+                break;
+            default:
+                break;
         }
     }
 }
 
 bool FitsHduList::IsImageHdu(casacore::FITS::HDUType hdu_type) {
     return ((hdu_type == casacore::FITS::PrimaryArrayHDU) || (hdu_type == casacore::FITS::PrimaryGroupHDU) ||
-            (hdu_type == casacore::FITS::PrimaryTableHDU) || (hdu_type == casacore::FITS::ImageExtensionHDU) ||
-            (hdu_type == casacore::FITS::BinaryTableHDU));
+            (hdu_type == casacore::FITS::PrimaryTableHDU) || (hdu_type == casacore::FITS::ImageExtensionHDU));
 }
 
 void FitsHduList::GetFitsHduInfo(casacore::FitsInput& fits_input, int& ndim, std::string& ext_name) {
@@ -65,14 +104,17 @@ void FitsHduList::GetFitsHduInfo(casacore::FitsInput& fits_input, int& ndim, std
                 case casacore::FITS::LONG:
                     header_unit = new casacore::PrimaryArray<int>(fits_input);
                     break;
-                case casacore::FITS::LONGLONG:
-                    header_unit = new casacore::PrimaryArray<long long>(fits_input);
-                    break;
                 case casacore::FITS::FLOAT:
                     header_unit = new casacore::PrimaryArray<float>(fits_input);
                     break;
                 case casacore::FITS::DOUBLE:
                     header_unit = new casacore::PrimaryArray<double>(fits_input);
+                    break;
+                case casacore::FITS::COMPLEX:
+                    header_unit = new casacore::PrimaryArray<std::complex<float>>(fits_input);
+                    break;
+                case casacore::FITS::DCOMPLEX:
+                    header_unit = new casacore::PrimaryArray<std::complex<double>>(fits_input);
                     break;
                 default:
                     break;
@@ -100,11 +142,6 @@ void FitsHduList::GetFitsHduInfo(casacore::FitsInput& fits_input, int& ndim, std
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
                 } break;
-                case casacore::FITS::LONGLONG: {
-                    casacore::ImageExtension<long long> header_unit = casacore::ImageExtension<long long>(fits_input);
-                    ndim = header_unit.dims();
-                    ext_name = header_unit.extname();
-                } break;
                 case casacore::FITS::FLOAT: {
                     casacore::ImageExtension<float> header_unit = casacore::ImageExtension<float>(fits_input);
                     ndim = header_unit.dims();
@@ -115,15 +152,18 @@ void FitsHduList::GetFitsHduInfo(casacore::FitsInput& fits_input, int& ndim, std
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
                 } break;
+                case casacore::FITS::COMPLEX: {
+                    casacore::ImageExtension<std::complex<float>> header_unit = casacore::ImageExtension<std::complex<float>>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
+                case casacore::FITS::DCOMPLEX: {
+                    casacore::ImageExtension<std::complex<double>> header_unit = casacore::ImageExtension<std::complex<double>>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
                 default:
                     break;
-            }
-        } break;
-        case casacore::FITS::BinaryTableHDU: {
-            casacore::BinaryTableExtension header_unit = casacore::BinaryTableExtension(fits_input);
-            if (header_unit.err() == casacore::HeaderDataUnit::OK) {
-                ndim = header_unit.dims();
-                ext_name = header_unit.extname();
             }
         } break;
         default:

@@ -21,6 +21,11 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
+// Valid for little-endian only
+#define XML_MAGIC_NUMBER 0x6D783F3C
+#define FITS_MAGIC_NUMBER 0x504D4953
+#define GZ_MAGIC_NUMBER 0x8088B1F
+
 // ************ Utilities *************
 bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(std::string folder, std::string top_folder);

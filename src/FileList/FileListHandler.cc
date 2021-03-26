@@ -13,6 +13,7 @@
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
+#include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
 
 // Default constructor
@@ -117,6 +118,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
+
                 try {
                     bool is_region(false);
                     if (region_list) {
@@ -150,8 +152,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                     break;
                                 }
                                 default: {
-                                    std::string image_type_msg = fmt::format(
-                                        "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
+                                    std::string image_type_msg =
+                                        fmt::format("{}: image type {} not supported", name, GetCasacoreTypeString(image_type));
                                     result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                     break;
                                 }
@@ -159,6 +161,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
                             if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
                                 add_image = true;
+                            } else if (GetMagicNumber(full_path) == GZ_MAGIC_NUMBER) {
+                                spdlog::info("{}: support for gzipped files not implemented yet.", name);
                             } else if (region_list) { // list unknown files: name, type, size
                                 add_image = true;
                             }

@@ -314,6 +314,10 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     if (success) {
         // add extended info map to message
         *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+    } else {
+        // log error
+        spdlog::error(message);
+        message += " Check log for error.";
     }
 
     // complete response message

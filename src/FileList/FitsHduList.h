@@ -15,8 +15,17 @@
 #include "../Logger/Logger.h"
 
 inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::ErrorLevel severity) {
+    // Log warnings and errors
     if (severity > casacore::FITSError::WARN) {
-        spdlog::error(err_message);
+        std::string error(err_message);
+
+        // Ignore HDU errors for fz files not supported by casacore
+        if ((error.find("HDU error") != std::string::npos) &&
+            ((error.find("TFORM") != std::string::npos) || (error.find("allocate") != std::string::npos))) {
+            return;
+        }
+
+        spdlog::error(error);
     }
 }
 
