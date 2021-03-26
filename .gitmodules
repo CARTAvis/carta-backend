@@ -4,3 +4,18 @@
 [submodule "carta-scripting-grpc"]
 	path = carta-scripting-grpc
 	url = https://github.com/CARTAvis/carta-scripting-grpc
+[submodule "uWebSockets"]
+	path = third-party/uWebSockets
+	url = https://github.com/uNetworking/uWebSockets.git
+[submodule "cxxopts"]
+	path = third-party/cxxopts
+	url = https://github.com/jarro2783/cxxopts
+[submodule "spdlog"]
+	path = third-party/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "sse2neon"]
+        path = third-party/sse2neon
+        url = https://github.com/DLTcollab/sse2neon.git
+[submodule "third-party/json"]
+	path = third-party/json
+	url = https://github.com/astoeckel/json.git

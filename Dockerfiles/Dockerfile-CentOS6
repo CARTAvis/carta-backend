@@ -1,8 +1,15 @@
 FROM centos:centos6
 
+# Need to update with EOL repositories
+RUN \ 
+  curl https://www.getpagespeed.com/files/centos6-eol.repo --output /etc/yum.repos.d/CentOS-Base.repo && \
+  yum -y update
+
 # The carta-backend will use GCC 8 functions, so install and activate devtoolset-8 
 RUN \
   yum -y install centos-release-scl && \
+  curl https://www.getpagespeed.com/files/centos6-scl-eol.repo --output /etc/yum.repos.d/CentOS-SCLo-scl.repo && \
+  curl https://www.getpagespeed.com/files/centos6-scl-rh-eol.repo --output /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo && \
   yum install -y devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran && \
   echo "source scl_source enable devtoolset-8" >> /etc/bashrc
  
@@ -10,8 +17,10 @@ RUN \
 RUN \
   source /etc/bashrc && \
   yum -y install epel-release && \
+  curl https://www.getpagespeed.com/files/centos6-epel-eol.repo --output /etc/yum.repos.d/epel.repo && \
   yum -y install autoconf automake bison blas-devel cfitsio-devel curl-devel flex git \
-    gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel subversion wget
+    gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel subversion wget \
+    libuuid-devel
 
 # gRPC needs a newer openSSL
 RUN \
@@ -36,15 +45,6 @@ RUN \
   cd CMake && git checkout v3.17.0 && ./configure && \
   make -j 2 && make install && \
   cd /root && rm -rf CMake
-
-# Install newer fmt
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/fmtlib/fmt && \
-  mkdir -p fmt/build && cd fmt/build && \
-  cmake .. && make && make install && \
-  cd /root && rm -rf fmt
 
 # Install a newer pugixml from source
 RUN \
@@ -141,15 +141,6 @@ RUN \
   cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
   make -j 2 && make install && \
   cd /root && rm -rf grpc
-
-# Install uWS
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/uNetworking/uWebSockets.git && \
-  cd uWebSockets && git checkout v0.14 && cd .. && \
-  make default install -C uWebSockets && \
-  rm -rf uWebSockets
 
 # Install zfp
 RUN \

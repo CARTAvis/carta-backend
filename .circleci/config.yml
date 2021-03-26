@@ -8,11 +8,15 @@ jobs:
       - run:
           name: "prepare submodules"
           command: |
-            git submodule init
-            git submodule update
+            git submodule update --init --recursive
       - run:
           name: "build ubuntu carta_backend"
-          command: mkdir build && cd build && cmake .. && make && ls && cp /scripts/package_ubuntu.sh . && ./package_ubuntu.sh carta_backend && ls -sort
+          command: mkdir build && cd build && cmake .. -Dtest=on && make -j2 && ls && cp /scripts/package_ubuntu.sh . && ./package_ubuntu.sh carta_backend && ls -sort
+      - run:
+          name: "run the unit tests"
+          command: cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml  
+      - store_test_results:
+            path: /root/project/build/test
       - run:
           name: "run Xvfb"
           command: Xvfb -ac :99 -screen 0 1280x1024x16 +extension RANDR > /dev/null 2>&1
@@ -34,11 +38,15 @@ jobs:
       - run:
           name: "prepare submodules"
           command: |
-            git submodule init
-            git submodule update
+            git submodule update --init --recursive
       - run:
           name: "build centos6 carta_backend"
-          command: source /opt/rh/devtoolset-8/enable && mkdir build && cd build && cmake .. -DCMAKE_CXX_STANDARD_LIBRARIES="-lstdc++fs" && make && ls && cp /scripts/package_centos6.sh . && ./package_centos6.sh carta_backend && ls -sort
+          command: source /opt/rh/devtoolset-8/enable && mkdir build && cd build && cmake .. -Dtest=on -DCMAKE_CXX_STANDARD_LIBRARIES="-lstdc++fs -lgrpc++" && make -j2 && ls && cp /scripts/package_centos6.sh . && ./package_centos6.sh carta_backend && ls -sort
+      - run:
+          name: "run the unit tests"
+          command: cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml
+      - store_test_results:
+            path: /root/project/build/test
       - run:
           name: "run Xvfb"
           command: Xvfb -ac :99 -screen 0 1280x1024x16 +extension RANDR > /dev/null 2>&1
@@ -61,7 +69,12 @@ jobs:
           name: "checking the formatting of the carta_backend code"
           command: |
             ./scripts/checkformat.sh
-            echo "Finished !!!"
+            echo "Finished"
+      - run:
+          name: "checking the copyright and licence headers in the carta_backend code"
+          command: |
+            ./scripts/headers.py check
+            echo "Finished"
 workflows:
   version: 2
   build:

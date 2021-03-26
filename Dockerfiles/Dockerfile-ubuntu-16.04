@@ -8,7 +8,7 @@ RUN \
     gdb gfortran git htop libblas-dev libcfitsio-dev libcurl4-gnutls-dev libgsl-dev \
     libgtest-dev libhdf5-dev liblapack-dev libncurses-dev libreadline-dev \
     libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev \
-    libx11-dev libzstd-dev pkg-config software-properties-common unzip wcslib-dev wget
+    libx11-dev libzstd-dev pkg-config software-properties-common unzip wcslib-dev wget uuid-dev
 
 # grpc from webispy ppa
 RUN \
@@ -30,11 +30,6 @@ RUN \
   cd CMake && git checkout v3.17.0 && ./configure && \
   make -j 2 && make install && \
   cd /root && rm -rf CMake
-
-# Ubuntu 16.04 does not have libfmt-dev so build it from source
-RUN \
-  git clone https://github.com/fmtlib/fmt.git && cd fmt && cmake CMakeLists.txt && \
-  make && make install && cd .. && rm -rf fmt
 
 # Install a newer pugixml from source
 RUN \
@@ -80,14 +75,6 @@ RUN \
   mkdir -p zfp/build && cd zfp/build && \
   cmake  -DCMAKE_BUILD_TYPE=RELEASE .. && make all install && \
   cd /root && rm -rf zfp
-
-# Install uWS
-RUN \
-  cd /root && \
-  git clone https://github.com/uNetworking/uWebSockets.git && \
-  cd uWebSockets && git checkout v0.14 && cd .. && \
-  make default install -C uWebSockets && \
-  rm -rf uWebSockets
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
