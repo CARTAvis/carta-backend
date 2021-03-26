@@ -59,12 +59,6 @@ void ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
     json j;
     try {
         j = json::parse(ifs);
-        if (j.contains("version")) {
-            version = j.at("version");
-        }
-        if (j.contains("help")) {
-            help = j.at("help");
-        }
         if (j.contains("verbosity")) {
             verbosity = j.at("verbosity");
         }
@@ -109,12 +103,6 @@ void ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
         }
         if (j.contains("idle_timeout")) {
             idle_session_wait_time = j.at("idle_timeout");
-        }
-        if (j.contains("files")) {
-            const auto json_files = j["files"];
-            for (const auto& f : json_files) {
-                files.push_back(f);
-            }
         }
     } catch (json::parse_error& err) {
         spdlog::warn("JSON parse error at {}", err.byte);
