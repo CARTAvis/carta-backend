@@ -46,16 +46,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FIND_PACKAGE(CURL REQUIRED)
 FIND_PACKAGE(PUGIXML REQUIRED)
-FIND_PACKAGE(ZFP REQUIRED)
+FIND_PACKAGE(ZFP CONFIG REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
 
 PKG_SEARCH_MODULE(UUID REQUIRED uuid)
 if (UUID_FOUND)
     message(STATUS "Found uuid using pkg-config")
-    set(LINK_LIBS
-            ${LINK_LIBS}
-            uuid
-            )
 else ()
     message(FATAL_ERROR "Could not find uuid")
 endif ()
@@ -63,10 +59,6 @@ endif ()
 PKG_SEARCH_MODULE(ZSTD REQUIRED libzstd)
 if (ZSTD_FOUND)
     message(STATUS "zstd found using pkg-config")
-    set(LINK_LIBS
-            ${LINK_LIBS}
-            zstd
-            )
 else ()
     message(FATAL_ERROR "Could not find zstd")
 endif ()
@@ -74,18 +66,10 @@ endif ()
 FIND_PACKAGE(TBB QUIET)
 if (TBB_FOUND)
     message(STATUS "Found TBB using find_package")
-    set(LINK_LIBS
-            ${LINK_LIBS}
-            tbb
-            )
 else ()
     PKG_SEARCH_MODULE(TBB REQUIRED tbb)
     if (TBB_FOUND)
         message(STATUS "Found TBB using pkg-config")
-        set(LINK_LIBS
-                ${LINK_LIBS}
-                tbb
-                )
     else()
         message(FATAL_ERROR "TBB not found")
     endif ()
@@ -161,8 +145,11 @@ set(LINK_LIBS
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         uSockets
+        uuid
         z
         zfp
+        zstd
+        tbb
         cfitsio
         pugixml
         curl
