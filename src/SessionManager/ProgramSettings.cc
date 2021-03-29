@@ -39,34 +39,38 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (argc > 1) {
         spdlog::info("Using command-line settings");
-        CommandLineSettings(argc, argv);
     }
+    CommandLineSettings(argc, argv);
 
-    fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
-    fs::path system_settings_path = "/etc/carta/backend.json";
+    const fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
+    const fs::path system_settings_path = "/etc/carta/backend.json";
 
-    json config_json, user_config_json;
-    bool system_config_json_exists = false;
-    bool user_config_json_exists = false;
+    json settings;
     if (fs::exists(system_settings_path) && !no_system_config) {
         spdlog::info("System settings found");
-        config_json = JSONConfigSettings(system_settings_path.string());
-        system_config_json_exists = true;
+        settings = JSONConfigSettings(system_settings_path.string());
+        system_settings_json_exists = true;
+        std::cout << settings << std::endl;
     }
+
     if (fs::exists(user_settings_path) && !no_user_config) {
-        if (system_config_json_exists) {
+        if (system_settings_json_exists) {
             spdlog::info("User settings found, applying on top of system settings");
         } else {
             spdlog::info("User settings found");
         }
-        user_config_json = JSONConfigSettings(user_settings_path.string());
-        user_config_json_exists = true;
+        auto user_settings = JSONConfigSettings(user_settings_path.string());
+        user_settings_json_exists = true;
+        std::cout << user_settings << std::endl;
+        settings.merge_patch(user_settings); // user on top of system
     }
-    if (user_config_json_exists) {
-        config_json.merge_patch(user_config_json);
+
+    if (system_settings_json_exists || user_settings_json_exists) {
+        settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
+        SetSettingsFromJSON(settings);
     }
-    std::cout << config_json << std::endl;
-    SetSettingsFromJSON(config_json);
+
+    std::cout << settings << std::endl;
 }
 
 json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
@@ -282,6 +286,55 @@ sending messages to the backend).
             auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
             files.push_back(relative_path.string());
         }
+    }
+
+    // produce JSON for over-ridding system and user configuration;
+    // Options here need to match all options available for system and user settings
+    command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
+    if (result.count("verbosity")) {
+        command_line_settings["verbosity"] = result["verbosity"].as<int>();
+    }
+    if (result.count("no_log")) {
+        command_line_settings["no_log"] = result["no_log"].as<bool>();
+    }
+    if (result.count("log_performance")) {
+        command_line_settings["log_performance"] = result["log_performance"].as<bool>();
+    }
+    if (result.count("log_protocol_messages")) {
+        command_line_settings["log_protocol_messages"] = result["log_protocol_messages"].as<bool>();
+    }
+    if (result.count("no_http")) {
+        command_line_settings["no_http"] = result["no_http"].as<bool>();
+    }
+    if (result.count("no_browser")) {
+        command_line_settings["no_browser"] = result["no_browser"].as<bool>();
+    }
+    if (result.count("host")) {
+        command_line_settings["host"] = result["host"].as<std::string>();
+    }
+    if (result.count("port")) {
+        command_line_settings["port"] = result["port"].as<int>();
+    }
+    if (result.count("grpc_port")) {
+        command_line_settings["grpc_port"] = result["grpc_port"].as<int>();
+    }
+    if (result.count("omp_threads")) {
+        command_line_settings["omp_thread_count"] = result["omp_threads"].as<int>();
+    }
+    if (result.count("top_level_folder")) {
+        command_line_settings["top_level_folder"] = result["top_level_folder"].as<std::string>();
+    }
+    if (result.count("frontend_folder")) {
+        command_line_settings["frontend_folder"] = result["frontend_folder"].as<std::string>();
+    }
+    if (result.count("exit_timeout")) {
+        command_line_settings["wait_time"] = result["exit_timeout"].as<int>();
+    }
+    if (result.count("initial_timeout")) {
+        command_line_settings["init_wait_time"] = result["initial_timeout"].as<int>();
+    }
+    if (result.count("idle_timeout")) {
+        command_line_settings["idle_session_wait_time"] = result["idle_timeout"].as<int>();
     }
 }
 

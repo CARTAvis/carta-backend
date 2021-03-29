@@ -41,6 +41,10 @@ struct ProgramSettings {
     bool no_user_config = false;
     bool no_system_config = false;
 
+    nlohmann::json command_line_settings;
+    bool system_settings_json_exists = false;
+    bool user_settings_json_exists = false;
+
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
     void CommandLineSettings(int argc, char** argv);
