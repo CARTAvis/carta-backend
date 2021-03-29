@@ -19,9 +19,8 @@ inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::Err
     if (severity > casacore::FITSError::WARN) {
         std::string error(err_message);
 
-        // Ignore HDU errors for fz files not supported by casacore
-        if ((error.find("HDU error") != std::string::npos) &&
-            ((error.find("TFORM") != std::string::npos) || (error.find("allocate") != std::string::npos))) {
+        // Ignore HDU error for fz files
+        if ((error.find("HDU error") != std::string::npos) && (error.find("Input") != std::string::npos)) {
             return;
         }
 

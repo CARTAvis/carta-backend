@@ -30,31 +30,32 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list) {
                     GetFitsHduInfo(fits_input, ndim, ext_name);
                     if (ndim > 0) {
                         if (!ext_name.empty()) {
-                            hdu_name += ":" + ext_name; // delimiter :
+                            hdu_name += ":" + ext_name;
                         }
                         hdu_list.push_back(hdu_name);
                     }
                     fits_input.skip_all(hdu_type); // skip data to next hdu
                 } else if (hdu_type == casacore::FITS::BinaryTableHDU) {
-                    // Check for FITS compressed fz: ZIMAGE = T
-                    casacore::BinaryTableExtension header_unit = casacore::BinaryTableExtension(fits_input, FitsInfoErrHandler);
-                    const casacore::FitsKeyword* zimage = header_unit.kw("ZIMAGE");
-
-                    if (zimage && zimage->asBool()) {
-                        // is fz file, check naxis
-                        const casacore::FitsKeyword* znaxis = header_unit.kw("ZNAXIS");
-                        if (znaxis && (znaxis->asInt() > 0)) {
-                            // add ext name if any
-                            std::string ext_name = header_unit.extname();
-                            if (!ext_name.empty()) {
-                                hdu_name += ":" + ext_name; // delimiter :
+                    // Check for FITS compressed fz: header ZIMAGE = T.
+                    // casacore::BinaryTableExtension destructor gets seg fault.
+                    // Using ExtensionHeaderDataUnit generates error "Input does not contain an HDU of this type" (UnknownExtensionHDU)
+                    casacore::ExtensionHeaderDataUnit extension(fits_input, FitsInfoErrHandler);
+                    casacore::FitsKeywordList fkw_list;
+                    if (!extension.get_hdr(hdu_type, fkw_list)) {
+                        casacore::FitsKeyword* fkw = fkw_list("ZIMAGE");
+                        if (fkw && fkw->asBool()) {
+                            // Check ndim
+                            fkw = fkw_list("ZNAXIS");
+                            if (fkw && (fkw->asInt() > 0)) {
+                                std::string ext_name = extension.extname();
+                                if (!ext_name.empty()) {
+                                    hdu_name += ":" + ext_name;
+                                }
+                                hdu_list.push_back(hdu_name);
                             }
-                            hdu_list.push_back(hdu_name);
                         }
-                        fits_input.skip_all(hdu_type); // skip data to next hdu
-                    } else {
-                        fits_input.skip_hdu();
                     }
+                    fits_input.skip_all(hdu_type); // skip data to next hdu
                 } else {
                     fits_input.skip_hdu();
                 }
