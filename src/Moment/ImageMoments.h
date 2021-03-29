@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.h"
 //
-#ifndef CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
-#define CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
+#ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_
+#define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_
 
 #include <casacore/lattices/Lattices/MaskedLattice.h>
 #include <casacore/scimath/Functionals/Gaussian1D.h>
@@ -127,4 +127,4 @@ protected:
 
 #include "ImageMoments.tcc"
 
-#endif // CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
+#endif // CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_

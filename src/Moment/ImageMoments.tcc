@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
 //
-#ifndef CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
-#define CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
+#ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
+#define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 
 using namespace carta;
 
@@ -715,4 +715,4 @@ casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casac
     return chunk_shape;
 }
 
-#endif // CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
+#endif // CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
