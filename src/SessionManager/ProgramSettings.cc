@@ -41,28 +41,44 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         spdlog::info("Using command-line settings");
         CommandLineSettings(argc, argv);
     }
+
     fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
-    if (fs::exists(user_settings_path) && !no_user_config) {
-        spdlog::info("Using user settings");
-        JSONConfigSettings(user_settings_path.string());
-    }
     fs::path system_settings_path = "/etc/carta/backend.json";
+
+    json config_json, user_config_json;
+    bool system_config_json_exists = false;
+    bool user_config_json_exists = false;
     if (fs::exists(system_settings_path) && !no_system_config) {
-        spdlog::info("Using system settings");
-        JSONConfigSettings(system_settings_path.string());
+        spdlog::info("System settings found");
+        config_json = JSONConfigSettings(system_settings_path.string());
+        system_config_json_exists = true;
     }
+    if (fs::exists(user_settings_path) && !no_user_config) {
+        if (system_config_json_exists) {
+            spdlog::info("User settings found, applying on top of system settings");
+        } else {
+            spdlog::info("User settings found");
+        }
+        user_config_json = JSONConfigSettings(user_settings_path.string());
+        user_config_json_exists = true;
+    }
+    if (user_config_json_exists) {
+        config_json.merge_patch(user_config_json);
+    }
+    std::cout << config_json << std::endl;
+    SetSettingsFromJSON(config_json);
 }
 
-void ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
+json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
     std::ifstream ifs(json_file_path, std::ifstream::in);
     json j;
     try {
         j = json::parse(ifs);
-        SetSettingsFromJSON(j);
     } catch (json::exception err) {
         spdlog::warn("Config file {} has problems, please check", json_file_path);
         spdlog::warn(err.what());
     }
+    return j;
 }
 
 void ProgramSettings::SetSettingsFromJSON(const json& j) {

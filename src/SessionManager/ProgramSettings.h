@@ -44,7 +44,7 @@ struct ProgramSettings {
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
     void CommandLineSettings(int argc, char** argv);
-    void JSONConfigSettings(const std::string& fsp);
+    nlohmann::json JSONConfigSettings(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
 
     auto GetTuple() const {
