@@ -40,7 +40,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (argc > 1) {
         spdlog::info("Using command-line settings");
     }
-    CommandLineSettings(argc, argv);
+    ApplyCommandLineSettings(argc, argv);
 
     const fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
     const fs::path system_settings_path = "/etc/carta/backend.json";
@@ -50,7 +50,6 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         spdlog::info("System settings found");
         settings = JSONConfigSettings(system_settings_path.string());
         system_settings_json_exists = true;
-        std::cout << settings << std::endl;
     }
 
     if (fs::exists(user_settings_path) && !no_user_config) {
@@ -61,7 +60,6 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         }
         auto user_settings = JSONConfigSettings(user_settings_path.string());
         user_settings_json_exists = true;
-        std::cout << user_settings << std::endl;
         settings.merge_patch(user_settings); // user on top of system
     }
 
@@ -69,8 +67,6 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
         SetSettingsFromJSON(settings);
     }
-
-    std::cout << settings << std::endl;
 }
 
 json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
@@ -133,7 +129,7 @@ void ProgramSettings::SetSettingsFromJSON(const json& j) {
     }
 }
 
-void ProgramSettings::CommandLineSettings(int argc, char** argv) {
+void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
     vector<string> positional_arguments;
 
     cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");

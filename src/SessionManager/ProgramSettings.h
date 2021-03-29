@@ -47,7 +47,7 @@ struct ProgramSettings {
 
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
-    void CommandLineSettings(int argc, char** argv);
+    void ApplyCommandLineSettings(int argc, char** argv);
     nlohmann::json JSONConfigSettings(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
 

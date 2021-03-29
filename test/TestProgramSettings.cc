@@ -35,7 +35,7 @@ public:
         }
 
         carta::ProgramSettings settings;
-        settings.CommandLineSettings(argVector.size(), cstrings.data());
+        settings.ApplyCommandLineSettings(argVector.size(), cstrings.data());
         return std::move(settings);
     }
 
@@ -219,9 +219,6 @@ TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
-    // auto settings = SettingsFromString(
-    //     "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
-    //     " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth");
     auto json_string = R"(
     {
         "verbosity": 6,
