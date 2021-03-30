@@ -12,6 +12,7 @@
 
 #include <uWebSockets/HttpContext.h>
 
+#include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/region_stats.pb.h>
@@ -43,7 +44,13 @@ CARTA::FileType GetCartaFileType(const std::string& filename);
 int GetStokesValue(const CARTA::StokesType& stokes_type);
 CARTA::StokesType GetStokesType(int stokes_value);
 
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
+
 // ************ Data Stream Helpers *************
+
+void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
+
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,

@@ -89,46 +89,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 }
 
                 if (!use_fits_header) {
-                    bool prefer_velocity(false), optical_velocity(false);
-                    bool prefer_wavelength(false), air_wavelength(false);
-                    if (coord_sys.hasSpectralAxis()) { // prefer spectral axis native type
-                        casacore::SpectralCoordinate::SpecType native_type;
-                        if (image->imageType() == "CartaMiriadImage") { // workaround to get correct native type
-                            CartaMiriadImage* miriad_image = static_cast<CartaMiriadImage*>(image);
-                            native_type = miriad_image->NativeType();
-                        } else {
-                            native_type = coord_sys.spectralCoordinate().nativeType();
-                        }
-                        switch (native_type) {
-                            case casacore::SpectralCoordinate::FREQ: {
-                                break;
-                            }
-                            case casacore::SpectralCoordinate::VRAD:
-                            case casacore::SpectralCoordinate::BETA: {
-                                prefer_velocity = true;
-                                break;
-                            }
-                            case casacore::SpectralCoordinate::VOPT: {
-                                prefer_velocity = true;
-
-                                // Check doppler type; oddly, native type can be VOPT but doppler is RADIO--?
-                                casacore::MDoppler::Types vel_doppler(coord_sys.spectralCoordinate().velocityDoppler());
-                                if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
-                                    optical_velocity = true;
-                                }
-                                break;
-                            }
-                            case casacore::SpectralCoordinate::WAVE: {
-                                prefer_wavelength = true;
-                                break;
-                            }
-                            case casacore::SpectralCoordinate::AWAV: {
-                                prefer_wavelength = true;
-                                air_wavelength = true;
-                                break;
-                            }
-                        }
-                    }
+                    bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
+                    GetSpectralCoordPreferences(image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
 
                     // Get image headers in FITS format
                     casacore::String error_string, origin_string;
