@@ -254,7 +254,7 @@ sending messages to the backend).
         }
     }
 
-    // produce JSON for over-ridding system and user configuration;
+    // produce JSON for overridding system and user configuration;
     // Options here need to match all options available for system and user settings
     command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
     const std::vector<std::string> int_keys = {
