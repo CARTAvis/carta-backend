@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+#include "Logger/Logger.h"
 #include "Moment/ImageMoments.h"
 #include "Util.h"
 
@@ -34,6 +35,13 @@ public:
             path = fs::current_path();
         }
         return (path / "data/images/casa" / filename).string();
+    }
+
+    static bool Exists(const fs::path& p, fs::file_status s = fs::file_status{}) {
+        if (fs::status_known(s) ? fs::exists(s) : fs::exists(p)) {
+            return true;
+        }
+        return false;
     }
 
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
@@ -76,10 +84,8 @@ public:
                 // copy of data if necessary
                 bool del_mask_ptr;
                 const bool* cursor_mask_ptr = cursor_mask.getStorage(del_mask_ptr);
-
                 bool del_data_ptr;
                 float* masked_data_ptr = masked_data.getStorage(del_data_ptr);
-
                 for (size_t i = 0; i < cursor_data.nelements(); ++i) {
                     if (!cursor_mask_ptr[i]) {
                         masked_data_ptr[i] = std::numeric_limits<float>::min();
@@ -100,7 +106,8 @@ public:
 
     static void CompareImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image1,
         std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image2) {
-        std::vector<float> data1, data2;
+        std::vector<float> data1;
+        std::vector<float> data2;
         GetImageData(image1, data1);
         GetImageData(image2, data2);
         if (data1.size() == data2.size()) {
@@ -112,40 +119,70 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    auto image = std::make_unique<casacore::PagedImage<float>>(ImagePath("M17_SWex.image"));
+    string file_name = ImagePath("M17_SWex.image");
 
-    casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
-    casacore::LogIO casa_os(casa_log);
-    casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
-    casacore::LogIO carta_os(carta_log);
+    if (Exists(file_name)) {
+        // open an image file
+        auto image = std::make_unique<casacore::PagedImage<float>>(file_name);
 
-    casa::ImageMoments<float> casa_image_moments(*image, casa_os, true);
-    carta::ImageMoments<float> carta_image_moments(*image, carta_os, true);
+        // create casa/carta moments generators
+        casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
+        casacore::LogIO casa_os(casa_log);
+        casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
+        casacore::LogIO carta_os(carta_log);
+        casa::ImageMoments<float> casa_image_moments(*image, casa_os, true);
+        carta::ImageMoments<float> carta_image_moments(*image, carta_os, true);
 
-    casacore::Vector<casacore::Int> moments(1, 1); // set moment types
-    int axis = 2;                                  // set spectral axis
-    casacore::Vector<float> include_pix;
-    casacore::Vector<float> exclude_pix;
-    casacore::Bool do_temp = true;
-    casacore::Bool remove_axis = false;
+        // set moment types
+        casacore::Vector<casacore::Int> moments(12);
+        moments[0] = 1;
+        moments[1] = 0;
+        moments[2] = 2;
+        moments[3] = 3;
+        moments[4] = 4;
+        moments[5] = 6;
+        moments[6] = 7;
+        moments[7] = 8;
+        moments[8] = 9;
+        moments[9] = 10;
+        moments[10] = 11;
+        moments[11] = 12;
 
-    casa_image_moments.setMoments(moments);
-    casa_image_moments.setMomentAxis(axis);
-    casa_image_moments.setInExCludeRange(include_pix, exclude_pix);
-    auto casa_results = casa_image_moments.createMoments(do_temp, "casa_image_moments", remove_axis);
+        // set spectral or stokes axis
+        int axis = 2;
 
-    carta_image_moments.setMoments(moments);
-    carta_image_moments.setMomentAxis(axis);
-    carta_image_moments.setInExCludeRange(include_pix, exclude_pix);
-    auto carta_results = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
+        // the other settings
+        casacore::Vector<float> include_pix;
+        casacore::Vector<float> exclude_pix;
+        casacore::Bool do_temp = true;
+        casacore::Bool remove_axis = false;
 
-    EXPECT_EQ(casa_results.size(), carta_results.size());
+        // calculate moments with casa moment generator
+        casa_image_moments.setMoments(moments);
+        casa_image_moments.setMomentAxis(axis);
+        casa_image_moments.setInExCludeRange(include_pix, exclude_pix);
+        auto casa_results = casa_image_moments.createMoments(do_temp, "casa_image_moments", remove_axis);
 
-    for (int i = 0; i < casa_results.size(); ++i) {
-        auto casa_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(casa_results[i]);
-        auto carta_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(carta_results[i]);
+        // calculate moments with carta moment generator
+        carta_image_moments.setMoments(moments);
+        carta_image_moments.setMomentAxis(axis);
+        carta_image_moments.setInExCludeRange(include_pix, exclude_pix);
+        auto carta_results = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
 
-        EXPECT_EQ(casa_moment_image->shape().size(), carta_moment_image->shape().size());
-        CompareImageData(casa_moment_image, carta_moment_image);
+        // check the consistency of casa/carta results
+        EXPECT_EQ(casa_results.size(), carta_results.size());
+        EXPECT_EQ(carta_results.size(), moments.size());
+
+        for (int i = 0; i < casa_results.size(); ++i) {
+            auto casa_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(casa_results[i]);
+            auto carta_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(carta_results[i]);
+
+            EXPECT_EQ(casa_moment_image->shape().size(), carta_moment_image->shape().size());
+            CompareImageData(casa_moment_image, carta_moment_image);
+        }
+    } else {
+        std::size_t found = file_name.find_last_of("/");
+        std::string file_base_name = file_name.substr(found + 1);
+        spdlog::warn("File {} does not exists! Ignore the Moment test: CheckConsistency.", file_base_name);
     }
 }
