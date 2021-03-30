@@ -257,50 +257,24 @@ sending messages to the backend).
     // produce JSON for over-ridding system and user configuration;
     // Options here need to match all options available for system and user settings
     command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
-    if (result.count("verbosity")) {
-        command_line_settings["verbosity"] = result["verbosity"].as<int>();
+    const std::vector<std::string> int_keys = {
+        "verbosity", "port", "grpc_port", "omp_threads", "exit_timeout", "initial_timeout", "idle_timeout"};
+    const std::vector<std::string> bool_keys = {"no_log", "log_performance", "log_protocol_messages", "no_http", "no_browser"};
+    const std::vector<std::string> string_keys = {"host", "top_level_folder", "frontend_folder"};
+    for (const auto& key : int_keys) {
+        if (result.count(key)) {
+            command_line_settings[key] = result[key].as<int>();
+        }
     }
-    if (result.count("no_log")) {
-        command_line_settings["no_log"] = result["no_log"].as<bool>();
+    for (const auto& key : bool_keys) {
+        if (result.count(key)) {
+            command_line_settings[key] = result[key].as<bool>();
+        }
     }
-    if (result.count("log_performance")) {
-        command_line_settings["log_performance"] = result["log_performance"].as<bool>();
-    }
-    if (result.count("log_protocol_messages")) {
-        command_line_settings["log_protocol_messages"] = result["log_protocol_messages"].as<bool>();
-    }
-    if (result.count("no_http")) {
-        command_line_settings["no_http"] = result["no_http"].as<bool>();
-    }
-    if (result.count("no_browser")) {
-        command_line_settings["no_browser"] = result["no_browser"].as<bool>();
-    }
-    if (result.count("host")) {
-        command_line_settings["host"] = result["host"].as<std::string>();
-    }
-    if (result.count("port")) {
-        command_line_settings["port"] = result["port"].as<int>();
-    }
-    if (result.count("grpc_port")) {
-        command_line_settings["grpc_port"] = result["grpc_port"].as<int>();
-    }
-    if (result.count("omp_threads")) {
-        command_line_settings["omp_thread_count"] = result["omp_threads"].as<int>();
-    }
-    if (result.count("top_level_folder")) {
-        command_line_settings["top_level_folder"] = result["top_level_folder"].as<std::string>();
-    }
-    if (result.count("frontend_folder")) {
-        command_line_settings["frontend_folder"] = result["frontend_folder"].as<std::string>();
-    }
-    if (result.count("exit_timeout")) {
-        command_line_settings["wait_time"] = result["exit_timeout"].as<int>();
-    }
-    if (result.count("initial_timeout")) {
-        command_line_settings["init_wait_time"] = result["initial_timeout"].as<int>();
-    }
-    if (result.count("idle_timeout")) {
-        command_line_settings["idle_session_wait_time"] = result["idle_timeout"].as<int>();
+    for (const auto& key : string_keys) {
+        if (result.count(key)) {
+            command_line_settings[key] = result[key].as<std::string>();
+        }
     }
 }
 
