@@ -119,7 +119,7 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    string file_name = ImagePath("M17_SWex.image");
+    string file_name = ImagePath("SDC335.579-0.292.spw0.line.image");
 
     if (Exists(file_name)) {
         // open an image file
@@ -135,18 +135,18 @@ TEST_F(MomentTest, CheckConsistency) {
 
         // set moment types
         casacore::Vector<casacore::Int> moments(12);
-        moments[0] = 1;
-        moments[1] = 0;
-        moments[2] = 2;
-        moments[3] = 3;
-        moments[4] = 4;
-        moments[5] = 6;
-        moments[6] = 7;
-        moments[7] = 8;
-        moments[8] = 9;
-        moments[9] = 10;
-        moments[10] = 11;
-        moments[11] = 12;
+        moments[0] = 0;   // AVERAGE
+        moments[1] = 1;   // INTEGRATED
+        moments[2] = 2;   // WEIGHTED_MEAN_COORDINATE
+        moments[3] = 3;   // WEIGHTED_DISPERSION_COORDINATE
+        moments[4] = 4;   // MEDIAN
+        moments[5] = 6;   // STANDARD_DEVIATION
+        moments[6] = 7;   // RMS
+        moments[7] = 8;   // ABS_MEAN_DEVIATION
+        moments[8] = 9;   // MAXIMUM
+        moments[9] = 10;  // MAXIMUM_COORDINATE
+        moments[10] = 11; // MINIMUM
+        moments[11] = 12; // MINIMUM_COORDINATE
 
         // set spectral or stokes axis
         int axis = 2;
