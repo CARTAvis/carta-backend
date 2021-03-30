@@ -82,51 +82,21 @@ json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
 }
 
 void ProgramSettings::SetSettingsFromJSON(const json& j) {
-    if (j.contains("verbosity")) {
-        verbosity = j.at("verbosity");
-    }
-    if (j.contains("no_log")) {
-        no_log = j.at("no_log");
-    }
-    if (j.contains("log_performance")) {
-        log_performance = j.at("log_performance");
-    }
-    if (j.contains("log_protocol_messages")) {
-        log_protocol_messages = j.at("log_protocol_messages");
-    }
-    if (j.contains("no_http")) {
-        no_http = j.at("no_http");
-    }
-    if (j.contains("no_browser")) {
-        no_browser = j.at("no_browser");
-    }
-    if (j.contains("host")) {
-        host = j.at("host");
-    }
-    if (j.contains("port")) {
-        port = j.at("port");
-    }
-    if (j.contains("grpc_port")) {
-        grpc_port = j.at("grpc_port");
-    }
-    if (j.contains("omp_threads")) {
-        omp_thread_count = j.at("omp_threads");
-    }
-    if (j.contains("top_level_folder")) {
-        top_level_folder = j.at("top_level_folder");
-    }
-    if (j.contains("frontend_folder")) {
-        frontend_folder = j.at("frontend_folder");
-    }
-    if (j.contains("exit_timeout")) {
-        wait_time = j.at("exit_timeout");
-    }
-    if (j.contains("initial_timeout")) {
-        init_wait_time = j.at("initial_timeout");
-    }
-    if (j.contains("idle_timeout")) {
-        idle_session_wait_time = j.at("idle_timeout");
-    }
+    verbosity = j.value("verbosity", verbosity);
+    no_log = j.value("no_log", no_log);
+    log_performance = j.value("log_performance", log_performance);
+    log_protocol_messages = j.value("log_protocol_messages", log_protocol_messages);
+    no_http = j.value("no_http", no_http);
+    no_browser = j.value("no_browser", no_browser);
+    host = j.value("host", host);
+    port = j.value("port", port);
+    grpc_port = j.value("grpc_port", grpc_port);
+    omp_thread_count = j.value("omp_threads", omp_thread_count);
+    top_level_folder = j.value("top_level_folder", top_level_folder);
+    frontend_folder = j.value("frontend_folder", frontend_folder);
+    wait_time = j.value("exit_timeout", wait_time);
+    init_wait_time = j.value("initial_timeout", init_wait_time);
+    idle_session_wait_time = j.value("idle_timeout", idle_session_wait_time);
 }
 
 void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
