@@ -34,8 +34,11 @@ public:
     void GetHduList(std::vector<std::string>& hdu_list);
 
 private:
+    // Using casacore
     bool IsImageHdu(casacore::FITS::HDUType hdu_type);
     void GetFitsHduInfo(casacore::FitsInput& fits_input, int& ndim, std::string& ext_name);
+    // Using cfitsio
+    void CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu_list);
 
     std::string _filename;
 };

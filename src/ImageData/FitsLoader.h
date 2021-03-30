@@ -7,8 +7,10 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
+#include <casacore/fits/FITS/fitsio.h>
 #include <casacore/images/Images/FITSImage.h>
 
+//#include "CompressedFitsImage.h"
 #include "FileLoader.h"
 
 namespace carta {
@@ -31,10 +33,33 @@ FitsLoader::FitsLoader(const std::string& filename) : FileLoader(filename) {}
 
 void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
+
     if (!_image || (hdu_num != _hdu)) {
-        _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        // Advance to input hdu
+        casacore::FitsInput fin(_filename.c_str(), casacore::FITS::Disk);
+        for (auto i = 0; i < hdu_num; ++i) {
+            fin.skip_hdu();
+        }
+
+        // Determine compression, not handled by casacore::FitsImage
+        fitsfile* fptr = fin.getfptr();
+        int status;
+        bool compressed = fits_is_compressed_image(fptr, &status);
+
+        if (compressed) {
+            throw(casacore::AipsError("Error opening compressed image."));
+            //_image.reset(new carta::CompressedFitsImage(_filename, 0, hdu_num, compressed));
+        } else {
+            try {
+                _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+            } catch (const casacore::AipsError& err) {
+                spdlog::debug(err.getMesg());
+                throw(casacore::AipsError("Error opening image."));
+            }
+        }
+
         if (!_image) {
-            throw(casacore::AipsError("Error opening image"));
+            throw(casacore::AipsError("Error opening image."));
         }
 
         _hdu = hdu_num;

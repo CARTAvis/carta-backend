@@ -316,7 +316,6 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     } else {
         // log error
         spdlog::error(message);
-        message += " Check log for error.";
     }
 
     // complete response message
