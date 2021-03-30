@@ -10,72 +10,42 @@
 #ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
 
-#include <imageanalysis/ImageAnalysis/ImageTask.h>
-
 #include <casa/Arrays/Array.h>
+#include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/IPosition.h>
+#include <casa/Arrays/Matrix.h>
+#include <casa/Arrays/Vector.h>
+#include <casa/Exceptions/Error.h>
+#include <casa/Logging/LogIO.h>
+#include <casa/Quanta/MVAngle.h>
+#include <casa/Quanta/QLogical.h>
 #include <casa/Quanta/Quantum.h>
+#include <casa/Quanta/Unit.h>
 #include <casa/aips.h>
+#include <casa/iostream.h>
+#include <components/ComponentModels/GaussianDeconvolver.h>
+#include <components/ComponentModels/GaussianShape.h>
+#include <components/ComponentModels/SkyComponentFactory.h>
+#include <coordinates/Coordinates/CoordinateSystem.h>
+#include <coordinates/Coordinates/CoordinateUtil.h>
+#include <coordinates/Coordinates/DirectionCoordinate.h>
+#include <imageanalysis/ImageAnalysis/ImageConvolver.h>
+#include <imageanalysis/ImageAnalysis/ImageMetaData.h>
+#include <imageanalysis/ImageAnalysis/ImageTask.h>
+#include <images/Images/ImageInfo.h>
+#include <images/Images/ImageInterface.h>
+#include <images/Images/ImageUtilities.h>
+#include <images/Images/PagedImage.h>
+#include <images/Images/SubImage.h>
+#include <images/Images/TempImage.h>
+#include <lattices/LatticeMath/Fit2D.h>
+#include <scimath/Functionals/Gaussian2D.h>
+#include <scimath/Mathematics/Convolver.h>
 #include <scimath/Mathematics/VectorKernel.h>
 
-namespace casacore {
-
-template <class T>
-class ImageInterface;
-template <class T>
-class Matrix;
-template <class T>
-class Vector;
-class String;
-class IPosition;
-class CoordinateSystem;
-class ImageInfo;
-class Unit;
-class GaussianBeam;
-
-} // namespace casacore
+#include <memory>
 
 namespace carta {
-
-// <summary>
-// This class does 2D convolution of an image by a functional form
-// </summary>
-
-// <use visibility=export>
-
-// <reviewed reviewer="" date="yyyy/mm/dd" tests="" demos="">
-// </reviewed>
-
-// <prerequisite>
-//   <li> <linkto class="casacore::ImageInterface">casacore::ImageInterface</linkto>
-//   <li> <linkto class="casacore::Convolver">casacore::Convolver</linkto>
-// </prerequisite>
-
-// <etymology>
-// This class handles 2D convolution of images
-// </etymology>
-
-// <synopsis>
-// This class convolves an image by a specified 2D function.
-// </synopsis>
-
-// <example>
-// <srcBlock>
-// </srcBlock>
-// </example>
-
-// <motivation>
-// Convolution is a standard image processing requirement.  The
-// class object has no state.
-// The convolution is done via FFT.  Thus input pixels which
-// are masked are set to 0 before the convolution.  The mask
-// is transferred to the output image.  No additional scaling
-// of the output image values is done.
-//
-// </motivation>
-
-// <todo asof="2001/08/28">
-//   <li>
-// </todo>
 
 template <class T>
 class Image2DConvolver : public casa::ImageTask<T> {

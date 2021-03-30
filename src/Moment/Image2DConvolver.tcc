@@ -10,39 +10,6 @@
 #ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
-#include <casa/Arrays/Array.h>
-#include <casa/Arrays/ArrayMath.h>
-#include <casa/Arrays/IPosition.h>
-#include <casa/Arrays/Matrix.h>
-#include <casa/Arrays/Vector.h>
-#include <casa/Exceptions/Error.h>
-#include <casa/Logging/LogIO.h>
-#include <casa/Quanta/MVAngle.h>
-#include <casa/Quanta/QLogical.h>
-#include <casa/Quanta/Quantum.h>
-#include <casa/Quanta/Unit.h>
-#include <casa/aips.h>
-#include <casa/iostream.h>
-#include <components/ComponentModels/GaussianDeconvolver.h>
-#include <components/ComponentModels/GaussianShape.h>
-#include <components/ComponentModels/SkyComponentFactory.h>
-#include <coordinates/Coordinates/CoordinateSystem.h>
-#include <coordinates/Coordinates/CoordinateUtil.h>
-#include <coordinates/Coordinates/DirectionCoordinate.h>
-#include <imageanalysis/ImageAnalysis/ImageConvolver.h>
-#include <imageanalysis/ImageAnalysis/ImageMetaData.h>
-#include <images/Images/ImageInfo.h>
-#include <images/Images/ImageInterface.h>
-#include <images/Images/ImageUtilities.h>
-#include <images/Images/PagedImage.h>
-#include <images/Images/SubImage.h>
-#include <images/Images/TempImage.h>
-#include <lattices/LatticeMath/Fit2D.h>
-#include <scimath/Functionals/Gaussian2D.h>
-#include <scimath/Mathematics/Convolver.h>
-
-#include <memory>
-
 using namespace carta;
 
 template <class T>
