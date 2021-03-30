@@ -5,7 +5,7 @@
 */
 
 //
-// Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
+// Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
 //
 #ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 #define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
@@ -15,7 +15,7 @@ using namespace carta;
 template <class T>
 ImageMoments<T>::ImageMoments(
     const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output, casacore::Bool show_progress)
-    : casa::MomentsBase<T>(os, over_write_output, show_progress), _stop(false) {
+    : casa::MomentsBase<T>(os, over_write_output, show_progress), _stop(false), _image_2d_convolver(nullptr) {
     SetNewImage(image);
 }
 
@@ -61,17 +61,22 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         os_p << casacore::LogIO::NORMAL << "The input image has multiple beams so each "
              << "plane will be convolved to the largest beam size " << max_beam << " prior to calculating moments" << casacore::LogIO::POST;
 
-        carta::Image2DConvolver<casacore::Float> convolver(_image, nullptr, "", "", false);
+        // reset the image 2D convolver
+        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false));
+
+        // set parameters for the image 2D convolver
         auto dir_axes = _image->coordinates().directionAxesNumbers();
-        convolver.setAxes(std::make_pair(dir_axes[0], dir_axes[1]));
-        convolver.setKernel("gaussian", max_beam.getMajor(), max_beam.getMinor(), max_beam.getPA(true));
-        convolver.setScale(-1);
-        convolver.setTargetRes(true);
-        auto image_copy = convolver.convolve();
+        _image_2d_convolver->setAxes(std::make_pair(dir_axes[0], dir_axes[1]));
+        _image_2d_convolver->setKernel("gaussian", max_beam.getMajor(), max_beam.getMinor(), max_beam.getPA(true));
+        _image_2d_convolver->setScale(-1);
+        _image_2d_convolver->setTargetRes(true);
+        auto image_copy = _image_2d_convolver->convolve(); // do long calculation
 
         // Replace the input image pointer with the convolved image pointer and proceed using the convolved image as if it were the input
         // image
-        _image = image_copy;
+        if (!_stop) { // check cancellation
+            _image = image_copy;
+        }
     }
 
     worldMomentAxis_p = _image->coordinates().pixelAxisToWorldAxis(momentAxis_p);
@@ -182,7 +187,13 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     casacore::CoordinateSystem csys = _image->coordinates();
     casacore::Int spectralAxis = csys.spectralAxisNumber(false);
     if (momentAxis_p == momentAxisDefault_p) {
-        this->setMomentAxis(spectralAxis);
+        this->setMomentAxis(spectralAxis); // this step will do 2D convolve for a per plane beam image
+
+        // check whether the calculation is cancelled
+        if (_stop) {
+            return std::vector<std::shared_ptr<casacore::MaskedLattice<T>>>();
+        }
+
         if (_image->shape()(momentAxis_p) <= 1) {
             goodParameterStatus_p = false;
             throw casacore::AipsError("Illegal moment axis; it has only 1 pixel");
@@ -522,6 +533,9 @@ void ImageMoments<T>::SetProgressMonitor(casa::ImageMomentsProgressMonitor* moni
 template <class T>
 void ImageMoments<T>::StopCalculation() {
     _stop = true;
+    if (_image_2d_convolver) {
+        _image_2d_convolver->StopCalculation();
+    }
 }
 
 template <class T>

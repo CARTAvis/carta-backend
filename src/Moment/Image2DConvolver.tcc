@@ -24,6 +24,9 @@
 //#                        Charlottesville, VA 22903-2475 USA
 //#
 
+//
+// Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/Image2DConvolver.tcc"
+//
 #ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
@@ -74,7 +77,8 @@ Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record
       _major(),
       _minor(),
       _pa(),
-      _axes(image->coordinates().directionAxesNumbers()) {
+      _axes(image->coordinates().directionAxesNumbers()),
+      _stop(false) {
     this->_construct(true);
 }
 
@@ -125,6 +129,8 @@ void Image2DConvolver<T>::setKernel(
 
 template <class T>
 SPIIT Image2DConvolver<T>::convolve() {
+    _stop = false; // reset the flag for cancellation
+
     ThrowIf(_axes.nelements() != 2, "You must give two pixel axes to convolve");
 
     auto inc = this->_getImage()->coordinates().increment();
@@ -366,6 +372,10 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
 
     casacore::uInt count = (nChan > 0 && nPol > 0) ? nChan * nPol : nChan > 0 ? nChan : nPol;
     for (casacore::uInt i = 0; i < count; ++i) {
+        if (_stop) { // cancel calculations
+            break;
+        }
+
         if (nChan > 0) {
             channel = i % nChan;
             start[specAxis] = channel;
@@ -806,6 +816,11 @@ void Image2DConvolver<T>::_fillGaussian(Double& maxVal, Double& volume, casacore
             volume += val;
         }
     }
+}
+
+template <class T>
+void Image2DConvolver<T>::StopCalculation() {
+    _stop = true;
 }
 
 #endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_

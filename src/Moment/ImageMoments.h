@@ -5,7 +5,7 @@
 */
 
 //
-// Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.h"
+// Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/ImageMoments.h"
 //
 #ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_
 #define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_
@@ -72,6 +72,7 @@ public:
 private:
     SPCIIT _image = SPCIIT(nullptr);
     casa::ImageMomentsProgressMonitor* _progress_monitor = nullptr;
+    std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
 
     casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
 

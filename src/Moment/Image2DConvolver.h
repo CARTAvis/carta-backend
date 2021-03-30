@@ -25,6 +25,9 @@
 //#
 //# $Id: Image2DConvolver.h 20229 2008-01-29 15:19:06Z gervandiepen $
 
+//
+// Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/Image2DConvolver.h"
+//
 #ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
 
@@ -138,6 +141,8 @@ public:
         _suppressWarnings = b;
     }
 
+    void StopCalculation(); // cancel calculations
+
 protected:
     casa::CasacRegionManager::StokesControl _getStokesControl() const {
         return casa::CasacRegionManager::USE_ALL_STOKES;
@@ -158,6 +163,7 @@ private:
     casacore::IPosition _axes;
     casacore::Bool _targetres = casacore::False;
     casacore::Bool _suppressWarnings = casacore::False;
+    volatile bool _stop; // used for cancellation
 
     void _checkKernelParameters(
         casacore::VectorKernel::KernelTypes kernelType, const casacore::Vector<casacore::Quantity>& parameters) const;
