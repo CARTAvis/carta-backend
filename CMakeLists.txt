@@ -6,7 +6,9 @@ include_directories(src)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
@@ -198,6 +200,9 @@ install(TARGETS carta_backend
 
 install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
     DESTINATION bin)
+
+install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
+    DESTINATION share/carta)
 
 # Tests
 option(test "Build tests." OFF)

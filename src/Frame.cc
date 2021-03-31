@@ -1522,10 +1522,31 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
 // Input message as a return message, which may contain error message
 // Return a bool if this functionality success
 bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
-    // Remove the old image file if it has a same file name
-    return casacore::ImageFITSConverter::ImageToFITS(message, image, output_filename.string(), 64, casacore::False, casacore::True, -32,
-        1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False, casacore::String(),
-        casacore::True);
+    bool success = false;
+    bool prefer_velocity;
+    bool optical_velocity;
+    bool prefer_wavelength;
+    bool air_wavelength;
+    GetSpectralCoordPreferences(&image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
+
+    casacore::String error_string;
+    casacore::String origin_string;
+    bool allow_overwrite(true);
+    bool degenerate_last(false);
+    bool verbose(true);
+    bool stokes_last(false);
+    bool history(true);
+    const int bit_pix(-32);
+    const float min_pix(1.0);
+    const float max_pix(-1.0);
+    if (casacore::ImageFITSConverter::ImageToFITS(error_string, image, output_filename.string(), 64, prefer_velocity, optical_velocity,
+            bit_pix, min_pix, max_pix, allow_overwrite, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength,
+            origin_string, history)) {
+        success = true;
+    } else {
+        message = error_string;
+    }
+    return success;
 }
 
 // Validate channels & stokes, if it starts from 0 and ends in the maximum range
