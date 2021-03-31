@@ -92,6 +92,8 @@ public:
 
     void StopCalculation(); // cancel calculations
 
+    void SetProgressMeter(casacore::LatticeProgress* progress_meter);
+
 protected:
     casa::CasacRegionManager::StokesControl _getStokesControl() const {
         return casa::CasacRegionManager::USE_ALL_STOKES;
@@ -112,7 +114,8 @@ private:
     casacore::IPosition _axes;
     casacore::Bool _targetres = casacore::False;
     casacore::Bool _suppressWarnings = casacore::False;
-    volatile bool _stop; // used for cancellation
+    volatile bool _stop;                        // used for cancellation
+    casacore::LatticeProgress* _progress_meter; // used to report the progress
 
     void _checkKernelParameters(
         casacore::VectorKernel::KernelTypes kernelType, const casacore::Vector<casacore::Quantity>& parameters) const;

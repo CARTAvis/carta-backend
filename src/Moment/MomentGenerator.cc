@@ -40,6 +40,12 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
     // Calculate moments
     try {
+        // Start the timer
+        _start_time = std::chrono::high_resolution_clock::now();
+
+        // Reset the first progress report
+        _first_report = false;
+
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
         } else {
@@ -53,12 +59,6 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                 std::string file_base_name = out_file.substr(found + 1);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
-
-                    // Start the timer
-                    _start_time = std::chrono::high_resolution_clock::now();
-
-                    // Reset the first progress report
-                    _first_report = false;
 
                     // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);

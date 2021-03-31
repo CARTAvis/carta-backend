@@ -25,7 +25,8 @@ Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record
       _minor(),
       _pa(),
       _axes(image->coordinates().directionAxesNumbers()),
-      _stop(false) {
+      _stop(false),
+      _progress_meter(nullptr) {
     this->_construct(true);
 }
 
@@ -318,9 +319,17 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
     }
 
     casacore::uInt count = (nChan > 0 && nPol > 0) ? nChan * nPol : nChan > 0 ? nChan : nPol;
+    if (_progress_meter) {
+        _progress_meter->init(count);
+    }
+
     for (casacore::uInt i = 0; i < count; ++i) {
         if (_stop) { // cancel calculations
             break;
+        }
+
+        if (_progress_meter) {
+            _progress_meter->nstepsDone(i);
         }
 
         if (nChan > 0) {
@@ -446,6 +455,10 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
         if (!_targetres) {
             iiOut.setBeam(channel, polarization, beamOut);
         }
+    }
+
+    if (_progress_meter) {
+        _progress_meter->done();
     }
 }
 
@@ -768,6 +781,11 @@ void Image2DConvolver<T>::_fillGaussian(Double& maxVal, Double& volume, casacore
 template <class T>
 void Image2DConvolver<T>::StopCalculation() {
     _stop = true;
+}
+
+template <class T>
+void Image2DConvolver<T>::SetProgressMeter(casacore::LatticeProgress* progress_meter) {
+    _progress_meter = progress_meter;
 }
 
 #endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_

@@ -64,6 +64,13 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         // reset the image 2D convolver
         _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false));
 
+        // set the progress meter
+        auto progress_meter = std::make_unique<casa::ImageMomentsProgress>();
+        if (_progress_monitor) {
+            progress_meter->setProgressMonitor(_progress_monitor);
+        }
+        _image_2d_convolver->SetProgressMeter(progress_meter.get());
+
         // set parameters for the image 2D convolver
         auto dir_axes = _image->coordinates().directionAxesNumbers();
         _image_2d_convolver->setAxes(std::make_pair(dir_axes[0], dir_axes[1]));
