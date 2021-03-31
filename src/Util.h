@@ -59,6 +59,15 @@ std::string IPAsText(std::string_view binary);
 
 std::string GetAuthToken(uWS::HttpRequest* http_request);
 
+// ************ Region Helpers *************
+
+inline std::string RegionName(CARTA::RegionType type) {
+    std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::RegionType::POINT, "point"},
+        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::RECTANGLE, "rectangle"},
+        {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "annulus"}, {CARTA::RegionType::POLYGON, "polygon"}};
+    return region_names[type];
+}
+
 // ************ structs *************
 //
 // Usage of the AxisRange:
