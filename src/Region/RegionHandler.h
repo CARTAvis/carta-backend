@@ -101,7 +101,7 @@ private:
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
-    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
@@ -128,7 +128,7 @@ private:
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
     std::mutex _spectral_mutex;
 
-    // Cache; CacheId key contains file, region, stokes, (optional) channel
+    // Cache; CacheId key contains file, region, stokes, (optional) z index
     std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;
     std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
     std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;

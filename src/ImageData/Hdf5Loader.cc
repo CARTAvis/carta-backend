@@ -178,12 +178,12 @@ bool Hdf5Loader::GetCursorSpectralData(
     if (has_swizzled) {
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _num_channels, count_y, count_x, 1));
+            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _depth, count_y, count_x, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _num_channels, count_y, count_x));
+            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _depth, count_y, count_x));
         }
 
-        data.resize(_num_channels * count_y * count_x);
+        data.resize(_depth * count_y * count_x);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         std::lock_guard<std::mutex> lguard(image_mutex);
         try {
@@ -204,13 +204,13 @@ bool Hdf5Loader::UseRegionSpectralData(const IPos& region_shape, std::mutex& ima
         return false;
     }
 
-    int num_x = region_shape(0);
-    int num_y = region_shape(1);
-    int num_z = _num_channels;
+    int width = region_shape(0);
+    int height = region_shape(1);
+    int depth = _depth;
 
     // Using the normal dataset may be faster if the region is wider than it is deep.
     // This is an initial estimate; we need to examine casacore's algorithm in more detail.
-    if (num_y * num_z < num_x) {
+    if (height * depth < width) {
         return false;
     }
 
@@ -241,15 +241,15 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         return true;
     }
 
-    int num_x = mask_shape(0);
-    int num_y = mask_shape(1);
-    int num_z = _num_channels;
+    int width = mask_shape(0);
+    int height = mask_shape(1);
+    int depth = _depth;
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(
-            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask_shape, num_z, has_flux));
+            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask_shape, depth, has_flux));
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask_shape)) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
         _region_stats[region_stats_id].shape = mask_shape;
@@ -277,7 +277,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     size_t x_start = _region_stats[region_stats_id].latest_x;
 
     // Set initial values of stats, or those set to NAN in previous iterations
-    for (size_t z = 0; z < num_z; z++) {
+    for (size_t z = 0; z < depth; z++) {
         if ((x_start == 0) || (num_pixels[z] == 0)) {
             min[z] = std::numeric_limits<float>::max();
             max[z] = std::numeric_limits<float>::lowest();
@@ -293,7 +293,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         double sum_z, sum_sq_z;
         uint64_t num_pixels_z;
 
-        for (size_t z = 0; z < num_z; z++) {
+        for (size_t z = 0; z < depth; z++) {
             if (num_pixels[z]) {
                 sum_z = sum[z];
                 sum_sq_z = sum_sq[z];
@@ -323,26 +323,26 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         }
     };
 
-    size_t delta_x = INIT_DELTA_CHANNEL; // since data is swizzled, third axis is x not channel
+    size_t delta_x = INIT_DELTA_Z; // since data is swizzled, third axis is x not z
     size_t max_x = x_start + delta_x;
-    if (max_x > num_x) {
-        max_x = num_x;
+    if (max_x > width) {
+        max_x = width;
     }
     std::vector<float> slice_data;
 
     for (size_t x = x_start; x < max_x; ++x) {
-        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y, image_mutex)) {
+        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, height, image_mutex)) {
             return false;
         }
 
-        for (size_t y = 0; y < num_y; y++) {
+        for (size_t y = 0; y < height; y++) {
             // skip all Z values for masked pixels
             if (!mask.getAt(IPos(2, x, y))) {
                 continue;
             }
 
-            for (size_t z = 0; z < num_z; z++) {
-                double v = slice_data[y * num_z + z];
+            for (size_t z = 0; z < depth; z++) {
+                double v = slice_data[y * depth + z];
 
                 // skip all NaN pixels
                 if (std::isfinite(v)) {
@@ -360,10 +360,10 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     calculate_stats();
 
     results = _region_stats[region_stats_id].stats;
-    if (max_x == num_x) {
+    if (max_x == width) {
         progress = PROFILE_COMPLETE;
     } else {
-        progress = (float)max_x / num_x;
+        progress = (float)max_x / width;
     }
 
     // Update starting x for next time
