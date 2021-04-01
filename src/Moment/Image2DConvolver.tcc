@@ -10,6 +10,8 @@
 #ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
+#include "../Logger/Logger.h"
+
 using namespace carta;
 
 template <class T>
@@ -42,11 +44,11 @@ std::vector<casacore::Quantity> Image2DConvolver<T>::_getConvolvingBeamForTarget
             throw casacore::AipsError();
         }
     } catch (const casacore::AipsError& x) {
-        ostringstream os;
-        os << "Unable to reach target resolution of " << targetBeam << " Input "
-           << "image beam " << inputBeam << " is (nearly) identical to or "
-           << "larger than the output beam size";
-        ThrowCc(os.str());
+        string error = fmt::format(
+            "Unable to reach target resolution of {}. Input image beam {} is (nearly) identical to or larger than the output beam size.",
+            GetGaussianInfo(targetBeam), GetGaussianInfo(inputBeam));
+        spdlog::error(error);
+        ThrowCc(error);
     }
     std::vector<casacore::Quantity> kernelParms{convolvingBeam.getMajor(), convolvingBeam.getMinor(), convolvingBeam.getPA(true)};
 
@@ -185,29 +187,19 @@ void Image2DConvolver<T>::_convolve(SPIIT imageOut, const ImageInterface<T>& ima
 
 template <class T>
 void Image2DConvolver<T>::_logBeamInfo(const ImageInfo& imageInfo, const String& desc) const {
-    ostringstream oss;
     const auto& beamSet = imageInfo.getBeamSet();
+    string message = desc;
 
     if (!imageInfo.hasBeam()) {
-        oss << desc << " has no beam";
+        message += " has no beam";
     } else if (imageInfo.hasSingleBeam()) {
-        oss << desc << " resolution " << beamSet.getBeam();
+        message += fmt::format(" resolution {} ", GetGaussianInfo(beamSet.getBeam()));
     } else {
-        oss << desc << " has multiple beams. Min area beam: " << beamSet.getMinAreaBeam() << ". Max area beam: " << beamSet.getMaxAreaBeam()
-            << ". Median area beam " << beamSet.getMedianAreaBeam();
+        message += fmt::format(" has multiple beams. Min area beam: {}. Max area beam: {}. Median area beam {}",
+            GetGaussianInfo(beamSet.getMinAreaBeam()), GetGaussianInfo(beamSet.getMaxAreaBeam()),
+            GetGaussianInfo(beamSet.getMedianAreaBeam()));
     }
-
-    auto msg = oss.str();
-    LogOrigin lor(getClass(), __func__);
-    this->addHistory(lor, msg);
-    _log(msg, LogIO::NORMAL);
-}
-
-template <class T>
-void Image2DConvolver<T>::_log(const String& msg, LogIO::Command priority) const {
-    if (!_suppressWarnings) {
-        *this->_getLog() << priority << msg << LogIO::POST;
-    }
+    spdlog::debug(message);
 }
 
 template <class T>
@@ -218,24 +210,18 @@ void Image2DConvolver<T>::_doSingleBeam(ImageInfo& iiOut, Double& kernelVolume, 
 
     if (_targetres) {
         kernelParms = _getConvolvingBeamForTargetResolution(originalParms, inputBeam);
-        if (!_suppressWarnings) {
-            *this->_getLog() << LogOrigin("Image2DConvolver<T>", __func__);
-            ostringstream oss;
-            oss << "Convolving image that has a beam of " << inputBeam << " with a Gaussian of " << GaussianBeam(kernelParms)
-                << " to reach a target resolution of " << GaussianBeam(originalParms);
-            _log(oss.str(), LogIO::NORMAL);
-        }
+        spdlog::debug("Convolving image that has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
+            GetGaussianInfo(inputBeam), GetGaussianInfo(GaussianBeam(kernelParms)), GetGaussianInfo(GaussianBeam(originalParms)));
+
         kernelVolume = _makeKernel(kernel, kernelType, kernelParms, imageIn);
     }
 
     const CoordinateSystem& cSys = imageIn.coordinates();
     auto scaleFactor = _dealWithRestoringBeam(
         brightnessUnitOut, beamOut, kernel, kernelVolume, kernelType, kernelParms, cSys, inputBeam, imageIn.units(), true);
-    ostringstream oss;
+    string message;
 
-    if (!_suppressWarnings) {
-        oss << "Scaling pixel values by ";
-    }
+    message += "Scaling pixel values by ";
 
     if (logFactors) {
         if (_targetres) {
@@ -243,16 +229,12 @@ void Image2DConvolver<T>::_doSingleBeam(ImageInfo& iiOut, Double& kernelVolume, 
             factor1 = pixelArea / kernelBeam.getArea("arcsec*arcsec");
         }
         Double factor2 = beamOut.getArea("arcsec*arcsec") / inputBeam.getArea("arcsec*arcsec");
-        if (!_suppressWarnings) {
-            oss << "inverse of area of convolution kernel in pixels (" << factor1 << ") times the ratio of the beam areas (" << factor2
-                << ") = ";
-        }
+        message += fmt::format(
+            "inverse of area of convolution kernel in pixels ({:.6f}) times the ratio of the beam areas ({:.6f}) = ", factor1, factor2);
     }
 
-    if (!_suppressWarnings) {
-        oss << scaleFactor;
-        _log(oss.str(), LogIO::NORMAL);
-    }
+    message += fmt::format("{:.6f}", scaleFactor);
+    spdlog::debug(message);
 
     if (_targetres && near(beamOut.getMajor(), beamOut.getMinor(), 1e-7)) {
         // circular beam should have same PA as given by user if targetres
@@ -275,12 +257,7 @@ void Image2DConvolver<T>::_doSingleBeam(ImageInfo& iiOut, Double& kernelVolume, 
     } else {
         // If one of the axes is in the sky plane, we must delete the restoring beam as it is no longer meaningful
         if (holdsOneSkyAxis) {
-            if (!_suppressWarnings) {
-                oss.str("");
-                oss << "Because you convolved just one of the sky axes" << endl;
-                oss << "The output image does not have a valid spatial restoring beam";
-                _log(oss.str(), LogIO::WARN);
-            }
+            spdlog::warn("Because you convolved just one of the sky axes, the output image does not have a valid spatial restoring beam.");
             iiOut.removeRestoringBeam();
         }
     }
@@ -354,31 +331,31 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
         auto doConvolve = true;
 
         if (_targetres) {
-            *this->_getLog() << LogIO::NORMAL;
+            string message;
 
             if (channel >= 0) {
-                *this->_getLog() << "Channel " << channel << " of " << nChan;
+                message += fmt::format("Channel {} of {}", channel, nChan);
                 if (polarization >= 0) {
-                    *this->_getLog() << ", ";
+                    message += ", ";
                 }
             }
             if (polarization >= 0) {
-                *this->_getLog() << "Polarization " << polarization << " of " << nPol;
+                message += fmt::format("Polarization {} of {}", polarization, nPol);
             }
 
-            *this->_getLog() << " ";
+            message += " ";
 
             if (near(inputBeam, GaussianBeam(originalParms), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
                 doConvolve = false;
-                *this->_getLog() << LogIO::NORMAL << " Input beam is already near target resolution so this "
-                                 << "plane will not be convolved" << LogIO::POST;
+                message += fmt::format("Input beam is already near target resolution so this plane will not be convolved.");
             } else {
                 kernelParms = _getConvolvingBeamForTargetResolution(originalParms, inputBeam);
                 kernelVolume = _makeKernel(kernel, kernelType, kernelParms, imageIn);
-                *this->_getLog() << ": Convolving image which has a beam of " << inputBeam << " with a Gaussian of "
-                                 << GaussianBeam(kernelParms) << " to reach a target "
-                                 << "resolution of " << GaussianBeam(originalParms) << LogIO::POST;
+                message += fmt::format(": Convolving image which has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
+                    GetGaussianInfo(inputBeam), GetGaussianInfo(GaussianBeam(kernelParms)), GetGaussianInfo(GaussianBeam(originalParms)));
             }
+
+            spdlog::debug(message);
         }
 
         casacore::TempImage<T> subImageOut(subImage.shape(), subImage.coordinates());
@@ -386,33 +363,32 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
             auto scaleFactor = _dealWithRestoringBeam(
                 brightnessUnitOut, beamOut, kernel, kernelVolume, kernelType, kernelParms, subCsys, inputBeam, imageIn.units(), i == 0);
             {
-                *this->_getLog() << LogIO::NORMAL << "Scaling pixel values by ";
+                string message("Scaling pixel values by ");
                 if (logFactors) {
                     if (_targetres) {
                         casacore::GaussianBeam kernelBeam(kernelParms);
                         factor1 = pixelArea / kernelBeam.getArea("arcsec*arcsec");
                     }
                     auto factor2 = beamOut.getArea("arcsec*arcsec") / inputBeam.getArea("arcsec*arcsec");
-                    *this->_getLog() << "inverse of area of convolution kernel "
-                                     << "in pixels (" << factor1 << ") times the ratio of "
-                                     << "the beam areas (" << factor2 << ") = ";
+                    message += fmt::format(
+                        "inverse of area of convolution kernel in pixels ({:.6f})  times the ratio of the beam areas ({:.6f}) = ", factor1,
+                        factor2);
                 }
-                *this->_getLog() << scaleFactor << " for ";
+                message += " for ";
                 if (channel >= 0) {
-                    *this->_getLog() << "channel number " << channel;
+                    message += "channel number ";
                     if (polarization >= 0) {
-                        *this->_getLog() << " and ";
+                        message += " and ";
                     }
                 }
                 if (polarization >= 0) {
-                    *this->_getLog() << "polarization number " << polarization;
+                    message += "polarization number ";
                 }
-                *this->_getLog() << casacore::LogIO::POST;
+                spdlog::debug(message);
             }
 
             if (_targetres && near(beamOut.getMajor(), beamOut.getMinor(), 1e-7)) {
-                // circular beam should have same PA as given by user if
-                // targetres
+                // circular beam should have same PA as given by user if targetres
                 beamOut.setPA(originalParms[2]);
             }
 
@@ -420,8 +396,6 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
             casacore::convertArray(modKernel, scaleFactor * kernel);
             casa::ImageConvolver<T> aic;
             aic.convolve(*this->_getLog(), subImageOut, subImage, modKernel, casa::ImageConvolver<T>::NONE, 1.0, true);
-
-            // _doImageConvolver(subImageOut, subImage, scaleFactor*kernel);
         } else {
             brightnessUnitOut = imageIn.units().getName();
             beamOut = inputBeam;
@@ -505,8 +479,6 @@ Double Image2DConvolver<T>::_dealWithRestoringBeam(casacore::String& brightnessU
     const casacore::Array<Double>& kernelArray, Double kernelVolume, const casacore::VectorKernel::KernelTypes,
     const casacore::Vector<casacore::Quantity>& parameters, const casacore::CoordinateSystem& cSys, const casacore::GaussianBeam& beamIn,
     const casacore::Unit& brightnessUnitIn, casacore::Bool emitMessage) const {
-    *this->_getLog() << LogOrigin(CLASS_NAME, __func__);
-
     // Find out if convolution axes hold the sky. Scaling from Jy/beam and Jy/pixel only really makes sense if this is true
     casacore::Bool holdsOneSkyAxis;
     auto hasSky = casacore::CoordinateUtil::holdsSky(holdsOneSkyAxis, cSys, _axes.asVector());
@@ -524,33 +496,24 @@ Double Image2DConvolver<T>::_dealWithRestoringBeam(casacore::String& brightnessU
         }
         if (minAx < diag) {
             diag.convert(minAx.getFullUnit());
-            if (!_suppressWarnings) {
-                ostringstream oss;
-                oss << "Convolving kernel has minor axis " << minAx << " which "
-                    << "is less than the pixel diagonal length of " << diag << ". Thus, the kernel is poorly sampled, and so the "
-                    << "output of this application may not be what you expect. "
-                    << "You should consider increasing the kernel size or "
-                    << "regridding the image to a smaller pixel size";
-                _log(oss.str(), LogIO::WARN);
-            }
+            spdlog::debug(
+                "Convolving kernel has minor axis {} which is less than the pixel diagonal length of {}. Thus, the kernel is "
+                "poorly sampled, and so the output of this application may not be what you expect. You should consider increasing the "
+                "kernel size or regridding the image to a smaller pixel size",
+                GetQuantityInfo(minAx), GetQuantityInfo(diag));
         } else if (beamIn.getMinor() < diag && beamIn != casacore::GaussianBeam::NULL_BEAM) {
             diag.convert(beamIn.getMinor().getFullUnit());
-            if (!_suppressWarnings) {
-                ostringstream oss;
-                oss << "Input beam has minor axis " << beamIn.getMinor() << " which is less than the pixel "
-                    << "diagonal length of " << diag << ". Thus, the beam is "
-                    << "poorly sampled, and so the output of this application "
-                    << "may not be what you expect. You should consider "
-                    << "regridding the image to a smaller pixel size.";
-                _log(oss.str(), LogIO::WARN);
-            }
+            spdlog::debug(
+                "Input beam has minor axis {} which is less than the pixel diagonal length of {}. Thus, the beam is poorly "
+                "sampled, and so the output of this application may not be what you expect. You should consider regridding the image "
+                "to a smaller pixel size.",
+                GetQuantityInfo(beamIn.getMinor()), GetQuantityInfo(diag));
         }
     }
 
-    if (emitMessage && !_suppressWarnings) {
-        ostringstream oss;
-        oss << "You are " << (hasSky ? "" : " not ") << "convolving the sky";
-        _log(oss.str(), LogIO::NORMAL);
+    if (emitMessage) {
+        string tmp = (hasSky ? "" : "not");
+        spdlog::debug("You are {} convolving the sky", tmp);
     }
 
     beamOut = casacore::GaussianBeam();
@@ -587,7 +550,7 @@ Double Image2DConvolver<T>::_dealWithRestoringBeam(casacore::String& brightnessU
         // casacore::Input p.a. is positive N->E
         if (!autoScale) {
             scaleFactor = _scale;
-            _log("Autoscaling is recommended for Jy/pixel convolution", LogIO::WARN);
+            spdlog::warn("Autoscaling is recommended for Jy/pixel convolution.");
         }
     } else {
         // Is there an input restoring beam and are we convolving the sky to which it pertains?  If not, all we can do is use user scaling
@@ -734,7 +697,7 @@ Double Image2DConvolver<T>::_fillKernel(casacore::Matrix<Double>& kernelMatrix, 
     auto yCentre = Double((kernelShape[_axes[1]] - 1) / 2.0);
     Double height = 1;
 
-    // Create functional. We only have gaussian2d functionals at this point.  Later the filling code can be moved out of the if statement
+    // Create functional. We only have gaussian2d functions at this point.  Later the filling code can be moved out of the if statement
     Double maxValKernel;
     Double volumeKernel = 0;
     auto pa = parameters[2];
@@ -788,4 +751,17 @@ void Image2DConvolver<T>::SetProgressMeter(casacore::LatticeProgress* progress_m
     _progress_meter = progress_meter;
 }
 
+template <class T>
+string Image2DConvolver<T>::GetGaussianInfo(const GaussianBeam& gaussian_beam) const {
+    string result;
+    result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
+    result += fmt::format("minor: {:.6f} {} ", gaussian_beam.getMinor().getValue(), gaussian_beam.getMinor().getUnit());
+    result += fmt::format("pa: {:.6f} {}", gaussian_beam.getPA().getValue(), gaussian_beam.getPA().getUnit());
+    return result;
+}
+
+template <class T>
+string Image2DConvolver<T>::GetQuantityInfo(const Quantity& quantity) const {
+    return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
+}
 #endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_

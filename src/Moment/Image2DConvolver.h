@@ -56,7 +56,6 @@ public:
 
     Image2DConvolver(const SPCIIT image, const casacore::Record* const& regionPtr, const casacore::String& mask,
         const casacore::String& outname, const casacore::Bool overwrite);
-
     Image2DConvolver(const Image2DConvolver<T>& other) = delete;
 
     ~Image2DConvolver() {}
@@ -65,17 +64,13 @@ public:
 
     SPIIT convolve();
 
-    // type is a string that starts with "g" (gaussian), "b" (boxcar), or "h"
-    // (hanning), and is case insensitive
+    // type is a string that starts with "g" (gaussian), "b" (boxcar), or "h" (hanning), and is case insensitive
     void setKernel(
         const casacore::String& type, const casacore::Quantity& major, const casacore::Quantity& minor, const casacore::Quantity& pa);
-
     void setScale(casacore::Double d) {
         _scale = d;
     }
-
     void setAxes(const std::pair<casacore::uInt, casacore::uInt>& axes);
-
     void setTargetRes(casacore::Bool b) {
         _targetres = b;
     }
@@ -84,25 +79,16 @@ public:
         return CLASS_NAME;
     }
 
-    // if true, do not log certain info/warning messages which would normally
-    // be logged during convolution
-    void setSuppressWarnings(casacore::Bool b) {
-        _suppressWarnings = b;
-    }
-
-    void StopCalculation(); // cancel calculations
-
+    void StopCalculation();
     void SetProgressMeter(casacore::LatticeProgress* progress_meter);
 
 protected:
     casa::CasacRegionManager::StokesControl _getStokesControl() const {
         return casa::CasacRegionManager::USE_ALL_STOKES;
     }
-
     std::vector<casacore::Coordinate::Type> _getNecessaryCoordinates() const {
         return std::vector<casacore::Coordinate::Type>();
     }
-
     inline casacore::Bool _supportsMultipleRegions() const {
         return true;
     }
@@ -113,7 +99,6 @@ private:
     casacore::Quantity _major, _minor, _pa;
     casacore::IPosition _axes;
     casacore::Bool _targetres = casacore::False;
-    casacore::Bool _suppressWarnings = casacore::False;
     volatile bool _stop;                        // used for cancellation
     casacore::LatticeProgress* _progress_meter; // used to report the progress
 
@@ -132,9 +117,8 @@ private:
         Double factor1, const ImageInterface<T>& imageIn, const std::vector<Quantity>& originalParms, std::vector<Quantity>& kernelParms,
         Array<Double>& kernel, VectorKernel::KernelTypes kernelType, Bool logFactors, Double pixelArea) const;
 
-    // The kernel is currently always real-valued, so make it Double at this
-    // point to avoid unnecessary templating issues if the image has is
-    // complex valued
+    // The kernel is currently always real-valued, so make it Double at this point to avoid unnecessary templating issues if the image has
+    // is complex valued
     void _doSingleBeam(ImageInfo& iiOut, Double& kernelVolume, std::vector<Quantity>& kernelParms, Array<Double>& kernel,
         String& brightnessUnitOut, GaussianBeam& beamOut, SPIIT imageOut, const ImageInterface<T>& imageIn,
         const std::vector<Quantity>& originalParms, VectorKernel::KernelTypes kernelType, Bool logFactors, Double factor1,
@@ -159,7 +143,8 @@ private:
 
     void _logBeamInfo(const ImageInfo& imageInfo, const String& desc) const;
 
-    void _log(const String& msg, LogIO::Command priority) const;
+    string GetGaussianInfo(const GaussianBeam& gaussian_beam) const;
+    string GetQuantityInfo(const Quantity& quantity) const;
 };
 
 } // namespace carta
