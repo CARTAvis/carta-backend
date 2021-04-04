@@ -11,10 +11,15 @@
 #ifndef CARTA_BACKEND__SMOOTHING_H_
 #define CARTA_BACKEND__SMOOTHING_H_
 
-#include <x86intrin.h>
 #include <cstdint>
 #include <limits>
 #include <vector>
+
+#ifdef _ARM_ARCH_
+#include <sse2neon/sse2neon.h>
+#else
+#include <x86intrin.h>
+#endif
 
 #define SMOOTHING_TEMP_BUFFER_SIZE_MB 200
 

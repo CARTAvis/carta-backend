@@ -332,14 +332,19 @@ bool RegionImportExport::ConvertRecordToRectangle(
 
     double cx, cy, width, height;
     casacore::Double blc_x = x[0];
+    casacore::Double brc_x = x[1];
     casacore::Double trc_x = x[2];
+    casacore::Double tlc_x = x[3];
     casacore::Double blc_y = y[0];
+    casacore::Double brc_y = y[1];
     casacore::Double trc_y = y[2];
+    casacore::Double tlc_y = y[3];
+
     // Control points: center point, width/height
     cx = (blc_x + trc_x) / 2.0;
     cy = (blc_y + trc_y) / 2.0;
-    width = fabs(trc_x - blc_x);
-    height = fabs(trc_y - blc_y);
+    width = sqrt(pow((brc_x - blc_x), 2) + pow((brc_y - blc_y), 2));
+    height = sqrt(pow((tlc_x - blc_x), 2) + pow((tlc_y - blc_y), 2));
 
     if (pixel_coord) {
         // Convert pixel value to Quantity in control points
@@ -353,7 +358,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
     try {
         // Convert center position to world coords
         casacore::Vector<casacore::Double> world_center;
-        casacore::IPosition pixel_center(_coord_sys->nPixelAxes(), 0);
+        casacore::Vector<casacore::Double> pixel_center(_coord_sys->nPixelAxes(), 0.0);
         pixel_center(0) = cx;
         pixel_center(1) = cy;
         _coord_sys->toWorld(world_center, pixel_center);

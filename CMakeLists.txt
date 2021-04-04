@@ -6,6 +6,10 @@ include_directories(src)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
@@ -25,7 +29,13 @@ endif ()
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 
-if (EnableAvx)
+# Automatically detect if building on an ARM based system such as the Apple M1.
+# It will replace SSE functions with ARM NEON functions using sse2neon.h from 
+# https://github.com/DLTcollab/sse2neon, redistributable under the MIT License.
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
+elseif (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
@@ -177,11 +187,22 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
+if (CartaUserFolderPrefix)
+    add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
+endif (CartaUserFolderPrefix)
+
+if (CartaDefaultFrontendFolder)
+    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+endif (CartaDefaultFrontendFolder)
+
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
 
 install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
     DESTINATION bin)
+
+install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
+    DESTINATION share/carta)
 
 # Tests
 option(test "Build tests." OFF)

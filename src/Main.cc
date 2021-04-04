@@ -82,19 +82,7 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 
     // Check if there's a token to be matched
     if (!auth_token.empty()) {
-        string req_token;
-        // First try the cookie auth token
-        auto cookie_header = http_request->getHeader("cookie");
-        if (!cookie_header.empty()) {
-            auto cookie_auth_value = GetAuthTokenFromCookie(string(cookie_header));
-            if (!cookie_auth_value.empty()) {
-                req_token = cookie_auth_value;
-            }
-        }
-        // Then try the auth header
-        if (req_token.empty()) {
-            req_token = http_request->getHeader("carta-auth-token");
-        }
+        string req_token = GetAuthToken(http_request);
 
         if (!req_token.empty()) {
             if (req_token != auth_token) {
@@ -167,6 +155,17 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
     ws->close();
 }
 
+void OnDrain(uWS::WebSocket<false, true>* ws) {
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    Session* session = sessions[session_id];
+    if (session) {
+        spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
+            session->GetAddress(), ws->getBufferedAmount());
+    } else {
+        spdlog::debug("Draining WebSocket backpressure: unknown client. Remaining buffered amount: {} (bytes).", ws->getBufferedAmount());
+    }
+}
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
@@ -179,10 +178,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
     if (op_code == uWS::OpCode::BINARY) {
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
             session->UpdateLastMessageTimestamp();
+
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
+
+            CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
+            LogReceivedEventType(event_type);
+
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
@@ -532,7 +536,7 @@ void ExitBackend(int s) {
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
-    spdlog::default_logger()->flush(); // flush the log file while exiting backend
+    FlushLogFile();
     exit(0);
 }
 
@@ -552,7 +556,7 @@ int main(int argc, char* argv[]) {
             exit(0);
         }
 
-        InitLogger(settings.no_log, settings.verbosity);
+        InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages);
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
@@ -573,6 +577,7 @@ int main(int argc, char* argv[]) {
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
+            FlushLogFile();
             return 1;
         }
 
@@ -599,6 +604,7 @@ int main(int argc, char* argv[]) {
         if (settings.grpc_port >= 0) {
             int grpc_status = StartGrpcService(settings.grpc_port);
             if (grpc_status) {
+                FlushLogFile();
                 return 1;
             }
         }
@@ -616,7 +622,7 @@ int main(int argc, char* argv[]) {
                 frontend_path = settings.frontend_folder;
             } else if (have_executable_path) {
                 fs::path executable_parent = fs::path(executable_path).parent_path();
-                frontend_path = executable_parent / "../share/carta/frontend";
+                frontend_path = executable_parent / CARTA_DEFAULT_FRONTEND_FOLDER;
             } else {
                 spdlog::warn(
                     "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
@@ -624,13 +630,9 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token);
                 if (http_server->CanServeFrontend()) {
-                    app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
-                        if (http_server && http_server->CanServeFrontend()) {
-                            http_server->HandleRequest(res, req);
-                        }
-                    });
+                    http_server->RegisterRoutes(app);
                 } else {
                     spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
                 }
@@ -717,19 +719,24 @@ int main(int argc, char* argv[]) {
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
+                                            .maxBackpressure = MAX_BACKPRESSURE,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
+                                            .drain = OnDrain,
                                             .close = OnDisconnect})
                 .run();
         }
     } catch (exception& e) {
         spdlog::critical("{}", e.what());
+        FlushLogFile();
         return 1;
     } catch (...) {
         spdlog::critical("Unknown error");
+        FlushLogFile();
         return 1;
     }
 
+    FlushLogFile();
     return 0;
 }
