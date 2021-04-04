@@ -142,9 +142,6 @@ private:
         const std::vector<casacore::Quantity>& targetBeamParms, const casacore::GaussianBeam& inputBeam) const;
 
     void _logBeamInfo(const ImageInfo& imageInfo, const String& desc) const;
-
-    string GetGaussianInfo(const GaussianBeam& gaussian_beam) const;
-    string GetQuantityInfo(const Quantity& quantity) const;
 };
 
 } // namespace carta

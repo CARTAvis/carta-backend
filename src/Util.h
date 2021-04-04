@@ -16,6 +16,7 @@
 
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+#include <scimath/Mathematics/GaussianBeam.h>
 
 #include "Constants.h"
 #include "ImageStats/BasicStatsCalculator.h"
@@ -26,6 +27,8 @@ bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
+std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
+std::string GetQuantityInfo(const casacore::Quantity& quantity);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);

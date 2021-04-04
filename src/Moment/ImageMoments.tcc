@@ -10,6 +10,9 @@
 #ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 #define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 
+#include "../Logger/Logger.h"
+#include "../Util.h"
+
 using namespace carta;
 
 template <class T>
@@ -58,8 +61,9 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
 
     if (momentAxis_p == _image->coordinates().spectralAxisNumber() && _image->imageInfo().hasMultipleBeams()) {
         casacore::GaussianBeam max_beam = casa::CasaImageBeamSet(_image->imageInfo().getBeamSet()).getCommonBeam();
-        os_p << casacore::LogIO::NORMAL << "The input image has multiple beams so each "
-             << "plane will be convolved to the largest beam size " << max_beam << " prior to calculating moments" << casacore::LogIO::POST;
+        spdlog::info(
+            "The input image has multiple beams so each plane will be convolved to the largest beam size {} prior to calculating moments.",
+            GetGaussianInfo(max_beam));
 
         // reset the image 2D convolver
         _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false));
@@ -211,7 +215,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     convertToVelocity_p = (momentAxis_p == spectralAxis) && (csys.spectralCoordinate().restFrequency() > 0);
 
     casacore::String moment_axis_units = csys.worldAxisUnits()(worldMomentAxis_p);
-    os_p << casacore::LogIO::NORMAL << endl << "Moment axis type is " << csys.worldAxisNames()(worldMomentAxis_p) << casacore::LogIO::POST;
+    spdlog::info("Moment axis type is {}.", csys.worldAxisNames()(worldMomentAxis_p));
 
     // If the moment axis is a spectral axis, indicate we want to convert to velocity. Check the user's requests are allowed
     _checkMethod();
@@ -311,8 +315,9 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
             output_image->setUnits(moment_units);
         } else {
             if (give_message) {
-                os_p << casacore::LogIO::NORMAL << "Could not determine the units of the moment image(s) so the units" << endl;
-                os_p << "will be the same as those of the input image. This may not be very useful." << casacore::LogIO::POST;
+                spdlog::warn(
+                    "Could not determine the units of the moment image(s). So the units will be the same as those of the input image. This "
+                    "may not be very useful.");
                 give_message = false;
             }
         }
@@ -325,11 +330,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     T noise;
     if (stdDeviation_p <= T(0) && (doWindow_p || (doFit_p && !doWindow_p))) {
         if (smoothed_image) {
-            os_p << casacore::LogIO::NORMAL << "Evaluating noise level from smoothed image" << casacore::LogIO::POST;
+            spdlog::info("Evaluating noise level from smoothed image.");
             WhatIsTheNoise(noise, *smoothed_image);
-
         } else {
-            os_p << casacore::LogIO::NORMAL << "Evaluating noise level from input image" << casacore::LogIO::POST;
+            spdlog::info("Evaluating noise level from input image.");
             WhatIsTheNoise(noise, *_image);
         }
         stdDeviation_p = noise;
@@ -367,7 +371,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
 
     if (window_method || fit_method) {
         if (moment_calculator->nFailedFits() != 0) {
-            os_p << casacore::LogIO::NORMAL << "There were " << moment_calculator->nFailedFits() << " failed fits" << casacore::LogIO::POST;
+            spdlog::warn("There were {} failed fits.", moment_calculator->nFailedFits());
         }
     }
 
@@ -473,7 +477,7 @@ void ImageMoments<T>::WhatIsTheNoise(T& sigma, const casacore::ImageInterface<T>
 
             // Check range is sensible
             if (index_max <= index_min || abs(index_max - index_min) < 3) {
-                os_p << casacore::LogIO::NORMAL << "The image histogram is strangely shaped, fitting to all bins" << casacore::LogIO::POST;
+                spdlog::warn("The image histogram is strangely shaped, fitting to all bins.");
                 index_min = 0;
                 index_max = num_of_bins - 1;
             }
@@ -520,11 +524,9 @@ void ImageMoments<T>::WhatIsTheNoise(T& sigma, const casacore::ImageInterface<T>
         // Return values of fit
         if (!fail && fitter.converged()) {
             sigma = T(abs(solution(2)) / casacore::C::sqrt2);
-            os_p << casacore::LogIO::NORMAL << "*** The fitted standard deviation of the noise is " << sigma << endl
-                 << casacore::LogIO::POST;
+            spdlog::info("The fitted standard deviation of the noise is {}.", sigma);
         } else {
-            os_p << casacore::LogIO::WARN << "The fit to determine the noise level failed." << endl;
-            os_p << "Try inputting it directly" << endl;
+            spdlog::warn("The fit to determine the noise level failed. Try inputting it directly.");
         }
 
         // Another go

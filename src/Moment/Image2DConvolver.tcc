@@ -11,6 +11,7 @@
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
 #include "../Logger/Logger.h"
+#include "../Util.h"
 
 using namespace carta;
 
@@ -751,17 +752,4 @@ void Image2DConvolver<T>::SetProgressMeter(casacore::LatticeProgress* progress_m
     _progress_meter = progress_meter;
 }
 
-template <class T>
-string Image2DConvolver<T>::GetGaussianInfo(const GaussianBeam& gaussian_beam) const {
-    string result;
-    result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
-    result += fmt::format("minor: {:.6f} {} ", gaussian_beam.getMinor().getValue(), gaussian_beam.getMinor().getUnit());
-    result += fmt::format("pa: {:.6f} {}", gaussian_beam.getPA().getValue(), gaussian_beam.getPA().getUnit());
-    return result;
-}
-
-template <class T>
-string Image2DConvolver<T>::GetQuantityInfo(const Quantity& quantity) const {
-    return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
-}
 #endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
