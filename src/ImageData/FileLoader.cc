@@ -23,6 +23,10 @@
 using namespace carta;
 
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
+    if (IsFitsGz(filename)) {
+        return new FitsLoader(filename, true);
+    }
+
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);

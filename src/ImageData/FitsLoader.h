@@ -7,17 +7,16 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
-#include <casacore/fits/FITS/fitsio.h>
 #include <casacore/images/Images/FITSImage.h>
 
-//#include "CompressedFitsImage.h"
+//#include "CartaFitsImage.h"
 #include "FileLoader.h"
 
 namespace carta {
 
 class FitsLoader : public FileLoader {
 public:
-    FitsLoader(const std::string& file);
+    FitsLoader(const std::string& file, bool is_gz = false);
 
     void OpenFile(const std::string& hdu) override;
 
@@ -25,41 +24,49 @@ public:
     ImageRef GetImage() override;
 
 private:
+    bool _is_gz;
     casacore::uInt _hdu;
     std::unique_ptr<casacore::FITSImage> _image;
 };
 
-FitsLoader::FitsLoader(const std::string& filename) : FileLoader(filename) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename), _is_gz(is_gz) {}
 
 void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 
     if (!_image || (hdu_num != _hdu)) {
-        // Advance to input hdu
-        casacore::FitsInput fin(_filename.c_str(), casacore::FITS::Disk);
-        for (auto i = 0; i < hdu_num; ++i) {
-            fin.skip_hdu();
+        if (_is_gz) {
+            // TODO
+            throw(casacore::AipsError("Compressed FITS gz image not supported."));
         }
 
-        // Determine compression, not handled by casacore::FitsImage
-        fitsfile* fptr = fin.getfptr();
-        int status;
-        bool compressed = fits_is_compressed_image(fptr, &status);
+        try {
+            _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        } catch (const casacore::AipsError& err) {
+            //_image.reset(new carta::CartaFitsImage(_filename, 0, hdu_num, compressed));
 
-        if (compressed) {
-            throw(casacore::AipsError("Error opening compressed image."));
-            //_image.reset(new carta::CompressedFitsImage(_filename, 0, hdu_num, compressed));
-        } else {
-            try {
-                _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
-            } catch (const casacore::AipsError& err) {
-                spdlog::debug(err.getMesg());
-                throw(casacore::AipsError("Error opening image."));
+            // Check for fz (TODO: CartaFitsImage)
+			fitsfile* fptr(nullptr);
+            int status(0);
+            fits_open_file(&fptr, _filename.c_str(), 0, &status);
+
+            // Advance to requested hdu
+            for (auto i = 0; i < hdu_num; ++i) {
+                int* hdutype(nullptr);
+                fits_movrel_hdu(fptr, 1, hdutype, &status);
             }
+
+            bool compressed = fits_is_compressed_image(fptr, &status);
+            if (compressed) {
+                throw(casacore::AipsError("Compressed FITS fz image not supported."));
+            }
+
+            spdlog::error(err.getMesg());
+            throw(casacore::AipsError("Error loading FITS image."));
         }
 
         if (!_image) {
-            throw(casacore::AipsError("Error opening image."));
+            throw(casacore::AipsError("Error loading FITS image."));
         }
 
         _hdu = hdu_num;

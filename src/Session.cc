@@ -154,7 +154,8 @@ void Session::ConnectCalled() {
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
     const std::string& folder, const std::string& filename, const std::string& hdu_key, std::string& message) {
-    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu_name supplied and FITS image
+    // Fill CARTA::FileInfo and CARTA::FileInfoExtended
+    // Map all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
 
     try {
@@ -179,10 +180,9 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             if (file_info.type() == CARTA::FileType::FITS) {
                 // Get list of HDUs for file info response map
                 FitsHduList fits_hdu_list = FitsHduList(full_name);
-                fits_hdu_list.GetHduList(hdu_list);
+                fits_hdu_list.GetHduList(hdu_list, message);
 
                 if (hdu_list.empty()) { // FitsHduList failed
-                    message = fmt::format("Failed to determine HDU info for {}.", filename);
                     return file_info_ok;
                 }
             } else if (file_info.hdu_list_size() > 0) {

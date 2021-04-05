@@ -39,7 +39,7 @@ bool FileExtInfoLoader::FillFileExtInfo(
 
     // fill header_entries, computed_entries
     bool file_ok(false);
-    if (_loader->CanOpenFile(message)) {
+    if (_loader && _loader->CanOpenFile(message)) {
         file_ok = FillFileInfoFromImage(extended_info, hdu, message);
     }
     return file_ok;

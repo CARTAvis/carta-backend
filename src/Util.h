@@ -12,6 +12,7 @@
 
 #include <uWebSockets/HttpContext.h>
 
+#include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/region_stats.pb.h>
@@ -31,6 +32,7 @@ bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
+bool IsFitsGz(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
@@ -43,6 +45,9 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 // Image info: filename, type
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 CARTA::FileType GetCartaFileType(const std::string& filename);
+
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
 
 // ************ Data Stream Helpers *************
 
@@ -62,23 +67,23 @@ std::string GetAuthToken(uWS::HttpRequest* http_request);
 
 // ************ structs *************
 //
-// Usage of the ChannelRange:
+// Usage of the AxisRange:
 //
-// ChannelRange() defines all channels
-// ChannelRange(0) defines a single channel range, channel 0, in this example
-// ChannelRange(0, 1) defines the channel range between 0 and 1 (including), in this example
-// ChannelRange(0, 2) defines the channel range between 0 and 2, i.e., [0, 1, 2] in this example
+// AxisRange() defines the full axis ALL_Z
+// AxisRange(0) defines a single axis index, 0, in this example
+// AxisRange(0, 1) defines the axis range including [0, 1] in this example
+// AxisRange(0, 2) defines the axis range including [0, 1, 2] in this example
 //
-struct ChannelRange {
+struct AxisRange {
     int from, to;
-    ChannelRange() {
+    AxisRange() {
         from = 0;
-        to = ALL_CHANNELS;
+        to = ALL_Z;
     }
-    ChannelRange(int from_and_to_) {
+    AxisRange(int from_and_to_) {
         from = to = from_and_to_;
     }
-    ChannelRange(int from_, int to_) {
+    AxisRange(int from_, int to_) {
         from = from_;
         to = to_;
     }
