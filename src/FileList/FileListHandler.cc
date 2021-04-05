@@ -166,7 +166,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                             if (region_list) {
                                 // list regular files in region list
                                 add_file = true;
-							} else if (IsFitsGz(full_path)) {
+                            } else if (IsFitsGz(full_path)) {
                                 add_file = true;
                             } else {
                                 auto image_type = CasacoreImageType(full_path);
