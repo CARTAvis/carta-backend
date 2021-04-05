@@ -201,6 +201,9 @@ install(TARGETS carta_backend
 install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
     DESTINATION bin)
 
+install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
+    DESTINATION share/carta)
+
 # Tests
 option(test "Build tests." OFF)
 if (test)

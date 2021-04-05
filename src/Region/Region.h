@@ -131,16 +131,18 @@ private:
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
     void RectanglePointsToCorners(std::vector<CARTA::Point>& pixel_points, float rotation, casacore::Vector<casacore::Double>& x,
         casacore::Vector<casacore::Double>& y);
-    bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
+    bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points, float& rotation);
 
     // Reference region as approximate polygon converted to image coordinates; used for data streams
+    bool UseApproximatePolygon(const casacore::CoordinateSystem& output_csys);
+    std::vector<CARTA::Point> GetRectangleMidpoints();
     casacore::LCRegion* GetCachedPolygonRegion(int file_id);
     casacore::LCRegion* GetAppliedPolygonRegion(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    std::vector<CARTA::Point> GetRegionPolygonPoints(int num_vertices);
+    std::vector<CARTA::Point> GetReferencePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
-    double GetPolygonLength(std::vector<CARTA::Point>& polygon_points);
+    double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
     bool ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
         casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
@@ -178,11 +180,11 @@ private:
     // Region cached as original type
     std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
     std::vector<casacore::Quantity> _wcs_control_points;   // for manual region conversion
-    float _ellipse_rotation;                               // (deg), may be adjusted from pixel rotation value
-    // Reference region applied to image; key is file_id
-    std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
-    // Polygon approximation region (LCPolygon or LCBox for point) converted to image; key is file_id
+    // Converted regions
+    // Reference region converted to image; key is file_id
+    std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
+    // Polygon approximation region converted to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _polygon_regions;
 
     // region flags
