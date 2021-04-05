@@ -11,6 +11,11 @@
 #include <fstream>
 #include <regex>
 
+extern "C" {
+#include <fitsio.h>
+#include <fitsio2.h>
+}
+
 #include <casacore/casa/OS/File.h>
 
 #include "ImageData/CartaMiriadImage.h"
