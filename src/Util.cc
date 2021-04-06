@@ -175,6 +175,10 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
 
 CARTA::FileType GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
+    if (IsFitsGz(filename)) {
+        return CARTA::FileType::FITS;
+    }
+
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
         case casacore::ImageOpener::IMAGECONCAT:

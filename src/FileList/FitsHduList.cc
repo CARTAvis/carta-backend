@@ -34,18 +34,19 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& er
 
 void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu_list, std::string& error) {
     // Use cfitsio lib to check headers for hdu list
-    int status(0);
+    int status(0); // NOTE: status must be equal to 0 on input, else functions immediately exit
 
     int hdunum(0);
     fits_get_num_hdus(fptr, &hdunum, &status);
 
     for (int hdu = 0; hdu < hdunum; ++hdu) {
-        // Add to hdulist if naxis > 0 and primary array or image extension
+        // Add to hdulist if primary array or image extension with naxis > 0.
+
         // Common arguments for fits_read_key
+        std::string key;
         char comment[70];
 
         bool is_image(false), is_fz(false);
-        std::string key;
 
         if (hdu == 0) {
             // Check SIMPLE for primary header only; exit if false
@@ -59,15 +60,11 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
                 break;
             }
         } else {
-            // Check XTENSION; must be "IMAGE"
+            int hdutype(0);
             status = 0;
-            key = "XTENSION";
-            char xtension[70];
-            fits_read_key(fptr, TSTRING, key.c_str(), xtension, comment, &status);
-
+            fits_get_hdu_type(fptr, &hdutype, &status);
             if (!status) {
-                std::string ext_type(xtension);
-                is_image = (ext_type.find("IMAGE") != std::string::npos);
+                is_image = (hdutype == IMAGE_HDU);
             }
 
             if (!is_image) {
@@ -82,69 +79,65 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
             }
         }
 
-        if ((hdu > 0) && !is_image) {
-            // Move to next hdu if not image extension
-            int* hdutype(nullptr);
-            fits_movrel_hdu(fptr, 1, hdutype, &status);
-            continue;
-        }
-
-        // Check NAXIS for primary hdu or image extension
-        status = 0;
-        key = (is_fz ? "ZNAXIS" : "NAXIS");
-        int naxis(0);
-        fits_read_key(fptr, TINT, key.c_str(), &naxis, comment, &status);
-
-        if (!status && (naxis > 1)) {
-            // Check BITPIX
+        if ((hdu == 0) || is_image) {
+            // Check NAXIS for primary hdu or image extension
+            key = (is_fz ? "ZNAXIS" : "NAXIS");
+            int naxis(0);
             status = 0;
-            key = (is_fz ? "ZBITPIX" : "BITPIX");
-            int bitpix(0);
-            fits_read_key(fptr, TINT, key.c_str(), &bitpix, comment, &status);
+            fits_read_key(fptr, TINT, key.c_str(), &naxis, comment, &status);
 
-            bool bitpix_valid(false);
-            if (!status) {
-                std::vector<int> valid_bitpix = {8, 16, 32, 64, -32, -64};
+            if (!status && (naxis > 1)) {
+                // Check BITPIX
+                key = (is_fz ? "ZBITPIX" : "BITPIX");
+                int bitpix(0);
+                status = 0;
+                fits_read_key(fptr, TINT, key.c_str(), &bitpix, comment, &status);
 
-                for (auto value : valid_bitpix) {
-                    if (value == bitpix) {
-                        bitpix_valid = true;
-                        break;
+                bool bitpix_valid(false);
+                if (!status) {
+                    std::vector<int> valid_bitpix = {8, 16, 32, 64, -32, -64};
+
+                    for (auto value : valid_bitpix) {
+                        if (value == bitpix) {
+                            bitpix_valid = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (bitpix_valid) {
-                // Add to hdu list
-                std::string hdu_name = std::to_string(hdu);
+                if (bitpix_valid) {
+                    // Add to hdu list
+                    std::string hdu_name = std::to_string(hdu);
 
-                if (hdu == 0) {
-                    // Add primary data array
-                    hdu_list.push_back(hdu_name);
-                } else {
-                    // Get extension name
-                    status = 0;
-                    key = "EXTNAME";
-                    char extname[70];
-                    fits_read_key(fptr, TSTRING, key.c_str(), extname, comment, &status);
-
-                    if (!status) {
-                        // Add hdu with ext name
-                        std::string ext_name(extname);
-                        std::string hdu_ext_name = fmt::format("{}: {}", hdu_name, ext_name);
-                        hdu_list.push_back(hdu_ext_name);
-                    } else {
-                        // Add hdu without ext name
+                    if (hdu == 0) {
+                        // Add primary data array
                         hdu_list.push_back(hdu_name);
+                    } else {
+                        // Get extension name
+                        key = "EXTNAME";
+                        char extname[70];
+                        status = 0;
+                        fits_read_key(fptr, TSTRING, key.c_str(), extname, comment, &status);
+
+                        if (!status) {
+                            // Add hdu with ext name
+                            std::string ext_name(extname);
+                            std::string hdu_ext_name = fmt::format("{}: {}", hdu_name, ext_name);
+                            hdu_list.push_back(hdu_ext_name);
+                        } else {
+                            // Add hdu without ext name
+                            hdu_list.push_back(hdu_name);
+                        }
                     }
+                } else {
+                    spdlog::debug("FITS HDU {} invalid BITPIX", hdu);
                 }
-            } else {
-                spdlog::debug("FITS HDU {} invalid BITPIX", hdu);
             }
         }
 
         // Move to next hdu
         int* hdutype(nullptr);
+        status = 0;
         fits_movrel_hdu(fptr, 1, hdutype, &status);
     }
 }
