@@ -26,22 +26,26 @@ using namespace carta;
 
 class MomentTest : public ::testing::Test {
 public:
-    static string ImagePath(const string& filename) {
-        string path_string;
-        fs::path path;
-        if (FindExecutablePath(path_string)) {
-            path = fs::path(path_string).parent_path();
-        } else {
-            path = fs::current_path();
+    static bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0) {
+        bool image_ok(false);
+        try {
+            casacore::ImageOpener::ImageTypes image_types = casacore::ImageOpener::imageType(filename);
+            switch (image_types) {
+                case casacore::ImageOpener::AIPSPP:
+                    image = std::make_shared<casacore::PagedImage<float>>(filename);
+                    image_ok = true;
+                    break;
+                case casacore::ImageOpener::FITS:
+                    image = std::make_shared<casacore::FITSImage>(filename, 0, hdu_num);
+                    image_ok = true;
+                    break;
+                default:
+                    break;
+            }
+        } catch (const AipsError& x) {
+            spdlog::error("Error on opening the file: {}", x.getMesg());
         }
-        return (path / "data/images/casa" / filename).string();
-    }
-
-    static bool Exists(const fs::path& p, fs::file_status s = fs::file_status{}) {
-        if (fs::status_known(s) ? fs::exists(s) : fs::exists(p)) {
-            return true;
-        }
-        return false;
+        return image_ok;
     }
 
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
@@ -119,12 +123,10 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    string file_name = ImagePath("SDC335.579-0.292.spw0.line.image");
+    string file_name = "data/images/casa/SDC335.579-0.292.spw0.line.image";
+    std::shared_ptr<casacore::ImageInterface<float>> image;
 
-    if (Exists(file_name)) {
-        // open an image file
-        auto image = std::make_unique<casacore::PagedImage<float>>(file_name);
-
+    if (OpenImage(image, file_name)) {
         // create casa/carta moments generators
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
         casacore::LogIO casa_os(casa_log);
@@ -181,8 +183,6 @@ TEST_F(MomentTest, CheckConsistency) {
             CompareImageData(casa_moment_image, carta_moment_image);
         }
     } else {
-        std::size_t found = file_name.find_last_of("/");
-        std::string file_base_name = file_name.substr(found + 1);
-        spdlog::warn("File {} does not exists! Ignore the Moment test: CheckConsistency.", file_base_name);
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test: CheckConsistency.", file_name);
     }
 }
