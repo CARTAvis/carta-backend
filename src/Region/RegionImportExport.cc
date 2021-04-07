@@ -358,7 +358,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
     try {
         // Convert center position to world coords
         casacore::Vector<casacore::Double> world_center;
-        casacore::IPosition pixel_center(_coord_sys->nPixelAxes(), 0);
+        casacore::Vector<casacore::Double> pixel_center(_coord_sys->nPixelAxes(), 0.0);
         pixel_center(0) = cx;
         pixel_center(1) = cy;
         _coord_sys->toWorld(world_center, pixel_center);
