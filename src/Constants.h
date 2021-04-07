@@ -4,13 +4,13 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# InterfaceConstants.h: definitions used in the Interface Control Document
+//# Constants.h: definitions used in the Interface Control Document
 //* Others added for implementation
-#ifndef CARTA_BACKEND__INTERFACECONSTANTS_H_
-#define CARTA_BACKEND__INTERFACECONSTANTS_H_
+#ifndef CARTA_BACKEND__CONSTANTS_H_
+#define CARTA_BACKEND__CONSTANTS_H_
 
 // version
-#define VERSION_ID "2.0.0-dev.21.03.04"
+#define VERSION_ID "2.0.0-dev.21.04.06"
 
 // thread counts
 #define OMP_THREAD_COUNT -1
@@ -25,11 +25,11 @@
 #define CURSOR_REGION_ID 0
 #define ALL_REGIONS -10
 
-// channels
-#define DEFAULT_CHANNEL 0
-#define CURRENT_CHANNEL -1
-#define ALL_CHANNELS -2
-#define CHANNEL_NOT_SET -3
+// z axis
+#define DEFAULT_Z 0
+#define CURRENT_Z -1
+#define ALL_Z -2
+#define Z_NOT_SET -3
 
 // stokes
 #define DEFAULT_STOKES 0
@@ -45,8 +45,8 @@
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 
-// spectral profile calculation
-#define INIT_DELTA_CHANNEL 10
+// z profile calculation
+#define INIT_DELTA_Z 10
 #define TARGET_DELTA_TIME 50 // milliseconds
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
@@ -98,4 +98,4 @@
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
 #define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
 
-#endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
+#endif // CARTA_BACKEND__CONSTANTS_H_

@@ -282,17 +282,19 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
 
     casacore::IPosition ref_shape(0);
     int ref_spectral_axis = -1;
+    int ref_z_axis = -1;
     int ref_stokes_axis = -1;
     int ref_index = 0;
 
     for (auto& loader : _loaders) {
         casacore::IPosition shape;
         int spectral_axis;
+        int z_axis;
 
         if (ref_index == 0) {
-            loader.second->FindCoordinateAxes(ref_shape, ref_spectral_axis, ref_stokes_axis, err);
+            loader.second->FindCoordinateAxes(ref_shape, ref_spectral_axis, ref_z_axis, ref_stokes_axis, err);
         } else {
-            loader.second->FindCoordinateAxes(shape, spectral_axis, stokes_axis, err);
+            loader.second->FindCoordinateAxes(shape, spectral_axis, z_axis, stokes_axis, err);
             if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
                 (ref_stokes_axis != stokes_axis)) {
                 err = "Image shapes or axes are not consistent!";

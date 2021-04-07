@@ -63,25 +63,34 @@ std::string IPAsText(std::string_view binary);
 
 std::string GetAuthToken(uWS::HttpRequest* http_request);
 
+// ************ Region Helpers *************
+
+inline std::string RegionName(CARTA::RegionType type) {
+    std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::RegionType::POINT, "point"},
+        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::RECTANGLE, "rectangle"},
+        {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "annulus"}, {CARTA::RegionType::POLYGON, "polygon"}};
+    return region_names[type];
+}
+
 // ************ structs *************
 //
-// Usage of the ChannelRange:
+// Usage of the AxisRange:
 //
-// ChannelRange() defines all channels
-// ChannelRange(0) defines a single channel range, channel 0, in this example
-// ChannelRange(0, 1) defines the channel range between 0 and 1 (including), in this example
-// ChannelRange(0, 2) defines the channel range between 0 and 2, i.e., [0, 1, 2] in this example
+// AxisRange() defines the full axis ALL_Z
+// AxisRange(0) defines a single axis index, 0, in this example
+// AxisRange(0, 1) defines the axis range including [0, 1] in this example
+// AxisRange(0, 2) defines the axis range including [0, 1, 2] in this example
 //
-struct ChannelRange {
+struct AxisRange {
     int from, to;
-    ChannelRange() {
+    AxisRange() {
         from = 0;
-        to = ALL_CHANNELS;
+        to = ALL_Z;
     }
-    ChannelRange(int from_and_to_) {
+    AxisRange(int from_and_to_) {
         from = to = from_and_to_;
     }
-    ChannelRange(int from_, int to_) {
+    AxisRange(int from_, int to_) {
         from = from_;
         to = to_;
     }
