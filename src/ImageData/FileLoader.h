@@ -155,7 +155,9 @@ public:
     // Image shape and coordinate system axes
     bool GetShape(IPos& shape);
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
-    bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+    bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
+    // Determine axes used for image raster data
+    void GetRenderAxes(std::vector<int>& axes);
 
     // Image Data
     // Check to see if the file has a particular HDU/group/table/etc
@@ -189,12 +191,14 @@ protected:
     // Full name of the image file
     std::string _filename;
 
-    // Dimension values used by stats functions
-    size_t _num_channels, _num_stokes, _num_dims, _channel_size;
-    int _spectral_axis, _stokes_axis;
+    // Axes, dimension values
+    size_t _num_dims, _image_plane_size;
+    size_t _depth, _num_stokes;
+    int _z_axis, _stokes_axis;
+    std::vector<int> _render_axes;
 
-    // Storage for channel and cube statistics
-    std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
+    // Storage for z-plane and cube statistics
+    std::vector<std::vector<carta::FileInfo::ImageStats>> _z_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
 
     // Return the shape of the specified stats dataset
