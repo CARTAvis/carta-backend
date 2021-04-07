@@ -8,6 +8,7 @@
 
 #include "StatsCalculator.h"
 
+#include <cmath>
 #include <limits>
 
 #include <casacore/casa/Arrays/ArrayMath.h>
@@ -129,7 +130,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                         for (size_t j = 0; j < result.size(); ++j) {
                             casacore::IPosition index(1, j);
                             if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
-                                result(index) = std::numeric_limits<double>::quiet_NaN();
+                                result(index) = nan("");
                             }
                         }
                     }
@@ -151,7 +152,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
             } catch (const casacore::AipsError& err) {
                 // Catch exception for calculated stat, e.g. flux density; set result to NaN
                 for (size_t j = 0; j < result_size; ++j) {
-                    dbl_result.push_back(std::numeric_limits<double>::quiet_NaN());
+                    dbl_result.push_back(nan(""));
                 }
             }
         }
