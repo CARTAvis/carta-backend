@@ -6,6 +6,8 @@
 
 #include "FileLoader.h"
 
+#include <cmath>
+
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
@@ -83,92 +85,78 @@ bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
     return false;
 }
 
-bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
-    // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
-
-    // set defaults: undefined
+bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
+    // Return image shape and axes for image. Spectral axis may or may not be z axis.
+    // All parameters are return values.
     spectral_axis = -1;
+    z_axis = -1;
     stokes_axis = -1;
 
     if (!HasData(FileInfo::Data::Image)) {
+        message = "Image has no data.";
         return false;
     }
 
     if (!GetShape(shape)) {
+        message = "Cannot determine image shape.";
         return false;
     }
 
+    // Dimension check
     _num_dims = shape.size();
-
     if (_num_dims < 2 || _num_dims > 4) {
         message = "Image must be 2D, 3D, or 4D.";
         return false;
     }
 
-    // Used for HDF5 stats only:
-    _channel_size = shape(0) * shape(1);
-
     // Coordinate system checks
     casacore::CoordinateSystem coord_sys;
     if (!GetCoordinateSystem(coord_sys)) {
-        message = "Image does not have valid coordinate system.";
+        message = "Invalid coordinate system.";
         return false;
     }
+
     if (coord_sys.nPixelAxes() != _num_dims) {
         message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
         return false;
     }
 
-    // use CoordinateSystem to find coordinate axes
-    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
+    // Determine which axes will be rendered
+    std::vector<int> render_axes;
+    GetRenderAxes(render_axes);
+    size_t width = shape(render_axes[0]);
+    size_t height = shape(render_axes[1]);
+    _image_plane_size = width * height;
+
+    // Spectral and stokes axis
     spectral_axis = coord_sys.spectralAxisNumber();
     stokes_axis = coord_sys.polarizationAxisNumber();
 
-    // pv images not supported (yet); spectral axis is 0 or 1, and the other is linear
-    if (!linear_axes.empty() && (((spectral_axis == 0) && (linear_axes(0) == 1)) || ((spectral_axis == 1) && (linear_axes(0) == 0)))) {
-        message = "Position-velocity (pv) images not supported yet.";
-        return false;
-    }
-
     // 2D image
     if (_num_dims == 2) {
-        _num_channels = 1;
+        // Save z values
+        _z_axis = -1;
+        _depth = 1;
+        // Save stokes values
+        _stokes_axis = -1;
         _num_stokes = 1;
-        _spectral_axis = spectral_axis;
-        _stokes_axis = stokes_axis;
         return true;
     }
 
-    // 3D image
-    if (_num_dims == 3) {
-        if ((spectral_axis >= 0) && (stokes_axis >= 0)) {
-            // both are known
-            _num_channels = shape(spectral_axis);
-            _num_stokes = shape(stokes_axis);
-        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) {
-            // spectral is known
-            _num_channels = shape(spectral_axis);
-            _num_stokes = 1;
-        } else if ((spectral_axis < 0) && (stokes_axis >= 0)) {
-            // stokes is known
-            _num_stokes = shape(stokes_axis);
-            _num_channels = 1;
-        } else {
-            // neither is known, assume third is spectral
-            spectral_axis = 2;
-            _num_channels = shape(spectral_axis);
-            _num_stokes = 1;
-        }
-
-        // save axes
-        _spectral_axis = spectral_axis;
-        _stokes_axis = stokes_axis;
-        return true;
+    // Cope with incomplete/invalid headers for 3D, 4D images
+    bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
+    if ((no_spectral && no_stokes) && (_num_dims == 3)) {
+        // assume third is spectral with no stokes
+        spectral_axis = 2;
     }
 
-    // 4D image
-    if ((spectral_axis < 0) || (stokes_axis < 0)) {
-        if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, guess by shape (max 4 stokes)
+    if ((no_spectral || no_stokes) && (_num_dims == 4)) {
+        if (no_spectral && !no_stokes) { // stokes is known
+            spectral_axis = (stokes_axis == 3 ? 2 : 3);
+        } else if (!no_spectral && no_stokes) { // spectral is known
+            stokes_axis = (spectral_axis == 3 ? 2 : 3);
+        } else { // neither is known
+            // guess by shape (max 4 stokes)
             if (shape(2) > 4) {
                 spectral_axis = 2;
                 stokes_axis = 3;
@@ -176,23 +164,74 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
                 spectral_axis = 3;
                 stokes_axis = 2;
             }
-            if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, assume [x, y, spectral, stokes]
+
+            if ((spectral_axis < 0) && (stokes_axis < 0)) {
+                // could not guess, assume [spectral, stokes]
                 spectral_axis = 2;
                 stokes_axis = 3;
             }
-        } else if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
-            spectral_axis = (stokes_axis == 3 ? 2 : 3);
-        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) { // spectral is known
-            stokes_axis = (spectral_axis == 3 ? 2 : 3);
         }
     }
 
-    _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
-    _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
-    _spectral_axis = spectral_axis;
+    // Z axis is non-render axis that is not stokes (if any)
+    for (size_t i = 0; i < _num_dims; ++i) {
+        if ((i != render_axes[0]) && (i != render_axes[1]) && (i != stokes_axis)) {
+            z_axis = i;
+            break;
+        }
+    }
+
+    // Save z axis values
+    _z_axis = z_axis;
+    _depth = (z_axis >= 0 ? shape(z_axis) : 1);
+
+    // Save stokes axis values
     _stokes_axis = stokes_axis;
+    _num_stokes = (stokes_axis >= 0 ? shape(stokes_axis) : 1);
 
     return true;
+}
+
+void FileLoader::GetRenderAxes(std::vector<int>& axes) {
+    // Determine which axes will be rendered
+    if (!_render_axes.empty()) {
+        axes = _render_axes;
+        return;
+    }
+
+    // Default unless PV image
+    axes.assign({0, 1});
+
+    casacore::IPosition shape;
+    if (GetShape(shape) && shape.size() > 2) {
+        casacore::CoordinateSystem coord_system;
+        if (GetCoordinateSystem(coord_system)) {
+            // Check for PV image: [Linear, Spectral] axes
+            if (coord_system.hasLinearCoordinate()) {
+                // Returns -1 if no spectral axis
+                int spectral_axis = coord_system.spectralAxisNumber();
+
+                if (spectral_axis >= 0) {
+                    // Find valid (not -1) linear axes
+                    std::vector<int> valid_axes;
+                    casacore::Vector<casacore::Int> lin_axes = coord_system.linearAxesNumbers();
+                    for (auto axis : lin_axes) {
+                        if (axis >= 0) {
+                            valid_axes.push_back(axis);
+                        }
+                    }
+
+                    // One linear + spectral axis = pV image
+                    if (valid_axes.size() == 1) {
+                        valid_axes.push_back(spectral_axis);
+                        axes = valid_axes;
+                    }
+                }
+            }
+        }
+    }
+
+    _render_axes = axes;
 }
 
 bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
@@ -227,7 +266,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             float* pMaskedData = masked_data.getStorage(del_data_ptr);
             for (size_t i = 0; i < cursor_data.nelements(); ++i) {
                 if (!pCursorMask[i]) {
-                    pMaskedData[i] = std::numeric_limits<float>::quiet_NaN();
+                    pMaskedData[i] = NAN;
                 }
             }
 
@@ -245,6 +284,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
 }
 
 bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
+    // Get SubImage from Slicer
     ImageRef image = GetImage();
     if (!image) {
         return false;
@@ -255,6 +295,7 @@ bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<
 }
 
 bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    // Get SubImage from image region
     ImageRef image = GetImage();
     if (!image) {
         return false;
@@ -319,16 +360,16 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
         const IPos& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(IPos(1, _num_channels))) ||
-            (_num_dims == 4 && stat_dims.isEqual(IPos(2, _num_channels, _num_stokes)))) {
+        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(IPos(1, _depth))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(2, _depth, _num_stokes)))) {
             auto data = GetStatsData(ds);
 
             switch (ds) {
                 case FileInfo::Data::STATS_2D_MAX: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].basic_stats[CARTA::StatsType::Max] = *it++;
+                        for (size_t z = 0; z < _depth; z++) {
+                            _z_stats[s][z].basic_stats[CARTA::StatsType::Max] = *it++;
                         }
                     }
                     break;
@@ -336,8 +377,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                 case FileInfo::Data::STATS_2D_MIN: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].basic_stats[CARTA::StatsType::Min] = *it++;
+                        for (size_t z = 0; z < _depth; z++) {
+                            _z_stats[s][z].basic_stats[CARTA::StatsType::Min] = *it++;
                         }
                     }
                     break;
@@ -345,8 +386,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                 case FileInfo::Data::STATS_2D_SUM: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].basic_stats[CARTA::StatsType::Sum] = *it++;
+                        for (size_t z = 0; z < _depth; z++) {
+                            _z_stats[s][z].basic_stats[CARTA::StatsType::Sum] = *it++;
                         }
                     }
                     break;
@@ -354,8 +395,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                 case FileInfo::Data::STATS_2D_SUMSQ: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].basic_stats[CARTA::StatsType::SumSq] = *it++;
+                        for (size_t z = 0; z < _depth; z++) {
+                            _z_stats[s][z].basic_stats[CARTA::StatsType::SumSq] = *it++;
                         }
                     }
                     break;
@@ -363,8 +404,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                 case FileInfo::Data::STATS_2D_NANS: {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].basic_stats[CARTA::StatsType::NanCount] = *it++;
+                        for (size_t z = 0; z < _depth; z++) {
+                            _z_stats[s][z].basic_stats[CARTA::StatsType::NanCount] = *it++;
                         }
                     }
                     break;
@@ -386,17 +427,16 @@ void FileLoader::LoadStats2DHist() {
         size_t num_bins = stat_dims[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) ||
-            (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _num_channels))) ||
-            (_num_dims == 4 && stat_dims.isEqual(IPos(3, num_bins, _num_channels, _num_stokes)))) {
+        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _depth))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(3, num_bins, _depth, _num_stokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 
             for (size_t s = 0; s < _num_stokes; s++) {
-                for (size_t c = 0; c < _num_channels; c++) {
-                    _channel_stats[s][c].histogram_bins.resize(num_bins);
+                for (size_t z = 0; z < _depth; z++) {
+                    _z_stats[s][z].histogram_bins.resize(num_bins);
                     for (size_t b = 0; b < num_bins; b++) {
-                        _channel_stats[s][c].histogram_bins[b] = *it++;
+                        _z_stats[s][z].histogram_bins[b] = *it++;
                     }
                 }
             }
@@ -420,8 +460,8 @@ void FileLoader::LoadStats2DPercent() {
 
         // We can handle 2D, 3D and 4D in the same way
         if ((_num_dims == 2 && dims_vals.isEqual(IPos(1, num_ranks))) ||
-            (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _num_channels))) ||
-            (_num_dims == 4 && dims_vals.isEqual(IPos(3, num_ranks, _num_channels, _num_stokes)))) {
+            (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _depth))) ||
+            (_num_dims == 4 && dims_vals.isEqual(IPos(3, num_ranks, _depth, _num_stokes)))) {
             auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
             auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
@@ -429,12 +469,12 @@ void FileLoader::LoadStats2DPercent() {
             auto itr = ranks->begin();
 
             for (size_t s = 0; s < _num_stokes; s++) {
-                for (size_t c = 0; c < _num_channels; c++) {
-                    _channel_stats[s][c].percentiles.resize(num_ranks);
-                    _channel_stats[s][c].percentile_ranks.resize(num_ranks);
+                for (size_t z = 0; z < _depth; z++) {
+                    _z_stats[s][z].percentiles.resize(num_ranks);
+                    _z_stats[s][z].percentile_ranks.resize(num_ranks);
                     for (size_t r = 0; r < num_ranks; r++) {
-                        _channel_stats[s][c].percentiles[r] = *it++;
-                        _channel_stats[s][c].percentile_ranks[r] = *itr++;
+                        _z_stats[s][z].percentiles[r] = *it++;
+                        _z_stats[s][z].percentile_ranks[r] = *itr++;
                     }
                 }
             }
@@ -559,9 +599,9 @@ void FileLoader::LoadStats3DPercent() {
 }
 
 void FileLoader::LoadImageStats(bool load_percentiles) {
-    _channel_stats.resize(_num_stokes);
+    _z_stats.resize(_num_stokes);
     for (size_t s = 0; s < _num_stokes; s++) {
-        _channel_stats[s].resize(_num_channels);
+        _z_stats[s].resize(_depth);
     }
     _cube_stats.resize(_num_stokes);
 
@@ -592,10 +632,10 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
-                for (size_t c = 0; c < _num_channels; c++) {
-                    auto& stats = _channel_stats[s][c].basic_stats;
+                for (size_t z = 0; z < _depth; z++) {
+                    auto& stats = _z_stats[s][z].basic_stats;
                     if (full) {
-                        num_pixels = _channel_size - stats[CARTA::StatsType::NanCount];
+                        num_pixels = _image_plane_size - stats[CARTA::StatsType::NanCount];
                         sum = stats[CARTA::StatsType::Sum];
                         sum_sq = stats[CARTA::StatsType::SumSq];
                         min = stats[CARTA::StatsType::Min];
@@ -610,9 +650,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                             stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
                         }
 
-                        _channel_stats[s][c].full = true;
+                        _z_stats[s][z].full = true;
                     }
-                    _channel_stats[s][c].valid = true;
+                    _z_stats[s][z].valid = true;
                 }
             }
         }
@@ -639,7 +679,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
             for (size_t s = 0; s < _num_stokes; s++) {
                 auto& stats = _cube_stats[s].basic_stats;
                 if (full) {
-                    num_pixels = (_channel_size * _num_channels) - stats[CARTA::StatsType::NanCount];
+                    num_pixels = (_image_plane_size * _depth) - stats[CARTA::StatsType::NanCount];
                     sum = stats[CARTA::StatsType::Sum];
                     sum_sq = stats[CARTA::StatsType::SumSq];
                     min = stats[CARTA::StatsType::Min];
@@ -662,8 +702,8 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     }
 }
 
-FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int channel) {
-    return (channel >= 0 ? _channel_stats[current_stokes][channel] : _cube_stats[current_stokes]);
+FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
+    return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
 }
 
 bool FileLoader::GetCursorSpectralData(

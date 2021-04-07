@@ -217,7 +217,7 @@ private:
     // Delete Frame(s)
     void DeleteFrame(int file_id);
 
-    // Specialized for cube; accumulate per-channel histograms and send progress messages
+    // Specialized for cube; accumulate per-z histograms and send progress messages
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
@@ -226,8 +226,8 @@ private:
     bool SendSpatialProfileData(int file_id, int region_id);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
-    void UpdateImageData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed);
-    void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
+    void UpdateImageData(int file_id, bool send_image_histogram, bool z_changed, bool stokes_changed);
+    void UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
@@ -263,7 +263,7 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
-    // Manage image channel
+    // Manage image channel/z
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
 

@@ -7,11 +7,13 @@
 #include "Util.h"
 
 #include <climits>
+#include <cmath>
 #include <fstream>
 #include <regex>
 
 #include <casacore/casa/OS/File.h>
 
+#include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 
 #ifdef __APPLE__
@@ -172,6 +174,50 @@ CARTA::FileType GetCartaFileType(const string& filename) {
     }
 }
 
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
+    prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
+    casacore::CoordinateSystem coord_sys(image->coordinates());
+    if (coord_sys.hasSpectralAxis()) { // prefer spectral axis native type
+        casacore::SpectralCoordinate::SpecType native_type;
+        if (image->imageType() == "CartaMiriadImage") { // workaround to get correct native type
+            carta::CartaMiriadImage* miriad_image = static_cast<carta::CartaMiriadImage*>(image);
+            native_type = miriad_image->NativeType();
+        } else {
+            native_type = coord_sys.spectralCoordinate().nativeType();
+        }
+        switch (native_type) {
+            case casacore::SpectralCoordinate::FREQ: {
+                break;
+            }
+            case casacore::SpectralCoordinate::VRAD:
+            case casacore::SpectralCoordinate::BETA: {
+                prefer_velocity = true;
+                break;
+            }
+            case casacore::SpectralCoordinate::VOPT: {
+                prefer_velocity = true;
+
+                // Check doppler type; oddly, native type can be VOPT but doppler is RADIO--?
+                casacore::MDoppler::Types vel_doppler(coord_sys.spectralCoordinate().velocityDoppler());
+                if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
+                    optical_velocity = true;
+                }
+                break;
+            }
+            case casacore::SpectralCoordinate::WAVE: {
+                prefer_wavelength = true;
+                break;
+            }
+            case casacore::SpectralCoordinate::AWAV: {
+                prefer_wavelength = true;
+                air_wavelength = true;
+                break;
+            }
+        }
+    }
+}
+
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
     if (histogram == nullptr) {
         return;
@@ -193,7 +239,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = numeric_limits<double>::quiet_NaN();
+            double nan_value = nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -211,7 +257,7 @@ void FillStatisticsValuesFromMap(
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = numeric_limits<double>::quiet_NaN();
+                value = nan("");
             }
         }
 
