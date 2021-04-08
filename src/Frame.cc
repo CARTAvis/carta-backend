@@ -32,6 +32,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+static const int HIGH_COMPRESSION_QUALITY(32);
+
 using namespace carta;
 
 Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z)
@@ -392,6 +394,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     int tile_width;
     int tile_height;
     if (GetRasterTileData(tile_image_data, tile, tile_width, tile_height)) {
+        size_t tile_image_data_size = sizeof(float) * tile_image_data.size(); // tile image data size in bytes
+
         if (ZStokesChanged(z, stokes)) {
             return false;
         }
@@ -403,17 +407,56 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
         } else if (compression_type == CARTA::CompressionType::ZFP) {
             auto nan_encodings = GetNanEncodingsBlock(tile_image_data, 0, tile_width, tile_height);
             tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+            size_t nan_encodings_size = sizeof(int32_t) * nan_encodings.size(); // nan-encoding data size in bytes
 
             if (ZStokesChanged(z, stokes)) {
                 return false;
             }
 
             auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
-            std::vector<char> compression_buffer;
-            size_t compressed_size;
-            int precision = lround(compression_quality);
-            Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+
+            {
+                // compress the data with a default precision
+                std::vector<char> compression_buffer;
+                size_t compressed_size;
+                int precision = lround(compression_quality);
+                Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
+                tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+                float compressibility = ((float)nan_encodings_size + (float)compressed_size) / (float)tile_image_data_size;
+
+                if (precision < HIGH_COMPRESSION_QUALITY && compressibility < 0.05) {
+                    // re-get the tile image data
+                    std::vector<float> tile_image_data_2;
+                    int tile_width_2;
+                    int tile_height_2;
+                    GetRasterTileData(tile_image_data_2, tile, tile_width_2, tile_height_2);
+
+                    // re-get the nan-encoding data
+                    auto nan_encodings_2 = GetNanEncodingsBlock(tile_image_data_2, 0, tile_width_2, tile_height_2);
+                    size_t nan_encodings_size_2 = sizeof(int32_t) * nan_encodings_2.size();
+
+                    // re-compress the data with a higher precision
+                    std::vector<char> compression_buffer_2;
+                    size_t compressed_size_2;
+                    Compress(tile_image_data_2, 0, compression_buffer_2, compressed_size_2, tile_width_2, tile_height_2,
+                        HIGH_COMPRESSION_QUALITY);
+                    float compressibility_2 = ((float)nan_encodings_size_2 + (float)compressed_size_2) / (float)tile_image_data_size;
+
+                    if (compressibility_2 < 0.1) {
+                        raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY); // reset the compression quality!
+                        tile_ptr->set_nan_encodings(
+                            nan_encodings_2.data(), sizeof(int32_t) * nan_encodings_2.size());    // reset the nan-encoding data!
+                        tile_ptr->set_image_data(compression_buffer_2.data(), compressed_size_2); // reset the compression data!
+                        spdlog::warn("Change to higher ZFP compression quality: {}->{}. The compressibility for a tile is {}.", precision,
+                            HIGH_COMPRESSION_QUALITY, compressibility_2);
+                    } else {
+                        spdlog::debug("The compressibility for a tile is {}.", compressibility);
+                    }
+                } else {
+                    spdlog::debug("The compressibility for a tile is {}.", compressibility);
+                }
+            }
+
             // Measure duration for compress tile data
             auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_compress_tile_data =
