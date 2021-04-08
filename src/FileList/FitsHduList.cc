@@ -15,6 +15,8 @@ FitsHduList::FitsHduList(const std::string& filename) {
 }
 
 void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& error) {
+    // Returns list of hdu num and ext name for primary array and image extensions
+    // Open file read-only
     fitsfile* fptr(nullptr);
     int status(0);
     fits_open_file(&fptr, _filename.c_str(), 0, &status);
@@ -34,7 +36,7 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& er
 
 void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu_list, std::string& error) {
     // Use cfitsio lib to check headers for hdu list
-    int status(0); // NOTE: status must be equal to 0 on input, else functions immediately exit
+    int status(0); // status must be equal to 0 on input, else functions immediately exit
 
     int hdunum(0);
     fits_get_num_hdus(fptr, &hdunum, &status);
@@ -60,12 +62,10 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
                 break;
             }
         } else {
-            int hdutype(0);
+            int hdutype(-1);
             status = 0;
             fits_get_hdu_type(fptr, &hdutype, &status);
-            if (!status) {
-                is_image = (hdutype == IMAGE_HDU);
-            }
+            is_image = (hdutype == IMAGE_HDU);
 
             if (!is_image) {
                 // Check ZIMAGE for fz compressed image
@@ -80,57 +80,35 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
         }
 
         if ((hdu == 0) || is_image) {
-            // Check NAXIS for primary hdu or image extension
+            // Check image dimensions for primary hdu or image extension
             key = (is_fz ? "ZNAXIS" : "NAXIS");
             int naxis(0);
             status = 0;
             fits_read_key(fptr, TINT, key.c_str(), &naxis, comment, &status);
 
-            if (!status && (naxis > 1)) {
-                // Check BITPIX
-                key = (is_fz ? "ZBITPIX" : "BITPIX");
-                int bitpix(0);
-                status = 0;
-                fits_read_key(fptr, TINT, key.c_str(), &bitpix, comment, &status);
+            if (naxis > 1) {
+                // Add to hdu list
+                std::string hdu_name = std::to_string(hdu);
 
-                bool bitpix_valid(false);
-                if (!status) {
-                    std::vector<int> valid_bitpix = {8, 16, 32, 64, -32, -64};
-
-                    for (auto value : valid_bitpix) {
-                        if (value == bitpix) {
-                            bitpix_valid = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (bitpix_valid) {
-                    // Add to hdu list
-                    std::string hdu_name = std::to_string(hdu);
-
-                    if (hdu == 0) {
-                        // Add primary data array
-                        hdu_list.push_back(hdu_name);
-                    } else {
-                        // Get extension name
-                        key = "EXTNAME";
-                        char extname[70];
-                        status = 0;
-                        fits_read_key(fptr, TSTRING, key.c_str(), extname, comment, &status);
-
-                        if (!status) {
-                            // Add hdu with ext name
-                            std::string ext_name(extname);
-                            std::string hdu_ext_name = fmt::format("{}: {}", hdu_name, ext_name);
-                            hdu_list.push_back(hdu_ext_name);
-                        } else {
-                            // Add hdu without ext name
-                            hdu_list.push_back(hdu_name);
-                        }
-                    }
+                if (hdu == 0) {
+                    // Add primary data array
+                    hdu_list.push_back(hdu_name);
                 } else {
-                    spdlog::debug("FITS HDU {} invalid BITPIX", hdu);
+                    // Get extension name
+                    key = "EXTNAME";
+                    char extname[70];
+                    status = 0;
+                    fits_read_key(fptr, TSTRING, key.c_str(), extname, comment, &status);
+
+                    std::string ext_name(extname);
+                    if (!ext_name.empty()) {
+                        // Add hdu with ext name
+                        std::string hdu_ext_name = fmt::format("{}: {}", hdu_name, ext_name);
+                        hdu_list.push_back(hdu_ext_name);
+                    } else {
+                        // Add hdu without ext name
+                        hdu_list.push_back(hdu_name);
+                    }
                 }
             }
         }

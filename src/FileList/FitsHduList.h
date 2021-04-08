@@ -10,10 +10,7 @@
 #include <string>
 #include <vector>
 
-extern "C" {
-#include <fitsio.h>
-#include <fitsio2.h>
-}
+#include "../Cfitsio.h"
 
 class FitsHduList {
 public:
