@@ -373,7 +373,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     if (ZStokesChanged(z, stokes)) {
         return false;
     }
-    
+
     raster_tile_data.set_channel(z);
     raster_tile_data.set_stokes(stokes);
     raster_tile_data.set_compression_type(compression_type);
