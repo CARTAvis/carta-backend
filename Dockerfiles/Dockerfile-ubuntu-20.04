@@ -17,7 +17,7 @@ RUN \
 RUN \
   add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get update && \
-  apt-get -y install casacore-dev libzfp-dev
+  apt-get -y install carta-casacore-dev libzfp-dev
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002

@@ -17,7 +17,7 @@ RUN \
   ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone && \
   add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get -y update && \
-  apt-get -y install casacore-dev googletest libgrpc++-dev libprotobuf-dev libzfp-dev protobuf-compiler-grpc 
+  apt-get -y install carta-casacore-dev googletest libgrpc++-dev libprotobuf-dev libzfp-dev protobuf-compiler-grpc 
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
