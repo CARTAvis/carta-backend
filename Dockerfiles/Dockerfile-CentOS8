@@ -7,19 +7,11 @@ RUN \
   dnf -y config-manager --set-enabled powertools && \
   dnf -y install centos-release-openstack-victoria && \
   dnf -y update && \
-  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex gcc \
+  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
          gcc-c++ grpc-devel grpc-plugins gtest-devel git git-lfs gsl-devel hdf5-devel lapack-devel \ 
          libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
          pugixml-devel readline-devel subversion tbb-devel wcslib-devel wget zlib-devel libuuid-devel \
          zfp-devel
-
-# carta_backend unit tests requires cmake >3.12 but CentOS8 still only provides cmake 3.11.4 for now
-RUN \
-  cd /root && \
-  git clone https://github.com/Kitware/CMake.git && \
-  cd CMake && git checkout v3.20.0 && ./configure && \
-  make -j 2 && make install && \
-  cd /root && rm -rf CMake
 
 # CARTA will have a problem finding the .h files in /usr/include/cfitsio/
 RUN \
@@ -46,7 +38,6 @@ RUN \
 # Install carta-casacore from CARTAvis repo with fixed DATA-DIR. 
 RUN \
   source /etc/bashrc && \
-  dnf -y install cmake && \
   cd /root && \
   git clone https://github.com/CARTAvis/carta-casacore.git && \
   cd carta-casacore && \

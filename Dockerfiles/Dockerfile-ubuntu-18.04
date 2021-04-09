@@ -4,21 +4,13 @@ FROM ubuntu:18.04
 RUN \
   apt-get update && \
   apt-get -y upgrade && \
-  apt-get install -y apt-utils autoconf bison build-essential byobu curl default-jre dialog emacs \
+  apt-get install -y apt-utils autoconf bison build-essential byobu cmake curl default-jre dialog emacs \
     fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libcurl4-gnutls-dev \
     libpugixml-dev libcfitsio-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool \
     libxml2-dev libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
     software-properties-common unzip vim wcslib-dev wget uuid-dev && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
-
-# carta_backend unit tests require cmake >3.12 but ubuntu 18.04 provides 3.10.2
-RUN \
-  cd /root && \
-  git clone https://github.com/Kitware/CMake.git && \
-  cd CMake && git checkout v3.20.0 && ./configure && \
-  make -j 2 && make install && \
-  cd /root && rm -rf CMake
 
 # Get carta dependencies from the cartavis-team PPA (includes casacore-data)
 RUN \
