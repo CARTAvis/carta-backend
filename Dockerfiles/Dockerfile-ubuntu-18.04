@@ -12,9 +12,10 @@ RUN \
     software-properties-common unzip vim wcslib-dev wget uuid-dev && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
 
-# Get carta dependencies from the cartavis-team PPA (includes casacore-data)
+# Get carta dependencies from the cartavis-team PPA and casacore-data from KERN
 RUN \
   ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone && \
+  apt-add-repository -y -s ppa:kernsuite/kern-5 && \
   add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get -y update && \
   apt-get -y install carta-casacore-dev googletest libgrpc++-dev libprotobuf-dev libzfp-dev protobuf-compiler-grpc 

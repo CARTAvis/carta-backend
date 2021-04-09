@@ -13,8 +13,9 @@ RUN \
     software-properties-common unzip wcslib-dev wget uuid-dev
 
 # Get carta dependencies
-# carta-casacore and zfp from cartavis-team PPA (includes casacore-data)
+# carta-casacore and zfp from cartavis-team PPA and casacore-data from KERN
 RUN \
+  apt-add-repository -y -s ppa:kernsuite/kern-7 && \
   add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get update && \
   apt-get -y install carta-casacore-dev libzfp-dev
