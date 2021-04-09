@@ -5,6 +5,7 @@ include_directories(src)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+set(CMAKE_LINK_DIRECTORIES_BEFORE ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -118,8 +119,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
-INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
