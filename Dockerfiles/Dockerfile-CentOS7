@@ -58,7 +58,8 @@ RUN \
            -DBUILD_PYTHON=OFF \
            -DUseCcache=1 \
            -DHAS_CXX11=1 \
-           -DDATA_DIR=/usr/local/share/casacore/data && \
+           -DDATA_DIR=/usr/local/share/casacore/data \
+           -DCMAKE_INSTALL_PREFIX=/opt/carta-casacore && \
   make -j2 && make install && \
   cd /root && rm -rf carta-casacore
 
