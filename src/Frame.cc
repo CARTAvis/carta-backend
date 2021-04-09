@@ -437,21 +437,21 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                     float compressibility_2 = ((float)nan_encodings_size_2 + (float)compressed_size_2) / (float)tile_image_data_size;
 
                     if (compressibility_2 < 0.1) {
-                        // set high compression data
+                        // set compression data with high precision
                         raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
                         tile_ptr->set_nan_encodings(nan_encodings_2.data(), sizeof(int32_t) * nan_encodings_2.size());
                         tile_ptr->set_image_data(compression_buffer_2.data(), compressed_size_2);
                         spdlog::warn("Change to higher ZFP compression quality: {}->{}. The compressibility for a tile is {:.3f}.",
                             precision, HIGH_COMPRESSION_QUALITY, compressibility_2);
                     } else {
-                        // set default compression data
+                        // set compression data with default precision
                         raster_tile_data.set_compression_quality(compression_quality);
                         tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                         tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
                         spdlog::debug("The compressibility for a tile is {:.3f}.", compressibility);
                     }
                 } else {
-                    // set default compression data
+                    // set compression data with default precision
                     raster_tile_data.set_compression_quality(compression_quality);
                     tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                     tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
