@@ -433,21 +433,25 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                         raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
                         tile_ptr->set_nan_encodings(nan_encodings_2.data(), sizeof(int32_t) * nan_encodings_2.size());
                         tile_ptr->set_image_data(compression_buffer_2.data(), compressed_size_2);
-                        spdlog::warn("Change to higher ZFP compression quality: {}->{}. The compressed ratio for a tile is {:.3f}.",
-                            precision, HIGH_COMPRESSION_QUALITY, compressed_ratio_2);
+                        spdlog::warn(
+                            "Change to higher compression quality: {}->{}. The compressed ratio for tile (layer:{}, x:{}, y:{}) is "
+                            "{:.3f}.",
+                            precision, HIGH_COMPRESSION_QUALITY, tile.layer, tile.x, tile.y, compressed_ratio_2);
                     } else {
                         // set compression data with default precision
                         raster_tile_data.set_compression_quality(compression_quality);
                         tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                         tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
-                        spdlog::debug("The compressed ratio for a tile is {:.3f}.", compressed_ratio);
+                        spdlog::debug("The compressed ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y,
+                            compressed_ratio);
                     }
                 } else {
                     // set compression data with default precision
                     raster_tile_data.set_compression_quality(compression_quality);
                     tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                     tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
-                    spdlog::debug("The compressed ratio for a tile is {:.3f}.", compressed_ratio);
+                    spdlog::debug(
+                        "The compressed ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compressed_ratio);
                 }
             }
 
