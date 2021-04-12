@@ -66,11 +66,6 @@ EXPOSE 3002
 EXPOSE 50051
 
 ENV HOME /root
-
-# Required for running the backend
-ENV LD_LIBRARY_PATH "/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
-ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
-
 WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile

@@ -77,12 +77,9 @@ EXPOSE 3002
 # Do the same with the gRPC service port
 EXPOSE 50051
 
+ENV LD_LIBRARY_PATH "/usr/local/lib"
+
 ENV HOME /root
-
-# Required for running the backend
-ENV LD_LIBRARY_PATH "/usr/local/lib64:/usr/local/lib"
-ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
-
 WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile
