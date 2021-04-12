@@ -418,9 +418,6 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 float compressed_ratio = (float)compressed_size / (float)tile_image_data_size;
 
                 if (precision < HIGH_COMPRESSION_QUALITY && compressed_ratio < 0.05) {
-                    // re-get the nan-encoding data
-                    auto nan_encodings_2 = GetNanEncodingsBlock(tile_image_data, 0, tile_width, tile_height);
-
                     // re-compress the data with a higher precision
                     std::vector<char> compression_buffer_2;
                     size_t compressed_size_2;
@@ -431,7 +428,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                     if (compressed_ratio_2 < 0.1) {
                         // set compression data with high precision
                         raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
-                        tile_ptr->set_nan_encodings(nan_encodings_2.data(), sizeof(int32_t) * nan_encodings_2.size());
+                        tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                         tile_ptr->set_image_data(compression_buffer_2.data(), compressed_size_2);
                         spdlog::warn(
                             "Change to higher compression quality: {}->{}. The compressed ratio for tile (layer:{}, x:{}, y:{}) is "
