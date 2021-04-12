@@ -74,13 +74,15 @@ RUN \
   cd /root && \
   git clone https://github.com/LLNL/zfp.git && \
   mkdir -p zfp/build && cd zfp/build && \
-  cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RELEASE .. && make all install && \
+  cmake -DCMAKE_BUILD_TYPE=RELEASE .. && make all install && \
   cd /root && rm -rf zfp
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
 # For gRPC scripting interface
 EXPOSE 50051
+
+ENV LD_LIBRARY_PATH "/usr/local/lib"
 
 ENV HOME /root
 WORKDIR /root
