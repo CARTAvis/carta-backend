@@ -430,7 +430,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                         raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
                         tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                         tile_ptr->set_image_data(compression_buffer_2.data(), compressed_size_2);
-                        spdlog::info(
+                        spdlog::debug(
                             "Change to high compression quality: {}->{}. The change of compression ratio for tile (layer:{}, x:{}, y:{}) "
                             "is {:.3f}->{:.3f}.",
                             precision, HIGH_COMPRESSION_QUALITY, tile.layer, tile.x, tile.y, compression_ratio, compression_ratio_2);
