@@ -58,6 +58,8 @@ private:
     // casacore ImageFITSConverter workaround
     casacore::CoordinateSystem SetUpCoordinateSystem(int nkeys, const std::string& header_str, casacore::RecordInterface& unused_headers);
     bool AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes);
+    bool AddStokesCoordinate(
+        casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis);
     void SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 

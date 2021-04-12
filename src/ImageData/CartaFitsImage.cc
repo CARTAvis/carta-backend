@@ -14,6 +14,7 @@
 #include <casacore/coordinates/Coordinates/FITSCoordinateUtil.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
+#include <casacore/measures/Measures/Stokes.h>
 
 #include <wcslib/fitshdr.h>
 #include <wcslib/wcs.h>
@@ -454,25 +455,30 @@ casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
         throw(casacore::AipsError("Coordinate system setup failed."));
     }
 
-    try {
-        // Determine the coordinates (longitude, latitude, spectral, stokes axes)
-        int long_axis(-1), lat_axis(-1), spec_axis(-1), stokes_axis(-1);
+    // Determine the coordinates (longitude, latitude, spectral, stokes axes)
+    int long_axis(-1), lat_axis(-1), spec_axis(-1), stokes_axis(-1);
 
-        const ::wcsprm wcs0 = wcs_ptr[0];
-        std::vector<int> dir_axes;
-        bool ok = AddDirectionCoordinate(coord_sys, wcs0, dir_axes);
+    const ::wcsprm wcs0 = wcs_ptr[0];
 
-        if (!ok) {
-            wcsvfree(&nwcs, &wcs_ptr);
-            throw(casacore::AipsError("Coordinate system setup failed."));
-        }
+    // Direction coordinate
+    std::vector<int> dir_axes;
+    bool ok = AddDirectionCoordinate(coord_sys, wcs0, dir_axes);
 
-        if (dir_axes.size() == 2) {
-            long_axis = dir_axes[0];
-            lat_axis = dir_axes[1];
-        }
-    } catch (const casacore::AipsError& err) {
-        spdlog::debug("Coordinate system error adding coordinate axes");
+    if (!ok) {
+        wcsvfree(&nwcs, &wcs_ptr);
+        throw(casacore::AipsError("Direction coordinate setup failed."));
+    }
+
+    if (dir_axes.size() == 2) {
+        long_axis = dir_axes[0];
+        lat_axis = dir_axes[1];
+    }
+
+    // Stokes coordinate
+    ok = AddStokesCoordinate(coord_sys, wcs0, _shape, stokes_axis);
+    if (!ok) {
+        wcsvfree(&nwcs, &wcs_ptr);
+        throw(casacore::AipsError("Coordinate system setup failed."));
     }
 
     // Put unused keyrecords in header string into Record
@@ -501,7 +507,7 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
     } catch (const casacore::AipsError& err) {
         spdlog::debug(err.getMesg());
         wcsfree(&wcs_long_lat);
-        spdlog::debug("Failed to extract latitude/longitude coordinates.");
+        spdlog::debug("Failed to extract wcs latitude/longitude coordinates.");
         return false;
     }
 
@@ -512,7 +518,7 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
         direction_axes.push_back(axes[0] - 1); // 1-based to 0-based
         direction_axes.push_back(axes[1] - 1); // 1-based to 0-based
 
-        // Set up wcsprm struct
+        // Set up wcsprm struct with wcsset
         casacore::Coordinate::set_wcs(wcs_long_lat);
 
         // Set direction system for DirectionCoordinate constructor using CTYPE, EQUINOX, RADESYS
@@ -593,8 +599,8 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
         }
 
         if (dir_type_defined) {
-            casacore::DirectionCoordinate dir_coord(direction_type, wcs_long_lat, true);
-            coord_sys.addCoordinate(dir_coord);
+            casacore::DirectionCoordinate direction_coord(direction_type, wcs_long_lat, true);
+            coord_sys.addCoordinate(direction_coord);
         } else {
             // If nsub is 2, should have been able to determine direction type
             ok = false;
@@ -602,6 +608,95 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
     }
 
     wcsfree(&wcs_long_lat);
+    return ok;
+}
+
+bool CartaFitsImage::AddStokesCoordinate(
+    casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis) {
+    // Create casacore::StokesCoordinate from headers and add to coord_sys.
+    // Returns stokes axis and whether wcssub (coordinate extraction) succeeded.
+
+    // Extract STOKES wcs structure
+    int nsub(1);
+    casacore::Block<int> axes(nsub);
+    axes[0] = WCSSUB_STOKES;
+    ::wcsprm wcs_stokes;
+    try {
+        casacore::Coordinate::sub_wcs(wcs, nsub, axes.storage(), wcs_stokes);
+    } catch (const casacore::AipsError& err) {
+        spdlog::debug(err.getMesg());
+        wcsfree(&wcs_stokes);
+        spdlog::debug("Failed to extract wcs stokes coordinate.");
+        return false;
+    }
+
+    bool ok(true);
+    if (nsub == 1) {
+        // Found 1 stokes axis
+        stokes_axis = axes[0] - 1; // 0-based
+
+        size_t stokes_length(1);
+        if (stokes_axis < shape.size()) {
+            stokes_length = shape(stokes_axis);
+            if (stokes_length > 4) {
+                spdlog::debug("Stokes coordinate length > 4.");
+                return false;
+            }
+        }
+
+        // Set up wcsprm struct with wcsset
+        casacore::Coordinate::set_wcs(wcs_stokes);
+
+        // Get FITS header values CRPIX, CRVAL, CDELT
+        double crpix = wcs_stokes.crpix[0] - 1.0; // 0-based
+        double crval = wcs_stokes.crval[0];
+        double cdelt = wcs_stokes.cdelt[0];
+
+        // Determine stokes type for each index
+        casacore::Vector<casacore::Int> stokes_types(stokes_length);
+
+        for (size_t i = 0; i < stokes_length; ++i) {
+            double tmp = crval + (i - crpix) * cdelt;
+            int tmp_stokes = (tmp >= 0 ? int(tmp + 0.01) : int(tmp - 0.01));
+
+            switch (tmp_stokes) {
+                case 0: {
+                    spdlog::debug("Detected Stokes coordinate = 0, setting to Undefined.");
+                    stokes_types(i) = casacore::Stokes::Undefined;
+                    break;
+                }
+                case 5: {
+                    spdlog::debug(
+                        "Detected Stokes coordinate is unofficial percentage polarization value.  Using fractional polarization instead.");
+                    stokes_types(i) = casacore::Stokes::PFlinear;
+                    break;
+                }
+                case 8: {
+                    spdlog::debug("Detected Stokes coordinate is unofficial spectral index value, setting to Undefined.");
+                    stokes_types(i) = casacore::Stokes::Undefined;
+                    break;
+                }
+                case 9: {
+                    spdlog::debug("Detected Stokes coordinate is unofficial optical depth, setting to Undefined.");
+                    stokes_types(i) = casacore::Stokes::Undefined;
+                    break;
+                }
+                default: {
+                    casacore::Stokes::StokesTypes type = casacore::Stokes::fromFITSValue(tmp_stokes);
+                    if (type == casacore::Stokes::Undefined) {
+                        spdlog::debug("Detected invalid Stokes coordinate {}, setting to Undefined.", tmp_stokes);
+                    }
+                    stokes_types(i) = type;
+                    break;
+                }
+            }
+        }
+
+        casacore::StokesCoordinate stokes_coord(stokes_types);
+        coord_sys.addCoordinate(stokes_coord);
+    }
+
+    wcsfree(&wcs_stokes);
     return ok;
 }
 
