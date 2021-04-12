@@ -122,6 +122,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        wcs
         casa_casa
         casa_coordinates
         casa_tables

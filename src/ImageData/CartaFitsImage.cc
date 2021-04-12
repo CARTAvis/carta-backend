@@ -9,6 +9,20 @@
 #include "CartaFitsImage.h"
 
 #include <casacore/casa/OS/File.h>
+#include <casacore/casa/Quanta/UnitMap.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/coordinates/Coordinates/FITSCoordinateUtil.h>
+#include <casacore/images/Images/ImageFITSConverter.h>
+#include <casacore/measures/Measures/MDirection.h>
+
+#include <wcslib/fitshdr.h>
+#include <wcslib/wcs.h>
+#include <wcslib/wcsfix.h>
+#include <wcslib/wcshdr.h>
+#include <wcslib/wcsmath.h>
+/*
+#include <wcslib/wcsconfig.h>
+*/
 
 #include "../Logger/Logger.h"
 
@@ -99,25 +113,35 @@ casacore::DataType CartaFitsImage::dataType() const {
 }
 
 casacore::Bool CartaFitsImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    /* TODO
-    reopenIfNeeded();
-    if (pTiledFile_p->dataType() == TpFloat) {
-       pTiledFile_p->get (buffer, section);
-    } else if (pTiledFile_p->dataType() == TpDouble) {
-       Array<Double> tmp;
-       pTiledFile_p->get (tmp, section);
-       buffer.resize(tmp.shape());
-       convertArray(buffer, tmp);
-    } else if (pTiledFile_p->dataType() == TpInt) {
-       pTiledFile_p->get (buffer, section, scale_p, offset_p, longMagic_p, hasBlanks_p);
-    } else if (pTiledFile_p->dataType() == TpShort) {
-       pTiledFile_p->get (buffer, section, scale_p, offset_p, shortMagic_p, hasBlanks_p);
-    } else if (pTiledFile_p->dataType() == TpUChar) {
-       pTiledFile_p->get (buffer, section, scale_p, offset_p, uCharMagic_p, hasBlanks_p);
+    throw(casacore::AipsError("CartaFitsImage doGetSlice not implemented."));
+
+    /*
+    fitsfile* fptr = OpenFile();
+
+    switch (_datatype) {
+        case 8:
+            break;
+        case 16:
+            break;
+        case 32:
+            break;
+        case 64:
+            break;
+        case -32:
+            break;
+        case -64:
+            break;
     }
+
+   Array<Double> tmp;
+   pTiledFile_p->get (tmp, section);
+   buffer.resize(tmp.shape());
+   convertArray(buffer, tmp);
+
+   pTiledFile_p->get (buffer, section, scale_p, offset_p, longMagic_p, hasBlanks_p);
     */
 
-    return false;
+    return true;
 }
 
 void CartaFitsImage::doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) {
@@ -139,13 +163,13 @@ void CartaFitsImage::resize(const casacore::TiledShape& newShape) {
 casacore::uInt CartaFitsImage::advisedMaxPixels() const {
     // TODO
     // return shape_p.tileShape().product();
-    return 0;
+    throw(casacore::AipsError("CartaFitsImage advisedMaxPixels not implemented."));
 }
 
 casacore::IPosition CartaFitsImage::doNiceCursorShape(casacore::uInt maxPixels) const {
     // TODO
     // return shape_p.tileShape();
-    return casacore::IPosition();
+    throw(casacore::AipsError("CartaFitsImage doNiceCursorShape not implemented."));
 }
 
 casacore::Bool CartaFitsImage::isMasked() const {
@@ -161,6 +185,7 @@ const casacore::Lattice<bool>& CartaFitsImage::pixelMask() const {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
 
+    throw(casacore::AipsError("CartaFitsImage pixelMask not implemented."));
     return *_pixel_mask;
 }
 
@@ -169,6 +194,7 @@ casacore::Lattice<bool>& CartaFitsImage::pixelMask() {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
 
+    throw(casacore::AipsError("CartaFitsImage pixelMask not implemented."));
     return *_pixel_mask;
 }
 
@@ -179,10 +205,24 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
         return false;
     }
 
+    throw(casacore::AipsError("CartaFitsImage doGetMaskSlice not implemented."));
     return _pixel_mask->getSlice(buffer, section);
 }
 
 // private
+
+fitsfile* CartaFitsImage::OpenFile() {
+    // Open file and return file pointer
+    fitsfile* fptr;
+    int status(0);
+    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+
+    if (status) {
+        throw(casacore::AipsError("Error opening FITS file."));
+    }
+
+    return fptr;
+}
 
 void CartaFitsImage::CloseFile(fitsfile* fptr) {
     int status = 0;
@@ -190,7 +230,7 @@ void CartaFitsImage::CloseFile(fitsfile* fptr) {
 }
 
 void CartaFitsImage::CloseFileIfError(fitsfile* fptr, const int& status, const std::string& error) {
-    // Close if status is not 0.  Optionally throw exception described by error.
+    // Close file if cfitsio status is not 0 (ok).  If error, throw exception.
     if (status) {
         CloseFile(fptr);
 
@@ -201,23 +241,85 @@ void CartaFitsImage::CloseFileIfError(fitsfile* fptr, const int& status, const s
 }
 
 void CartaFitsImage::SetUpImage() {
-    casacore::Vector<casacore::String> headers = GetFitsHeaders();
-    throw(casacore::AipsError("SetUpImage incomplete."));
+    // Set up image parameters and coordinate system from headers
+    // Get headers as single string
+    int nheaders(0);
+    std::string header_str;
+    GetFitsHeaders(nheaders, header_str);
+
+    // Convert headers to Vector of Strings to pass to casacore converter
+    casacore::Vector<casacore::String> header_strings(nheaders);
+    size_t pos(0);
+    for (int i = 0; i < nheaders; ++i) {
+        header_strings(i) = header_str.substr(pos, 80);
+        pos += 80;
+    }
+
+    casacore::Record unused_headers;
+    casacore::LogSink sink;
+    casacore::LogIO log(sink);
+    casacore::CoordinateSystem coord_sys;
+    int stokes_fits_value(1);
+    bool drop_stokes(true);
+
+    try {
+        // Set coordinate system
+        coord_sys = casacore::ImageFITSConverter::getCoordinateSystem(
+            stokes_fits_value, unused_headers, header_strings, log, 0, _shape, drop_stokes);
+    } catch (const casacore::AipsError& err) {
+        if (err.getMesg().startsWith("Tabular Coordinate")) {
+            // Spectral axis defined in velocity fails if no rest freq to convert to frequencies
+            try {
+                // Set up with wcslib
+                coord_sys = SetUpCoordinateSystem(nheaders, header_str, unused_headers);
+            } catch (const casacore::AipsError& err) {
+                spdlog::debug("Coordinate system setup error: {}", err.getMesg());
+                throw(casacore::AipsError("Coordinate system setup from FITS headers failed."));
+            }
+        } else {
+            spdlog::debug("Coordinate system setup error: {}", err.getMesg());
+            throw(casacore::AipsError("Coordinate system setup from FITS headers failed."));
+        }
+    }
+
+    // Set coord sys in image
+    setCoordinateInfo(coord_sys);
+
+    try {
+        // Set image units
+        setUnits(casacore::ImageFITSConverter::getBrightnessUnit(unused_headers, log));
+
+        // Set image info
+        casacore::ImageInfo image_info = casacore::ImageFITSConverter::getImageInfo(unused_headers);
+        if (stokes_fits_value != -1) {
+            casacore::ImageInfo::ImageTypes type = casacore::ImageInfo::imageTypeFromFITS(stokes_fits_value);
+            if (type != casacore::ImageInfo::Undefined) {
+                image_info.setImageType(type);
+            }
+        }
+        setImageInfo(image_info);
+
+        // Set misc info
+        casacore::Record misc_info;
+        casacore::ImageFITSConverter::extractMiscInfo(misc_info, unused_headers);
+        setMiscInfo(misc_info);
+    } catch (const casacore::AipsError& err) {
+        spdlog::debug("Image setup error: {}", err.getMesg());
+        throw(casacore::AipsError("Image setup from FITS headers failed."));
+    }
 }
 
-casacore::Vector<casacore::String> CartaFitsImage::GetFitsHeaders() {
-    // Read header values into string vector, and store some values.
-    fitsfile* fptr(nullptr);
-    int status(0);
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
-    if (status) {
-        throw(casacore::AipsError("Error opening FITS file."));
-    }
+void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
+    // Read header values into single string, and store some image parameters.
+    // Returns string and number of keys contained in string.
+    // Throws exception if any headers missing.
+
+    fitsfile* fptr = OpenFile();
 
     // Advance to requested hdu
     int hdu(_hdu + 1);
     int* hdutype(nullptr);
-    status = 0;
+    int status(0);
     fits_movabs_hdu(fptr, hdu, hdutype, &status);
     CloseFileIfError(fptr, status, "Error advancing FITS gz file to requested HDU.");
 
@@ -271,7 +373,6 @@ casacore::Vector<casacore::String> CartaFitsImage::GetFitsHeaders() {
                 break;
         }
         _has_blanks = !status;
-        spdlog::debug("PDEBUG: has blanks={}", _has_blanks);
     }
 
     // Get headers to set up image:
@@ -282,7 +383,6 @@ casacore::Vector<casacore::String> CartaFitsImage::GetFitsHeaders() {
     CloseFileIfError(fptr, status, "Error detecting image compression.");
 
     // Number of headers (keys)
-    int nkeys(0);
     int* more_keys(nullptr);
     status = 0;
     fits_get_hdrspace(fptr, &nkeys, more_keys, &status);
@@ -306,20 +406,303 @@ casacore::Vector<casacore::String> CartaFitsImage::GetFitsHeaders() {
         CloseFileIfError(fptr, status, "Unable to read FITS headers.");
     }
 
-    // Convert headers to Vector of Strings to pass to converter
-    std::string hdrstr(header[0]);
-    casacore::Vector<casacore::String> headers(nkeys);
-    size_t pos(0);
-    for (int i = 0; i < nkeys; ++i) {
-        headers(i) = hdrstr.substr(pos, 80);
-        pos += 80;
-    }
+    hdrstr = std::string(header[0]);
+
     // Free memory allocated by cfitsio
     int free_status(0);
     fits_free_memory(*header, &free_status);
 
     // Done with file
     CloseFile(fptr);
+}
 
-    return headers;
+casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
+    int nkeys, const std::string& header_str, casacore::RecordInterface& unused_headers) {
+    // Sets up coordinate sys with wcslib due to error thrown by casacore, or throws exception.
+    // Based on casacore::FITSCoordinateUtil::fromFITSHeader.
+    //   Unfortunately, only this top-level function is public,
+    //   so if any coordinate "fails" the entire coordinate system fails.
+    //   It is impossible to reuse the code for the "good" coordinates.
+    casacore::CoordinateSystem coord_sys;
+
+    // Parse header string into wcsprm struct; removes used keyrecords
+    // inputs:
+    char* header;
+    std::strcpy(header, header_str.c_str());
+    int relax(WCSHDR_all); // allow informal extensions of WCS standard
+    int ctrl(-2);          // report rejected keys and remove
+    // outputs:
+    int nreject(0); // number of rejected keys
+    int nwcs(0);    // number of coordinate representations found
+    ::wcsprm* wcs_ptr(nullptr);
+
+    int status = wcspih(header, nkeys, relax, ctrl, &nreject, &nwcs, &wcs_ptr);
+    if (status || (nwcs == 0)) {
+        spdlog::debug("Coordinate system error: wcslib parser error");
+        throw(casacore::AipsError("Coordinate system setup failed."));
+    }
+
+    // wcsfix: translate non-standard wcs usage, e.g. projection types, spectral types, etc.
+    ctrl = 7; // do all correction functions
+    std::vector<int> tmpshp(_shape.begin(), _shape.end());
+    int stat[NWCSFIX]; // 7; status of all functions
+    status = wcsfix(ctrl, &(tmpshp[0]), &wcs_ptr[0], stat);
+
+    if (status) {
+        wcsvfree(&nwcs, &wcs_ptr);
+        spdlog::debug("Coordinate system error: wcslib fix error");
+        throw(casacore::AipsError("Coordinate system setup failed."));
+    }
+
+    try {
+        // Determine the coordinates (longitude, latitude, spectral, stokes axes)
+        int long_axis(-1), lat_axis(-1), spec_axis(-1), stokes_axis(-1);
+
+        const ::wcsprm wcs0 = wcs_ptr[0];
+        std::vector<int> dir_axes;
+        bool ok = AddDirectionCoordinate(coord_sys, wcs0, dir_axes);
+
+        if (!ok) {
+            wcsvfree(&nwcs, &wcs_ptr);
+            throw(casacore::AipsError("Coordinate system setup failed."));
+        }
+
+        if (dir_axes.size() == 2) {
+            long_axis = dir_axes[0];
+            lat_axis = dir_axes[1];
+        }
+    } catch (const casacore::AipsError& err) {
+        spdlog::debug("Coordinate system error adding coordinate axes");
+    }
+
+    // Put unused keyrecords in header string into Record
+    casacore::Record header_rec;
+    SetUnusedHeaderRec(header, header_rec);
+
+    casacore::UnitMap::addFITS(); // add FITS units for Quanta
+
+    AddObsInfo(coord_sys, header_rec);
+
+    return coord_sys;
+}
+
+bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes) {
+    // Create casacore::DirectionCoordinate from headers and add to coord_sys.
+    // Returns index of direction axes in vector and whether wcssub (coordinate extraction) succeeded.
+
+    // Extract LAT/LONG wcs structure
+    int nsub(2);
+    casacore::Block<int> axes(nsub);
+    axes[0] = WCSSUB_LONGITUDE;
+    axes[1] = WCSSUB_LATITUDE;
+    ::wcsprm wcs_long_lat;
+    try {
+        casacore::Coordinate::sub_wcs(wcs, nsub, axes.storage(), wcs_long_lat);
+    } catch (const casacore::AipsError& err) {
+        spdlog::debug(err.getMesg());
+        wcsfree(&wcs_long_lat);
+        spdlog::debug("Failed to extract latitude/longitude coordinates.");
+        return false;
+    }
+
+    bool ok(true);
+    if (nsub == 2) {
+        // Found 2 direction coordinates, should be able to discern direction system.
+        // Set direction axes
+        direction_axes.push_back(axes[0] - 1); // 1-based to 0-based
+        direction_axes.push_back(axes[1] - 1); // 1-based to 0-based
+
+        // Set up wcsprm struct
+        casacore::Coordinate::set_wcs(wcs_long_lat);
+
+        // Set direction system for DirectionCoordinate constructor using CTYPE, EQUINOX, RADESYS
+        casacore::String ctype1 = wcs_long_lat.ctype[0];
+        casacore::String ctype2 = wcs_long_lat.ctype[1];
+        ctype1.upcase();
+        ctype2.upcase();
+
+        bool have_equinox = !undefined(wcs_long_lat.equinox);
+        double equinox(0.0);
+        if (have_equinox) {
+            equinox = wcs_long_lat.equinox;
+        }
+        bool equinox_is_2000 = casacore::near(equinox, 2000.0);
+
+        casacore::MDirection::Types direction_type;
+        bool dir_type_defined(false); // No "unknown" type
+
+        // Check LAT/LON direction system
+        if ((ctype1.find("GLON") != std::string::npos) && (ctype2.find("GLAT") != std::string::npos)) {
+            direction_type = casacore::MDirection::GALACTIC;
+            dir_type_defined = true;
+        } else if ((ctype1.find("SLON") != std::string::npos) && (ctype2.find("SLAT") != std::string::npos)) {
+            direction_type = casacore::MDirection::SUPERGAL;
+            dir_type_defined = true;
+        } else if ((ctype1.find("ELON") != std::string::npos) && (ctype2.find("ELAT") != std::string::npos)) {
+            if (!have_equinox || equinox_is_2000) {
+                direction_type = casacore::MDirection::ECLIPTIC;
+                dir_type_defined = true;
+            }
+        } else if (((ctype1.find("LON") != std::string::npos) || (ctype1.find("LAT") != std::string::npos)) &&
+                   ((ctype2.find("LON") != std::string::npos) || (ctype2.find("LAT") != std::string::npos))) {
+            spdlog::debug("{} and {} are unsupported types", ctype1, ctype2);
+        } else {
+            // Not LAT/LON
+            std::string radesys(wcs_long_lat.radesys);
+            bool equinox_is_1950 = casacore::near(equinox, 1950.0);
+            bool equinox_is_1950_vla = casacore::near(equinox, 1979.9);
+
+            if (radesys[0] != '\0') {
+                // Use RADESYS for direction type
+                if (radesys.find("ICRS") != std::string::npos) {
+                    if (!have_equinox || equinox_is_2000) {
+                        direction_type = casacore::MDirection::ICRS;
+                        dir_type_defined = true;
+                    }
+                } else if (radesys.find("FK5") != std::string::npos) {
+                    if (!have_equinox || equinox_is_2000) {
+                        direction_type = casacore::MDirection::J2000;
+                        dir_type_defined = true;
+                    }
+                } else if (radesys.find("FK4") != std::string::npos) {
+                    if (!have_equinox || equinox_is_1950) {
+                        direction_type = casacore::MDirection::B1950;
+                        dir_type_defined = true;
+                    } else if (!have_equinox || equinox_is_1950_vla) {
+                        direction_type = casacore::MDirection::B1950_VLA;
+                        dir_type_defined = true;
+                    }
+                } else if (radesys.find("GAPPT") != std::string::npos) {
+                    spdlog::debug("RADESYS GAPPT not supported");
+                }
+            } else if (have_equinox) {
+                // Use EQUINOX
+                if (equinox >= 1984.0) {
+                    direction_type = casacore::MDirection::J2000;
+                } else if (equinox_is_1950_vla) {
+                    direction_type = casacore::MDirection::B1950_VLA;
+                } else {
+                    direction_type = casacore::MDirection::B1950;
+                }
+                dir_type_defined = true;
+            } else {
+                spdlog::debug("Direction system not defined, assuming J2000.");
+                direction_type = casacore::MDirection::J2000;
+                dir_type_defined = true;
+            }
+        }
+
+        if (dir_type_defined) {
+            casacore::DirectionCoordinate dir_coord(direction_type, wcs_long_lat, true);
+            coord_sys.addCoordinate(dir_coord);
+        } else {
+            // If nsub is 2, should have been able to determine direction type
+            ok = false;
+        }
+    }
+
+    wcsfree(&wcs_long_lat);
+    return ok;
+}
+
+void CartaFitsImage::SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers) {
+    // Parse unused keyrecords into casacore Record
+    int nkeys = strlen(header) / 80; // update for unused keys
+    int nkey_ids(0), nreject(0);
+    ::fitskeyid key_ids[1];
+    ::fitskey* fits_keys; // struct: using keyword, type, keyvalue, comment, ulen
+    int status = fitshdr(header, nkeys, nkey_ids, key_ids, &nreject, &fits_keys);
+
+    if (status) {
+        spdlog::debug("Coordinate system error: wcslib FITS header parser error");
+        throw(casacore::AipsError("Coordinate system setup failed."));
+    }
+
+    for (int i = 0; i < nkeys; ++i) {
+        // Each keyrecord is a subrecord in the unused_headers Record
+        // name: value, comment/unit
+        casacore::Record sub_record;
+
+        // name
+        casacore::String name(fits_keys[i].keyword);
+        name.downcase();
+
+        // type: if type < 0, syntax error encountered
+        int type = abs(fits_keys[i].type);
+
+        switch (type) {
+            case 0: // no value
+                break;
+            case 1: { // logical, represented as int
+                casacore::Bool value(fits_keys[i].keyvalue.i > 0);
+                sub_record.define("value", value);
+                break;
+            }
+            case 2: { // int
+                casacore::Int value(fits_keys[i].keyvalue.i);
+                sub_record.define("value", value);
+                break;
+            }
+            case 3: { // int64
+                casacore::Int64 value(fits_keys[i].keyvalue.i);
+                sub_record.define("value", value);
+                break;
+            }
+            case 4: // very long int, not supported
+                break;
+            case 5: { // float
+                casacore::Float value(fits_keys[i].keyvalue.i);
+                sub_record.define("value", value);
+                break;
+            }
+            case 6:   // integer complex
+            case 7: { // double complex
+                casacore::Complex value(fits_keys[i].keyvalue.c[0], fits_keys[i].keyvalue.c[1]);
+                sub_record.define("value", value);
+                break;
+            }
+            case 8: { // string
+                casacore::String value(fits_keys[i].keyvalue.i);
+                sub_record.define("value", value);
+                break;
+            }
+            default:
+                break;
+        }
+
+        // Add unit and comment
+        if (sub_record.isDefined("value")) {
+            casacore::String comment(fits_keys[i].comment);
+            if (fits_keys[i].ulen > 0) {
+                // comment contains units string in standard format; set substring to unit
+                casacore::String unit(comment, 1, fits_keys[i].ulen - 2);
+                sub_record.define("unit", unit);
+            } else {
+                sub_record.define("comment", comment);
+            }
+        }
+
+        // Add to unused_headers Record unless already defined
+        if (!unused_headers.isDefined(name)) {
+            unused_headers.defineRecord(name, sub_record);
+        }
+    }
+
+    free(fits_keys);
+}
+
+void CartaFitsImage::AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec) {
+    // Add ObsInfo (observer, telescope, date) to coordinate system, and update header_rec
+    casacore::Vector<casacore::String> error;
+    casacore::ObsInfo obs_info;
+    obs_info.fromFITS(error, header_rec);
+    coord_sys.setObsInfo(obs_info);
+
+    // Remove used ObsInfo keys from header_rec
+    casacore::Vector<casacore::String> obs_keys = casacore::ObsInfo::keywordNamesFITS();
+    for (auto& obs_key : obs_keys) {
+        if (header_rec.isDefined(obs_key)) {
+            header_rec.removeField(obs_key);
+        }
+    }
 }

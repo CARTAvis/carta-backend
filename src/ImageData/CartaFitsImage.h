@@ -48,12 +48,18 @@ public:
     casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) override;
 
 private:
-    void OpenFile();
+    fitsfile* OpenFile();
     void CloseFile(fitsfile* fptr);
     void CloseFileIfError(fitsfile* fptr, const int& status, const std::string& error);
 
     void SetUpImage();
-    casacore::Vector<casacore::String> GetFitsHeaders();
+    void GetFitsHeaders(int& nkeys, std::string& hdrstr);
+
+    // casacore ImageFITSConverter workaround
+    casacore::CoordinateSystem SetUpCoordinateSystem(int nkeys, const std::string& header_str, casacore::RecordInterface& unused_headers);
+    bool AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes);
+    void SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers);
+    void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
     std::string _filename;
     unsigned int _hdu;
