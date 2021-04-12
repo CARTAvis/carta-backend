@@ -415,32 +415,32 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 size_t compressed_size;
                 int precision = lround(compression_quality);
                 Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-                float compressed_ratio = (float)compressed_size / (float)tile_image_data_size;
+                float compression_ratio = (float)compressed_size / (float)tile_image_data_size;
 
-                if (precision < HIGH_COMPRESSION_QUALITY && compressed_ratio < 0.05) {
+                if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio < 0.05) {
                     // re-compress the data with a higher precision
                     std::vector<char> compression_buffer_2;
                     size_t compressed_size_2;
                     Compress(
                         tile_image_data, 0, compression_buffer_2, compressed_size_2, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
-                    float compressed_ratio_2 = (float)compressed_size_2 / (float)tile_image_data_size;
+                    float compression_ratio_2 = (float)compressed_size_2 / (float)tile_image_data_size;
 
-                    if (compressed_ratio_2 < 0.1) {
+                    if (compression_ratio_2 < 0.1) {
                         // set compression data with high precision
                         raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
                         tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                         tile_ptr->set_image_data(compression_buffer_2.data(), compressed_size_2);
-                        spdlog::warn(
-                            "Change to higher compression quality: {}->{}. The compressed ratio for tile (layer:{}, x:{}, y:{}) is "
-                            "{:.3f}.",
-                            precision, HIGH_COMPRESSION_QUALITY, tile.layer, tile.x, tile.y, compressed_ratio_2);
+                        spdlog::info(
+                            "Change to high compression quality: {}->{}. The change of compression ratio for tile (layer:{}, x:{}, y:{}) "
+                            "is {:.3f}->{:.3f}.",
+                            precision, HIGH_COMPRESSION_QUALITY, tile.layer, tile.x, tile.y, compression_ratio, compression_ratio_2);
                     } else {
                         // set compression data with default precision
                         raster_tile_data.set_compression_quality(compression_quality);
                         tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                         tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
-                        spdlog::debug("The compressed ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y,
-                            compressed_ratio);
+                        spdlog::debug("The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y,
+                            compression_ratio);
                     }
                 } else {
                     // set compression data with default precision
@@ -448,7 +448,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                     tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                     tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
                     spdlog::debug(
-                        "The compressed ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compressed_ratio);
+                        "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
                 }
             }
 
