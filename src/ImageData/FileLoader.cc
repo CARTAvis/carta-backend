@@ -189,6 +189,14 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
     _stokes_axis = stokes_axis;
     _num_stokes = (stokes_axis >= 0 ? shape(stokes_axis) : 1);
 
+    // save stokes types with respect to the stokes index
+    if ((_stokes_indices.size() == 1) && (_delta_stokes_index > 0)) {
+        auto it = _stokes_indices.begin();
+        for (int i = 1; i < _num_stokes; ++i) {
+            int stokes_value = GetStokesValue(it->first) + i * _delta_stokes_index;
+            _stokes_indices[GetStokesType(stokes_value)] = i;
+        }
+    }
     return true;
 }
 
@@ -737,4 +745,35 @@ double FileLoader::CalculateBeamArea() {
     }
 
     return info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
+}
+
+void FileLoader::SetFirstStokesType(int stokes_value) {
+    switch (stokes_value) {
+        case 1:
+            _stokes_indices[CARTA::StokesType::I] = 0;
+            break;
+        case 2:
+            _stokes_indices[CARTA::StokesType::Q] = 0;
+            break;
+        case 3:
+            _stokes_indices[CARTA::StokesType::U] = 0;
+            break;
+        case 4:
+            _stokes_indices[CARTA::StokesType::V] = 0;
+            break;
+        default:
+            break;
+    }
+}
+
+bool FileLoader::GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index) {
+    if (_stokes_indices.count(stokes_type)) {
+        stokes_index = _stokes_indices[stokes_type];
+        return true;
+    }
+    return false;
+}
+
+void FileLoader::SetDeltaStokesIndex(int delta_stokes_index) {
+    _delta_stokes_index = delta_stokes_index;
 }

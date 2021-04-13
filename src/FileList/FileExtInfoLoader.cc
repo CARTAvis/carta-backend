@@ -113,9 +113,13 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 // Create header entry for each FitsKeyword
                 fhi.kw.first(); // go to first card
                 casacore::FitsKeyword* fkw = fhi.kw.next();
+                std::set<casacore::String> name_set; // used to check the repetition of name
+                casacore::String stokes_coord_type_num;
                 while (fkw) {
                     casacore::String name(fkw->name());
                     casacore::String comment(fkw->comm());
+                    name_set.insert(name);
+                    bool fill(true);
 
                     // Strangely, the FitsKeyword does not append axis/coord number
                     if ((name == "NAXIS")) {
@@ -145,7 +149,27 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         name = "HDF5_DATE";
                     }
 
-                    if (name != "END") {
+                    // Don't fill the name which is repeated after removing the underscore suffix
+                    if (!name.empty() && (name.back() == '_') && name_set.count(name.substr(0, name.size() - 1))) {
+                        fill = false;
+                    }
+
+                    // Get the stokes coordinate number
+                    casacore::String key_world = fkw->asString();
+                    if (casacore::String(key_world).find("STOKES") != casacore::String::npos) {
+                        stokes_coord_type_num = name.back();
+                    }
+
+                    // Fill the first stokes type and the delta value for the stokes index. Set the first stokes type index as 0
+                    if (!stokes_coord_type_num.empty()) {
+                        if (name == ("CRVAL" + stokes_coord_type_num)) {
+                            _loader->SetFirstStokesType((int)fkw->asDouble());
+                        } else if (name == ("CDELT" + stokes_coord_type_num)) {
+                            _loader->SetDeltaStokesIndex((int)fkw->asDouble());
+                        }
+                    }
+
+                    if (name != "END" && fill) {
                         switch (fkw->type()) {
                             case casacore::FITS::LOGICAL: {
                                 bool value(fkw->asBool());
