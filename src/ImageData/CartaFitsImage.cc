@@ -8,10 +8,13 @@
 
 #include "CartaFitsImage.h"
 
+#include <casacore/casa/BasicSL/Constants.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/FITSCoordinateUtil.h>
+#include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
+#include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/Stokes.h>
@@ -478,7 +481,14 @@ casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
     ok = AddStokesCoordinate(coord_sys, wcs0, _shape, stokes_axis);
     if (!ok) {
         wcsvfree(&nwcs, &wcs_ptr);
-        throw(casacore::AipsError("Coordinate system setup failed."));
+        throw(casacore::AipsError("Stokes coordinate setup failed."));
+    }
+
+    // Spectral coordinate
+    ok = AddSpectralCoordinate(coord_sys, wcs0, _shape, spec_axis);
+    if (!ok) {
+        wcsvfree(&nwcs, &wcs_ptr);
+        throw(casacore::AipsError("Spectral coordinate setup failed."));
     }
 
     // Put unused keyrecords in header string into Record
@@ -507,7 +517,6 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
     } catch (const casacore::AipsError& err) {
         spdlog::debug(err.getMesg());
         wcsfree(&wcs_long_lat);
-        spdlog::debug("Failed to extract wcs latitude/longitude coordinates.");
         return false;
     }
 
@@ -626,7 +635,6 @@ bool CartaFitsImage::AddStokesCoordinate(
     } catch (const casacore::AipsError& err) {
         spdlog::debug(err.getMesg());
         wcsfree(&wcs_stokes);
-        spdlog::debug("Failed to extract wcs stokes coordinate.");
         return false;
     }
 
@@ -640,6 +648,7 @@ bool CartaFitsImage::AddStokesCoordinate(
             stokes_length = shape(stokes_axis);
             if (stokes_length > 4) {
                 spdlog::debug("Stokes coordinate length > 4.");
+                wcsfree(&wcs_stokes);
                 return false;
             }
         }
@@ -698,6 +707,215 @@ bool CartaFitsImage::AddStokesCoordinate(
 
     wcsfree(&wcs_stokes);
     return ok;
+}
+
+bool CartaFitsImage::AddSpectralCoordinate(
+    casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& spectral_axis) {
+    // Create casacore::SpectralCoordinate from headers and add to coord_sys.
+    // Returns spectral axis and whether wcssub (coordinate extraction) succeeded.
+
+    // Extract SPECTRAL wcs structure
+    int nsub(1);
+    casacore::Block<int> axes(nsub);
+    axes[0] = WCSSUB_SPECTRAL;
+    ::wcsprm wcs_spectral;
+    try {
+        casacore::Coordinate::sub_wcs(wcs, nsub, axes.storage(), wcs_spectral);
+    } catch (const casacore::AipsError& err) {
+        spdlog::debug(err.getMesg());
+        wcsfree(&wcs_spectral);
+        return false;
+    }
+
+    bool ok(true);
+    if (nsub == 1) {
+        // Found 1 spectral axis
+        spectral_axis = axes[0] - 1; // 0-based
+
+        size_t num_chan(1);
+        if (spectral_axis < shape.size()) {
+            num_chan = shape(spectral_axis);
+        }
+
+        if (num_chan == 0) {
+            spdlog::debug("Spectral coordinate has no channels.");
+            wcsfree(&wcs_spectral);
+            return false;
+        }
+
+        // CTYPE, native type for SpectralCoordinate
+        casacore::String ctype1 = wcs_spectral.ctype[0];
+
+        if (ctype1.startsWith("WAVE") || ctype1.startsWith("AWAV") || ctype1.startsWith("VOPT") || ctype1.startsWith("FELO")) {
+            // Set up wcsprm struct with wcsset
+            casacore::Coordinate::set_wcs(wcs_spectral);
+
+            // Determine frequency type
+            casacore::MFrequency::Types frequency_type = GetFrequencyType(wcs_spectral);
+
+            if (frequency_type == casacore::MFrequency::Undefined) {
+                spdlog::debug("Failed to determine spectral reference frame.");
+                wcsfree(&wcs_spectral);
+                return false;
+            }
+
+            // Spectral headers
+            double crval = wcs_spectral.crval[0];
+            double crpix = wcs_spectral.crpix[0];
+            double cdelt = wcs_spectral.cdelt[0];
+            double pc = wcs_spectral.pc[0];
+            double rest_frequency = wcs_spectral.restfrq;
+            casacore::String cunit(wcs_spectral.cunit[0]);
+
+            if (rest_frequency == 0.0) {
+                if (wcs_spectral.restwav != 0.0) {
+                    rest_frequency = casacore::C::c / wcs.restwav;
+                }
+            }
+
+            if (ctype1.startsWith("WAVE") || ctype1.startsWith("AWAV")) {
+                // Calculate wavelengths
+                casacore::Vector<casacore::Double> wavelengths(num_chan);
+                for (size_t i = 0; i < num_chan; ++i) {
+                    wavelengths(i) = crval + (cdelt * pc * (double(i + 1) - crpix)); // +1 because FITS works 1-based
+                }
+
+                bool in_air(false);
+                casacore::SpectralCoordinate::SpecType native_type(casacore::SpectralCoordinate::WAVE);
+
+                if (ctype1.contains("AWAV")) {
+                    in_air = true;
+                    native_type = casacore::SpectralCoordinate::AWAV;
+                }
+
+                casacore::SpectralCoordinate spectral_coord(frequency_type, wavelengths, cunit, rest_frequency, in_air);
+                spectral_coord.setNativeType(native_type);
+                coord_sys.addCoordinate(spectral_coord);
+            } else {
+                // Calculate frequencies for VOPT, FELO
+                casacore::Vector<casacore::Double> frequencies(num_chan);
+                casacore::Unit vel_unit(cunit);
+
+                for (size_t i = 0; i < num_chan; ++i) {
+                    casacore::Quantity vel_quant(crval + (cdelt * pc * (double(i + 1) - crpix)), vel_unit);
+                    double vel_mps = vel_quant.getValue("m/s");
+
+                    if (vel_mps > -casacore::C::c) {
+                        frequencies(i) = rest_frequency / ((vel_mps / casacore::C::c) + 1.0); // in Hz
+                    } else {
+                        frequencies(i) = HUGE_VAL;
+                    }
+                }
+
+                casacore::SpectralCoordinate spectral_coord(frequency_type, frequencies, rest_frequency);
+                spectral_coord.setNativeType(casacore::SpectralCoordinate::VOPT);
+                coord_sys.addCoordinate(spectral_coord);
+            }
+        } else {
+            casacore::SpectralCoordinate::SpecType native_type(casacore::SpectralCoordinate::FREQ);
+
+            if (ctype1.startsWith("VELO")) {
+                native_type = casacore::SpectralCoordinate::VRAD;
+            } else if (ctype1.startsWith("VRAD")) {
+                native_type = casacore::SpectralCoordinate::VRAD;
+            } else if (ctype1.startsWith("BETA")) {
+                native_type = casacore::SpectralCoordinate::BETA;
+            } else {
+                spdlog::debug("Spectral coordinate type {} not supported.", ctype1);
+                wcsfree(&wcs_spectral);
+                return false;
+            }
+
+            // Translate spectral axis to FREQ
+            int spectral_axis_index(0); // in wcs_spectral struct
+            char ctype[9];
+            strcpy(ctype, "FREQ-???");
+            int status = wcssptr(&wcs_spectral, &spectral_axis_index, ctype);
+
+            if (status) {
+                switch (status) {
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        break;
+                    default:
+                        ok = false;
+                }
+            } else {
+                // Set up wcsprm struct with wcsset
+                casacore::Coordinate::set_wcs(wcs_spectral);
+            }
+
+            if (ok) {
+                // Determine frequency type
+                casacore::MFrequency::Types frequency_type = GetFrequencyType(wcs_spectral);
+
+                if (frequency_type == casacore::MFrequency::Undefined) {
+                    spdlog::debug("Failed to determine spectral reference frame.");
+                    wcsfree(&wcs_spectral);
+                    return false;
+                }
+
+                bool one_based(true);
+                casacore::SpectralCoordinate spectral_coord(frequency_type, wcs_spectral, one_based);
+                spectral_coord.setNativeType(native_type);
+                coord_sys.addCoordinate(spectral_coord);
+            }
+        }
+    }
+
+    wcsfree(&wcs_spectral);
+    return ok;
+}
+
+casacore::MFrequency::Types CartaFitsImage::GetFrequencyType(const ::wcsprm& wcs_spectral) {
+    // Determine frequency type from wcs spectral headers
+    casacore::MFrequency::Types freq_type(casacore::MFrequency::Undefined);
+
+    if (wcs_spectral.specsys[0] == '\0') {
+        // If no SPECSYS, use VELREF
+        if (wcs_spectral.velref == 0) {
+            // No VELREF either, freq type undefined
+            return freq_type;
+        } else {
+            int velref = wcs_spectral.velref;
+            if (velref > 256) {
+                velref -= 256;
+            }
+
+            std::vector<casacore::MFrequency::Types> velref_freq_types = {casacore::MFrequency::LSRK, casacore::MFrequency::BARY,
+                casacore::MFrequency::TOPO, casacore::MFrequency::LSRD, casacore::MFrequency::GEO, casacore::MFrequency::REST,
+                casacore::MFrequency::GALACTO};
+            if ((velref > 0) && (velref - 1) < velref_freq_types.size()) {
+                freq_type = velref_freq_types[velref - 1];
+            } else {
+                spdlog::debug("Frequency type from VELREF undefined by AIPS convention.  TOPO assumed.");
+                freq_type = casacore::MFrequency::TOPO;
+            }
+
+            return freq_type;
+        }
+    }
+
+    // Use SPECSYS
+    casacore::String specsys(wcs_spectral.specsys[0]);
+    specsys.upcase();
+
+    std::unordered_map<std::string, casacore::MFrequency::Types> specsys_freq_types = {{"TOPOCENT", casacore::MFrequency::TOPO},
+        {"GEOCENTR", casacore::MFrequency::GEO}, {"BARYCENT", casacore::MFrequency::BARY}, {"HELIOCEN", casacore::MFrequency::BARY},
+        {"LSRK", casacore::MFrequency::LSRK}, {"LSRD", casacore::MFrequency::LSRD}, {"GALACTOC", casacore::MFrequency::GALACTO},
+        {"LOCALGRP", casacore::MFrequency::LGROUP}, {"CMBDIPOL", casacore::MFrequency::CMB}, {"SOURCE", casacore::MFrequency::REST}};
+
+    if (specsys_freq_types.count(specsys)) {
+        freq_type = specsys_freq_types[specsys];
+
+        if (specsys[0] == 'H') {
+            spdlog::debug("HELIOCEN reference frame unsupported, using BARYCENT instead.");
+        }
+    }
+
+    return freq_type;
 }
 
 void CartaFitsImage::SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers) {

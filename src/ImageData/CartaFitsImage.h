@@ -12,7 +12,6 @@
 
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInterface.h>
-#include <casacore/tables/DataMan/TiledFileAccess.h>
 
 #include "../Cfitsio.h"
 
@@ -60,6 +59,9 @@ private:
     bool AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes);
     bool AddStokesCoordinate(
         casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis);
+    bool AddSpectralCoordinate(
+        casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& spectral_axis);
+    casacore::MFrequency::Types GetFrequencyType(const ::wcsprm& wcs_spectral);
     void SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
