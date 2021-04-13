@@ -433,7 +433,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                         tile_ptr->set_image_data(compression_buffer_hq.data(), compressed_size_hq);
 
                         spdlog::debug("Using high compression quality. Previous compression ratio: {:.3f}", compression_ratio);
-                        compression_ratio = compressed_size_hq;
+                        compression_ratio = compression_ratio_hq;
                         use_high_precision = true;
                     }
                 }
