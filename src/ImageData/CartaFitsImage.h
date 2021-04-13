@@ -55,14 +55,16 @@ private:
     void GetFitsHeaders(int& nkeys, std::string& hdrstr);
 
     // casacore ImageFITSConverter workaround
-    casacore::CoordinateSystem SetUpCoordinateSystem(int nkeys, const std::string& header_str, casacore::RecordInterface& unused_headers);
+    casacore::CoordinateSystem SetCoordinateSystem(
+        int nheaders, const std::string& header_str, casacore::RecordInterface& unused_headers, int& stokes_fits_value);
     bool AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes);
-    bool AddStokesCoordinate(
-        casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis);
+    bool AddStokesCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis,
+        int& stokes_fits_value);
     bool AddSpectralCoordinate(
         casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& spectral_axis);
     casacore::MFrequency::Types GetFrequencyType(const ::wcsprm& wcs_spectral);
-    void SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers);
+    bool AddLinearCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& linear_axes);
+    void SetHeaderRec(char* header, casacore::RecordInterface& header_rec);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
     std::string _filename;

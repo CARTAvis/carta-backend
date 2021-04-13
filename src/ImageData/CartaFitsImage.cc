@@ -275,7 +275,7 @@ void CartaFitsImage::SetUpImage() {
             // Spectral axis defined in velocity fails if no rest freq to convert to frequencies
             try {
                 // Set up with wcslib
-                coord_sys = SetUpCoordinateSystem(nheaders, header_str, unused_headers);
+                coord_sys = SetCoordinateSystem(nheaders, header_str, unused_headers, stokes_fits_value);
             } catch (const casacore::AipsError& err) {
                 spdlog::debug("Coordinate system setup error: {}", err.getMesg());
                 throw(casacore::AipsError("Coordinate system setup from FITS headers failed."));
@@ -420,8 +420,8 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
     CloseFile(fptr);
 }
 
-casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
-    int nkeys, const std::string& header_str, casacore::RecordInterface& unused_headers) {
+casacore::CoordinateSystem CartaFitsImage::SetCoordinateSystem(
+    int nheaders, const std::string& header_str, casacore::RecordInterface& unused_headers, int& stokes_fits_value) {
     // Sets up coordinate sys with wcslib due to error thrown by casacore, or throws exception.
     // Based on casacore::FITSCoordinateUtil::fromFITSHeader.
     //   Unfortunately, only this top-level function is public,
@@ -440,7 +440,7 @@ casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
     int nwcs(0);    // number of coordinate representations found
     ::wcsprm* wcs_ptr(nullptr);
 
-    int status = wcspih(header, nkeys, relax, ctrl, &nreject, &nwcs, &wcs_ptr);
+    int status = wcspih(header, nheaders, relax, ctrl, &nreject, &nwcs, &wcs_ptr);
     if (status || (nwcs == 0)) {
         spdlog::debug("Coordinate system error: wcslib parser error");
         throw(casacore::AipsError("Coordinate system setup failed."));
@@ -457,6 +457,14 @@ casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
         spdlog::debug("Coordinate system error: wcslib fix error");
         throw(casacore::AipsError("Coordinate system setup failed."));
     }
+
+    // Put unused keyrecords in header string into Record
+    SetHeaderRec(header, unused_headers);
+
+    casacore::UnitMap::addFITS(); // add FITS units for Quanta
+
+    // Add ObsInfo and remove used keyrecords from Record
+    AddObsInfo(coord_sys, unused_headers);
 
     // Determine the coordinates (longitude, latitude, spectral, stokes axes)
     int long_axis(-1), lat_axis(-1), spec_axis(-1), stokes_axis(-1);
@@ -478,7 +486,7 @@ casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
     }
 
     // Stokes coordinate
-    ok = AddStokesCoordinate(coord_sys, wcs0, _shape, stokes_axis);
+    ok = AddStokesCoordinate(coord_sys, wcs0, _shape, stokes_fits_value, stokes_axis);
     if (!ok) {
         wcsvfree(&nwcs, &wcs_ptr);
         throw(casacore::AipsError("Stokes coordinate setup failed."));
@@ -491,13 +499,16 @@ casacore::CoordinateSystem CartaFitsImage::SetUpCoordinateSystem(
         throw(casacore::AipsError("Spectral coordinate setup failed."));
     }
 
-    // Put unused keyrecords in header string into Record
-    casacore::Record header_rec;
-    SetUnusedHeaderRec(header, header_rec);
+    // Linear coordinate
+    std::vector<int> lin_axes;
+    ok = AddLinearCoordinate(coord_sys, wcs0, lin_axes);
 
-    casacore::UnitMap::addFITS(); // add FITS units for Quanta
+    // Free wcs memory
+    wcsvfree(&nwcs, &wcs_ptr);
 
-    AddObsInfo(coord_sys, header_rec);
+    if (!ok) {
+        throw(casacore::AipsError("Linear coordinate setup failed."));
+    }
 
     return coord_sys;
 }
@@ -608,8 +619,13 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
         }
 
         if (dir_type_defined) {
-            casacore::DirectionCoordinate direction_coord(direction_type, wcs_long_lat, true);
-            coord_sys.addCoordinate(direction_coord);
+            try {
+                casacore::DirectionCoordinate direction_coord(direction_type, wcs_long_lat, true);
+                coord_sys.addCoordinate(direction_coord);
+            } catch (const casacore::AipsError& err) {
+                // Catch so the wcs sub can be freed
+                ok = false;
+            }
         } else {
             // If nsub is 2, should have been able to determine direction type
             ok = false;
@@ -620,8 +636,8 @@ bool CartaFitsImage::AddDirectionCoordinate(casacore::CoordinateSystem& coord_sy
     return ok;
 }
 
-bool CartaFitsImage::AddStokesCoordinate(
-    casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis) {
+bool CartaFitsImage::AddStokesCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape,
+    int& stokes_fits_value, int& stokes_axis) {
     // Create casacore::StokesCoordinate from headers and add to coord_sys.
     // Returns stokes axis and whether wcssub (coordinate extraction) succeeded.
 
@@ -661,6 +677,9 @@ bool CartaFitsImage::AddStokesCoordinate(
         double crval = wcs_stokes.crval[0];
         double cdelt = wcs_stokes.cdelt[0];
 
+        // Used to set image type if not -1, else uses FITS BTYPE header
+        stokes_fits_value = -1;
+
         // Determine stokes type for each index
         casacore::Vector<casacore::Int> stokes_types(stokes_length);
 
@@ -672,6 +691,7 @@ bool CartaFitsImage::AddStokesCoordinate(
                 case 0: {
                     spdlog::debug("Detected Stokes coordinate = 0, setting to Undefined.");
                     stokes_types(i) = casacore::Stokes::Undefined;
+                    stokes_fits_value = 0; // ImageInfo::Beam
                     break;
                 }
                 case 5: {
@@ -683,11 +703,13 @@ bool CartaFitsImage::AddStokesCoordinate(
                 case 8: {
                     spdlog::debug("Detected Stokes coordinate is unofficial spectral index value, setting to Undefined.");
                     stokes_types(i) = casacore::Stokes::Undefined;
+                    stokes_fits_value = 8; // ImageInfo::SpectralIndex
                     break;
                 }
                 case 9: {
                     spdlog::debug("Detected Stokes coordinate is unofficial optical depth, setting to Undefined.");
                     stokes_types(i) = casacore::Stokes::Undefined;
+                    stokes_fits_value = 9; // ImageInfo::OpticalDepth
                     break;
                 }
                 default: {
@@ -701,8 +723,13 @@ bool CartaFitsImage::AddStokesCoordinate(
             }
         }
 
-        casacore::StokesCoordinate stokes_coord(stokes_types);
-        coord_sys.addCoordinate(stokes_coord);
+        try {
+            casacore::StokesCoordinate stokes_coord(stokes_types);
+            coord_sys.addCoordinate(stokes_coord);
+        } catch (const casacore::AipsError& err) {
+            // Catch so the wcs sub can be freed
+            ok = false;
+        }
     }
 
     wcsfree(&wcs_stokes);
@@ -788,9 +815,14 @@ bool CartaFitsImage::AddSpectralCoordinate(
                     native_type = casacore::SpectralCoordinate::AWAV;
                 }
 
-                casacore::SpectralCoordinate spectral_coord(frequency_type, wavelengths, cunit, rest_frequency, in_air);
-                spectral_coord.setNativeType(native_type);
-                coord_sys.addCoordinate(spectral_coord);
+                try {
+                    casacore::SpectralCoordinate spectral_coord(frequency_type, wavelengths, cunit, rest_frequency, in_air);
+                    spectral_coord.setNativeType(native_type);
+                    coord_sys.addCoordinate(spectral_coord);
+                } catch (const casacore::AipsError& err) {
+                    // Catch so the wcs sub can be freed
+                    ok = false;
+                }
             } else {
                 // Calculate frequencies for VOPT, FELO
                 casacore::Vector<casacore::Double> frequencies(num_chan);
@@ -807,9 +839,14 @@ bool CartaFitsImage::AddSpectralCoordinate(
                     }
                 }
 
-                casacore::SpectralCoordinate spectral_coord(frequency_type, frequencies, rest_frequency);
-                spectral_coord.setNativeType(casacore::SpectralCoordinate::VOPT);
-                coord_sys.addCoordinate(spectral_coord);
+                try {
+                    casacore::SpectralCoordinate spectral_coord(frequency_type, frequencies, rest_frequency);
+                    spectral_coord.setNativeType(casacore::SpectralCoordinate::VOPT);
+                    coord_sys.addCoordinate(spectral_coord);
+                } catch (const casacore::AipsError& err) {
+                    // Catch so the wcs sub can be freed
+                    ok = false;
+                }
             }
         } else {
             casacore::SpectralCoordinate::SpecType native_type(casacore::SpectralCoordinate::FREQ);
@@ -857,10 +894,15 @@ bool CartaFitsImage::AddSpectralCoordinate(
                     return false;
                 }
 
-                bool one_based(true);
-                casacore::SpectralCoordinate spectral_coord(frequency_type, wcs_spectral, one_based);
-                spectral_coord.setNativeType(native_type);
-                coord_sys.addCoordinate(spectral_coord);
+                try {
+                    bool one_based(true);
+                    casacore::SpectralCoordinate spectral_coord(frequency_type, wcs_spectral, one_based);
+                    spectral_coord.setNativeType(native_type);
+                    coord_sys.addCoordinate(spectral_coord);
+                } catch (const casacore::AipsError& err) {
+                    // Catch so the wcs sub can be freed
+                    ok = false;
+                }
             }
         }
     }
@@ -918,9 +960,50 @@ casacore::MFrequency::Types CartaFitsImage::GetFrequencyType(const ::wcsprm& wcs
     return freq_type;
 }
 
-void CartaFitsImage::SetUnusedHeaderRec(char* header, casacore::RecordInterface& unused_headers) {
-    // Parse unused keyrecords into casacore Record
-    int nkeys = strlen(header) / 80; // update for unused keys
+bool CartaFitsImage::AddLinearCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& linear_axes) {
+    // Create casacore::LinearCoordinate from headers and add to coord_sys.
+    // Returns linear axes and whether wcssub (coordinate extraction) succeeded.
+
+    // Extract wcs structure for any remaining axes (not direction, spectral, or stokes)
+    int nsub(1);
+    casacore::Block<int> axes(wcs.naxis);
+    axes[0] = -(WCSSUB_LONGITUDE | WCSSUB_LATITUDE | WCSSUB_SPECTRAL | WCSSUB_STOKES);
+    ::wcsprm wcs_linear;
+    try {
+        casacore::Coordinate::sub_wcs(wcs, nsub, axes.storage(), wcs_linear);
+    } catch (const casacore::AipsError& err) {
+        spdlog::debug(err.getMesg());
+        wcsfree(&wcs_linear);
+        return false;
+    }
+
+    bool ok(true);
+    if (nsub > 0) {
+        // Assign linear axes
+        for (int i = 0; i < nsub; i++) {
+            linear_axes.push_back(axes[i] - 1); // 0-based index
+        }
+
+        // Set up wcsprm struct with wcsset
+        casacore::Coordinate::set_wcs(wcs_linear);
+
+        try {
+            bool one_based(true);
+            casacore::LinearCoordinate linear_coord(wcs_linear, one_based);
+            coord_sys.addCoordinate(linear_coord);
+        } catch (const casacore::AipsError& err) {
+            // Catch so the wcs sub can be freed
+            ok = false;
+        }
+    }
+
+    wcsfree(&wcs_linear);
+    return ok;
+}
+
+void CartaFitsImage::SetHeaderRec(char* header, casacore::RecordInterface& header_rec) {
+    // Parse keyrecords into casacore Record
+    int nkeys = strlen(header) / 80;
     int nkey_ids(0), nreject(0);
     ::fitskeyid key_ids[1];
     ::fitskey* fits_keys; // struct: using keyword, type, keyvalue, comment, ulen
@@ -932,7 +1015,7 @@ void CartaFitsImage::SetUnusedHeaderRec(char* header, casacore::RecordInterface&
     }
 
     for (int i = 0; i < nkeys; ++i) {
-        // Each keyrecord is a subrecord in the unused_headers Record
+        // Each keyrecord is a subrecord in the headers Record
         // name: value, comment/unit
         casacore::Record sub_record;
 
@@ -995,9 +1078,9 @@ void CartaFitsImage::SetUnusedHeaderRec(char* header, casacore::RecordInterface&
             }
         }
 
-        // Add to unused_headers Record unless already defined
-        if (!unused_headers.isDefined(name)) {
-            unused_headers.defineRecord(name, sub_record);
+        // Add to headers Record unless already defined
+        if (!header_rec.isDefined(name)) {
+            header_rec.defineRecord(name, sub_record);
         }
     }
 
