@@ -162,7 +162,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
                         dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml"
+                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_filter=-"TimerTest*" --gtest_output=xml:macos_test_detail.xml"
                         }
                         }
                     }
@@ -696,7 +696,7 @@ pipeline {
                 }
             }
         }
-        stage('ICD tests: spectral line query') {
+        stage('ICD tests: catalog') {
             parallel {
                 stage('CentOS7') {
                     agent {
@@ -710,7 +710,7 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                line_query()
+                                catalog()
                             }
                         }
                         }
@@ -728,7 +728,7 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                line_query()
+                                catalog()
                             }
                         }
                         }
@@ -746,7 +746,7 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                line_query()
+                                catalog()
                             }
                         }
                         }
@@ -870,6 +870,122 @@ pipeline {
                 }
             }
         }
+        stage('ICD tests: match') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                match_tests()
+                            }
+                        }
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                match_tests()
+                            }
+                        }
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                match_tests()
+                            }
+                        }
+                        }
+                    }
+                }
+            }
+        }
+        stage('ICD tests: close_file') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                close_file_tests()
+                            }
+                        }
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                close_file_tests()
+                            }
+                        }
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                close_file_tests()
+                            }
+                        }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 def session(){
@@ -933,22 +1049,33 @@ def raster_tiles(){
     sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts # test 1 of 2"
     sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
 }
-def line_query(){
-    sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts # test 1 of 2"
-    sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts # test 2 of 2"
+def catalog(){
+    sh "CI=true npm test src/test/CATALOG_GENERAL.test.ts # test 1 of 2"
+    sh "CI=true npm test src/test/CATALOG_FITS_VOT.test.ts # test 2 of 2"
 }
 def moment_tests(){
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 1 of 7"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 2 of 7"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
-    sh "# skipping CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 1 of 6"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 2 of 6"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 3 of 6"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 4 of 6"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 5 of 6"
+    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 6 of 6"
 }
 def resume_tests(){
     sh "CI=true npm test src/test/RESUME_CATALOG.test.ts # test 1 of 4"
     sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
     sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
     sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
+}
+def match_tests(){
+    sh "CI=true npm test src/test/MATCH_SPATIAL.test.ts # test 1 of 3"
+    sh "CI=true npm test src/test/MATCH_SPECTRAL.test.ts # test 2 of 3"
+    sh "CI=true npm test src/test/MATCH_STATS.test.ts # test 3 of 3"
+}
+def close_file_tests(){
+    sh "CI=true npm test src/test/CLOSE_FILE_SINGLE.test.ts # test 1 of 5"
+    sh "CI=true npm test src/test/CLOSE_FILE_ANIMATION.test.ts # test 2 of 5"
+    sh "CI=true npm test src/test/CLOSE_FILE_ERROR.test.ts # test 3 of 5"
+    sh "CI=true npm test src/test/CLOSE_FILE_SPECTRAL_PROFILE.test.ts # test 4 of 5"
+    sh "CI=true npm test src/test/CLOSE_FILE_TILE.test.ts # test 5 of 5"
 }
