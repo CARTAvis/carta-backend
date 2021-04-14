@@ -59,15 +59,18 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             }
         }
 
-        // Default is casacore::FITSImage
+        // Default is casacore::FITSImage; if fails, try CartaFitsImage
         bool use_casacore_fits(true);
 
         try {
             if (_is_gz) {
                 if (gz_mem_ok) {
-                    use_casacore_fits = false; // throws exception "No data in the zeroth or first extension"
+                    // Use wcslib to access data in CartaFitsImage.
+                    // casacore throws exception "No data in the zeroth or first extension"
+                    use_casacore_fits = false;
                     _image.reset(new carta::CartaFitsImage(_filename, hdu_num));
                 } else {
+                    // use casacore for unzipped FITS file
                     _image.reset(new casacore::FITSImage(_uncompress_filename, 0, hdu_num));
                 }
             } else {
@@ -75,7 +78,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             }
         } catch (const casacore::AipsError& err) {
             if (use_casacore_fits) {
-                // FITSImage failed, try CartaFitsImage
+                // casacore::FITSImage failed, try CartaFitsImage
                 try {
                     _image.reset(new carta::CartaFitsImage(_filename, hdu_num));
                 } catch (const casacore::AipsError& err) {
@@ -196,8 +199,9 @@ bool FitsLoader::GzImageMemoryOk(const casacore::uInt hdu_num, std::string& erro
     // Compare required to available memory
     auto required_mem_kB = (datasize * nbytes) / 1000.0;
     auto avail_mem_kB = casacore::HostInfo::memoryFree();
-    spdlog::debug("FITS gz hdu {}: required memory {} kB, available memory {} kB", hdu_num, required_mem_kB, avail_mem_kB);
     gz_mem_ok = (avail_mem_kB > required_mem_kB);
+    // spdlog::debug("FITS gz hdu {}: required memory {} kB, available memory {} kB", hdu_num, required_mem_kB, avail_mem_kB);
+    spdlog::debug("Access FITS gz in memory: {}", gz_mem_ok);
 
     status = 0;
     fits_close_file(fptr, &status);

@@ -60,10 +60,11 @@ private:
     bool AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes);
     bool AddStokesCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis,
         int& stokes_fits_value);
-    bool AddSpectralCoordinate(
-        casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& spectral_axis);
+    bool AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape,
+        int& spectral_axis, int& linear_spectral_axis);
     casacore::MFrequency::Types GetFrequencyType(const ::wcsprm& wcs_spectral);
     bool AddLinearCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& linear_axes);
+    void SetCoordSysOrder(casacore::CoordinateSystem& coord_sys, int naxes, std::vector<int>& special_axes, std::vector<int>& lin_axes);
     void SetHeaderRec(char* header, casacore::RecordInterface& header_rec);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
