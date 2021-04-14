@@ -410,23 +410,23 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             }
 
             auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
-            
+
             // compress the data with the default precision
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            float compression_ratio = (float)compressed_size / (float)tile_image_data_size;
+            float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
             bool use_high_precision(false);
 
-            if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio < 0.05) {
+            if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio > 20) {
                 // re-compress the data with a higher precision
                 std::vector<char> compression_buffer_hq;
                 size_t compressed_size_hq;
                 Compress(tile_image_data, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
-                float compression_ratio_hq = (float)compressed_size_hq / (float)tile_image_data_size;
+                float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
 
-                if (compression_ratio_hq < 0.1) {
+                if (compression_ratio_hq > 10) {
                     // set compression data with high precision
                     raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
                     tile_ptr->set_image_data(compression_buffer_hq.data(), compressed_size_hq);
