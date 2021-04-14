@@ -162,7 +162,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
                         dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_filter=-"TimerTest*" --gtest_output=xml:macos_test_detail.xml"
+                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_filter=-"TimerTest\\*" --gtest_output=xml:macos_test_detail.xml"
                         }
                         }
                     }
