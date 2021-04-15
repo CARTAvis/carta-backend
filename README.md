@@ -12,12 +12,6 @@ sudo add-apt-repository ppa:cartavis-team/carta
 sudo apt-get update
 ```
 
-To install the release version of the backend only:
-
-```shell
-sudo apt-get install carta-backend
-```
-
 To install the development version of the backend only (suitable for use with the CARTA controller):
 
 ```shell
