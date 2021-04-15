@@ -8,7 +8,6 @@
 
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
 #include <images/Images/ImageOpener.h>
 #include <spdlog/fmt/fmt.h>
@@ -50,17 +49,13 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (fs::exists(system_settings_path) && !no_system_config) {
         settings = JSONConfigSettings(system_settings_path.string());
         system_settings_json_exists = true;
-        spdlog::info("System settings found. Command-line arguments and will override system settings");
-        spdlog::info("If you want to ignore system settings, use --no_system_config as command-line argument.");
+        spdlog::info("Reading system settings from {}", system_settings_path.string());
     }
 
     if (fs::exists(user_settings_path) && !no_user_config) {
         auto user_settings = JSONConfigSettings(user_settings_path.string());
         user_settings_json_exists = true;
-        spdlog::info(
-            "User settings found, applying on top of system settings. Note that Command-line arguments will override system and user "
-            "settings");
-        spdlog::info("If you want to ignore system settings, use --no_user_config as command-line argument.");
+        spdlog::info("Reading user settings from {}", user_settings_path.string());
         settings.merge_patch(user_settings); // user on top of system
     }
 
@@ -139,7 +134,8 @@ void ProgramSettings::ValidateJSON(const json& j) {
             continue;
         }
         if (!j[key].is_number_integer()) {
-            spdlog::warn("Config file has problems, please check key with name {}, it's current value is {}", key, j[key]);
+            spdlog::warn(
+                "Config file has problems, please check key with name {}. Its current value is {}, and a number is expected", key, j[key]);
             invalid_keys.insert(key);
         }
     }
@@ -148,7 +144,8 @@ void ProgramSettings::ValidateJSON(const json& j) {
             continue;
         }
         if (!j[key].is_boolean()) {
-            spdlog::warn("Config file has problems, please check key with name {}, it's current value is {}", key, j[key]);
+            spdlog::warn(
+                "Config file has problems, please check key with name {}. Its current value is {} and a boolean is expected", key, j[key]);
             invalid_keys.insert(key);
         }
     }
@@ -157,18 +154,10 @@ void ProgramSettings::ValidateJSON(const json& j) {
             continue;
         }
         if (!j[key].is_string()) {
-            spdlog::warn("Config file has problems, please check key with name {}, it's current value is {}", key, j[key]);
+            spdlog::warn(
+                "Config file has problems, please check key with name {}. Its current value is {} and a string is expected", key, j[key]);
             invalid_keys.insert(key);
         }
-    }
-    if (invalid_keys.size()) {
-        std::stringstream ss;
-        for (const auto& key : invalid_keys) {
-            ss << key << ", ";
-        }
-        auto res = ss.str();
-        res = res.substr(0, res.size() - 2); // remove traling space and comma
-        spdlog::warn("List of invalid keys in settings = {}", res);
     }
 }
 
