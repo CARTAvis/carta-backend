@@ -989,7 +989,7 @@ pipeline {
     }
 }
 def session(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1004,10 +1004,11 @@ def session(){
              sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
              sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
              sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
-    }
+         }
+     }
 }
 def file_browser(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1025,10 +1026,11 @@ def file_browser(){
              sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts # test 7 of 9"
              sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 8 of 9"
              sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
-    }
+         }
+     }
 }
 def animator(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1042,10 +1044,11 @@ def animator(){
              sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 3 of 5"
              sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 4 of 5"
              sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
+        }
     }
 }
 def contour(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1057,10 +1060,11 @@ def contour(){
              sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts # test 1 of 3"
              sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts # test 2 of 3"
              sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
-    }
+         }
+     }
 }
 def region_statistics(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1072,10 +1076,11 @@ def region_statistics(){
              sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 3"
              sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 3"
              sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 3"
-    }
+         }
+     }
 }
 def region_manipulation(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1094,10 +1099,11 @@ def region_manipulation(){
              sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
              sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
              sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
-    }
+         }
+     }
 }
 def cube_histogram(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1109,10 +1115,11 @@ def cube_histogram(){
              sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
              sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
              sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
-    }
+         }
+     }
 }
 def spatial_profiler(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1123,10 +1130,11 @@ def spatial_profiler(){
              }
              sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts # test 1 of 2"
              sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
-    }
+         }
+     }
 }
 def raster_tiles(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1137,10 +1145,11 @@ def raster_tiles(){
              }
              sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts # test 1 of 2"
              sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
-    }
+         }
+     }
 }
 def catalog(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1151,10 +1160,11 @@ def catalog(){
              }
              sh "CI=true npm test src/test/CATALOG_GENERAL.test.ts # test 1 of 2"
              sh "CI=true npm test src/test/CATALOG_FITS_VOT.test.ts # test 2 of 2"
-    }
+         }
+     }
 }
 def moment_tests(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1169,10 +1179,11 @@ def moment_tests(){
              sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 4 of 6"
              sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 5 of 6"
              sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 6 of 6"
-    }
+         }
+     }
 }
 def resume_tests(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1185,10 +1196,11 @@ def resume_tests(){
              sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
              sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
              sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
-    }
+         }
+     }
 }
 def match_tests(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1200,10 +1212,11 @@ def match_tests(){
              sh "CI=true npm test src/test/MATCH_SPATIAL.test.ts # test 1 of 3"
              sh "CI=true npm test src/test/MATCH_SPECTRAL.test.ts # test 2 of 3"
              sh "CI=true npm test src/test/MATCH_STATS.test.ts # test 3 of 3"
-    }
+         }
+     }
 }
 def close_file_tests(){
-    script {
+     script {
          ret = false
          retry(3) {
              if (ret) {
@@ -1217,5 +1230,6 @@ def close_file_tests(){
              sh "CI=true npm test src/test/CLOSE_FILE_ERROR.test.ts # test 3 of 5"
              sh "CI=true npm test src/test/CLOSE_FILE_SPECTRAL_PROFILE.test.ts # test 4 of 5"
              sh "CI=true npm test src/test/CLOSE_FILE_TILE.test.ts # test 5 of 5"
-    }
+         }
+     } 
 }
