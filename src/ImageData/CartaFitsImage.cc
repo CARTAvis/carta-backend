@@ -17,6 +17,7 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/Stokes.h>
+#include <casacore/tables/DataMan/TiledFileAccess.h>
 
 #include <wcslib/fitshdr.h>
 #include <wcslib/wcs.h>
@@ -35,6 +36,7 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
     : casacore::ImageInterface<float>(),
       _filename(filename),
       _hdu(hdu),
+      _fptr(nullptr),
       _is_compressed(false),
       _datatype(casacore::TpOther),
       _has_blanks(false),
@@ -55,6 +57,7 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
     : ImageInterface<float>(other),
       _filename(other._filename),
       _hdu(other._hdu),
+      _fptr(other._fptr),
       _shape(other._shape),
       _is_compressed(other._is_compressed),
       _datatype(other._datatype),
@@ -63,13 +66,15 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
       _short_blank(other._short_blank),
       _int_blank(other._int_blank),
       _longlong_blank(other._longlong_blank),
-      _pixel_mask(nullptr) {
+      _pixel_mask(nullptr),
+      _tiled_shape(other._tiled_shape) {
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
     }
 }
 
 CartaFitsImage::~CartaFitsImage() {
+    CloseFile();
     delete _pixel_mask;
 }
 
@@ -97,6 +102,10 @@ casacore::Bool CartaFitsImage::ok() const {
 }
 
 casacore::DataType CartaFitsImage::dataType() const {
+    return casacore::DataType::TpFloat;
+}
+
+casacore::DataType CartaFitsImage::internalDataType() const {
     switch (_datatype) {
         case 8:
             return casacore::DataType::TpUChar;
@@ -112,30 +121,59 @@ casacore::DataType CartaFitsImage::dataType() const {
             return casacore::DataType::TpDouble;
     }
 
-    return casacore::DataType::TpOther;
+    return dataType();
 }
 
 casacore::Bool CartaFitsImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    throw(casacore::AipsError("CartaFitsImage doGetSlice not implemented."));
-
-    /*
+    // Read section of data using wcslib
     fitsfile* fptr = OpenFile();
 
+    // start
+    casacore::IPosition slicer_start = section.start();
+    slicer_start += 1; // FITS 1-based
+    std::vector<int> start = slicer_start.asVector().tovector();
+    // end
+    casacore::IPosition slicer_end = section.end();
+    slicer_end += 1; // FITS 1-based
+    std::vector<int> end = slicer_end.asVector().tovector();
+    // inc
+    std::vector<int> inc = section.stride().asVector().tovector();
+
+    // Buffer
+    casacore::IPosition slice_shape = section.length();
+    auto buffer_size(slice_shape.product());
+    std::vector<unsigned char> tmp_mask(buffer_size);
+
     switch (_datatype) {
-        case 8:
+        case 8: {
+            std::vector<unsigned char> tmp(buffer_size);
             break;
-        case 16:
+        }
+        case 16: {
+            std::vector<short> tmp(buffer_size);
             break;
-        case 32:
+        }
+        case 32: {
+            std::vector<int> tmp(buffer_size);
             break;
-        case 64:
+        }
+        case 64: {
+            std::vector<LONGLONG> tmp(buffer_size);
             break;
-        case -32:
+        }
+        case -32: {
+            std::vector<float> tmp(buffer_size);
             break;
-        case -64:
+        }
+        case -64: {
+            std::vector<double> tmp(buffer_size);
             break;
+        }
+        default:
+            return false;
     }
 
+    /*
    Array<Double> tmp;
    pTiledFile_p->get (tmp, section);
    buffer.resize(tmp.shape());
@@ -164,15 +202,11 @@ void CartaFitsImage::resize(const casacore::TiledShape& newShape) {
 }
 
 casacore::uInt CartaFitsImage::advisedMaxPixels() const {
-    // TODO
-    // return shape_p.tileShape().product();
-    throw(casacore::AipsError("CartaFitsImage advisedMaxPixels not implemented."));
+    return _tiled_shape.tileShape().product();
 }
 
-casacore::IPosition CartaFitsImage::doNiceCursorShape(casacore::uInt maxPixels) const {
-    // TODO
-    // return shape_p.tileShape();
-    throw(casacore::AipsError("CartaFitsImage doNiceCursorShape not implemented."));
+casacore::IPosition CartaFitsImage::doNiceCursorShape(casacore::uInt) const {
+    return _tiled_shape.tileShape();
 }
 
 casacore::Bool CartaFitsImage::isMasked() const {
@@ -188,6 +222,7 @@ const casacore::Lattice<bool>& CartaFitsImage::pixelMask() const {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
 
+    // TODO
     throw(casacore::AipsError("CartaFitsImage pixelMask not implemented."));
     return *_pixel_mask;
 }
@@ -197,6 +232,7 @@ casacore::Lattice<bool>& CartaFitsImage::pixelMask() {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
 
+    // TODO
     throw(casacore::AipsError("CartaFitsImage pixelMask not implemented."));
     return *_pixel_mask;
 }
@@ -208,6 +244,7 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
         return false;
     }
 
+    // TODO
     throw(casacore::AipsError("CartaFitsImage doGetMaskSlice not implemented."));
     return _pixel_mask->getSlice(buffer, section);
 }
@@ -216,26 +253,33 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
 
 fitsfile* CartaFitsImage::OpenFile() {
     // Open file and return file pointer
-    fitsfile* fptr;
-    int status(0);
-    fits_open_file(&fptr, _filename.c_str(), 0, &status);
+    if (!_fptr) {
+        fitsfile* fptr;
+        int status(0);
+        fits_open_file(&fptr, _filename.c_str(), 0, &status);
 
-    if (status) {
-        throw(casacore::AipsError("Error opening FITS file."));
+        if (status) {
+            throw(casacore::AipsError("Error opening FITS file."));
+        }
+
+        _fptr = fptr;
     }
 
-    return fptr;
+    return _fptr;
 }
 
-void CartaFitsImage::CloseFile(fitsfile* fptr) {
-    int status = 0;
-    fits_close_file(fptr, &status);
+void CartaFitsImage::CloseFile() {
+    if (_fptr) {
+        int status = 0;
+        fits_close_file(_fptr, &status);
+        _fptr = nullptr;
+    }
 }
 
-void CartaFitsImage::CloseFileIfError(fitsfile* fptr, const int& status, const std::string& error) {
+void CartaFitsImage::CloseFileIfError(const int& status, const std::string& error) {
     // Close file if cfitsio status is not 0 (ok).  If error, throw exception.
     if (status) {
-        CloseFile(fptr);
+        CloseFile();
 
         if (!error.empty()) {
             throw(casacore::AipsError(error));
@@ -285,10 +329,13 @@ void CartaFitsImage::SetUpImage() {
         }
     }
 
-    // Set coord sys in image
-    setCoordinateInfo(coord_sys);
-
     try {
+        // Set tiled shape for data access (must be done before image info in case of multiple beams)
+        _tiled_shape = casacore::TiledShape(_shape, casacore::TiledFileAccess::makeTileShape(_shape));
+
+        // Set coord sys in image
+        setCoordinateInfo(coord_sys);
+
         // Set image units
         setUnits(casacore::ImageFITSConverter::getBrightnessUnit(unused_headers, log));
 
@@ -306,6 +353,7 @@ void CartaFitsImage::SetUpImage() {
         casacore::Record misc_info;
         casacore::ImageFITSConverter::extractMiscInfo(misc_info, unused_headers);
         setMiscInfo(misc_info);
+
     } catch (const casacore::AipsError& err) {
         spdlog::debug("Image setup error: {}", err.getMesg());
         throw(casacore::AipsError("Image setup from FITS headers failed."));
@@ -324,17 +372,17 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
     int* hdutype(nullptr);
     int status(0);
     fits_movabs_hdu(fptr, hdu, hdutype, &status);
-    CloseFileIfError(fptr, status, "Error advancing FITS gz file to requested HDU.");
+    CloseFileIfError(status, "Error advancing FITS gz file to requested HDU.");
 
     // Check hdutype
     if (_hdu > 0) {
         int hdutype(-1);
         status = 0;
         fits_get_hdu_type(fptr, &hdutype, &status); // IMAGE_HDU, ASCII_TBL, BINARY_TBL
-        CloseFileIfError(fptr, status, "Error determining HDU type.");
+        CloseFileIfError(status, "Error determining HDU type.");
 
         if (hdutype != IMAGE_HDU) {
-            CloseFileIfError(fptr, 1, "No image at specified hdu in FITS file.");
+            CloseFileIfError(1, "No image at specified hdu in FITS file.");
         }
     }
 
@@ -343,9 +391,10 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
     long naxes[maxdim];
     status = 0;
     fits_get_img_param(fptr, maxdim, &bitpix, &naxis, naxes, &status);
-    CloseFileIfError(fptr, status, "Error getting image parameters.");
+    CloseFileIfError(status, "Error getting image parameters.");
+
     if (naxis < 2) {
-        CloseFileIfError(fptr, 1, "Image must be at least 2D.");
+        CloseFileIfError(1, "Image must be at least 2D.");
     }
 
     // Set shape and data type
@@ -378,18 +427,22 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
         _has_blanks = !status;
     }
 
+    // Set optimal number of rows to read for maximum I/O efficiency
+    status = 0;
+
     // Get headers to set up image:
     // Previous functions converted compressed headers automatically; must call specific function for uncompressed headers
     // Determine whether tile compressed
     status = 0;
     _is_compressed = fits_is_compressed_image(fptr, &status);
-    CloseFileIfError(fptr, status, "Error detecting image compression.");
+    CloseFileIfError(status, "Error detecting image compression.");
 
-    // Number of headers (keys)
+    // Number of headers (keys).  nkeys is function parameter.
+    nkeys = 0;
     int* more_keys(nullptr);
     status = 0;
     fits_get_hdrspace(fptr, &nkeys, more_keys, &status);
-    CloseFileIfError(fptr, status, "Unable to determine FITS headers.");
+    CloseFileIfError(status, "Unable to determine FITS headers.");
 
     // Get headers as single string with no exclusions (exclist=nullptr, nexc=0)
     int no_comments(0);
@@ -406,7 +459,7 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
         // Free memory allocated by cfitsio, close file, throw exception
         int free_status(0);
         fits_free_memory(*header, &free_status);
-        CloseFileIfError(fptr, status, "Unable to read FITS headers.");
+        CloseFileIfError(status, "Unable to read FITS headers.");
     }
 
     hdrstr = std::string(header[0]);
@@ -416,7 +469,7 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
     fits_free_memory(*header, &free_status);
 
     // Done with file
-    CloseFile(fptr);
+    CloseFile();
 }
 
 casacore::CoordinateSystem CartaFitsImage::SetCoordinateSystem(

@@ -12,6 +12,7 @@
 
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInterface.h>
+#include <casacore/lattices/Lattices/TiledShape.h>
 
 #include "../Cfitsio.h"
 
@@ -46,10 +47,13 @@ public:
     casacore::Lattice<bool>& pixelMask() override;
     casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) override;
 
+    casacore::DataType internalDataType() const;
+
 private:
+    // Uses _fptr (nullptr when file is closed)
     fitsfile* OpenFile();
-    void CloseFile(fitsfile* fptr);
-    void CloseFileIfError(fitsfile* fptr, const int& status, const std::string& error);
+    void CloseFile();
+    void CloseFileIfError(const int& status, const std::string& error);
 
     void SetUpImage();
     void GetFitsHeaders(int& nkeys, std::string& hdrstr);
@@ -71,6 +75,9 @@ private:
     std::string _filename;
     unsigned int _hdu;
 
+    // File pointer for open file; nullptr when closed
+    fitsfile* _fptr;
+
     // FITS header values
     bool _is_compressed;
     casacore::IPosition _shape;
@@ -82,6 +89,7 @@ private:
     LONGLONG _longlong_blank;
 
     casacore::Lattice<bool>* _pixel_mask;
+    casacore::TiledShape _tiled_shape;
 };
 
 } // namespace carta
