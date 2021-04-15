@@ -78,85 +78,34 @@ json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
 }
 
 void ProgramSettings::SetSettingsFromJSON(const json& j) {
-    ValidateJSON(j); // check for invalid keys, store them in std::set for easy counting
-    // logic here is
-    // value = check invalid, if invalid then default value, otherwise check json and assign its value, otherwise default
-    if (!invalid_keys.count("verbosity")) {
-        verbosity = j.value("verbosity", verbosity);
-    }
-    if (!invalid_keys.count("no_log")) {
-        no_log = j.value("no_log", no_log);
-    }
-    if (!invalid_keys.count("log_performance")) {
-        log_performance = j.value("log_performance", log_performance);
-    }
-    if (!invalid_keys.count("log_protocol_messages")) {
-        log_protocol_messages = j.value("log_protocol_messages", log_protocol_messages);
-    }
-    if (!invalid_keys.count("no_http")) {
-        no_http = j.value("no_http", no_http);
-    }
-    if (!invalid_keys.count("no_browser")) {
-        no_browser = j.value("no_browser", no_browser);
-    }
-    if (!invalid_keys.count("host")) {
-        host = j.value("host", host);
-    }
-    if (!invalid_keys.count("port")) {
-        port = j.value("port", port);
-    }
-    if (!invalid_keys.count("grpc_port")) {
-        grpc_port = j.value("grpc_port", grpc_port);
-    }
-    if (!invalid_keys.count("omp_threads")) {
-        omp_thread_count = j.value("omp_threads", omp_thread_count);
-    }
-    if (!invalid_keys.count("top_level_folder")) {
-        top_level_folder = j.value("top_level_folder", top_level_folder);
-    }
-    if (!invalid_keys.count("frontend_folder")) {
-        frontend_folder = j.value("frontend_folder", frontend_folder);
-    }
-    if (!invalid_keys.count("exit_timeout")) {
-        wait_time = j.value("exit_timeout", wait_time);
-    }
-    if (!invalid_keys.count("initial_timeout")) {
-        init_wait_time = j.value("initial_timeout", init_wait_time);
-    }
-    if (!invalid_keys.count("idle_timeout")) {
-        idle_session_wait_time = j.value("idle_timeout", idle_session_wait_time);
-    }
-}
-
-void ProgramSettings::ValidateJSON(const json& j) {
-    for (const auto& key : int_keys) {
-        if (!j.count(key)) {
+    for (const auto& key : int_keys_map) {
+        if (!j[key.first].is_number_integer()) {
+            spdlog::warn("Config file has problems, please check key with name {}. Its current value is {}, and a number is expected",
+                key.first, j[key.first]);
             continue;
         }
-        if (!j[key].is_number_integer()) {
-            spdlog::warn(
-                "Config file has problems, please check key with name {}. Its current value is {}, and a number is expected", key, j[key]);
-            invalid_keys.insert(key);
+        if (j.contains(key.first)) {
+            *key.second = j[key.first];
         }
     }
-    for (const auto& key : bool_keys) {
-        if (!j.count(key)) {
+    for (const auto& key : bool_keys_map) {
+        if (!j[key.first].is_boolean()) {
+            spdlog::warn("Config file has problems, please check key with name {}. Its current value is {}, and a number is expected",
+                key.first, j[key.first]);
             continue;
         }
-        if (!j[key].is_boolean()) {
-            spdlog::warn(
-                "Config file has problems, please check key with name {}. Its current value is {} and a boolean is expected", key, j[key]);
-            invalid_keys.insert(key);
+        if (j.contains(key.first)) {
+            *key.second = j[key.first];
         }
     }
-    for (const auto& key : string_keys) {
-        if (!j.count(key)) {
+    for (const auto& key : strings_keys_map) {
+        if (!j[key.first].is_string()) {
+            spdlog::warn("Config file has problems, please check key with name {}. Its current value is {}, and a number is expected",
+                key.first, j[key.first]);
             continue;
         }
-        if (!j[key].is_string()) {
-            spdlog::warn(
-                "Config file has problems, please check key with name {}. Its current value is {} and a string is expected", key, j[key]);
-            invalid_keys.insert(key);
+        if (j.contains(key.first)) {
+            *key.second = j[key.first];
         }
     }
 }
@@ -319,19 +268,19 @@ sending messages to the backend).
     // produce JSON for overridding system and user configuration;
     // Options here need to match all options available for system and user settings
     command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
-    for (const auto& key : int_keys) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<int>();
+    for (const auto& key : int_keys_map) {
+        if (result.count(key.first)) {
+            command_line_settings[key.first] = result[key.first].as<int>();
         }
     }
-    for (const auto& key : bool_keys) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<bool>();
+    for (const auto& key : bool_keys_map) {
+        if (result.count(key.first)) {
+            command_line_settings[key.first] = result[key.first].as<bool>();
         }
     }
-    for (const auto& key : string_keys) {
-        if (result.count(key)) {
-            command_line_settings[key] = result[key].as<std::string>();
+    for (const auto& key : strings_keys_map) {
+        if (result.count(key.first)) {
+            command_line_settings[key.first] = result[key.first].as<std::string>();
         }
     }
 }
