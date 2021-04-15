@@ -318,15 +318,7 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "centos7-1_carta_backend_icd"
@@ -338,21 +330,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "ubuntu-1_carta_backend_icd"
@@ -364,21 +347,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "macos-1_carta_backend_icd"
@@ -389,7 +363,6 @@ pipeline {
                                 }
                             }
                         }
-                    }
                 }     
             }
         }
@@ -400,15 +373,7 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "centos7-1_carta_backend_icd"
@@ -420,21 +385,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "ubuntu-1_carta_backend_icd"
@@ -446,21 +402,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "macos-1_carta_backend_icd"
@@ -471,7 +418,6 @@ pipeline {
                                 }
                             }
                         }
-                    }
                 }
             }
         }
@@ -1002,15 +948,7 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "centos7-1_carta_backend_icd"
@@ -1022,21 +960,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "ubuntu-1_carta_backend_icd"
@@ -1048,21 +977,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "macos-1_carta_backend_icd"
@@ -1073,7 +993,6 @@ pipeline {
                                 }
                             }
                         }
-                    }
                 }
             }
         }
@@ -1139,15 +1058,7 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "centos7-1_carta_backend_icd"
@@ -1159,21 +1070,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "ubuntu-1_carta_backend_icd"
@@ -1185,21 +1087,12 @@ pipeline {
                             }
                         }
                     }
-                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "export PATH=/usr/local/bin:$PATH"
                                 dir ('build') {
                                     unstash "macos-1_carta_backend_icd"
@@ -1211,7 +1104,6 @@ pipeline {
                             }
                         }
                     }
-                }
             }
         }
     }
