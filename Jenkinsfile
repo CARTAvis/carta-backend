@@ -181,24 +181,16 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        session()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                session()
                             }
+                        }
                         }
                     }
                 }
@@ -207,24 +199,16 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        session()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                session()
                             }
+                        }
                         }
                     }
                 }
@@ -233,24 +217,16 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        session()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                session()
                             }
+                        }
                         }
                     }
                 }    
@@ -263,51 +239,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        file_browser()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                file_browser()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        file_browser()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                file_browser()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd" 
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        file_browser()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd" 
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                file_browser()
                             }
                         }
+                        }
+                    }
                 }
             }
         }
@@ -318,51 +297,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        animator()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                animator()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        animator()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                animator()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        animator()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                animator()
                             }
                         }
+                        }
+                    }
                 }     
             }
         }
@@ -373,51 +355,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        contour()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                contour()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        contour()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                contour()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        contour()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                contour()
                             }
                         }
+                        }
+                    }
                 }
             }
         }
@@ -428,51 +413,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        region_statistics()
-                                    }  
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                region_statistics()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        region_statistics()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                region_statistics()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        region_statistics()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                region_statistics()
                             }
                         }
+                        }
+                    }
                 }
             }
         }
@@ -483,51 +471,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        region_manipulation()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                region_manipulation()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        region_manipulation()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                region_manipulation()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        region_manipulation()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                region_manipulation()
                             }
                         }
+                        }
+                    }
                 }
             }
         }
@@ -538,24 +529,16 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        cube_histogram()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                cube_histogram()
                             }
+                        }
                         }
                     }
                 }
@@ -564,24 +547,16 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        cube_histogram()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                cube_histogram()
                             }
+                        }
                         }
                     }
                 }
@@ -590,24 +565,16 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        cube_histogram()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                cube_histogram()
                             }
+                        }
                         }
                     }
                 }
@@ -620,24 +587,16 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        spatial_profiler()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                spatial_profiler()
                             }
+                        }
                         }
                     }
                 }
@@ -646,24 +605,16 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        spatial_profiler()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                spatial_profiler()
                             }
+                        }
                         }
                     }
                 }
@@ -672,24 +623,16 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        spatial_profiler()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                spatial_profiler()
                             }
+                        }
                         }
                     }
                 }
@@ -702,24 +645,16 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        raster_tiles()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                raster_tiles()
                             }
+                        }
                         }
                     }
                 }
@@ -728,24 +663,16 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        raster_tiles()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                raster_tiles()
                             }
+                        }
                         }
                     }
                 }
@@ -754,24 +681,16 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        raster_tiles()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                raster_tiles()
                             }
+                        }
                         }
                     }
                 }
@@ -784,24 +703,16 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        catalog()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                catalog()
                             }
+                        }
                         }
                     }
                 }
@@ -810,24 +721,16 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        catalog()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                catalog()
                             }
+                        }
                         }
                     }
                 }
@@ -836,24 +739,16 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        catalog()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                catalog()
                             }
+                        }
                         }
                     }
                 }
@@ -866,24 +761,16 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        moment_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                moment_tests()
                             }
+                        }
                         }
                     }
                 }
@@ -892,24 +779,16 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        moment_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                moment_tests()
                             }
+                        }
                         }
                     }
                 }
@@ -918,24 +797,16 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        script {
-                            ret = false
-                            retry(3) {
-                                if (ret) {
-                                    sleep(time:30,unit:"SECONDS")
-                                    echo "Trying again"
-                                } else {
-                                    ret = true
-                                }
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        moment_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                moment_tests()
                             }
+                        }
                         }
                     }
                 }
@@ -948,51 +819,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        resume_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                resume_tests()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        resume_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                resume_tests()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        resume_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                resume_tests()
                             }
                         }
+                        }
+                    }
                 }
             }
         }
@@ -1003,51 +877,54 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        match_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                match_tests()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        match_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                match_tests()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        match_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                match_tests()
                             }
                         }
+                        }
+                    }
                 }
             }
         }
@@ -1058,144 +935,287 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "centos7-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        close_file_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                close_file_tests()
                             }
                         }
+                        }
                     }
+                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "ubuntu-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        close_file_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                close_file_tests()
                             }
                         }
+                        }
                     }
+                }
                 stage('MacOS') {
                     agent {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "export PATH=/usr/local/bin:$PATH"
-                                dir ('build') {
-                                    unstash "macos-1_carta_backend_icd"
-                                    sh "./run.sh # run carta_backend in the background"
-                                    dir ('carta-backend-ICD-test') {
-                                        close_file_tests()
-                                    }
-                                }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                close_file_tests()
                             }
                         }
+                        }
                     }
+                }
             }
         }
     }
 }
 def session(){
-    sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6" 
-    sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
-    sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts # test 3 of 6"
-    sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
-    sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
-    sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6" 
+             sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
+             sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts # test 3 of 6"
+             sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
+             sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
+             sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
+    }
 }
 def file_browser(){
-    sh "CI=true npm test src/test/GET_FILELIST.test.ts # test 1 of 9"
-    sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 9"
-    sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts # test 3 of 9"
-    sh "CI=true npm test src/test/FILEINFO_FITS.test.ts # test 4 of 9"
-    sh "CI=true npm test src/test/FILEINFO_CASA.test.ts # test 5 of 9"
-    sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts # test 6 of 9"
-    sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts # test 7 of 9"
-    sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 8 of 9"
-    sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/GET_FILELIST.test.ts # test 1 of 9"
+             sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 9"
+             sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts # test 3 of 9"
+             sh "CI=true npm test src/test/FILEINFO_FITS.test.ts # test 4 of 9"
+             sh "CI=true npm test src/test/FILEINFO_CASA.test.ts # test 5 of 9"
+             sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts # test 6 of 9"
+             sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts # test 7 of 9"
+             sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 8 of 9"
+             sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
+    }
 }
 def animator(){
-    sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 5"
-    sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 5"
-    sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 3 of 5"
-    sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 4 of 5"
-    sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 5"
+             sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 5"
+             sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 3 of 5"
+             sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 4 of 5"
+             sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
+    }
 }
 def contour(){
-    sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts # test 1 of 3"
-    sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts # test 2 of 3"
-    sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts # test 1 of 3"
+             sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts # test 2 of 3"
+             sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
+    }
 }
 def region_statistics(){
-    sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 3"
-    sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 3"
-    sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 3"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 3"
+             sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 3"
+             sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 3"
+    }
 }
 def region_manipulation(){
-    sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 10"
-    sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 10"
-    sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 10"
-    sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 10"
-    sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 10"
-    sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 10"
-    sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 10"
-    sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
-    sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
-    sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 10"
+             sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 10"
+             sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 10"
+             sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 10"
+             sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 10"
+             sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 10"
+             sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 10"
+             sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
+             sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
+             sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
+    }
 }
 def cube_histogram(){
-    sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
-    sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
-    sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
+             sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
+             sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
+    }
 }
 def spatial_profiler(){
-    sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts # test 1 of 2"
-    sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts # test 1 of 2"
+             sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
+    }
 }
 def raster_tiles(){
-    sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts # test 1 of 2"
-    sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts # test 1 of 2"
+             sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
+    }
 }
 def catalog(){
-    sh "CI=true npm test src/test/CATALOG_GENERAL.test.ts # test 1 of 2"
-    sh "CI=true npm test src/test/CATALOG_FITS_VOT.test.ts # test 2 of 2"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/CATALOG_GENERAL.test.ts # test 1 of 2"
+             sh "CI=true npm test src/test/CATALOG_FITS_VOT.test.ts # test 2 of 2"
+    }
 }
 def moment_tests(){
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 1 of 6"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 2 of 6"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 3 of 6"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 4 of 6"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 5 of 6"
-    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 6 of 6"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 1 of 6"
+             sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 2 of 6"
+             sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 3 of 6"
+             sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 4 of 6"
+             sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 5 of 6"
+             sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 6 of 6"
+    }
 }
 def resume_tests(){
-    sh "CI=true npm test src/test/RESUME_CATALOG.test.ts # test 1 of 4"
-    sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
-    sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
-    sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/RESUME_CATALOG.test.ts # test 1 of 4"
+             sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
+             sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
+             sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
+    }
 }
 def match_tests(){
-    sh "CI=true npm test src/test/MATCH_SPATIAL.test.ts # test 1 of 3"
-    sh "CI=true npm test src/test/MATCH_SPECTRAL.test.ts # test 2 of 3"
-    sh "CI=true npm test src/test/MATCH_STATS.test.ts # test 3 of 3"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/MATCH_SPATIAL.test.ts # test 1 of 3"
+             sh "CI=true npm test src/test/MATCH_SPECTRAL.test.ts # test 2 of 3"
+             sh "CI=true npm test src/test/MATCH_STATS.test.ts # test 3 of 3"
+    }
 }
 def close_file_tests(){
-    sh "CI=true npm test src/test/CLOSE_FILE_SINGLE.test.ts # test 1 of 5"
-    sh "CI=true npm test src/test/CLOSE_FILE_ANIMATION.test.ts # test 2 of 5"
-    sh "CI=true npm test src/test/CLOSE_FILE_ERROR.test.ts # test 3 of 5"
-    sh "CI=true npm test src/test/CLOSE_FILE_SPECTRAL_PROFILE.test.ts # test 4 of 5"
-    sh "CI=true npm test src/test/CLOSE_FILE_TILE.test.ts # test 5 of 5"
+    script {
+         ret = false
+         retry(3) {
+             if (ret) {
+                 sleep(time:30,unit:"SECONDS")
+                 echo "Trying again"
+             } else {
+                 ret = true
+             }
+             sh "CI=true npm test src/test/CLOSE_FILE_SINGLE.test.ts # test 1 of 5"
+             sh "CI=true npm test src/test/CLOSE_FILE_ANIMATION.test.ts # test 2 of 5"
+             sh "CI=true npm test src/test/CLOSE_FILE_ERROR.test.ts # test 3 of 5"
+             sh "CI=true npm test src/test/CLOSE_FILE_SPECTRAL_PROFILE.test.ts # test 4 of 5"
+             sh "CI=true npm test src/test/CLOSE_FILE_TILE.test.ts # test 5 of 5"
+    }
 }
