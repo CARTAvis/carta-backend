@@ -252,3 +252,49 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
 }
+
+TEST_F(ProgramSettingsTest, ValidateJSON_Singlefield) {
+    auto json_string = R"(
+    {
+        "verbosity": "a string instead of a number"
+    })";
+    nlohmann::json j = nlohmann::json::parse(json_string);
+    carta::ProgramSettings settings;
+    settings.SetSettingsFromJSON(j);  // should throw a warning
+    EXPECT_EQ(settings.verbosity, 4); // default and not something else
+}
+
+TEST_F(ProgramSettingsTest, ValidateJSON_Allfields) {
+    auto json_string = R"(
+    {
+        "verbosity": "debug",
+        "no_log": 1,
+        "no_http": 1,
+        "no_browser": 1,
+        "host": true,
+        "port": "1234",
+        "grpc_port": "5678",
+        "omp_threads": true,
+        "top_level_folder": 1,
+        "frontend_folder": false,
+        "exit_timeout": "",
+        "initial_timeout": ""
+    })";
+    nlohmann::json j = nlohmann::json::parse(json_string);
+
+    carta::ProgramSettings settings;
+    settings.SetSettingsFromJSON(j);
+
+    EXPECT_EQ(settings.verbosity, 4);
+    EXPECT_EQ(settings.no_log, false);
+    EXPECT_EQ(settings.no_http, false);
+    EXPECT_EQ(settings.no_browser, false);
+    EXPECT_EQ(settings.host, "0.0.0.0");
+    EXPECT_EQ(settings.port, -1);
+    EXPECT_EQ(settings.grpc_port, -1);
+    EXPECT_EQ(settings.omp_thread_count, -1);
+    EXPECT_EQ(settings.top_level_folder, "/");
+    EXPECT_EQ(settings.frontend_folder, "");
+    EXPECT_EQ(settings.wait_time, -1);
+    EXPECT_EQ(settings.init_wait_time, -1);
+}

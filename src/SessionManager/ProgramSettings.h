@@ -8,6 +8,7 @@
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 
 #include <iostream>
+#include <set>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -45,11 +46,18 @@ struct ProgramSettings {
     bool system_settings_json_exists = false;
     bool user_settings_json_exists = false;
 
+    std::vector<std::string> int_keys = {
+        "verbosity", "port", "grpc_port", "omp_threads", "exit_timeout", "initial_timeout", "idle_timeout"};
+    std::vector<std::string> bool_keys = {"no_log", "log_performance", "log_protocol_messages", "no_http", "no_browser"};
+    std::vector<std::string> string_keys = {"host", "top_level_folder", "frontend_folder"};
+    std::set<std::string> invalid_keys; // hold keys that are not valid
+
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
     void ApplyCommandLineSettings(int argc, char** argv);
     nlohmann::json JSONConfigSettings(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
+    void ValidateJSON(const nlohmann::json& j);
 
     auto GetTuple() const {
         return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
