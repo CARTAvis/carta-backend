@@ -47,15 +47,15 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
 
     json settings;
     if (fs::exists(system_settings_path) && !no_system_config) {
-        settings = JSONConfigSettings(system_settings_path.string());
+        settings = JSONSettingsFromFile(system_settings_path.string());
         system_settings_json_exists = true;
-        spdlog::info("Reading system settings from {}", system_settings_path.string());
+        spdlog::info("Reading system settings from {}.", system_settings_path.string());
     }
 
     if (fs::exists(user_settings_path) && !no_user_config) {
-        auto user_settings = JSONConfigSettings(user_settings_path.string());
+        auto user_settings = JSONSettingsFromFile(user_settings_path.string());
         user_settings_json_exists = true;
-        spdlog::info("Reading user settings from {}", user_settings_path.string());
+        spdlog::info("Reading user settings from {}.", user_settings_path.string());
         settings.merge_patch(user_settings); // user on top of system
     }
 
@@ -65,31 +65,34 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     }
 }
 
-json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
+json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
     std::ifstream ifs(json_file_path, std::ifstream::in);
     json j;
     try {
         j = json::parse(ifs);
     } catch (json::exception& err) {
-        spdlog::warn("Config file {} has problems, please check:", json_file_path);
+        spdlog::warn("Error parsing config file {}.", json_file_path);
         spdlog::warn(err.what());
     }
     for (const auto& key : int_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_number_integer()) {
-            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a number is expected.", json_file_path, key.first,
+            spdlog::warn("Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path, key.first,
                 j[key.first]);
+            j.erase(key.first);
         }
     }
     for (const auto& key : bool_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_boolean()) {
-            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a boolean is expected.", json_file_path, key.first,
+            spdlog::warn("Problem in config file {} at key {}: current value is {}, but a boolean is expected.", json_file_path, key.first,
                 j[key.first]);
+            j.erase(key.first);
         }
     }
     for (const auto& key : strings_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_string()) {
-            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a string is expected.", json_file_path, key.first,
+            spdlog::warn("Problem in config file {} at key {}: current value is {}, but a string is expected.", json_file_path, key.first,
                 j[key.first]);
+            j.erase(key.first);
         }
     }
     return j;
@@ -97,19 +100,19 @@ json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
 
 void ProgramSettings::SetSettingsFromJSON(const json& j) {
     for (const auto& key : int_keys_map) {
-        if (!j.contains(key.first) || !j[key.first].is_number_integer()) {
+        if (!j.contains(key.first)) {
             continue;
         }
         *key.second = j[key.first];
     }
     for (const auto& key : bool_keys_map) {
-        if (!j.contains(key.first) || !j[key.first].is_boolean()) {
+        if (!j.contains(key.first)) {
             continue;
         }
         *key.second = j[key.first];
     }
     for (const auto& key : strings_keys_map) {
-        if (!j.contains(key.first) || !j[key.first].is_string()) {
+        if (!j.contains(key.first)) {
             continue;
         }
         *key.second = j[key.first];
