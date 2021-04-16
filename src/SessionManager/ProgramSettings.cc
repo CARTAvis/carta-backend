@@ -79,34 +79,37 @@ json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
 
 void ProgramSettings::SetSettingsFromJSON(const json& j) {
     for (const auto& key : int_keys_map) {
+        if (!j.contains(key.first)) {
+            continue;
+        }
         if (!j[key.first].is_number_integer()) {
             spdlog::warn("Config file has problems, please check key with name {}. Its current value is {}, and a number is expected",
                 key.first, j[key.first]);
             continue;
         }
-        if (j.contains(key.first)) {
-            *key.second = j[key.first];
-        }
+        *key.second = j[key.first];
     }
     for (const auto& key : bool_keys_map) {
+        if (!j.contains(key.first)) {
+            continue;
+        }
         if (!j[key.first].is_boolean()) {
             spdlog::warn("Config file has problems, please check key with name {}. Its current value is {}, and a number is expected",
                 key.first, j[key.first]);
             continue;
         }
-        if (j.contains(key.first)) {
-            *key.second = j[key.first];
-        }
+        *key.second = j[key.first];
     }
     for (const auto& key : strings_keys_map) {
+        if (!j.contains(key.first)) {
+            continue;
+        }
         if (!j[key.first].is_string()) {
             spdlog::warn("Config file has problems, please check key with name {}. Its current value is {}, and a number is expected",
                 key.first, j[key.first]);
             continue;
         }
-        if (j.contains(key.first)) {
-            *key.second = j[key.first];
-        }
+        *key.second = j[key.first];
     }
 }
 
