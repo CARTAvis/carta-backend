@@ -76,17 +76,20 @@ json ProgramSettings::JSONConfigSettings(const std::string& json_file_path) {
     }
     for (const auto& key : int_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_number_integer()) {
-            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a number is expected.", json_file_path, key.first, j[key.first]);
+            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a number is expected.", json_file_path, key.first,
+                j[key.first]);
         }
     }
     for (const auto& key : bool_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_boolean()) {
-            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a boolean is expected.", json_file_path, key.first, j[key.first]);
+            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a boolean is expected.", json_file_path, key.first,
+                j[key.first]);
         }
     }
     for (const auto& key : strings_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_string()) {
-            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a string is expected.", json_file_path, key.first, j[key.first]);
+            spdlog::warn("Problem in config file {}, at key {}: current value is {}, and a string is expected.", json_file_path, key.first,
+                j[key.first]);
         }
     }
     return j;
