@@ -24,11 +24,6 @@
 #include <wcslib/wcsfix.h>
 #include <wcslib/wcshdr.h>
 #include <wcslib/wcsmath.h>
-/*
-#include <wcslib/wcsconfig.h>
-*/
-
-#include "../Logger/Logger.h"
 
 using namespace carta;
 
@@ -40,10 +35,6 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
       _is_compressed(false),
       _datatype(casacore::TpOther),
       _has_blanks(false),
-      _uchar_blank(0),
-      _short_blank(0),
-      _int_blank(0),
-      _longlong_blank(0),
       _pixel_mask(nullptr) {
     casacore::File ccfile(filename);
     if (!ccfile.exists() || !ccfile.isReadable()) {
@@ -62,10 +53,6 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
       _is_compressed(other._is_compressed),
       _datatype(other._datatype),
       _has_blanks(other._has_blanks),
-      _uchar_blank(other._uchar_blank),
-      _short_blank(other._short_blank),
-      _int_blank(other._int_blank),
-      _longlong_blank(other._longlong_blank),
       _pixel_mask(nullptr),
       _tiled_shape(other._tiled_shape) {
     if (other._pixel_mask != nullptr) {
@@ -125,62 +112,43 @@ casacore::DataType CartaFitsImage::internalDataType() const {
 }
 
 casacore::Bool CartaFitsImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
-    // Read section of data using wcslib
+    // Read section of data using cfitsio implicit data type conversion.
+    // cfitsio scales the data by BSCALE and BZERO
     fitsfile* fptr = OpenFile();
 
-    // start
-    casacore::IPosition slicer_start = section.start();
-    slicer_start += 1; // FITS 1-based
-    std::vector<int> start = slicer_start.asVector().tovector();
-    // end
-    casacore::IPosition slicer_end = section.end();
-    slicer_end += 1; // FITS 1-based
-    std::vector<int> end = slicer_end.asVector().tovector();
-    // inc
-    std::vector<int> inc = section.stride().asVector().tovector();
-
-    // Buffer
-    casacore::IPosition slice_shape = section.length();
-    auto buffer_size(slice_shape.product());
-    std::vector<unsigned char> tmp_mask(buffer_size);
-
+    // Read data subset from image
+    bool ok(false);
     switch (_datatype) {
         case 8: {
-            std::vector<unsigned char> tmp(buffer_size);
+            ok = GetDataSubset<unsigned char>(fptr, _datatype, section, buffer);
             break;
         }
         case 16: {
-            std::vector<short> tmp(buffer_size);
+            ok = GetDataSubset<short>(fptr, _datatype, section, buffer);
             break;
         }
         case 32: {
-            std::vector<int> tmp(buffer_size);
+            ok = GetDataSubset<int>(fptr, _datatype, section, buffer);
             break;
         }
         case 64: {
-            std::vector<LONGLONG> tmp(buffer_size);
+            ok = GetDataSubset<LONGLONG>(fptr, _datatype, section, buffer);
             break;
         }
         case -32: {
-            std::vector<float> tmp(buffer_size);
+            ok = GetDataSubset<float>(fptr, _datatype, section, buffer);
             break;
         }
         case -64: {
-            std::vector<double> tmp(buffer_size);
+            ok = GetDataSubset<double>(fptr, _datatype, section, buffer);
             break;
         }
-        default:
-            return false;
     }
 
-    /*
-   Array<Double> tmp;
-   pTiledFile_p->get (tmp, section);
-   buffer.resize(tmp.shape());
-   convertArray(buffer, tmp);
-
-   pTiledFile_p->get (buffer, section, scale_p, offset_p, longMagic_p, hasBlanks_p);
-    */
+    if (!ok) {
+        spdlog::error("FITS read data failed.");
+        return false;
+    }
 
     return true;
 }
@@ -243,7 +211,6 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
         buffer = true;
         return false;
     }
-
     // TODO
     throw(casacore::AipsError("CartaFitsImage doGetMaskSlice not implemented."));
     return _pixel_mask->getSlice(buffer, section);
@@ -261,6 +228,13 @@ fitsfile* CartaFitsImage::OpenFile() {
         if (status) {
             throw(casacore::AipsError("Error opening FITS file."));
         }
+
+        // Advance to requested hdu
+        int hdu(_hdu + 1);
+        int* hdutype(nullptr);
+        status = 0;
+        fits_movabs_hdu(fptr, hdu, hdutype, &status);
+        CloseFileIfError(status, "Error advancing FITS file to requested HDU.");
 
         _fptr = fptr;
     }
@@ -367,17 +341,11 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
 
     fitsfile* fptr = OpenFile();
 
-    // Advance to requested hdu
-    int hdu(_hdu + 1);
-    int* hdutype(nullptr);
     int status(0);
-    fits_movabs_hdu(fptr, hdu, hdutype, &status);
-    CloseFileIfError(status, "Error advancing FITS gz file to requested HDU.");
 
     // Check hdutype
     if (_hdu > 0) {
         int hdutype(-1);
-        status = 0;
         fits_get_hdu_type(fptr, &hdutype, &status); // IMAGE_HDU, ASCII_TBL, BINARY_TBL
         CloseFileIfError(status, "Error determining HDU type.");
 
@@ -407,28 +375,12 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
     // Set blanks used for integer datatypes (int value for NAN), for pixel mask
     if (bitpix > 0) {
         std::string key("BLANK");
+        int blank_value;
         char* comment(nullptr);
         status = 0;
-
-        switch (_datatype) {
-            case 8:
-                fits_read_key(fptr, _datatype, key.c_str(), &_uchar_blank, comment, &status);
-                break;
-            case 16:
-                fits_read_key(fptr, _datatype, key.c_str(), &_short_blank, comment, &status);
-                break;
-            case 32:
-                fits_read_key(fptr, _datatype, key.c_str(), &_int_blank, comment, &status);
-                break;
-            case 64:
-                fits_read_key(fptr, _datatype, key.c_str(), &_longlong_blank, comment, &status);
-                break;
-        }
+        fits_read_key(fptr, TLONG, key.c_str(), &blank_value, comment, &status);
         _has_blanks = !status;
     }
-
-    // Set optimal number of rows to read for maximum I/O efficiency
-    status = 0;
 
     // Get headers to set up image:
     // Previous functions converted compressed headers automatically; must call specific function for uncompressed headers

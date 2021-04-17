@@ -15,6 +15,7 @@
 #include <casacore/lattices/Lattices/TiledShape.h>
 
 #include "../Cfitsio.h"
+#include "../Logger/Logger.h"
 
 namespace carta {
 
@@ -72,6 +73,9 @@ private:
     void SetHeaderRec(char* header, casacore::RecordInterface& header_rec);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
+    template <typename T>
+    bool GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer);
+
     std::string _filename;
     unsigned int _hdu;
 
@@ -83,15 +87,13 @@ private:
     casacore::IPosition _shape;
     int _datatype; // bitpix value
     bool _has_blanks;
-    unsigned char _uchar_blank;
-    short _short_blank;
-    int _int_blank;
-    LONGLONG _longlong_blank;
 
     casacore::Lattice<bool>* _pixel_mask;
     casacore::TiledShape _tiled_shape;
 };
 
 } // namespace carta
+
+#include "CartaFitsImage.tcc"
 
 #endif // CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
