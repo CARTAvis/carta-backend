@@ -40,13 +40,14 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
+// stokes types and value conversion
+int GetStokesValue(const CARTA::StokesType& stokes_type);
+CARTA::StokesType GetStokesType(int stokes_value);
+
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
 
 // ************ Data Stream Helpers *************
-
-// TODO: this function is not correct if an image has stokes axis that not start from I
-int GetStokesTypeIndex(const std::string& coordinate);
 
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 

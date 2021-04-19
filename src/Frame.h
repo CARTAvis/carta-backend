@@ -176,6 +176,8 @@ public:
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
 
+    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
+
 private:
     // Validate z and stokes index values
     bool CheckZ(int z);

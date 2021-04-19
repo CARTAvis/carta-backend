@@ -268,21 +268,46 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-int GetStokesTypeIndex(const string& coordinate) {
-    int stokes_index(-1);
-    if (coordinate.size() == 2) {
-        char stokes_char(coordinate.front());
-        if (stokes_char == 'I') {
-            stokes_index = 0;
-        } else if (stokes_char == 'Q') {
-            stokes_index = 1;
-        } else if (stokes_char == 'U') {
-            stokes_index = 2;
-        } else if (stokes_char == 'V') {
-            stokes_index = 3;
-        }
+int GetStokesValue(const CARTA::StokesType& stokes_type) {
+    int stokes_value(-1);
+    switch (stokes_type) {
+        case CARTA::StokesType::I:
+            stokes_value = 1;
+            break;
+        case CARTA::StokesType::Q:
+            stokes_value = 2;
+            break;
+        case CARTA::StokesType::U:
+            stokes_value = 3;
+            break;
+        case CARTA::StokesType::V:
+            stokes_value = 4;
+            break;
+        default:
+            break;
     }
-    return stokes_index;
+    return stokes_value;
+}
+
+CARTA::StokesType GetStokesType(int stokes_value) {
+    CARTA::StokesType stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
+    switch (stokes_value) {
+        case 1:
+            stokes_type = CARTA::StokesType::I;
+            break;
+        case 2:
+            stokes_type = CARTA::StokesType::Q;
+            break;
+        case 3:
+            stokes_type = CARTA::StokesType::U;
+            break;
+        case 4:
+            stokes_type = CARTA::StokesType::V;
+            break;
+        default:
+            break;
+    }
+    return stokes_type;
 }
 
 string IPAsText(string_view binary) {

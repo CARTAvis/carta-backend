@@ -20,6 +20,7 @@ public:
 
 private:
     static const std::string Headers[];
+    static const std::unordered_map<std::string, std::string> HeaderTypeMap;
     static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
     static void ParseQueryResult(const std::string& results, CARTA::SpectralLineResponse& spectral_line_response);
 };

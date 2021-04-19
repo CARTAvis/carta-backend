@@ -366,7 +366,8 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     for (auto& profile : spectral_profiles) {
         // check stokes coordinate
         std::string profile_coordinate(profile.coordinate());
-        if (!SpectralCoordinateValid(profile_coordinate, nstokes)) {
+        int stokes_index;
+        if (!frame->GetStokesTypeIndex(profile_coordinate, stokes_index)) {
             continue;
         }
 
@@ -425,16 +426,6 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     ulock.unlock();
 
     return true;
-}
-
-bool RegionHandler::SpectralCoordinateValid(const std::string& coordinate, int nstokes) {
-    // Check stokes coordinate is valid for image
-    int stokes_index = GetStokesTypeIndex(coordinate);
-    bool valid(stokes_index < nstokes);
-    if (!valid) {
-        spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
-    }
-    return valid;
 }
 
 bool RegionHandler::HasSpectralRequirements(
@@ -832,8 +823,10 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Get stokes index
-        int stokes = GetStokesTypeIndex(hist_config.coordinate);
-        stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
+        int stokes;
+        if (!_frames.at(file_id)->GetStokesTypeIndex(hist_config.coordinate, stokes)) {
+            continue;
+        }
 
         // Set histogram fields
         CARTA::RegionHistogramData histogram_message;
@@ -977,9 +970,10 @@ bool RegionHandler::FillSpectralProfileData(
                     continue;
                 }
 
-                // Get index into stokes axis for data message
-                int stokes_index = GetStokesTypeIndex(coordinate);
-                stokes_index = (stokes_index == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes_index;
+                int stokes_index;
+                if (!_frames.at(config_file_id)->GetStokesTypeIndex(coordinate, stokes_index)) {
+                    continue;
+                }
 
                 // Return spectral profile for this requirement
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
@@ -1282,7 +1276,10 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
     auto send_stats_results = [&](int region_id, int file_id, std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs) {
         for (auto stats_config : stats_configs) {
             // Get stokes index
-            int stokes = GetStokesTypeIndex(stats_config.coordinate());
+            int stokes;
+            if (!_frames.at(file_id)->GetStokesTypeIndex(stats_config.coordinate(), stokes)) {
+                continue;
+            }
 
             // Set required stats types
             std::vector<CARTA::StatsType> required_stats;

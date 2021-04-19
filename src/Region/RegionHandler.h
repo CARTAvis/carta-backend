@@ -91,9 +91,6 @@ private:
     // Clear cache for changed region
     void ClearRegionCache(int region_id);
 
-    // Spectral requirements helpers
-    // Check if stokes is valid (e.g. frontend can send "Vz" for 3-stokes image)
-    bool SpectralCoordinateValid(const std::string& coordinate, int nstokes);
     // Check if spectral config has been changed/cancelled
     bool HasSpectralRequirements(int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats);
     // Set all requirements "new" when region changes
