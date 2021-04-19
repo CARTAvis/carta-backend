@@ -287,7 +287,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_session_type(type);
 
     uint32_t feature_flags;
-    if (_read_only_mode == true) {
+    if (_read_only_mode) {
         feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
     } else {
         feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
@@ -737,12 +737,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
 }
 
 void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id) {
-    if (_read_only_mode == true) {
-        string error = "Exporting region is not allowed in read only mode";
-        spdlog::error(error);
-        SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
-        return;
-    }
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
         if (!_region_handler) {
@@ -751,22 +745,30 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             return;
         }
 
-        // Export filename (optional, for server-side export)
-        std::string directory(message.directory()), filename(message.file());
-        std::string abs_filename;
-        if (!directory.empty() && !filename.empty()) {
-            // export file is on server, form path with filename
-            casacore::Path top_level_path(_top_level_folder);
-            top_level_path.append(directory);
-            top_level_path.append(filename);
-            abs_filename = top_level_path.absoluteName();
-        }
-
-        std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
-
         CARTA::ExportRegionAck export_ack;
-        _region_handler->ExportRegion(
-            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+        if (_read_only_mode) {
+            string error = "Exporting region is not allowed in read-only mode";
+            spdlog::error(error);
+            SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
+            export_ack.set_success(false);
+            export_ack.set_message(error);
+        } else {
+            // Export filename (optional, for server-side export)
+            std::string directory(message.directory()), filename(message.file());
+            std::string abs_filename;
+            if (!directory.empty() && !filename.empty()) {
+                // export file is on server, form path with filename
+                casacore::Path top_level_path(_top_level_folder);
+                top_level_path.append(directory);
+                top_level_path.append(filename);
+                abs_filename = top_level_path.absoluteName();
+            }
+
+            std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+
+             _region_handler->ExportRegion(
+                file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+        }
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -1126,17 +1128,18 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 }
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
-    if (_read_only_mode == true) {
-        string error = "Saving files is not allowed in read only mode";
-        spdlog::error(error);
-        SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
-        return;
-    }
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
-
+        if (_read_only_mode) {
+            string error = "Saving files is not allowed in read-only mode";
+            spdlog::error(error);
+            SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(error);
+        } else {
+            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
+        }
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
     } else {
