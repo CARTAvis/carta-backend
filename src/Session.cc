@@ -288,7 +288,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 
     uint32_t feature_flags;
     if (_read_only_mode) {
-        feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+        feature_flags = CARTA::ServerFeatureFlags::READ_ONLY;
     } else {
         feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
     }
