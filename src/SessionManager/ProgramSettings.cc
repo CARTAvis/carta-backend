@@ -69,7 +69,7 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
     std::ifstream ifs(json_file_path, std::ifstream::in);
     json j;
     try {
-        j = json::parse(ifs);
+        j = json::parse(ifs, nullptr, true, true);
     } catch (json::exception& err) {
         spdlog::warn("Error parsing config file {}.", json_file_path);
         spdlog::warn(err.what());
@@ -77,21 +77,21 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
     for (const auto& key : int_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_number_integer()) {
             spdlog::warn("Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path, key.first,
-                j[key.first]);
+                j[key.first].dump());
             j.erase(key.first);
         }
     }
     for (const auto& key : bool_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_boolean()) {
             spdlog::warn("Problem in config file {} at key {}: current value is {}, but a boolean is expected.", json_file_path, key.first,
-                j[key.first]);
+                j[key.first].dump());
             j.erase(key.first);
         }
     }
     for (const auto& key : strings_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_string()) {
             spdlog::warn("Problem in config file {} at key {}: current value is {}, but a string is expected.", json_file_path, key.first,
-                j[key.first]);
+                j[key.first].dump());
             j.erase(key.first);
         }
     }
