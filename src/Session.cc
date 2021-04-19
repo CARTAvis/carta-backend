@@ -49,7 +49,7 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port)
+    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -58,6 +58,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
+      _read_only_mode(read_only_mode),
       _loader(nullptr),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
@@ -285,7 +286,12 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_message(status);
     ack_message.set_session_type(type);
 
-    uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    uint32_t feature_flags;
+    if (_read_only_mode == true) {
+        feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    } else {
+        feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
+    }
     if (_grpc_port >= 0) {
         feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
         ack_message.set_grpc_port(_grpc_port);
@@ -731,6 +737,12 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
 }
 
 void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id) {
+    if (_read_only_mode == true) {
+        string error = "Exporting region is not allowed in read only mode";
+        spdlog::error(error);
+        SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
+        return;
+    }
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
         if (!_region_handler) {
@@ -1114,6 +1126,12 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 }
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
+    if (_read_only_mode == true) {
+        string error = "Saving files is not allowed in read only mode";
+        spdlog::error(error);
+        SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
+        return;
+    }
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;

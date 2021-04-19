@@ -124,7 +124,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 
     // create a Session
     sessions[session_id] = new Session(
-        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port);
+        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port, settings.read_only_mode);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
