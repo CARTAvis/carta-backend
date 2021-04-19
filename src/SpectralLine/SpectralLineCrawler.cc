@@ -27,6 +27,14 @@ const std::string SpectralLineCrawler::Headers[] = {"Species", "Chemical Name", 
     "Unresolved Quantum Numbers", "CDMS/JPL Intensity", "S<sub>ij</sub>&#956;<sup>2</sup> (D<sup>2</sup>)", "S<sub>ij</sub>",
     "Log<sub>10</sub> (A<sub>ij</sub>)", "Lovas/AST Intensity", "E_L (cm^-1)", "E_L (K)", "E_U (cm^-1)", "E_U (K)", "Linelist"};
 
+const std::unordered_map<std::string, std::string> SpectralLineCrawler::HeaderTypeMap = {{"Species", "string"}, {"Chemical Name", "string"},
+    {"Shifted Frequency", "number"}, {"Freq-MHz(rest frame,redshifted)", "number"}, {"Freq Err(rest frame,redshifted)", "number"},
+    {"Meas Freq-MHz(rest frame,redshifted)", "number"}, {"Meas Freq Err(rest frame,redshifted)", "number"}, {"Resolved QNs", "string"},
+    {"Unresolved Quantum Numbers", "string"}, {"CDMS/JPL Intensity", "number"},
+    {"S<sub>ij</sub>&#956;<sup>2</sup> (D<sup>2</sup>)", "number"}, {"S<sub>ij</sub>", "number"},
+    {"Log<sub>10</sub> (A<sub>ij</sub>)", "number"}, {"Lovas/AST Intensity", "number"}, {"E_L (cm^-1)", "number"}, {"E_L (K)", "number"},
+    {"E_U (cm^-1)", "number"}, {"E_U (K)", "number"}, {"Linelist", "string"}};
+
 SpectralLineCrawler::SpectralLineCrawler() {}
 
 SpectralLineCrawler::~SpectralLineCrawler() {}
@@ -158,6 +166,9 @@ void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::Sp
         auto response_header = response_headers->Add();
         response_header->set_name(column_name);
         response_header->set_column_index(column_index);
+        auto iter = SpectralLineCrawler::HeaderTypeMap.find(column_name);
+        auto dataType = iter != SpectralLineCrawler::HeaderTypeMap.end() && iter->second == "number" ? CARTA::Double : CARTA::String;
+        response_header->set_data_type(dataType);
 
         // columns
         auto carta_column = CARTA::ColumnData();

@@ -187,6 +187,11 @@ public:
     // Get the full name of image file
     virtual std::string GetFileName();
 
+    // Handle stokes type index
+    virtual void SetFirstStokesType(int stokes_value);
+    virtual void SetDeltaStokesIndex(int delta_stokes_index);
+    virtual bool GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index);
+
 protected:
     // Full name of the image file
     std::string _filename;
@@ -200,6 +205,10 @@ protected:
     // Storage for z-plane and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _z_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
+
+    // Storage for the stokes type vs. stokes index
+    std::unordered_map<CARTA::StokesType, int> _stokes_indices;
+    int _delta_stokes_index;
 
     // Return the shape of the specified stats dataset
     virtual const IPos GetStatsDataShape(FileInfo::Data ds);
