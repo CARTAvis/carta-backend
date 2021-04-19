@@ -19,6 +19,11 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+#include <fstream>
+#include <iostream>
+
+#define GTEST_COUT std::cerr << "[          ] [ DEBUG ]"
+
 using namespace std;
 
 class ProgramSettingsTest : public ::testing::Test {
@@ -253,36 +258,33 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.init_wait_time, 11);
 }
 
-TEST_F(ProgramSettingsTest, ValidateJSON_Singlefield) {
-    auto json_string = R"(
-    {
-        "verbosity": "a string instead of a number"
-    })";
-    nlohmann::json j = nlohmann::json::parse(json_string);
+TEST_F(ProgramSettingsTest, ValidateJSONFromFile) {
+    const std::string input = "./data/settings-good-fields.json";
+
     carta::ProgramSettings settings;
-    settings.SetSettingsFromJSON(j);  // should throw a warning
-    EXPECT_EQ(settings.verbosity, 4); // default and not something else
+    auto j = settings.JSONSettingsFromFile(input);
+    settings.SetSettingsFromJSON(j);
+
+    EXPECT_EQ(settings.verbosity, 6);
+    EXPECT_EQ(settings.no_log, true);
+    EXPECT_EQ(settings.no_http, true);
+    EXPECT_EQ(settings.no_browser, true);
+    EXPECT_EQ(settings.host, "helloworld");
+    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.grpc_port, 5678);
+    EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.top_level_folder, "/tmp");
+    EXPECT_EQ(settings.frontend_folder, "/var");
+    EXPECT_EQ(settings.wait_time, 10);
+    EXPECT_EQ(settings.init_wait_time, 11);
 }
 
-TEST_F(ProgramSettingsTest, ValidateJSON_Allfields) {
-    auto json_string = R"(
-    {
-        "verbosity": "debug",
-        "no_log": 1,
-        "no_http": 1,
-        "no_browser": 1,
-        "host": true,
-        "port": "1234",
-        "grpc_port": "5678",
-        "omp_threads": true,
-        "top_level_folder": 1,
-        "frontend_folder": false,
-        "exit_timeout": "",
-        "initial_timeout": ""
-    })";
-    nlohmann::json j = nlohmann::json::parse(json_string);
+TEST_F(ProgramSettingsTest, ValidateJSONFromFile_BadFields) {
+    const std::string input = "./data/settings-bad-fields.json";
 
     carta::ProgramSettings settings;
+    auto j = settings.JSONSettingsFromFile(input);
+    std::cout << "Object: " << j.dump() << std::endl;
     settings.SetSettingsFromJSON(j);
 
     EXPECT_EQ(settings.verbosity, 4);
