@@ -416,14 +416,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
-bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id) {
-    // Set an image moment file id, name and its image interface
-    int file_id = collapse_result.file_id;
-    std::string name = collapse_result.name;
-    auto image = collapse_result.image;
-
+bool Session::OnOpenFile(
+    int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image, CARTA::OpenFileAck* open_file_ack) {
     // Response message for opening a file
-    auto open_file_ack = moment_response.add_open_file_acks();
     open_file_ack->set_file_id(file_id);
     string err_message;
 
@@ -452,6 +447,10 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
             *open_file_ack->mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
             open_file_ack->set_file_feature_flags(feature_flags);
+            std::vector<CARTA::Beam> beams;
+            if (_frames.at(file_id)->GetBeams(beams)) {
+                *open_file_ack->mutable_beam_table() = {beams.begin(), beams.end()};
+            }
             success = true;
         } else {
             err_message = frame->GetErrorMessage();
@@ -545,7 +544,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
                             compression_type == CARTA::CompressionType::NONE);
                     } else {
-                        spdlog::error("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                        spdlog::error("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
                     }
                 }
             }
@@ -919,7 +918,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     bool success(true);
     spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
 
-    // Error message
+    // Error messages
     std::string err_message;
     std::string err_file_ids = "Problem loading files: ";
     std::string err_region_ids = "Problem loading regions: ";
@@ -943,32 +942,44 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     // Open images
     for (int i = 0; i < message.images_size(); ++i) {
         const CARTA::ImageProperties& image = message.images(i);
-        int file_id(image.file_id());
-
-        CARTA::OpenFile open_file_msg;
-        open_file_msg.set_directory(image.directory());
-        open_file_msg.set_file(image.file());
-        open_file_msg.set_hdu(image.hdu());
-        open_file_msg.set_file_id(file_id);
         bool file_ok(true);
-        if (!OnOpenFile(open_file_msg, request_id, true)) {
-            success = false;
-            file_ok = false;
-            // Error message
-            std::string file_id_str = std::to_string(file_id) + " ";
-            err_file_ids.append(file_id_str);
+
+        if (image.stokes_files_size() > 1) {
+            CARTA::ConcatStokesFiles concat_stokes_files_msg;
+            concat_stokes_files_msg.set_file_id(image.file_id());
+            *concat_stokes_files_msg.mutable_stokes_files() = image.stokes_files();
+
+            // Open a concatenated stokes file
+            if (!OnConcatStokesFiles(concat_stokes_files_msg, request_id)) {
+                success = false;
+                file_ok = false;
+                err_file_ids.append(std::to_string(image.file_id()) + " ");
+            }
+        } else {
+            CARTA::OpenFile open_file_msg;
+            open_file_msg.set_directory(image.directory());
+            open_file_msg.set_file(image.file());
+            open_file_msg.set_hdu(image.hdu());
+            open_file_msg.set_file_id(image.file_id());
+
+            // Open a file
+            if (!OnOpenFile(open_file_msg, request_id, true)) {
+                success = false;
+                file_ok = false;
+                err_file_ids.append(std::to_string(image.file_id()) + " ");
+            }
         }
 
         if (file_ok) {
             // Set image channels
             CARTA::SetImageChannels set_image_channels_msg;
-            set_image_channels_msg.set_file_id(file_id);
+            set_image_channels_msg.set_file_id(image.file_id());
             set_image_channels_msg.set_channel(image.channel());
             set_image_channels_msg.set_stokes(image.stokes());
             OnSetImageChannels(set_image_channels_msg);
 
             // Set regions
-            for (auto& region_id_info : image.regions()) {
+            for (const auto& region_id_info : image.regions()) {
                 // region_id_info is <region_id, CARTA::RegionInfo>
                 if (region_id_info.first == 0) {
                     CARTA::Point cursor = region_id_info.second.control_points(0);
@@ -977,16 +988,14 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                     OnSetCursor(set_cursor_msg, request_id);
                 } else {
                     CARTA::SetRegion set_region_msg;
-                    set_region_msg.set_file_id(file_id);
+                    set_region_msg.set_file_id(image.file_id());
                     set_region_msg.set_region_id(region_id_info.first);
                     CARTA::RegionInfo resume_region_info = region_id_info.second;
                     *set_region_msg.mutable_region_info() = resume_region_info;
 
                     if (!OnSetRegion(set_region_msg, request_id, true)) {
                         success = false;
-                        // Error message
-                        std::string region_id = std::to_string(region_id_info.first) + " ";
-                        err_region_ids.append(region_id);
+                        err_region_ids.append(std::to_string(region_id_info.first) + " ");
                     }
                 }
             }
@@ -1080,10 +1089,11 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             }
         }
 
+        // Open moments images from the cache, open files acknowledgements will be sent to the frontend
         for (int i = 0; i < collapse_results.size(); ++i) {
             auto& collapse_result = collapse_results[i];
-            // Open an moment image from the cache, open file acknowledgement will be sent to the frontend
-            OnOpenFile(collapse_result, moment_response, request_id);
+            auto* open_file_ack = moment_response.add_open_file_acks();
+            OnOpenFile(collapse_result.file_id, collapse_result.name, collapse_result.image, open_file_ack);
         }
 
         // Send moment response message
@@ -1120,6 +1130,31 @@ void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_req
     carta::SpectralLineCrawler::SendRequest(
         spectral_line_request.frequency_range(), spectral_line_request.line_intensity_lower_limit(), spectral_line_response);
     SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
+}
+
+bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id) {
+    bool success(false);
+    if (!_stokes_files_connector) {
+        _stokes_files_connector = std::make_unique<StokesFilesConnector>(_top_level_folder);
+    }
+
+    CARTA::ConcatStokesFilesAck response;
+    std::shared_ptr<casacore::ImageConcat<float>> concatenated_image;
+    string concatenated_name;
+
+    if (_stokes_files_connector->DoConcat(message, response, concatenated_image, concatenated_name)) {
+        auto* open_file_ack = response.mutable_open_file_ack();
+        if (OnOpenFile(message.file_id(), concatenated_name, concatenated_image, open_file_ack)) {
+            success = true;
+        } else {
+            spdlog::error("Fail to open the concatenated stokes image!");
+        }
+    } else {
+        spdlog::error("Fail to concatenate stokes files!");
+    }
+
+    SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
+    return success;
 }
 
 // ******** SEND DATA STREAMS *********
@@ -1310,7 +1345,6 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
 
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region spectral profile
-        CARTA::SpectralProfileData profile_data;
         data_sent = _region_handler->FillSpectralProfileData(
             [&](CARTA::SpectralProfileData profile_data) {
                 if (profile_data.profiles_size() > 0) {
@@ -1322,7 +1356,6 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
     } else if (region_id == CURSOR_REGION_ID) {
         // Cursor spectral profile
         if (_frames.count(file_id)) {
-            CARTA::SpectralProfileData profile_data;
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {

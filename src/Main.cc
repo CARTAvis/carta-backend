@@ -468,6 +468,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     }
                     break;
                 }
+                case CARTA::EventType::CONCAT_STOKES_FILES: {
+                    CARTA::ConcatStokesFiles message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnConcatStokesFiles(message, head.request_id);
+                    } else {
+                        spdlog::warn("Bad CONCAT_STOKES_FILES message!");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
