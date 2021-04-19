@@ -32,6 +32,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+static const int HIGH_COMPRESSION_QUALITY(32);
+
 using namespace carta;
 
 Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z)
@@ -372,12 +374,9 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
         return false;
     }
 
-    auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
-
     raster_tile_data.set_channel(z);
     raster_tile_data.set_stokes(stokes);
     raster_tile_data.set_compression_type(compression_type);
-    raster_tile_data.set_compression_quality(compression_quality);
 
     if (raster_tile_data.tiles_size()) {
         raster_tile_data.clear_tiles();
@@ -392,6 +391,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     int tile_width;
     int tile_height;
     if (GetRasterTileData(tile_image_data, tile, tile_width, tile_height)) {
+        size_t tile_image_data_size = sizeof(float) * tile_image_data.size(); // tile image data size in bytes
+
         if (ZStokesChanged(z, stokes)) {
             return false;
         }
@@ -409,11 +410,42 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             }
 
             auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
+
+            // compress the data with the default precision
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
+            bool use_high_precision(false);
+
+            if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio > 20) {
+                // re-compress the data with a higher precision
+                std::vector<char> compression_buffer_hq;
+                size_t compressed_size_hq;
+                Compress(tile_image_data, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
+                float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
+
+                if (compression_ratio_hq > 10) {
+                    // set compression data with high precision
+                    raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
+                    tile_ptr->set_image_data(compression_buffer_hq.data(), compressed_size_hq);
+
+                    spdlog::debug("Using high compression quality. Previous compression ratio: {:.3f}", compression_ratio);
+                    compression_ratio = compression_ratio_hq;
+                    use_high_precision = true;
+                }
+            }
+
+            if (!use_high_precision) {
+                // set compression data with default precision
+                raster_tile_data.set_compression_quality(compression_quality);
+                tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            }
+
+            spdlog::debug(
+                "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
+
             // Measure duration for compress tile data
             auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_compress_tile_data =
