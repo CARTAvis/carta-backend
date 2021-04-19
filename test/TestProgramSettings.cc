@@ -258,13 +258,38 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.init_wait_time, 11);
 }
 
-TEST_F(ProgramSettingsTest, ValidateJSONFromFile) {
+TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     const std::string input = "./data/settings-good-fields.json";
+    carta::ProgramSettings settings;
+    auto j = settings.JSONSettingsFromFile(input);
+    EXPECT_EQ(j.size(), 12);
+    EXPECT_EQ(j["verbosity"], 6);
+    EXPECT_EQ(j["port"], 1234);
+    EXPECT_EQ(j["grpc_port"], 5678);
+    EXPECT_EQ(j["omp_threads"], 10);
+    EXPECT_EQ(j["exit_timeout"], 10);
+    EXPECT_EQ(j["initial_timeout"], 11);
+    EXPECT_EQ(j["no_log"], true);
+    EXPECT_EQ(j["no_http"], true);
+    EXPECT_EQ(j["no_browser"], true);
+    EXPECT_EQ(j["host"], "helloworld");
+    EXPECT_EQ(j["top_level_folder"], "/tmp");
+    EXPECT_EQ(j["frontend_folder"], "/var");
+}
 
+TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
+    const std::string input = "./data/settings-bad-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
+    EXPECT_EQ(j.size(), 0);
+}
 
+TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
+    const std::string input = "./data/settings-good-fields.json";
+    carta::ProgramSettings settings;
+    auto j = settings.JSONSettingsFromFile(input);
+    settings.SetSettingsFromJSON(j);
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
@@ -279,14 +304,11 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFile) {
     EXPECT_EQ(settings.init_wait_time, 11);
 }
 
-TEST_F(ProgramSettingsTest, ValidateJSONFromFile_BadFields) {
+TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     const std::string input = "./data/settings-bad-fields.json";
-
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
-    std::cout << "Object: " << j.dump() << std::endl;
     settings.SetSettingsFromJSON(j);
-
     EXPECT_EQ(settings.verbosity, 4);
     EXPECT_EQ(settings.no_log, false);
     EXPECT_EQ(settings.no_http, false);
