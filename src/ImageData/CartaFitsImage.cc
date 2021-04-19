@@ -190,9 +190,7 @@ const casacore::Lattice<bool>& CartaFitsImage::pixelMask() const {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
 
-    // TODO
-    throw(casacore::AipsError("CartaFitsImage pixelMask not implemented."));
-    return *_pixel_mask;
+    return pixelMask();
 }
 
 casacore::Lattice<bool>& CartaFitsImage::pixelMask() {
@@ -200,20 +198,30 @@ casacore::Lattice<bool>& CartaFitsImage::pixelMask() {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
 
-    // TODO
-    throw(casacore::AipsError("CartaFitsImage pixelMask not implemented."));
+    if (!_pixel_mask) {
+        SetPixelMask();
+    }
+
     return *_pixel_mask;
 }
 
 casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
+    // Return slice of stored pixel mask
     if (!_has_blanks) {
         buffer.resize(section.length());
         buffer = true;
         return false;
     }
-    // TODO
-    throw(casacore::AipsError("CartaFitsImage doGetMaskSlice not implemented."));
-    return _pixel_mask->getSlice(buffer, section);
+
+    if (!_pixel_mask) {
+        SetPixelMask();
+    }
+
+    if (_pixel_mask) {
+        return _pixel_mask->getSlice(buffer, section);
+    }
+
+    return false;
 }
 
 // private
@@ -1216,4 +1224,48 @@ void CartaFitsImage::AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore:
             header_rec.removeField(obs_key);
         }
     }
+}
+
+void CartaFitsImage::SetPixelMask() {
+    // Set pixel mask for entire image
+    fitsfile* fptr = OpenFile();
+
+    // Read blanked mask from image
+    bool ok(false);
+    casacore::ArrayLattice<bool> mask_lattice;
+    switch (_datatype) {
+        case 8: {
+            ok = GetPixelMask<unsigned char>(fptr, _datatype, _shape, mask_lattice);
+            break;
+        }
+        case 16: {
+            ok = GetPixelMask<short>(fptr, _datatype, _shape, mask_lattice);
+            break;
+        }
+        case 32: {
+            ok = GetPixelMask<int>(fptr, _datatype, _shape, mask_lattice);
+            break;
+        }
+        case 64: {
+            ok = GetPixelMask<LONGLONG>(fptr, _datatype, _shape, mask_lattice);
+            break;
+        }
+        case -32: {
+            ok = GetPixelMask<float>(fptr, _datatype, _shape, mask_lattice);
+            break;
+        }
+        case -64: {
+            ok = GetPixelMask<double>(fptr, _datatype, _shape, mask_lattice);
+            break;
+        }
+    }
+
+    if (!ok) {
+        spdlog::error("FITS read pixel mask failed.");
+        _pixel_mask = nullptr;
+    } else {
+        _pixel_mask = new casacore::ArrayLattice<bool>(mask_lattice);
+    }
+
+    CloseFile();
 }

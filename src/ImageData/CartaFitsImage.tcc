@@ -37,28 +37,30 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
     // cfitsio params
     int anynul(0), status(0);
     T null_val(0);
+    int dtype(TFLOAT);
 
     switch (datatype) {
         case 8:
-            fits_read_subset(fptr, TBYTE, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            dtype = TBYTE;
             break;
         case 16:
-            fits_read_subset(fptr, TSHORT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            dtype = TSHORT;
             break;
         case 32:
-            fits_read_subset(fptr, TINT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            dtype = TINT;
             break;
         case 64:
-            fits_read_subset(fptr, TLONGLONG, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            dtype = TLONGLONG;
             break;
         case -32:
-            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            dtype = TFLOAT;
             break;
         case -64:
-            fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            dtype = TDOUBLE;
             break;
     }
 
+    fits_read_subset(fptr, dtype, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
     if (status > 0) {
         spdlog::debug("fits_read_subset exited with status {}", status);
         return false;
@@ -68,6 +70,53 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
     buffer.resize(tmp_array.shape());
     convertArray(buffer, tmp_array);
 
+    return true;
+}
+
+template <typename T>
+bool CartaFitsImage::GetPixelMask(fitsfile* fptr, int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask) {
+    // Return mask for entire image
+    auto mask_size = shape.product();
+    std::vector<char> mask_buffer(mask_size);
+    casacore::Array<char> marray(shape, mask_buffer.data(), casacore::StorageInitPolicy::SHARE);
+    std::vector<T> data_buffer(mask_size);
+
+    // cfitsio params
+    std::vector<long> start(shape.size(), 1);
+    int anynul(0), status(0);
+    int dtype(TFLOAT);
+
+    switch (datatype) {
+        case 8:
+            dtype = TBYTE;
+            break;
+        case 16:
+            dtype = TSHORT;
+            break;
+        case 32:
+            dtype = TINT;
+            break;
+        case 64:
+            dtype = TLONGLONG;
+            break;
+        case -32:
+            dtype = TFLOAT;
+            break;
+        case -64:
+            dtype = TDOUBLE;
+            break;
+    }
+
+    fits_read_pixnull(fptr, dtype, start.data(), mask_size, data_buffer.data(), mask_buffer.data(), &anynul, &status);
+    if (status > 0) {
+        spdlog::debug("fits_read_pixnull exited with status {}", status);
+        return false;
+    }
+
+    // Convert <char> to <bool>
+    casacore::Array<bool> mask_array(marray.shape());
+    convertArray(mask_array, marray);
+    mask = casacore::ArrayLattice<bool>(mask_array);
     return true;
 }
 

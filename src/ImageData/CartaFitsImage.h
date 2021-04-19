@@ -73,8 +73,13 @@ private:
     void SetHeaderRec(char* header, casacore::RecordInterface& header_rec);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
+    // Pixel mask
+    void SetPixelMask();
+
     template <typename T>
     bool GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer);
+    template <typename T>
+    bool GetPixelMask(fitsfile* fptr, int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask);
 
     std::string _filename;
     unsigned int _hdu;
