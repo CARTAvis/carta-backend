@@ -120,13 +120,8 @@ public:
             }
         }
     }
-};
 
-TEST_F(MomentTest, CheckConsistency) {
-    string file_name = "data/images/casa/SDC335.579-0.292.spw0.line.image";
-    std::shared_ptr<casacore::ImageInterface<float>> image;
-
-    if (OpenImage(image, file_name)) {
+    static void GenerateMoments(const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis) {
         // create casa/carta moments generators
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
         casacore::LogIO casa_os(casa_log);
@@ -150,9 +145,6 @@ TEST_F(MomentTest, CheckConsistency) {
         moments[10] = 11; // MINIMUM
         moments[11] = 12; // MINIMUM_COORDINATE
 
-        // set spectral or stokes axis
-        int axis = 2;
-
         // the other settings
         casacore::Vector<float> include_pix;
         casacore::Vector<float> exclude_pix;
@@ -161,13 +153,13 @@ TEST_F(MomentTest, CheckConsistency) {
 
         // calculate moments with casa moment generator
         casa_image_moments.setMoments(moments);
-        casa_image_moments.setMomentAxis(axis);
+        casa_image_moments.setMomentAxis(moments_axis);
         casa_image_moments.setInExCludeRange(include_pix, exclude_pix);
         auto casa_results = casa_image_moments.createMoments(do_temp, "casa_image_moments", remove_axis);
 
         // calculate moments with carta moment generator
         carta_image_moments.setMoments(moments);
-        carta_image_moments.setMomentAxis(axis);
+        carta_image_moments.setMomentAxis(moments_axis);
         carta_image_moments.setInExCludeRange(include_pix, exclude_pix);
         auto carta_results = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
 
@@ -182,6 +174,15 @@ TEST_F(MomentTest, CheckConsistency) {
             EXPECT_EQ(casa_moment_image->shape().size(), carta_moment_image->shape().size());
             CompareImageData(casa_moment_image, carta_moment_image);
         }
+    }
+};
+
+TEST_F(MomentTest, CheckConsistency) {
+    string file_name = "data/images/fits/M17_SWex_unittest.fits";
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_name)) {
+        GenerateMoments(image, 2);
     } else {
         spdlog::warn("Fail to open the file {}! Ignore the Moment test: CheckConsistency.", file_name);
     }
