@@ -122,7 +122,7 @@ bool Region::IsConnected() {
 
 void Region::WaitForTaskCancellation() { // to interrupt the running jobs in the Region
     _connected = false;
-    std::unique_lock lock(life_mutex);
+    std::unique_lock lock(GetLifeMutex());
 }
 
 // ******************************************************************************************
@@ -1198,4 +1198,8 @@ bool Region::ConvertWorldToPixel(std::vector<casacore::Quantity>& world_point, c
     }
 
     return success;
+}
+
+std::shared_mutex& Region::GetLifeMutex() {
+    return _life_mutex;
 }

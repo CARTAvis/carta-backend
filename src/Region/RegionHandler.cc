@@ -995,8 +995,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
 
-    std::shared_lock frame_lock(_frames.at(file_id)->life_mutex);
-    std::shared_lock region_lock(_regions.at(region_id)->life_mutex);
+    std::shared_lock frame_lock(_frames.at(file_id)->GetLifeMutex());
+    std::shared_lock region_lock(_regions.at(region_id)->GetLifeMutex());
 
     // Initialize results map for requested stats to NaN, progress to zero
     size_t profile_size = _frames.at(file_id)->Depth();

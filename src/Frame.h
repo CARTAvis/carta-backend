@@ -175,8 +175,7 @@ public:
 
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
 
-    // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
-    mutable std::shared_mutex life_mutex;
+    std::shared_mutex& GetLifeMutex();
 
 private:
     // Validate z and stokes index values
@@ -253,6 +252,9 @@ private:
     std::vector<float> _image_cache;    // image data for current z, stokes
     tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;            // only one disk access at a time
+
+    // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
+    mutable std::shared_mutex _life_mutex;
 
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;
