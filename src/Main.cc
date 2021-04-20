@@ -639,7 +639,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path, auth_token);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
                     http_server->RegisterRoutes(app);
                 } else {
