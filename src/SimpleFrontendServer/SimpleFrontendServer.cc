@@ -426,6 +426,11 @@ std::string_view SimpleFrontendServer::SetLayoutFromString(const string& buffer)
 }
 
 std::string_view SimpleFrontendServer::ClearLayoutFromString(const string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing layouts file is not allowed in read-only mode");
+        return HTTP_400;
+    }
+
     try {
         json post_data = json::parse(buffer);
         if (post_data["layoutName"].is_string()) {
