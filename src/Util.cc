@@ -268,33 +268,46 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-void ConvertCoordinateToAxes(const string& coordinate, int& axis_index, int& stokes_index) {
-    // converts profile string into axis, stokes index into image shape
-    // axis
-    char axis_char(coordinate.back());
-    if (axis_char == 'x') {
-        axis_index = 0;
-    } else if (axis_char == 'y') {
-        axis_index = 1;
-    } else if (axis_char == 'z') {
-        axis_index = -1; // not used
+int GetStokesValue(const CARTA::StokesType& stokes_type) {
+    int stokes_value(-1);
+    switch (stokes_type) {
+        case CARTA::StokesType::I:
+            stokes_value = 1;
+            break;
+        case CARTA::StokesType::Q:
+            stokes_value = 2;
+            break;
+        case CARTA::StokesType::U:
+            stokes_value = 3;
+            break;
+        case CARTA::StokesType::V:
+            stokes_value = 4;
+            break;
+        default:
+            break;
     }
+    return stokes_value;
+}
 
-    // stokes
-    if (coordinate.size() == 2) {
-        char stokes_char(coordinate.front());
-        if (stokes_char == 'I') {
-            stokes_index = 0;
-        } else if (stokes_char == 'Q') {
-            stokes_index = 1;
-        } else if (stokes_char == 'U') {
-            stokes_index = 2;
-        } else if (stokes_char == 'V') {
-            stokes_index = 3;
-        }
-    } else {
-        stokes_index = -1;
+CARTA::StokesType GetStokesType(int stokes_value) {
+    CARTA::StokesType stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
+    switch (stokes_value) {
+        case 1:
+            stokes_type = CARTA::StokesType::I;
+            break;
+        case 2:
+            stokes_type = CARTA::StokesType::Q;
+            break;
+        case 3:
+            stokes_type = CARTA::StokesType::U;
+            break;
+        case 4:
+            stokes_type = CARTA::StokesType::V;
+            break;
+        default:
+            break;
     }
+    return stokes_type;
 }
 
 string IPAsText(string_view binary) {
@@ -314,7 +327,6 @@ string IPAsText(string_view binary) {
 }
 
 string GetAuthToken(uWS::HttpRequest* http_request) {
-    string req_token;
     // First try the cookie auth token
     string cookie_header = string(http_request->getHeader("cookie"));
     if (!cookie_header.empty()) {
@@ -333,8 +345,12 @@ string GetAuthToken(uWS::HttpRequest* http_request) {
         return sm[1].str();
     }
 
+    // Try the URL query
+    auto query_token = http_request->getQuery("token");
+    if (!query_token.empty()) {
+        return string(query_token);
+    }
     // Finally, fall back to the non-standard auth token header
-    // TODO: Should this be supported any more? Where is it used?
     return string(http_request->getHeader("carta-auth-token"));
 }
 
