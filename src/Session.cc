@@ -1084,11 +1084,9 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 
-            frame->IncreaseMomentsCount();
             if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
                 frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
-            frame->DecreaseMomentsCount();
         }
 
         // Open moments images from the cache, open files acknowledgements will be sent to the frontend
