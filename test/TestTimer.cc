@@ -20,10 +20,10 @@ public:
     static constexpr double delay_millis = 2.5;
 
     void block_for_millis(double millis) {
-        double dt = 0;
-        auto t_start = chrono::high_resolution_clock::now();
+        volatile double dt = 0;
+        auto t_start = chrono::steady_clock::now();
         while (dt < millis) {
-            auto now = chrono::high_resolution_clock::now();
+            auto now = chrono::steady_clock::now();
             dt = chrono::duration_cast<chrono::microseconds>(now - t_start).count() / 1000.0;
         }
     }
