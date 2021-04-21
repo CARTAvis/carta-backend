@@ -8,6 +8,7 @@
 #include <thread>
 
 #include <gtest/gtest.h>
+#include <fmt/format.h>
 
 #include "../src/Timer/Timer.h"
 
@@ -97,9 +98,9 @@ TEST_F(TimerTest, ClearAllWorks) {
 TEST_F(TimerTest, MeasurementStringWorks) {
     Timer t;
     t.Start("MeasurementStringWorks");
-    block_for_millis(delay_millis);
+    int blocked_time_rounded = block_for_millis(delay_millis);
     t.End("MeasurementStringWorks");
-    EXPECT_EQ(t.GetMeasurementString("MeasurementStringWorks").rfind("MeasurementStringWorks: 2.5"), 0);
+    EXPECT_EQ(t.GetMeasurementString("MeasurementStringWorks").rfind(fmt::format("MeasurementStringWorks: {}", blocked_time_rounded)), 0);
 
     // Clear after fetching
     t.GetMeasurementString("MeasurementStringWorks", true);
