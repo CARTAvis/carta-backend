@@ -223,7 +223,7 @@ void Frame::WaitForTaskCancellation() {
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
     }
-    std::unique_lock lock(GetLifeMutex());
+    std::unique_lock lock(GetActiveTaskMutex());
 }
 
 bool Frame::IsConnected() {
@@ -1011,7 +1011,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
-    std::shared_lock lock(GetLifeMutex());
+    std::shared_lock lock(GetActiveTaskMutex());
 
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
@@ -1322,7 +1322,7 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
-    std::shared_lock lock(GetLifeMutex());
+    std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
         _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
@@ -1472,6 +1472,6 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     return true;
 }
 
-std::shared_mutex& Frame::GetLifeMutex() {
-    return _life_mutex;
+std::shared_mutex& Frame::GetActiveTaskMutex() {
+    return _active_task_mutex;
 }

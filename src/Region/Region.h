@@ -112,7 +112,7 @@ public:
     casacore::TableRecord GetImageRegionRecord(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
 
-    std::shared_mutex& GetLifeMutex();
+    std::shared_mutex& GetActiveTaskMutex();
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -179,7 +179,7 @@ private:
     std::mutex _region_approx_mutex;
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
-    mutable std::shared_mutex _life_mutex;
+    mutable std::shared_mutex _active_task_mutex;
 
     // Region cached as original type
     std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
