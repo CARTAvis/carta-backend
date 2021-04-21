@@ -7,8 +7,8 @@
 #include <chrono>
 #include <thread>
 
-#include <gtest/gtest.h>
 #include <fmt/format.h>
+#include <gtest/gtest.h>
 
 #include "../src/Timer/Timer.h"
 
