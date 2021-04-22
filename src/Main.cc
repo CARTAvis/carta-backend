@@ -64,7 +64,7 @@ void DeleteSession(int session_id) {
             delete session;
             sessions.erase(session_id);
         } else {
-            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->DecreaseRefCount());
+            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->GetRefCount());
         }
     } else {
         spdlog::warn("Could not delete session {}: not found!", session_id);
@@ -465,6 +465,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                             new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
                         spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
+                    }
+                    break;
+                }
+                case CARTA::EventType::CONCAT_STOKES_FILES: {
+                    CARTA::ConcatStokesFiles message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnConcatStokesFiles(message, head.request_id);
+                    } else {
+                        spdlog::warn("Bad CONCAT_STOKES_FILES message!");
                     }
                     break;
                 }

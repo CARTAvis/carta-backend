@@ -42,7 +42,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler();
+    RegionHandler() = default;
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
@@ -91,8 +91,6 @@ private:
     void ClearRegionCache(int region_id);
 
     // Spectral requirements helpers
-    // Check if stokes is valid (e.g. frontend can send "Vz" for 3-stokes image)
-    bool SpectralCoordinateValid(std::string& coordinate, int nstokes);
     // Check if spectral config has been changed/cancelled
     bool HasSpectralRequirements(int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats);
     // Set all requirements "new" when region changes
@@ -109,12 +107,6 @@ private:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
-
-    // Trigger job cancellation when true
-    volatile bool _cancel_all_jobs = false;
-
-    // Track ongoing calculations
-    std::atomic<int> _z_profile_count;
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

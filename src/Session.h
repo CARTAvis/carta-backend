@@ -51,6 +51,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -66,7 +67,8 @@ public:
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
-    bool OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id);
+    bool OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
+        CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
@@ -89,10 +91,10 @@ public:
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
-
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
+    bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -156,6 +158,9 @@ public:
     }
     int DecreaseRefCount() {
         return --_ref_count;
+    }
+    int GetRefCount() {
+        return _ref_count;
     }
     void WaitForTaskCancellation();
     void ConnectCalled();
@@ -262,6 +267,9 @@ private:
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
+
+    // Individual stokes files connector
+    std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
 
     // Manage image channel/z
     std::unordered_map<int, std::mutex> _image_channel_mutexes;

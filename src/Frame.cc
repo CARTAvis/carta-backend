@@ -32,6 +32,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+static const int HIGH_COMPRESSION_QUALITY(32);
+
 using namespace carta;
 
 Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z)
@@ -46,8 +48,6 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _stokes_index(DEFAULT_STOKES),
       _depth(1),
       _num_stokes(1),
-      _z_profile_count(0),
-      _moments_count(0),
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -226,29 +226,11 @@ void Frame::WaitForTaskCancellation() {
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
     }
-    while (_z_profile_count > 0 || _moments_count > 0) { // wait for z profiles or moments calculation finished
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    std::unique_lock lock(GetActiveTaskMutex());
 }
 
 bool Frame::IsConnected() {
     return _connected; // whether file is to be closed
-}
-
-void Frame::IncreaseZProfileCount() {
-    _z_profile_count++;
-}
-
-void Frame::DecreaseZProfileCount() {
-    _z_profile_count--;
-}
-
-void Frame::IncreaseMomentsCount() {
-    _moments_count++;
-}
-
-void Frame::DecreaseMomentsCount() {
-    _moments_count--;
 }
 
 // ********************************************************************
@@ -373,12 +355,9 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
         return false;
     }
 
-    auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
-
     raster_tile_data.set_channel(z);
     raster_tile_data.set_stokes(stokes);
     raster_tile_data.set_compression_type(compression_type);
-    raster_tile_data.set_compression_quality(compression_quality);
 
     if (raster_tile_data.tiles_size()) {
         raster_tile_data.clear_tiles();
@@ -393,6 +372,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     int tile_width;
     int tile_height;
     if (GetRasterTileData(tile_image_data, tile, tile_width, tile_height)) {
+        size_t tile_image_data_size = sizeof(float) * tile_image_data.size(); // tile image data size in bytes
+
         if (ZStokesChanged(z, stokes)) {
             return false;
         }
@@ -410,11 +391,42 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             }
 
             auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
+
+            // compress the data with the default precision
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
+            bool use_high_precision(false);
+
+            if (precision < HIGH_COMPRESSION_QUALITY && compression_ratio > 20) {
+                // re-compress the data with a higher precision
+                std::vector<char> compression_buffer_hq;
+                size_t compressed_size_hq;
+                Compress(tile_image_data, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
+                float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
+
+                if (compression_ratio_hq > 10) {
+                    // set compression data with high precision
+                    raster_tile_data.set_compression_quality(HIGH_COMPRESSION_QUALITY);
+                    tile_ptr->set_image_data(compression_buffer_hq.data(), compressed_size_hq);
+
+                    spdlog::debug("Using high compression quality. Previous compression ratio: {:.3f}", compression_ratio);
+                    compression_ratio = compression_ratio_hq;
+                    use_high_precision = true;
+                }
+            }
+
+            if (!use_high_precision) {
+                // set compression data with default precision
+                raster_tile_data.set_compression_quality(compression_quality);
+                tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            }
+
+            spdlog::debug(
+                "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
+
             // Measure duration for compress tile data
             auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_compress_tile_data =
@@ -990,10 +1002,8 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     std::vector<SpectralConfig> new_configs;
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
-        int axis, stokes;
-        ConvertCoordinateToAxes(coordinate, axis, stokes);
-        if (stokes >= nstokes) {
-            spdlog::warn("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+        int stokes;
+        if (!GetStokesTypeIndex(coordinate, stokes)) {
             continue;
         }
 
@@ -1034,7 +1044,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
-    IncreaseZProfileCount();
+    std::shared_lock lock(GetActiveTaskMutex());
+
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
@@ -1047,12 +1058,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     for (auto& config : current_configs) {
         if (!(_cursor == start_cursor) || !IsConnected()) {
             // cursor changed or file closed, cancel profiles
-            DecreaseZProfileCount();
             return false;
         }
         if (!HasSpectralConfig(config)) {
             // requirements changed
-            DecreaseZProfileCount();
             return false;
         }
 
@@ -1070,15 +1079,13 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         // point spectral profiles only have one stats type
         spectral_profile->set_stats_type(config.all_stats[0]);
 
-        // Send NaN if cursor outside image
-        if (!start_cursor.InImage(_width, _height)) {
-            double nan_value = nan("");
-            spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
-            cb(profile_message);
-        } else {
-            int axis, stokes;
-            ConvertCoordinateToAxes(coordinate, axis, stokes);
-            if (coordinate == "z") {
+        // Send spectral profile data if cursor inside image
+        if (start_cursor.InImage(_image_shape(0), _image_shape(1))) {
+            int stokes;
+            if (!GetStokesTypeIndex(coordinate, stokes)) {
+                continue;
+            }
+            if (stokes < 0) {
                 stokes = CurrentStokes();
             }
 
@@ -1123,7 +1130,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     casacore::Slicer slicer(start, count);
                     std::vector<float> buffer;
                     if (!GetSlicerData(slicer, buffer)) {
-                        DecreaseZProfileCount();
                         return false;
                     }
 
@@ -1153,12 +1159,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                     // Check for cancel before sending
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
-                        DecreaseZProfileCount();
                         return false;
                     }
                     if (!HasSpectralConfig(config)) {
                         // requirements changed, cancel this profile
-                        DecreaseZProfileCount();
                         break;
                     }
 
@@ -1189,7 +1193,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
     spdlog::performance("Fill cursor spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
-    DecreaseZProfileCount();
     return true;
 }
 
@@ -1352,6 +1355,8 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
+    std::shared_lock lock(GetActiveTaskMutex());
+
     if (!_moment_generator) {
         _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
     }
@@ -1468,4 +1473,38 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     save_file_ack.set_success(success);
     save_file_ack.set_message(message);
+}
+
+bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
+    if (coordinate.size() == 2) {
+        bool stokes_ok(false);
+        char stokes_char(coordinate.front());
+        switch (stokes_char) {
+            case 'I':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::I, stokes_index);
+                break;
+            case 'Q':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::Q, stokes_index);
+                break;
+            case 'U':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::U, stokes_index);
+                break;
+            case 'V':
+                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::V, stokes_index);
+                break;
+            default:
+                break;
+        }
+        if (!stokes_ok) {
+            spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+            return false;
+        }
+    } else {
+        stokes_index = -1; // current stokes
+    }
+    return true;
+}
+
+std::shared_mutex& Frame::GetActiveTaskMutex() {
+    return _active_task_mutex;
 }
