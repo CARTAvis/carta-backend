@@ -64,7 +64,7 @@ void DeleteSession(int session_id) {
             delete session;
             sessions.erase(session_id);
         } else {
-            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->DecreaseRefCount());
+            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->GetRefCount());
         }
     } else {
         spdlog::warn("Could not delete session {}: not found!", session_id);
