@@ -38,7 +38,7 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 
 ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (argc > 1) {
-        spdlog::info("Using command-line settings");
+        spdlog::debug("Using command-line settings");
     }
     ApplyCommandLineSettings(argc, argv);
 
@@ -49,13 +49,13 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (fs::exists(system_settings_path) && !no_system_config) {
         settings = JSONSettingsFromFile(system_settings_path.string());
         system_settings_json_exists = true;
-        spdlog::info("Reading system settings from {}.", system_settings_path.string());
+        spdlog::debug("Reading system settings from {}.", system_settings_path.string());
     }
 
     if (fs::exists(user_settings_path) && !no_user_config) {
         auto user_settings = JSONSettingsFromFile(user_settings_path.string());
         user_settings_json_exists = true;
-        spdlog::info("Reading user settings from {}.", user_settings_path.string());
+        spdlog::debug("Reading user settings from {}.", user_settings_path.string());
         settings.merge_patch(user_settings); // user on top of system
     }
 
