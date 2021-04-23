@@ -93,6 +93,8 @@ struct ProgramSettings {
     void flushMessages() {
         std::for_each(warning_msgs.begin(), warning_msgs.end(), [](const std::string& msg) { spdlog::warn(msg); });
         std::for_each(debug_msgs.begin(), debug_msgs.end(), [](const std::string& msg) { spdlog::debug(msg); });
+        warning_msgs.clear();
+        debug_msgs.clear();
     }
 };
 } // namespace carta
