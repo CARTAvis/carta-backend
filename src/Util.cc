@@ -6,6 +6,7 @@
 
 #include "Util.h"
 
+#include <fitsio.h>
 #include <climits>
 #include <cmath>
 #include <fstream>
@@ -13,7 +14,6 @@
 
 #include <casacore/casa/OS/File.h>
 
-#include "Cfitsio.h"
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 
