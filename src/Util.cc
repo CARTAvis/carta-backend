@@ -339,7 +339,6 @@ string IPAsText(string_view binary) {
 }
 
 string GetAuthToken(uWS::HttpRequest* http_request) {
-    string req_token;
     // First try the cookie auth token
     string cookie_header = string(http_request->getHeader("cookie"));
     if (!cookie_header.empty()) {
@@ -358,8 +357,12 @@ string GetAuthToken(uWS::HttpRequest* http_request) {
         return sm[1].str();
     }
 
+    // Try the URL query
+    auto query_token = http_request->getQuery("token");
+    if (!query_token.empty()) {
+        return string(query_token);
+    }
     // Finally, fall back to the non-standard auth token header
-    // TODO: Should this be supported any more? Where is it used?
     return string(http_request->getHeader("carta-auth-token"));
 }
 
