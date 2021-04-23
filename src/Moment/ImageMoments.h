@@ -72,6 +72,7 @@ public:
 private:
     SPCIIT _image = SPCIIT(nullptr);
     casa::ImageMomentsProgressMonitor* _progress_monitor = nullptr;
+    std::unique_ptr<casa::ImageMomentsProgress> _image_moments_progress = nullptr;
     std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
 
     casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
@@ -92,6 +93,9 @@ private:
 
     // Stop moment calculation
     volatile bool _stop;
+
+    // Number of steps have done for the beam convolution
+    casacore::uInt _steps_for_beam_convolution = 0;
 
 protected:
     using casa::MomentsBase<T>::os_p;

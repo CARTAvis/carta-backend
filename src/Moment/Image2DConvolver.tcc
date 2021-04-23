@@ -298,7 +298,9 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
 
     casacore::uInt count = (nChan > 0 && nPol > 0) ? nChan * nPol : nChan > 0 ? nChan : nPol;
     if (_progress_meter) {
-        _progress_meter->init(count);
+        _progress_meter->init(count * 2); // roughly estimate the total number of steps for the whole moments calculation is twice as the
+                                          // number of steps for the beam convolution
+        _total_steps = count;             // set total number of steps for the beam convolution
     }
 
     for (casacore::uInt i = 0; i < count; ++i) {
@@ -430,10 +432,6 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
         if (!_targetres) {
             iiOut.setBeam(channel, polarization, beamOut);
         }
-    }
-
-    if (_progress_meter) {
-        _progress_meter->done();
     }
 }
 

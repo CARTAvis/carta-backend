@@ -82,6 +82,10 @@ public:
     void StopCalculation();
     void SetProgressMeter(casacore::LatticeProgress* progress_meter);
 
+    casacore::uInt GetTotalSteps() {
+        return _total_steps;
+    }
+
 protected:
     casa::CasacRegionManager::StokesControl _getStokesControl() const {
         return casa::CasacRegionManager::USE_ALL_STOKES;
@@ -101,6 +105,7 @@ private:
     casacore::Bool _targetres = casacore::False;
     volatile bool _stop;                        // used for cancellation
     casacore::LatticeProgress* _progress_meter; // used to report the progress
+    mutable casacore::uInt _total_steps = 0;    // total number of steps for the beam convolution
 
     void _checkKernelParameters(
         casacore::VectorKernel::KernelTypes kernelType, const casacore::Vector<casacore::Quantity>& parameters) const;
