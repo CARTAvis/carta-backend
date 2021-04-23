@@ -266,7 +266,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     const std::string input = "./data/settings-good-fields.json";
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
-    EXPECT_EQ(j.size(), 12);
+    EXPECT_EQ(j.size(), 13);
     EXPECT_EQ(j["verbosity"], 6);
     EXPECT_EQ(j["port"], 1234);
     EXPECT_EQ(j["grpc_port"], 5678);
