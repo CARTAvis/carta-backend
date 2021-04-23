@@ -14,7 +14,8 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/lattices/Lattices/TiledShape.h>
 
-#include "../Cfitsio.h"
+#include <fitsio.h>
+
 #include "../Logger/Logger.h"
 
 namespace carta {

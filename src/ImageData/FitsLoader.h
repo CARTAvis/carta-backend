@@ -9,9 +9,10 @@
 
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/images/Images/FITSImage.h>
+
+#include <fitsio.h>
 #include "zlib.h"
 
-#include "../Cfitsio.h"
 #include "CartaFitsImage.h"
 #include "FileLoader.h"
 

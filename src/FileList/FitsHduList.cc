@@ -79,6 +79,12 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
             }
         }
 
+        key = "BITPIX";
+        int bitpix(0);
+        status = 0;
+        fits_read_key(fptr, TINT, key.c_str(), &bitpix, comment, &status);
+        spdlog::debug("BITPIX={}, comment={}", bitpix, comment);
+
         if ((hdu == 0) || is_image) {
             // Check image dimensions for primary hdu or image extension
             key = (is_fz ? "ZNAXIS" : "NAXIS");

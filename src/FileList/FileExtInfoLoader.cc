@@ -194,6 +194,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                                 if ((name.find("BITPIX") != std::string::npos) && (is_casacore_fits || is_carta_fits)) {
                                     // Convert internal datatype to bitpix value (since always -32 in header conversion)
                                     value = GetFitsBitpix(image);
+                                    comment.clear();
                                 }
 
                                 std::string string_value = fmt::format("{:d}", value);
