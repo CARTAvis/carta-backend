@@ -1,12 +1,37 @@
 # CARTA Image Viewer (Backend)
 Backend process for simple web-based interface for viewing radio astronomy images in CASA, FITS, MIRIAD, and HDF5 formats (using the IDIA custom schema for HDF5). Unlike the conventional approach of rendering an image on the backend and sending a rendered image to the frontend client, the backend sends a compressed subset of the data, and the frontend renders the image efficiently on the GPU using WebGL and GLSL shaders. While the data is compressed using the lossy ZFP algorithm, the compression artefacts are generally much less noticeable than those cropping up from full-colour JPEG compression. While data sizes depend on compression quality used, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting, depending on the colour map used to generate the JPEG image. PNG compression is generally a factor of 2 larger than the ZFP compressed data.
 
+## Ubuntu packages
+
+We provide packages for Ubuntu 20.04 (Focal Fossa) and 18.04 (Bionic Beaver) in [a PPA](https://launchpad.net/~cartavis-team/+archive/ubuntu/carta) on Launchpad. All required dependencies are included in the PPA.
+
+To add the PPA:
+
+```shell
+sudo add-apt-repository ppa:cartavis-team/carta
+sudo apt-get update
+```
+
+To install the development version of the backend only (suitable for use with the CARTA controller):
+
+```shell
+sudo apt-get install carta-backend-beta
+```
+
+To install the development version of the backend and frontend (suitable for a desktop install):
+
+```shell
+sudo apt-get install carta-beta
+```
+
+The development package installs a launcher which allows CARTA to be started from the desktop environment's menu.
+
 ## Building from source
 
 ### Submodules
 
 The protocol buffer definitions for communication between the backend and frontend, and for communication between the scripting interface and the backend. [µWebSockets](https://github.com/uNetworking/uWebSockets), which builds on [µSockets](https://github.com/uNetworking/uSockets), is used to communicate with the frontend. In order to get the right version of µWebSockets and its dependency µSockets, together with the other two submodules, a git initialisation command must be applied as follows:
-```
+```shell
 git submodule update --init --recursive
 ```
 
@@ -29,7 +54,7 @@ The backend build depends on the following libraries:
 ### Build
 
 Use cmake to build:
-```
+```shell
 mkdir build
 cd build
 cmake ..
@@ -40,7 +65,7 @@ For more detailed example commands for installing the dependencies and performin
 
 ## Running the backend process
 
-Command-line arguments are in the format `arg=value` or `-arg value`. Run `carta_backend --help` for a list of option. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `frontend_folder` argument. Hosting of the frontend can be disabled with the `no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `debug_no_auth` argument.
+Command-line arguments are in the format `--arg=value` or `--arg value`. Run `carta_backend --help` for a list of options. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Hosting of the frontend can be disabled with the `--no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `--debug_no_auth` argument.
 
 [![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend) 
 
