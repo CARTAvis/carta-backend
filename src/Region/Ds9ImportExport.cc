@@ -8,12 +8,12 @@
 
 #include "Ds9ImportExport.h"
 
-#include <casacore/casa/Quanta/QMath.h>
-#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-
 #include <iomanip>
 
-#include "../Util.h"
+#include <spdlog/fmt/fmt.h>
+
+#include <casacore/casa/Quanta/QMath.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
 using namespace carta;
 

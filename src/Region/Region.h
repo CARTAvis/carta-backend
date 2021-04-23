@@ -10,6 +10,7 @@
 #define CARTA_BACKEND_REGION_REGION_H_
 
 #include <atomic>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -101,9 +102,7 @@ public:
 
     // Communication
     bool IsConnected();
-    void DisconnectCalled();
-    void IncreaseZProfileCount();
-    void DecreaseZProfileCount();
+    void WaitForTaskCancellation();
 
     // Converted region as approximate LCPolygon and its mask
     casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
@@ -112,6 +111,8 @@ public:
     // Converted region in Record for export
     casacore::TableRecord GetImageRegionRecord(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+
+    std::shared_mutex& GetActiveTaskMutex();
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -131,16 +132,18 @@ private:
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
     void RectanglePointsToCorners(std::vector<CARTA::Point>& pixel_points, float rotation, casacore::Vector<casacore::Double>& x,
         casacore::Vector<casacore::Double>& y);
-    bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
+    bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points, float& rotation);
 
     // Reference region as approximate polygon converted to image coordinates; used for data streams
+    bool UseApproximatePolygon(const casacore::CoordinateSystem& output_csys);
+    std::vector<CARTA::Point> GetRectangleMidpoints();
     casacore::LCRegion* GetCachedPolygonRegion(int file_id);
     casacore::LCRegion* GetAppliedPolygonRegion(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    std::vector<CARTA::Point> GetRegionPolygonPoints(int num_vertices);
+    std::vector<CARTA::Point> GetReferencePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
-    double GetPolygonLength(std::vector<CARTA::Point>& polygon_points);
+    double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
     bool ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
         casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
@@ -175,14 +178,17 @@ private:
     std::mutex _region_mutex; // creation of casacore regions is not threadsafe
     std::mutex _region_approx_mutex;
 
+    // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
+    mutable std::shared_mutex _active_task_mutex;
+
     // Region cached as original type
     std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
     std::vector<casacore::Quantity> _wcs_control_points;   // for manual region conversion
-    float _ellipse_rotation;                               // (deg), may be adjusted from pixel rotation value
-    // Reference region applied to image; key is file_id
-    std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
-    // Polygon approximation region (LCPolygon or LCBox for point) converted to image; key is file_id
+    // Converted regions
+    // Reference region converted to image; key is file_id
+    std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
+    // Polygon approximation region converted to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _polygon_regions;
 
     // region flags
@@ -191,7 +197,6 @@ private:
     bool _reference_region_set; // indicates attempt was made; may be null wcregion outside image
 
     // Communication
-    std::atomic<int> _z_profile_count;
     volatile bool _connected = true;
 };
 

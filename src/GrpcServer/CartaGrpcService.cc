@@ -10,6 +10,8 @@
 
 #include <chrono>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/scripting.pb.h>
@@ -19,7 +21,7 @@
 
 uint32_t CartaGrpcService::_scripting_request_id = 0;
 
-CartaGrpcService::CartaGrpcService(bool verbose) : _verbose(verbose) {}
+CartaGrpcService::CartaGrpcService() {}
 
 void CartaGrpcService::AddSession(Session* session) {
     // Map session to its ID, set connected to false

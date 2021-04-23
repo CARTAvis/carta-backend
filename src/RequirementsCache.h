@@ -71,7 +71,7 @@ struct RegionHistogramConfig {
 
 struct HistogramCache {
     carta::BasicStats<float> stats;
-    std::unordered_map<int, carta::HistogramResults> results; // key is num_bins
+    std::unordered_map<int, carta::Histogram> histograms; // key is num_bins
 
     HistogramCache() {}
 
@@ -87,21 +87,21 @@ struct HistogramCache {
         stats = stats_;
     }
 
-    bool GetHistogram(int num_bins_, carta::HistogramResults& results_) {
-        if (results.count(num_bins_)) {
-            results_ = results.at(num_bins_);
+    bool GetHistogram(int num_bins_, carta::Histogram& histogram_) {
+        if (histograms.count(num_bins_)) {
+            histogram_ = histograms.at(num_bins_);
             return true;
         }
         return false;
     }
 
-    void SetHistogram(int num_bins_, carta::HistogramResults& results_) {
-        results[num_bins_] = results_;
+    void SetHistogram(int num_bins_, carta::Histogram& histogram_) {
+        histograms[num_bins_] = histogram_;
     }
 
     void ClearHistograms() {
         stats = carta::BasicStats<float>();
-        results.clear();
+        histograms.clear();
     }
 };
 

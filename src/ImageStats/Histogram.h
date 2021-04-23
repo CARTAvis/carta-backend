@@ -14,29 +14,44 @@
 
 namespace carta {
 
-struct HistogramResults {
-    int num_bins;
-    float bin_width;
-    float bin_center;
-    std::vector<int> histogram_bins;
-};
-
 class Histogram {
-    int _num_bins;
-    float _bin_width;
-    float _min_val;
-    std::vector<int> _hist;
-    const std::vector<float>& _data;
+    float _min_val;                   // lower bound of the histogram (inclusive)
+    float _max_val;                   // upper bound of the histogram (inclusive)
+    float _bin_width;                 // bin width
+    float _bin_center;                // bin center
+    std::vector<int> _histogram_bins; // histogram bin counts
+
+    void Fill(const std::vector<float>&);
+    static bool ConsistencyCheck(const Histogram&, const Histogram&);
 
 public:
+    Histogram() = default; // required to create empty histograms used in references
     Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
-    Histogram(Histogram& h, tbb::split);
 
-    void operator()(const tbb::blocked_range<size_t>& r);
-    void join(Histogram& h); // NOLINT
-    void setup_bins();
+    Histogram(const Histogram& h);
 
-    HistogramResults GetHistogram() const;
+    bool Add(const Histogram& h);
+
+    float GetMinVal() const {
+        return _min_val;
+    }
+    float GetMaxVal() const {
+        return _max_val;
+    }
+    size_t GetNbins() const {
+        return _histogram_bins.size();
+    }
+    float GetBinWidth() const {
+        return _bin_width;
+    }
+    float GetBinCenter() const {
+        return _bin_center;
+    }
+    const std::vector<int>& GetHistogramBins() const {
+        return _histogram_bins;
+    }
+
+    void SetHistogramBins(const std::vector<int>&);
 };
 
 } // namespace carta

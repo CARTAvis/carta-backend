@@ -19,11 +19,10 @@
 #include <utility>
 #include <vector>
 
-#include <App.h>
-#include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
+#include <uWebSockets/App.h>
 
 #include <casacore/casa/aips.h>
 
@@ -52,14 +51,15 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
 
 class Session {
 public:
-    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-        FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
+    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD
@@ -67,7 +67,8 @@ public:
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
-    bool OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id);
+    bool OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
+        CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
@@ -90,10 +91,10 @@ public:
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
-
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
+    bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -158,7 +159,10 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
-    void DisconnectCalled();
+    int GetRefCount() {
+        return _ref_count;
+    }
+    void WaitForTaskCancellation();
     void ConnectCalled();
     static int NumberOfSessions() {
         return _num_sessions;
@@ -201,6 +205,9 @@ public:
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
+    void UpdateLastMessageTimestamp();
+    std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
+
 private:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
@@ -215,7 +222,7 @@ private:
     // Delete Frame(s)
     void DeleteFrame(int file_id);
 
-    // Specialized for cube; accumulate per-channel histograms and send progress messages
+    // Specialized for cube; accumulate per-z histograms and send progress messages
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
@@ -224,8 +231,8 @@ private:
     bool SendSpatialProfileData(int file_id, int region_id);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
-    void UpdateImageData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed);
-    void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
+    void UpdateImageData(int file_id, bool send_image_histogram, bool z_changed, bool stokes_changed);
+    void UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
@@ -239,10 +246,8 @@ private:
 
     uint32_t _id;
     std::string _address;
-    std::string _root_folder;
-    std::string _base_folder;
-    bool _verbose_logging;
-    bool _performance_logging;
+    std::string _top_level_folder;
+    std::string _starting_folder;
     int _grpc_port;
 
     // File browser
@@ -263,7 +268,10 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
-    // Manage image channel
+    // Individual stokes files connector
+    std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
+
+    // Manage image channel/z
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
     std::unordered_map<int, bool> _image_channel_task_active;
 
@@ -291,6 +299,9 @@ private:
     // Scripting responses from the client
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
     std::mutex _scripting_mutex;
+
+    // Timestamp for the last protobuf message
+    std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

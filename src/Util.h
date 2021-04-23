@@ -8,21 +8,13 @@
 #define CARTA_BACKEND__UTIL_H_
 
 #include <cassert>
-#include <chrono>
-#include <fstream>
-#include <regex>
 #include <string>
-#include <unordered_map>
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
+#include <uWebSockets/HttpContext.h>
 
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/File.h>
+#include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
-#include <casacore/mirlib/miriad.h>
 
-#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -30,27 +22,10 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
-// ************ Logging *************
-
-namespace carta { // Add a name space to avoid the ambiguity with casacore Log() function
-
-void Log(uint32_t id, const std::string& log_message);
-
-template <typename... Args>
-inline void Log(uint32_t id, const char* template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
-}
-
-template <typename... Args>
-inline void Log(uint32_t id, const std::string& template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
-}
-
-} // namespace carta
-
 // ************ Utilities *************
-
-bool CheckRootBaseFolders(std::string& root, std::string& base);
+bool FindExecutablePath(std::string& path);
+bool IsSubdirectory(std::string folder, std::string top_folder);
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
@@ -65,11 +40,18 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
+// stokes types and value conversion
+int GetStokesValue(const CARTA::StokesType& stokes_type);
+CARTA::StokesType GetStokesType(int stokes_value);
+
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
+
 // ************ Data Stream Helpers *************
 
 void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
 
-void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results);
+void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
     std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
@@ -79,27 +61,36 @@ void FillStatisticsValuesFromMap(
 
 std::string IPAsText(std::string_view binary);
 
-std::string GetAuthTokenFromCookie(const std::string& header);
+std::string GetAuthToken(uWS::HttpRequest* http_request);
+
+// ************ Region Helpers *************
+
+inline std::string RegionName(CARTA::RegionType type) {
+    std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::RegionType::POINT, "point"},
+        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::RECTANGLE, "rectangle"},
+        {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "annulus"}, {CARTA::RegionType::POLYGON, "polygon"}};
+    return region_names[type];
+}
 
 // ************ structs *************
 //
-// Usage of the ChannelRange:
+// Usage of the AxisRange:
 //
-// ChannelRange() defines all channels
-// ChannelRange(0) defines a single channel range, channel 0, in this example
-// ChannelRange(0, 1) defines the channel range between 0 and 1 (including), in this example
-// ChannelRange(0, 2) defines the channel range between 0 and 2, i.e., [0, 1, 2] in this example
+// AxisRange() defines the full axis ALL_Z
+// AxisRange(0) defines a single axis index, 0, in this example
+// AxisRange(0, 1) defines the axis range including [0, 1] in this example
+// AxisRange(0, 2) defines the axis range including [0, 1, 2] in this example
 //
-struct ChannelRange {
+struct AxisRange {
     int from, to;
-    ChannelRange() {
+    AxisRange() {
         from = 0;
-        to = ALL_CHANNELS;
+        to = ALL_Z;
     }
-    ChannelRange(int from_and_to_) {
+    AxisRange(int from_and_to_) {
         from = to = from_and_to_;
     }
-    ChannelRange(int from_, int to_) {
+    AxisRange(int from_, int to_) {
         from = from_;
         to = to_;
     }

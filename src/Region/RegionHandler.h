@@ -42,7 +42,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler(bool perflog);
+    RegionHandler() = default;
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
@@ -91,8 +91,6 @@ private:
     void ClearRegionCache(int region_id);
 
     // Spectral requirements helpers
-    // Check if stokes is valid (e.g. frontend can send "Vz" for 3-stokes image)
-    bool SpectralCoordinateValid(std::string& coordinate, int nstokes);
     // Check if spectral config has been changed/cancelled
     bool HasSpectralRequirements(int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats);
     // Set all requirements "new" when region changes
@@ -101,7 +99,7 @@ private:
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
-    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
@@ -109,15 +107,6 @@ private:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
-
-    // Logging
-    bool _perflog;
-
-    // Trigger job cancellation when true
-    volatile bool _cancel_all_jobs = false;
-
-    // Track ongoing calculations
-    std::atomic<int> _z_profile_count;
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
@@ -131,7 +120,7 @@ private:
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
     std::mutex _spectral_mutex;
 
-    // Cache; CacheId key contains file, region, stokes, (optional) channel
+    // Cache; CacheId key contains file, region, stokes, (optional) z index
     std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;
     std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
     std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
