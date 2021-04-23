@@ -732,13 +732,13 @@ bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore
 }
 
 bool FileLoader::GetDownsampledRasterData(
-    std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
+    std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
 bool FileLoader::GetChunk(
-    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }

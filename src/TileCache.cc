@@ -64,7 +64,7 @@ void TilePool::TilePtrDeleter::operator()(std::vector<float>* raw_tile) const no
 
 // TILE CACHE
 
-TileCache::TileCache(int capacity) : _capacity(capacity), _channel(0), _stokes(0), _pool(std::make_shared<TilePool>()) {
+TileCache::TileCache(int capacity) : _capacity(capacity), _z(0), _stokes(0), _pool(std::make_shared<TilePool>()) {
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
     _pool->Grow(capacity);
 }
@@ -98,7 +98,7 @@ TilePtr TileCache::Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::
     return nullptr;
 }
 
-void TileCache::Reset(int32_t channel, int32_t stokes, int capacity) {
+void TileCache::Reset(int32_t z, int32_t stokes, int capacity) {
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
     if (capacity > 0) {
         _pool->Grow(capacity - _capacity);
@@ -106,7 +106,7 @@ void TileCache::Reset(int32_t channel, int32_t stokes, int capacity) {
     }
     _map.clear();
     _queue.clear();
-    _channel = channel;
+    _z = z;
     _stokes = stokes;
 }
 
@@ -133,7 +133,7 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
     int data_width;
     int data_height;
 
-    if (!loader->GetChunk(_chunk, data_width, data_height, chunk_key.x, chunk_key.y, _channel, _stokes, image_mutex)) {
+    if (!loader->GetChunk(_chunk, data_width, data_height, chunk_key.x, chunk_key.y, _z, _stokes, image_mutex)) {
         return false;
     };
 

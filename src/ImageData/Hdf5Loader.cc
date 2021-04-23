@@ -408,7 +408,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 }
 
 bool Hdf5Loader::GetDownsampledRasterData(
-    std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
+    std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     if (!HasMip(mip)) {
         return false;
     }
@@ -425,9 +425,9 @@ bool Hdf5Loader::GetDownsampledRasterData(
 
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(IPos(4, xmin, ymin, channel, stokes), IPos(4, w, h, 1, 1));
+        slicer = casacore::Slicer(IPos(4, xmin, ymin, z, stokes), IPos(4, w, h, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(IPos(3, xmin, ymin, channel), IPos(3, w, h, 1));
+        slicer = casacore::Slicer(IPos(3, xmin, ymin, z), IPos(3, w, h, 1));
     } else if (_num_dims == 2) {
         slicer = casacore::Slicer(IPos(2, xmin, ymin), IPos(2, w, h));
     } else {
@@ -449,7 +449,7 @@ bool Hdf5Loader::GetDownsampledRasterData(
 }
 
 bool Hdf5Loader::GetChunk(
-    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
     bool data_ok(false);
 
     data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
@@ -457,9 +457,9 @@ bool Hdf5Loader::GetChunk(
 
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(IPos(4, min_x, min_y, channel, stokes), IPos(4, data_width, data_height, 1, 1));
+        slicer = casacore::Slicer(IPos(4, min_x, min_y, z, stokes), IPos(4, data_width, data_height, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(IPos(3, min_x, min_y, channel), IPos(3, data_width, data_height, 1));
+        slicer = casacore::Slicer(IPos(3, min_x, min_y, z), IPos(3, data_width, data_height, 1));
     } else if (_num_dims == 2) {
         slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, data_width, data_height));
     }

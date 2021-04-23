@@ -268,7 +268,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 
                     if (_loader->UseTileCache()) {
                         // invalidate / clear the full resolution tile cache
-                        _tile_cache.Reset(_channel_index, _stokes_index);
+                        _tile_cache.Reset(_z_index, _stokes_index);
                     }
                 }
 
@@ -498,7 +498,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
 
     if (mip > 1) {
         // Try to load downsampled data from the image file
-        loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
+        loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (!_image_cache_valid && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
         tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
@@ -1111,7 +1111,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 bounds.set_y_max(end);
             }
 
-            if (_loader->GetDownsampledRasterData(profile, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
+            if (_loader->GetDownsampledRasterData(profile, _z_index, _stokes_index, bounds, mip, _image_mutex)) {
                 have_profile = true;
             }
         } else { // Use image cache to return full resolution data or prepare data for decimation
