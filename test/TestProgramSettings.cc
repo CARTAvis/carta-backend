@@ -267,7 +267,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     EXPECT_EQ(j.size(), 13);
-    EXPECT_EQ(j["verbosity"], 6);
+    EXPECT_EQ(j["verbosity"], 5);
     EXPECT_EQ(j["port"], 1234);
     EXPECT_EQ(j["grpc_port"], 5678);
     EXPECT_EQ(j["omp_threads"], 10);
@@ -295,7 +295,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
-    EXPECT_EQ(settings.verbosity, 6);
+    EXPECT_EQ(settings.verbosity, 5);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
     EXPECT_EQ(settings.no_browser, true);

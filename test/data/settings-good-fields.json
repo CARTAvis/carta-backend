@@ -1,5 +1,5 @@
 {
-    "verbosity": 6,
+    "verbosity": 5,
     "no_log": true,
     "no_http": true,
     "no_browser": true,
