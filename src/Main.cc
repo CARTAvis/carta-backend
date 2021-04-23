@@ -566,7 +566,7 @@ int main(int argc, char* argv[]) {
         }
 
         InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages);
-        settings.flushMessages(); // flush log messages produced during Program Settings setup
+        settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);

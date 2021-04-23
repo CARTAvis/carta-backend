@@ -65,7 +65,8 @@ struct ProgramSettings {
         {"log_performance", &log_performance},
         {"log_protocol_messages", &log_protocol_messages},
         {"no_http", &no_http},
-        {"no_browser", &no_browser}
+        {"no_browser", &no_browser},
+        {"read_only_mode", &read_only_mode}
     };
 
     std::unordered_map<std::string, std::string*> strings_keys_map{
@@ -91,7 +92,7 @@ struct ProgramSettings {
 
     std::vector<std::string> warning_msgs;
     std::vector<std::string> debug_msgs;
-    void flushMessages() {
+    void FlushMessages() {
         std::for_each(warning_msgs.begin(), warning_msgs.end(), [](const std::string& msg) { spdlog::warn(msg); });
         std::for_each(debug_msgs.begin(), debug_msgs.end(), [](const std::string& msg) { spdlog::debug(msg); });
         warning_msgs.clear();

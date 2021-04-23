@@ -239,7 +239,8 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "top_level_folder": "/tmp",
         "frontend_folder": "/var",
         "exit_timeout": 10,
-        "initial_timeout": 11
+        "initial_timeout": 11,
+        "read_only_mode": true
     })";
     nlohmann::json j = nlohmann::json::parse(json_string);
 
@@ -258,6 +259,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
+    EXPECT_EQ(settings.read_only_mode, true);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
@@ -277,6 +279,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     EXPECT_EQ(j["host"], "helloworld");
     EXPECT_EQ(j["top_level_folder"], "/tmp");
     EXPECT_EQ(j["frontend_folder"], "/var");
+    EXPECT_EQ(j["read_only_mode"], true);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
@@ -304,6 +307,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
+    EXPECT_EQ(settings.read_only_mode, true);
 }
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
@@ -323,4 +327,5 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     EXPECT_EQ(settings.frontend_folder, "");
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
+    EXPECT_EQ(settings.read_only_mode, false);
 }
