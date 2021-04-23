@@ -184,6 +184,17 @@ TEST_F(MomentTest, CheckConsistency) {
     if (OpenImage(image, file_name)) {
         GenerateMoments(image, 2);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the Moment test: CheckConsistency.", file_name);
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_name);
+    }
+}
+
+TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
+    string file_name = "data/images/fits/small_perplanebeam.fits";
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_name)) {
+        GenerateMoments(image, 2);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_name);
     }
 }
