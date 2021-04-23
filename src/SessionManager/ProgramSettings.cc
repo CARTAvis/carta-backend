@@ -9,9 +9,10 @@
 #include <fstream>
 #include <iostream>
 
-#include <images/Images/ImageOpener.h>
 #include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
+
+#include <casacore/images/Images/ImageOpener.h>
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
