@@ -40,6 +40,9 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         throw casacore::AipsError("Internal class status is bad");
     }
 
+    // reset the number of steps have done for the beam convolution
+    _steps_for_beam_convolution = 0;
+
     momentAxis_p = moment_axis;
     if (momentAxis_p == momentAxisDefault_p) {
         momentAxis_p = _image->coordinates().spectralAxisNumber();
