@@ -13,8 +13,6 @@
 #include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
 
-#include "Logger/Logger.h"
-
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
@@ -38,7 +36,7 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 
 ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (argc > 1) {
-        spdlog::debug("Using command-line settings");
+        debug_msgs.push_back("Using command-line settings");
     }
     ApplyCommandLineSettings(argc, argv);
 
@@ -49,13 +47,13 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     if (fs::exists(system_settings_path) && !no_system_config) {
         settings = JSONSettingsFromFile(system_settings_path.string());
         system_settings_json_exists = true;
-        spdlog::debug("Reading system settings from {}.", system_settings_path.string());
+        debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
     }
 
     if (fs::exists(user_settings_path) && !no_user_config) {
         auto user_settings = JSONSettingsFromFile(user_settings_path.string());
         user_settings_json_exists = true;
-        spdlog::debug("Reading user settings from {}.", user_settings_path.string());
+        debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
         settings.merge_patch(user_settings); // user on top of system
     }
 
@@ -71,27 +69,30 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
     try {
         j = json::parse(ifs, nullptr, true, true);
     } catch (json::exception& err) {
-        spdlog::warn("Error parsing config file {}.", json_file_path);
-        spdlog::warn(err.what());
+        warning_msgs.push_back(fmt::format("Error parsing config file {}.", json_file_path));
+        warning_msgs.push_back(err.what());
     }
     for (const auto& key : int_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_number_integer()) {
-            spdlog::warn("Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path, key.first,
-                j[key.first].dump());
+            auto msg = fmt::format("Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path,
+                key.first, j[key.first].dump());
+            warning_msgs.push_back(msg);
             j.erase(key.first);
         }
     }
     for (const auto& key : bool_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_boolean()) {
-            spdlog::warn("Problem in config file {} at key {}: current value is {}, but a boolean is expected.", json_file_path, key.first,
-                j[key.first].dump());
+            auto msg = fmt::format("Problem in config file {} at key {}: current value is {}, but a boolean is expected.", json_file_path,
+                key.first, j[key.first].dump());
+            warning_msgs.push_back(msg);
             j.erase(key.first);
         }
     }
     for (const auto& key : strings_keys_map) {
         if (j.contains(key.first) && !j[key.first].is_string()) {
-            spdlog::warn("Problem in config file {} at key {}: current value is {}, but a string is expected.", json_file_path, key.first,
-                j[key.first].dump());
+            auto msg = fmt::format("Problem in config file {} at key {}: current value is {}, but a string is expected.", json_file_path,
+                key.first, j[key.first].dump());
+            warning_msgs.push_back(msg);
             j.erase(key.first);
         }
     }

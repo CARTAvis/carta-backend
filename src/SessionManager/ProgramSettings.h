@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 
+#include "Logger/Logger.h"
+
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -85,6 +87,13 @@ struct ProgramSettings {
     }
     bool operator!=(const ProgramSettings& rhs) const;
     bool operator==(const ProgramSettings& rhs) const;
+
+    std::vector<std::string> warning_msgs;
+    std::vector<std::string> debug_msgs;
+    void flushMessages() {
+        std::for_each(warning_msgs.begin(), warning_msgs.end(), [](const std::string& msg) { spdlog::warn(msg); });
+        std::for_each(debug_msgs.begin(), debug_msgs.end(), [](const std::string& msg) { spdlog::debug(msg); });
+    }
 };
 } // namespace carta
 #endif // CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
