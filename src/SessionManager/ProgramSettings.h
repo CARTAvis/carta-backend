@@ -40,6 +40,7 @@ struct ProgramSettings {
     int wait_time = -1;
     int init_wait_time = -1;
     int idle_session_wait_time = -1;
+    bool read_only_mode = false;
 
     bool no_user_config = false;
     bool no_system_config = false;

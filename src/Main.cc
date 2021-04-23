@@ -64,7 +64,7 @@ void DeleteSession(int session_id) {
             delete session;
             sessions.erase(session_id);
         } else {
-            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->DecreaseRefCount());
+            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->GetRefCount());
         }
     } else {
         spdlog::warn("Could not delete session {}: not found!", session_id);
@@ -123,8 +123,8 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] = new Session(
-        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port);
+    sessions[session_id] = new Session(ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder,
+        file_list_handler, settings.grpc_port, settings.read_only_mode);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -640,7 +640,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path, auth_token);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
                     http_server->RegisterRoutes(app);
                 } else {

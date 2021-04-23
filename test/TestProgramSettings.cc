@@ -64,6 +64,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_FALSE(settings.no_log);
     EXPECT_FALSE(settings.no_browser);
     EXPECT_FALSE(settings.debug_no_auth);
+    EXPECT_FALSE(settings.read_only_mode);
 
     EXPECT_TRUE(settings.frontend_folder.empty());
     EXPECT_TRUE(settings.files.empty());
@@ -91,7 +92,7 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
-        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth");
+        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode");
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
@@ -105,6 +106,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.debug_no_auth, true);
+    EXPECT_EQ(settings.read_only_mode, true);
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesShort) {

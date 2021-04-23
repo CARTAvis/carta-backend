@@ -145,6 +145,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
+        ("read_only_mode", "disable write requests", cxxopts::value<bool>())
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
@@ -216,6 +217,7 @@ sending messages to the backend).
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
+    read_only_mode = result["read_only_mode"].as<bool>();
 
     no_user_config = result.count("no_user_config") ? true : false;
     no_system_config = result.count("no_system_config") ? true : false;
