@@ -58,6 +58,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
+        ("read_only_mode", "disable write requests", cxxopts::value<bool>())
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
 
     options.add_options("Deprecated and debug")
@@ -127,6 +128,7 @@ sending messages to the backend).
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
+    read_only_mode = result["read_only_mode"].as<bool>();
 
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument
