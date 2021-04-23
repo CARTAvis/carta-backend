@@ -30,7 +30,8 @@ using json = nlohmann::json;
 // Allows testing of protected methods in SimpleFrontendServer without polluting the original class
 class TestSimpleFrontendServer : public carta::SimpleFrontendServer {
 public:
-    TestSimpleFrontendServer(fs::path root_folder, std::string auth_token, bool read_only_mode) : carta::SimpleFrontendServer(root_folder, auth_token, read_only_mode) {}
+    TestSimpleFrontendServer(fs::path root_folder, std::string auth_token, bool read_only_mode)
+        : carta::SimpleFrontendServer(root_folder, auth_token, read_only_mode) {}
     FRIEND_TEST(RestApiTest, UpdatePreferencesFromString);
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
     FRIEND_TEST(RestApiTest, GetExistingPrefs);
