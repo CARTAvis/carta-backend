@@ -3,29 +3,15 @@ FROM centos:8
 # Install the required packages
 RUN \
   dnf -y install epel-release && \
-  dnf -y install https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm && \
   dnf -y install 'dnf-command(config-manager)' && \
-  dnf -y config-manager --set-enabled powertools epel-testing elrepo-testing && \
+  dnf -y config-manager --set-enabled powertools && \
+  dnf -y install centos-release-openstack-victoria && \
   dnf -y update && \
-  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex gcc \
-         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel make \
-         openssl-devel pugixml-devel subversion tbb-devel wcslib-devel wcslib-devel wget zlib-devel \
-         libuuid-devel
-
-# gRPC will need cmake >3.13 but CentOS8 only provides cmake 3.11.
-RUN \
-  cd /root && \
-  git clone https://github.com/Kitware/CMake.git && \
-  cd CMake && git checkout v3.17.0 && ./configure && \
-  make -j 2 && make install && \
-  cd /root && rm -rf CMake
-
-# gRPC needs protoc >3.6 but CentOS8 only provides 3.5
-RUN \
-  cd /root && \
-  git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
-  ./autogen.sh && ./configure && make && make install && \
-  cd /root && rm -rf protobuf
+  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
+         gcc-c++ grpc-devel grpc-plugins gtest-devel git git-lfs gsl-devel hdf5-devel lapack-devel \ 
+         libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
+         pugixml-devel readline-devel subversion tbb-devel wcslib-devel wget zlib-devel libuuid-devel \
+         zfp-devel
 
 # CARTA will have a problem finding the .h files in /usr/include/cfitsio/
 RUN \
@@ -68,28 +54,10 @@ RUN \
            -DBUILD_PYTHON=OFF \
            -DUseCcache=1 \
            -DHAS_CXX11=1 \
-           -DDATA_DIR=/usr/local/share/casacore/data && \
+           -DDATA_DIR=/usr/local/share/casacore/data \
+           -DCMAKE_INSTALL_PREFIX=/opt/carta-casacore && \
   make -j2 && make install && \
   cd /root && rm -rf carta-casacore
-
-# Install gRPC for the scripting interface 
-RUN \
-  cd /root && \
-  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && \
-  git clone --recurse-submodules https://github.com/grpc/grpc && \
-  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
-  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
-  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
-  make -j 2 && make install && \
-  cd /root && rm -rf grpc
-
-# Install zfp
-RUN \
-  cd /root && \
-  git clone https://github.com/LLNL/zfp.git && \
-  mkdir -p zfp/build && cd zfp/build && \
-  cmake .. && make all install && \
-  cd /root && rm -rf zfp
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
@@ -98,13 +66,7 @@ EXPOSE 3002
 EXPOSE 50051
 
 ENV HOME /root
-
-# Required for running the backend
-ENV LD_LIBRARY_PATH "/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
-ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
-
 WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile
 CMD ["bash"]
-

@@ -1,0 +1,15 @@
+{
+    "verbosity": "hi",
+    "no_log": "ok",
+    "no_http": "use_http",
+    "no_browser": "false",
+    "host": 1,
+    "port": "ok",
+    "grpc_port": "wrong port",
+    "omp_threads": true,
+    "top_level_folder": true,
+    "frontend_folder": 1,
+    "exit_timeout": false,
+    "initial_timeout": false,
+    "read_only_mode": "yes"
+}

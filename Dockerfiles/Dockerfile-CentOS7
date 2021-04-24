@@ -8,38 +8,13 @@ RUN \
 
 # Install the required packages
 RUN \
+  yum -y install centos-release-openstack-train && \
   yum -y install epel-release && \
-  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex \
-    git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
-    make openssl-devel pugixml-devel subversion systemd-devel wcslib-devel wget zlib-devel \
-    libuuid-devel
-
-# gRPC will need cmake >3.13
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/Kitware/CMake.git && \
-  cd CMake && git checkout v3.17.0 && ./configure && \
-  make -j 2 && make install && \
-  cd /root && rm -rf CMake
-
-# CASA needs wcslib 4.7 but CentOS6 and CentOS7 provide 4.3, so install newer wcslib from source
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  wget ftp://ftp.atnf.csiro.au/pub/software/wcslib/wcslib.tar.bz2 && \
-  tar -xvf wcslib.tar.bz2 && cd wcslib* && \
-  ./configure && make && make install && \
-  cd .. && rm -rf wcslib*
-
-# CARTA needs proto3, CentOS6 and CentOS7 only provide proto2
-RUN \
-  source /etc/bashrc && \
-  cd /root && git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
-  ./autogen.sh && ./configure && make && make install && \
-# not all the .h files in stubs are copied over/installed for some reason
-  yes | cp -rf /root/protobuf/src/google/protobuf/stubs /usr/local/include/google/protobuf/ && \
-  cd .. && rm -rf protobuf
+  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel cmake3 curl-devel flex \
+    git git-lfs gsl-devel grpc-devel grpc-plugins gtest-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
+    make openssl-devel protobuf-devel pugixml-devel readline-devel subversion systemd-devel wcslib-devel wget \
+    zlib-devel libuuid-devel zfp-devel && \
+  ln -s /usr/bin/cmake3 /usr/bin/cmake
 
 # CARTA will have a problem finding the .h files in /usr/include/cfitsio/
 RUN \
@@ -83,39 +58,18 @@ RUN \
            -DBUILD_PYTHON=OFF \
            -DUseCcache=1 \
            -DHAS_CXX11=1 \
-           -DDATA_DIR=/usr/local/share/casacore/data && \
+           -DDATA_DIR=/usr/local/share/casacore/data \
+           -DCMAKE_INSTALL_PREFIX=/opt/carta-casacore && \
   make -j2 && make install && \
   cd /root && rm -rf carta-casacore
 
-# Install gRPC for the scripting interface 
+# CARTA has a problem with CentOS7 tbb 4.1, so install a newer version:
 RUN \
   source /etc/bashrc && \
   cd /root && \
-  git clone --recurse-submodules https://github.com/grpc/grpc && \
-  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
-  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
-  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
-  make -j 2 && make install && \
-  cd /root && rm -rf grpc
-
-# Install zfp
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/LLNL/zfp.git && \
-  mkdir -p zfp/build && cd zfp/build && \
-  cmake .. && make all install && \
-  cd /root && rm -rf zfp
-
-# CARTA has a problem with CentOS7 tbb 4.1, so get a newer version:
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  wget https://github.com/01org/tbb/releases/download/2017_U2/tbb2017_20161004oss_lin.tgz && \
-  tar -xvf tbb2017_20161004oss_lin.tgz && \
-  cp -r /root/tbb2017_20161004oss/lib/intel64/gcc4.7/* /usr/lib64/ && \
-  cp -r /root/tbb2017_20161004oss/include/tbb /usr/include && \
-  cd /root && rm -rf tbb2017_20161004oss*
+  git clone https://github.com/wjakob/tbb.git && \
+  cd tbb/build && cmake .. && make && make install && \
+  cd /root && rm -rf tbb
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
@@ -123,12 +77,9 @@ EXPOSE 3002
 # Do the same with the gRPC service port
 EXPOSE 50051
 
+ENV LD_LIBRARY_PATH "/usr/local/lib"
+
 ENV HOME /root
-
-# Required for running the backend
-ENV LD_LIBRARY_PATH "/usr/local/lib64:/usr/local/lib"
-ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
-
 WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile
