@@ -128,7 +128,7 @@ public:
         casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
         casacore::LogIO carta_os(carta_log);
         casa::ImageMoments<float> casa_image_moments(*image, casa_os, true);
-        carta::ImageMoments<float> carta_image_moments(*image, carta_os, true);
+        carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr, true);
 
         // set moment types
         casacore::Vector<casacore::Int> moments(12);
@@ -180,9 +180,10 @@ public:
 TEST_F(MomentTest, CheckConsistency) {
     string file_name = "data/images/fits/M17_SWex_unittest.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
+    int moment_axis(2);
 
     if (OpenImage(image, file_name)) {
-        GenerateMoments(image, 2);
+        GenerateMoments(image, moment_axis);
     } else {
         spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_name);
     }
@@ -191,9 +192,10 @@ TEST_F(MomentTest, CheckConsistency) {
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
     string file_name = "data/images/fits/small_perplanebeam.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
+    int moment_axis(2);
 
     if (OpenImage(image, file_name)) {
-        GenerateMoments(image, 2);
+        GenerateMoments(image, moment_axis);
     } else {
         spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_name);
     }

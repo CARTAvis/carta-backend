@@ -28,8 +28,8 @@ namespace carta {
 template <class T>
 class ImageMoments : public casa::MomentsBase<T> {
 public:
-    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output = false,
-        casacore::Bool show_progress = true);
+    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor,
+        casacore::Bool over_write_output = false);
 
     ~ImageMoments(){};
 
@@ -63,16 +63,12 @@ public:
         return _image->shape();
     }
 
-    // Set an ImageMomentsProgressMonitor interested in getting updates on the progress of the collapse process
-    void SetProgressMonitor(casa::ImageMomentsProgressMonitor* progressMonitor);
-
     // Stop the calculation
     void StopCalculation();
 
 private:
     SPCIIT _image = SPCIIT(nullptr);
-    casa::ImageMomentsProgressMonitor* _progress_monitor = nullptr;
-    std::unique_ptr<casa::ImageMomentsProgress> _image_moments_progress = nullptr;
+    std::unique_ptr<casa::ImageMomentsProgress> _image_moments_progress;
     std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
 
     casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
@@ -86,7 +82,7 @@ private:
 
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
-        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis, casacore::LatticeProgress* tell_progress = 0);
+        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis);
 
     // Get a suitable chunk shape in order for the iteration
     casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);

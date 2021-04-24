@@ -55,7 +55,7 @@ public:
     Image2DConvolver() = delete;
 
     Image2DConvolver(const SPCIIT image, const casacore::Record* const& regionPtr, const casacore::String& mask,
-        const casacore::String& outname, const casacore::Bool overwrite);
+        const casacore::String& outname, const casacore::Bool overwrite, casacore::LatticeProgress* progress_meter);
     Image2DConvolver(const Image2DConvolver<T>& other) = delete;
 
     ~Image2DConvolver() {}
@@ -80,7 +80,6 @@ public:
     }
 
     void StopCalculation();
-    void SetProgressMeter(casacore::LatticeProgress* progress_meter);
 
     casacore::uInt GetTotalSteps() {
         return _total_steps;

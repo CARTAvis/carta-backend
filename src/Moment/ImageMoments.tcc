@@ -16,10 +16,14 @@
 using namespace carta;
 
 template <class T>
-ImageMoments<T>::ImageMoments(
-    const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output, casacore::Bool show_progress)
-    : casa::MomentsBase<T>(os, over_write_output, show_progress), _stop(false), _image_2d_convolver(nullptr) {
+ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os,
+    casa::ImageMomentsProgressMonitor* progress_monitor, casacore::Bool over_write_output)
+    : casa::MomentsBase<T>(os, over_write_output, true), _stop(false), _image_2d_convolver(nullptr), _image_moments_progress(nullptr) {
     SetNewImage(image);
+    if (progress_monitor) { // set the progress meter
+        _image_moments_progress = std::make_unique<casa::ImageMomentsProgress>();
+        _image_moments_progress->setProgressMonitor(progress_monitor);
+    }
 }
 
 template <class T>
@@ -68,17 +72,9 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
             "The input image has multiple beams so each plane will be convolved to the largest beam size {} prior to calculating moments.",
             GetGaussianInfo(max_beam));
 
-        // set the progress meter
-        if (!_image_moments_progress) {
-            _image_moments_progress = std::make_unique<casa::ImageMomentsProgress>();
-            if (_progress_monitor) {
-                _image_moments_progress->setProgressMonitor(_progress_monitor);
-            }
-        }
-
         // reset the image 2D convolver
-        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false));
-        _image_2d_convolver->SetProgressMeter(_image_moments_progress.get());
+        _image_2d_convolver.reset(
+            new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _image_moments_progress.get()));
 
         // set parameters for the image 2D convolver
         auto dir_axes = _image->coordinates().directionAxesNumbers();
@@ -97,7 +93,6 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
     }
 
     worldMomentAxis_p = _image->coordinates().pixelAxisToWorldAxis(momentAxis_p);
-
     return true;
 }
 
@@ -358,15 +353,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
-    if (showProgress_p) {
-        if (!_image_moments_progress) {
-            _image_moments_progress = std::make_unique<casa::ImageMomentsProgress>();
-            if (_progress_monitor) {
-                _image_moments_progress->setProgressMonitor(_progress_monitor);
-            }
-        }
-    }
-
     casacore::uInt out_images_size = output_images.size();
     casacore::PtrBlock<casacore::MaskedLattice<T>*> ptr_blocks(out_images_size);
     for (casacore::uInt i = 0; i < out_images_size; ++i) {
@@ -374,7 +360,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     // Do expensive calculation
-    LineMultiApply(ptr_blocks, *_image, *moment_calculator, momentAxis_p, _image_moments_progress.get());
+    LineMultiApply(ptr_blocks, *_image, *moment_calculator, momentAxis_p);
 
     if (window_method || fit_method) {
         if (moment_calculator->nFailedFits() != 0) {
@@ -542,11 +528,6 @@ void ImageMoments<T>::WhatIsTheNoise(T& sigma, const casacore::ImageInterface<T>
 }
 
 template <class T>
-void ImageMoments<T>::SetProgressMonitor(casa::ImageMomentsProgressMonitor* monitor) {
-    _progress_monitor = monitor;
-}
-
-template <class T>
 void ImageMoments<T>::StopCalculation() {
     _stop = true;
     if (_image_2d_convolver) {
@@ -556,8 +537,7 @@ void ImageMoments<T>::StopCalculation() {
 
 template <class T>
 void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out,
-    const casacore::MaskedLattice<T>& lattice_in, casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis,
-    casacore::LatticeProgress* tell_progress) {
+    const casacore::MaskedLattice<T>& lattice_in, casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis) {
     // First verify that all the output lattices have the same shape and tile shape
     const casacore::uInt n_out = lattice_out.nelements(); // Number of output lattices
     AlwaysAssert(n_out > 0, AipsError);
@@ -607,9 +587,10 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     casacore::IPosition cur_pos;                           // Current position for the chunk iterator
     static const casacore::Vector<casacore::Bool> no_mask; // False mask vector
 
-    if (tell_progress && (_steps_for_beam_convolution == 0)) { // no beam convolution done before, so initialize the progress meter
+    if (_image_moments_progress &&
+        (_steps_for_beam_convolution == 0)) { // no beam convolution done before, so initialize the progress meter
         casacore::uInt total_slices = in_shape.product() / in_shape[collapse_axis];
-        tell_progress->init(total_slices);
+        _image_moments_progress->init(total_slices);
     }
 
     casacore::uInt n_done = 0; // Number of slices have done
@@ -659,9 +640,9 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             done = True; // The scan of this chunk is complete
 
             // Report the number of slices have done
-            if (tell_progress) {
+            if (_image_moments_progress) {
                 ++n_done;
-                tell_progress->nstepsDone(n_done + _steps_for_beam_convolution);
+                _image_moments_progress->nstepsDone(n_done + _steps_for_beam_convolution);
             }
 
             // Proceed to the next slice on the display axes
@@ -704,8 +685,8 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         }
     }
 
-    if (tell_progress) {
-        tell_progress->done();
+    if (_image_moments_progress) {
+        _image_moments_progress->done();
     }
 }
 

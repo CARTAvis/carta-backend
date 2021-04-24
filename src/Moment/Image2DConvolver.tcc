@@ -20,7 +20,7 @@ const casacore::String Image2DConvolver<T>::CLASS_NAME = "Image2DConvolver";
 
 template <class T>
 Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record* const& region, const casacore::String& mask,
-    const casacore::String& outname, const casacore::Bool overwrite)
+    const casacore::String& outname, const casacore::Bool overwrite, casacore::LatticeProgress* progress_meter)
     : casa::ImageTask<T>(image, "", region, "", "", "", mask, outname, overwrite),
       _type(casacore::VectorKernel::GAUSSIAN),
       _scale(0),
@@ -29,7 +29,7 @@ Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record
       _pa(),
       _axes(image->coordinates().directionAxesNumbers()),
       _stop(false),
-      _progress_meter(nullptr) {
+      _progress_meter(progress_meter) {
     this->_construct(true);
 }
 
@@ -743,11 +743,6 @@ void Image2DConvolver<T>::_fillGaussian(Double& maxVal, Double& volume, casacore
 template <class T>
 void Image2DConvolver<T>::StopCalculation() {
     _stop = true;
-}
-
-template <class T>
-void Image2DConvolver<T>::SetProgressMeter(casacore::LatticeProgress* progress_meter) {
-    _progress_meter = progress_meter;
 }
 
 #endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
