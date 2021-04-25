@@ -55,7 +55,7 @@ public:
     Image2DConvolver() = delete;
 
     Image2DConvolver(const SPCIIT image, const casacore::Record* const& regionPtr, const casacore::String& mask,
-        const casacore::String& outname, const casacore::Bool overwrite, casacore::LatticeProgress* progress_meter);
+        const casacore::String& outname, const casacore::Bool overwrite, casa::ImageMomentsProgress* progress_monitor);
     Image2DConvolver(const Image2DConvolver<T>& other) = delete;
 
     ~Image2DConvolver() {}
@@ -102,9 +102,9 @@ private:
     casacore::Quantity _major, _minor, _pa;
     casacore::IPosition _axes;
     casacore::Bool _targetres = casacore::False;
-    volatile bool _stop;                        // used for cancellation
-    casacore::LatticeProgress* _progress_meter; // used to report the progress
-    mutable casacore::uInt _total_steps = 0;    // total number of steps for the beam convolution
+    volatile bool _stop;                           // used for cancellation
+    casa::ImageMomentsProgress* _progress_monitor; // used to report the progress
+    mutable casacore::uInt _total_steps = 0;       // total number of steps for the beam convolution
 
     void _checkKernelParameters(
         casacore::VectorKernel::KernelTypes kernelType, const casacore::Vector<casacore::Quantity>& parameters) const;

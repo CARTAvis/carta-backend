@@ -14,10 +14,10 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
+#include <casacore/scimath/Mathematics/GaussianBeam.h>
 
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
-#include <scimath/Mathematics/GaussianBeam.h>
 
 #include "Constants.h"
 #include "ImageStats/BasicStatsCalculator.h"

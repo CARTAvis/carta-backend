@@ -18,11 +18,11 @@ using namespace carta;
 template <class T>
 ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os,
     casa::ImageMomentsProgressMonitor* progress_monitor, casacore::Bool over_write_output)
-    : casa::MomentsBase<T>(os, over_write_output, true), _stop(false), _image_2d_convolver(nullptr), _image_moments_progress(nullptr) {
+    : casa::MomentsBase<T>(os, over_write_output, true), _stop(false), _image_2d_convolver(nullptr), _progress_monitor(nullptr) {
     SetNewImage(image);
     if (progress_monitor) { // set the progress meter
-        _image_moments_progress = std::make_unique<casa::ImageMomentsProgress>();
-        _image_moments_progress->setProgressMonitor(progress_monitor);
+        _progress_monitor = std::make_unique<casa::ImageMomentsProgress>();
+        _progress_monitor->setProgressMonitor(progress_monitor);
     }
 }
 
@@ -73,8 +73,7 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
             GetGaussianInfo(max_beam));
 
         // reset the image 2D convolver
-        _image_2d_convolver.reset(
-            new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _image_moments_progress.get()));
+        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _progress_monitor.get()));
 
         // set parameters for the image 2D convolver
         auto dir_axes = _image->coordinates().directionAxesNumbers();
@@ -587,10 +586,9 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     casacore::IPosition cur_pos;                           // Current position for the chunk iterator
     static const casacore::Vector<casacore::Bool> no_mask; // False mask vector
 
-    if (_image_moments_progress &&
-        (_steps_for_beam_convolution == 0)) { // no beam convolution done before, so initialize the progress meter
+    if (_progress_monitor && (_steps_for_beam_convolution == 0)) { // no beam convolution done before, so initialize the progress meter
         casacore::uInt total_slices = in_shape.product() / in_shape[collapse_axis];
-        _image_moments_progress->init(total_slices);
+        _progress_monitor->init(total_slices);
     }
 
     casacore::uInt n_done = 0; // Number of slices have done
@@ -640,9 +638,9 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             done = True; // The scan of this chunk is complete
 
             // Report the number of slices have done
-            if (_image_moments_progress) {
+            if (_progress_monitor) {
                 ++n_done;
-                _image_moments_progress->nstepsDone(n_done + _steps_for_beam_convolution);
+                _progress_monitor->nstepsDone(n_done + _steps_for_beam_convolution);
             }
 
             // Proceed to the next slice on the display axes
@@ -685,8 +683,8 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         }
     }
 
-    if (_image_moments_progress) {
-        _image_moments_progress->done();
+    if (_progress_monitor) {
+        _progress_monitor->done();
     }
 }
 

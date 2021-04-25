@@ -20,7 +20,7 @@ const casacore::String Image2DConvolver<T>::CLASS_NAME = "Image2DConvolver";
 
 template <class T>
 Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record* const& region, const casacore::String& mask,
-    const casacore::String& outname, const casacore::Bool overwrite, casacore::LatticeProgress* progress_meter)
+    const casacore::String& outname, const casacore::Bool overwrite, casa::ImageMomentsProgress* progress_monitor)
     : casa::ImageTask<T>(image, "", region, "", "", "", mask, outname, overwrite),
       _type(casacore::VectorKernel::GAUSSIAN),
       _scale(0),
@@ -29,7 +29,7 @@ Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record
       _pa(),
       _axes(image->coordinates().directionAxesNumbers()),
       _stop(false),
-      _progress_meter(progress_meter) {
+      _progress_monitor(progress_monitor) {
     this->_construct(true);
 }
 
@@ -297,10 +297,10 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
     }
 
     casacore::uInt count = (nChan > 0 && nPol > 0) ? nChan * nPol : nChan > 0 ? nChan : nPol;
-    if (_progress_meter) {
-        _progress_meter->init(count * 2); // roughly estimate the total number of steps for the whole moments calculation is twice as the
-                                          // number of steps for the beam convolution
-        _total_steps = count;             // set total number of steps for the beam convolution
+    if (_progress_monitor) {
+        _progress_monitor->init(count * 2); // roughly estimate the total number of steps for the whole moments calculation is twice as the
+                                            // number of steps for the beam convolution
+        _total_steps = count;               // set total number of steps for the beam convolution
     }
 
     for (casacore::uInt i = 0; i < count; ++i) {
@@ -308,8 +308,8 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
             break;
         }
 
-        if (_progress_meter) {
-            _progress_meter->nstepsDone(i);
+        if (_progress_monitor) {
+            _progress_monitor->nstepsDone(i);
         }
 
         if (nChan > 0) {
