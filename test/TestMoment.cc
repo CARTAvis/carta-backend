@@ -114,6 +114,8 @@ public:
         std::vector<float> data2;
         GetImageData(image1, data1);
         GetImageData(image2, data2);
+        EXPECT_EQ(data1.size(), data2.size());
+
         if (data1.size() == data2.size()) {
             for (int i = 0; i < data1.size(); ++i) {
                 EXPECT_FLOAT_EQ(data1[i], data2[i]);
@@ -148,8 +150,8 @@ public:
         // the other settings
         casacore::Vector<float> include_pix;
         casacore::Vector<float> exclude_pix;
-        casacore::Bool do_temp = true;
-        casacore::Bool remove_axis = false;
+        casacore::Bool do_temp(true);
+        casacore::Bool remove_axis(false);
 
         // calculate moments with casa moment generator
         casa_image_moments.setMoments(moments);
