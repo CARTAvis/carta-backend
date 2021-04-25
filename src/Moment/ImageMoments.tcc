@@ -193,6 +193,11 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         throw casacore::AipsError("Internal status of class is bad.  You have ignored errors");
     }
 
+    // check whether the calculation is cancelled
+    if (_stop) {
+        return std::vector<std::shared_ptr<casacore::MaskedLattice<T>>>();
+    }
+
     // Find spectral axis use a copy of the coordinate system here since, if the image has multiple beams, "_image" will change and hence a
     // reference to its casacore::CoordinateSystem will disappear causing a seg fault.
     casacore::CoordinateSystem csys = _image->coordinates();
