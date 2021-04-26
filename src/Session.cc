@@ -1127,17 +1127,29 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
+    int region_id(save_file.region_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
+        auto active_frame = _frames.at(file_id);
         if (_read_only_mode) {
             string error = "Saving files is not allowed in read-only mode";
             spdlog::error(error);
             SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
             save_file_ack.set_success(false);
             save_file_ack.set_message(error);
+        } else if (region_id) {
+            std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
+            if (active_frame->GetImageRegion(file_id, _region)) {
+                active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
+            } else {
+                save_file_ack.set_success(false);
+                save_file_ack.set_message("The selected region is entirely outside the image.");
+            }
         } else {
-            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
+            // Save full image
+            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack, nullptr);
         }
+
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
     } else {

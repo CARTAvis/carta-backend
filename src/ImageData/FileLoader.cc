@@ -313,6 +313,18 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
     return true;
 }
 
+bool FileLoader::GetSubImage(
+    const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    auto result = false;
+    ImageRef image = GetImage();
+    if (image) {
+        auto temp_image = casacore::SubImage<float>(*image, region);
+        sub_image = casacore::SubImage<float>(temp_image, slicer);
+        result = true;
+    }
+    return result;
+}
+
 bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     // Obtains beam table from ImageInfo
     bool success(false);
