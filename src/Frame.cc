@@ -316,8 +316,8 @@ bool Frame::FillImageCache() {
     auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
     auto dt_set_image_cache =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height,
-        dt_set_image_cache * 1e-3, (float)(_width * _height) / dt_set_image_cache);
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt_set_image_cache * 1e-3,
+        (float)(_width * _height) / dt_set_image_cache);
 
     _image_cache_valid = true;
     return true;
@@ -435,7 +435,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
-            Compress((*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
+            Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
             bool use_high_precision(false);
 
@@ -443,7 +443,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 // re-compress the data with a higher precision
                 std::vector<char> compression_buffer_hq;
                 size_t compressed_size_hq;
-                Compress((*tile_data_ptr, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
+                Compress(*tile_data_ptr, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
                 float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
 
                 if (compression_ratio_hq > 10) {

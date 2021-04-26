@@ -7,8 +7,6 @@
 #ifndef CARTA_BACKEND__TILE_H_
 #define CARTA_BACKEND__TILE_H_
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -41,8 +39,6 @@ struct Tile {
         double total_layers = ceil(log2(max_mip));
         return pow(2.0, total_layers - layer);
     }
-
-    friend std::ostream& operator<<(std::ostream& os, const Tile& tile);
 };
 
 #endif // CARTA_BACKEND__TILE_H_

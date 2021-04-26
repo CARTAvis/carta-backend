@@ -7,13 +7,6 @@
 #include "TileCache.h"
 #include <functional>
 
-// TILE CACHE KEY
-
-std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
-    fmt::print(os, "x={}, y={}", key.x, key.y);
-    return os;
-}
-
 // TILE POOL
 
 void TilePool::Grow(int size) {

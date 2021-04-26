@@ -11,8 +11,8 @@
 #include <functional>
 #include <list>
 #include <memory>
-#include <unordered_map>
 #include <stack>
+#include <unordered_map>
 #include <vector>
 
 #include "ImageData/FileLoader.h"
@@ -53,8 +53,6 @@ struct TileCacheKey {
 
     int32_t x;
     int32_t y;
-
-    friend std::ostream& operator<<(std::ostream& os, const TileCacheKey& key);
 };
 
 namespace std {
