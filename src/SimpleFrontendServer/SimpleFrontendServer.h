@@ -33,7 +33,7 @@ typedef uWS::HttpResponse<false> Res;
 
 class SimpleFrontendServer {
 public:
-    SimpleFrontendServer(fs::path root_folder, std::string auth_token);
+    SimpleFrontendServer(fs::path root_folder, std::string auth_token, bool read_only_mode);
     bool CanServeFrontend() {
         return _frontend_found;
     }
@@ -70,6 +70,7 @@ private:
     fs::path _config_folder;
     bool _frontend_found;
     std::string _auth_token;
+    bool _read_only_mode;
 };
 
 } // namespace carta

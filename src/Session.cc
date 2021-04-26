@@ -49,7 +49,7 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port)
+    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -58,6 +58,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
+      _read_only_mode(read_only_mode),
       _loader(nullptr),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
@@ -285,7 +286,12 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_message(status);
     ack_message.set_session_type(type);
 
-    uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    uint32_t feature_flags;
+    if (_read_only_mode) {
+        feature_flags = CARTA::ServerFeatureFlags::READ_ONLY;
+    } else {
+        feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
+    }
     if (_grpc_port >= 0) {
         feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
         ack_message.set_grpc_port(_grpc_port);
@@ -747,22 +753,30 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             return;
         }
 
-        // Export filename (optional, for server-side export)
-        std::string directory(message.directory()), filename(message.file());
-        std::string abs_filename;
-        if (!directory.empty() && !filename.empty()) {
-            // export file is on server, form path with filename
-            casacore::Path top_level_path(_top_level_folder);
-            top_level_path.append(directory);
-            top_level_path.append(filename);
-            abs_filename = top_level_path.absoluteName();
-        }
-
-        std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
-
         CARTA::ExportRegionAck export_ack;
-        _region_handler->ExportRegion(
-            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+        if (_read_only_mode) {
+            string error = "Exporting region is not allowed in read-only mode";
+            spdlog::error(error);
+            SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
+            export_ack.set_success(false);
+            export_ack.set_message(error);
+        } else {
+            // Export filename (optional, for server-side export)
+            std::string directory(message.directory()), filename(message.file());
+            std::string abs_filename;
+            if (!directory.empty() && !filename.empty()) {
+                // export file is on server, form path with filename
+                casacore::Path top_level_path(_top_level_folder);
+                top_level_path.append(directory);
+                top_level_path.append(filename);
+                abs_filename = top_level_path.absoluteName();
+            }
+
+            std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+
+            _region_handler->ExportRegion(
+                file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+        }
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -1096,11 +1110,9 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 
-            frame->IncreaseMomentsCount();
             if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
                 frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
-            frame->DecreaseMomentsCount();
         }
 
         // Open moments images from the cache, open files acknowledgements will be sent to the frontend
@@ -1129,8 +1141,15 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
-
+        if (_read_only_mode) {
+            string error = "Saving files is not allowed in read-only mode";
+            spdlog::error(error);
+            SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(error);
+        } else {
+            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
+        }
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
     } else {

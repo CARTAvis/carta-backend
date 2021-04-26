@@ -22,8 +22,8 @@ namespace carta {
 
 const string success_string = json({{"success", true}}).dump();
 
-SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token)
-    : _http_root_folder(root_folder), _auth_token(auth_token) {
+SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token, bool read_only_mode)
+    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode) {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
@@ -156,6 +156,11 @@ json SimpleFrontendServer::GetExistingPreferences() {
 }
 
 bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing preferences file is not allowed in read-only mode");
+        return false;
+    }
+
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
@@ -379,6 +384,11 @@ nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
 }
 
 bool SimpleFrontendServer::WriteLayoutFile(const string& layout_name, nlohmann::json& obj) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing layouts file is not allowed in read-only mode");
+        return false;
+    }
+
     auto layout_path = _config_folder / "layouts" / (layout_name + ".json");
 
     try {
@@ -416,6 +426,11 @@ std::string_view SimpleFrontendServer::SetLayoutFromString(const string& buffer)
 }
 
 std::string_view SimpleFrontendServer::ClearLayoutFromString(const string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing layouts file is not allowed in read-only mode");
+        return HTTP_400;
+    }
+
     try {
         json post_data = json::parse(buffer);
         if (post_data["layoutName"].is_string()) {

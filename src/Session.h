@@ -59,7 +59,7 @@
 class Session {
 public:
     Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1);
+        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false);
     ~Session();
 
     // CARTA ICD
@@ -159,6 +159,9 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
+    int GetRefCount() {
+        return _ref_count;
+    }
     void WaitForTaskCancellation();
     void ConnectCalled();
     static int NumberOfSessions() {
@@ -249,6 +252,7 @@ private:
     std::string _top_level_folder;
     std::string _starting_folder;
     int _grpc_port;
+    bool _read_only_mode;
 
     // File browser
     FileListHandler* _file_list_handler;
