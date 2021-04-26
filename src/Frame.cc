@@ -51,8 +51,6 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _stokes_index(DEFAULT_STOKES),
       _depth(1),
       _num_stokes(1),
-      _z_profile_count(0),
-      _moments_count(0),
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -230,29 +228,11 @@ void Frame::WaitForTaskCancellation() {
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
     }
-    while (_z_profile_count > 0 || _moments_count > 0) { // wait for z profiles or moments calculation finished
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    std::unique_lock lock(GetActiveTaskMutex());
 }
 
 bool Frame::IsConnected() {
     return _connected; // whether file is to be closed
-}
-
-void Frame::IncreaseZProfileCount() {
-    _z_profile_count++;
-}
-
-void Frame::DecreaseZProfileCount() {
-    _z_profile_count--;
-}
-
-void Frame::IncreaseMomentsCount() {
-    _moments_count++;
-}
-
-void Frame::DecreaseMomentsCount() {
-    _moments_count--;
 }
 
 // ********************************************************************
@@ -1066,7 +1046,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
-    IncreaseZProfileCount();
+    std::shared_lock lock(GetActiveTaskMutex());
+
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
@@ -1079,12 +1060,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     for (auto& config : current_configs) {
         if (!(_cursor == start_cursor) || !IsConnected()) {
             // cursor changed or file closed, cancel profiles
-            DecreaseZProfileCount();
             return false;
         }
         if (!HasSpectralConfig(config)) {
             // requirements changed
-            DecreaseZProfileCount();
             return false;
         }
 
@@ -1153,7 +1132,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     casacore::Slicer slicer(start, count);
                     std::vector<float> buffer;
                     if (!GetSlicerData(slicer, buffer)) {
-                        DecreaseZProfileCount();
                         return false;
                     }
 
@@ -1183,12 +1161,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                     // Check for cancel before sending
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
-                        DecreaseZProfileCount();
                         return false;
                     }
                     if (!HasSpectralConfig(config)) {
                         // requirements changed, cancel this profile
-                        DecreaseZProfileCount();
                         break;
                     }
 
@@ -1219,7 +1195,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
     spdlog::performance("Fill cursor spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
-    DecreaseZProfileCount();
     return true;
 }
 
@@ -1382,6 +1357,8 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
+    std::shared_lock lock(GetActiveTaskMutex());
+
     if (!_moment_generator) {
         _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
     }
@@ -1792,4 +1769,8 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
         stokes_index = -1; // current stokes
     }
     return true;
+}
+
+std::shared_mutex& Frame::GetActiveTaskMutex() {
+    return _active_task_mutex;
 }

@@ -24,8 +24,6 @@
 
 namespace carta {
 
-RegionHandler::RegionHandler() : _z_profile_count(0) {}
-
 // ********************************************************************
 // Region handling
 
@@ -723,9 +721,7 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
     // Do calculations
     if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
-        frame->IncreaseMomentsCount();
         frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
-        frame->DecreaseMomentsCount();
     }
     return !collapse_results.empty();
 }
@@ -1002,8 +998,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     bool use_current_stokes(coordinate == "z");
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
-    _frames.at(file_id)->IncreaseZProfileCount();
-    _regions.at(region_id)->IncreaseZProfileCount();
+
+    std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
+    std::shared_lock region_lock(_regions.at(region_id)->GetActiveTaskMutex());
 
     // Initialize results map for requested stats to NaN, progress to zero
     size_t profile_size = _frames.at(file_id)->Depth();
@@ -1027,9 +1024,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
         progress = PROFILE_COMPLETE;
         partial_results_callback(results, progress);
-
-        _frames.at(file_id)->DecreaseZProfileCount();
-        _regions.at(region_id)->DecreaseZProfileCount();
         return true;
     }
 
@@ -1038,8 +1032,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     if (!lcregion) {
         progress = PROFILE_COMPLETE;
         partial_results_callback(results, progress); // region outside image, send NaNs
-        _frames.at(file_id)->DecreaseZProfileCount();
-        _regions.at(region_id)->DecreaseZProfileCount();
         return true;
     }
 
@@ -1063,9 +1055,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 progress = PROFILE_COMPLETE;
                 partial_results_callback(results, progress);
             }
-
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return ok;
         }
 
@@ -1084,25 +1073,17 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             while (progress < PROFILE_COMPLETE) {
                 // Cancel if region or frame is closing
                 if (!RegionFileIdsValid(region_id, file_id)) {
-                    _frames.at(file_id)->DecreaseZProfileCount();
-                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
 
                 // Cancel if region, current stokes, or spectral requirements changed
                 if (_regions.at(region_id)->GetRegionState() != initial_region_state) {
-                    _frames.at(file_id)->DecreaseZProfileCount();
-                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
                 if (use_current_stokes && (stokes_index != _frames.at(file_id)->CurrentStokes())) {
-                    _frames.at(file_id)->DecreaseZProfileCount();
-                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
                 if (!HasSpectralRequirements(region_id, file_id, coordinate, required_stats)) {
-                    _frames.at(file_id)->DecreaseZProfileCount();
-                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
 
@@ -1129,8 +1110,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                         partial_results_callback(results, progress);
                     }
                 } else {
-                    _frames.at(file_id)->DecreaseZProfileCount();
-                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
             }
@@ -1139,9 +1118,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             auto dt_spectral_profile =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
             spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
-
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return true;
         }
     } // end loader swizzled data
@@ -1170,8 +1146,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         AxisRange z_range(start_z, end_z);
         casacore::ImageRegion region;
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, region)) {
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
 
@@ -1179,8 +1153,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         bool per_z(true);
         std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
         if (!_frames.at(file_id)->GetRegionStats(region, _spectral_stats, per_z, partial_profiles)) {
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
 
@@ -1213,24 +1185,16 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
         // Cancel if region or frame is closing
         if (!RegionFileIdsValid(region_id, file_id)) {
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
         // Cancel if region, current stokes, or spectral requirements changed
         if (_regions.at(region_id)->GetRegionState() != initial_region_state) {
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
         if (use_current_stokes && (stokes_index != _frames.at(file_id)->CurrentStokes())) {
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
         if (!HasSpectralRequirements(region_id, file_id, coordinate, required_stats)) {
-            _frames.at(file_id)->DecreaseZProfileCount();
-            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
 
@@ -1251,8 +1215,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
     spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
 
-    _frames.at(file_id)->DecreaseZProfileCount();
-    _regions.at(region_id)->DecreaseZProfileCount();
     return true;
 }
 
