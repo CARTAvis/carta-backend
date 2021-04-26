@@ -123,8 +123,8 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] = new Session(
-        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port);
+    sessions[session_id] = new Session(ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder,
+        file_list_handler, settings.grpc_port, settings.read_only_mode);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -566,6 +566,7 @@ int main(int argc, char* argv[]) {
         }
 
         InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages);
+        settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
@@ -639,7 +640,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path, auth_token);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
                     http_server->RegisterRoutes(app);
                 } else {

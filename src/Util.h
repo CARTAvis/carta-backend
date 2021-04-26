@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <string>
+#include <unordered_map>
 
 #include <uWebSockets/HttpContext.h>
 
@@ -132,5 +133,10 @@ struct PointXy {
         return (x_in_image && y_in_image);
     }
 };
+
+// Map for enmu CARTA:FileType to string
+static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileType::CASA, "CASA"}, {CARTA::FileType::CRTF, "CRTF"},
+    {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
+    {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
 #endif // CARTA_BACKEND__UTIL_H_

@@ -88,6 +88,10 @@ void RegionHandler::RemoveRegion(int region_id) {
     RemoveRegionRequirementsCache(region_id);
 }
 
+std::shared_ptr<Region> RegionHandler::GetRegion(int region_id) {
+    return _regions.at(region_id);
+}
+
 bool RegionHandler::RegionSet(int region_id) {
     // Check whether a particular region is set or any regions are set
     if (region_id == ALL_REGIONS) {
