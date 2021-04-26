@@ -12,6 +12,7 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <stack>
 #include <vector>
 
 #include "ImageData/FileLoader.h"

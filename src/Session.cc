@@ -285,7 +285,12 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_message(status);
     ack_message.set_session_type(type);
 
-    uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    uint32_t feature_flags;
+    if (_read_only_mode) {
+        feature_flags = CARTA::ServerFeatureFlags::READ_ONLY;
+    } else {
+        feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
+    }
     if (_grpc_port >= 0) {
         feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
         ack_message.set_grpc_port(_grpc_port);
