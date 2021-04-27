@@ -267,7 +267,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                     FillImageCache();
                 } else {
                     // invalidate the image cache, but don't load the new cache here
-                    _image_cache_valid = false;
+                    InvalidateImageCache();
 
                     if (_loader->UseTileCache()) {
                         // invalidate / clear the full resolution tile cache
@@ -293,11 +293,6 @@ bool Frame::SetCursor(float x, float y) {
 bool Frame::FillImageCache() {
     // get image data for z, stokes
 
-    // Exit early if the cache has already been loaded for this z and stokes
-    if (_image_cache_valid) {
-        return true;
-    }
-
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
 
@@ -321,6 +316,12 @@ bool Frame::FillImageCache() {
 
     _image_cache_valid = true;
     return true;
+}
+
+void Frame::InvalidateImageCache() {
+    bool write_lock(true);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+    _image_cache_valid = false;
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {

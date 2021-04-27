@@ -197,6 +197,7 @@ private:
 
     // Cache image plane data for current z, stokes
     bool FillImageCache();
+    void InvalidateImageCache();
 
     // Downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
