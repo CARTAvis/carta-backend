@@ -12,9 +12,12 @@
 #include <fstream>
 #include <thread>
 
+#include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>
+#include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCSlicer.h>
+#include <casacore/lattices/LRegions/LattRegionHolder.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
 #include "DataStream/Compression.h"
@@ -1375,10 +1378,16 @@ void Frame::StopMomentCalc() {
     }
 }
 
-void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
+// Export modified image to file, for changed range of channels/stokes and chopped region
+// Input root_folder as target path
+// Input save_file_msg as requesting parameters
+// Input save_file_ack as responding message to frontend
+// Input region as std::shared_ptr<Region> of information of target region
+// Return void
+void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
+    std::shared_ptr<Region> region) {
     // Input file info
     std::string in_file = GetFileName();
-    casacore::ImageInterface<float>* image = GetImage();
 
     // Output file info
     fs::path output_filename(save_file_msg.output_file_name());
@@ -1403,37 +1412,40 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
-    if (output_file_type == CARTA::FileType::CASA) {
-        // Remove the old image file if it has a same file name
-        if (fs::exists(output_filename)) {
-            fs::remove_all(output_filename);
+    // Modify image to export
+    auto image = GetImage();
+    auto image_shape = image->shape();
+
+    casacore::SubImage<float> sub_image;
+    casacore::LCRegion* image_region;
+    casacore::IPosition region_shape;
+    if (region) {
+        image_region = GetImageRegion(file_id, region);
+        region_shape = image_region->shape();
+    }
+
+    if (image_shape.size() == 2) {
+        if (region) {
+            _loader->GetSubImage(LattRegionHolder(image_region), sub_image);
+            image = sub_image.cloneII();
         }
-
-        // Get a copy of the original pixel data
-        casacore::IPosition start(image->shape().size(), 0);
-        casacore::IPosition count(image->shape());
-        casacore::Slicer slice(start, count);
-        casacore::Array<casacore::Float> temp_array;
-        image->doGetSlice(temp_array, slice);
-
-        // Construct a new CASA image
+    } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
-            auto out_image =
-                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
-            out_image->setMiscInfo(image->miscInfo());
-            out_image->setImageInfo(image->imageInfo());
-            out_image->appendLog(image->logger());
-            out_image->setUnits(image->units());
-            out_image->putSlice(temp_array, start);
+            // If apply region
+            if (region) {
+                auto latt_region_holder = LattRegionHolder(image_region);
+                auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);
+                _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
+            } else {
+                auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
+                _loader->GetSubImage(slice_sub_image, sub_image);
+            }
 
-            // Copy the mask if the original image has
-            if (image->hasPixelMask()) {
-                casacore::Array<casacore::Bool> image_mask;
-                image->getMaskSlice(image_mask, slice);
-                out_image->makeMask("mask0", true, true);
-                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
-                out_image_mask.putSlice(image_mask, start);
+            // If keep degenerated axes
+            if (save_file_msg.keep_degenerate()) {
+                image = sub_image.cloneII();
+            } else {
+                image = casacore::SubImage<float>(sub_image, casacore::AxesSpecifier(false), true).cloneII();
             }
         } catch (casacore::AipsError error) {
             message = error.getMesg();
@@ -1441,26 +1453,36 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             save_file_ack.set_message(message);
             return;
         }
-        success = true;
-    } else if (output_file_type == CARTA::FileType::FITS) {
-        bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
-        GetSpectralCoordPreferences(image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
-
-        casacore::String error_string, origin_string;
-        bool allow_overwrite(true), degenerate_last(false), verbose(true), stokes_last(false), history(true);
-        int bit_pix(-32);
-        float min_pix(1.0), max_pix(-1.0);
-        if (casacore::ImageFITSConverter::ImageToFITS(error_string, *image, output_filename.string(), 64, prefer_velocity, optical_velocity,
-                bit_pix, min_pix, max_pix, allow_overwrite, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength,
-                origin_string, history)) {
-            success = true;
-        } else {
-            message = error_string;
-        }
     } else {
-        message = "No saving file action!";
+        return;
     }
-    ulock.unlock(); // Unlock the image
+
+    // Export image data to file
+    try {
+        std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
+        {
+            switch (output_file_type) {
+                case CARTA::FileType::CASA:
+                    success = ExportCASAImage(*image, output_filename, message);
+                    break;
+                case CARTA::FileType::FITS:
+                    success = ExportFITSImage(*image, output_filename, message);
+                    break;
+                default:
+                    message = fmt::format("Could not export file. Unknown file type {}.", FileTypeString[output_file_type]);
+                    break;
+            }
+        }
+        ulock.unlock(); // Unlock the image
+    } catch (casacore::AipsError error) {
+        message += error.getMesg();
+        save_file_ack.set_success(false);
+        save_file_ack.set_message(message);
+        return;
+    }
+    if (success) {
+        spdlog::info("Exported a {} file \'{}\'.", FileTypeString[output_file_type], output_filename.string());
+    }
 
     // Remove the root folder from the ack message
     if (!root_folder.empty()) {
@@ -1472,6 +1494,251 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     save_file_ack.set_success(success);
     save_file_ack.set_message(message);
+}
+
+// Export carta::FileLoader::ImageRef image to CASA file
+// Input casacore::ImageInterface<casacore::Float> image as source data
+// Input output_filename as file path
+// Input message as a return message, which may contain error message
+// Return a bool if this functionality success
+bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+    bool success(false);
+
+    // Remove the old image file if it has a same file name
+    if (fs::exists(output_filename)) {
+        fs::remove_all(output_filename);
+    }
+
+    // Get a copy of all pixel data
+    casacore::IPosition start(image.shape().size(), 0);
+    casacore::IPosition count(image.shape());
+    casacore::Slicer slice(start, count);
+    casacore::Array<casacore::Float> temp_array;
+    image.doGetSlice(temp_array, slice);
+
+    // Construct a new CASA image
+    try {
+        auto out_image =
+            std::make_unique<casacore::PagedImage<casacore::Float>>(image.shape(), image.coordinates(), output_filename.string());
+        out_image->setMiscInfo(image.miscInfo());
+        out_image->setImageInfo(image.imageInfo());
+        out_image->appendLog(image.logger());
+        out_image->setUnits(image.units());
+        out_image->putSlice(temp_array, start);
+
+        // Create the mask for region
+        if (image.hasPixelMask()) {
+            casacore::Array<casacore::Bool> image_mask;
+            image.getMaskSlice(image_mask, slice);
+            out_image->makeMask("mask0", true, true);
+            casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+            out_image_mask.putSlice(image_mask, start);
+        }
+        success = true;
+    } catch (casacore::AipsError error) {
+        message = error.getMesg();
+    }
+
+    return success;
+}
+
+// Export carta::FileLoader::ImageRef image to FITS file
+// Input casacore::ImageInterface<casacore::Float> image as source data
+// Input output_filename as file path
+// Input message as a return message, which may contain error message
+// Return a bool if this functionality success
+bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+    bool success = false;
+    bool prefer_velocity;
+    bool optical_velocity;
+    bool prefer_wavelength;
+    bool air_wavelength;
+    GetSpectralCoordPreferences(&image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
+
+    casacore::String error_string;
+    casacore::String origin_string;
+    bool allow_overwrite(true);
+    bool degenerate_last(false);
+    bool verbose(true);
+    bool stokes_last(false);
+    bool history(true);
+    const int bit_pix(-32);
+    const float min_pix(1.0);
+    const float max_pix(-1.0);
+    if (casacore::ImageFITSConverter::ImageToFITS(error_string, image, output_filename.string(), 64, prefer_velocity, optical_velocity,
+            bit_pix, min_pix, max_pix, allow_overwrite, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength,
+            origin_string, history)) {
+        success = true;
+    } else {
+        message = error_string;
+    }
+    return success;
+}
+
+// Validate channels & stokes, if it starts from 0 and ends in the maximum range
+// Output channels as [channels_start, channels_end, channels_stride], default [0, channels_number, 1]
+// Output stokes as [stokes_start, stokes_end, stokes_stride], default [0, stokes_number, 1]
+// Input save_file_msg as the parameters from the request, which gives input range
+// Return void
+void Frame::ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg) {
+    auto image = GetImage();
+    auto image_shape = image->shape();
+
+    // Default for channels
+    int channels_max = _z_axis > -1 ? image_shape[_z_axis] : 1;
+    int channels_start = 0;
+    int channels_stride = 1;
+    int channels_end = channels_max - 1;
+    int channels_length = channels_max;
+    // Clamp channels range
+    if (save_file_msg.channels().size() > 0) {
+        channels_start = std::min(std::max(save_file_msg.channels(0), 0), channels_max - 1);
+        channels_end = std::min(std::max(save_file_msg.channels(1), channels_start), channels_max - 1);
+    }
+
+    // Default for stokes
+    int stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
+    int stokes_start = 0;
+    int stokes_stride = 1;
+    int stokes_end = stokes_max - 1;
+    int stokes_length = stokes_max;
+    // Clamp stokes range
+    if (save_file_msg.stokes().size() > 0) {
+        stokes_start = std::min(std::max(save_file_msg.stokes(0), 0), stokes_max - 1);
+        stokes_end = std::min(std::max(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
+        stokes_stride = std::round(std::min(std::max(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
+    }
+
+    // Ouput results
+    channels.push_back(channels_start);
+    channels.push_back(channels_end);
+    channels.push_back(channels_stride);
+    stokes.push_back(stokes_start);
+    stokes.push_back(stokes_end);
+    stokes.push_back(stokes_stride);
+}
+
+// Calculate Slicer for a given image with modified channels/stokes
+// Input save_file_msg as the parameters from the request, which gives input range
+// Input image_shape as casacore::IPosition of source image
+// Return casacore::Slicer(start, end, stride) for apply subImage()
+casacore::Slicer Frame::GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape) {
+    auto channels = std::vector<int>();
+    auto stokes = std::vector<int>();
+    ValidateChannelStokes(channels, stokes, save_file_msg);
+
+    casacore::IPosition start;
+    casacore::IPosition end;
+    casacore::IPosition stride;
+    switch (image_shape.size()) {
+        // 3 dimensional cube image
+        case 3:
+            if (_z_axis == 2) {
+                // Channels present
+                start = casacore::IPosition(3, 0, 0, channels[0]);
+                end = casacore::IPosition(3, image_shape[0] - 1, image_shape[1] - 1, channels[1]);
+                stride = casacore::IPosition(3, 1, 1, channels[2]);
+            } else {
+                // Stokes present
+                start = casacore::IPosition(3, 0, 0, stokes[0]);
+                end = casacore::IPosition(3, image_shape[0] - 1, image_shape[1] - 1, stokes[1]);
+                stride = casacore::IPosition(3, 1, 1, stokes[2]);
+            }
+            break;
+        // 4 dimensional cube image
+        case 4:
+            if (_z_axis == 2) {
+                // Channels present before stokes
+                start = casacore::IPosition(4, 0, 0, channels[0], stokes[0]);
+                end = casacore::IPosition(4, image_shape[0] - 1, image_shape[1] - 1, channels[1], stokes[1]);
+                stride = casacore::IPosition(4, 1, 1, channels[2], stokes[2]);
+            } else {
+                // Channels present after stokes
+                start = casacore::IPosition(4, 0, 0, stokes[0], channels[0]);
+                end = casacore::IPosition(4, image_shape[0] - 1, image_shape[1] - 1, stokes[1], channels[1]);
+                stride = casacore::IPosition(4, 1, 1, stokes[2], channels[2]);
+            }
+            break;
+        default:
+            break;
+    }
+    return casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
+}
+
+// Calculate Slicer/LattRegionHolder for a given region with modified channels/stokes
+// Input save_file_msg as the parameters from the request, which gives input range
+// Input image_shape as casacore::IPosition of source image
+// Input region_shape as casacore::IPosition of target region
+// Input image_region as casacore::LCRegion of infomation of target region to chop
+// Output latt_region_holder as casacore::LattRegionHolder of target region
+//   If dimension of region does not match the source image, will modify latt_region_holder.
+// Return casacore::Slicer(start, end, stride) for apply subImage()
+casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
+    casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder) {
+    auto channels = std::vector<int>();
+    auto stokes = std::vector<int>();
+    ValidateChannelStokes(channels, stokes, save_file_msg);
+
+    casacore::IPosition start;
+    casacore::IPosition end;
+    casacore::IPosition stride;
+    switch (image_shape.size()) {
+        // 3 dimensional cube image
+        case 3:
+            if (_z_axis == 2) {
+                // Channels present
+                start = casacore::IPosition(3, 0, 0, channels[0]);
+                end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, channels[1]);
+                stride = casacore::IPosition(3, 1, 1, channels[2]);
+                if (region_shape.size() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                        casacore::LCBox(
+                            casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[2]), casacore::IPosition(1, image_shape[2])));
+                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                }
+            } else {
+                // Stokes present
+                start = casacore::IPosition(3, 0, 0, stokes[0]);
+                end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, stokes[1]);
+                stride = casacore::IPosition(3, 1, 1, stokes[2]);
+                if (region_shape.size() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                        casacore::LCBox(
+                            casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[3]), casacore::IPosition(1, image_shape[3])));
+                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                }
+            }
+            break;
+        // 4 dimensional cube image
+        case 4:
+            if (_z_axis == 2) {
+                // Channels present before stokes
+                start = casacore::IPosition(4, 0, 0, channels[0], stokes[0]);
+                end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, channels[1], stokes[1]);
+                stride = casacore::IPosition(4, 1, 1, channels[2], stokes[2]);
+                if (region_shape.size() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                        casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[2], image_shape[3]),
+                            casacore::IPosition(2, image_shape[2], image_shape[3])));
+                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                }
+            } else {
+                // Channels present after stokes
+                start = casacore::IPosition(4, 0, 0, stokes[0], channels[0]);
+                end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, stokes[1], channels[1]);
+                stride = casacore::IPosition(4, 1, 1, stokes[2], channels[2]);
+                if (region_shape.size() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                        casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[3], image_shape[2]),
+                            casacore::IPosition(2, image_shape[3], image_shape[2])));
+                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {

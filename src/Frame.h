@@ -39,6 +39,14 @@
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 struct ContourSettings {
     std::vector<double> levels;
     CARTA::SmoothingMode smoothing_mode;
@@ -170,8 +178,9 @@ public:
         std::vector<carta::CollapseResult>& collapse_results);
     void StopMomentCalc();
 
-    // Save as a new file or convert it between CASA/FITS formats
-    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
+    // Save as a new file or export sub-image to CASA/FITS format
+    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
+        std::shared_ptr<Region> image_region);
 
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
 
@@ -206,11 +215,18 @@ private:
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
 
+    // Export image
+    bool ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
+    bool ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
+    void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
+    casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
+    casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
+        casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
+
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
     }
-
     // Get the full name of image file
     std::string GetFileName() {
         return _loader->GetFileName();
@@ -219,7 +235,6 @@ private:
     casacore::ImageInterface<float>* GetImage() {
         return _loader->GetImage();
     }
-
     // Setup
     uint32_t _session_id;
 
