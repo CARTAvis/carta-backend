@@ -64,8 +64,8 @@ private:
     casacore::CoordinateSystem SetCoordinateSystem(
         int nheaders, const std::string& header_str, casacore::RecordInterface& unused_headers, int& stokes_fits_value);
     bool AddDirectionCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& direction_axes);
-    bool AddStokesCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape, int& stokes_axis,
-        int& stokes_fits_value);
+    bool AddStokesCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape,
+        int& stokes_fits_value, int& stokes_axis);
     bool AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, const casacore::IPosition& shape,
         int& spectral_axis, int& linear_spectral_axis);
     casacore::MFrequency::Types GetFrequencyType(const ::wcsprm& wcs_spectral);
