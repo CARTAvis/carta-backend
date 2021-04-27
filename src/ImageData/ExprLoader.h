@@ -21,7 +21,7 @@ class ExprLoader : public FileLoader {
 public:
     ExprLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, bool header_only = false) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -33,7 +33,7 @@ private:
 
 ExprLoader::ExprLoader(const std::string& filename) : FileLoader(filename) {}
 
-void ExprLoader::OpenFile(const std::string& /*hdu*/) {
+void ExprLoader::OpenFile(const std::string& /*hdu*/, bool /*header_only*/) {
     if (!_image) {
         casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(_filename + "/imageexpr.json");
         casacore::String _expr = _jmap.get("ImageExpr").getString();

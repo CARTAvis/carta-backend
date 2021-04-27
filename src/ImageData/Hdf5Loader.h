@@ -23,7 +23,7 @@ class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, bool header_only = false) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;

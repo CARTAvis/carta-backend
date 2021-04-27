@@ -31,7 +31,7 @@ public:
     FitsLoader(const std::string& filename, bool is_gz = false);
     ~FitsLoader();
 
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, bool header_only = false) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -54,15 +54,16 @@ FitsLoader::~FitsLoader() {
     }
 }
 
-void FitsLoader::OpenFile(const std::string& hdu) {
+void FitsLoader::OpenFile(const std::string& hdu, bool header_only) {
     // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 
     if (!_image || (hdu_num != _hdu)) {
-        bool gz_mem_ok(false);
+        bool gz_mem_ok(true);
 
-        if (_is_gz) {
+        if (_is_gz && !header_only) {
             // Determine whether to load into memory or decompress on disk.
+            // Do not check memory if for headers only.
             // Error if failure reading naxis/bitpix headers.
             std::string error;
             gz_mem_ok = CheckGzMemory(hdu_num, error);

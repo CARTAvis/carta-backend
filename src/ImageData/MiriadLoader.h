@@ -19,7 +19,7 @@ public:
     MiriadLoader(const std::string& file);
 
     bool CanOpenFile(std::string& error) override;
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, bool header_only = false) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -57,7 +57,7 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
     return miriad_ok;
 }
 
-void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
+void MiriadLoader::OpenFile(const std::string& /*hdu*/, bool /*header_only*/) {
     if (!_image) {
         _image.reset(new CartaMiriadImage(_filename));
         if (!_image) {

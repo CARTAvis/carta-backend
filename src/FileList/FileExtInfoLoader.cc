@@ -50,7 +50,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
     bool file_ok(false);
     if (_loader) {
         try {
-            _loader->OpenFile(hdu);
+            _loader->OpenFile(hdu, true);
             casacore::ImageInterface<float>* image = _loader->GetImage();
             if (image) {
                 casacore::IPosition image_shape(image->shape());

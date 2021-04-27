@@ -15,7 +15,7 @@ class ImagePtrLoader : public FileLoader {
 public:
     ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, bool header_only = false) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -29,7 +29,7 @@ ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> 
     _num_dims = _image->shape().size();
 }
 
-void ImagePtrLoader::OpenFile(const std::string& /*hdu*/) {}
+void ImagePtrLoader::OpenFile(const std::string& /*hdu*/, bool /*header_only*/) {}
 
 bool ImagePtrLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
