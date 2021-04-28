@@ -42,12 +42,13 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler();
+    RegionHandler() = default;
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
+    std::shared_ptr<Region> GetRegion(int region_id);
 
     // Region Import/Export
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,
@@ -107,12 +108,6 @@ private:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
-
-    // Trigger job cancellation when true
-    volatile bool _cancel_all_jobs = false;
-
-    // Track ongoing calculations
-    std::atomic<int> _z_profile_count;
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

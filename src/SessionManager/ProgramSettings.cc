@@ -6,12 +6,13 @@
 
 #include "ProgramSettings.h"
 
+#include <fstream>
 #include <iostream>
 
 #include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
 
-#include <images/Images/ImageOpener.h>
+#include <casacore/images/Images/ImageOpener.h>
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -23,6 +24,7 @@ namespace fs = std::filesystem;
 #endif
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace carta {
 
@@ -34,6 +36,92 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 }
 
 ProgramSettings::ProgramSettings(int argc, char** argv) {
+    if (argc > 1) {
+        debug_msgs.push_back("Using command-line settings");
+    }
+    ApplyCommandLineSettings(argc, argv);
+
+    const fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
+    const fs::path system_settings_path = "/etc/carta/backend.json";
+
+    json settings;
+    if (fs::exists(system_settings_path) && !no_system_config) {
+        settings = JSONSettingsFromFile(system_settings_path.string());
+        system_settings_json_exists = true;
+        debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
+    }
+
+    if (fs::exists(user_settings_path) && !no_user_config) {
+        auto user_settings = JSONSettingsFromFile(user_settings_path.string());
+        user_settings_json_exists = true;
+        debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
+        settings.merge_patch(user_settings); // user on top of system
+    }
+
+    if (system_settings_json_exists || user_settings_json_exists) {
+        settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
+        SetSettingsFromJSON(settings);
+    }
+}
+
+json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
+    std::ifstream ifs(json_file_path, std::ifstream::in);
+    json j;
+    try {
+        j = json::parse(ifs, nullptr, true, true);
+    } catch (json::exception& err) {
+        warning_msgs.push_back(fmt::format("Error parsing config file {}.", json_file_path));
+        warning_msgs.push_back(err.what());
+    }
+    for (const auto& key : int_keys_map) {
+        if (j.contains(key.first) && !j[key.first].is_number_integer()) {
+            auto msg = fmt::format("Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path,
+                key.first, j[key.first].dump());
+            warning_msgs.push_back(msg);
+            j.erase(key.first);
+        }
+    }
+    for (const auto& key : bool_keys_map) {
+        if (j.contains(key.first) && !j[key.first].is_boolean()) {
+            auto msg = fmt::format("Problem in config file {} at key {}: current value is {}, but a boolean is expected.", json_file_path,
+                key.first, j[key.first].dump());
+            warning_msgs.push_back(msg);
+            j.erase(key.first);
+        }
+    }
+    for (const auto& key : strings_keys_map) {
+        if (j.contains(key.first) && !j[key.first].is_string()) {
+            auto msg = fmt::format("Problem in config file {} at key {}: current value is {}, but a string is expected.", json_file_path,
+                key.first, j[key.first].dump());
+            warning_msgs.push_back(msg);
+            j.erase(key.first);
+        }
+    }
+    return j;
+}
+
+void ProgramSettings::SetSettingsFromJSON(const json& j) {
+    for (const auto& key : int_keys_map) {
+        if (!j.contains(key.first)) {
+            continue;
+        }
+        *key.second = j[key.first];
+    }
+    for (const auto& key : bool_keys_map) {
+        if (!j.contains(key.first)) {
+            continue;
+        }
+        *key.second = j[key.first];
+    }
+    for (const auto& key : strings_keys_map) {
+        if (!j.contains(key.first)) {
+            continue;
+        }
+        *key.second = j[key.first];
+    }
+}
+
+void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
     vector<string> positional_arguments;
 
     cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");
@@ -58,7 +146,10 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
-        ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
+        ("read_only_mode", "disable write requests", cxxopts::value<bool>())
+        ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
+        ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
+        ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port (not secure; use with caution!)", cxxopts::value<bool>())
@@ -127,6 +218,10 @@ sending messages to the backend).
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
+    read_only_mode = result["read_only_mode"].as<bool>();
+
+    no_user_config = result.count("no_user_config") ? true : false;
+    no_system_config = result.count("no_system_config") ? true : false;
 
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument
@@ -180,6 +275,25 @@ sending messages to the backend).
         for (const auto& p : file_paths) {
             auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
             files.push_back(relative_path.string());
+        }
+    }
+
+    // produce JSON for overridding system and user configuration;
+    // Options here need to match all options available for system and user settings
+    command_line_settings = json({}); // needs to have empty JSON at least in case of no command line options
+    for (const auto& key : int_keys_map) {
+        if (result.count(key.first)) {
+            command_line_settings[key.first] = result[key.first].as<int>();
+        }
+    }
+    for (const auto& key : bool_keys_map) {
+        if (result.count(key.first)) {
+            command_line_settings[key.first] = result[key.first].as<bool>();
+        }
+    }
+    for (const auto& key : strings_keys_map) {
+        if (result.count(key.first)) {
+            command_line_settings[key.first] = result[key.first].as<std::string>();
         }
     }
 }

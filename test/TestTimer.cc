@@ -7,6 +7,8 @@
 #include <chrono>
 #include <thread>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <gtest/gtest.h>
 
 #include "../src/Timer/Timer.h"
@@ -19,13 +21,14 @@ public:
     static constexpr double timer_eps = 0.1;
     static constexpr double delay_millis = 2.5;
 
-    void block_for_millis(double millis) {
-        double dt = 0;
-        auto t_start = chrono::high_resolution_clock::now();
+    double block_for_millis(double millis) {
+        volatile double dt = 0;
+        auto t_start = chrono::steady_clock::now();
         while (dt < millis) {
-            auto now = chrono::high_resolution_clock::now();
+            auto now = chrono::steady_clock::now();
             dt = chrono::duration_cast<chrono::microseconds>(now - t_start).count() / 1000.0;
         }
+        return dt;
     }
 };
 
@@ -50,24 +53,26 @@ TEST_F(TimerTest, IgnoresWrongOrder) {
 TEST_F(TimerTest, AccurateAverage) {
     Timer t;
 
+    double total = 0;
     for (auto i = 0; i < 5; i++) {
         t.Start("AccurateAverage");
-        block_for_millis(delay_millis);
+        double blocked_time = block_for_millis(delay_millis);
         t.End("AccurateAverage");
+        total += blocked_time;
     }
 
     auto dt = t.GetMeasurement("AccurateAverage").count();
-    auto diff = dt - delay_millis;
+    auto diff = dt - (total / 5.0);
     EXPECT_LT(diff, timer_eps);
 }
 
 TEST_F(TimerTest, AccurateTime) {
     Timer t;
     t.Start("AccurateTime");
-    block_for_millis(delay_millis);
+    double blocked_time = block_for_millis(delay_millis);
     t.End("AccurateTime");
     auto dt = t.GetMeasurement("AccurateTime").count();
-    auto diff = dt - delay_millis;
+    auto diff = dt - blocked_time;
     EXPECT_LT(diff, timer_eps);
 }
 
@@ -94,9 +99,9 @@ TEST_F(TimerTest, ClearAllWorks) {
 TEST_F(TimerTest, MeasurementStringWorks) {
     Timer t;
     t.Start("MeasurementStringWorks");
-    block_for_millis(delay_millis);
+    int blocked_time_rounded = block_for_millis(delay_millis);
     t.End("MeasurementStringWorks");
-    EXPECT_EQ(t.GetMeasurementString("MeasurementStringWorks").rfind("MeasurementStringWorks: 2.5"), 0);
+    EXPECT_EQ(t.GetMeasurementString("MeasurementStringWorks").rfind(fmt::format("MeasurementStringWorks: {}", blocked_time_rounded)), 0);
 
     // Clear after fetching
     t.GetMeasurementString("MeasurementStringWorks", true);

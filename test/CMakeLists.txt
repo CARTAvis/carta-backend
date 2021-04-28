@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(carta_backend_test)
 
-add_compile_definitions(CARTA_USER_FOLDER_PREFIX=".carta-unit-tests")
+add_definitions(-DCARTA_USER_FOLDER_PREFIX=".carta-unit-tests")
 
 # Performance tests should not be run by default, since they need to be run in isolation
 option(performance_tests "Build performance tests." OFF)
