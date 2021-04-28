@@ -1019,8 +1019,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     bool write_lock(false);
 
     for (auto& config : _cursor_spatial_configs) {
-        int start(config.start());
-        int end(config.end());
+        size_t start(config.start());
+        size_t end(config.end());
         int mip(config.mip());
 
         if (!end) {
@@ -1034,6 +1034,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         if (mip >= 2 && !_loader->HasMip(2)) {
             start = std::ceil((float)start / (mip * 2)) * mip * 2;
             end = std::ceil((float)end / (mip * 2)) * mip * 2;
+            end = config.coordinate() == "x" ? std::min(end, _width) : std::min(end, _height);
         }
 
         profile.clear();
@@ -1143,7 +1144,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         // decimate the profile in-place, attempting to preserve order
         if (have_profile && mip >= 2 && !_loader->HasMip(2)) {
             for (size_t i = 0; i < profile.size(); i += mip * 2) {
-                auto [it_min, it_max] = std::minmax_element(profile.begin() + i, profile.begin() + i + mip * 2);
+                auto [it_min, it_max] = std::minmax_element(profile.begin() + i, std::min(profile.begin() + i + mip * 2, profile.end()));
                 if (std::distance(it_min, it_max) > 0) {
                     profile[i / mip] = *it_min;
                     profile[i / mip + 1] = *it_max;
@@ -1152,7 +1153,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     profile[i / mip + 1] = *it_min;
                 }
             }
-            profile.resize(profile.size() / mip); // shrink the profile to the downsampled size
+            profile.resize(requested_end - requested_start); // shrink the profile to the downsampled size
         }
 
         if (have_profile) {
