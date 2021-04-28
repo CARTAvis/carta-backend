@@ -46,7 +46,7 @@ bool FileExtInfoLoader::FillFileExtInfo(
     bool has_mips = _loader->HasMip(2);
     if (has_mips) {
         auto has_mip_entry = extended_info.add_computed_entries();
-        has_mip_entry->set_name("Has MipMaps");
+        has_mip_entry->set_name("Has mipmaps");
         has_mip_entry->set_value("T");
         has_mip_entry->set_entry_type(CARTA::EntryType::STRING);
     }
