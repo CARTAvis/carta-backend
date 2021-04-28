@@ -8,7 +8,10 @@
 
 #include "FitsHduList.h"
 
+#include <fitsio.h>
+
 #include "../Logger/Logger.h"
+#include "../Util.h"
 
 FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;
@@ -16,12 +19,18 @@ FitsHduList::FitsHduList(const std::string& filename) {
 
 void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& error) {
     // Returns list of hdu num and ext name for primary array and image extensions
+    if (IsCompressedFits(_filename)) {
+        error = "Compressed FITS gz/bz format not supported yet.";
+        return;
+    }
+
     // Open file read-only
     fitsfile* fptr(nullptr);
     int status(0);
     fits_open_file(&fptr, _filename.c_str(), 0, &status);
 
     if (status) {
+        spdlog::debug("FITS {} fits_open_file status {}", _filename, status);
         error = "FITS open file error.";
         return;
     }

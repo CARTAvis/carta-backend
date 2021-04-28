@@ -23,16 +23,18 @@
 #include "ImageStats/Histogram.h"
 
 // Valid for little-endian only
-#define XML_MAGIC_NUMBER 0x6D783F3C
+#define BZ_MAGIC_NUMBER 0x39685A42
 #define FITS_MAGIC_NUMBER 0x504D4953
-#define GZ_MAGIC_NUMBER 0x8088B1F
+#define GZ_MAGIC_NUMBER 0x08088B1F
+#define HDF5_MAGIC_NUMBER 0x46444889
+#define XML_MAGIC_NUMBER 0x6D783F3C
 
 // ************ Utilities *************
 bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
-bool IsFitsGz(const std::string& filename);
+bool IsCompressedFits(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);

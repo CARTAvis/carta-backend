@@ -19,7 +19,7 @@ class ConcatLoader : public FileLoader {
 public:
     ConcatLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu, bool header_only = false) override;
+    void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -31,7 +31,7 @@ private:
 
 ConcatLoader::ConcatLoader(const std::string& filename) : FileLoader(filename) {}
 
-void ConcatLoader::OpenFile(const std::string& /*hdu*/, bool /*header_only*/) {
+void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(this->GetFileName() + "/imageconcat.json");
         _image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));

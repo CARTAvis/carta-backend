@@ -144,7 +144,7 @@ public:
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
     // Do anything required to open the file at given HDU (set up cache size, Image object)
-    virtual void OpenFile(const std::string& hdu, bool header_only = false) = 0;
+    virtual void OpenFile(const std::string& hdu) = 0;
 
     // Return the opened casacore image
     virtual ImageRef GetImage() = 0;

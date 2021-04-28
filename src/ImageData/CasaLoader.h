@@ -17,7 +17,7 @@ class CasaLoader : public FileLoader {
 public:
     CasaLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu, bool header_only = false) override;
+    void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -28,7 +28,7 @@ private:
 
 CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/, bool /*header_only*/) {
+void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new casacore::PagedImage<float>(_filename));
         if (!_image) {

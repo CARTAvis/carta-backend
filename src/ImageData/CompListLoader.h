@@ -19,7 +19,7 @@ class CompListLoader : public FileLoader {
 public:
     CompListLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu, bool header_only = false) override;
+    void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
@@ -31,7 +31,7 @@ private:
 
 CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CompListLoader::OpenFile(const std::string& /*hdu*/, bool /*header_only*/) {
+void CompListLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new casa::ComponentListImage(_filename));
         if (!_image) {

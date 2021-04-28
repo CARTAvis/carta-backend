@@ -21,6 +21,14 @@
 #include <mach-o/dyld.h>
 #endif
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace std;
 
 bool CheckFolderPaths(string& top_level_string, string& starting_string) {
@@ -117,23 +125,20 @@ uint32_t GetMagicNumber(const string& filename) {
         input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
     }
+
     return magic_number;
 }
 
-bool IsFitsGz(const std::string& filename) {
-    // Check if gzip file then try to open as FITS
-    if (GetMagicNumber(filename) == GZ_MAGIC_NUMBER) {
-        fitsfile* fptr(nullptr);
-        int status(0);
-        fits_open_file(&fptr, filename.c_str(), 0, &status);
-
-        if (!status && fptr) {
-            fits_close_file(fptr, &status);
-            return true;
-        }
+bool IsCompressedFits(const std::string& filename) {
+    // Check if gzip file, then check .fits extension
+    bool is_fits(false);
+    auto magic_number = GetMagicNumber(filename);
+    if ((magic_number == GZ_MAGIC_NUMBER) || (magic_number == BZ_MAGIC_NUMBER)) {
+        fs::path bgz_path(filename);
+        is_fits = (bgz_path.stem().extension().string() == ".fits");
     }
 
-    return false;
+    return is_fits;
 }
 
 void SplitString(string& input, char delim, vector<string>& parts) {
@@ -171,7 +176,7 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
 
 CARTA::FileType GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
-    if (IsFitsGz(filename)) {
+    if (IsCompressedFits(filename)) {
         return CARTA::FileType::FITS;
     }
 

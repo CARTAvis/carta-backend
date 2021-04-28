@@ -25,7 +25,7 @@
 using namespace carta;
 
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    if (IsFitsGz(filename)) {
+    if (IsCompressedFits(filename)) {
         return new FitsLoader(filename, true);
     }
 

@@ -162,17 +162,14 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 }
                             }
                         } else if (cc_file.isRegular(true)) {
-                            // Determine if image file or .fits.gz; add all files to region list
                             if (region_list) {
-                                // list regular files in region list
-                                add_file = true;
-                            } else if (IsFitsGz(full_path)) {
+                                // List all regular files in region list
                                 add_file = true;
                             } else {
-                                auto image_type = CasacoreImageType(full_path);
-                                if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
-                                    add_file = true;
-                                }
+                                // Determine if FITS, HDF5, or FITS gz file
+                                auto magic_number = GetMagicNumber(full_path);
+                                add_file = ((magic_number == FITS_MAGIC_NUMBER) || (magic_number == HDF5_MAGIC_NUMBER) ||
+                                            IsCompressedFits(full_path));
                             }
                         }
 
