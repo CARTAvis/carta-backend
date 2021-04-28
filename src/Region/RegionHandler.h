@@ -48,6 +48,7 @@ public:
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
+    std::shared_ptr<Region> GetRegion(int region_id);
 
     // Region Import/Export
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,

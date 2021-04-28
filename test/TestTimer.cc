@@ -7,7 +7,8 @@
 #include <chrono>
 #include <thread>
 
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
+
 #include <gtest/gtest.h>
 
 #include "../src/Timer/Timer.h"
