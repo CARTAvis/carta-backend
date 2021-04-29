@@ -196,7 +196,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
         _loader.reset(carta::FileLoader::GetLoader(full_name));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
-        // FileExtendedInfo for each hdu
+        // FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
 

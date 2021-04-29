@@ -160,6 +160,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                     file_list.add_subdirectories(dir_name);
                                     break;
                                 }
+                                default:
+                                    break;
                             }
                         } else if (cc_file.isRegular(true)) {
                             if (region_list) {

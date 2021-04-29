@@ -9,10 +9,8 @@
 #include "FileExtInfoLoader.h"
 
 #include <spdlog/fmt/fmt.h>
-// not needed here but *must* include before miriad.h
 #include <spdlog/fmt/ostr.h>
 
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
@@ -21,7 +19,6 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MFrequency.h>
-#include <casacore/mirlib/miriad.h>
 
 #include "../ImageData/CartaFitsImage.h"
 
