@@ -22,9 +22,17 @@ class FileExtInfoLoader {
 public:
     FileExtInfoLoader(carta::FileLoader* loader);
 
+    // Fill extended file info for all FITS image hdus
+    bool FillFitsFileInfoMap(
+        std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message);
+
+    // Fill extended file info for specified hdu
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
 
 private:
+    // FITS HDU extensions include name
+    void StripHduName(std::string& hdu);
+
     // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
     void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);

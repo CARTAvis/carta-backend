@@ -18,11 +18,8 @@ FitsHduList::FitsHduList(const std::string& filename) {
 }
 
 void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& error) {
-    // Returns list of hdu num and ext name for primary array and image extensions
-    if (IsCompressedFits(_filename)) {
-        error = "Compressed FITS gz/bz format not supported yet.";
-        return;
-    }
+    // Returns list of hdu num and ext name for primary array and image extensions.
+    // Note: do not use this for compressed FITS, open decompresses entire file.
 
     // Open file read-only
     fitsfile* fptr(nullptr);

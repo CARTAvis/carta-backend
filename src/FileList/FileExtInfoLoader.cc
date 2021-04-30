@@ -21,25 +21,75 @@
 #include <casacore/measures/Measures/MFrequency.h>
 
 #include "../ImageData/CartaFitsImage.h"
+#include "FileList/FitsHduList.h"
+#include "Logger/Logger.h"
 
 using namespace carta;
 
 FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {}
 
+bool FileExtInfoLoader::FillFitsFileInfoMap(
+    std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message) {
+    // Fill map with FileInfoExtended for all FITS image HDUs
+    bool map_ok(false);
+
+    if (IsCompressedFits(filename)) {
+        message = "Compressed FITS not implemented yet.";
+        return map_ok;
+    } else {
+        // Get list of image HDUs
+        std::vector<std::string> hdu_list;
+        FitsHduList fits_hdu_list = FitsHduList(filename);
+        fits_hdu_list.GetHduList(hdu_list, message);
+
+        if (hdu_list.empty()) {
+            return map_ok;
+        }
+
+        // Get FileInfoExtended for each hdu
+        for (auto& hdu : hdu_list) {
+            CARTA::FileInfoExtended file_info_ext;
+            if (FillFileExtInfo(file_info_ext, filename, hdu, message)) {
+                hdu_info_map[hdu] = file_info_ext;
+            }
+        }
+
+        map_ok = !hdu_info_map.empty();
+    }
+
+    return map_ok;
+}
+
 bool FileExtInfoLoader::FillFileExtInfo(
     CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
-    // set name from filename
+    // Fill FileInfoExtended for specific hdu
+    // Set name from filename
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Name");
     entry->set_value(filename);
     entry->set_entry_type(CARTA::EntryType::STRING);
 
-    // fill header_entries, computed_entries
-    bool file_ok(false);
+    std::string hdu_num(hdu);
+    StripHduName(hdu_num);
+
+    // Fill header_entries, computed_entries
+    bool info_ok(false);
     if (_loader && _loader->CanOpenFile(message)) {
-        file_ok = FillFileInfoFromImage(extended_info, hdu, message);
+        info_ok = FillFileInfoFromImage(extended_info, hdu_num, message);
     }
-    return file_ok;
+
+    return info_ok;
+}
+
+void FileExtInfoLoader::StripHduName(std::string& hdu) {
+    // Strip extension name if any from hdu_name
+    if (!hdu.empty()) {
+        // split hdu_name number and ext name (if any)
+        size_t delim_pos = hdu.find(":");
+        if (delim_pos != std::string::npos) {
+            hdu = hdu.substr(0, delim_pos);
+        }
+    }
 }
 
 bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_info, const std::string& hdu, std::string& message) {
