@@ -203,9 +203,9 @@ void TableController::OnFileListRequest(
 
     try {
         // get total number of files in the directory
-        using std::filesystem::directory_iterator;
-        using func_ptr = bool (*)(const std::filesystem::path&);
-        auto total_files = std::count_if(directory_iterator(file_path), directory_iterator{}, (func_ptr)std::filesystem::is_regular_file);
+        using fs::directory_iterator;
+        using func_ptr = bool (*)(const fs::path&);
+        auto total_files = std::count_if(directory_iterator(file_path), directory_iterator{}, (func_ptr)fs::is_regular_file);
 
         // initialize variables for the progress report and the interruption option
         int num_of_files_done(0);
