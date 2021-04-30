@@ -41,7 +41,7 @@ public:
     void StopGettingFileList() {
         _stop_getting_file_list = true;
     }
-    void SetProgressCallBack(const std::function<void(CARTA::Progress)>& progress_callback) {
+    void SetProgressCallback(const std::function<void(CARTA::Progress)>& progress_callback) {
         _progress_callback = progress_callback;
     }
 
