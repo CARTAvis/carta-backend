@@ -216,6 +216,15 @@ void TableController::OnFileListRequest(
         _first_report = false;
         auto start_time = std::chrono::high_resolution_clock::now();
 
+        auto report_progress = [&](const std::chrono::high_resolution_clock::time_point& current_time) {
+            CARTA::Progress progress;
+            progress.set_percentage(percentage);
+            progress.set_checked_count(num_of_files_done);
+            progress.set_total_count(total_files);
+            _progress_callback(progress);
+            start_time = current_time;
+        };
+
         for (const auto& entry : fs::directory_iterator(file_path)) {
             if (_stop_getting_file_list) {
                 file_list_response.set_cancel(true);
@@ -259,21 +268,12 @@ void TableController::OnFileListRequest(
             auto current_time = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration<double>(current_time - start_time).count();
 
-            auto report_progress = [&]() {
-                CARTA::Progress progress;
-                progress.set_percentage(percentage);
-                progress.set_checked_count(num_of_files_done);
-                progress.set_total_count(total_files);
-                _progress_callback(progress);
-                start_time = current_time;
-            };
-
             // report the progress if it fits the conditions
             if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
-                report_progress();
+                report_progress(current_time);
                 _first_report = true;
             } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
-                report_progress();
+                report_progress(current_time);
             }
         }
         file_list_response.set_success(true);
