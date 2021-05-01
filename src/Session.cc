@@ -301,7 +301,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 }
 
 void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id) {
-    auto progress_callback = [&](CARTA::Progress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
     _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg result_msg;
@@ -333,7 +333,7 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 }
 
 void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
-    auto progress_callback = [&](CARTA::Progress progress) { SendEvent(CARTA::EventType::REGION_LIST_PROGRESS, request_id, progress); };
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::REGION_LIST_PROGRESS, request_id, progress); };
     _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::RegionListResponse response;
     FileListHandler::ResultMsg result_msg;
@@ -1051,7 +1051,9 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 }
 
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
-    auto progress_callback = [&](CARTA::Progress progress) { SendEvent(CARTA::EventType::CATALOG_LIST_PROGRESS, request_id, progress); };
+    auto progress_callback = [&](CARTA::ListProgress progress) {
+        SendEvent(CARTA::EventType::CATALOG_LIST_PROGRESS, request_id, progress);
+    };
     _table_controller->SetProgressCallBack(progress_callback);
     CARTA::CatalogListResponse file_list_response;
     _table_controller->OnFileListRequest(file_list_request, file_list_response);

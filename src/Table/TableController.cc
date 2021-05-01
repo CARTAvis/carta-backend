@@ -217,7 +217,7 @@ void TableController::OnFileListRequest(
         auto start_time = std::chrono::high_resolution_clock::now();
 
         auto report_progress = [&](const std::chrono::high_resolution_clock::time_point& current_time) {
-            CARTA::Progress progress;
+            CARTA::ListProgress progress;
             progress.set_percentage(percentage);
             progress.set_checked_count(num_of_files_done);
             progress.set_total_count(total_files);

@@ -214,7 +214,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             auto dt = std::chrono::duration<double>(current_time - start_time).count();
 
             auto report_progress = [&]() {
-                CARTA::Progress progress;
+                CARTA::ListProgress progress;
                 progress.set_percentage(percentage);
                 progress.set_checked_count(num_of_files_done);
                 progress.set_total_count(total_files);
