@@ -13,6 +13,7 @@
 
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/fits/FITS/hdu.h>
+#include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
@@ -35,6 +36,8 @@ private:
 
     // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
+    void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
+        CARTA::FileInfoExtended& extended_info, std::string& extname, std::string& radesys);
     void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);
 
     // Image shape, nchannels, nstokes
@@ -43,7 +46,7 @@ private:
 
     // Info about xy axes
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-        const std::vector<int>& display_axes, casacore::String& radesys, bool use_fits_header);
+        const std::vector<int>& display_axes, casacore::String& radesys, bool using_image_header);
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, std::string& radesys);
 
     // FITS keyword conversion

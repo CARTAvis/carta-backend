@@ -14,7 +14,6 @@
 #include <casacore/casa/Quanta/MVAngle.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
@@ -94,17 +93,20 @@ void FileExtInfoLoader::StripHduName(std::string& hdu) {
 
 bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_info, const std::string& hdu, std::string& message) {
     // add header_entries in FITS format (issue #13) using ImageInterface from FileLoader
-    bool file_ok(false);
+    bool info_ok(false);
     if (_loader) {
         try {
             _loader->OpenFile(hdu);
             casacore::ImageInterface<float>* image = _loader->GetImage();
+
             if (image) {
+                // Check dimensions
                 casacore::IPosition image_shape(image->shape());
                 unsigned int num_dim = image_shape.size();
+
                 if (num_dim < 2 || num_dim > 4) {
                     message = "Image must be 2D, 3D or 4D.";
-                    return file_ok;
+                    return info_ok;
                 }
 
                 // Name of image class: special cases for FITS
@@ -115,7 +117,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 casacore::CoordinateSystem coord_sys(image->coordinates());
                 casacore::ImageFITSHeaderInfo fhi;
 
-                bool use_fits_header(false);
+                // Set up fhi from image or fits_input headers
+                bool using_image_header(true);
                 if ((coord_sys.linearAxesNumbers().size() == 2) && is_casacore_fits) {
                     // dummy linear system when there is a wcslib error, get original headers
                     casacore::String filename(image->name());
@@ -135,12 +138,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         casacore::FitsKeywordList kwlist;
                         if (GetFitsKwList(fits_input, hdu_num, kwlist)) {
                             fhi.kw = kwlist;
-                            use_fits_header = true;
+                            using_image_header = false;
                         }
                     }
                 }
 
-                if (!use_fits_header) {
+                if (using_image_header) {
                     bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
                     GetSpectralCoordPreferences(image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
 
@@ -153,177 +156,27 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head,
                             allow_append, origin_string, history)) {
                         message = error_string;
-                        return file_ok;
+                        return info_ok;
                     }
                 }
 
-                // axis or coord number to append to name
-                int naxis(0), ntype(1), nval(1), ndelt(1), npix(1);
-
-                casacore::String extname, radesys; // for computed entries
-
-                // Create header entry for each FitsKeyword
-                fhi.kw.first(); // go to first card
-                casacore::FitsKeyword* fkw = fhi.kw.next();
-                std::set<casacore::String> name_set; // used to check the repetition of name
-                casacore::String stokes_coord_type_num;
-                while (fkw) {
-                    casacore::String name(fkw->name());
-                    casacore::String comment(fkw->comm());
-                    name_set.insert(name);
-                    bool fill(true);
-
-                    // Strangely, the FitsKeyword does not append axis/coord number
-                    if ((name == "NAXIS")) {
-                        if (naxis > 0) {
-                            name += casacore::String::toString(naxis++);
-                        } else {
-                            naxis++;
-                        }
-                    }
-
-                    // Modify names
-                    if (name == "CTYPE") { // append type number
-                        name += casacore::String::toString(ntype++);
-                    } else if (name == "CRVAL") { // append val number
-                        name += casacore::String::toString(nval++);
-                    } else if (name == "CDELT") { // append delt number
-                        name += casacore::String::toString(ndelt++);
-                    } else if (name == "CRPIX") { // append pix number
-                        name += casacore::String::toString(npix++);
-                    } else if (name == "H5SCHEMA") { // was shortened to FITS length 8
-                        name = "SCHEMA_VERSION";
-                    } else if (name == "H5CNVRTR") { // was shortened to FITS length 8
-                        name = "HDF5_CONVERTER";
-                    } else if (name == "H5CONVSN") { // was shortened to FITS length 8
-                        name = "HDF5_CONVERTER_VERSION";
-                    } else if (name == "H5DATE") { // was shortened to FITS length 8
-                        name = "HDF5_DATE";
-                    }
-
-                    // Don't fill the name which is repeated after removing the underscore suffix
-                    if (!name.empty() && (name.back() == '_') && name_set.count(name.substr(0, name.size() - 1))) {
-                        fill = false;
-                    }
-
-                    // Get the stokes coordinate number
-                    casacore::String key_world = fkw->asString();
-                    if (casacore::String(key_world).find("STOKES") != casacore::String::npos) {
-                        stokes_coord_type_num = name.back();
-                    }
-
-                    // Fill the first stokes type and the delta value for the stokes index. Set the first stokes type index as 0
-                    if (!stokes_coord_type_num.empty()) {
-                        if (name == ("CRVAL" + stokes_coord_type_num)) {
-                            _loader->SetFirstStokesType((int)fkw->asDouble());
-                        } else if (name == ("CDELT" + stokes_coord_type_num)) {
-                            _loader->SetDeltaStokesIndex((int)fkw->asDouble());
-                        }
-                    }
-
-                    if (name != "END" && fill) {
-                        switch (fkw->type()) {
-                            case casacore::FITS::LOGICAL: {
-                                bool value(fkw->asBool());
-                                std::string bool_string(value ? "T" : "F");
-
-                                auto header_entry = extended_info.add_header_entries();
-                                header_entry->set_name(name);
-                                *header_entry->mutable_value() = bool_string;
-                                header_entry->set_entry_type(CARTA::EntryType::INT);
-                                header_entry->set_numeric_value(value);
-                                header_entry->set_comment(comment);
-                                break;
-                            }
-                            case casacore::FITS::LONG: {
-                                int value(fkw->asInt());
-
-                                if ((name.find("BITPIX") != std::string::npos) && (is_casacore_fits || is_carta_fits)) {
-                                    // Convert internal datatype to bitpix value (since always -32 in header conversion)
-                                    value = GetFitsBitpix(image);
-                                    comment.clear();
-                                }
-
-                                std::string string_value = fmt::format("{:d}", value);
-
-                                auto header_entry = extended_info.add_header_entries();
-                                header_entry->set_name(name);
-                                *header_entry->mutable_value() = string_value;
-                                header_entry->set_entry_type(CARTA::EntryType::INT);
-                                header_entry->set_numeric_value(value);
-                                header_entry->set_comment(comment);
-                                break;
-                            }
-                            case casacore::FITS::BYTE:
-                            case casacore::FITS::SHORT:
-                            case casacore::FITS::FLOAT:
-                            case casacore::FITS::DOUBLE:
-                            case casacore::FITS::REAL: {
-                                double value(fkw->asDouble());
-                                std::string string_value;
-                                if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
-                                    (name.find("EPOCH") != std::string::npos)) {
-                                    string_value = fmt::format("{}", value);
-                                } else {
-                                    string_value = fmt::format("{:.12E}", value);
-                                }
-
-                                auto header_entry = extended_info.add_header_entries();
-                                header_entry->set_name(name);
-                                *header_entry->mutable_value() = string_value;
-                                header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-                                header_entry->set_numeric_value(value);
-                                header_entry->set_comment(comment);
-                                break;
-                            }
-                            case casacore::FITS::STRING:
-                            case casacore::FITS::FSTRING: {
-                                // Do not include ORIGIN (casacore) or DATE (current) added by ImageHeaderToFITS
-                                if (use_fits_header || (!use_fits_header && ((name != "DATE") && (name != "ORIGIN")))) {
-                                    casacore::String header_string = fkw->asString();
-                                    header_string.trim();
-
-                                    // save for computed_entries
-                                    if (name == "RADESYS") {
-                                        radesys = header_string;
-                                    } else if (name == "EXTNAME") {
-                                        extname = header_string;
-                                    }
-
-                                    if (name.contains("CTYPE") && header_string.contains("FREQ")) {
-                                        // Fix header with "FREQUENCY"
-                                        header_string = "FREQ";
-                                    }
-
-                                    auto header_entry = extended_info.add_header_entries();
-                                    header_entry->set_name(name);
-                                    *header_entry->mutable_value() = header_string;
-                                    header_entry->set_entry_type(CARTA::EntryType::STRING);
-                                    header_entry->set_comment(comment);
-                                }
-                                break;
-                            }
-                            case casacore::FITS::BIT:
-                            case casacore::FITS::CHAR:
-                            case casacore::FITS::COMPLEX:
-                            case casacore::FITS::ICOMPLEX:
-                            case casacore::FITS::DCOMPLEX:
-                            case casacore::FITS::VADESC:
-                            case casacore::FITS::NOVALUE:
-                            default:
-                                break;
-                        }
-                    }
-                    fkw = fhi.kw.next(); // get next keyword
+                // Set bitpix to header value
+                int bitpix(0);
+                if (is_casacore_fits || is_carta_fits) {
+                    bitpix = GetFitsBitpix(image);
                 }
 
-                // Add hdu number and extension name entries if set
+                casacore::String extname, radesys; // Save from FITS headers to add to computed entries in order
+                FitsHeaderInfoToHeaderEntries(fhi, using_image_header, bitpix, extended_info, extname, radesys);
+
+                // Create FileInfoExtended computed_entries for hdu, extension name
                 if (!hdu.empty()) {
                     auto entry = extended_info.add_computed_entries();
                     entry->set_name("HDU");
                     entry->set_value(hdu);
                     entry->set_entry_type(CARTA::EntryType::STRING);
                 }
+
                 if (!extname.empty()) {
                     auto entry = extended_info.add_computed_entries();
                     entry->set_name("Extension name");
@@ -333,11 +186,14 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
+                    // Report rendered image axes (not always 0 and 1)
                     std::vector<int> render_axes;
                     _loader->GetRenderAxes(render_axes);
+
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
-                    AddComputedEntries(extended_info, image, render_axes, radesys, use_fits_header);
-                    file_ok = true;
+                    AddComputedEntries(extended_info, image, render_axes, radesys, using_image_header);
+
+                    info_ok = true;
                 }
             } else { // image failed
                 message = "Image could not be opened.";
@@ -353,7 +209,167 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
     } else { // loader failed
         message = "Image type not supported.";
     }
-    return file_ok;
+
+    return info_ok;
+}
+
+void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header,
+    int bitpix, CARTA::FileInfoExtended& extended_info, std::string& extname, std::string& radesys) {
+    // Fill FileInfoExtended header_entries from ImageFITSHeaderInfo.
+    // Returns modified FileInfoExtended and EXTNAME and RADESYS value for computed_entries.
+
+    // Axis or coord number to append to name
+    int naxis(0), ntype(1), nval(1), ndelt(1), npix(1);
+
+    // Determine stokes values for loader
+    casacore::String stokes_axis_num;
+
+    // Create FileInfoExtended header_entries for each FitsKeyword
+    fhi.kw.first(); // go to first card
+    casacore::FitsKeyword* fkw = fhi.kw.next();
+
+    while (fkw) {
+        casacore::String name(fkw->name());
+        casacore::String comment(fkw->comm());
+
+        // Strangely, FitsKeyword does not append axis/coord number so do it here
+        if ((name == "NAXIS")) {
+            if (naxis > 0) {
+                name += casacore::String::toString(naxis++);
+            } else {
+                naxis++;
+            }
+        }
+
+        // Modify names: append number or use longer string
+        if (name == "CTYPE") { // append type number
+            name += casacore::String::toString(ntype++);
+        } else if (name == "CRVAL") { // append val number
+            name += casacore::String::toString(nval++);
+        } else if (name == "CDELT") { // append delt number
+            name += casacore::String::toString(ndelt++);
+        } else if (name == "CRPIX") { // append pix number
+            name += casacore::String::toString(npix++);
+        } else if (name == "H5SCHEMA") { // was shortened to FITS length 8
+            name = "SCHEMA_VERSION";
+        } else if (name == "H5CNVRTR") { // was shortened to FITS length 8
+            name = "HDF5_CONVERTER";
+        } else if (name == "H5CONVSN") { // was shortened to FITS length 8
+            name = "HDF5_CONVERTER_VERSION";
+        } else if (name == "H5DATE") { // was shortened to FITS length 8
+            name = "HDF5_DATE";
+        }
+
+        // Fill the first stokes type and the delta value for the stokes index. Set the first stokes type index as 0
+        if (!stokes_axis_num.empty()) {
+            if (name == ("CRVAL" + stokes_axis_num)) {
+                _loader->SetFirstStokesType((int)fkw->asDouble());
+            } else if (name == ("CDELT" + stokes_axis_num)) {
+                _loader->SetDeltaStokesIndex((int)fkw->asDouble());
+            }
+        }
+
+        if (name != "END") {
+            switch (fkw->type()) {
+                case casacore::FITS::LOGICAL: {
+                    bool value(fkw->asBool());
+                    std::string bool_string(value ? "T" : "F");
+
+                    auto header_entry = extended_info.add_header_entries();
+                    header_entry->set_name(name);
+                    *header_entry->mutable_value() = bool_string;
+                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                    header_entry->set_numeric_value(value);
+                    header_entry->set_comment(comment);
+                    break;
+                }
+                case casacore::FITS::LONG: {
+                    int value(fkw->asInt());
+
+                    if ((name.find("BITPIX") != std::string::npos) && (bitpix != 0)) {
+                        // Convert internal datatype to bitpix value (since always -32 in header conversion)
+                        value = bitpix;
+                        comment.clear();
+                    }
+
+                    std::string string_value = fmt::format("{:d}", value);
+
+                    auto header_entry = extended_info.add_header_entries();
+                    header_entry->set_name(name);
+                    *header_entry->mutable_value() = string_value;
+                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                    header_entry->set_numeric_value(value);
+                    header_entry->set_comment(comment);
+                    break;
+                }
+                case casacore::FITS::BYTE:
+                case casacore::FITS::SHORT:
+                case casacore::FITS::FLOAT:
+                case casacore::FITS::DOUBLE:
+                case casacore::FITS::REAL: {
+                    double value(fkw->asDouble());
+                    std::string string_value;
+                    if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
+                        (name.find("EPOCH") != std::string::npos)) {
+                        string_value = fmt::format("{}", value);
+                    } else {
+                        string_value = fmt::format("{:.12E}", value);
+                    }
+
+                    auto header_entry = extended_info.add_header_entries();
+                    header_entry->set_name(name);
+                    *header_entry->mutable_value() = string_value;
+                    header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+                    header_entry->set_numeric_value(value);
+                    header_entry->set_comment(comment);
+                    break;
+                }
+                case casacore::FITS::STRING:
+                case casacore::FITS::FSTRING: {
+                    // Do not include ORIGIN (casacore) or DATE (current) added by ImageHeaderToFITS
+                    if (!using_image_header || (using_image_header && ((name != "DATE") && (name != "ORIGIN")))) {
+                        casacore::String header_string = fkw->asString();
+                        header_string.trim();
+
+                        // save for computed_entries
+                        if (name == "RADESYS") {
+                            radesys = header_string;
+                        } else if (name == "EXTNAME") {
+                            extname = header_string;
+                        }
+
+                        if (name.contains("CTYPE")) {
+                            if (header_string.contains("FREQ")) {
+                                // Fix header with "FREQUENCY"
+                                header_string = "FREQ";
+                            } else if (header_string.startsWith("STOKES")) {
+                                // Found CTYPEX = STOKES; set the stokes axis number X
+                                stokes_axis_num = name.back();
+                            }
+                        }
+
+                        auto header_entry = extended_info.add_header_entries();
+                        header_entry->set_name(name);
+                        *header_entry->mutable_value() = header_string;
+                        header_entry->set_entry_type(CARTA::EntryType::STRING);
+                        header_entry->set_comment(comment);
+                    }
+                    break;
+                }
+                case casacore::FITS::BIT:
+                case casacore::FITS::CHAR:
+                case casacore::FITS::COMPLEX:
+                case casacore::FITS::ICOMPLEX:
+                case casacore::FITS::DCOMPLEX:
+                case casacore::FITS::VADESC:
+                case casacore::FITS::NOVALUE:
+                default:
+                    break;
+            }
+        }
+
+        fkw = fhi.kw.next(); // get next keyword
+    }
 }
 
 // ***** Computed entries *****
@@ -412,11 +428,11 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 }
 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-    const std::vector<int>& display_axes, casacore::String& radesys, bool use_fits_header) {
+    const std::vector<int>& display_axes, casacore::String& radesys, bool using_image_header) {
     // Add computed entries to extended file info
     casacore::CoordinateSystem coord_system(image->coordinates());
 
-    if (use_fits_header) {
+    if (!using_image_header) {
         AddComputedEntriesFromHeaders(extended_info, display_axes, radesys);
     } else {
         // Use image coordinate system
