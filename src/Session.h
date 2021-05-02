@@ -205,8 +205,8 @@ public:
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
-    void StopFileList();
-    void StopCatalogList();
+    void StopImageFileList();
+    void StopCatalogFileList();
 
     void UpdateLastMessageTimestamp();
     std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();

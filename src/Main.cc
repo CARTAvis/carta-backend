@@ -451,11 +451,16 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     break;
                 }
                 case CARTA::EventType::STOP_FILE_LIST: {
-                    session->StopFileList();
-                    break;
-                }
-                case CARTA::EventType::STOP_CATALOG_LIST: {
-                    session->StopCatalogList();
+                    CARTA::StopFileList message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.file_list_type() == CARTA::Image) {
+                            session->StopImageFileList();
+                        } else {
+                            session->StopCatalogFileList();
+                        }
+                    } else {
+                        spdlog::warn("Bad STOP_FILE_LIST message!");
+                    }
                     break;
                 }
                 default: {

@@ -333,7 +333,7 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 }
 
 void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
-    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::REGION_LIST_PROGRESS, request_id, progress); };
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
     _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::RegionListResponse response;
     FileListHandler::ResultMsg result_msg;
@@ -1051,9 +1051,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 }
 
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
-    auto progress_callback = [&](CARTA::ListProgress progress) {
-        SendEvent(CARTA::EventType::CATALOG_LIST_PROGRESS, request_id, progress);
-    };
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
     _table_controller->SetProgressCallBack(progress_callback);
     CARTA::CatalogListResponse file_list_response;
     _table_controller->OnFileListRequest(file_list_request, file_list_response);
@@ -2005,13 +2003,13 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
     }
 }
 
-void Session::StopFileList() {
+void Session::StopImageFileList() {
     if (_file_list_handler) {
         _file_list_handler->StopGettingFileList();
     }
 }
 
-void Session::StopCatalogList() {
+void Session::StopCatalogFileList() {
     if (_table_controller) {
         _table_controller->StopGettingFileList();
     }

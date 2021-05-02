@@ -215,6 +215,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
             auto report_progress = [&]() {
                 CARTA::ListProgress progress;
+                progress.set_file_list_type(CARTA::FileListType::Image);
                 progress.set_percentage(percentage);
                 progress.set_checked_count(num_of_files_done);
                 progress.set_total_count(total_files);
