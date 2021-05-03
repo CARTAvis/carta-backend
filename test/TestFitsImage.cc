@@ -59,7 +59,7 @@ TEST_F(FitsImageTest, ExampleFriendTest) {
     EXPECT_TRUE(frame->_open_image_error.empty());
 }
 
-TEST_F(FitsImageTest, CorrentShape2dImage) {
+TEST_F(FitsImageTest, CorrectShape2dImage) {
     auto path_string = ImagePath("noise_10px_10px.fits");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -72,7 +72,7 @@ TEST_F(FitsImageTest, CorrentShape2dImage) {
     EXPECT_EQ(frame->NumStokes(), 1);
 }
 
-TEST_F(FitsImageTest, CorrentShape3dImage) {
+TEST_F(FitsImageTest, CorrectShape3dImage) {
     auto path_string = ImagePath("noise_3d.fits");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -87,7 +87,7 @@ TEST_F(FitsImageTest, CorrentShape3dImage) {
     EXPECT_EQ(frame->StokesAxis(), -1);
 }
 
-TEST_F(FitsImageTest, CorrentShapeDegenerate3dImages) {
+TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     auto path_string = ImagePath("noise_3d_degen.fits");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -118,7 +118,7 @@ TEST_F(FitsImageTest, CorrentShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 2);
 }
 
-TEST_F(FitsImageTest, CorrentShape4dImages) {
+TEST_F(FitsImageTest, CorrectShape4dImages) {
     auto path_string = ImagePath("noise_4d.fits");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
