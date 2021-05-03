@@ -27,6 +27,7 @@ set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         TestBlockSmooth.cc
         TestFitsTable.cc
+        TestFitsImage.cc
         TestHistogram.cc
         TestMain.cc
         TestProgramSettings.cc
