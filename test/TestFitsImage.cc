@@ -5,9 +5,9 @@
 */
 #include <gtest/gtest.h>
 
-#include "Util.h"
-#include "ImageData/FileLoader.h"
 #include "Frame.h"
+#include "ImageData/FileLoader.h"
+#include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -20,14 +20,12 @@ namespace fs = std::filesystem;
 using namespace std;
 using namespace carta;
 
-
 // Allows testing of protected methods in Frame without polluting the original class
 class TestFrame : public Frame {
 public:
-    TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z):
-        Frame(session_id, loader, hdu, default_z){}
+    TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z)
+        : Frame(session_id, loader, hdu, default_z) {}
     FRIEND_TEST(FitsImageTest, ExampleFriendTest);
-
 };
 
 class FitsImageTest : public ::testing::Test {
