@@ -1139,70 +1139,70 @@ void CartaFitsImage::SetHeaderRec(char* header, casacore::RecordInterface& heade
 
     for (int i = 0; i < nkeys; ++i) {
         // Each keyrecord is a subrecord in the headers Record
-        // name: value, comment/unit
-        casacore::Record sub_record;
-
         // name
         casacore::String name(fits_keys[i].keyword);
         name.downcase();
 
-        // type: if type < 0, syntax error encountered
-        int type = abs(fits_keys[i].type);
-
-        switch (type) {
-            case 0: // no value
-                break;
-            case 1: { // logical, represented as int
-                casacore::Bool value(fits_keys[i].keyvalue.i > 0);
-                sub_record.define("value", value);
-                break;
-            }
-            case 2: { // int
-                casacore::Int value(fits_keys[i].keyvalue.i);
-                sub_record.define("value", value);
-                break;
-            }
-            case 3: { // int64
-                casacore::Int64 value(fits_keys[i].keyvalue.i);
-                sub_record.define("value", value);
-                break;
-            }
-            case 4: // very long int, not supported
-                break;
-            case 5: { // float
-                casacore::Float value(fits_keys[i].keyvalue.i);
-                sub_record.define("value", value);
-                break;
-            }
-            case 6:   // integer complex
-            case 7: { // double complex
-                casacore::Complex value(fits_keys[i].keyvalue.c[0], fits_keys[i].keyvalue.c[1]);
-                sub_record.define("value", value);
-                break;
-            }
-            case 8: { // string
-                casacore::String value(fits_keys[i].keyvalue.i);
-                sub_record.define("value", value);
-                break;
-            }
-            default:
-                break;
-        }
-
-        // Add unit and comment
-        if (sub_record.isDefined("value")) {
-            casacore::String comment(fits_keys[i].comment);
-            if (fits_keys[i].ulen > 0) {
-                // comment contains units string in standard format; set substring to unit
-                casacore::String unit(comment, 1, fits_keys[i].ulen - 2);
-                sub_record.define("unit", unit);
-            } else {
-                sub_record.define("comment", comment);
-            }
-        }
-
-        // Add to headers Record unless already defined
         if (!header_rec.isDefined(name)) {
+            // name: value, comment/unit
+            casacore::Record sub_record;
+
+            // type: if type < 0, syntax error encountered
+            int type = abs(fits_keys[i].type);
+
+            switch (type) {
+                case 0: // no value
+                    break;
+                case 1: { // logical, represented as int
+                    casacore::Bool value(fits_keys[i].keyvalue.i > 0);
+                    sub_record.define("value", value);
+                    break;
+                }
+                case 2: { // int
+                    casacore::Int value(fits_keys[i].keyvalue.i);
+                    sub_record.define("value", value);
+                    break;
+                }
+                case 3: { // int64
+                    casacore::Int64 value(fits_keys[i].keyvalue.i);
+                    sub_record.define("value", value);
+                    break;
+                }
+                case 4: // very long int, not supported
+                    break;
+                case 5: { // float
+                    casacore::Float value(fits_keys[i].keyvalue.i);
+                    sub_record.define("value", value);
+                    break;
+                }
+                case 6:   // integer complex
+                case 7: { // double complex
+                    casacore::Complex value(fits_keys[i].keyvalue.c[0], fits_keys[i].keyvalue.c[1]);
+                    sub_record.define("value", value);
+                    break;
+                }
+                case 8: { // string
+                    casacore::String value(fits_keys[i].keyvalue.i);
+                    sub_record.define("value", value);
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            // Add unit and comment
+            if (sub_record.isDefined("value")) {
+                casacore::String comment(fits_keys[i].comment);
+                if (fits_keys[i].ulen > 0) {
+                    // comment contains units string in standard format; set substring to unit
+                    casacore::String unit(comment, 1, fits_keys[i].ulen - 2);
+                    sub_record.define("unit", unit);
+                } else {
+                    sub_record.define("comment", comment);
+                }
+            }
+
+            // Add to headers Record
             header_rec.defineRecord(name, sub_record);
         }
     }
