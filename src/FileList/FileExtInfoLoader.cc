@@ -213,8 +213,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
     return info_ok;
 }
 
-void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header,
-    int bitpix, CARTA::FileInfoExtended& extended_info, std::string& extname, std::string& radesys) {
+void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
+    CARTA::FileInfoExtended& extended_info, std::string& extname, std::string& radesys) {
     // Fill FileInfoExtended header_entries from ImageFITSHeaderInfo.
     // Returns modified FileInfoExtended and EXTNAME and RADESYS value for computed_entries.
 

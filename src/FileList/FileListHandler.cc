@@ -147,6 +147,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     if (!is_region_file) {
                         // Whether to add to file list
                         bool add_file(false);
+                        CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
 
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                             // Determine if image or directory
@@ -156,7 +157,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
                                 case casacore::ImageOpener::COMPLISTIMAGE: {
-                                    image_type = CARTA::FileType::CASA;
+                                    file_type = CARTA::FileType::CASA;
                                     add_file = true;
                                     break;
                                 }
@@ -189,26 +190,26 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 // Determine if FITS, HDF5, or FITS gz file
                                 auto magic_number = GetMagicNumber(full_path);
                                 switch (magic_number) {
-									case FITS_MAGIC_NUMBER: {
+                                    case FITS_MAGIC_NUMBER: {
                                         file_type = CARTA::FileType::FITS;
                                         add_file = true;
                                         break;
                                     }
-									case HDF5_MAGIC_NUMBER: {
+                                    case HDF5_MAGIC_NUMBER: {
                                         file_type = CARTA::FileType::HDF5;
                                         add_file = true;
                                         break;
                                     }
-									case BZ_MAGIC_NUMBER:
-									case GZ_MAGIC_NUMBER: {
+                                    case BZ_MAGIC_NUMBER:
+                                    case GZ_MAGIC_NUMBER: {
                                         if (IsCompressedFits(full_path)) {
                                             file_type = CARTA::FileType::FITS;
                                             add_file = true;
                                         }
                                         break;
                                     }
-									default:
-                                        file_type = CARTA::FileType::UNKNOWN;
+                                    default:
+                                        break;
                                 }
                             }
                         }
@@ -216,7 +217,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                         if (add_file) { // add to file list
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
-                            FileInfoLoader info_loader = FileInfoLoader(full_path);
+                            FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
                             info_loader.FillFileInfo(file_info);
                         }
                     }

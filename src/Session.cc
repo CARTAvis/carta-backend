@@ -159,23 +159,14 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
     bool file_info_ok(false);
 
     try {
-        file_info.set_name(filename);
-        casacore::String full_name(GetResolvedFilename(_top_level_folder, folder, filename));
-
-        if (full_name.empty()) {
-            message = fmt::format("File {} does not exist.", filename);
-            return file_info_ok;
-        }
-
         // FileInfo
-        FileInfoLoader info_loader = FileInfoLoader(full_name);
-        if (!info_loader.FillFileInfo(file_info)) {
-            message = fmt::format("File info for {} failed.", filename);
+        std::string fullname;
+        if (!FillFileInfo(file_info, folder, filename, fullname, message)) {
             return file_info_ok;
         }
 
         // FileInfoExtended
-        _loader.reset(carta::FileLoader::GetLoader(full_name));
+        _loader.reset(carta::FileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader(_loader.get());
 
         std::string requested_hdu(hdu);
@@ -187,13 +178,13 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
         if (!requested_hdu.empty() || (file_info.type() != CARTA::FileType::FITS)) {
             // Get extended file info for requested hdu or images without hdus
             CARTA::FileInfoExtended file_info_ext;
-            file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, full_name, requested_hdu, message);
+            file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, fullname, requested_hdu, message);
             if (file_info_ok) {
                 hdu_info_map[requested_hdu] = file_info_ext;
             }
         } else {
             // Get extended file info for all FITS hdus
-            file_info_ok = ext_info_loader.FillFitsFileInfoMap(hdu_info_map, full_name, message);
+            file_info_ok = ext_info_loader.FillFitsFileInfoMap(hdu_info_map, fullname, message);
         }
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
@@ -208,9 +199,15 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
     bool file_info_ok(false);
 
     try {
-        _loader.reset(carta::FileLoader::GetLoader(filename));
+        // FileInfo
+        std::string fullname;
+        if (!FillFileInfo(file_info, folder, filename, fullname, message)) {
+            return file_info_ok;
+        }
+
+        _loader.reset(carta::FileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
-        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, hdu_name, message);
+        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu_name, message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
     }
@@ -229,6 +226,28 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
+    }
+
+    return file_info_ok;
+}
+
+bool Session::FillFileInfo(
+    CARTA::FileInfo& file_info, const std::string& folder, const std::string& filename, std::string& fullname, std::string& message) {
+    // Resolve filename and fill file info submessage
+    bool file_info_ok(false);
+
+    fullname = GetResolvedFilename(_top_level_folder, folder, filename);
+    if (fullname.empty()) {
+        message = fmt::format("File {} does not exist.", filename);
+        return file_info_ok;
+    }
+
+    file_info.set_name(filename);
+    FileInfoLoader info_loader = FileInfoLoader(fullname);
+    file_info_ok = info_loader.FillFileInfo(file_info);
+
+    if (!file_info_ok) {
+        message = fmt::format("File info for {} failed.", filename);
     }
 
     return file_info_ok;
@@ -358,8 +377,13 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
 
     if (info_loaded) {
+        std::string hdu_num(hdu);
+        if (hdu.find(":") != std::string::npos) {
+            hdu_num = hdu.substr(0, hdu.find(":"));
+        }
+
         // create Frame for image; Frame owns loader
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu));
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu_num));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -380,12 +404,14 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             *ack.mutable_file_info() = response_file_info;
             *ack.mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+
             // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
             if (file_info.type() == CARTA::FileType::HDF5) {
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
             }
+
             ack.set_file_feature_flags(feature_flags);
             std::vector<CARTA::Beam> beams;
             if (_frames.at(file_id)->GetBeams(beams)) {
