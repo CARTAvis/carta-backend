@@ -14,7 +14,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include "FileInfoLoader.h"
-#include "Timer/ProgressReporter.h"
+#include "Timer/ListProgressReporter.h"
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
@@ -116,7 +116,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         // initialize variables for the progress report and the interruption option
         _stop_getting_file_list = false;
         _first_report_made = false;
-        ProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
+        ListProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
 
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {

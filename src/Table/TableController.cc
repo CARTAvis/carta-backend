@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 
 #include "Logger/Logger.h"
-#include "Timer/ProgressReporter.h"
+#include "Timer/ListProgressReporter.h"
 #include "Util.h"
 
 #if defined(__APPLE__)
@@ -213,7 +213,7 @@ void TableController::OnFileListRequest(
         // initialize variables for the progress report and the interruption option
         _stop_getting_file_list = false;
         _first_report_made = false;
-        ProgressReporter progress_reporter(total_files, _progress_callback);
+        ListProgressReporter progress_reporter(total_files, _progress_callback);
 
         for (const auto& entry : fs::directory_iterator(file_path)) {
             if (_stop_getting_file_list) {

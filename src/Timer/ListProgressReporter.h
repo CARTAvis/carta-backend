@@ -4,17 +4,17 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_TIMER_PROGRESSREPORTER_H_
-#define CARTA_BACKEND_TIMER_PROGRESSREPORTER_H_
+#ifndef CARTA_BACKEND_TIMER_LISTPROGRESSREPORTER_H_
+#define CARTA_BACKEND_TIMER_LISTPROGRESSREPORTER_H_
 
 #include <carta-protobuf/defs.pb.h>
 
 #include <chrono>
 
-class ProgressReporter {
+class ListProgressReporter {
 public:
-    ProgressReporter(size_t total_steps, std::function<void(CARTA::ListProgress)> progress_callback);
-    ~ProgressReporter() = default;
+    ListProgressReporter(size_t total_steps, std::function<void(CARTA::ListProgress)> progress_callback);
+    ~ListProgressReporter() = default;
 
     int UpdateProgress(); // return the difference of current time and start time in the unit of seconds
     void ReportFileListProgress(const CARTA::FileListType& file_list_type);
@@ -28,4 +28,4 @@ private:
     std::function<void(CARTA::ListProgress)> _progress_callback;
 };
 
-#endif // CARTA_BACKEND_TIMER_PROGRESSREPORTER_H_
+#endif // CARTA_BACKEND_TIMER_LISTPROGRESSREPORTER_H_
