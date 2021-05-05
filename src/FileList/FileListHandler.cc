@@ -213,7 +213,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
                 progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
                 _first_report_made = true;
-            } else if (_first_report_made && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
+            } else if (_first_report_made && dt > FILE_LIST_PROGRESS_INTERVAL_SECS) {
                 progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
             }
         }
