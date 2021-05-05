@@ -63,7 +63,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                     _start_time = std::chrono::high_resolution_clock::now();
 
                     // Reset the first progress report
-                    _first_report = false;
+                    _first_report_made = false;
 
                     // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
@@ -249,12 +249,12 @@ void MomentGenerator::setStepsCompleted(int count) {
         _progress = PROCESS_COMPLETED;
     }
 
-    if (!_first_report) {
+    if (!_first_report_made) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(current_time - _start_time).count();
         if (dt >= FIRST_PROGRESS_AFTER_MILLI_SECS) {
             _progress_callback(_progress);
-            _first_report = true;
+            _first_report_made = true;
         }
     }
 
@@ -262,8 +262,8 @@ void MomentGenerator::setStepsCompleted(int count) {
     if ((_progress - _pre_progress) >= PROGRESS_REPORT_INTERVAL) {
         _progress_callback(_progress);
         _pre_progress = _progress;
-        if (!_first_report) {
-            _first_report = true;
+        if (!_first_report_made) {
+            _first_report_made = true;
         }
     }
 }

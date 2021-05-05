@@ -63,6 +63,10 @@
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
 
+// file list
+#define FILE_LIST_FIRST_PROGRESS_AFTER_SECS 5
+#define FILE_LIST_PROGRESS_INTERVAL_SECS 2
+
 // uWebSockets setting
 #define MAX_BACKPRESSURE 256 * 1024 * 1024
 
