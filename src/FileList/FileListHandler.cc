@@ -224,7 +224,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             };
 
             // report the progress if it fits the conditions
-            if (!_first_report_made && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
+            if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
                 report_progress();
                 _first_report_made = true;
             } else if (_first_report_made && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
