@@ -9,6 +9,7 @@
 #ifndef CARTA_BACKEND__FILELISTHANDLER_H_
 #define CARTA_BACKEND__FILELISTHANDLER_H_
 
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 
@@ -37,11 +38,18 @@ public:
     void OnRegionFileInfoRequest(
         const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg);
 
+    void StopGettingFileList() {
+        _stop_getting_file_list = true;
+    }
+    void SetProgressCallback(const std::function<void(CARTA::ListProgress)>& progress_callback) {
+        _progress_callback = progress_callback;
+    }
+
 private:
     // ICD: File/Region list response
     void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list = false);
 
-    bool FillFileInfo(CARTA::FileInfo& file_info, const std::string& filename);
+    bool FillFileInfo(CARTA::FileInfo& file_info, const std::string& filename, const CARTA::FileType& file_type);
     bool FillRegionFileInfo(CARTA::FileInfo& file_info, const string& filename, CARTA::FileType type = CARTA::FileType::UNKNOWN);
     void GetRegionFileContents(std::string& full_name, std::vector<std::string>& file_contents);
 
@@ -55,6 +63,10 @@ private:
     std::string _filelist_folder;
     std::string _regionlist_folder;
     std::string _top_level_folder, _starting_folder;
+
+    volatile bool _stop_getting_file_list;
+    volatile bool _first_report_made;
+    std::function<void(CARTA::ListProgress)> _progress_callback;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_

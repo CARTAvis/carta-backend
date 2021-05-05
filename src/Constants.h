@@ -10,7 +10,7 @@
 #define CARTA_BACKEND__CONSTANTS_H_
 
 // version
-#define VERSION_ID "2.0.0-dev.21.04.21"
+#define VERSION_ID "2.0.0-dev.21.04.27"
 
 // thread counts
 #define OMP_THREAD_COUNT -1
@@ -55,12 +55,6 @@
 // scripting timeouts
 #define SCRIPTING_TIMEOUT 10 // seconds
 
-// image moments
-#define REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS 5000
-#define REPORT_PROGRESS_EVERY_FACTOR 0.1
-#define MOMENT_COMPLETE 1.0
-#define OUTPUT_ID_MULTIPLIER 1000
-
 // CARTA default region style
 #define REGION_COLOR "#2EE6D6"
 #define REGION_DASH_LENGTH 2
@@ -68,6 +62,10 @@
 
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
+
+// file list
+#define FILE_LIST_FIRST_PROGRESS_AFTER_SECS 5
+#define FILE_LIST_PROGRESS_INTERVAL_SECS 2
 
 // uWebSockets setting
 #define MAX_BACKPRESSURE 256 * 1024 * 1024
