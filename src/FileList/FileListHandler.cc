@@ -114,7 +114,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
         // initialize variables for the progress report and the interruption option
         _stop_getting_file_list = false;
-        _first_report = false;
+        _first_report_made = false;
         auto total_files = start_dir.nEntries();
         int num_of_files_done(0);
         float percentage(0);
@@ -224,10 +224,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             };
 
             // report the progress if it fits the conditions
-            if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
+            if (!_first_report_made && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
                 report_progress();
-                _first_report = true;
-            } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
+                _first_report_made = true;
+            } else if (_first_report_made && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
                 report_progress();
             }
         }

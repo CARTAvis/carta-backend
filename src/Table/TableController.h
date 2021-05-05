@@ -67,7 +67,7 @@ protected:
 
 private:
     volatile bool _stop_getting_file_list;
-    volatile bool _first_report;
+    volatile bool _first_report_made;
     std::function<void(CARTA::ListProgress)> _progress_callback;
 };
 } // namespace carta

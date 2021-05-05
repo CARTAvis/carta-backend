@@ -213,7 +213,7 @@ void TableController::OnFileListRequest(
         int num_of_files_done(0);
         float percentage(0);
         _stop_getting_file_list = false;
-        _first_report = false;
+        _first_report_made = false;
         auto start_time = std::chrono::high_resolution_clock::now();
 
         auto report_progress = [&](const std::chrono::high_resolution_clock::time_point& current_time) {
@@ -270,10 +270,10 @@ void TableController::OnFileListRequest(
             auto dt = std::chrono::duration<double>(current_time - start_time).count();
 
             // report the progress if it fits the conditions
-            if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
+            if (!_first_report_made && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
                 report_progress(current_time);
-                _first_report = true;
-            } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
+                _first_report_made = true;
+            } else if (_first_report_made && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
                 report_progress(current_time);
             }
         }
