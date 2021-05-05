@@ -374,15 +374,3 @@ bool FindExecutablePath(string& path) {
     path = path_buffer;
     return true;
 }
-
-void ReportProgress(size_t total_files, size_t num_of_files_done, float percentage,
-    std::function<void(CARTA::ListProgress)> progress_callback, const std::chrono::high_resolution_clock::time_point& current_time,
-    std::chrono::high_resolution_clock::time_point& start_time) {
-    CARTA::ListProgress progress;
-    progress.set_file_list_type(CARTA::FileListType::Catalog);
-    progress.set_total_count(total_files);
-    progress.set_checked_count(num_of_files_done);
-    progress.set_percentage(percentage);
-    progress_callback(progress);
-    start_time = current_time;
-}

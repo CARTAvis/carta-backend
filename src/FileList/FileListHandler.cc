@@ -14,6 +14,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include "FileInfoLoader.h"
+#include "Timer/ProgressReporter.h"
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
@@ -115,10 +116,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         // initialize variables for the progress report and the interruption option
         _stop_getting_file_list = false;
         _first_report_made = false;
-        auto total_files = start_dir.nEntries();
-        size_t num_of_files_done(0);
-        float percentage(0);
-        auto start_time = std::chrono::high_resolution_clock::now();
+        ProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
 
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
@@ -208,17 +206,15 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             }
             dir_iter++;
 
-            ++num_of_files_done;
-            percentage = (float)num_of_files_done / (float)total_files;
-            auto current_time = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration<double>(current_time - start_time).count();
+            // update the progress and get the difference between the current time and start time
+            auto dt = progress_reporter.UpdateProgress();
 
             // report the progress if it fits the conditions
             if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
-                ReportProgress(total_files, num_of_files_done, percentage, _progress_callback, current_time, start_time);
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
                 _first_report_made = true;
             } else if (_first_report_made && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
-                ReportProgress(total_files, num_of_files_done, percentage, _progress_callback, current_time, start_time);
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
             }
         }
     } catch (casacore::AipsError& err) {

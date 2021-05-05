@@ -48,10 +48,6 @@ CARTA::StokesType GetStokesType(int stokes_value);
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
 
-void ReportProgress(size_t total_files, size_t num_of_files_done, float percentage,
-    std::function<void(CARTA::ListProgress)> progress_callback, const std::chrono::high_resolution_clock::time_point& current_time,
-    std::chrono::high_resolution_clock::time_point& start_time);
-
 // ************ Data Stream Helpers *************
 
 void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
