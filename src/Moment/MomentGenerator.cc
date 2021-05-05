@@ -12,6 +12,11 @@ using namespace carta;
 
 using IM = ImageMoments<casacore::Float>;
 
+static const int FIRST_PROGRESS_AFTER_MILLI_SECS = 5000;
+static const float PROGRESS_REPORT_INTERVAL = 0.1;
+static const float PROCESS_COMPLETED = 1;
+static const int ID_MULTIPLIER = 1000;
+
 MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image)
     : _filename(filename), _image(image), _sub_image(nullptr), _image_moments(nullptr), _success(false), _cancel(false) {
     SetMomentTypeMaps();
@@ -70,7 +75,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
                         // Set a temp moment file Id. Todo: find another better way to assign the temp file Id
                         int moment_type = _moments[i];
-                        int moment_file_id = (file_id + 1) * OUTPUT_ID_MULTIPLIER + moment_type;
+                        int moment_file_id = (file_id + 1) * ID_MULTIPLIER + moment_type;
 
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
@@ -240,21 +245,21 @@ void MomentGenerator::setStepCount(int count) {
 
 void MomentGenerator::setStepsCompleted(int count) {
     _progress = (float)count / _total_steps;
-    if (_progress > MOMENT_COMPLETE) {
-        _progress = MOMENT_COMPLETE;
+    if (_progress > PROCESS_COMPLETED) {
+        _progress = PROCESS_COMPLETED;
     }
 
     if (!_first_report) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(current_time - _start_time).count();
-        if (dt >= REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS) {
+        if (dt >= FIRST_PROGRESS_AFTER_MILLI_SECS) {
             _progress_callback(_progress);
             _first_report = true;
         }
     }
 
     // Update the progress report every percent
-    if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
+    if ((_progress - _pre_progress) >= PROGRESS_REPORT_INTERVAL) {
         _progress_callback(_progress);
         _pre_progress = _progress;
         if (!_first_report) {
