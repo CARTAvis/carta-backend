@@ -237,6 +237,7 @@ set(SOURCE_FILES
         src/Table/TableView.cc
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
+        src/Timer/ProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc
