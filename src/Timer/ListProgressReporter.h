@@ -7,9 +7,10 @@
 #ifndef CARTA_BACKEND_TIMER_LISTPROGRESSREPORTER_H_
 #define CARTA_BACKEND_TIMER_LISTPROGRESSREPORTER_H_
 
-#include <carta-protobuf/defs.pb.h>
-
 #include <chrono>
+#include <functional>
+
+#include <carta-protobuf/defs.pb.h>
 
 class ListProgressReporter {
 public:
