@@ -55,12 +55,6 @@
 // scripting timeouts
 #define SCRIPTING_TIMEOUT 10 // seconds
 
-// image moments
-#define REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS 5000
-#define REPORT_PROGRESS_EVERY_FACTOR 0.1
-#define MOMENT_COMPLETE 1.0
-#define OUTPUT_ID_MULTIPLIER 1000
-
 // CARTA default region style
 #define REGION_COLOR "#2EE6D6"
 #define REGION_DASH_LENGTH 2
