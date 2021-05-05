@@ -116,19 +116,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         _stop_getting_file_list = false;
         _first_report_made = false;
         auto total_files = start_dir.nEntries();
-        int num_of_files_done(0);
+        size_t num_of_files_done(0);
         float percentage(0);
         auto start_time = std::chrono::high_resolution_clock::now();
-
-        auto report_progress = [&](const std::chrono::high_resolution_clock::time_point& current_time) {
-            CARTA::ListProgress progress;
-            progress.set_file_list_type(CARTA::FileListType::Image);
-            progress.set_percentage(percentage);
-            progress.set_checked_count(num_of_files_done);
-            progress.set_total_count(total_files);
-            _progress_callback(progress);
-            start_time = current_time;
-        };
 
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
@@ -225,10 +215,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
             // report the progress if it fits the conditions
             if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
-                report_progress(current_time);
+                ReportProgress(total_files, num_of_files_done, percentage, _progress_callback, current_time, start_time);
                 _first_report_made = true;
             } else if (_first_report_made && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
-                report_progress(current_time);
+                ReportProgress(total_files, num_of_files_done, percentage, _progress_callback, current_time, start_time);
             }
         }
     } catch (casacore::AipsError& err) {
