@@ -15,6 +15,7 @@
 
 #include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
+#include "Timer/ListProgressReporter.h"
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
@@ -112,7 +113,18 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
+
+        // initialize variables for the progress report and the interruption option
+        _stop_getting_file_list = false;
+        _first_report_made = false;
+        ListProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
+
         while (!dir_iter.pastEnd()) {
+            if (_stop_getting_file_list) {
+                file_list.set_cancel(true);
+                break;
+            }
+
             casacore::File cc_file(dir_iter.file());          // directory is also a File
             casacore::String name(cc_file.path().baseName()); // to keep link name before resolve
 
@@ -141,17 +153,23 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                             auto image_type = CasacoreImageType(full_path);
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
-                                case casacore::ImageOpener::MIRIAD:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
-                                case casacore::ImageOpener::COMPLISTIMAGE:
+                                case casacore::ImageOpener::COMPLISTIMAGE: {
+                                    image_type = CARTA::FileType::CASA;
                                     add_file = true;
                                     break;
+                                }
                                 case casacore::ImageOpener::GIPSY:
                                 case casacore::ImageOpener::CAIPS:
                                 case casacore::ImageOpener::NEWSTAR: {
                                     std::string image_type_msg = fmt::format("{}: image type not supported", name);
                                     result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                    break;
+                                }
+                                case casacore::ImageOpener::MIRIAD: {
+                                    file_type = CARTA::FileType::MIRIAD;
+                                    add_file = true;
                                     break;
                                 }
                                 case casacore::ImageOpener::UNKNOWN: {
@@ -170,8 +188,28 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                             } else {
                                 // Determine if FITS, HDF5, or FITS gz file
                                 auto magic_number = GetMagicNumber(full_path);
-                                add_file = ((magic_number == FITS_MAGIC_NUMBER) || (magic_number == HDF5_MAGIC_NUMBER) ||
-                                            IsCompressedFits(full_path));
+                                switch (magic_number) {
+									case FITS_MAGIC_NUMBER: {
+                                        file_type = CARTA::FileType::FITS;
+                                        add_file = true;
+                                        break;
+                                    }
+									case HDF5_MAGIC_NUMBER: {
+                                        file_type = CARTA::FileType::HDF5;
+                                        add_file = true;
+                                        break;
+                                    }
+									case BZ_MAGIC_NUMBER:
+									case GZ_MAGIC_NUMBER: {
+                                        if (IsCompressedFits(full_path)) {
+                                            file_type = CARTA::FileType::FITS;
+                                            add_file = true;
+                                        }
+                                        break;
+                                    }
+									default:
+                                        file_type = CARTA::FileType::UNKNOWN;
+                                }
                             }
                         }
 
@@ -187,6 +225,17 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                 }
             }
             dir_iter++;
+
+            // update the progress and get the difference between the current time and start time
+            auto dt = progress_reporter.UpdateProgress();
+
+            // report the progress if it fits the conditions
+            if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
+                _first_report_made = true;
+            } else if (_first_report_made && dt > FILE_LIST_PROGRESS_INTERVAL_SECS) {
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
+            }
         }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
@@ -234,6 +283,7 @@ void FileListHandler::OnRegionListRequest(
     region_response.set_parent(file_response.parent());
     *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
     *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
+    region_response.set_cancel(file_response.cancel());
 
     _regionlist_folder = "nofolder"; // ready for next file list request
 }
