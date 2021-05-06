@@ -20,6 +20,7 @@
 #include <casacore/measures/Measures/MFrequency.h>
 
 #include "../ImageData/CartaFitsImage.h"
+#include "../ImageData/CompressedFits.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 
@@ -33,8 +34,30 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
     bool map_ok(false);
 
     if (IsCompressedFits(filename)) {
-        message = "Compressed FITS not implemented yet.";
-        return map_ok;
+        CompressedFits cfits(filename);
+        if (!cfits.GetFitsHeaderInfo(hdu_info_map)) {
+            message = "Compressed FITS headers failed.";
+            return map_ok;
+        }
+
+        /*
+        for (auto& hdu_fhi : hdu_fhi_map) {
+            bool using_image_header(false);
+            int bitpix(hdu_fhi.second.kw(casacore::FITS::BITPIX)->asInt());
+            CARTA::FileInfoExtended extended_info;
+            std::string radesys;
+            FitsHeaderInfoToHeaderEntries(hdu_fhi.second, using_image_header, bitpix, hdu_fhi.first, extended_info, radesys);
+
+            // Add shape and axes info, determine which axes are rendered
+            std::vector<int> render_axes;
+            AddShapeEntries(hdu_fhi.second, extended_info, render_axes);
+
+            // Use headers in FileInfoExtended to create computed entries
+            AddComputedEntriesFromHeaders(extended_info, render_axes, radesys);
+        }
+        */
+
+        map_ok = !hdu_info_map.empty();
     } else {
         // Get list of image HDUs
         std::vector<std::string> hdu_list;
@@ -166,23 +189,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     bitpix = GetFitsBitpix(image);
                 }
 
-                casacore::String extname, radesys; // Save from FITS headers to add to computed entries in order
-                FitsHeaderInfoToHeaderEntries(fhi, using_image_header, bitpix, extended_info, extname, radesys);
-
-                // Create FileInfoExtended computed_entries for hdu, extension name
-                if (!hdu.empty()) {
-                    auto entry = extended_info.add_computed_entries();
-                    entry->set_name("HDU");
-                    entry->set_value(hdu);
-                    entry->set_entry_type(CARTA::EntryType::STRING);
-                }
-
-                if (!extname.empty()) {
-                    auto entry = extended_info.add_computed_entries();
-                    entry->set_name("Extension name");
-                    entry->set_value(extname);
-                    entry->set_entry_type(CARTA::EntryType::STRING);
-                }
+                casacore::String radesys; // Save from FITS headers to add to computed entries in order
+                FitsHeaderInfoToHeaderEntries(fhi, using_image_header, bitpix, hdu, extended_info, radesys);
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
@@ -214,15 +222,17 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 }
 
 void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
-    CARTA::FileInfoExtended& extended_info, std::string& extname, std::string& radesys) {
-    // Fill FileInfoExtended header_entries from ImageFITSHeaderInfo.
-    // Returns modified FileInfoExtended and EXTNAME and RADESYS value for computed_entries.
+    const std::string& hdu, CARTA::FileInfoExtended& extended_info, std::string& radesys) {
+    // Fill FileInfoExtended header_entries from ImageFITSHeaderInfo and begin computed_entries.
+    // Modifies FileInfoExtended and returns RADESYS value for computed_entries.
 
     // Axis or coord number to append to name
     int naxis(0), ntype(1), nval(1), ndelt(1), npix(1);
 
     // Determine stokes values for loader
     casacore::String stokes_axis_num;
+
+    std::string extname; // for computed_entries
 
     // Create FileInfoExtended header_entries for each FitsKeyword
     fhi.kw.first(); // go to first card
@@ -370,9 +380,30 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
 
         fkw = fhi.kw.next(); // get next keyword
     }
+
+    // Create FileInfoExtended computed_entries for hdu, extension name
+    if (!hdu.empty()) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("HDU");
+        entry->set_value(hdu);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (!extname.empty()) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("Extension name");
+        entry->set_value(extname);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
 }
 
 // ***** Computed entries *****
+
+void FileExtInfoLoader::AddShapeEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info, std::vector<int>& render_axes) {
+    // Use header info to determine shape, special axes, and rendered axes
+    // TODO: shape, chan_axis, depth_axis, stokes_axis, render_axes
+    // AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
+}
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,
     int depth_axis, int stokes_axis, const std::vector<int>& render_axes) {

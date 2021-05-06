@@ -226,7 +226,7 @@ set(SOURCE_FILES
         src/ImageData/CartaMiriadImage.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/StokesFilesConnector.cc
-		src/ImageData/CompressedFits.cc
+        src/ImageData/CompressedFits.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Region/CrtfImportExport.cc

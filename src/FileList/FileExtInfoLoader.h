@@ -9,6 +9,7 @@
 #ifndef CARTA_BACKEND__FILELIST_FILEEXTINFOLOADER_H_
 #define CARTA_BACKEND__FILELIST_FILEEXTINFOLOADER_H_
 
+#include <map>
 #include <string>
 
 #include <casacore/casa/Arrays/IPosition.h>
@@ -37,10 +38,10 @@ private:
     // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
     void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
-        CARTA::FileInfoExtended& extended_info, std::string& extname, std::string& radesys);
-    void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);
+        const std::string& hdu, CARTA::FileInfoExtended& extended_info, std::string& radesys);
 
     // Image shape, nchannels, nstokes
+    void AddShapeEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info, std::vector<int>& render_axes);
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
         int stokes_axis, const std::vector<int>& render_axes);
 
