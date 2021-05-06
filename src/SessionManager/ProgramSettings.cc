@@ -137,6 +137,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
+        ("browser", "user custom browser + args", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<int>(), "<port>")
         ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
@@ -237,6 +238,8 @@ sending messages to the backend).
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
     applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
+
+    applyOptionalArgument(browser, "browser", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
