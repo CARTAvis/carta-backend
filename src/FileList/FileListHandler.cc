@@ -156,10 +156,11 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
-                                case casacore::ImageOpener::COMPLISTIMAGE:
+                                case casacore::ImageOpener::COMPLISTIMAGE: {
                                     file_type = CARTA::FileType::CASA;
                                     add_file = true;
                                     break;
+                                }
                                 case casacore::ImageOpener::GIPSY:
                                 case casacore::ImageOpener::CAIPS:
                                 case casacore::ImageOpener::NEWSTAR: {
