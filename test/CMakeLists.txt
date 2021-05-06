@@ -26,15 +26,17 @@ include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         TestBlockSmooth.cc
-        TestFITS.cc
+        TestFitsTable.cc
+        TestFitsImage.cc
         TestHistogram.cc
         TestMain.cc
+        TestMoment.cc
         TestProgramSettings.cc
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc
         TestRestApi.cc
-        TestVOTable.cc)
+        TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})

@@ -5,15 +5,14 @@
 */
 
 //
-// Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.h"
+// Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/ImageMoments.h"
 //
-#ifndef CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
-#define CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
+#ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_
+#define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_
 
 #include <casacore/lattices/Lattices/MaskedLattice.h>
 #include <casacore/scimath/Functionals/Gaussian1D.h>
 #include <imageanalysis/ImageAnalysis/CasaImageBeamSet.h>
-#include <imageanalysis/ImageAnalysis/Image2DConvolver.h>
 #include <imageanalysis/ImageAnalysis/ImageHistograms.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgress.h>
 #include <imageanalysis/ImageAnalysis/MomentClip.h>
@@ -22,13 +21,15 @@
 #include <imageanalysis/ImageAnalysis/MomentsBase.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
 
+#include "Image2DConvolver.h"
+
 namespace carta {
 
 template <class T>
 class ImageMoments : public casa::MomentsBase<T> {
 public:
-    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output = false,
-        casacore::Bool show_progress = true);
+    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor,
+        casacore::Bool over_write_output = false);
 
     ~ImageMoments(){};
 
@@ -62,15 +63,13 @@ public:
         return _image->shape();
     }
 
-    // Set an ImageMomentsProgressMonitor interested in getting updates on the progress of the collapse process
-    void SetProgressMonitor(casa::ImageMomentsProgressMonitor* progressMonitor);
-
     // Stop the calculation
     void StopCalculation();
 
 private:
     SPCIIT _image = SPCIIT(nullptr);
-    casa::ImageMomentsProgressMonitor* _progress_monitor = nullptr;
+    std::unique_ptr<casa::ImageMomentsProgress> _progress_monitor;
+    std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
 
     casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
 
@@ -83,13 +82,16 @@ private:
 
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
-        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis, casacore::LatticeProgress* tell_progress = 0);
+        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis);
 
     // Get a suitable chunk shape in order for the iteration
     casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);
 
     // Stop moment calculation
     volatile bool _stop;
+
+    // Number of steps have done for the beam convolution
+    casacore::uInt _steps_for_beam_convolution = 0;
 
 protected:
     using casa::MomentsBase<T>::os_p;
@@ -126,4 +128,4 @@ protected:
 
 #include "ImageMoments.tcc"
 
-#endif // CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
+#endif // CARTA_BACKEND__MOMENT_IMAGEMOMENTS_H_

@@ -20,7 +20,7 @@ namespace fs = std::filesystem;
 using namespace std;
 using namespace carta;
 
-class VOTableTest : public ::testing::Test {
+class VoTableTest : public ::testing::Test {
 public:
     static string ImagePath(const string& filename) {
         string path_string;
@@ -34,62 +34,62 @@ public:
     }
 };
 
-TEST_F(VOTableTest, FailOnEmptyFilename) {
+TEST_F(VoTableTest, FailOnEmptyFilename) {
     Table table("");
     EXPECT_FALSE(table.IsValid());
 }
 
-TEST_F(VOTableTest, FailOnEmptyFilenameHeaderOnly) {
+TEST_F(VoTableTest, FailOnEmptyFilenameHeaderOnly) {
     Table table_header_only("", true);
     EXPECT_FALSE(table_header_only.IsValid());
 }
 
-TEST_F(VOTableTest, FailOnMissingResource) {
+TEST_F(VoTableTest, FailOnMissingResource) {
     Table table(ImagePath("no_resource.xml"));
     EXPECT_FALSE(table.IsValid());
 }
 
-TEST_F(VOTableTest, FailOnMissingTable) {
+TEST_F(VoTableTest, FailOnMissingTable) {
     Table table(ImagePath("no_table.xml"));
     EXPECT_FALSE(table.IsValid());
 }
 
-TEST_F(VOTableTest, FailOnMissingData) {
+TEST_F(VoTableTest, FailOnMissingData) {
     Table table(ImagePath("no_data.xml"));
     EXPECT_FALSE(table.IsValid());
 }
 
-TEST_F(VOTableTest, ParseMissingDataHeaderOnly) {
+TEST_F(VoTableTest, ParseMissingDataHeaderOnly) {
     Table table(ImagePath("empty_data.xml"), true);
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, ParseMissingData) {
+TEST_F(VoTableTest, ParseMissingData) {
     Table table(ImagePath("empty_data.xml"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, ParseIvoaExampleHeaderOnly) {
+TEST_F(VoTableTest, ParseIvoaExampleHeaderOnly) {
     Table table(ImagePath("ivoa_example.xml"), true);
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, ParseIvoaExample) {
+TEST_F(VoTableTest, ParseIvoaExample) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 3);
 }
 
-TEST_F(VOTableTest, CorrectFieldCount) {
+TEST_F(VoTableTest, CorrectFieldCount) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumColumns(), 6);
 }
 
-TEST_F(VOTableTest, CorrectFieldNames) {
+TEST_F(VoTableTest, CorrectFieldNames) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_EQ(table[0]->name, "RA");
     EXPECT_EQ(table[1]->name, "Dec");
@@ -99,7 +99,7 @@ TEST_F(VOTableTest, CorrectFieldNames) {
     EXPECT_EQ(table[5]->name, "R");
 }
 
-TEST_F(VOTableTest, CorrectFieldUnits) {
+TEST_F(VoTableTest, CorrectFieldUnits) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_EQ(table[0]->unit, "deg");
     EXPECT_EQ(table[1]->unit, "deg");
@@ -109,7 +109,7 @@ TEST_F(VOTableTest, CorrectFieldUnits) {
     EXPECT_EQ(table[5]->unit, "Mpc");
 }
 
-TEST_F(VOTableTest, CorrectFieldTypes) {
+TEST_F(VoTableTest, CorrectFieldTypes) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_EQ(table[0]->data_type, CARTA::Float);
     EXPECT_EQ(table[1]->data_type, CARTA::Float);
@@ -119,7 +119,7 @@ TEST_F(VOTableTest, CorrectFieldTypes) {
     EXPECT_EQ(table[5]->data_type, CARTA::Float);
 }
 
-TEST_F(VOTableTest, CorrectFieldSizes) {
+TEST_F(VoTableTest, CorrectFieldSizes) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_EQ(table[0]->data_type_size, 4);
     EXPECT_EQ(table[1]->data_type_size, 4);
@@ -129,7 +129,7 @@ TEST_F(VOTableTest, CorrectFieldSizes) {
     EXPECT_EQ(table[5]->data_type_size, 4);
 }
 
-TEST_F(VOTableTest, CorrectNameLookups) {
+TEST_F(VoTableTest, CorrectNameLookups) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_EQ(table["RA"]->name, "RA");
     EXPECT_EQ(table["Dec"]->name, "Dec");
@@ -141,7 +141,7 @@ TEST_F(VOTableTest, CorrectNameLookups) {
     EXPECT_EQ(table[""], nullptr);
 }
 
-TEST_F(VOTableTest, CorrectIdLookups) {
+TEST_F(VoTableTest, CorrectIdLookups) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_EQ(table["col1"]->id, "col1");
     EXPECT_EQ(table["col2"]->id, "col2");
@@ -151,7 +151,7 @@ TEST_F(VOTableTest, CorrectIdLookups) {
     EXPECT_EQ(table["col6"]->id, "col6");
 }
 
-TEST_F(VOTableTest, CorrectColumnTypes) {
+TEST_F(VoTableTest, CorrectColumnTypes) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_NE(DataColumn<float>::TryCast(table["col1"]), nullptr);
     EXPECT_EQ(DataColumn<double>::TryCast(table["col1"]), nullptr);
@@ -166,7 +166,7 @@ TEST_F(VOTableTest, CorrectColumnTypes) {
     EXPECT_EQ(DataColumn<int>::TryCast(table["col5"]), nullptr);
 }
 
-TEST_F(VOTableTest, CorrectDataValues) {
+TEST_F(VoTableTest, CorrectDataValues) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto& col1_vals = DataColumn<float>::TryCast(table["col1"])->entries;
@@ -190,7 +190,7 @@ TEST_F(VOTableTest, CorrectDataValues) {
     EXPECT_EQ(col5_vals[1], 6);
 }
 
-TEST_F(VOTableTest, FailOnWrongFilterType) {
+TEST_F(VoTableTest, FailOnWrongFilterType) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_FALSE(table.View().StringFilter(table["dummy"], "N 224"));
     EXPECT_FALSE(table.View().StringFilter(table["col1"], "N 224"));
@@ -199,13 +199,13 @@ TEST_F(VOTableTest, FailOnWrongFilterType) {
     EXPECT_FALSE(table.View().NumericFilter(table["col3"], CARTA::RangeClosed, 0, 100));
 }
 
-TEST_F(VOTableTest, PassOnCorrectFilterType) {
+TEST_F(VoTableTest, PassOnCorrectFilterType) {
     Table table(ImagePath("ivoa_example.xml"));
     EXPECT_TRUE(table.View().StringFilter(table["col3"], "N 224"));
     EXPECT_TRUE(table.View().NumericFilter(table["col1"], CARTA::RangeClosed, 0, 100));
 }
 
-TEST_F(VOTableTest, CaseSensitiveStringFilter) {
+TEST_F(VoTableTest, CaseSensitiveStringFilter) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -217,7 +217,7 @@ TEST_F(VOTableTest, CaseSensitiveStringFilter) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, CaseInsensitiveStringFilter) {
+TEST_F(VoTableTest, CaseInsensitiveStringFilter) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -229,7 +229,7 @@ TEST_F(VOTableTest, CaseInsensitiveStringFilter) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, FailFilterExtractMistypedValues) {
+TEST_F(VoTableTest, FailFilterExtractMistypedValues) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -243,7 +243,7 @@ TEST_F(VOTableTest, FailFilterExtractMistypedValues) {
     EXPECT_TRUE(float_vals.empty());
 }
 
-TEST_F(VOTableTest, FilterExtractValues) {
+TEST_F(VoTableTest, FilterExtractValues) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -258,7 +258,7 @@ TEST_F(VOTableTest, FilterExtractValues) {
     EXPECT_FLOAT_EQ(float_vals[0], 287.43f);
 }
 
-TEST_F(VOTableTest, NumericFilterEqual) {
+TEST_F(VoTableTest, NumericFilterEqual) {
     Table table(ImagePath("ivoa_example.xml"));
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::Equal, 287.43);
@@ -268,7 +268,7 @@ TEST_F(VOTableTest, NumericFilterEqual) {
     EXPECT_EQ(view.NumRows(), 1);
 }
 
-TEST_F(VOTableTest, NumericFilterNotEqual) {
+TEST_F(VoTableTest, NumericFilterNotEqual) {
     Table table(ImagePath("ivoa_example.xml"));
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::NotEqual, 287.43);
@@ -278,7 +278,7 @@ TEST_F(VOTableTest, NumericFilterNotEqual) {
     EXPECT_EQ(view.NumRows(), 2);
 }
 
-TEST_F(VOTableTest, NumericFilterGreater) {
+TEST_F(VoTableTest, NumericFilterGreater) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -290,7 +290,7 @@ TEST_F(VOTableTest, NumericFilterGreater) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, NumericFilterLesser) {
+TEST_F(VoTableTest, NumericFilterLesser) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -302,7 +302,7 @@ TEST_F(VOTableTest, NumericFilterLesser) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, NumericFilterRange) {
+TEST_F(VoTableTest, NumericFilterRange) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -314,14 +314,14 @@ TEST_F(VOTableTest, NumericFilterRange) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST_F(VOTableTest, FailSortMissingColummn) {
+TEST_F(VoTableTest, FailSortMissingColummn) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
     EXPECT_FALSE(view.SortByColumn(nullptr));
 }
 
-TEST_F(VOTableTest, SortNumericAscending) {
+TEST_F(VoTableTest, SortNumericAscending) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -332,7 +332,7 @@ TEST_F(VOTableTest, SortNumericAscending) {
     EXPECT_FLOAT_EQ(vals[2], 287.43f);
 }
 
-TEST_F(VOTableTest, SortNumericDescending) {
+TEST_F(VoTableTest, SortNumericDescending) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -343,7 +343,7 @@ TEST_F(VOTableTest, SortNumericDescending) {
     EXPECT_FLOAT_EQ(vals[2], 10.68f);
 }
 
-TEST_F(VOTableTest, SortNumericSubset) {
+TEST_F(VoTableTest, SortNumericSubset) {
     Table table(ImagePath("ivoa_example.xml"));
 
     // Ascending sort
@@ -355,7 +355,7 @@ TEST_F(VOTableTest, SortNumericSubset) {
     EXPECT_FLOAT_EQ(vals[1], 287.43f);
 }
 
-TEST_F(VOTableTest, SortStringAscending) {
+TEST_F(VoTableTest, SortStringAscending) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -366,7 +366,7 @@ TEST_F(VOTableTest, SortStringAscending) {
     EXPECT_EQ(vals[2], "N 6744");
 }
 
-TEST_F(VOTableTest, SortStringDescending) {
+TEST_F(VoTableTest, SortStringDescending) {
     Table table(ImagePath("ivoa_example.xml"));
 
     auto view = table.View();
@@ -377,7 +377,7 @@ TEST_F(VOTableTest, SortStringDescending) {
     EXPECT_EQ(vals[2], "N 224");
 }
 
-TEST_F(VOTableTest, SortStringSubset) {
+TEST_F(VoTableTest, SortStringSubset) {
     Table table(ImagePath("ivoa_example.xml"));
 
     // Ascending sort
@@ -389,13 +389,13 @@ TEST_F(VOTableTest, SortStringSubset) {
     EXPECT_EQ(vals[1], "N 6744");
 }
 
-TEST_F(VOTableTest, ParseArrayFile) {
+TEST_F(VoTableTest, ParseArrayFile) {
     Table table(ImagePath("array_types.xml"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 3);
 }
 
-TEST_F(VOTableTest, IgnoreArrayTypes) {
+TEST_F(VoTableTest, IgnoreArrayTypes) {
     Table table(ImagePath("array_types.xml"));
     EXPECT_EQ(table["FixedArray"]->data_type, CARTA::UnsupportedType);
     EXPECT_EQ(table["BoundedArray"]->data_type, CARTA::UnsupportedType);
@@ -405,7 +405,7 @@ TEST_F(VOTableTest, IgnoreArrayTypes) {
     EXPECT_EQ(table["UnboundedArray2D"]->data_type, CARTA::UnsupportedType);
 }
 
-TEST_F(VOTableTest, CorrectScalarData) {
+TEST_F(VoTableTest, CorrectScalarData) {
     Table table(ImagePath("array_types.xml"));
     auto& scalar1_vals = DataColumn<float>::TryCast(table["Scalar1"])->entries;
     auto& scalar2_vals = DataColumn<float>::TryCast(table["Scalar2"])->entries;
