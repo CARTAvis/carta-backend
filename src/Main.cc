@@ -293,15 +293,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     }
                     break;
                 }
-                case CARTA::EventType::FILE_LIST_REQUEST: {
-                    CARTA::FileListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnFileListRequest(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad FILE_LIST_REQUEST message!");
-                    }
-                    break;
-                }
                 case CARTA::EventType::OPEN_FILE: {
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -315,15 +306,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
                     tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
-                    break;
-                }
-                case CARTA::EventType::REGION_LIST_REQUEST: {
-                    CARTA::RegionListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegionListRequest(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad REGION_LIST_REQUEST message!");
-                    }
                     break;
                 }
                 case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
@@ -392,15 +374,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->OnSetSpectralRequirements(message);
                     } else {
                         spdlog::warn("Bad SET_SPECTRAL_REQUIREMENTS message!");
-                    }
-                    break;
-                }
-                case CARTA::EventType::CATALOG_LIST_REQUEST: {
-                    CARTA::CatalogListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFileList(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -474,6 +447,19 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->OnConcatStokesFiles(message, head.request_id);
                     } else {
                         spdlog::warn("Bad CONCAT_STOKES_FILES message!");
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_FILE_LIST: {
+                    CARTA::StopFileList message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.file_list_type() == CARTA::Image) {
+                            session->StopImageFileList();
+                        } else {
+                            session->StopCatalogFileList();
+                        }
+                    } else {
+                        spdlog::warn("Bad STOP_FILE_LIST message!");
                     }
                     break;
                 }

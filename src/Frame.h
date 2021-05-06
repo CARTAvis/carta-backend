@@ -186,7 +186,7 @@ public:
 
     std::shared_mutex& GetActiveTaskMutex();
 
-private:
+protected:
     // Validate z and stokes index values
     bool CheckZ(int z);
     bool CheckStokes(int stokes);

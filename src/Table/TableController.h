@@ -47,6 +47,13 @@ public:
     void OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request,
         std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback);
 
+    void StopGettingFileList() {
+        _stop_getting_file_list = true;
+    }
+    void SetProgressCallBack(const std::function<void(CARTA::ListProgress)>& progress_callback) {
+        _progress_callback = progress_callback;
+    }
+
 protected:
     void PopulateHeaders(google::protobuf::RepeatedPtrField<CARTA::CatalogHeader>* headers, const Table& table);
     void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
@@ -57,6 +64,11 @@ protected:
     std::string _starting_folder;
     std::unordered_map<int, Table> _tables;
     std::unordered_map<int, TableViewCache> _view_cache;
+
+private:
+    volatile bool _stop_getting_file_list;
+    volatile bool _first_report_made;
+    std::function<void(CARTA::ListProgress)> _progress_callback;
 };
 } // namespace carta
 #endif // CARTA_BACKEND_TABLE_TABLECONTROLLER_H_

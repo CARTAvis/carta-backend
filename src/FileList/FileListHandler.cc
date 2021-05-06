@@ -14,6 +14,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include "FileInfoLoader.h"
+#include "Timer/ListProgressReporter.h"
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
@@ -111,7 +112,18 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
+
+        // initialize variables for the progress report and the interruption option
+        _stop_getting_file_list = false;
+        _first_report_made = false;
+        ListProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
+
         while (!dir_iter.pastEnd()) {
+            if (_stop_getting_file_list) {
+                file_list.set_cancel(true);
+                break;
+            }
+
             casacore::File cc_file(dir_iter.file());          // directory is also a File
             casacore::String name(cc_file.path().baseName()); // to keep link name before resolve
 
@@ -133,16 +145,23 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     }
                     if (!is_region) {
                         bool add_image(false);
+                        CARTA::FileType file_type;
                         auto image_type = casacore::ImageOpener::imageType(full_path);
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
-                                case casacore::ImageOpener::MIRIAD:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
-                                case casacore::ImageOpener::COMPLISTIMAGE:
+                                case casacore::ImageOpener::COMPLISTIMAGE: {
+                                    file_type = CARTA::FileType::CASA;
                                     add_image = true;
                                     break;
+                                }
+                                case casacore::ImageOpener::MIRIAD: {
+                                    file_type = CARTA::FileType::MIRIAD;
+                                    add_image = true;
+                                    break;
+                                }
                                 case casacore::ImageOpener::UNKNOWN: {
                                     // Check if it is a directory and the user has permission to access it
                                     casacore::String dir_name(cc_file.path().baseName());
@@ -157,17 +176,28 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 }
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
-                                add_image = true;
-                            } else if (region_list) { // list unknown files: name, type, size
-                                add_image = true;
+                            switch (image_type) {
+                                case casacore::ImageOpener::FITS: {
+                                    file_type = CARTA::FileType::FITS;
+                                    add_image = true;
+                                    break;
+                                }
+                                case casacore::ImageOpener::HDF5: {
+                                    file_type = CARTA::FileType::HDF5;
+                                    add_image = true;
+                                    break;
+                                }
+                                default: {
+                                    file_type = CARTA::FileType::UNKNOWN;
+                                    break;
+                                }
                             }
                         }
 
                         if (add_image) { // add image to file list
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
-                            FillFileInfo(file_info, full_path);
+                            FillFileInfo(file_info, full_path, file_type);
                         }
                     }
                 } catch (casacore::AipsError& err) { // RegularFileIO error
@@ -175,6 +205,17 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                 }
             }
             dir_iter++;
+
+            // update the progress and get the difference between the current time and start time
+            auto dt = progress_reporter.UpdateProgress();
+
+            // report the progress if it fits the conditions
+            if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
+                _first_report_made = true;
+            } else if (_first_report_made && dt > FILE_LIST_PROGRESS_INTERVAL_SECS) {
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Image);
+            }
         }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
@@ -213,9 +254,9 @@ std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageT
     return type_str;
 }
 
-bool FileListHandler::FillFileInfo(CARTA::FileInfo& file_info, const string& filename) {
+bool FileListHandler::FillFileInfo(CARTA::FileInfo& file_info, const string& filename, const CARTA::FileType& file_type) {
     // fill FileInfo submessage
-    FileInfoLoader info_loader = FileInfoLoader(filename);
+    FileInfoLoader info_loader = FileInfoLoader(filename, file_type);
     return info_loader.FillFileInfo(file_info);
 }
 
@@ -255,6 +296,7 @@ void FileListHandler::OnRegionListRequest(
     region_response.set_parent(file_response.parent());
     *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
     *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
+    region_response.set_cancel(file_response.cancel());
 
     _regionlist_folder = "nofolder"; // ready for next file list request
 }
