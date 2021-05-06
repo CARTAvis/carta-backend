@@ -45,6 +45,12 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
     // Calculate moments
     try {
+        // Start the timer
+        _start_time = std::chrono::high_resolution_clock::now();
+
+        // Reset the first progress report
+        _first_report_made = false;
+
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
         } else {
@@ -58,12 +64,6 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                 std::string file_base_name = out_file.substr(found + 1);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
-
-                    // Start the timer
-                    _start_time = std::chrono::high_resolution_clock::now();
-
-                    // Reset the first progress report
-                    _first_report_made = false;
 
                     // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
@@ -187,11 +187,8 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
 
-    // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
-
-    // Set moment calculation progress monitor
-    _image_moments->SetProgressMonitor(this);
+    // Make an ImageMoments object and overwrite the output file if it already exists
+    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {

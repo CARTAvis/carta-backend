@@ -119,6 +119,18 @@ uint32_t GetMagicNumber(const string& filename) {
     return magic_number;
 }
 
+std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam) {
+    std::string result;
+    result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
+    result += fmt::format("minor: {:.6f} {} ", gaussian_beam.getMinor().getValue(), gaussian_beam.getMinor().getUnit());
+    result += fmt::format("pa: {:.6f} {}", gaussian_beam.getPA().getValue(), gaussian_beam.getPA().getUnit());
+    return result;
+}
+
+std::string GetQuantityInfo(const casacore::Quantity& quantity) {
+    return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
+}
+
 void SplitString(string& input, char delim, vector<string>& parts) {
     // util to split input string into parts by delimiter
     parts.clear();
