@@ -183,38 +183,26 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                     break;
                             }
                         } else if (cc_file.isRegular(true)) {
-                            if (region_list) {
-                                // List all regular files in region list
+                            // Determine if FITS gz/bz, FITS, or HDF5 file
+                            if (IsCompressedFits(full_path)) { // checks magic number and extension
+                                file_type = CARTA::FileType::FITS;
                                 add_file = true;
                             } else {
-                                // Determine if FITS, HDF5, or FITS gz file
                                 auto magic_number = GetMagicNumber(full_path);
-                                switch (magic_number) {
-                                    case FITS_MAGIC_NUMBER: {
-                                        file_type = CARTA::FileType::FITS;
-                                        add_file = true;
-                                        break;
-                                    }
-                                    case HDF5_MAGIC_NUMBER: {
-                                        file_type = CARTA::FileType::HDF5;
-                                        add_file = true;
-                                        break;
-                                    }
-                                    case BZ_MAGIC_NUMBER:
-                                    case GZ_MAGIC_NUMBER: {
-                                        if (IsCompressedFits(full_path)) {
-                                            file_type = CARTA::FileType::FITS;
-                                            add_file = true;
-                                        }
-                                        break;
-                                    }
-                                    default:
-                                        break;
+                                if (magic_number == FITS_MAGIC_NUMBER) {
+                                    file_type = CARTA::FileType::FITS;
+                                    add_file = true;
+                                } else if (magic_number == HDF5_MAGIC_NUMBER) {
+                                    file_type = CARTA::FileType::HDF5;
+                                    add_file = true;
+                                } else if (region_list) {
+                                    // List all regular files in region list
+                                    add_file = true;
                                 }
                             }
                         }
 
-                        if (add_file) { // add to file list
+                        if (add_file) { // add to file list: name, type, size, date
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
                             FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
@@ -225,6 +213,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     // skip it
                 }
             }
+
             dir_iter++;
 
             // update the progress and get the difference between the current time and start time
