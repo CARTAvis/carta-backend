@@ -13,6 +13,7 @@
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
+#include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
 #include "Timer/ListProgressReporter.h"
 
@@ -129,81 +130,90 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
+
                 try {
-                    bool is_region(false);
-                    if (region_list) {
-                        if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
-                            if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                                CARTA::FileType file_type(GetRegionType(full_path));
-                                if (file_type != CARTA::FileType::UNKNOWN) {
-                                    auto& file_info = *file_list.add_files();
-                                    FillRegionFileInfo(file_info, full_path, file_type);
-                                    is_region = true;
-                                }
-                            }
+                    bool is_region_file(false);
+
+                    if (region_list && cc_file.isRegular(true)) {
+                        CARTA::FileType file_type(GetRegionType(full_path)); // CRTF, DS9, or UNKNOWN
+
+                        if (file_type != CARTA::FileType::UNKNOWN) {
+                            auto& file_info = *file_list.add_files();
+                            FillRegionFileInfo(file_info, full_path, file_type);
+                            is_region_file = true; // Done with file
                         }
                     }
-                    if (!is_region) {
-                        bool add_image(false);
-                        CARTA::FileType file_type;
-                        auto image_type = casacore::ImageOpener::imageType(full_path);
+
+                    if (!is_region_file) {
+                        // Whether to add to file list
+                        bool add_file(false);
+                        CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
+
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                            // Determine if image or directory
+                            auto image_type = CasacoreImageType(full_path);
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
                                 case casacore::ImageOpener::COMPLISTIMAGE: {
                                     file_type = CARTA::FileType::CASA;
-                                    add_image = true;
+                                    add_file = true;
+                                    break;
+                                }
+                                case casacore::ImageOpener::GIPSY:
+                                case casacore::ImageOpener::CAIPS:
+                                case casacore::ImageOpener::NEWSTAR: {
+                                    std::string image_type_msg = fmt::format("{}: image type not supported", name);
+                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                     break;
                                 }
                                 case casacore::ImageOpener::MIRIAD: {
                                     file_type = CARTA::FileType::MIRIAD;
-                                    add_image = true;
+                                    add_file = true;
                                     break;
                                 }
                                 case casacore::ImageOpener::UNKNOWN: {
-                                    // Check if it is a directory and the user has permission to access it
+                                    // UNKNOWN directories are directories
                                     casacore::String dir_name(cc_file.path().baseName());
                                     file_list.add_subdirectories(dir_name);
                                     break;
                                 }
-                                default: {
-                                    std::string image_type_msg = fmt::format(
-                                        "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
-                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                default:
                                     break;
-                                }
                             }
-                        } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            switch (image_type) {
-                                case casacore::ImageOpener::FITS: {
+                        } else if (cc_file.isRegular(true)) {
+                            // Determine if FITS gz/bz, FITS, or HDF5 file
+                            if (IsCompressedFits(full_path)) { // checks magic number and extension
+                                file_type = CARTA::FileType::FITS;
+                                add_file = true;
+                            } else {
+                                auto magic_number = GetMagicNumber(full_path);
+                                if (magic_number == FITS_MAGIC_NUMBER) {
                                     file_type = CARTA::FileType::FITS;
-                                    add_image = true;
-                                    break;
-                                }
-                                case casacore::ImageOpener::HDF5: {
+                                    add_file = true;
+                                } else if (magic_number == HDF5_MAGIC_NUMBER) {
                                     file_type = CARTA::FileType::HDF5;
-                                    add_image = true;
-                                    break;
-                                }
-                                default: {
-                                    file_type = CARTA::FileType::UNKNOWN;
-                                    break;
+                                    add_file = true;
+                                } else if (region_list) {
+                                    // List all regular files in region list
+                                    add_file = true;
                                 }
                             }
                         }
 
-                        if (add_image) { // add image to file list
+                        if (add_file) { // add to file list: name, type, size, date
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
-                            FillFileInfo(file_info, full_path, file_type);
+                            FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
+                            info_loader.FillFileInfo(file_info);
                         }
                     }
                 } catch (casacore::AipsError& err) { // RegularFileIO error
                     // skip it
                 }
             }
+
             dir_iter++;
 
             // update the progress and get the difference between the current time and start time
@@ -223,41 +233,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         file_list.set_message(err.getMesg());
         return;
     }
+
     file_list.set_success(true);
-}
-
-std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageTypes type) { // convert enum to string
-    std::string type_str;
-    switch (type) {
-        case casacore::ImageOpener::GIPSY:
-            type_str = "Gipsy";
-            break;
-        case casacore::ImageOpener::CAIPS:
-            type_str = "Classic AIPS";
-            break;
-        case casacore::ImageOpener::NEWSTAR:
-            type_str = "Newstar";
-            break;
-        case casacore::ImageOpener::IMAGECONCAT:
-            type_str = "ImageConcat";
-            break;
-        case casacore::ImageOpener::IMAGEEXPR:
-            type_str = "ImageExpr";
-            break;
-        case casacore::ImageOpener::COMPLISTIMAGE:
-            type_str = "ComponentListImage";
-            break;
-        default:
-            type_str = "Unknown";
-            break;
-    }
-    return type_str;
-}
-
-bool FileListHandler::FillFileInfo(CARTA::FileInfo& file_info, const string& filename, const CARTA::FileType& file_type) {
-    // fill FileInfo submessage
-    FileInfoLoader info_loader = FileInfoLoader(filename, file_type);
-    return info_loader.FillFileInfo(file_info);
 }
 
 void FileListHandler::OnRegionListRequest(

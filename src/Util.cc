@@ -6,6 +6,7 @@
 
 #include "Util.h"
 
+#include <fitsio.h>
 #include <climits>
 #include <cmath>
 #include <fstream>
@@ -18,6 +19,14 @@
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
+#endif
+
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 using namespace std;
@@ -116,7 +125,20 @@ uint32_t GetMagicNumber(const string& filename) {
         input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
     }
+
     return magic_number;
+}
+
+bool IsCompressedFits(const std::string& filename) {
+    // Check if gzip file, then check .fits extension
+    bool is_fits(false);
+    auto magic_number = GetMagicNumber(filename);
+    if ((magic_number == GZ_MAGIC_NUMBER) || (magic_number == BZ_MAGIC_NUMBER)) {
+        fs::path bgz_path(filename);
+        is_fits = (bgz_path.stem().extension().string() == ".fits");
+    }
+
+    return is_fits;
 }
 
 std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam) {
@@ -166,6 +188,10 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
 
 CARTA::FileType GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
+    if (IsCompressedFits(filename)) {
+        return CARTA::FileType::FITS;
+    }
+
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
         case casacore::ImageOpener::IMAGECONCAT:

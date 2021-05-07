@@ -15,9 +15,6 @@
 #include "TableView.h"
 
 #define MAX_HEADER_SIZE (64 * 1024)
-// Valid for little-endian only
-#define XML_MAGIC_NUMBER 0x6D783F3C
-#define FITS_MAGIC_NUMBER 0x504D4953
 
 namespace carta {
 

@@ -26,18 +26,16 @@ using namespace carta;
 CartaHdf5Image::CartaHdf5Image(
     const std::string& filename, const std::string& array_name, const std::string& hdu, casacore::MaskSpecifier mask_spec)
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
-      _valid(false),
       _pixel_mask(nullptr),
       _mask_spec(mask_spec),
       _lattice(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu) {
     _shape = _lattice.shape();
     _pixel_mask = new casacore::ArrayLattice<bool>();
-    _valid = SetUpImage();
+    SetUpImage();
 }
 
 CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
     : casacore::ImageInterface<float>(other),
-      _valid(other._valid),
       _pixel_mask(nullptr),
       _mask_spec(other._mask_spec),
       _lattice(other._lattice),
@@ -157,9 +155,8 @@ casacore::Bool CartaHdf5Image::doGetMaskSlice(casacore::Array<bool>& buffer, con
 
 // Set up image CoordinateSystem, ImageInfo
 
-bool CartaHdf5Image::SetUpImage() {
+void CartaHdf5Image::SetUpImage() {
     // Set up coordinate system, image info, misc info from image header entries
-    bool valid(false);
     try {
         // convert header entries to FITS header strings
         casacore::Vector<casacore::String> fits_header_strings = Hdf5ToFITSHeaderStrings();
@@ -234,12 +231,11 @@ bool CartaHdf5Image::SetUpImage() {
             }
             misc_info.removeField("simple"); // remove redundant header
             setMiscInfo(misc_info);
-            valid = true;
         }
     } catch (casacore::AipsError& err) {
         spdlog::error("Error opening HDF5 image: {}", err.getMesg());
+        throw(casacore::AipsError("Error opening HDF5 image"));
     }
-    return valid;
 }
 
 casacore::Vector<casacore::String> CartaHdf5Image::Hdf5ToFITSHeaderStrings() {

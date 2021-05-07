@@ -9,21 +9,18 @@
 #include "FileExtInfoLoader.h"
 
 #include <spdlog/fmt/fmt.h>
-// not needed here but *must* include before miriad.h
 #include <spdlog/fmt/ostr.h>
 
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/fits/FITS/hdu.h>
+#include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MFrequency.h>
-#include <casacore/mirlib/miriad.h>
 
-#include "../ImageData/CartaMiriadImage.h"
-#include "../ImageData/FileLoader.h"
+#include "../ImageData/CartaFitsImage.h"
 
 using namespace carta;
 
@@ -39,7 +36,7 @@ bool FileExtInfoLoader::FillFileExtInfo(
 
     // fill header_entries, computed_entries
     bool file_ok(false);
-    if (_loader->CanOpenFile(message)) {
+    if (_loader && _loader->CanOpenFile(message)) {
         file_ok = FillFileInfoFromImage(extended_info, hdu, message);
     }
     return file_ok;
@@ -60,30 +57,35 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     return file_ok;
                 }
 
+                // Name of image class: special cases for FITS
+                casacore::String image_type(image->imageType());
+                bool is_casacore_fits(image_type == "FITSImage");
+                bool is_carta_fits(image_type == "CartaFitsImage");
+
                 casacore::CoordinateSystem coord_sys(image->coordinates());
                 casacore::ImageFITSHeaderInfo fhi;
 
                 bool use_fits_header(false);
-                if (coord_sys.linearAxesNumbers().size() == 2) {
+                if ((coord_sys.linearAxesNumbers().size() == 2) && is_casacore_fits) {
+                    // dummy linear system when there is a wcslib error, get original headers
                     casacore::String filename(image->name());
-                    if (CasacoreImageType(filename) == casacore::ImageOpener::FITS) {
-                        // dummy linear system when there is a wcslib error, get original headers
-                        casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk);
-                        if (!fits_input.err()) {
-                            unsigned int hdu_num(FileInfo::GetFitsHdu(hdu));
-                            for (unsigned int ihdu = 0; ihdu < hdu_num; ++ihdu) {
-                                fits_input.skip_hdu();
-                                if (fits_input.err()) {
-                                    message = "Error advancing to requested hdu.";
-                                    return false;
-                                }
-                            }
+                    casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk);
 
-                            casacore::FitsKeywordList kwlist;
-                            if (GetFitsKwList(fits_input, hdu_num, kwlist)) {
-                                fhi.kw = kwlist;
-                                use_fits_header = true;
+                    if (!fits_input.err()) {
+                        unsigned int hdu_num(FileInfo::GetFitsHdu(hdu));
+
+                        for (unsigned int ihdu = 0; ihdu < hdu_num; ++ihdu) {
+                            fits_input.skip_hdu();
+                            if (fits_input.err()) {
+                                message = "Error advancing to requested hdu.";
+                                return false;
                             }
+                        }
+
+                        casacore::FitsKeywordList kwlist;
+                        if (GetFitsKwList(fits_input, hdu_num, kwlist)) {
+                            fhi.kw = kwlist;
+                            use_fits_header = true;
                         }
                     }
                 }
@@ -186,6 +188,13 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             }
                             case casacore::FITS::LONG: {
                                 int value(fkw->asInt());
+
+                                if ((name.find("BITPIX") != std::string::npos) && (is_casacore_fits || is_carta_fits)) {
+                                    // Convert internal datatype to bitpix value (since always -32 in header conversion)
+                                    value = GetFitsBitpix(image);
+                                    comment.clear();
+                                }
+
                                 std::string string_value = fmt::format("{:d}", value);
 
                                 auto header_entry = extended_info.add_header_entries();
@@ -202,17 +211,17 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             case casacore::FITS::DOUBLE:
                             case casacore::FITS::REAL: {
                                 double value(fkw->asDouble());
-                                std::string header_string;
+                                std::string string_value;
                                 if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
                                     (name.find("EPOCH") != std::string::npos)) {
-                                    header_string = fmt::format("{}", value);
+                                    string_value = fmt::format("{}", value);
                                 } else {
-                                    header_string = fmt::format("{:.12E}", value);
+                                    string_value = fmt::format("{:.12E}", value);
                                 }
 
                                 auto header_entry = extended_info.add_header_entries();
                                 header_entry->set_name(name);
-                                *header_entry->mutable_value() = header_string;
+                                *header_entry->mutable_value() = string_value;
                                 header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                                 header_entry->set_numeric_value(value);
                                 header_entry->set_comment(comment);
@@ -852,4 +861,48 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
     if (names.count(coord_name2)) {
         coord_name2 = names[coord_name2];
     }
+}
+
+int FileExtInfoLoader::GetFitsBitpix(casacore::ImageInterface<float>* image) {
+    // Use FITS data type to set bitpix
+    int bitpix(-32);
+    casacore::DataType data_type(casacore::DataType::TpFloat);
+
+    if (image->imageType() == "FITSImage") {
+        casacore::FITSImage* fits_image = dynamic_cast<casacore::FITSImage*>(image);
+        if (fits_image) {
+            data_type = fits_image->internalDataType();
+        }
+    } else {
+        carta::CartaFitsImage* fits_image = dynamic_cast<carta::CartaFitsImage*>(image);
+        if (fits_image) {
+            data_type = fits_image->internalDataType();
+        }
+    }
+
+    switch (data_type) {
+        case casacore::DataType::TpUChar:
+            bitpix = 8;
+            break;
+        case casacore::DataType::TpShort:
+            bitpix = 16;
+            break;
+        case casacore::DataType::TpInt:
+            bitpix = 32;
+            break;
+        case casacore::DataType::TpInt64:
+            bitpix = 64;
+            break;
+        case casacore::DataType::TpFloat:
+            bitpix = -32;
+            break;
+        case casacore::DataType::TpDouble:
+            bitpix = -64;
+            break;
+        default:
+            bitpix = -32;
+            break;
+    }
+
+    return bitpix;
 }

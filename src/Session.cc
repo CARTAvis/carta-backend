@@ -154,8 +154,9 @@ void Session::ConnectCalled() {
 // File browser info
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-    const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message) {
-    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu_name supplied and FITS image
+    const std::string& folder, const std::string& filename, const std::string& hdu_key, std::string& message) {
+    // Fill CARTA::FileInfo and CARTA::FileInfoExtended
+    // Map all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
 
     try {
@@ -174,30 +175,28 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             return file_info_ok;
         }
 
-        // Extended file info in response is map<hdu_name, FileInfoExtended>
+        // Extended file info in response is map<hdu_key, FileInfoExtended>
         std::vector<std::string> hdu_list;
-        if (hdu_name.empty()) {
+        if (hdu_key.empty()) {
             if (file_info.type() == CARTA::FileType::FITS) {
-                // Get list of HDUs; FITS hdus moved to file info response
+                // Get list of HDUs for file info response map
                 FitsHduList fits_hdu_list = FitsHduList(full_name);
-                fits_hdu_list.GetHduList(hdu_list);
+                fits_hdu_list.GetHduList(hdu_list, message);
+
                 if (hdu_list.empty()) { // FitsHduList failed
-                    message = fmt::format("Failed to determine HDU info for {}.", filename);
                     return file_info_ok;
-                } else {
-                    hdu_list.push_back(hdu_list[0]);
                 }
             } else if (file_info.hdu_list_size() > 0) {
                 hdu_list.push_back(file_info.hdu_list(0)); // use first
             }
         } else {
-            hdu_list.push_back(hdu_name);
+            hdu_list.push_back(hdu_key);
         }
 
         _loader.reset(carta::FileLoader::GetLoader(full_name));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
-        // FileExtendedInfo for each hdu_name
+        // FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
 
@@ -324,6 +323,9 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     if (success) {
         // add extended info map to message
         *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+    } else {
+        // log error
+        spdlog::error(message);
     }
 
     // complete response message
