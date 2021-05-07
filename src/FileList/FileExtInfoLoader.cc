@@ -155,8 +155,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
 
                     // Get the stokes coordinate number
-                    casacore::String key_world = fkw->asString();
-                    if (casacore::String(key_world).find("STOKES") != casacore::String::npos) {
+                    casacore::String keyword = fkw->asString();
+                    std::transform(keyword.begin(), keyword.end(), keyword.begin(), [](unsigned char c) { return std::tolower(c); });
+                    if (casacore::String(keyword).find("stokes") != casacore::String::npos) {
                         stokes_coord_type_num = name.back();
                     }
 
