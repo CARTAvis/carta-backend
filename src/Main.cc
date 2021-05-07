@@ -701,8 +701,7 @@ int main(int argc, char* argv[]) {
                 }
                 if (!settings.no_browser) {
                     if (settings.browser.size() > 0) {
-                        auto cmd = settings.ParseBrowserCommand(frontend_url);
-                        spdlog::info("open with {}", cmd);
+                        auto cmd = settings.GenerateBrowserCommand(frontend_url);
                         auto cmd_result = system(cmd.c_str());
                         if (cmd_result) {
                             spdlog::warn("Failed to open the browser. Check the custom input at --browser.");

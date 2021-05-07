@@ -102,8 +102,8 @@ struct ProgramSettings {
         debug_msgs.clear();
     }
 
-    std::string ParseBrowserCommand(const std::string& url) {
-        const std::string wildcard = "%url";
+    std::string GenerateBrowserCommand(const std::string& url) {
+        const std::string wildcard = "CARTA_URL";
         auto wildcard_pos = browser.find(wildcard);
         std::string cmd;
         if (wildcard_pos != std::string::npos) {
