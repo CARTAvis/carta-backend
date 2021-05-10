@@ -137,6 +137,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
+        ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<int>(), "<port>")
         ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
@@ -197,6 +198,11 @@ written to a separate log file, '{}/log/performance.log'.
 Options are provided to shut the backend down automatically if it is idle (if no 
 clients are connected), and to kill frontend sessions that are idle (no longer 
 sending messages to the backend).
+
+Disabling the browser takes precedence over a custom browser command. The custom 
+browser command may contain the placeholder CARTA_URL, which will be replaced by 
+the frontend URL. If the placeholder is omitted, the URL will be appended to the 
+end.
 )",
         CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
@@ -237,6 +243,8 @@ sending messages to the backend).
     applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
     applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
+
+    applyOptionalArgument(browser, "browser", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
