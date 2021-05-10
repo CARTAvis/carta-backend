@@ -37,6 +37,8 @@ private:
 
     // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
+
+    // Header entries
     void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
         const std::string& hdu, CARTA::FileInfoExtended& extended_info, std::string& radesys);
 

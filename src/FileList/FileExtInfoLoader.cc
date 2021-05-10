@@ -137,6 +137,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 bool is_casacore_fits(image_type == "FITSImage");
                 bool is_carta_fits(image_type == "CartaFitsImage");
 
+                int bitpix(0);
+                if (is_casacore_fits || is_carta_fits) {
+                    bitpix = GetFitsBitpix(image);
+                }
+
                 casacore::CoordinateSystem coord_sys(image->coordinates());
                 casacore::ImageFITSHeaderInfo fhi;
 
@@ -183,18 +188,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 }
 
-                // Set bitpix to header value
-                int bitpix(0);
-                if (is_casacore_fits || is_carta_fits) {
-                    bitpix = GetFitsBitpix(image);
-                }
-
                 casacore::String radesys; // Save from FITS headers to add to computed entries in order
                 FitsHeaderInfoToHeaderEntries(fhi, using_image_header, bitpix, hdu, extended_info, radesys);
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
-                    // Report rendered image axes (not always 0 and 1)
+                    // Computed entries for rendered image axes (not always 0 and 1)
                     std::vector<int> render_axes;
                     _loader->GetRenderAxes(render_axes);
 
@@ -297,7 +296,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                     int value(fkw->asInt());
 
                     if ((name.find("BITPIX") != std::string::npos) && (bitpix != 0)) {
-                        // Convert internal datatype to bitpix value (since always -32 in header conversion)
+                        // Use internal datatype for bitpix value (since always -32 in header conversion)
                         value = bitpix;
                         comment.clear();
                     }
