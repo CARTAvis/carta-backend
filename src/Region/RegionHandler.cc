@@ -680,7 +680,6 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 
         // Create LCBox with z range and stokes using a slicer
         casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes);
-        casacore::LCBox z_stokes_box(z_stokes_slicer, image_shape);
 
         // Set returned region
         // Combine applied region with z/stokes box
@@ -805,15 +804,17 @@ bool RegionHandler::GetRegionHistogramData(
     int z(_frames.at(file_id)->CurrentZ());
     AxisRange z_range(z);
 
+    // Stokes type to be determined in each of histogram configs
+    int stokes;
+
     // Flags for calculations
-    bool have_region_data(false);
     bool have_basic_stats(false);
 
     // Reuse the image region for each histogram
     casacore::ImageRegion region;
 
-    // Reuse data and stats for each histogram; results depend on num_bins
-    std::vector<float> data;
+    // Reuse data with respect to stokes and stats for each histogram; results depend on num_bins
+    std::unordered_map<int, std::vector<float>> data;
     BasicStats<float> stats;
 
     for (auto& hist_config : configs) {
@@ -823,7 +824,6 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Get stokes index
-        int stokes;
         if (!_frames.at(file_id)->GetStokesTypeIndex(hist_config.coordinate, stokes)) {
             continue;
         }
@@ -876,22 +876,22 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Calculate stats and/or histograms, not in cache
         // Get data in region
-        if (!have_region_data) {
-            have_region_data = _frames.at(file_id)->GetRegionData(region, data);
-            if (!have_region_data) {
+        if (!data.count(stokes)) {
+            if (!_frames.at(file_id)->GetRegionData(region, data[stokes])) {
+                spdlog::error("Failed to get data in the region!");
                 return false;
             }
         }
 
         // Calculate and cache stats
         if (!have_basic_stats) {
-            CalcBasicStats(data, stats);
+            CalcBasicStats(data[stokes], stats);
             _histogram_cache[cache_id].SetBasicStats(stats);
             have_basic_stats = true;
         }
 
         // Calculate and cache histogram for number of bins
-        Histogram histo = CalcHistogram(num_bins, stats, data);
+        Histogram histo = CalcHistogram(num_bins, stats, data[stokes]);
         _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
