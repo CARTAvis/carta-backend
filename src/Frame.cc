@@ -593,27 +593,24 @@ bool Frame::FillRegionHistogramData(
         histogram_data.set_region_id(region_id);
         histogram_data.set_progress(1.0);
 
-        // set value for single z
+        // Set channel
         int z = histogram_config.channel;
         if ((z == CURRENT_Z) || (Depth() == 1)) {
             z = CurrentZ();
         }
+        histogram_data.set_channel(z);
 
         // Use number of bins in requirements
         int num_bins = histogram_config.num_bins;
 
-        // Histogram submessage for this config
-        auto histogram = histogram_data.add_histograms();
-        histogram->set_channel(z);
-
-        // Get stokes index
+        // Set stokes
         if (!GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
             continue;
         }
-
         histogram_data.set_stokes(stokes);
 
         // fill histogram submessage from cache (loader or local)
+        auto* histogram = histogram_data.mutable_histograms();
         bool histogram_filled = FillHistogramFromCache(z, stokes, num_bins, histogram);
 
         if (!histogram_filled) {

@@ -833,13 +833,13 @@ bool RegionHandler::GetRegionHistogramData(
         histogram_message.set_file_id(file_id);
         histogram_message.set_region_id(region_id);
         histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
+        histogram_message.set_channel(z);
         histogram_message.set_stokes(stokes);
 
         // Get image region
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
             // region outside image, send default histogram
-            auto default_histogram = histogram_message.add_histograms();
-            default_histogram->set_channel(z);
+            auto* default_histogram = histogram_message.mutable_histograms();
             default_histogram->set_num_bins(1);
             default_histogram->set_bin_width(0.0);
             default_histogram->set_first_bin_center(0.0);
@@ -866,8 +866,7 @@ bool RegionHandler::GetRegionHistogramData(
             if (have_basic_stats) {
                 carta::Histogram hist;
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
-                    auto histogram = histogram_message.add_histograms();
-                    histogram->set_channel(z);
+                    auto* histogram = histogram_message.mutable_histograms();
                     FillHistogramFromResults(histogram, stats, hist);
                     continue;
                 }
@@ -895,8 +894,7 @@ bool RegionHandler::GetRegionHistogramData(
         _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
-        auto histogram = histogram_message.add_histograms();
-        histogram->set_channel(z);
+        auto* histogram = histogram_message.mutable_histograms();
         FillHistogramFromResults(histogram, stats, histo);
 
         // Fill in the final result
