@@ -1428,29 +1428,29 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
         return data_sent;
     }
 
+    auto region_histogram_data_callback = [&](CARTA::RegionHistogramData histogram_data) {
+        if (histogram_data.histograms_size() > 0) {
+            SendFileEvent(histogram_data.file_id(), CARTA::EventType::REGION_HISTOGRAM_DATA, 0, histogram_data);
+            data_sent = true;
+        }
+    };
+
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region histogram
-        data_sent = _region_handler->FillRegionHistogramData(
-            [&](CARTA::RegionHistogramData histogram_data) {
-                if (histogram_data.histograms_size() > 0) {
-                    SendFileEvent(histogram_data.file_id(), CARTA::EventType::REGION_HISTOGRAM_DATA, 0, histogram_data);
-                }
-            },
-            region_id, file_id);
+        data_sent = _region_handler->FillRegionHistogramData(region_histogram_data_callback, region_id, file_id);
     } else if (region_id < CURSOR_REGION_ID) {
         // Image or cube histogram
         if (_frames.count(file_id)) {
-            CARTA::RegionHistogramData histogram_data;
-            histogram_data.set_file_id(file_id);
-            histogram_data.set_region_id(region_id);
-            if (_frames.at(file_id)->FillRegionHistogramData(region_id, histogram_data)) {
-                SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, 0, histogram_data);
-                data_sent = true;
-            } else if (region_id == CUBE_REGION_ID) { // not in cache, calculate cube histogram
+            if (region_id == CUBE_REGION_ID) { // not in cache, calculate cube histogram
+                CARTA::RegionHistogramData histogram_data;
+                histogram_data.set_file_id(file_id);
+                histogram_data.set_region_id(region_id);
                 if (CalculateCubeHistogram(file_id, histogram_data)) {
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, 0, histogram_data);
                     data_sent = true;
                 }
+            } else {
+                _frames.at(file_id)->FillRegionHistogramData(region_histogram_data_callback, region_id, file_id);
             }
         }
     } else {

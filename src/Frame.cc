@@ -568,14 +568,12 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
     return true;
 }
 
-bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& histogram_data) {
+bool Frame::FillRegionHistogramData(
+    std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id) {
     // fill histogram message for image plane or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
     }
-
-    // fill common message fields
-    histogram_data.set_progress(1.0);
 
     std::vector<HistogramConfig> requirements;
     if (region_id == IMAGE_REGION_ID) {
@@ -584,9 +582,16 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
         requirements = _cube_histogram_configs;
     }
 
+    int stokes;
     bool have_valid_histogram(false);
     for (auto& histogram_config : requirements) {
         auto t_start_image_histogram = std::chrono::high_resolution_clock::now();
+
+        // create and fill region histogram data message
+        CARTA::RegionHistogramData histogram_data;
+        histogram_data.set_file_id(file_id);
+        histogram_data.set_region_id(region_id);
+        histogram_data.set_progress(1.0);
 
         // set value for single z
         int z = histogram_config.channel;
@@ -602,7 +607,6 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
         histogram->set_channel(z);
 
         // Get stokes index
-        int stokes;
         if (!GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
             continue;
         }
@@ -625,6 +629,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
                     FillHistogramFromResults(histogram, stats, hist);
+                    region_histogram_callback(histogram_data); // send region histogram data message
                 }
             }
 
@@ -1787,7 +1792,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
             return false;
         }
     } else {
-        stokes_index = CurrentStokes(); // current stokes
+        stokes_index = CurrentStokes(); // get current stokes
     }
     return true;
 }
