@@ -60,23 +60,14 @@ public:
     // type is a string that starts with "g" (gaussian), "b" (boxcar), or "h" (hanning), and is case insensitive
     void SetKernel(
         const casacore::String& type, const casacore::Quantity& major, const casacore::Quantity& minor, const casacore::Quantity& pa);
-    void SetScale(casacore::Double scale_factor) {
-        _scale = scale_factor;
-    }
     void SetAxes(const std::pair<casacore::uInt, casacore::uInt>& axes);
-    // void SetTargetRes(casacore::Bool target_res) {
-    //    _target_res = target_res;
-    //}
-
     void StopCalculation();
-
     casacore::uInt GetTotalSteps() {
         return _total_steps;
     }
 
 private:
     casacore::VectorKernel::KernelTypes _type;
-    casacore::Double _scale;
     casacore::Quantity _major, _minor, _pa;
     casacore::IPosition _axes;
     volatile bool _stop;                           // used for cancellation
@@ -95,7 +86,7 @@ private:
     Double DealWithRestoringBeam(casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out,
         const casacore::Array<Double>& kernel_array, Double kernel_volume, const casacore::VectorKernel::KernelTypes kernelType,
         const casacore::Vector<casacore::Quantity>& parameters, const casacore::CoordinateSystem& csys,
-        const casacore::GaussianBeam& beam_in, const casacore::Unit& brightness_unit_in, casacore::Bool emit_message) const;
+        const casacore::GaussianBeam& beam_in, const casacore::Unit& brightness_unit_in) const;
 
     void DoMultipleBeams(ImageInfo& image_info_out, Double& kernel_volume, SPIIT image_out, String& brightness_unit_out,
         GaussianBeam& beam_out, Double factor1, const ImageInterface<T>& image_in, const std::vector<Quantity>& original_parms,

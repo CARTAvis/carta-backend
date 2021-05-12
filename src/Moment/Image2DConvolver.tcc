@@ -20,7 +20,6 @@ Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const casacore::Record
     const casacore::String& out_name, const casacore::Bool overwrite, casa::ImageMomentsProgress* progress_monitor)
     : _image(image),
       _type(casacore::VectorKernel::GAUSSIAN),
-      _scale(0),
       _major(),
       _minor(),
       _pa(),
@@ -62,7 +61,6 @@ void Image2DConvolver<T>::SetAxes(const std::pair<casacore::uInt, casacore::uInt
     if (_axes.size() != 2) {
         _axes.resize(2, false);
     }
-
     _axes[0] = axes.first;
     _axes[1] = axes.second;
 }
@@ -156,14 +154,11 @@ void Image2DConvolver<T>::Convolve(
     casacore::Double factor1 = -1;
     double pixel_area = 0;
 
-    auto auto_scale = (_scale <= 0);
-    if (auto_scale) {
-        auto brightness_unit_up = brightness_unit.getName();
-        brightness_unit_up.upcase();
-        log_factors = brightness_unit_up.contains("/BEAM");
-        if (log_factors) {
-            pixel_area = csys.directionCoordinate().getPixelArea().getValue("arcsec*arcsec");
-        }
+    auto brightness_unit_up = brightness_unit.getName();
+    brightness_unit_up.upcase();
+    log_factors = brightness_unit_up.contains("/BEAM");
+    if (log_factors) {
+        pixel_area = csys.directionCoordinate().getPixelArea().getValue("arcsec*arcsec");
     }
 
     if (image_info.hasMultipleBeams()) {
@@ -214,7 +209,7 @@ void Image2DConvolver<T>::DoSingleBeam(casacore::ImageInfo& image_info_out, casa
 
     const CoordinateSystem& csys = image_in.coordinates();
     auto scale_factor = DealWithRestoringBeam(
-        brightness_unit_out, beam_out, kernel, kernel_volume, kernel_type, kernel_parms, csys, input_beam, image_in.units(), true);
+        brightness_unit_out, beam_out, kernel, kernel_volume, kernel_type, kernel_parms, csys, input_beam, image_in.units());
 
     string message = "Scaling pixel values by ";
 
@@ -355,8 +350,8 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
 
         casacore::TempImage<T> sub_image_out(sub_image.shape(), sub_image.coordinates());
         if (do_convolve) {
-            auto scale_factor = DealWithRestoringBeam(brightness_unit_out, beam_out, kernel, kernel_volume, kernel_type, kernel_parms,
-                sub_csys, input_beam, image_in.units(), i == 0);
+            auto scale_factor = DealWithRestoringBeam(
+                brightness_unit_out, beam_out, kernel, kernel_volume, kernel_type, kernel_parms, sub_csys, input_beam, image_in.units());
             {
                 string message("Scaling pixel values by ");
                 if (log_factors) {
@@ -463,7 +458,7 @@ template <class T>
 Double Image2DConvolver<T>::DealWithRestoringBeam(casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out,
     const casacore::Array<Double>& kernel_array, casacore::Double kernel_volume, const casacore::VectorKernel::KernelTypes,
     const casacore::Vector<casacore::Quantity>& parameters, const casacore::CoordinateSystem& csys, const casacore::GaussianBeam& beam_in,
-    const casacore::Unit& brightness_unit_in, casacore::Bool emit_message) const {
+    const casacore::Unit& brightness_unit_in) const {
     // Find out if convolution axes hold the sky. Scaling from Jy/beam and Jy/pixel only really makes sense if this is true
     casacore::Bool holdsOneSkyAxis;
     auto has_sky = casacore::CoordinateUtil::holdsSky(holdsOneSkyAxis, csys, _axes.asVector());
@@ -496,17 +491,14 @@ Double Image2DConvolver<T>::DealWithRestoringBeam(casacore::String& brightness_u
         }
     }
 
-    if (emit_message) {
-        string tmp = (has_sky ? "" : "not");
-        spdlog::debug("You are {} convolving the sky", tmp);
-    }
+    string tmp = (has_sky ? "" : "not");
+    spdlog::debug("You are {} convolving the sky", tmp);
 
     beam_out = casacore::GaussianBeam();
     auto brightness_unit_in_upcase = casacore::upcase(brightness_unit_in.getName());
     const auto& ref_pix = csys.referencePixel();
     casacore::Double scale_factor = 1;
     brightness_unit_out = brightness_unit_in.getName();
-    auto auto_scale = _scale <= 0;
 
     if (has_sky && brightness_unit_in_upcase.contains("/PIXEL")) {
         // Easy case. Peak of convolution kernel must be unity and output units are Jy/beam. All other cases require numerical convolution
@@ -531,12 +523,6 @@ Double Image2DConvolver<T>::DealWithRestoringBeam(casacore::String& brightness_u
         }
 
         beam_out = casacore::GaussianBeam(maj_axis, min_axis, parameters(2));
-
-        // casacore::Input p.a. is positive N->E
-        if (!auto_scale) {
-            scale_factor = _scale;
-            spdlog::warn("Autoscaling is recommended for Jy/pixel convolution.");
-        }
     } else {
         // Is there an input restoring beam and are we convolving the sky to which it pertains?  If not, all we can do is use user scaling
         // or normalize the convolution kernel to unit volume.  There is no point to convolving the input beam either as it pertains only to
@@ -576,7 +562,7 @@ Double Image2DConvolver<T>::DealWithRestoringBeam(casacore::String& brightness_u
 
             // Scale kernel
             auto max_val_out = max(beam_matrix_out);
-            scale_factor = auto_scale ? 1 / max_val_out : _scale;
+            scale_factor = 1 / max_val_out;
 
             casacore::Fit2D fitter(*_log);
             const casacore::uInt n = beam_matrix_out.shape()(0);
@@ -607,12 +593,8 @@ Double Image2DConvolver<T>::DealWithRestoringBeam(casacore::String& brightness_u
                 scale_factor *= beam_in.getArea("arcsec2") / beam_out.getArea("arcsec2");
             }
         } else {
-            if (auto_scale) {
-                // Conserve flux is the best we can do
-                scale_factor = 1 / kernel_volume;
-            } else {
-                scale_factor = _scale;
-            }
+            // Conserve flux is the best we can do
+            scale_factor = 1 / kernel_volume;
         }
     }
 
