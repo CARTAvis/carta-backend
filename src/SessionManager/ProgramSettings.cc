@@ -140,6 +140,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<int>(), "<port>")
+        ("starting_port", "Set the startign port to listen at", cxxopts::value<int>(), "<starting port>")
         ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
@@ -236,6 +237,7 @@ end.
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
     applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
+    applyOptionalArgument(starting_port, "starting_port", result);
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
