@@ -638,11 +638,12 @@ int main(int argc, char* argv[]) {
         bool port_ok(false);
 
         if (settings.port < 0) {
-            settings.port = DEFAULT_SOCKET_PORT;
+            settings.port = settings.starting_port > 0 ? settings.starting_port : DEFAULT_SOCKET_PORT;
             int num_listen_retries(0);
             while (!port_ok) {
                 if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
-                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, settings.port - 1);
+                    spdlog::error("Unable to listen on the port range {}-{}!",
+                        settings.starting_port > 0 ? settings.starting_port : DEFAULT_SOCKET_PORT, settings.port - 1);
                     break;
                 }
                 app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
