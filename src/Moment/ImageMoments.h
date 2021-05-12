@@ -31,7 +31,7 @@ public:
     ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor,
         casacore::Bool over_write_output = false);
 
-    ~ImageMoments(){};
+    ~ImageMoments() = default;
 
     casacore::Bool setMomentAxis(const Int moment_axis);
 

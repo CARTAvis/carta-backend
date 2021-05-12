@@ -77,11 +77,11 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
 
         // set parameters for the image 2D convolver
         auto dir_axes = _image->coordinates().directionAxesNumbers();
-        _image_2d_convolver->setAxes(std::make_pair(dir_axes[0], dir_axes[1]));
-        _image_2d_convolver->setKernel("gaussian", max_beam.getMajor(), max_beam.getMinor(), max_beam.getPA(true));
-        _image_2d_convolver->setScale(-1);
-        _image_2d_convolver->setTargetRes(true);
-        auto image_copy = _image_2d_convolver->convolve();                  // do long calculation
+        _image_2d_convolver->SetAxes(std::make_pair(dir_axes[0], dir_axes[1]));
+        _image_2d_convolver->SetKernel("gaussian", max_beam.getMajor(), max_beam.getMinor(), max_beam.getPA(true));
+        _image_2d_convolver->SetScale(-1);
+        _image_2d_convolver->SetTargetRes(true);
+        auto image_copy = _image_2d_convolver->DoConvolve();                  // do long calculation
         _steps_for_beam_convolution = _image_2d_convolver->GetTotalSteps(); // set number of steps have done for the beam convolution
 
         // Replace the input image pointer with the convolved image pointer and proceed using the convolved image as if it were the input
