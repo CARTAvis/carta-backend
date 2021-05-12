@@ -120,8 +120,6 @@ void Image2DConvolver<T>::Convolve(
     ThrowIf(!in_shape.isEqual(out_shape), "Input and output images must have the same shape");
 
     // Generate Kernel Array (height unity)
-    ThrowIf(_target_res && kernel_type != casacore::VectorKernel::GAUSSIAN, "targetres can only be true for a Gaussian convolving kernel");
-
     // maybe can remove this comment if I'm smart enough kernel needs to be type T because ultimately we use ImageConvolver which requires
     // the kernel and input image to be of the same type. This is kind of stupid because our kernels are always real-valued, and we use
     // Fit2D which requires a real-valued kernel, so it seems we could support complex valued images and real valued kernels if
@@ -131,10 +129,6 @@ void Image2DConvolver<T>::Convolve(
     // initialize to avoid compiler warning, kernel_volume will always be set to something reasonable below before it is used.
     casacore::Double kernel_volume = -1;
     std::vector<casacore::Quantity> original_parms{_major, _minor, _pa};
-
-    if (!_target_res) {
-        kernel_volume = MakeKernel(kernel, kernel_type, original_parms, image_in);
-    }
 
     const auto& csys = image_in.coordinates();
     if (_major.getUnit().startsWith("pix")) {
@@ -169,10 +163,6 @@ void Image2DConvolver<T>::Convolve(
         log_factors = brightness_unit_up.contains("/BEAM");
         if (log_factors) {
             pixel_area = csys.directionCoordinate().getPixelArea().getValue("arcsec*arcsec");
-            if (!_target_res) {
-                casacore::GaussianBeam kernel_beam(kernel_parms);
-                factor1 = pixel_area / kernel_beam.getArea("arcsec*arcsec");
-            }
         }
     }
 
@@ -216,13 +206,11 @@ void Image2DConvolver<T>::DoSingleBeam(casacore::ImageInfo& image_info_out, casa
     casacore::Double factor1, casacore::Double pixel_area) const {
     GaussianBeam input_beam = image_in.imageInfo().restoringBeam();
 
-    if (_target_res) {
-        kernel_parms = GetConvolvingBeamForTargetResolution(original_parms, input_beam);
-        spdlog::debug("Convolving image that has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-            GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_parms)), GetGaussianInfo(GaussianBeam(original_parms)));
+    kernel_parms = GetConvolvingBeamForTargetResolution(original_parms, input_beam);
+    spdlog::debug("Convolving image that has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
+        GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_parms)), GetGaussianInfo(GaussianBeam(original_parms)));
 
-        kernel_volume = MakeKernel(kernel, kernel_type, kernel_parms, image_in);
-    }
+    kernel_volume = MakeKernel(kernel, kernel_type, kernel_parms, image_in);
 
     const CoordinateSystem& csys = image_in.coordinates();
     auto scale_factor = DealWithRestoringBeam(
@@ -231,10 +219,8 @@ void Image2DConvolver<T>::DoSingleBeam(casacore::ImageInfo& image_info_out, casa
     string message = "Scaling pixel values by ";
 
     if (log_factors) {
-        if (_target_res) {
-            casacore::GaussianBeam kernelBeam(kernel_parms);
-            factor1 = pixel_area / kernelBeam.getArea("arcsec*arcsec");
-        }
+        casacore::GaussianBeam kernelBeam(kernel_parms);
+        factor1 = pixel_area / kernelBeam.getArea("arcsec*arcsec");
         casacore::Double factor2 = beam_out.getArea("arcsec*arcsec") / input_beam.getArea("arcsec*arcsec");
         message += fmt::format(
             "inverse of area of convolution kernel in pixels ({:.6f}) times the ratio of the beam areas ({:.6f}) = ", factor1, factor2);
@@ -243,7 +229,7 @@ void Image2DConvolver<T>::DoSingleBeam(casacore::ImageInfo& image_info_out, casa
     message += fmt::format("{:.6f}", scale_factor);
     spdlog::debug(message);
 
-    if (_target_res && casacore::near(beam_out.getMajor(), beam_out.getMinor(), 1e-7)) {
+    if (casacore::near(beam_out.getMajor(), beam_out.getMinor(), 1e-7)) {
         // circular beam should have same PA as given by user if targetres
         beam_out.setPA(original_parms[2]);
     }
@@ -299,10 +285,8 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
     casacore::Int channel = -1;
     casacore::Int polarization = -1;
 
-    if (_target_res) {
-        image_info_out.removeRestoringBeam();
-        image_info_out.setRestoringBeam(casacore::GaussianBeam(kernel_parms));
-    }
+    image_info_out.removeRestoringBeam();
+    image_info_out.setRestoringBeam(casacore::GaussianBeam(kernel_parms));
 
     casacore::uInt count = (nchan > 0 && npol > 0) ? nchan * npol : nchan > 0 ? nchan : npol;
 
@@ -344,34 +328,30 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
         auto input_beam = image_in.imageInfo().restoringBeam(channel, polarization);
         bool do_convolve(true);
 
-        if (_target_res) {
-            string message;
-
-            if (channel >= 0) {
-                message += fmt::format("Channel {} of {}", channel, nchan);
-                if (polarization >= 0) {
-                    message += ", ";
-                }
-            }
+        string message;
+        if (channel >= 0) {
+            message += fmt::format("Channel {} of {}", channel, nchan);
             if (polarization >= 0) {
-                message += fmt::format("Polarization {} of {}", polarization, npol);
+                message += ", ";
             }
-
-            message += " ";
-
-            if (casacore::near(input_beam, GaussianBeam(original_parms), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
-                do_convolve = false;
-                message += fmt::format("Input beam is already near target resolution so this plane will not be convolved.");
-            } else {
-                kernel_parms = GetConvolvingBeamForTargetResolution(original_parms, input_beam);
-                kernel_volume = MakeKernel(kernel, kernel_type, kernel_parms, image_in);
-                message += fmt::format(": Convolving image which has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-                    GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_parms)),
-                    GetGaussianInfo(GaussianBeam(original_parms)));
-            }
-
-            spdlog::debug(message);
         }
+        if (polarization >= 0) {
+            message += fmt::format("Polarization {} of {}", polarization, npol);
+        }
+
+        message += " ";
+
+        if (casacore::near(input_beam, GaussianBeam(original_parms), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
+            do_convolve = false;
+            message += fmt::format("Input beam is already near target resolution so this plane will not be convolved.");
+        } else {
+            kernel_parms = GetConvolvingBeamForTargetResolution(original_parms, input_beam);
+            kernel_volume = MakeKernel(kernel, kernel_type, kernel_parms, image_in);
+            message += fmt::format(": Convolving image which has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
+                GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_parms)), GetGaussianInfo(GaussianBeam(original_parms)));
+        }
+
+        spdlog::debug(message);
 
         casacore::TempImage<T> sub_image_out(sub_image.shape(), sub_image.coordinates());
         if (do_convolve) {
@@ -380,10 +360,8 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
             {
                 string message("Scaling pixel values by ");
                 if (log_factors) {
-                    if (_target_res) {
-                        casacore::GaussianBeam kernelBeam(kernel_parms);
-                        factor1 = pixel_area / kernelBeam.getArea("arcsec*arcsec");
-                    }
+                    casacore::GaussianBeam kernelBeam(kernel_parms);
+                    factor1 = pixel_area / kernelBeam.getArea("arcsec*arcsec");
                     auto factor2 = beam_out.getArea("arcsec*arcsec") / input_beam.getArea("arcsec*arcsec");
                     message += fmt::format(
                         "inverse of area of convolution kernel in pixels ({:.6f})  times the ratio of the beam areas ({:.6f}) = ", factor1,
@@ -402,7 +380,7 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
                 spdlog::debug(message);
             }
 
-            if (_target_res && casacore::near(beam_out.getMajor(), beam_out.getMinor(), 1e-7)) {
+            if (casacore::near(beam_out.getMajor(), beam_out.getMinor(), 1e-7)) {
                 // circular beam should have same PA as given by user if targetres
                 beam_out.setPA(original_parms[2]);
             }
@@ -439,10 +417,6 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
                 }
                 out_pos = out_pos + tmp_cursor_shape;
             }
-        }
-
-        if (!_target_res) {
-            image_info_out.setBeam(channel, polarization, beam_out);
         }
     }
 }

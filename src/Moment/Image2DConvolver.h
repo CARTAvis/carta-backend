@@ -64,9 +64,9 @@ public:
         _scale = scale_factor;
     }
     void SetAxes(const std::pair<casacore::uInt, casacore::uInt>& axes);
-    void SetTargetRes(casacore::Bool target_res) {
-        _target_res = target_res;
-    }
+    // void SetTargetRes(casacore::Bool target_res) {
+    //    _target_res = target_res;
+    //}
 
     void StopCalculation();
 
@@ -79,7 +79,6 @@ private:
     casacore::Double _scale;
     casacore::Quantity _major, _minor, _pa;
     casacore::IPosition _axes;
-    casacore::Bool _target_res = casacore::False;
     volatile bool _stop;                           // used for cancellation
     casa::ImageMomentsProgress* _progress_monitor; // used to report the progress
     mutable casacore::uInt _total_steps = 0;       // total number of steps for the beam convolution
