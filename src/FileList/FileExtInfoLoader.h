@@ -32,25 +32,23 @@ public:
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
 
 private:
-    // FITS HDU extensions include name
-    void StripHduName(std::string& hdu);
-
-    // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
+    void StripHduName(std::string& hdu); // remove extension name
 
     // Header entries
-    void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
-        const std::string& hdu, CARTA::FileInfoExtended& extended_info, std::string& radesys);
+    void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix, const std::string& hdu,
+        CARTA::FileInfoExtended& extended_info);
 
-    // Image shape, nchannels, nstokes
-    void AddShapeEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info, std::vector<int>& render_axes);
+    // Image shape, nchannels, nstokes entries
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
         int stokes_axis, const std::vector<int>& render_axes);
 
-    // Info about xy axes
+    // Computed entries for direction and spectral axes
+    void AddInitialComputedEntries(
+        const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::vector<int>& render_axes);
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-        const std::vector<int>& display_axes, casacore::String& radesys, bool using_image_header);
-    void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, std::string& radesys);
+        const std::vector<int>& display_axes, bool using_image_header);
+    void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes);
 
     // FITS keyword conversion
     bool GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist);

@@ -24,6 +24,14 @@
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace carta;
 
 FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {}
@@ -33,6 +41,9 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
     // Fill map with FileInfoExtended for all FITS image HDUs
     bool map_ok(false);
 
+    fs::path filepath(filename);
+    std::string filename_nopath = filepath.filename().string();
+
     if (IsCompressedFits(filename)) {
         CompressedFits cfits(filename);
         if (!cfits.GetFitsHeaderInfo(hdu_info_map)) {
@@ -40,22 +51,13 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
             return map_ok;
         }
 
-        /*
-        for (auto& hdu_fhi : hdu_fhi_map) {
-            bool using_image_header(false);
-            int bitpix(hdu_fhi.second.kw(casacore::FITS::BITPIX)->asInt());
-            CARTA::FileInfoExtended extended_info;
-            std::string radesys;
-            FitsHeaderInfoToHeaderEntries(hdu_fhi.second, using_image_header, bitpix, hdu_fhi.first, extended_info, radesys);
-
-            // Add shape and axes info, determine which axes are rendered
-            std::vector<int> render_axes;
-            AddShapeEntries(hdu_fhi.second, extended_info, render_axes);
+        for (auto& hdu_info : hdu_info_map) {
+            std::vector<int> render_axes = {0, 1}; // default
+            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename_nopath, render_axes);
 
             // Use headers in FileInfoExtended to create computed entries
-            AddComputedEntriesFromHeaders(extended_info, render_axes, radesys);
+            AddComputedEntriesFromHeaders(hdu_info.second, render_axes);
         }
-        */
 
         map_ok = !hdu_info_map.empty();
     } else {
@@ -71,7 +73,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         // Get FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
-            if (FillFileExtInfo(file_info_ext, filename, hdu, message)) {
+            if (FillFileExtInfo(file_info_ext, filename_nopath, hdu, message)) {
                 hdu_info_map[hdu] = file_info_ext;
             }
         }
@@ -188,8 +190,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 }
 
-                casacore::String radesys; // Save from FITS headers to add to computed entries in order
-                FitsHeaderInfoToHeaderEntries(fhi, using_image_header, bitpix, hdu, extended_info, radesys);
+                FitsHeaderInfoToHeaderEntries(fhi, using_image_header, bitpix, hdu, extended_info);
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
@@ -198,7 +199,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     _loader->GetRenderAxes(render_axes);
 
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
-                    AddComputedEntries(extended_info, image, render_axes, radesys, using_image_header);
+                    AddComputedEntries(extended_info, image, render_axes, using_image_header);
 
                     info_ok = true;
                 }
@@ -221,17 +222,16 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 }
 
 void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix,
-    const std::string& hdu, CARTA::FileInfoExtended& extended_info, std::string& radesys) {
+    const std::string& hdu, CARTA::FileInfoExtended& extended_info) {
     // Fill FileInfoExtended header_entries from ImageFITSHeaderInfo and begin computed_entries.
     // Modifies FileInfoExtended and returns RADESYS value for computed_entries.
 
     // Axis or coord number to append to name
     int naxis(0), ntype(1), nval(1), ndelt(1), npix(1);
 
-    // Determine stokes values for loader
-    casacore::String stokes_axis_num;
+    casacore::String stokes_axis_num; // stokes values for loader
 
-    std::string extname; // for computed_entries
+    std::string extname; // for initial computed_entries
 
     // Create FileInfoExtended header_entries for each FitsKeyword
     fhi.kw.first(); // go to first card
@@ -341,9 +341,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                         header_string.trim();
 
                         // save for computed_entries
-                        if (name == "RADESYS") {
-                            radesys = header_string;
-                        } else if (name == "EXTNAME") {
+                        if (name == "EXTNAME") {
                             extname = header_string;
                         }
 
@@ -398,10 +396,66 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
 
 // ***** Computed entries *****
 
-void FileExtInfoLoader::AddShapeEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info, std::vector<int>& render_axes) {
-    // Use header info to determine shape, special axes, and rendered axes
-    // TODO: shape, chan_axis, depth_axis, stokes_axis, render_axes
-    // AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
+void FileExtInfoLoader::AddInitialComputedEntries(
+    const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::vector<int>& render_axes) {
+    // Add computed entries for filename, hdu, shape, and axes
+    // Set name and HDU
+    auto entry = extended_info.add_computed_entries();
+    entry->set_name("Name");
+    entry->set_value(filename);
+    entry->set_entry_type(CARTA::EntryType::STRING);
+
+    if (!hdu.empty()) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("HDU");
+        entry->set_value(hdu);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    // Use header entries to determine computed entries
+    std::string extname;
+    casacore::IPosition shape;
+    int chan_axis(-1), depth_axis(-1), stokes_axis(-1);
+    std::vector<std::string> spectral_ctypes = {"ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA"};
+
+    for (int i = 0; i < extended_info.header_entries_size(); ++i) {
+        auto header_entry = extended_info.header_entries(i);
+        auto entry_name = header_entry.name();
+
+        if (entry_name == "EXTNAME") {
+            auto entry = extended_info.add_computed_entries();
+            entry->set_name("Extension name");
+            entry->set_value(header_entry.value());
+            entry->set_entry_type(CARTA::EntryType::STRING);
+        } else if (entry_name.find("NAXIS") == 0) {
+            std::string naxis_index(&entry_name.back());
+            auto entry_num_value = header_entry.numeric_value();
+
+            if (naxis_index == "S") { // just "NAXIS"
+                shape.resize(entry_num_value);
+            } else { // NAXISn (1-based)
+                int n = stoi(naxis_index);
+                shape(n - 1) = entry_num_value;
+            }
+        } else if (entry_name.find("CTYPE") == 0) {
+            std::string ctype_index(&entry_name.back());
+            int axis_num = stoi(ctype_index) - 1;
+            auto entry_value = header_entry.value();
+            std::transform(entry_value.begin(), entry_value.end(), entry_value.begin(), [](unsigned char c) { return std::toupper(c); });
+
+            if (entry_value == "STOKES") {
+                stokes_axis = axis_num;
+            } else if ((entry_value.find("FREQ") == 0) || (entry_value.find("WAV") != std::string::npos) ||
+                       (std::find(spectral_ctypes.begin(), spectral_ctypes.end(), entry_value) != spectral_ctypes.end())) {
+                chan_axis = axis_num;
+                if (chan_axis > 1) {
+                    depth_axis = chan_axis;
+                }
+            }
+        }
+    }
+
+    AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,
@@ -442,7 +496,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
         unsigned int nchan = shape(chan_axis);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of channels");
-        entry->set_value(casacore::String::toString(nchan));
+        entry->set_value(std::to_string(nchan));
         entry->set_entry_type(CARTA::EntryType::INT);
         entry->set_numeric_value(nchan);
     }
@@ -451,19 +505,19 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
         unsigned int nstokes = shape(stokes_axis);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of stokes");
-        entry->set_value(casacore::String::toString(nstokes));
+        entry->set_value(std::to_string(nstokes));
         entry->set_entry_type(CARTA::EntryType::INT);
         entry->set_numeric_value(nstokes);
     }
 }
 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-    const std::vector<int>& display_axes, casacore::String& radesys, bool using_image_header) {
+    const std::vector<int>& display_axes, bool using_image_header) {
     // Add computed entries to extended file info
     casacore::CoordinateSystem coord_system(image->coordinates());
 
     if (!using_image_header) {
-        AddComputedEntriesFromHeaders(extended_info, display_axes, radesys);
+        AddComputedEntriesFromHeaders(extended_info, display_axes);
     } else {
         // Use image coordinate system
         int display_axis0(display_axes[0]), display_axis1(display_axes[1]);
@@ -549,13 +603,13 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         if (coord_system.hasDirectionCoordinate()) {
             // add RADESYS
             casacore::String direction_frame = casacore::MDirection::showType(coord_system.directionCoordinate().directionType());
-            if (radesys.empty()) {
-                if (direction_frame.contains("J2000")) {
-                    radesys = "FK5";
-                } else if (direction_frame.contains("B1950")) {
-                    radesys = "FK4";
-                }
+            casacore::String radesys;
+            if (direction_frame.contains("J2000")) {
+                radesys = "FK5";
+            } else if (direction_frame.contains("B1950")) {
+                radesys = "FK4";
             }
+
             if (!radesys.empty() && (radesys != "ICRS")) {
                 direction_frame = radesys + ", " + direction_frame;
             }
@@ -606,35 +660,33 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     }
 }
 
-void FileExtInfoLoader::AddComputedEntriesFromHeaders(
-    CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, std::string& radesys) {
+void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
     // For images with missing headers or headers which casacore/wcslib cannot process.
     // Axes are 1-based for header names (ctype, cunit, etc.), 0-based for display axes
     casacore::String suffix1(std::to_string(display_axes[0] + 1));
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
-    casacore::String ctype1, ctype2, cunit1, cunit2, frame;
+    casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
     float min_float(std::numeric_limits<float>::min());
     float crval1(min_float), crval2(min_float), crpix1(min_float), crpix2(min_float), cdelt1(min_float), cdelt2(min_float);
 
     // Quit looking for key when have needed values
-    bool need_ctype(true), need_crpix(true), need_crval(true), need_cunit(true), need_cdelt(true), need_frame(true);
-    bool need_radesys(radesys.empty());
+    bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto entry = extended_info.header_entries(i);
         auto entry_name = entry.name();
 
         // coordinate types
-        if (need_ctype && (entry_name.find("CTYPE") != std::string::npos)) {
-            if (entry_name.find("CTYPE" + suffix1) != std::string::npos) {
+        if (need_ctype && (entry_name.find("CTYPE") == 0)) {
+            if (entry_name.find("CTYPE" + suffix1) == 0) {
                 ctype1 = entry.value();
                 if (ctype1.contains("/")) {
                     ctype1 = ctype1.before("/");
                 }
                 ctype1.trim();
-            } else if (entry_name.find("CTYPE" + suffix2) != std::string::npos) {
+            } else if (entry_name.find("CTYPE" + suffix2) == 0) {
                 ctype2 = entry.value();
                 if (ctype2.contains("/")) {
                     ctype2 = ctype2.before("/");
@@ -647,10 +699,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
 
         // reference pixels
-        if (need_crpix && (entry_name.find("CRPIX") != std::string::npos)) {
-            if (entry_name.find("CRPIX" + suffix1) != std::string::npos) {
+        if (need_crpix && (entry_name.find("CRPIX") == 0)) {
+            if (entry_name.find("CRPIX" + suffix1) == 0) {
                 crpix1 = entry.numeric_value();
-            } else if (entry_name.find("CRPIX" + suffix2) != std::string::npos) {
+            } else if (entry_name.find("CRPIX" + suffix2) == 0) {
                 crpix2 = entry.numeric_value();
             }
             if ((crpix1 != min_float) && (crpix2 != min_float)) {
@@ -659,10 +711,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
 
         // reference values
-        if (need_crval && (entry_name.find("CRVAL") != std::string::npos)) {
-            if (entry_name.find("CRVAL" + suffix1) != std::string::npos) {
+        if (need_crval && (entry_name.find("CRVAL") == 0)) {
+            if (entry_name.find("CRVAL" + suffix1) == 0) {
                 crval1 = entry.numeric_value();
-            } else if (entry_name.find("CRVAL" + suffix2) != std::string::npos) {
+            } else if (entry_name.find("CRVAL" + suffix2) == 0) {
                 crval2 = entry.numeric_value();
             }
             if ((crval1 != min_float) && (crval2 != min_float)) {
@@ -671,36 +723,33 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
 
         // coordinate units
-        if (need_cunit && (entry_name.find("CUNIT") != std::string::npos)) {
-            if (entry_name.find("CUNIT" + suffix1) != std::string::npos) {
+        if (entry_name.find("CUNIT") == 0) {
+            if (entry_name.find("CUNIT" + suffix1) == 0) {
                 cunit1 = entry.value();
                 if (cunit1.contains("/")) {
                     cunit1 = cunit1.before("/");
                 }
                 cunit1.trim();
-                if (cunit1 == "Degrees") { // nonstandard FITS value
+                if (cunit1.startsWith("DEG") || cunit1.startsWith("Deg")) { // Degrees, DEGREES nonstandard FITS values
                     cunit1 = "deg";
                 }
-            } else if (entry_name.find("CUNIT" + suffix2) != std::string::npos) {
+            } else if (entry_name.find("CUNIT" + suffix2) == 0) {
                 cunit2 = entry.value();
                 if (cunit2.contains("/")) {
                     cunit2 = cunit2.before("/");
                 }
                 cunit2.trim();
-                if (cunit2 == "Degrees") { // nonstandard FITS value
+                if (cunit2.startsWith("DEG") || cunit2.startsWith("Deg")) { // Degrees, DEGREES nonstandard FITS values
                     cunit2 = "deg";
                 }
-            }
-            if (!cunit1.empty() && !cunit2.empty()) {
-                need_cunit = false;
             }
         }
 
         // pixel increment
-        if (need_cdelt && (entry_name.find("CDELT") != std::string::npos)) {
-            if (entry_name.find("CDELT" + suffix1) != std::string::npos) {
+        if (need_cdelt && (entry_name.find("CDELT") == 0)) {
+            if (entry_name.find("CDELT" + suffix1) == 0) {
                 cdelt1 = entry.numeric_value();
-            } else if (entry_name.find("CDELT" + suffix2) != std::string::npos) {
+            } else if (entry_name.find("CDELT" + suffix2) == 0) {
                 cdelt2 = entry.numeric_value();
             }
             if ((cdelt1 != min_float) && (cdelt2 != min_float)) {
@@ -709,7 +758,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
 
         // Celestial frame
-        if (need_frame && ((entry_name.find("EQUINOX") != std::string::npos) || (entry_name.find("EPOCH") != std::string::npos))) {
+        if (need_frame && ((entry_name.find("EQUINOX") == 0) || (entry_name.find("EPOCH") == 0))) {
             need_frame = false;
             frame = entry.value();
             if (frame.contains("2000")) {
@@ -717,6 +766,22 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             } else if (frame.contains("1950")) {
                 frame = "B1950";
             }
+        }
+
+        // Radesys
+        if (entry_name.find("RADESYS") == 0) {
+            need_radesys = false;
+            radesys = entry.value();
+        }
+
+        // Specsys
+        if (entry_name.find("SPECSYS") == 0) {
+            specsys = entry.value();
+        }
+
+        // Bunit
+        if (entry_name.find("BUNIT") == 0) {
+            bunit = entry.value();
         }
     }
 
@@ -755,19 +820,30 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_entry_type(CARTA::EntryType::STRING);
 
         // reference coordinates in deg
-        if (!need_cunit) {
-            casacore::Quantity q1(crval1, cunit1);
-            casacore::Quantity q2(crval2, cunit2);
-            bool q1IsDir(q1.isConform("deg")), q2IsDir(q2.isConform("deg"));
-            if (q1IsDir || q2IsDir) {
-                // Reference coord(s) converted to deg
-                std::string ref_coords_deg = ConvertCoordsToDeg(q1, q2);
-                auto comp_entry = extended_info.add_computed_entries();
-                comp_entry->set_name("Image ref coords (deg)");
-                comp_entry->set_value(ref_coords_deg);
-                comp_entry->set_entry_type(CARTA::EntryType::STRING);
-            }
+        casacore::Quantity q1(crval1, cunit1);
+        casacore::Quantity q2(crval2, cunit2);
+        bool q1IsDir(q1.isConform("deg")), q2IsDir(q2.isConform("deg"));
+        if (q1IsDir || q2IsDir) {
+            // Reference coord(s) converted to deg
+            std::string ref_coords_deg = ConvertCoordsToDeg(q1, q2);
+            auto comp_entry = extended_info.add_computed_entries();
+            comp_entry->set_name("Image ref coords (deg)");
+            comp_entry->set_value(ref_coords_deg);
+            comp_entry->set_entry_type(CARTA::EntryType::STRING);
         }
+    }
+
+    if (!need_cdelt) {
+        std::string pixel_inc;
+        // Increment in arcsec
+        casacore::Quantity inc1(cdelt1, cunit1);
+        casacore::Quantity inc2(cdelt2, cunit2);
+        pixel_inc = ConvertIncrementToArcsec(inc1, inc2);
+
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("Pixel increment");
+        entry->set_value(pixel_inc);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!need_radesys || !need_frame) {
@@ -793,14 +869,17 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    if (!need_cdelt && !need_cunit) {
-        // Increment in arcsec
-        casacore::Quantity inc1(cdelt1, cunit1);
-        casacore::Quantity inc2(cdelt2, cunit2);
-        std::string pixel_inc = ConvertIncrementToArcsec(inc1, inc2);
+    if (!specsys.empty()) {
         auto entry = extended_info.add_computed_entries();
-        entry->set_name("Pixel increment");
-        entry->set_value(pixel_inc);
+        entry->set_name("Spectral frame");
+        entry->set_value(specsys);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (!bunit.empty()) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("Pixel unit");
+        entry->set_value(bunit);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
