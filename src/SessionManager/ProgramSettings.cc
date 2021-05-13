@@ -97,6 +97,17 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
             j.erase(key.first);
         }
     }
+
+    for (const auto& [key, elem] : vector_int_keys_map) {
+        if (j.contains(key) && !j[key].is_array()) {
+            auto msg =
+                fmt::format("Problem in config file {} at key {}: current value is {}, but a number or a list of numbers is expected.",
+                    json_file_path, key, j[key].dump());
+            warning_msgs.push_back(msg);
+            j.erase(key);
+        }
+    }
+
     return j;
 }
 
@@ -107,17 +118,29 @@ void ProgramSettings::SetSettingsFromJSON(const json& j) {
         }
         *key.second = j[key.first];
     }
+
     for (const auto& key : bool_keys_map) {
         if (!j.contains(key.first)) {
             continue;
         }
         *key.second = j[key.first];
     }
+
     for (const auto& key : strings_keys_map) {
         if (!j.contains(key.first)) {
             continue;
         }
         *key.second = j[key.first];
+    }
+
+    for (const auto& [key, elem] : vector_int_keys_map) {
+        if (!j.contains(key)) {
+            continue;
+        }
+        elem->resize(j[key].size());
+        for (int i = 0; i < elem->size(); ++i) {
+            elem->at(i) = j[key][i];
+        }
     }
 }
 
@@ -139,8 +162,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
-        ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<int>(), "<port>")
-        ("starting_port", "Set the startign port to listen at", cxxopts::value<int>(), "<starting port>")
+        ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
         ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
@@ -237,7 +259,6 @@ end.
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
     applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
-    applyOptionalArgument(starting_port, "starting_port", result);
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
