@@ -67,18 +67,16 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
     }
 
     if (momentAxis_p == _image->coordinates().spectralAxisNumber() && _image->imageInfo().hasMultipleBeams()) {
+        // set parameters for the image 2D convolver
+        auto dir_axes = _image->coordinates().directionAxesNumbers();
         casacore::GaussianBeam max_beam = casa::CasaImageBeamSet(_image->imageInfo().getBeamSet()).getCommonBeam();
         spdlog::info(
             "The input image has multiple beams so each plane will be convolved to the largest beam size {} prior to calculating moments.",
             GetGaussianInfo(max_beam));
 
         // reset the image 2D convolver
-        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _progress_monitor.get()));
-
-        // set parameters for the image 2D convolver
-        auto dir_axes = _image->coordinates().directionAxesNumbers();
-        _image_2d_convolver->SetAxes(std::make_pair(dir_axes[0], dir_axes[1]));
-        _image_2d_convolver->SetKernel(max_beam.getMajor(), max_beam.getMinor(), max_beam.getPA(true));
+        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(
+            _image, std::make_pair(dir_axes[0], dir_axes[1]), max_beam, _progress_monitor.get()));
         auto image_copy = _image_2d_convolver->DoConvolve();                // do long calculation
         _steps_for_beam_convolution = _image_2d_convolver->GetTotalSteps(); // set number of steps have done for the beam convolution
 
