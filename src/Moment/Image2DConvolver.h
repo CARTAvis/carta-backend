@@ -81,12 +81,12 @@ private:
         const casacore::CoordinateSystem& csys, const casacore::GaussianBeam& beam_in, const casacore::Unit& brightness_unit_in) const;
 
     void DoMultipleBeams(ImageInfo& image_info_out, Double& kernel_volume, SPIIT image_out, String& brightness_unit_out,
-        GaussianBeam& beam_out, Double factor1, const ImageInterface<T>& image_in, const std::vector<Quantity>& original_parms,
-        std::vector<Quantity>& kernel_parms, Array<Double>& kernel, Bool log_factors, Double pixel_area) const;
+        GaussianBeam& beam_out, Double factor1, const ImageInterface<T>& image_in, const std::vector<Quantity>& original_params,
+        std::vector<Quantity>& kernel_params, Array<Double>& kernel, Bool log_factors, Double pixel_area) const;
 
     // The kernel is currently always real-valued, so make it Double at this point to avoid unnecessary templating issues if the image has
     // is complex valued
-    void DoSingleBeam(ImageInfo& image_info_out, Double& kernel_volume, std::vector<Quantity>& kernel_parms, Array<Double>& kernel,
+    void DoSingleBeam(ImageInfo& image_info_out, Double& kernel_volume, std::vector<Quantity>& kernel_params, Array<Double>& kernel,
         String& brightness_unit_out, GaussianBeam& beam_out, SPIIT image_out, const ImageInterface<T>& image_in,
         const std::vector<Quantity>& original_params, Bool log_factors, Double factor1, Double pixel_area) const;
 
@@ -101,7 +101,7 @@ private:
 
     casacore::IPosition ShapeOfKernel(const casacore::Vector<casacore::Double>& parameters, const casacore::uInt ndim) const;
 
-    casacore::uInt SizeOfGaussian(const casacore::Double width, const casacore::Double nSigma) const;
+    casacore::uInt SizeOfGaussian(const casacore::Double width, const casacore::Double nsigma) const;
 
     std::vector<casacore::Quantity> GetConvolvingBeamForTargetResolution(
         const std::vector<casacore::Quantity>& target_beam_params, const casacore::GaussianBeam& input_beam) const;

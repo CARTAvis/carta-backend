@@ -30,30 +30,6 @@ Image2DConvolver<T>::Image2DConvolver(const SPCIIT image, const std::pair<casaco
 }
 
 template <class T>
-std::vector<casacore::Quantity> Image2DConvolver<T>::GetConvolvingBeamForTargetResolution(
-    const std::vector<casacore::Quantity>& target_beam_params, const casacore::GaussianBeam& input_beam) const {
-    casacore::GaussianBeam convolving_beam;
-    casacore::GaussianBeam target_beam(target_beam_params[0], target_beam_params[1], target_beam_params[2]);
-
-    try {
-        if (casa::GaussianDeconvolver::deconvolve(convolving_beam, target_beam, input_beam)) {
-            // point source, or convolving_beam nonsensical
-            throw casacore::AipsError();
-        }
-    } catch (const casacore::AipsError& x) {
-        string error = fmt::format(
-            "Unable to reach target resolution of {}. Input image beam {} is (nearly) identical to or larger than the output beam size.",
-            GetGaussianInfo(target_beam), GetGaussianInfo(input_beam));
-        spdlog::error(error);
-        ThrowCc(error);
-    }
-
-    std::vector<casacore::Quantity> kernel_params{convolving_beam.getMajor(), convolving_beam.getMinor(), convolving_beam.getPA(true)};
-
-    return kernel_params;
-}
-
-template <class T>
 void Image2DConvolver<T>::SetAxes(const std::pair<casacore::uInt, casacore::uInt>& axes) {
     casacore::uInt ndim = _image->ndim();
 
@@ -88,8 +64,16 @@ SPIIT Image2DConvolver<T>::DoConvolve() {
         !casacore::near(casacore::Quantity(fabs(inc[_axes[0]]), units[_axes[0]]), casacore::Quantity(fabs(inc[_axes[1]]), units[_axes[1]])),
         "Pixels must be square, please repair your image so that they are");
 
+    casacore::String empty_out_file;
     casacore::Record region_record;
-    auto sub_image = casa::SubImageFactory<T>::createImage(*_image, "", region_record, "", false, false, false, false);
+    casacore::String empty_mask;
+    casacore::Bool drop_degenerate_axes(false);
+    casacore::Bool overwrite(false);
+    casacore::Bool list(false);
+    casacore::Bool extend_mask(false);
+    auto sub_image = casa::SubImageFactory<T>::createImage(
+        *_image, empty_out_file, region_record, empty_mask, drop_degenerate_axes, overwrite, list, extend_mask);
+
     const casacore::Int ndim = sub_image->ndim();
 
     ThrowIf(_axes(0) < 0 || _axes(0) >= ndim || _axes(1) < 0 || _axes(1) >= ndim,
@@ -115,11 +99,7 @@ void Image2DConvolver<T>::Convolve(SPIIT image_out, const casacore::ImageInterfa
     const auto& out_shape = image_out->shape();
     ThrowIf(!in_shape.isEqual(out_shape), "Input and output images must have the same shape");
 
-    // Generate Kernel Array (height unity)
-    // maybe can remove this comment if I'm smart enough kernel needs to be type T because ultimately we use ImageConvolver which requires
-    // the kernel and input image to be of the same type. This is kind of stupid because our kernels are always real-valued, and we use
-    // Fit2D which requires a real-valued kernel, so it seems we could support complex valued images and real valued kernels if
-    // ImageConvolver was smarter
+    // generate kernel array (height unity)
     casacore::Array<casacore::Double> kernel;
 
     // initialize to avoid compiler warning, kernel_volume will always be set to something reasonable below before it is used.
@@ -175,44 +155,27 @@ void Image2DConvolver<T>::Convolve(SPIIT image_out, const casacore::ImageInterfa
 }
 
 template <class T>
-void Image2DConvolver<T>::LogBeamInfo(const casacore::ImageInfo& imageInfo, const casacore::String& desc) const {
-    const auto& beam_set = imageInfo.getBeamSet();
-    string message = desc;
-
-    if (!imageInfo.hasBeam()) {
-        message += " has no beam";
-    } else if (imageInfo.hasSingleBeam()) {
-        message += fmt::format(" resolution {} ", GetGaussianInfo(beam_set.getBeam()));
-    } else {
-        message += fmt::format(" has multiple beams. Min area beam: {}. Max area beam: {}. Median area beam {}",
-            GetGaussianInfo(beam_set.getMinAreaBeam()), GetGaussianInfo(beam_set.getMaxAreaBeam()),
-            GetGaussianInfo(beam_set.getMedianAreaBeam()));
-    }
-    spdlog::debug(message);
-}
-
-template <class T>
 void Image2DConvolver<T>::DoSingleBeam(casacore::ImageInfo& image_info_out, casacore::Double& kernel_volume,
-    vector<casacore::Quantity>& kernel_parms, casacore::Array<casacore::Double>& kernel, casacore::String& brightness_unit_out,
+    vector<casacore::Quantity>& kernel_params, casacore::Array<casacore::Double>& kernel, casacore::String& brightness_unit_out,
     casacore::GaussianBeam& beam_out, SPIIT image_out, const casacore::ImageInterface<T>& image_in,
     const vector<casacore::Quantity>& original_params, casacore::Bool log_factors, casacore::Double factor1,
     casacore::Double pixel_area) const {
     GaussianBeam input_beam = image_in.imageInfo().restoringBeam();
 
-    kernel_parms = GetConvolvingBeamForTargetResolution(original_params, input_beam);
+    kernel_params = GetConvolvingBeamForTargetResolution(original_params, input_beam);
     spdlog::debug("Convolving image that has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-        GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_parms)), GetGaussianInfo(GaussianBeam(original_params)));
+        GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_params)), GetGaussianInfo(GaussianBeam(original_params)));
 
-    kernel_volume = MakeKernel(kernel, kernel_parms, image_in);
+    kernel_volume = MakeKernel(kernel, kernel_params, image_in);
 
     const CoordinateSystem& csys = image_in.coordinates();
     auto scale_factor =
-        DealWithRestoringBeam(brightness_unit_out, beam_out, kernel, kernel_volume, kernel_parms, csys, input_beam, image_in.units());
+        DealWithRestoringBeam(brightness_unit_out, beam_out, kernel, kernel_volume, kernel_params, csys, input_beam, image_in.units());
 
     string message = "Scaling pixel values by ";
 
     if (log_factors) {
-        casacore::GaussianBeam kernelBeam(kernel_parms);
+        casacore::GaussianBeam kernelBeam(kernel_params);
         factor1 = pixel_area / kernelBeam.getArea("arcsec*arcsec");
         casacore::Double factor2 = beam_out.getArea("arcsec*arcsec") / input_beam.getArea("arcsec*arcsec");
         message += fmt::format(
@@ -252,7 +215,7 @@ void Image2DConvolver<T>::DoSingleBeam(casacore::ImageInfo& image_info_out, casa
 template <class T>
 void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, casacore::Double& kernel_volume, SPIIT image_out,
     casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out, casacore::Double factor1,
-    const casacore::ImageInterface<T>& image_in, const vector<Quantity>& original_parms, vector<Quantity>& kernel_parms,
+    const casacore::ImageInterface<T>& image_in, const vector<Quantity>& original_params, vector<Quantity>& kernel_params,
     casacore::Array<casacore::Double>& kernel, casacore::Bool log_factors, casacore::Double pixel_area) const {
     casa::ImageMetaData<T> md(image_out);
     auto nchan = md.nChannels();
@@ -278,7 +241,7 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
     casacore::Int polarization = -1;
 
     image_info_out.removeRestoringBeam();
-    image_info_out.setRestoringBeam(casacore::GaussianBeam(kernel_parms));
+    image_info_out.setRestoringBeam(casacore::GaussianBeam(kernel_params));
 
     casacore::uInt count = (nchan > 0 && npol > 0) ? nchan * npol : nchan > 0 ? nchan : npol;
 
@@ -333,14 +296,14 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
 
         message += " ";
 
-        if (casacore::near(input_beam, GaussianBeam(original_parms), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
+        if (casacore::near(input_beam, GaussianBeam(original_params), 1e-5, casacore::Quantity(1e-2, "arcsec"))) {
             do_convolve = false;
             message += fmt::format("Input beam is already near target resolution so this plane will not be convolved.");
         } else {
-            kernel_parms = GetConvolvingBeamForTargetResolution(original_parms, input_beam);
-            kernel_volume = MakeKernel(kernel, kernel_parms, image_in);
+            kernel_params = GetConvolvingBeamForTargetResolution(original_params, input_beam);
+            kernel_volume = MakeKernel(kernel, kernel_params, image_in);
             message += fmt::format(": Convolving image which has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-                GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_parms)), GetGaussianInfo(GaussianBeam(original_parms)));
+                GetGaussianInfo(input_beam), GetGaussianInfo(GaussianBeam(kernel_params)), GetGaussianInfo(GaussianBeam(original_params)));
         }
 
         spdlog::debug(message);
@@ -348,11 +311,11 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
         casacore::TempImage<T> sub_image_out(sub_image.shape(), sub_image.coordinates());
         if (do_convolve) {
             auto scale_factor = DealWithRestoringBeam(
-                brightness_unit_out, beam_out, kernel, kernel_volume, kernel_parms, sub_csys, input_beam, image_in.units());
+                brightness_unit_out, beam_out, kernel, kernel_volume, kernel_params, sub_csys, input_beam, image_in.units());
             {
                 string message("Scaling pixel values by ");
                 if (log_factors) {
-                    casacore::GaussianBeam kernelBeam(kernel_parms);
+                    casacore::GaussianBeam kernelBeam(kernel_params);
                     factor1 = pixel_area / kernelBeam.getArea("arcsec*arcsec");
                     auto factor2 = beam_out.getArea("arcsec*arcsec") / input_beam.getArea("arcsec*arcsec");
                     message += fmt::format(
@@ -374,7 +337,7 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
 
             if (casacore::near(beam_out.getMajor(), beam_out.getMinor(), 1e-7)) {
                 // circular beam should have same PA as given by user if targetres
-                beam_out.setPA(original_parms[2]);
+                beam_out.setPA(original_params[2]);
             }
 
             casacore::Array<T> mod_kernel(kernel.shape());
@@ -387,28 +350,26 @@ void Image2DConvolver<T>::DoMultipleBeams(casacore::ImageInfo& image_info_out, c
             sub_image_out.put(sub_image.get());
         }
 
-        {
-            auto do_mask = image_out->isMasked() && image_out->hasPixelMask();
-            casacore::Lattice<casacore::Bool>* mask_out = 0;
-            if (do_mask) {
-                mask_out = &image_out->pixelMask();
-                if (!mask_out->isWritable()) {
-                    do_mask = false;
-                }
+        auto do_mask = image_out->isMasked() && image_out->hasPixelMask();
+        casacore::Lattice<casacore::Bool>* mask_out = 0;
+        if (do_mask) {
+            mask_out = &image_out->pixelMask();
+            if (!mask_out->isWritable()) {
+                do_mask = false;
             }
+        }
 
-            auto cursor_shape = sub_image_out.niceCursorShape();
-            auto out_pos = start;
-            casacore::LatticeStepper stepper(sub_image_out.shape(), cursor_shape, casacore::LatticeStepper::RESIZE);
-            casacore::RO_MaskedLatticeIterator<T> iter(sub_image_out, stepper);
-            for (iter.reset(); !iter.atEnd(); iter++) {
-                casacore::IPosition tmp_cursor_shape = iter.cursorShape();
-                image_out->putSlice(iter.cursor(), out_pos);
-                if (do_mask) {
-                    mask_out->putSlice(iter.getMask(), out_pos);
-                }
-                out_pos = out_pos + tmp_cursor_shape;
+        auto cursor_shape = sub_image_out.niceCursorShape();
+        auto out_pos = start;
+        casacore::LatticeStepper stepper(sub_image_out.shape(), cursor_shape, casacore::LatticeStepper::RESIZE);
+        casacore::RO_MaskedLatticeIterator<T> iter(sub_image_out, stepper);
+        for (iter.reset(); !iter.atEnd(); iter++) {
+            casacore::IPosition tmp_cursor_shape = iter.cursorShape();
+            image_out->putSlice(iter.cursor(), out_pos);
+            if (do_mask) {
+                mask_out->putSlice(iter.getMask(), out_pos);
             }
+            out_pos = out_pos + tmp_cursor_shape;
         }
     }
 }
@@ -625,10 +586,10 @@ casacore::IPosition Image2DConvolver<T>::ShapeOfKernel(
 }
 
 template <class T>
-uInt Image2DConvolver<T>::SizeOfGaussian(const casacore::Double width, const casacore::Double nSigma) const {
+uInt Image2DConvolver<T>::SizeOfGaussian(const casacore::Double width, const casacore::Double nsigma) const {
     // +/- 5 sigma is a volume error of less than 6e-5%
     casacore::Double sigma = width / sqrt(casacore::Double(8.0) * C::ln2);
-    return (casacore::Int(nSigma * sigma + 0.5) + 1) * 2;
+    return (casacore::Int(nsigma * sigma + 0.5) + 1) * 2;
 }
 
 template <class T>
@@ -680,6 +641,30 @@ void Image2DConvolver<T>::FillGaussian(casacore::Double& max_val, casacore::Doub
 }
 
 template <class T>
+std::vector<casacore::Quantity> Image2DConvolver<T>::GetConvolvingBeamForTargetResolution(
+    const std::vector<casacore::Quantity>& target_beam_params, const casacore::GaussianBeam& input_beam) const {
+    casacore::GaussianBeam convolving_beam;
+    casacore::GaussianBeam target_beam(target_beam_params[0], target_beam_params[1], target_beam_params[2]);
+
+    try {
+        if (casa::GaussianDeconvolver::deconvolve(convolving_beam, target_beam, input_beam)) {
+            // point source, or convolving_beam nonsensical
+            throw casacore::AipsError();
+        }
+    } catch (const casacore::AipsError& x) {
+        std::string error = fmt::format(
+            "Unable to reach target resolution of {}. Input image beam {} is (nearly) identical to or larger than the output beam size.",
+            GetGaussianInfo(target_beam), GetGaussianInfo(input_beam));
+        spdlog::error(error);
+        ThrowCc(error);
+    }
+
+    std::vector<casacore::Quantity> kernel_params{convolving_beam.getMajor(), convolving_beam.getMinor(), convolving_beam.getPA(true)};
+
+    return kernel_params;
+}
+
+template <class T>
 SPIIT Image2DConvolver<T>::PrepareOutputImage(const casacore::ImageInterface<T>& image, casacore::Bool drop_deg) const {
     casacore::String out_name;
     casacore::Bool overwrite(false);
@@ -687,6 +672,23 @@ SPIIT Image2DConvolver<T>::PrepareOutputImage(const casacore::ImageInterface<T>&
     static const casacore::String empty_string;
     auto out_image = casa::SubImageFactory<T>::createImage(image, out_name, empty, empty_string, drop_deg, overwrite, true, false, false);
     return out_image;
+}
+
+template <class T>
+void Image2DConvolver<T>::LogBeamInfo(const casacore::ImageInfo& imageInfo, const casacore::String& desc) const {
+    const auto& beam_set = imageInfo.getBeamSet();
+    string message = desc;
+
+    if (!imageInfo.hasBeam()) {
+        message += " has no beam";
+    } else if (imageInfo.hasSingleBeam()) {
+        message += fmt::format(" resolution {} ", GetGaussianInfo(beam_set.getBeam()));
+    } else {
+        message += fmt::format(" has multiple beams. Min area beam: {}. Max area beam: {}. Median area beam {}",
+            GetGaussianInfo(beam_set.getMinAreaBeam()), GetGaussianInfo(beam_set.getMaxAreaBeam()),
+            GetGaussianInfo(beam_set.getMedianAreaBeam()));
+    }
+    spdlog::debug(message);
 }
 
 template <class T>
