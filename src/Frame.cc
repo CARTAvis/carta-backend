@@ -98,6 +98,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _image_histogram_configs.clear();
     _cube_histogram_configs.clear();
     HistogramConfig config;
+    config.coordinate = "z"; // current stokes type
     config.channel = CURRENT_Z;
     config.num_bins = AUTO_BIN_SIZE;
     _image_histogram_configs.push_back(config);
@@ -549,11 +550,19 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
 
     if (region_id == IMAGE_REGION_ID) {
         _image_histogram_configs.clear();
+
+        // set histogram requirements for the image
+        HistogramConfig config;
+        config.coordinate = "z"; // current stokes type
+        config.channel = CurrentZ();
+        config.num_bins = AUTO_BIN_SIZE;
+        _image_histogram_configs.push_back(config);
     } else {
         _cube_histogram_configs.clear();
     }
 
     for (auto& histogram_config : histogram_configs) {
+        // set histogram requirements for histogram widgets
         HistogramConfig config;
         config.coordinate = histogram_config.coordinate();
         config.channel = histogram_config.channel();
