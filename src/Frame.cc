@@ -554,7 +554,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
         // set histogram requirements for the image
         HistogramConfig config;
         config.coordinate = "z"; // current stokes type
-        config.channel = CurrentZ();
+        config.channel = CURRENT_Z;
         config.num_bins = AUTO_BIN_SIZE;
         _image_histogram_configs.push_back(config);
     } else {
