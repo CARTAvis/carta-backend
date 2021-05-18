@@ -19,9 +19,9 @@ FUZZY_HEADER_MATCH = """/\* This file (.*)
 \*/
 """
 
-def cpp_files(directory):
+def cpp_files(directory, ignore):
     for root, dirs, files in os.walk(directory):
-        dirs[:] = [d for d in dirs]
+        dirs[:] = [d for d in dirs if d not in ignore]
         for basename in files:
             if re.search("\.(cc|h|tcc)$", basename):
                 filename = os.path.join(root, basename)
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check or fix copyright and licence headers.")
     parser.add_argument('command', help="Command (check or fix).", choices=("check", "fix"))
     parser.add_argument('-d', '--directory', help="Location of the root directory; can be used multiple times. Defaults to the `src' and `test' subdirectories in the current directory.", default=[], action="append")
+    parser.add_argument('-i', '--ignore', help="Directory name to ignore; can be used multiple times. Defaults to `fits2idia' .", default=[], action="append")
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
 
     args = parser.parse_args()
@@ -44,9 +45,13 @@ if __name__ == "__main__":
     # We have to do it like this because the append action doesn't clear the default list
     if not args.directory:
         args.directory.extend(["src", "test"])
+    if not args.ignore:
+        args.ignore.append("fits2idia")
+        
+    ignore = set(args.ignore)
     
     for directory in set(args.directory):
-        for filename in cpp_files(directory):
+        for filename in cpp_files(directory, ignore):
             with open(filename) as f:
                 data = f.read()
                 

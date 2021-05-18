@@ -7,4 +7,4 @@
 
 cformat=${1:-clang-format}
 
-find src test -regex ".*\.\(cc\|h\|tcc\)" | xargs $cformat -i
+find src test ! -path '*/fits2idia/*' -regex ".*\.\(cc\|h\|tcc\)" | xargs $cformat -i

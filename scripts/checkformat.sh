@@ -7,7 +7,7 @@
 # If changes are necessary the script will print a diff -- please run reformat.sh to fix the code.
 # The clang-format configuration is found in .clang-format
 
-PARAMS=(\( -regex '.*\.\(cc\|h\|tcc\)' \))
+PARAMS=(\( ! -path '*/fits2idia/*' -regex '.*\.\(cc\|h\|tcc\)' \))
 
 find src test "${PARAMS[@]}" -exec cat {} \; | diff -u <(find src test "${PARAMS[@]}" -exec clang-format {} \;) -
 
