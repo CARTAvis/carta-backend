@@ -796,23 +796,21 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
     }
 
     try {
-        if (is_reference_image) {
+        // Convert reference WCRegion to LCRegion in image with output csys and shape
+        // Create reference WCRegion if not set
+        if (!_reference_region_set) {
+            SetReferenceRegion();
+        }
+
+        // Convert to LCRegion in output csys and shape
+        std::lock_guard<std::mutex> guard(_region_mutex);
+        if (ReferenceRegionValid()) {
+            std::shared_ptr<const casacore::WCRegion> reference_region = std::atomic_load(&_reference_region);
+            lc_region = reference_region->toLCRegion(output_csys, output_shape);
+        } else if (is_reference_image) {
             // Create LCRegion with control points for reference image
             casacore::TableRecord region_record = GetControlPointsRecord(output_shape);
             lc_region = casacore::LCRegion::fromRecord(region_record, "");
-        } else {
-            // Convert reference WCRegion to LCRegion in image with output csys and shape
-            // Create reference WCRegion if needed
-            if (!_reference_region_set) {
-                SetReferenceRegion();
-            }
-
-            // Convert to LCRegion in output csys and shape
-            std::lock_guard<std::mutex> guard(_region_mutex);
-            if (ReferenceRegionValid()) {
-                std::shared_ptr<const casacore::WCRegion> reference_region = std::atomic_load(&_reference_region);
-                lc_region = reference_region->toLCRegion(output_csys, output_shape);
-            }
         }
     } catch (const casacore::AipsError& err) {
         spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
