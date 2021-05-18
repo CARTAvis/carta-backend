@@ -643,7 +643,7 @@ int main(int argc, char* argv[]) {
             auto port_end = settings.port[1] == -1 ? std::numeric_limits<unsigned short>::max() : settings.port[1];
             int num_listen_retries(0);
             while (!port_ok) {
-                if (num_listen_retries > MAX_SOCKET_PORT_TRIALS || port > port_end) {
+                if ((port_end == -1 && num_listen_retries > MAX_SOCKET_PORT_TRIALS) || port > port_end) {
                     spdlog::error("Unable to listen on the port range {}-{}!", settings.port[0], port - 1);
                     break;
                 }
