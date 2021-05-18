@@ -18,12 +18,10 @@ CartaMiriadImage::CartaMiriadImage(const std::string& filename, casacore::MaskSp
     : casacore::MIRIADImage(filename, mask_spec),
       _filename(filename),
       _mask_spec(mask_spec),
-      _valid(false),
       _is_open(false),
       _has_mask(false),
       _pixel_mask(nullptr) {
     SetUp();
-    _valid = true;
 }
 
 CartaMiriadImage::CartaMiriadImage(const CartaMiriadImage& other)

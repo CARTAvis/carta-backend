@@ -30,6 +30,7 @@ set(TEST_SOURCES
         TestFitsImage.cc
         TestHistogram.cc
         TestMain.cc
+        TestMoment.cc
         TestProgramSettings.cc
         TestTileEncoding.cc
         TestTimer.cc
