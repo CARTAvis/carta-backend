@@ -32,9 +32,11 @@ ExternalProject_Add(fits2idia
 
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
+        CommonTestUtilities.cc
         TestBlockSmooth.cc
         TestFitsTable.cc
         TestFitsImage.cc
+        TestHdf5Image.cc
         TestHistogram.cc
         TestMain.cc
         TestMoment.cc
@@ -56,6 +58,9 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DI
 
 # Copy image generator to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/image-generator/make_image.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+
+# Create empty subdirectory for generated image files
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data/generated)
 
 add_executable(${BINARY} ${SOURCES} ${TEST_SOURCES})
 add_test(NAME ${BINARY} COMMAND ${BINARY})
