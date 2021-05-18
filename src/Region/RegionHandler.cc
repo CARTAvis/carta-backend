@@ -673,13 +673,13 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 
     try {
         casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id);
-        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
         if (applied_region == nullptr) {
             return false;
         }
 
         // Create LCBox with z range and stokes using a slicer
         casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes);
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
         casacore::LCBox z_stokes_box(z_stokes_slicer, image_shape);
 
         // Set returned region
