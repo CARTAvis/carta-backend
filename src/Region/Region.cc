@@ -880,7 +880,7 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
         }
         case CARTA::RegionType::RECTANGLE: {
             // Rectangle is LCPolygon with 4 corners; calculate from center and width/height
-            casacore::Vector<casacore::Float> x(4), y(4);
+            casacore::Vector<casacore::Float> x(5), y(5);
             float center_x = _region_state.control_points[0].x();
             float center_y = _region_state.control_points[0].y();
             float width = _region_state.control_points[1].x();
@@ -899,6 +899,9 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             // Top left
             x(3) = x_min;
             y(3) = y_max;
+            // LCPolygon::toRecord includes last point as first point to close region
+            x(4) = x(0);
+            y(4) = y(0);
 
             record.define("name", "LCPolygon");
             record.define("x", x);
@@ -912,7 +915,7 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 x(i) = _region_state.control_points[i].x();
                 y(i) = _region_state.control_points[i].y();
             }
-            // LCPolygon::toRecord includes first point as last point to close region
+            // LCPolygon::toRecord includes last point as first point to close region
             x(npoints) = _region_state.control_points[0].x();
             y(npoints) = _region_state.control_points[0].y();
 
