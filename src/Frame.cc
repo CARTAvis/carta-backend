@@ -95,13 +95,8 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     }
 
     // set default histogram requirements
-    _image_histogram_configs.clear();
+    InitImageHistogramConfigs();
     _cube_histogram_configs.clear();
-    HistogramConfig config;
-    config.coordinate = "z"; // current stokes type
-    config.channel = CURRENT_Z;
-    config.num_bins = AUTO_BIN_SIZE;
-    _image_histogram_configs.push_back(config);
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -549,14 +544,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
     }
 
     if (region_id == IMAGE_REGION_ID) {
-        _image_histogram_configs.clear();
-
-        // set histogram requirements for the image
-        HistogramConfig config;
-        config.coordinate = "z"; // current stokes type
-        config.channel = CURRENT_Z;
-        config.num_bins = AUTO_BIN_SIZE;
-        _image_histogram_configs.push_back(config);
+        InitImageHistogramConfigs();
     } else {
         _cube_histogram_configs.clear();
     }
@@ -1805,4 +1793,15 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
+}
+
+void Frame::InitImageHistogramConfigs() {
+    _image_histogram_configs.clear();
+
+    // set histogram requirements for the image
+    HistogramConfig config;
+    config.coordinate = "z"; // current stokes type
+    config.channel = CURRENT_Z;
+    config.num_bins = AUTO_BIN_SIZE;
+    _image_histogram_configs.push_back(config);
 }

@@ -224,6 +224,8 @@ protected:
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
         casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
 
+    void InitImageHistogramConfigs();
+
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
