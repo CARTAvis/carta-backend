@@ -635,7 +635,10 @@ bool Frame::FillRegionHistogramData(
                 spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt_image_histogram * 1e-3,
                     (float)stats.num_pixels / dt_image_histogram);
             }
+        } else {
+            region_histogram_callback(histogram_data); // send region histogram data message
         }
+
         have_valid_histogram |= histogram_filled;
     }
 
@@ -688,10 +691,10 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
 
     bool have_histogram(false);
     carta::Histogram hist;
-    if (z == CURRENT_Z) {
-        have_histogram = GetCachedImageHistogram(z, stokes, num_bins, hist);
-    } else if (z == ALL_Z) {
+    if (z == ALL_Z) {
         have_histogram = GetCachedCubeHistogram(stokes, num_bins, hist);
+    } else {
+        have_histogram = GetCachedImageHistogram(z, stokes, num_bins, hist);
     }
 
     if (have_histogram) {
