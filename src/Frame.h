@@ -140,7 +140,7 @@ public:
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
-    bool FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsData>& stats_data_vec);
+    bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> stats_data_callback, int region_id, int file_id);
 
     // Spatial: cursor
     bool SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles);

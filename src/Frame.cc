@@ -842,7 +842,7 @@ bool Frame::SetStatsRequirements(int region_id, const std::vector<CARTA::SetStat
     return true;
 }
 
-bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsData>& stats_data_vec) {
+bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> stats_data_callback, int region_id, int file_id) {
     if (region_id != IMAGE_REGION_ID) {
         return false;
     }
@@ -862,6 +862,8 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
 
         // Set response message
         CARTA::RegionStatsData stats_data;
+        stats_data.set_file_id(file_id);
+        stats_data.set_region_id(region_id);
         stats_data.set_channel(z);
         stats_data.set_stokes(stokes);
 
@@ -875,7 +877,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
         auto& image_stats = _loader->GetImageStats(stokes, z);
         if (image_stats.full) {
             FillStatisticsValuesFromMap(stats_data, required_stats, image_stats.basic_stats);
-            stats_data_vec.push_back(stats_data);
+            stats_data_callback(stats_data);
             continue;
         }
 
@@ -884,7 +886,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
         if (_image_stats.count(cache_key)) {
             auto stats_map = _image_stats[cache_key];
             FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
-            stats_data_vec.push_back(stats_data);
+            stats_data_callback(stats_data);
             continue;
         }
 
@@ -903,7 +905,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
 
             // complete message
             FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
-            stats_data_vec.push_back(stats_data);
+            stats_data_callback(stats_data);
 
             // cache results
             _image_stats[cache_key] = stats_map;
@@ -914,7 +916,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
         }
     }
 
-    return stats_data_vec.size();
+    return true;
 }
 
 // ****************************************************

@@ -1469,27 +1469,19 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
         return data_sent;
     }
 
+    auto region_stats_data_callback = [&](CARTA::RegionStatsData region_stats_data) {
+        if (region_stats_data.statistics_size() > 0) {
+            SendFileEvent(region_stats_data.file_id(), CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
+        }
+    };
+
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region stats
-        data_sent = _region_handler->FillRegionStatsData(
-            [&](CARTA::RegionStatsData region_stats_data) {
-                if (region_stats_data.statistics_size() > 0) {
-                    SendFileEvent(region_stats_data.file_id(), CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
-                }
-            },
-            region_id, file_id);
+        data_sent = _region_handler->FillRegionStatsData(region_stats_data_callback, region_id, file_id);
     } else if (region_id == IMAGE_REGION_ID) {
         // Image stats
         if (_frames.count(file_id)) {
-            std::vector<CARTA::RegionStatsData> region_stats_data_vec;
-            if (_frames.at(file_id)->FillRegionStatsData(region_id, region_stats_data_vec)) {
-                for (auto region_stats_data : region_stats_data_vec) { // send region stats data with respect to stokes
-                    region_stats_data.set_file_id(file_id);
-                    region_stats_data.set_region_id(region_id);
-                    SendFileEvent(file_id, CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
-                }
-                data_sent = true;
-            }
+            data_sent = _frames.at(file_id)->FillRegionStatsData(region_stats_data_callback, region_id, file_id);
         }
     }
     return data_sent;
