@@ -10,7 +10,7 @@
 
 using namespace carta;
 
-std::string ImageGenerator::GenerateFitsImage(const std::string& params) {
+fs::path GetTestRoot() {
     std::string path_string;
     fs::path root;
     if (FindExecutablePath(path_string)) {
@@ -18,11 +18,17 @@ std::string ImageGenerator::GenerateFitsImage(const std::string& params) {
     } else {
         root = fs::current_path();
     }
+    return root;
+}
+
+std::string ImageGenerator::GenerateFitsImage(const std::string& params) {
+    fs::path root = GetTestRoot();
 
     std::string filename = fmt::format("{:x}.fits", std::hash<std::string>{}(params));
-    std::string fitspath = (root / "data/generated" / filename).string();
+    std::string fitspath = (root / "data" / "generated" / filename).string();
+    std::string generator_path = (root / "bin" / "make_image.py" ).string();
 
-    std::string fitscmd = fmt::format("./bin/make_image.py -s 0 -o {} {}", fitspath, params);
+    std::string fitscmd = fmt::format("{} -s 0 -o {} {}", generator_path, fitspath, params);
     auto result = system(fitscmd.c_str());
 
     generated_images.insert(fitspath);
@@ -30,10 +36,13 @@ std::string ImageGenerator::GenerateFitsImage(const std::string& params) {
 }
 
 std::string ImageGenerator::GenerateHdf5Image(const std::string& params) {
+    fs::path root = GetTestRoot();
+    
     std::string fitspath = ImageGenerator::GenerateFitsImage(params);
     std::string hdf5path = fmt::format("{}.hdf5", fitspath);
+    std::string converter_path = (root / "bin" / "fits2idia" ).string();
 
-    std::string hdf5cmd = fmt::format("./bin/fits2idia -o {} {}", hdf5path, fitspath);
+    std::string hdf5cmd = fmt::format("{} -o {} {}", converter_path, hdf5path, fitspath);
     auto result = system(hdf5cmd.c_str());
 
     generated_images.insert(hdf5path);

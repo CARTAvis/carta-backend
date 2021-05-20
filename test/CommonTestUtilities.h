@@ -23,6 +23,8 @@ namespace fs = std::filesystem;
 
 using namespace carta;
 
+fs::path GetTestRoot();
+
 class ImageGenerator {
 public:
     static std::string GenerateFitsImage(const std::string& params);
