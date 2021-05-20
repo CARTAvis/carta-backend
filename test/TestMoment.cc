@@ -21,7 +21,6 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-using namespace std;
 using namespace carta;
 
 class MomentTest : public ::testing::Test {
@@ -158,7 +157,7 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    string file_name = "data/images/fits/M17_SWex_unittest.fits";
+    std::string file_name = "data/images/fits/M17_SWex_unittest.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
@@ -170,7 +169,7 @@ TEST_F(MomentTest, CheckConsistency) {
 }
 
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
-    string file_name = "data/images/fits/small_perplanebeam.fits";
+    std::string file_name = "data/images/fits/small_perplanebeam.fits";
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 

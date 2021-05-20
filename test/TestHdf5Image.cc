@@ -12,7 +12,6 @@
 
 #include "CommonTestUtilities.h"
 
-using namespace std;
 using namespace carta;
 
 // Allows testing of protected methods in Frame without polluting the original class

@@ -7,7 +7,7 @@
 #ifndef CARTA_BACKEND__COMMON_TEST_UTILITIES_H_
 #define CARTA_BACKEND__COMMON_TEST_UTILITIES_H_
 
-#include <functional>
+#include <unordered_set>
 
 #include "Util.h"
 
@@ -21,17 +21,16 @@ namespace fs = std::filesystem;
 
 #include <spdlog/fmt/fmt.h>
 
-using namespace std;
 using namespace carta;
 
 class ImageGenerator {
 public:
-    static string GenerateFitsImage(const string& params);
-    static string GenerateHdf5Image(const string& params);
+    static std::string GenerateFitsImage(const std::string& params);
+    static std::string GenerateHdf5Image(const std::string& params);
     static void DeleteImages();
 
 private:
-    static unordered_set<string> generated_images;
+    static std::unordered_set<std::string> generated_images;
 };
 
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_

@@ -24,14 +24,13 @@ namespace fs = std::filesystem;
 
 #define GTEST_COUT std::cerr << "[          ] [ DEBUG ]"
 
-using namespace std;
 
 class ProgramSettingsTest : public ::testing::Test {
 public:
     carta::ProgramSettings default_settings;
 
     // Utility for converting vector of string values to
-    static auto SettingsFromVector(vector<string> argVector) {
+    static auto SettingsFromVector(std::vector<std::string> argVector) {
         std::vector<char*> cstrings;
         cstrings.reserve(argVector.size());
 
@@ -44,11 +43,11 @@ public:
         return std::move(settings);
     }
 
-    static auto SettingsFromString(const string& argString) {
-        vector<string> argVector;
+    static auto SettingsFromString(const std::string& argString) {
+        std::vector<std::string> argVector;
 
-        string token;
-        istringstream stream(argString);
+        std::string token;
+        std::istringstream stream(argString);
         while (std::getline(stream, token, ' ')) {
             argVector.push_back(token);
         }
@@ -164,7 +163,7 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
 
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     auto image_dir = fs::current_path() / "data/images";
-    string image_path_string = "data/images/fits/noise_10px_10px.fits";
+    std::string image_path_string = "data/images/fits/noise_10px_10px.fits";
     auto image_path = image_dir / "fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", image_path_string});
     ASSERT_EQ(settings.files.size(), 1);
@@ -173,7 +172,7 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
     auto image_dir = fs::current_path() / "data/images";
-    string image_path_string = "./data/images/fits/noise_10px_10px.fits";
+    std::string image_path_string = "./data/images/fits/noise_10px_10px.fits";
     auto image_path = image_dir / "fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", image_path_string});
     ASSERT_EQ(settings.files.size(), 1);
@@ -183,7 +182,7 @@ TEST_F(ProgramSettingsTest, TrimExtraFolders) {
 TEST_F(ProgramSettingsTest, FileImageRelativeToTopLevel) {
     auto top_level_dir = fs::current_path() / "data/images";
 
-    string image_path_string = "data/images/fits/noise_10px_10px.fits";
+    std::string image_path_string = "data/images/fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");

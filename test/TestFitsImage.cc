@@ -3,7 +3,6 @@
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
-#include <unordered_set>
 
 #include <gtest/gtest.h>
 
@@ -12,7 +11,6 @@
 
 #include "CommonTestUtilities.h"
 
-using namespace std;
 using namespace carta;
 
 // Allows testing of protected methods in Frame without polluting the original class

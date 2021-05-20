@@ -18,7 +18,6 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-using namespace std;
 
 TEST(UtilTest, SubdirectoryAbs) {
     auto pwd = fs::current_path();

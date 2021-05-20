@@ -24,7 +24,6 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-using namespace std;
 using json = nlohmann::json;
 
 // Allows testing of protected methods in SimpleFrontendServer without polluting the original class
@@ -99,15 +98,15 @@ public:
 
     void WriteDefaultPrefs() {
         fs::create_directories(preferences_path.parent_path());
-        ofstream(preferences_path.string()) << example_options.dump(4);
+        std::ofstream(preferences_path.string()) << example_options.dump(4);
     }
 
     void WriteDefaultLayouts() {
         fs::create_directories(layouts_path);
-        ofstream((layouts_path / "test_layout.json").string()) << example_options.dump(4);
-        ofstream((layouts_path / "test_layout2.json").string()) << example_options.dump();
-        ofstream((layouts_path / "test_layout3.json").string()) << "this is not a json file!";
-        ofstream((layouts_path / "bad_layout_name").string()) << example_options.dump(4);
+        std::ofstream((layouts_path / "test_layout.json").string()) << example_options.dump(4);
+        std::ofstream((layouts_path / "test_layout2.json").string()) << example_options.dump();
+        std::ofstream((layouts_path / "test_layout3.json").string()) << "this is not a json file!";
+        std::ofstream((layouts_path / "bad_layout_name").string()) << example_options.dump(4);
     }
 
     void TearDown() {

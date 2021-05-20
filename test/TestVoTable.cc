@@ -17,13 +17,12 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-using namespace std;
 using namespace carta;
 
 class VoTableTest : public ::testing::Test {
 public:
-    static string ImagePath(const string& filename) {
-        string path_string;
+    static std::string ImagePath(const std::string& filename) {
+        std::string path_string;
         fs::path path;
         if (FindExecutablePath(path_string)) {
             path = fs::path(path_string).parent_path();
@@ -156,11 +155,11 @@ TEST_F(VoTableTest, CorrectColumnTypes) {
     EXPECT_NE(DataColumn<float>::TryCast(table["col1"]), nullptr);
     EXPECT_EQ(DataColumn<double>::TryCast(table["col1"]), nullptr);
 
-    EXPECT_NE(DataColumn<string>::TryCast(table["col3"]), nullptr);
+    EXPECT_NE(DataColumn<std::string>::TryCast(table["col3"]), nullptr);
     EXPECT_EQ(DataColumn<int>::TryCast(table["col3"]), nullptr);
 
     EXPECT_NE(DataColumn<int>::TryCast(table["col4"]), nullptr);
-    EXPECT_EQ(DataColumn<string>::TryCast(table["col4"]), nullptr);
+    EXPECT_EQ(DataColumn<std::string>::TryCast(table["col4"]), nullptr);
 
     EXPECT_NE(DataColumn<int16_t>::TryCast(table["col5"]), nullptr);
     EXPECT_EQ(DataColumn<int>::TryCast(table["col5"]), nullptr);
@@ -179,7 +178,7 @@ TEST_F(VoTableTest, CorrectDataValues) {
     EXPECT_FLOAT_EQ(col2_vals[0], 41.27f);
     EXPECT_FLOAT_EQ(col2_vals[1], -63.85f);
 
-    auto& col3_vals = DataColumn<string>::TryCast(table["col3"])->entries;
+    auto& col3_vals = DataColumn<std::string>::TryCast(table["col3"])->entries;
     EXPECT_EQ(col3_vals.size(), 3);
     EXPECT_EQ(col3_vals[0], "N 224");
     EXPECT_EQ(col3_vals[1], "N 6744");
@@ -235,7 +234,7 @@ TEST_F(VoTableTest, FailFilterExtractMistypedValues) {
     auto view = table.View();
     auto double_vals = view.Values<double>(table["col1"]);
     EXPECT_TRUE(double_vals.empty());
-    auto string_vals = view.Values<string>(table["col1"]);
+    auto string_vals = view.Values<std::string>(table["col1"]);
     EXPECT_TRUE(string_vals.empty());
 
     view.StringFilter(table["col3"], "N 6744");
@@ -248,7 +247,7 @@ TEST_F(VoTableTest, FilterExtractValues) {
 
     auto view = table.View();
     view.NumericFilter(table["col1"], CARTA::GreaterOrEqual, 10);
-    auto string_vals = view.Values<string>(table["col3"]);
+    auto string_vals = view.Values<std::string>(table["col3"]);
     EXPECT_EQ(string_vals.size(), 3);
     EXPECT_EQ(string_vals[0], "N 224");
 
@@ -360,7 +359,7 @@ TEST_F(VoTableTest, SortStringAscending) {
 
     auto view = table.View();
     EXPECT_TRUE(view.SortByColumn(table["col3"]));
-    auto vals = view.Values<string>(table["col3"]);
+    auto vals = view.Values<std::string>(table["col3"]);
     EXPECT_EQ(vals[0], "N 224");
     EXPECT_EQ(vals[1], "N 598");
     EXPECT_EQ(vals[2], "N 6744");
@@ -371,7 +370,7 @@ TEST_F(VoTableTest, SortStringDescending) {
 
     auto view = table.View();
     EXPECT_TRUE(view.SortByColumn(table["col3"], false));
-    auto vals = view.Values<string>(table["col3"]);
+    auto vals = view.Values<std::string>(table["col3"]);
     EXPECT_EQ(vals[0], "N 6744");
     EXPECT_EQ(vals[1], "N 598");
     EXPECT_EQ(vals[2], "N 224");
@@ -384,7 +383,7 @@ TEST_F(VoTableTest, SortStringSubset) {
     auto view = table.View();
     view.NumericFilter(table["col1"], CARTA::RangeClosed, 11, 300);
     EXPECT_TRUE(view.SortByColumn(table["col3"]));
-    auto vals = view.Values<string>(table["col3"]);
+    auto vals = view.Values<std::string>(table["col3"]);
     EXPECT_EQ(vals[0], "N 598");
     EXPECT_EQ(vals[1], "N 6744");
 }
