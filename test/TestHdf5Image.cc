@@ -31,7 +31,7 @@ public:
 };
 
 TEST_F(Hdf5ImageTest, BasicLoadingTest) {
-    auto path_string = GenerateHdf5Image("10 10");
+    auto path_string = GeneratedHdf5ImagePath("10 10");
     std::unique_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     EXPECT_NE(loader.get(), nullptr);
     std::unique_ptr<Frame> frame(new Frame(0, loader.release(), "0"));
@@ -40,7 +40,7 @@ TEST_F(Hdf5ImageTest, BasicLoadingTest) {
 }
 
 TEST_F(Hdf5ImageTest, ExampleFriendTest) {
-    auto path_string = GenerateHdf5Image("10 10");
+    auto path_string = GeneratedHdf5ImagePath("10 10");
     // TestFrame used instead of Frame if access to protected values is required
     std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
@@ -48,7 +48,7 @@ TEST_F(Hdf5ImageTest, ExampleFriendTest) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
-    auto path_string = GenerateHdf5Image("10 10");
+    auto path_string = GeneratedHdf5ImagePath("10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -61,7 +61,7 @@ TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
-    auto path_string = GenerateHdf5Image("10 10 10");
+    auto path_string = GeneratedHdf5ImagePath("10 10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -76,7 +76,7 @@ TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
-    auto path_string = GenerateHdf5Image("10 10 10 1");
+    auto path_string = GeneratedHdf5ImagePath("10 10 10 1");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -91,7 +91,7 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = GenerateHdf5Image("10 10 1 10");
+    path_string = GeneratedHdf5ImagePath("10 10 1 10");
     frame.reset(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -107,7 +107,7 @@ TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
 }
 
 TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
-    auto path_string = GenerateHdf5Image("10 10 5 2");
+    auto path_string = GeneratedHdf5ImagePath("10 10 5 2");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -122,7 +122,7 @@ TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = GenerateHdf5Image("10 10 2 5");
+    path_string = GeneratedHdf5ImagePath("10 10 2 5");
     frame.reset(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 

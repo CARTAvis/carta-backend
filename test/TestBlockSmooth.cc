@@ -29,7 +29,6 @@
 
 typedef casacore::Matrix<float> Matrix2F;
 
-
 class BlockSmoothingTest : public ::testing::Test {
 public:
     const std::vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};

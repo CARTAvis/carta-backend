@@ -14,15 +14,7 @@
 #include "Logger/Logger.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-
-namespace fs = std::filesystem;
-#endif
+#include "CommonTestUtilities.h"
 
 using json = nlohmann::json;
 
@@ -116,6 +108,9 @@ public:
         fs::remove(preferences_path.parent_path());
         fs::remove(preferences_path.parent_path().parent_path());
     }
+
+private:
+    fs::path working_directory;
 };
 
 TEST_F(RestApiTest, EmptyStartingPrefs) {

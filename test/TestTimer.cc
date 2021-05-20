@@ -13,7 +13,6 @@
 
 #include "../src/Timer/Timer.h"
 
-
 class TimerTest : public ::testing::Test {
 public:
     // Test for 0.1 ms accuracy

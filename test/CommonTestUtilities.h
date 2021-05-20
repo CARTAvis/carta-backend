@@ -23,16 +23,26 @@ namespace fs = std::filesystem;
 
 using namespace carta;
 
-fs::path GetTestRoot();
+fs::path TestRoot();
 
 class ImageGenerator {
 public:
-    static std::string GenerateFitsImage(const std::string& params);
-    static std::string GenerateHdf5Image(const std::string& params);
+    static std::string GeneratedFitsImagePath(const std::string& params);
+    static std::string GeneratedHdf5ImagePath(const std::string& params);
     static void DeleteImages();
 
 private:
     static std::unordered_set<std::string> generated_images;
+};
+
+class FileFinder {
+public:
+    static std::string DataPath(const std::string& filename);
+    static std::string FitsImagePath(const std::string& filename);
+    static std::string CasaImagePath(const std::string& filename);
+    static std::string Hdf5ImagePath(const std::string& filename);
+    static std::string FitsTablePath(const std::string& filename);
+    static std::string XmlTablePath(const std::string& filename);
 };
 
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_

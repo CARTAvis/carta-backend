@@ -17,7 +17,6 @@
 #include "Timer/Timer.h"
 #endif
 
-
 class HistogramTest : public ::testing::Test {
 public:
     std::random_device rd;
