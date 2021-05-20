@@ -736,7 +736,8 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
 // ***** Fill histogram *****
 
-bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
+bool RegionHandler::FillRegionHistogramData(
+    std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id) {
     // Fill histogram data for given region and file
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
@@ -761,7 +762,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
                 if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_messages)) {
                     for (const auto& histogram_message : histogram_messages) {
-                        cb(histogram_message); // send histogram data with respect to stokes
+                        region_histogram_callback(histogram_message); // send histogram data with respect to stokes
                     }
                     message_filled = true;
                 }
@@ -785,7 +786,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 std::vector<CARTA::RegionHistogramData> histogram_messages;
                 if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_messages)) {
                     for (const auto& histogram_message : histogram_messages) {
-                        cb(histogram_message); // send histogram data with respect to stokes
+                        region_histogram_callback(histogram_message); // send histogram data with respect to stokes
                     }
                     message_filled = true;
                 }
