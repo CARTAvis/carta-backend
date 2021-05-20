@@ -313,7 +313,6 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     const std::string input = DataPath("settings-bad-fields.json");
-    ;
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
