@@ -25,7 +25,7 @@ find_package(GTest)
 include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
 ExternalProject_Add(fits2idia
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fits2idia
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/fits2idia
   INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -57,7 +57,7 @@ list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main.cc)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # Copy image generator to build directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/image-generator/make_image.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/image-generator/make_image.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 # Create empty subdirectory for generated image files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data/generated)
