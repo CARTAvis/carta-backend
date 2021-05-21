@@ -49,7 +49,6 @@ std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params) {
     return hdf5path;
 }
 
-// TODO simplify all of this; create and remove the whole directory from here
 void ImageGenerator::DeleteImages() {
     for (auto imgpath : generated_images) {
         std::string rmcmd = fmt::format("rm {}", imgpath);
