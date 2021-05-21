@@ -638,13 +638,26 @@ int main(int argc, char* argv[]) {
 
         bool port_ok(false);
         int port(-1);
-        if (settings.port.size() > 1) { // a port range was given
-            port = settings.port[0];
-            auto port_end = settings.port[1] == -1 ? std::numeric_limits<unsigned short>::max() : settings.port[1];
-            int num_listen_retries(0);
+
+        if (settings.port.size() == 1) {
+            // If the user specifies a valid port, we should not try other ports
+            port = settings.port.size() == 1 ? settings.port[0] : DEFAULT_SOCKET_PORT;
+            app.listen(settings.host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+                if (token) {
+                    port_ok = true;
+                } else {
+                    spdlog::error("Could not listen on port {}!\n", port);
+                }
+            });
+        } else {
+            port = settings.port.size() > 0 ? settings.port[0] : DEFAULT_SOCKET_PORT;
+            const unsigned short port_start = port;
+            const unsigned short port_end = settings.port.size() > 1
+                                                ? (settings.port[1] == -1 ? std::numeric_limits<unsigned short>::max() : settings.port[1])
+                                                : port + MAX_SOCKET_PORT_TRIALS;
             while (!port_ok) {
-                if ((port_end == -1 && num_listen_retries > MAX_SOCKET_PORT_TRIALS) || port > port_end) {
-                    spdlog::error("Unable to listen on the port range {}-{}!", settings.port[0], port - 1);
+                if (port > port_end) {
+                    spdlog::error("Unable to listen on the port range {}-{}!", port_start, port - 1);
                     break;
                 }
                 app.listen(settings.host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
@@ -653,20 +666,9 @@ int main(int argc, char* argv[]) {
                     } else {
                         spdlog::warn("Port {} is already in use. Trying next port.", port);
                         ++port;
-                        ++num_listen_retries;
                     }
                 });
             }
-        } else {
-            port = settings.port.size() == 1 ? settings.port[0] : DEFAULT_SOCKET_PORT;
-            // If the user specifies a valid port, we should not try other ports
-            app.listen(settings.host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
-                if (token) {
-                    port_ok = true;
-                } else {
-                    spdlog::error("Could not listen on port {}!\n", port);
-                }
-            });
         }
 
         if (port_ok) {
