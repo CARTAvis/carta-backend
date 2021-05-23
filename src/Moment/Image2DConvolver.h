@@ -76,27 +76,32 @@ private:
     void SetAxes(const std::pair<casacore::uInt, casacore::uInt>& axes);
 
     // returns the value by which pixel values will be scaled
-    Double DealWithRestoringBeam(casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out,
-        const casacore::Array<Double>& kernel_array, Double kernel_volume, const casacore::Vector<casacore::Quantity>& parameters,
-        const casacore::CoordinateSystem& csys, const casacore::GaussianBeam& beam_in, const casacore::Unit& brightness_unit_in) const;
+    casacore::Double DealWithRestoringBeam(casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out,
+        const casacore::Array<casacore::Double>& kernel_array, casacore::Double kernel_volume,
+        const casacore::Vector<casacore::Quantity>& parameters, const casacore::CoordinateSystem& csys,
+        const casacore::GaussianBeam& beam_in, const casacore::Unit& brightness_unit_in) const;
 
-    void DoMultipleBeams(ImageInfo& image_info_out, Double& kernel_volume, SPIIT image_out, String& brightness_unit_out,
-        GaussianBeam& beam_out, Double factor1, const ImageInterface<T>& image_in, const std::vector<Quantity>& original_params,
-        std::vector<Quantity>& kernel_params, Array<Double>& kernel, Bool log_factors, Double pixel_area) const;
+    void DoMultipleBeams(casacore::ImageInfo& image_info_out, casacore::Double& kernel_volume, SPIIT image_out,
+        casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out, casacore::Double factor1,
+        const casacore::ImageInterface<T>& image_in, const std::vector<casacore::Quantity>& original_params,
+        std::vector<casacore::Quantity>& kernel_params, casacore::Array<casacore::Double>& kernel, casacore::Bool log_factors,
+        casacore::Double pixel_area) const;
 
     // The kernel is currently always real-valued, so make it Double at this point to avoid unnecessary templating issues if the image has
     // is complex valued
-    void DoSingleBeam(ImageInfo& image_info_out, Double& kernel_volume, std::vector<Quantity>& kernel_params, Array<Double>& kernel,
-        String& brightness_unit_out, GaussianBeam& beam_out, SPIIT image_out, const ImageInterface<T>& image_in,
-        const std::vector<Quantity>& original_params, Bool log_factors, Double factor1, Double pixel_area) const;
+    void DoSingleBeam(casacore::ImageInfo& image_info_out, casacore::Double& kernel_volume, std::vector<Quantity>& kernel_params,
+        casacore::Array<casacore::Double>& kernel, casacore::String& brightness_unit_out, casacore::GaussianBeam& beam_out, SPIIT image_out,
+        const casacore::ImageInterface<T>& image_in, const std::vector<Quantity>& original_params, casacore::Bool log_factors,
+        casacore::Double factor1, casacore::Double pixel_area) const;
 
-    Double FillKernel(casacore::Matrix<Double>& kernel_matrix, const casacore::IPosition& kernel_shape,
+    casacore::Double FillKernel(casacore::Matrix<casacore::Double>& kernel_matrix, const casacore::IPosition& kernel_shape,
         const casacore::Vector<casacore::Double>& parameters) const;
 
-    void FillGaussian(Double& max_val, Double& volume, casacore::Matrix<Double>& pixels, Double height, Double x_centre, Double y_centre,
-        Double major_axis, Double ratio, Double position_angle) const;
+    void FillGaussian(casacore::Double& max_val, casacore::Double& volume, casacore::Matrix<casacore::Double>& pixels,
+        casacore::Double height, casacore::Double x_centre, casacore::Double y_centre, casacore::Double major_axis, casacore::Double ratio,
+        casacore::Double position_angle) const;
 
-    Double MakeKernel(casacore::Array<Double>& kernel_array, const std::vector<casacore::Quantity>& parameters,
+    casacore::Double MakeKernel(casacore::Array<casacore::Double>& kernel_array, const std::vector<casacore::Quantity>& parameters,
         const casacore::ImageInterface<T>& image_in) const;
 
     casacore::IPosition ShapeOfKernel(const casacore::Vector<casacore::Double>& parameters, const casacore::uInt ndim) const;
@@ -106,9 +111,9 @@ private:
     std::vector<casacore::Quantity> GetConvolvingBeamForTargetResolution(
         const std::vector<casacore::Quantity>& target_beam_params, const casacore::GaussianBeam& input_beam) const;
 
-    void LogBeamInfo(const ImageInfo& imageInfo, const String& desc) const;
+    void LogBeamInfo(const casacore::ImageInfo& image_info, const casacore::String& description) const;
 
-    SPIIT PrepareOutputImage(const casacore::ImageInterface<T>& image, casacore::Bool drop_degen = false) const;
+    SPIIT PrepareOutputImage(const casacore::ImageInterface<T>& image) const;
 
     static void CopyMask(casacore::Lattice<casacore::Bool>& mask, const casacore::ImageInterface<T>& image);
 };
