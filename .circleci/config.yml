@@ -21,11 +21,11 @@ jobs:
       - run:
           name: "build carta_backend"
           command: |
-            git submodule update --init --recursive && mkdir build && cd build && cmake .. -Dtest=on && make -j2
+            source scl_source enable devtoolset-8 && git submodule update --init --recursive && mkdir build && cd build && cmake .. -Dtest=on && make -j2
       - run:
           name: "run unit tests"
           command: |
-            cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml --gtest_filter=-"TimerTest*"
+            source scl_source enable devtoolset-8 && cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml --gtest_filter=-"TimerTest*"
       - store_test_results:
             path: /root/project/build/test
 workflows:
