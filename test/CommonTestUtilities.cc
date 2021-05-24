@@ -14,11 +14,11 @@ fs::path TestRoot() {
     std::string path_string;
     fs::path root;
     if (FindExecutablePath(path_string)) {
-        root = fs::path(path_string).parent_path();
+        root = fs::path(path_string).lexically_normal().parent_path();
     } else {
         root = fs::current_path();
     }
-    return root.lexically_normal();
+    return root;
 }
 
 std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {
