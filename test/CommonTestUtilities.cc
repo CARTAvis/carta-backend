@@ -18,7 +18,7 @@ fs::path TestRoot() {
     } else {
         root = fs::current_path();
     }
-    return root;
+    return root.lexically_normal();
 }
 
 std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {
