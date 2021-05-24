@@ -24,4 +24,4 @@
 	url = https://github.com/idia-astro/image-generator
 [submodule "test/fits2idia"]
 	path = third-party/fits2idia
-	url = https://github.com/idia-astro/fits2idia/
+	url = https://github.com/idia-astro/fits2idia
