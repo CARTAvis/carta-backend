@@ -59,9 +59,12 @@ TEST(UtilTest, SubdirectorySelf) {
 
 TEST(UtilTest, ParentNotSubdirectory) {
     auto pwd = TestRoot();
-    EXPECT_FALSE(IsSubdirectory(pwd.parent_path().string(), pwd.string()));
-    EXPECT_FALSE(IsSubdirectory((pwd / "..").string(), pwd.string()));
-    EXPECT_FALSE(IsSubdirectory("../", "./"));
+    // Temporary change to debug failing test on Mac
+    EXPECT_EQ(pwd, "dummy");
+    
+//     EXPECT_FALSE(IsSubdirectory(pwd.parent_path().string(), pwd.string()));
+//     EXPECT_FALSE(IsSubdirectory((pwd / "..").string(), pwd.string()));
+//     EXPECT_FALSE(IsSubdirectory("../", "./"));
 }
 
 TEST(UtilTest, TopIsRoot) {
