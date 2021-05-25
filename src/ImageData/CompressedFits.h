@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_COMPRESSEDFITS_H_
 #define CARTA_BACKEND_IMAGEDATA_COMPRESSEDFITS_H_
 
+#include <zlib.h>
 #include <map>
 #include <string>
 
@@ -20,9 +21,15 @@ class CompressedFits {
 public:
     CompressedFits(const std::string& filename) : _filename(filename) {}
 
+    // Headers for file info
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
 
+    // File decompression
+    int GetDecompressSize();
+    bool DecompressGzFile(std::string& unzip_filename);
+
 private:
+    gzFile OpenGzFile();
     bool IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext);
     void ParseFitsCard(casacore::String& fits_card, casacore::String& keyword, casacore::String& value, casacore::String& comment);
     void AddHeaderEntry(

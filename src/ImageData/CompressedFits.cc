@@ -6,43 +6,29 @@
 
 #include "CompressedFits.h"
 
-#include <zlib.h>
-#include <map>
-
 #include "../Logger/Logger.h"
 #include "../Util.h"
 
 #define FITS_BLOCK_SIZE 2880
 #define FITS_CARD_SIZE 80
-#define INITIAL_HEADERS_SIZE 3
+#define INITIAL_HEADERS_SIZE 4
 
 bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map) {
     // Read compressed file headers to fill map
-    // Open input zip file
-    auto zip_file = gzopen(_filename.c_str(), "rb");
+    auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {
-        spdlog::debug("Error opening {}: {}", _filename, strerror(errno));
-        return false;
-    }
-
-    // Set buffer size
-    int err(0);
-    size_t bufsize(FITS_BLOCK_SIZE);
-    int success = gzbuffer(zip_file, bufsize);
-    if (success == -1) {
-        const char* error_string = gzerror(zip_file, &err);
-        spdlog::debug("gzbuffer size {} failed with error: {}", bufsize, error_string);
-        spdlog::error("Error setting buffer size for reading compressed file");
         return false;
     }
 
     // For map:
     int hdu(-1);
     CARTA::FileInfoExtended file_info_ext;
-
+    size_t bufsize(FITS_BLOCK_SIZE);
     bool is_image_hdu(false);
+
     while (!gzeof(zip_file)) {
         // Read block
+        int err(0);
         char buffer[bufsize] = {'\0'};
         size_t bytes_read = gzread(zip_file, buffer, bufsize);
 
@@ -63,7 +49,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
             is_image_hdu = IsImageHdu(fits_block, file_info_ext);
 
             if (is_image_hdu) {
-                block_index = 3 * FITS_CARD_SIZE;
+                block_index = INITIAL_HEADERS_SIZE * FITS_CARD_SIZE;
             }
         }
 
@@ -214,4 +200,63 @@ void CompressedFits::AddHeaderEntry(
     if (!comment.empty()) {
         entry->set_comment(comment);
     }
+}
+
+gzFile CompressedFits::OpenGzFile() {
+    // Open input zip file and set buffer size
+    gzFile zip_file = gzopen(_filename.c_str(), "rb");
+
+    if (zip_file == Z_NULL) {
+        spdlog::error("Error opening {}: {}", _filename, strerror(errno));
+    } else {
+        // Set buffer size
+        int err(0);
+        size_t bufsize(FITS_BLOCK_SIZE);
+        int success = gzbuffer(zip_file, bufsize);
+
+        if (success == -1) {
+            const char* error_string = gzerror(zip_file, &err);
+            spdlog::debug("gzbuffer size {} failed with error: {}", bufsize, error_string);
+            spdlog::error("Error setting buffer for FITS gz file.");
+            gzclose(zip_file);
+            zip_file = Z_NULL;
+        }
+    }
+
+    return zip_file;
+}
+
+int CompressedFits::GetDecompressSize() {
+    // Returns size (headers + data for all HDUs) in kB
+    auto zip_file = OpenGzFile();
+    if (zip_file == Z_NULL) {
+        return 0;
+    }
+
+    size_t bufsize(FITS_BLOCK_SIZE);
+    int unzip_size(0);
+    while (!gzeof(zip_file)) {
+        // Read block
+        int err(0);
+        char buffer[bufsize] = {'\0'};
+        size_t bytes_read = gzread(zip_file, buffer, bufsize);
+
+        if (bytes_read == -1) {
+            const char* error_string = gzerror(zip_file, &err);
+            spdlog::debug("gzread failed with error: {}", error_string);
+            spdlog::error("Error reading buffer for FITS gz file.");
+            return 0;
+        }
+
+        unzip_size += bytes_read;
+    }
+
+    gzclose(zip_file);
+
+    return unzip_size;
+}
+
+bool CompressedFits::DecompressGzFile(std::string& unzip_filename) {
+    // TODO: write gz file to temp dir, return filename of unzipped file
+    return false;
 }

@@ -58,8 +58,6 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
             // Use headers in FileInfoExtended to create computed entries
             AddComputedEntriesFromHeaders(hdu_info.second, render_axes);
         }
-
-        map_ok = !hdu_info_map.empty();
     } else {
         // Get list of image HDUs
         std::vector<std::string> hdu_list;
@@ -77,8 +75,11 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
                 hdu_info_map[hdu] = file_info_ext;
             }
         }
+    }
 
-        map_ok = !hdu_info_map.empty();
+    map_ok = !hdu_info_map.empty();
+    if (!map_ok) {
+        message = "No image hdus found.";
     }
 
     return map_ok;
