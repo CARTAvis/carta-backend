@@ -25,14 +25,16 @@ std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {
     fs::path root = TestRoot();
 
     std::string filename = fmt::format("{:x}.fits", std::hash<std::string>{}(params));
-    std::string fitspath = (root / "data" / "generated" / filename).string();
-    std::string generator_path = (root / "bin" / "make_image.py").string();
+    fs::path fitspath = (root / "data" / "generated" / filename);
 
-    std::string fitscmd = fmt::format("{} -s 0 -o {} {}", generator_path, fitspath, params);
-    auto result = system(fitscmd.c_str());
+    if (!fs::exists(fitspath)) {
+        std::string generator_path = (root / "bin" / "make_image.py").string();
+        std::string fitscmd = fmt::format("{} -s 0 -o {} {}", generator_path, fitspath.string(), params);
+        auto result = system(fitscmd.c_str());
+        generated_images.insert(fitspath.string());
+    }
 
-    generated_images.insert(fitspath);
-    return fitspath;
+    return fitspath.string();
 }
 
 std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params) {
@@ -40,12 +42,14 @@ std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params) {
 
     std::string fitspath = GeneratedFitsImagePath(params);
     std::string hdf5path = fmt::format("{}.hdf5", fitspath);
-    std::string converter_path = (root / "bin" / "fits2idia").string();
 
-    std::string hdf5cmd = fmt::format("{} -o {} {}", converter_path, hdf5path, fitspath);
-    auto result = system(hdf5cmd.c_str());
+    if (!fs::exists(fs::path(hdf5path))) {
+        std::string converter_path = (root / "bin" / "fits2idia").string();
+        std::string hdf5cmd = fmt::format("{} -o {} {}", converter_path, hdf5path, fitspath);
+        auto result = system(hdf5cmd.c_str());
+        generated_images.insert(hdf5path);
+    }
 
-    generated_images.insert(hdf5path);
     return hdf5path;
 }
 
@@ -81,4 +85,11 @@ std::string FileFinder::FitsTablePath(const std::string& filename) {
 
 std::string FileFinder::XmlTablePath(const std::string& filename) {
     return (TestRoot() / "data" / "tables" / "xml" / filename).string();
+}
+
+CartaEnvironment::~CartaEnvironment() {}
+
+void CartaEnvironment::TearDown() {
+    // delete all generated images
+    ImageGenerator::DeleteImages();
 }

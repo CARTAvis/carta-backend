@@ -22,13 +22,7 @@ public:
     FRIEND_TEST(Hdf5ImageTest, ExampleFriendTest);
 };
 
-class Hdf5ImageTest : public ::testing::Test, public ImageGenerator {
-public:
-    void TearDown() {
-        // delete generated images
-        ImageGenerator::DeleteImages();
-    }
-};
+class Hdf5ImageTest : public ::testing::Test, public ImageGenerator {};
 
 TEST_F(Hdf5ImageTest, BasicLoadingTest) {
     auto path_string = GeneratedHdf5ImagePath("10 10");

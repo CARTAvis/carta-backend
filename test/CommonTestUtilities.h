@@ -9,6 +9,9 @@
 
 #include <unordered_set>
 
+#include <gtest/gtest.h>
+#include <spdlog/fmt/fmt.h>
+
 #include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
@@ -18,8 +21,6 @@ namespace fs = boost::filesystem;
 #include <filesystem>
 namespace fs = std::filesystem;
 #endif
-
-#include <spdlog/fmt/fmt.h>
 
 using namespace carta;
 
@@ -43,6 +44,12 @@ public:
     static std::string Hdf5ImagePath(const std::string& filename);
     static std::string FitsTablePath(const std::string& filename);
     static std::string XmlTablePath(const std::string& filename);
+};
+
+class CartaEnvironment : public ::testing::Environment {
+public:
+    virtual ~CartaEnvironment();
+    void TearDown() override;
 };
 
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_

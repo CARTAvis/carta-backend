@@ -21,13 +21,7 @@ public:
     FRIEND_TEST(FitsImageTest, ExampleFriendTest);
 };
 
-class FitsImageTest : public ::testing::Test, public ImageGenerator {
-public:
-    void TearDown() {
-        // delete generated images
-        ImageGenerator::DeleteImages();
-    }
-};
+class FitsImageTest : public ::testing::Test, public ImageGenerator {};
 
 TEST_F(FitsImageTest, BasicLoadingTest) {
     auto path_string = GeneratedFitsImagePath("10 10");
