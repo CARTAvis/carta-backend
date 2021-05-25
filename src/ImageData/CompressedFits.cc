@@ -13,6 +13,16 @@
 #define FITS_CARD_SIZE 80
 #define INITIAL_HEADERS_SIZE 4
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
+using namespace carta;
+
 bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map) {
     // Read compressed file headers to fill map
     auto zip_file = OpenGzFile();
@@ -85,6 +95,30 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
     gzclose(zip_file);
     return true;
+}
+
+gzFile CompressedFits::OpenGzFile() {
+    // Open input zip file and set buffer size
+    gzFile zip_file = gzopen(_filename.c_str(), "rb");
+
+    if (zip_file == Z_NULL) {
+        spdlog::error("Error opening {}: {}", _filename, strerror(errno));
+    } else {
+        // Set buffer size
+        int err(0);
+        size_t bufsize(FITS_BLOCK_SIZE);
+        int success = gzbuffer(zip_file, bufsize);
+
+        if (success == -1) {
+            const char* error_string = gzerror(zip_file, &err);
+            spdlog::debug("gzbuffer size {} failed with error: {}", bufsize, error_string);
+            spdlog::error("Error setting buffer for FITS gz file.");
+            gzclose(zip_file);
+            zip_file = Z_NULL;
+        }
+    }
+
+    return zip_file;
 }
 
 bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext) {
@@ -202,32 +236,16 @@ void CompressedFits::AddHeaderEntry(
     }
 }
 
-gzFile CompressedFits::OpenGzFile() {
-    // Open input zip file and set buffer size
-    gzFile zip_file = gzopen(_filename.c_str(), "rb");
-
-    if (zip_file == Z_NULL) {
-        spdlog::error("Error opening {}: {}", _filename, strerror(errno));
-    } else {
-        // Set buffer size
-        int err(0);
-        size_t bufsize(FITS_BLOCK_SIZE);
-        int success = gzbuffer(zip_file, bufsize);
-
-        if (success == -1) {
-            const char* error_string = gzerror(zip_file, &err);
-            spdlog::debug("gzbuffer size {} failed with error: {}", bufsize, error_string);
-            spdlog::error("Error setting buffer for FITS gz file.");
-            gzclose(zip_file);
-            zip_file = Z_NULL;
-        }
-    }
-
-    return zip_file;
-}
-
 unsigned long long CompressedFits::GetDecompressSize() {
     // Returns size of decompressed gz file in kB
+
+    // Check if file has already been decompressed and return size
+    if (DecompressedFileExists()) {
+        fs::path unzip_path(_unzip_file);
+        return fs::file_size(unzip_path);
+    }
+
+    // Decompress file in blocks and accumulate size
     auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {
         return 0;
@@ -257,7 +275,103 @@ unsigned long long CompressedFits::GetDecompressSize() {
     return unzip_size / 1000;
 }
 
-bool CompressedFits::DecompressGzFile(std::string& unzip_filename) {
-    // TODO: write gz file to temp dir, return filename of unzipped file
+bool CompressedFits::DecompressGzFile(std::string& unzip_file, std::string& error) {
+    // Decompress file to temp dir if needed.  Return unzip_file or error.
+    if (DecompressedFileExists()) {
+        unzip_file = _unzip_file;
+        return true;
+    }
+
+    if (_unzip_file.empty()) {
+        error = "Cannot determine temporary file path to decompress image.";
+        return false;
+    }
+
+    // Open input zip file and set buffer
+    auto zip_file = OpenGzFile();
+
+    // Open output fits file
+    spdlog::debug("Decompressing FITS file to {}", _unzip_file);
+    std::ofstream out_file(_unzip_file, std::ios_base::out | std::ios_base::binary);
+
+    // Read and decompress file, write to output file
+    size_t bufsize(FITS_BLOCK_SIZE);
+    int err(0);
+
+    while (!gzeof(zip_file)) {
+        // Read and decompress file into buffer
+        char buffer[bufsize];
+        size_t bytes_read = gzread(zip_file, buffer, bufsize);
+
+        if (bytes_read == -1) {
+            const char* error_string = gzerror(zip_file, &err);
+            spdlog::debug("gzread failed with error {}", error_string);
+            error = "Error reading gz file.";
+            return false;
+        } else {
+            out_file.write(buffer, bytes_read);
+            auto file_offset = gzoffset(zip_file);
+
+            if (bytes_read < bufsize) {
+                if (gzeof(zip_file)) {
+                    break;
+                } else {
+                    const char* error_string = gzerror(zip_file, &err);
+                    if (err != Z_OK) {
+                        spdlog::debug("Error reading gz file: {}", error_string);
+
+                        // Close gz file
+                        gzclose(zip_file);
+
+                        // Close and remove decompressed file
+                        out_file.close();
+                        fs::path out_path(unzip_file);
+                        fs::remove(out_path);
+
+                        error = "Error reading gz file.";
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    gzclose(zip_file);
+    out_file.close();
+
+    unzip_file = _unzip_file;
+    return true;
+}
+
+bool CompressedFits::DecompressedFileExists() {
+    // Returns whether file exists with unzip filename
+    SetDecompressFilename();
+
+    fs::path unzip_path(_unzip_file);
+    if (fs::exists(unzip_path)) {
+        // File already decompressed
+        spdlog::info("Using decompressed FITS file {}", _unzip_file);
+        return true;
+    }
+
     return false;
+}
+
+void CompressedFits::SetDecompressFilename() {
+    // Determines temporary directory and filename with zip extension removed
+    // Sets decompressed filename _unzip_file to tmpdir/filename.fits.
+    if (!_unzip_file.empty()) {
+        return;
+    }
+
+    auto tmp_path = fs::temp_directory_path();
+    if (tmp_path.empty()) {
+        return;
+    }
+
+    // Add filename.fits (remove .gz) to tmp path
+    fs::path zip_path(_filename);
+    tmp_path /= zip_path.filename().stem();
+
+    _unzip_file = tmp_path.string();
 }

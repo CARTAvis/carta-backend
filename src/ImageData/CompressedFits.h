@@ -17,6 +17,8 @@
 
 // Read compressed FITS file headers
 
+namespace carta {
+
 class CompressedFits {
 public:
     CompressedFits(const std::string& filename) : _filename(filename) {}
@@ -26,16 +28,23 @@ public:
 
     // File decompression
     unsigned long long GetDecompressSize();
-    bool DecompressGzFile(std::string& unzip_filename);
+    bool DecompressGzFile(std::string& unzip_file, std::string& error);
 
 private:
     gzFile OpenGzFile();
+    bool DecompressedFileExists();
+    void SetDecompressFilename();
+
+    // Extended file info
     bool IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext);
     void ParseFitsCard(casacore::String& fits_card, casacore::String& keyword, casacore::String& value, casacore::String& comment);
     void AddHeaderEntry(
         casacore::String& keyword, casacore::String& value, casacore::String& comment, CARTA::FileInfoExtended& file_info_ext);
 
     std::string _filename;
+    std::string _unzip_file;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_IMAGEDATA_COMPRESSEDFITS_H_

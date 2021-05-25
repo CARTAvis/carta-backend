@@ -44,8 +44,10 @@ private:
 FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename), _is_gz(is_gz), _hdu(-1) {}
 
 FitsLoader::~FitsLoader() {
-    if (fs::exists(_unzip_file)) {
-        fs::remove(_unzip_file);
+    // Remove decompressed fits.gz file
+    auto unzip_path = fs::path(_unzip_file);
+    if (fs::exists(unzip_path)) {
+        fs::remove(unzip_path);
     }
 }
 
@@ -71,8 +73,11 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             gz_mem_ok = (free_mem_kB > required_mem_kB);
             spdlog::debug("required mem={} kB, free mem={} kB, access file in memory={}", required_mem_kB, free_mem_kB, gz_mem_ok);
 
-            if (!gz_mem_ok && !fits_gz.DecompressGzFile(_unzip_file)) {
-                throw(casacore::AipsError("Decompress FITS gz file failed."));
+            if (!gz_mem_ok) {
+                std::string error;
+                if (!fits_gz.DecompressGzFile(_unzip_file, error)) {
+                    throw(casacore::AipsError("Decompress FITS gz file failed: " + error));
+                }
             }
         }
 
