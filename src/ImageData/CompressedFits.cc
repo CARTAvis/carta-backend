@@ -226,15 +226,15 @@ gzFile CompressedFits::OpenGzFile() {
     return zip_file;
 }
 
-int CompressedFits::GetDecompressSize() {
-    // Returns size (headers + data for all HDUs) in kB
+unsigned long long CompressedFits::GetDecompressSize() {
+    // Returns size of decompressed gz file in kB
     auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {
         return 0;
     }
 
     size_t bufsize(FITS_BLOCK_SIZE);
-    int unzip_size(0);
+    unsigned long long unzip_size(0);
     while (!gzeof(zip_file)) {
         // Read block
         int err(0);
@@ -253,7 +253,8 @@ int CompressedFits::GetDecompressSize() {
 
     gzclose(zip_file);
 
-    return unzip_size;
+    // Convert to kB
+    return unzip_size / 1000;
 }
 
 bool CompressedFits::DecompressGzFile(std::string& unzip_filename) {

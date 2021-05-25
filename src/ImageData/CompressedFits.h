@@ -25,7 +25,7 @@ public:
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
 
     // File decompression
-    int GetDecompressSize();
+    unsigned long long GetDecompressSize();
     bool DecompressGzFile(std::string& unzip_filename);
 
 private:
