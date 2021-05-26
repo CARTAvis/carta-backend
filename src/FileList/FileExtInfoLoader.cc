@@ -41,9 +41,6 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
     // Fill map with FileInfoExtended for all FITS image HDUs
     bool map_ok(false);
 
-    fs::path filepath(filename);
-    std::string filename_nopath = filepath.filename().string();
-
     if (IsCompressedFits(filename)) {
         CompressedFits cfits(filename);
         if (!cfits.GetFitsHeaderInfo(hdu_info_map)) {
@@ -53,7 +50,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
         for (auto& hdu_info : hdu_info_map) {
             std::vector<int> render_axes = {0, 1}; // default
-            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename_nopath, render_axes);
+            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, render_axes);
 
             // Use headers in FileInfoExtended to create computed entries
             AddComputedEntriesFromHeaders(hdu_info.second, render_axes);
@@ -71,7 +68,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         // Get FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
-            if (FillFileExtInfo(file_info_ext, filename_nopath, hdu, message)) {
+            if (FillFileExtInfo(file_info_ext, filename, hdu, message)) {
                 hdu_info_map[hdu] = file_info_ext;
             }
         }
@@ -89,9 +86,11 @@ bool FileExtInfoLoader::FillFileExtInfo(
     CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
     // Fill FileInfoExtended for specific hdu
     // Set name from filename
+    fs::path filepath(filename);
+    std::string filename_nopath = filepath.filename().string();
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Name");
-    entry->set_value(filename);
+    entry->set_value(filename_nopath);
     entry->set_entry_type(CARTA::EntryType::STRING);
 
     std::string hdu_num(hdu);
