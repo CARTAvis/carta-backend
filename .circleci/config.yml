@@ -13,23 +13,7 @@ jobs:
           name: "checking the copyright and licence headers in the carta_backend code"
           command: |
             ./scripts/headers.py check
-  "centos7":
-    docker:
-      - image: ajmasiaa/carta-backend-builder-centos7
-    steps:
-      - checkout
-      - run:
-          name: "build carta_backend"
-          command: |
-            source scl_source enable devtoolset-8 && git submodule update --init --recursive && mkdir build && cd build && cmake .. -Dtest=on && make -j2
-      - run:
-          name: "run unit tests"
-          command: |
-            source scl_source enable devtoolset-8 && cd /root/project/build/test && ./carta_backend_tests --gtest_output=xml --gtest_filter=-"TimerTest*"
-      - store_test_results:
-            path: /root/project/build/test
 workflows:
   build:
     jobs:
       - "format check"
-      - "centos7"
