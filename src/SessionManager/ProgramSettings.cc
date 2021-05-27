@@ -98,15 +98,14 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
         }
     }
 
+    auto msg_and_remove = [&](const std::string& key) {
+        auto msg =
+            fmt::format("Problem in config file {} at key {}: current value is {}, but a number or a list of two numbers is expected.",
+                json_file_path, key, j[key].dump());
+        warning_msgs.push_back(msg);
+        j.erase(key);
+    };
     for (const auto& [key, elem] : vector_int_keys_map) {
-        auto msg_and_remove = [&](const std::string& key) {
-            auto msg =
-                fmt::format("Problem in config file {} at key {}: current value is {}, but a number or a list of two numbers is expected.",
-                    json_file_path, key, j[key].dump());
-            warning_msgs.push_back(msg);
-            j.erase(key);
-        };
-
         if (j.contains(key)) {
             if (j[key].size() == 1 && j[key].is_number()) {
                 continue;
@@ -123,6 +122,7 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
                     }
                 } else {
                     // looks like things went well
+                    continue;
                 }
             } else {
                 msg_and_remove(key);
