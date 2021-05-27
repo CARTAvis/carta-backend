@@ -80,21 +80,10 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
         address = IPAsText(http_response->getRemoteAddress());
     }
 
-    // Check if there's a token to be matched
-    if (!auth_token.empty()) {
-        string req_token = GetAuthToken(http_request);
-
-        if (!req_token.empty()) {
-            if (req_token != auth_token) {
-                spdlog::error("Incorrect auth token supplied! Closing WebSocket connection");
-                http_response->close();
-                return;
-            }
-        } else {
-            spdlog::error("No auth token supplied! Closing WebSocket connection");
-            http_response->close();
-            return;
-        }
+    if (!ValidateAuthToken(http_request, auth_token)) {
+        spdlog::error("Incorrect or missing auth token supplied! Closing WebSocket connection");
+        http_response->close();
+        return;
     }
 
     session_number++;
