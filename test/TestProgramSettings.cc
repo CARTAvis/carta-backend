@@ -69,7 +69,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_TRUE(settings.frontend_folder.empty());
     EXPECT_TRUE(settings.files.empty());
 
-    EXPECT_EQ(settings.port, -1);
+    EXPECT_EQ(settings.port.size(), 0);
     EXPECT_EQ(settings.grpc_port, -1);
     EXPECT_EQ(settings.omp_thread_count, -1);
     EXPECT_EQ(settings.top_level_folder, "/");
@@ -98,7 +98,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.no_http, true);
     EXPECT_EQ(settings.no_browser, true);
     EXPECT_EQ(settings.host, "helloworld");
-    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
@@ -111,7 +111,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
 
 TEST_F(ProgramSettingsTest, ExpectedValuesShort) {
     auto settings = SettingsFromString("carta_backend -p 1234 -g 5678 -t 10");
-    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
 }
@@ -233,7 +233,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "no_http": true,
         "no_browser": true,
         "host": "helloworld",
-        "port": 1234,
+        "port": [1234],
         "grpc_port": 5678,
         "omp_threads": 10,
         "top_level_folder": "/tmp",
@@ -252,7 +252,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.no_http, true);
     EXPECT_EQ(settings.no_browser, true);
     EXPECT_EQ(settings.host, "helloworld");
-    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
@@ -268,7 +268,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     auto j = settings.JSONSettingsFromFile(input);
     EXPECT_EQ(j.size(), 13);
     EXPECT_EQ(j["verbosity"], 5);
-    EXPECT_EQ(j["port"], 1234);
+    EXPECT_EQ(j["port"][0], 1234);
     EXPECT_EQ(j["grpc_port"], 5678);
     EXPECT_EQ(j["omp_threads"], 10);
     EXPECT_EQ(j["exit_timeout"], 10);
@@ -300,7 +300,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
     EXPECT_EQ(settings.no_http, true);
     EXPECT_EQ(settings.no_browser, true);
     EXPECT_EQ(settings.host, "helloworld");
-    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
@@ -320,7 +320,7 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     EXPECT_EQ(settings.no_http, false);
     EXPECT_EQ(settings.no_browser, false);
     EXPECT_EQ(settings.host, "0.0.0.0");
-    EXPECT_EQ(settings.port, -1);
+    EXPECT_EQ(settings.port.size(), 0);
     EXPECT_EQ(settings.grpc_port, -1);
     EXPECT_EQ(settings.omp_thread_count, -1);
     EXPECT_EQ(settings.top_level_folder, "/");
