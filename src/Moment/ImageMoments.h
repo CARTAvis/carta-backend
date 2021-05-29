@@ -35,17 +35,10 @@ public:
 
     casacore::Bool setMomentAxis(const Int moment_axis);
 
-    // This function invokes smoothing of the input image. Give casacore::Int arrays for the axes (0 relative) to be smoothed and the
-    // smoothing kernel types (use the <src>enum KernelTypes</src>) for each axis. Give a casacore::Double array for the widths (full width
-    // for BOXCAR and full width at half maximum for GAUSSIAN) in pixels of the smoothing kernels for each axis. For HANNING smoothing, you
-    // always get the quarter-half-quarter kernel (no matter what you might ask for). A return value of false indicates that you have given
-    // an inconsistent or invalid set of smoothing parameters. If you don't call this function the default state of the class is to do no
-    // smoothing. The kernel types are specified with the casacore::VectorKernel::KernelTypes enum
     casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes, const casacore::Vector<casacore::Int>& kernel_types,
-        const casacore::Vector<casacore::Quantum<casacore::Double>>& kernel_widths);
-
-    casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes, const casacore::Vector<casacore::Int>& kernel_types,
-        const casacore::Vector<casacore::Double>& kernel_widths_pix);
+        const casacore::Vector<casacore::Quantum<casacore::Double>>& kernel_widths) {
+        return false;
+    }
 
     // This is the function that does all the computational work. The output vector will hold PagedImages or TempImages (do_temp = true).
     // If do_temp is true, the out_file_name is not used. If you create PagedImages, out_file_name is the root name for the output files.
