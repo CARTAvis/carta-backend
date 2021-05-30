@@ -28,10 +28,9 @@ namespace carta {
 template <class T>
 class ImageMoments : public casa::MomentsBase<T> {
 public:
-    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor,
-        casacore::Bool over_write_output = false);
+    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor);
 
-    ~ImageMoments(){};
+    ~ImageMoments() = default;
 
     casacore::Bool setMomentAxis(const Int moment_axis);
 
@@ -66,13 +65,6 @@ private:
 
     casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
 
-    // casacore::Smooth an image
-    SPIIT SmoothImage();
-
-    // Determine the noise by fitting a Gaussian to a histogram of the entire image above the 25% levels. If a plotting device is set, the
-    // user can interact with this process.
-    void WhatIsTheNoise(T& noise, const casacore::ImageInterface<T>& image);
-
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
         casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis);
@@ -88,32 +80,13 @@ private:
 
 protected:
     using casa::MomentsBase<T>::os_p;
-    using casa::MomentsBase<T>::showProgress_p;
     using casa::MomentsBase<T>::momentAxisDefault_p;
-    using casa::MomentsBase<T>::peakSNR_p;
-    using casa::MomentsBase<T>::stdDeviation_p;
-    using casa::MomentsBase<T>::yMin_p;
-    using casa::MomentsBase<T>::yMax_p;
-    using casa::MomentsBase<T>::out_p;
-    using casa::MomentsBase<T>::smoothOut_p;
     using casa::MomentsBase<T>::goodParameterStatus_p;
-    using casa::MomentsBase<T>::doWindow_p;
-    using casa::MomentsBase<T>::doFit_p;
-    using casa::MomentsBase<T>::doSmooth_p;
-    using casa::MomentsBase<T>::noInclude_p;
-    using casa::MomentsBase<T>::noExclude_p;
-    using casa::MomentsBase<T>::fixedYLimits_p;
     using casa::MomentsBase<T>::momentAxis_p;
     using casa::MomentsBase<T>::worldMomentAxis_p;
-    using casa::MomentsBase<T>::kernelTypes_p;
-    using casa::MomentsBase<T>::kernelWidths_p;
     using casa::MomentsBase<T>::moments_p;
-    using casa::MomentsBase<T>::selectRange_p;
-    using casa::MomentsBase<T>::smoothAxes_p;
     using casa::MomentsBase<T>::overWriteOutput_p;
-    using casa::MomentsBase<T>::error_p;
     using casa::MomentsBase<T>::convertToVelocity_p;
-    using casa::MomentsBase<T>::velocityType_p;
     using casa::MomentsBase<T>::_checkMethod;
 };
 

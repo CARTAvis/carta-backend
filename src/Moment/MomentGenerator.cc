@@ -188,7 +188,7 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     casacore::LogIO os(log);
 
     // Make an ImageMoments object and overwrite the output file if it already exists
-    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
+    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this));
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {

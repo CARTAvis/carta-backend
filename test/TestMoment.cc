@@ -108,7 +108,7 @@ public:
         casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
         casacore::LogIO carta_os(carta_log);
         casa::ImageMoments<float> casa_image_moments(*image, casa_os, true);
-        carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr, true);
+        carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr);
 
         // set moment types
         casacore::Vector<casacore::Int> moments(12);

@@ -16,9 +16,9 @@
 using namespace carta;
 
 template <class T>
-ImageMoments<T>::ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os,
-    casa::ImageMomentsProgressMonitor* progress_monitor, casacore::Bool over_write_output)
-    : casa::MomentsBase<T>(os, over_write_output, true), _stop(false), _image_2d_convolver(nullptr), _progress_monitor(nullptr) {
+ImageMoments<T>::ImageMoments(
+    const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor)
+    : casa::MomentsBase<T>(os, true, true), _stop(false), _image_2d_convolver(nullptr), _progress_monitor(nullptr) {
     SetNewImage(image);
     if (progress_monitor) { // set the progress meter
         _progress_monitor = std::make_unique<casa::ImageMomentsProgress>();
@@ -141,29 +141,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         }
     }
 
-    // Set methods
-    auto smooth_clip_method = false;
-    auto window_method = false;
-    auto fit_method = false;
-    auto clip_method = false;
-
-    if (doSmooth_p && !doWindow_p) {
-        smooth_clip_method = true;
-    } else if (doWindow_p) {
-        window_method = true;
-    } else if (doFit_p) {
-        fit_method = true;
-    } else {
-        clip_method = true;
-    }
-
-    // We only smooth the image if we are doing the smooth/clip method or possibly the interactive window method. Note that the convolution
-    // routines can only handle convolution when the image fits fully in core at present.
-    SPIIT smoothed_image;
-    if (doSmooth_p) {
-        smoothed_image = SmoothImage();
-    }
-
     // Set output images shape and coordinates.
     casacore::IPosition out_image_shape;
     const auto out_csys = this->_makeOutputCoordinates(out_image_shape, csys, _image->shape(), momentAxis_p, remove_axis);
@@ -239,31 +216,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         output_images[i] = output_image;
     }
 
-    // If the user is using the automatic, non-fitting window method, they need a good assessment of the noise. The user can input that
-    // value, but if they don't, we work it out here.
-    T noise;
-    if (stdDeviation_p <= T(0) && (doWindow_p || (doFit_p && !doWindow_p))) {
-        if (smoothed_image) {
-            spdlog::info("Evaluating noise level from smoothed image.");
-            WhatIsTheNoise(noise, *smoothed_image);
-        } else {
-            spdlog::info("Evaluating noise level from input image.");
-            WhatIsTheNoise(noise, *_image);
-        }
-        stdDeviation_p = noise;
-    }
-
     // Create appropriate MomentCalculator object
     shared_ptr<casa::MomentCalcBase<T>> moment_calculator;
-    if (clip_method || smooth_clip_method) {
-        moment_calculator.reset(new casa::MomentClip<T>(smoothed_image, *this, os_p, output_images.size()));
-
-    } else if (window_method) {
-        moment_calculator.reset(new casa::MomentWindow<T>(smoothed_image, *this, os_p, output_images.size()));
-
-    } else if (fit_method) {
-        moment_calculator.reset(new casa::MomentFit<T>(*this, os_p, output_images.size()));
-    }
+    SPIIT empty_smoothed_image;
+    moment_calculator.reset(new casa::MomentClip<T>(empty_smoothed_image, *this, os_p, output_images.size()));
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
     casacore::uInt out_images_size = output_images.size();
@@ -274,12 +230,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
 
     // Do expensive calculation
     LineMultiApply(ptr_blocks, *_image, *moment_calculator, momentAxis_p);
-
-    if (window_method || fit_method) {
-        if (moment_calculator->nFailedFits() != 0) {
-            spdlog::warn("There were {} failed fits.", moment_calculator->nFailedFits());
-        }
-    }
 
     if (_stop) {
         // Reset shared ptrs for output moments images if calculation is cancelled
@@ -295,149 +245,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     return output_images;
-}
-
-// casacore::Smooth image. casacore::Input masked pixels are zeros before smoothing. The output smoothed image is masked as well to reflect
-// the input mask.
-template <class T>
-SPIIT ImageMoments<T>::SmoothImage() {
-    auto max_axis = max(smoothAxes_p) + 1;
-    ThrowIf(max_axis > casacore::Int(_image->ndim()), "You have specified an illegal smoothing axis");
-
-    SPIIT smoothed_image;
-    if (smoothOut_p.empty()) {
-        smoothed_image.reset(new casacore::TempImage<T>(_image->shape(), _image->coordinates()));
-    } else {
-        // This image has already been checked in setSmoothOutName to not exist
-        smoothed_image.reset(new casacore::PagedImage<T>(_image->shape(), _image->coordinates(), smoothOut_p));
-    }
-
-    smoothed_image->setMiscInfo(_image->miscInfo());
-
-    // Do the convolution. Conserve flux.
-    casa::SepImageConvolver<T> sep_image_con(*_image, os_p, true);
-    auto smooth_axes_size = smoothAxes_p.size();
-    for (casacore::uInt i = 0; i < smooth_axes_size; ++i) {
-        casacore::VectorKernel::KernelTypes type = casacore::VectorKernel::KernelTypes(kernelTypes_p[i]);
-        sep_image_con.setKernel(casacore::uInt(smoothAxes_p[i]), type, kernelWidths_p[i], true, false, 1.0);
-    }
-    sep_image_con.convolve(*smoothed_image);
-
-    return smoothed_image;
-}
-
-// Determine the noise level in the image by first making a histogram of the image, then fitting a Gaussian between the 25% levels to give
-// sigma Find a histogram of the image
-template <class T>
-void ImageMoments<T>::WhatIsTheNoise(T& sigma, const casacore::ImageInterface<T>& image) {
-    casa::ImageHistograms<T> hist(image, false);
-    const casacore::uInt num_of_bins = 100;
-    hist.setNBins(num_of_bins);
-
-    // It is safe to use casacore::Vector rather than casacore::Array because we are binning the whole image and ImageHistograms will only
-    // resize these Vectors to a 1-D shape
-    casacore::Vector<T> values, counts; // (x, y) for histograms vectors
-    ThrowIf(!hist.getHistograms(values, counts), "Unable to make histogram of image");
-
-    // Enter into a plot/fit loop
-    auto bin_width = values(1) - values(0);
-    T x_min, x_max, y_min, y_max;
-
-    x_min = values(0) - bin_width;
-    x_max = values(num_of_bins - 1) + bin_width;
-    casacore::Float x_min_f = casacore::Float(real(x_min));
-    casacore::Float x_max_f = casacore::Float(real(x_max));
-    casacore::LatticeStatsBase::stretchMinMax(x_min_f, x_max_f);
-
-    casacore::IPosition y_min_pos(1), y_max_pos(1);
-    casacore::minMax(y_min, y_max, y_min_pos, y_max_pos, counts);
-    casacore::Float y_max_f = casacore::Float(real(y_max));
-    y_max_f += y_max_f / 20;
-
-    auto first = true;
-    auto more = true;
-
-    while (more) {
-        casacore::Int index_min = 0;
-        casacore::Int index_max = 0;
-
-        if (first) {
-            first = false;
-
-            index_max = y_max_pos(0);
-            casacore::uInt i;
-            for (i = y_max_pos(0); i < num_of_bins; i++) {
-                if (counts(i) < y_max / 4) {
-                    index_max = i;
-                    break;
-                }
-            }
-
-            index_min = y_min_pos(0);
-            for (i = y_max_pos(0); i > 0; i--) {
-                if (counts(i) < y_max / 4) {
-                    index_min = i;
-                    break;
-                }
-            }
-
-            // Check range is sensible
-            if (index_max <= index_min || abs(index_max - index_min) < 3) {
-                spdlog::warn("The image histogram is strangely shaped, fitting to all bins.");
-                index_min = 0;
-                index_max = num_of_bins - 1;
-            }
-        }
-
-        // Now generate the distribution we want to fit. Normalize to peak 1 to help fitter.
-        const casacore::uInt num_of_points = index_max - index_min + 1;
-        casacore::Vector<T> data_x(num_of_points);
-        casacore::Vector<T> data_y(num_of_points);
-        casacore::Int i;
-
-        for (i = index_min; i <= index_max; i++) {
-            data_x(i - index_min) = values(i);
-            data_y(i - index_min) = counts(i) / y_max;
-        }
-
-        // Create a fitter
-        casacore::NonLinearFitLM<T> fitter;
-        casacore::Gaussian1D<casacore::AutoDiff<T>> gauss;
-        fitter.setFunction(gauss);
-
-        // Guess initial fit parameters
-        casacore::Vector<T> v(3);
-        v(0) = 1.0;                           // height
-        v(1) = values(y_max_pos(0));          // position
-        v(2) = num_of_points * bin_width / 2; // width
-
-        // Fit
-        fitter.setParameterValues(v);
-        fitter.setMaxIter(50);
-        T criteria = 0.001;
-        fitter.setCriteria(criteria);
-        casacore::Vector<T> result_sigma(num_of_points);
-        result_sigma = 1;
-        casacore::Vector<T> solution;
-        casacore::Bool fail = false;
-
-        try {
-            solution = fitter.fit(data_x, data_y, result_sigma);
-        } catch (const casacore::AipsError& x) {
-            fail = true;
-        }
-
-        // Return values of fit
-        if (!fail && fitter.converged()) {
-            sigma = T(abs(solution(2)) / casacore::C::sqrt2);
-            spdlog::info("The fitted standard deviation of the noise is {}.", sigma);
-        } else {
-            spdlog::warn("The fit to determine the noise level failed. Try inputting it directly.");
-        }
-
-        // Another go
-        more = false;
-    }
 }
 
 template <class T>
