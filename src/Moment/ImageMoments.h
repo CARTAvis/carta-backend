@@ -80,7 +80,6 @@ private:
 
 protected:
     using casa::MomentsBase<T>::os_p;
-    using casa::MomentsBase<T>::momentAxisDefault_p;
     using casa::MomentsBase<T>::goodParameterStatus_p;
     using casa::MomentsBase<T>::momentAxis_p;
     using casa::MomentsBase<T>::worldMomentAxis_p;

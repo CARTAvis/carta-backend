@@ -48,13 +48,12 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
     _steps_for_beam_convolution = 0;
 
     momentAxis_p = moment_axis;
-    if (momentAxis_p == momentAxisDefault_p) {
+    if (momentAxis_p < 0) {
         momentAxis_p = _image->coordinates().spectralAxisNumber();
         if (momentAxis_p == -1) {
             goodParameterStatus_p = false;
             throw casacore::AipsError("There is no spectral axis in this image -- specify the axis");
         }
-
     } else {
         if (momentAxis_p < 0 || momentAxis_p > casacore::Int(_image->ndim() - 1)) {
             goodParameterStatus_p = false;
@@ -111,20 +110,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     // reference to its casacore::CoordinateSystem will disappear causing a seg fault.
     casacore::CoordinateSystem csys = _image->coordinates();
     casacore::Int spectralAxis = csys.spectralAxisNumber(false);
-    if (momentAxis_p == momentAxisDefault_p) {
-        this->setMomentAxis(spectralAxis); // this step will do 2D convolve for a per plane beam image
-
-        // check whether the calculation is cancelled
-        if (_stop) {
-            return std::vector<std::shared_ptr<casacore::MaskedLattice<T>>>();
-        }
-
-        if (_image->shape()(momentAxis_p) <= 1) {
-            goodParameterStatus_p = false;
-            throw casacore::AipsError("Illegal moment axis; it has only 1 pixel");
-        }
-        worldMomentAxis_p = csys.pixelAxisToWorldAxis(momentAxis_p);
-    }
 
     convertToVelocity_p = (momentAxis_p == spectralAxis) && (csys.spectralCoordinate().restFrequency() > 0);
 
