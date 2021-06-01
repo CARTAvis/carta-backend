@@ -400,9 +400,11 @@ void FileExtInfoLoader::AddInitialComputedEntries(
     const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::vector<int>& render_axes) {
     // Add computed entries for filename, hdu, shape, and axes
     // Set name and HDU
+    fs::path filepath(filename);
+    std::string filename_nopath = filepath.filename().string();
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Name");
-    entry->set_value(filename);
+    entry->set_value(filename_nopath);
     entry->set_entry_type(CARTA::EntryType::STRING);
 
     if (!hdu.empty()) {

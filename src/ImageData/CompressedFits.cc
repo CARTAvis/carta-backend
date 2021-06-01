@@ -6,6 +6,8 @@
 
 #include "CompressedFits.h"
 
+#include <cmath>
+
 #include "../Logger/Logger.h"
 #include "../Util.h"
 
@@ -33,14 +35,22 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     // For map:
     int hdu(-1);
     CARTA::FileInfoExtended file_info_ext;
-    size_t bufsize(FITS_BLOCK_SIZE);
-    bool is_image_hdu(false);
+    bool in_image_headers(false);
 
     while (!gzeof(zip_file)) {
-        // Read block
+        size_t bufsize;
+        if (in_image_headers) {
+            // Read entire block for headers
+            bufsize = FITS_BLOCK_SIZE;
+        } else {
+            // Read beginning of block to check for new HDU
+            bufsize = FITS_CARD_SIZE * INITIAL_HEADERS_SIZE;
+        }
+
+        // Read headers
         int err(0);
-        char buffer[bufsize] = {'\0'};
-        size_t bytes_read = gzread(zip_file, buffer, bufsize);
+        std::string buffer(bufsize, 0);
+        size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
 
         if (bytes_read == -1) {
             const char* error_string = gzerror(zip_file, &err);
@@ -49,24 +59,31 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
             return false;
         }
 
-        buffer[bufsize] = '\0';
-        std::string fits_block(buffer);
-        size_t block_index(0);
-
-        if ((fits_block.substr(0, 6) == "SIMPLE") || (fits_block.substr(0, 8) == "XTENSION")) {
-            // New hdu
+        if ((buffer.substr(0, 6) == "SIMPLE") || (buffer.substr(0, 8) == "XTENSION")) {
+            // New hdu: read initial headers
             hdu++;
-            is_image_hdu = IsImageHdu(fits_block, file_info_ext);
+            in_image_headers = IsImageHdu(buffer, file_info_ext);
 
-            if (is_image_hdu) {
-                block_index = INITIAL_HEADERS_SIZE * FITS_CARD_SIZE;
+            if (!in_image_headers) {
+                file_info_ext.clear_header_entries();
             }
         }
 
-        if (is_image_hdu) {
-            while (block_index < bytes_read) {
-                casacore::String fits_card = fits_block.substr(block_index, FITS_CARD_SIZE);
-                block_index += FITS_CARD_SIZE;
+        // Size of rest of block - to read or skip
+        size_t block_size = FITS_BLOCK_SIZE - bufsize;
+
+        if (in_image_headers) {
+            if (block_size > 0) {
+                // Read rest of block after initial headers
+                buffer.resize(block_size, 0);
+                bytes_read = gzread(zip_file, buffer.data(), block_size);
+            }
+
+            // Continue parsing headers and add to file info
+            size_t buffer_index(0);
+            while (buffer_index < bytes_read) {
+                casacore::String fits_card = buffer.substr(buffer_index, FITS_CARD_SIZE);
+                buffer_index += FITS_CARD_SIZE;
 
                 fits_card.trim();
                 if (fits_card.empty()) {
@@ -79,17 +96,21 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                 if (keyword != "END") {
                     AddHeaderEntry(keyword, value, comment, file_info_ext);
                 } else {
-                    // At last header, add entry to map
+                    // At last header "END", add entry to map
                     std::string hduname = std::to_string(hdu);
                     hdu_info_map[hduname] = file_info_ext;
 
                     // Reset for next hdu
                     file_info_ext.clear_header_entries();
-                    is_image_hdu = false;
+                    in_image_headers = false;
 
+                    // Stop parsing block
                     break;
                 }
             }
+        } else {
+            // Skip to end of block
+            gzseek(zip_file, block_size, SEEK_CUR);
         }
     }
 
@@ -123,41 +144,53 @@ gzFile CompressedFits::OpenGzFile() {
 
 bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext) {
     // Parse initial header strings (FITS standard: SIMPLE/XTENSION, BITPIX, NAXIS) to determine whether to include this HDU
-    std::unordered_map<std::string, casacore::String> first_header = {{"SIMPLE", "T"}, {"XTENSION", "IMAGE"}};
-    std::vector<std::string> valid_bitpix = {"8", "16", "32", "64", "-32", "-64"};
 
-    bool first_header_ok(false), bitpix_ok(false), naxis_ok(false);
-    size_t header_start(0);
+    // Check first header value
+    casacore::String header = fits_block.substr(0, FITS_CARD_SIZE);
+    casacore::String keyword, value, comment;
+    ParseFitsCard(header, keyword, value, comment);
+    bool is_image = ((keyword == "SIMPLE") && (value == "T")) || ((keyword == "XTENSION") && (value == "IMAGE"));
 
-    for (auto i = 0; i < INITIAL_HEADERS_SIZE; ++i) {
-        casacore::String header = fits_block.substr(header_start, FITS_CARD_SIZE);
-        header_start += FITS_CARD_SIZE;
+    if (!is_image) {
+        return false;
+    }
+
+    // Add header to file info
+    AddHeaderEntry(keyword, value, comment, file_info_ext);
+
+    // Check other initial headers
+    bool bitpix_ok(false), naxis_ok(false);
+    for (auto i = 1; i < INITIAL_HEADERS_SIZE; ++i) {
+        header = fits_block.substr(i * FITS_CARD_SIZE, FITS_CARD_SIZE);
 
         casacore::String keyword, value, comment;
         ParseFitsCard(header, keyword, value, comment);
 
-        if (first_header.count(keyword)) {
-            first_header_ok = (value == first_header[keyword]);
-        } else if (keyword == "BITPIX") {
+        if (keyword == "BITPIX") {
+            std::vector<std::string> valid_bitpix = {"8", "16", "32", "64", "-32", "-64"};
             auto found = std::find(std::begin(valid_bitpix), std::end(valid_bitpix), value);
-            bitpix_ok = found != std::end(valid_bitpix);
+            bitpix_ok = (found != std::end(valid_bitpix));
+
+            if (!bitpix_ok) {
+                return false;
+            }
         } else if (keyword == "NAXIS") {
             try {
                 naxis_ok = std::stoi(value) >= 2;
             } catch (std::invalid_argument) {
                 // stoi failed
             }
+
+            if (!naxis_ok) {
+                return false;
+            }
         }
 
+        // Add header to file info
         AddHeaderEntry(keyword, value, comment, file_info_ext);
     }
 
-    bool is_image = first_header_ok && bitpix_ok && naxis_ok;
-    if (!is_image) {
-        file_info_ext.clear_header_entries();
-    }
-
-    return is_image;
+    return bitpix_ok && naxis_ok;
 }
 
 void CompressedFits::ParseFitsCard(
