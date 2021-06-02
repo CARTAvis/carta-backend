@@ -67,9 +67,12 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
         // Get FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
+            std::string hdu_num(hdu);
+            StripHduName(hdu_num);
+
             CARTA::FileInfoExtended file_info_ext;
-            if (FillFileExtInfo(file_info_ext, filename, hdu, message)) {
-                hdu_info_map[hdu] = file_info_ext;
+            if (FillFileExtInfo(file_info_ext, filename, hdu_num, message)) {
+                hdu_info_map[hdu_num] = file_info_ext;
             }
         }
     }
@@ -93,13 +96,10 @@ bool FileExtInfoLoader::FillFileExtInfo(
     entry->set_value(filename_nopath);
     entry->set_entry_type(CARTA::EntryType::STRING);
 
-    std::string hdu_num(hdu);
-    StripHduName(hdu_num);
-
     // Fill header_entries, computed_entries
     bool info_ok(false);
     if (_loader && _loader->CanOpenFile(message)) {
-        info_ok = FillFileInfoFromImage(extended_info, hdu_num, message);
+        info_ok = FillFileInfoFromImage(extended_info, hdu, message);
     }
 
     return info_ok;
