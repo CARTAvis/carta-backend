@@ -32,6 +32,8 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
         return false;
     }
 
+    auto t_start_get_hdu_info = std::chrono::high_resolution_clock::now();
+
     // For map:
     int hdu(-1);
     CARTA::FileInfoExtended file_info_ext;
@@ -122,6 +124,10 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     }
 
     gzclose(zip_file);
+
+    auto t_end_get_hdu_info = std::chrono::high_resolution_clock::now();
+    auto dt_get_hdu_info = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_hdu_info - t_start_get_hdu_info).count();
+    spdlog::performance("Get hdu info in {:.3f} ms", dt_get_hdu_info * 1e-3);
     return true;
 }
 
@@ -174,7 +180,7 @@ bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended
         ParseFitsCard(header, keyword, value, comment);
 
         if (keyword == "BITPIX") {
-            std::vector<std::string> valid_bitpix = {"8", "16", "32", "64", "-32", "-64"};
+            std::vector<casacore::String> valid_bitpix = {"8", "16", "32", "64", "-32", "-64"};
             auto found = std::find(std::begin(valid_bitpix), std::end(valid_bitpix), value);
             bitpix_ok = (found != std::end(valid_bitpix));
 
