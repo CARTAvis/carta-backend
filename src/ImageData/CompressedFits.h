@@ -42,7 +42,7 @@ private:
         casacore::String& keyword, casacore::String& value, casacore::String& comment, CARTA::FileInfoExtended& file_info_ext);
 
     std::string _filename;
-    std::string _unzip_file;
+    std::string _unzip_filename;
 };
 
 } // namespace carta

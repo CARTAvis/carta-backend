@@ -6,7 +6,7 @@
 
 #include "CompressedFits.h"
 
-#include <cmath>
+#include <chrono>
 
 #include "../Logger/Logger.h"
 #include "../Util.h"
@@ -35,7 +35,9 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     // For map:
     int hdu(-1);
     CARTA::FileInfoExtended file_info_ext;
+
     bool in_image_headers(false);
+    auto t_start_get_hdu = std::chrono::high_resolution_clock::now();
 
     while (!gzeof(zip_file)) {
         size_t bufsize;
@@ -61,6 +63,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
         if ((buffer.substr(0, 6) == "SIMPLE") || (buffer.substr(0, 8) == "XTENSION")) {
             // New hdu: read initial headers
+            t_start_get_hdu = std::chrono::high_resolution_clock::now();
             hdu++;
             in_image_headers = IsImageHdu(buffer, file_info_ext);
 
@@ -99,6 +102,10 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                     // At last header "END", add entry to map
                     std::string hduname = std::to_string(hdu);
                     hdu_info_map[hduname] = file_info_ext;
+
+                    auto t_end_get_hdu = std::chrono::high_resolution_clock::now();
+                    auto dt_get_hdu = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_hdu - t_start_get_hdu).count();
+                    spdlog::performance("Get hdu {} headers in {:.3f} ms", hdu, dt_get_hdu * 1e-3);
 
                     // Reset for next hdu
                     file_info_ext.clear_header_entries();
@@ -274,58 +281,78 @@ unsigned long long CompressedFits::GetDecompressSize() {
 
     // Check if file has already been decompressed and return size
     if (DecompressedFileExists()) {
-        fs::path unzip_path(_unzip_file);
-        return fs::file_size(unzip_path);
+        fs::path unzip_path(_unzip_filename);
+        return fs::file_size(unzip_path) / 1000;
     }
 
-    // Decompress file in blocks and accumulate size
+    auto t_start_get_size = std::chrono::high_resolution_clock::now();
+
     auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {
         return 0;
     }
 
-    size_t bufsize(FITS_BLOCK_SIZE);
+    // Seek end of FITS blocks and accumulate size
+    size_t seek_bufsize(FITS_BLOCK_SIZE - 1);
     unsigned long long unzip_size(0);
+    std::string buffer(1, 0);
+
     while (!gzeof(zip_file)) {
-        // Read block
+        // Read 1 byte, seek to end of block
         int err(0);
-        char buffer[bufsize] = {'\0'};
-        size_t bytes_read = gzread(zip_file, buffer, bufsize);
+        size_t bytes_read = gzread(zip_file, buffer.data(), 1);
 
         if (bytes_read == -1) {
+            gzclose(zip_file);
+
             const char* error_string = gzerror(zip_file, &err);
             spdlog::debug("gzread failed with error: {}", error_string);
             spdlog::error("Error reading buffer for FITS gz file.");
             return 0;
         }
 
-        unzip_size += bytes_read;
+        size_t bytes_seek = gzseek(zip_file, seek_bufsize, SEEK_CUR);
+        if (bytes_seek == -1) {
+            gzclose(zip_file);
+
+            const char* error_string = gzerror(zip_file, &err);
+            spdlog::debug("gzseek failed with error: {}", error_string);
+            spdlog::error("Error reading buffer for FITS gz file.");
+            return 0;
+        }
+
+        unzip_size = bytes_seek;
     }
 
     gzclose(zip_file);
+
+    auto t_end_get_size = std::chrono::high_resolution_clock::now();
+    auto dt_get_size = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_size - t_start_get_size).count();
+    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", dt_get_size * 1e-3);
 
     // Convert to kB
     return unzip_size / 1000;
 }
 
-bool CompressedFits::DecompressGzFile(std::string& unzip_file, std::string& error) {
-    // Decompress file to temp dir if needed.  Return unzip_file or error.
+bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& error) {
+    // Decompress file to temp dir if needed.  Return unzip_filename or error.
     if (DecompressedFileExists()) {
-        unzip_file = _unzip_file;
+        unzip_filename = _unzip_filename;
         return true;
     }
 
-    if (_unzip_file.empty()) {
+    if (_unzip_filename.empty()) {
         error = "Cannot determine temporary file path to decompress image.";
         return false;
     }
 
+    auto t_start_decompress = std::chrono::high_resolution_clock::now();
     // Open input zip file and set buffer
     auto zip_file = OpenGzFile();
 
     // Open output fits file
-    spdlog::debug("Decompressing FITS file to {}", _unzip_file);
-    std::ofstream out_file(_unzip_file, std::ios_base::out | std::ios_base::binary);
+    spdlog::debug("Decompressing FITS file to {}", _unzip_filename);
+    std::ofstream out_file(_unzip_filename, std::ios_base::out | std::ios_base::binary);
 
     // Read and decompress file, write to output file
     size_t bufsize(FITS_BLOCK_SIZE);
@@ -333,8 +360,8 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_file, std::string& erro
 
     while (!gzeof(zip_file)) {
         // Read and decompress file into buffer
-        char buffer[bufsize];
-        size_t bytes_read = gzread(zip_file, buffer, bufsize);
+        std::string buffer(bufsize, 0);
+        size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
 
         if (bytes_read == -1) {
             const char* error_string = gzerror(zip_file, &err);
@@ -342,8 +369,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_file, std::string& erro
             error = "Error reading gz file.";
             return false;
         } else {
-            out_file.write(buffer, bytes_read);
-            auto file_offset = gzoffset(zip_file);
+            out_file.write(buffer.c_str(), bytes_read);
 
             if (bytes_read < bufsize) {
                 if (gzeof(zip_file)) {
@@ -358,7 +384,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_file, std::string& erro
 
                         // Close and remove decompressed file
                         out_file.close();
-                        fs::path out_path(unzip_file);
+                        fs::path out_path(_unzip_filename);
                         fs::remove(out_path);
 
                         error = "Error reading gz file.";
@@ -371,8 +397,12 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_file, std::string& erro
 
     gzclose(zip_file);
     out_file.close();
+    unzip_filename = _unzip_filename;
 
-    unzip_file = _unzip_file;
+    auto t_end_decompress = std::chrono::high_resolution_clock::now();
+    auto dt_decompress = std::chrono::duration_cast<std::chrono::microseconds>(t_end_decompress - t_start_decompress).count();
+    spdlog::performance("Decompress fits.gz in {:.3f} ms", dt_decompress * 1e-3);
+
     return true;
 }
 
@@ -380,10 +410,10 @@ bool CompressedFits::DecompressedFileExists() {
     // Returns whether file exists with unzip filename
     SetDecompressFilename();
 
-    fs::path unzip_path(_unzip_file);
+    fs::path unzip_path(_unzip_filename);
     if (fs::exists(unzip_path)) {
         // File already decompressed
-        spdlog::info("Using decompressed FITS file {}", _unzip_file);
+        spdlog::info("Using decompressed FITS file {}", _unzip_filename);
         return true;
     }
 
@@ -392,8 +422,8 @@ bool CompressedFits::DecompressedFileExists() {
 
 void CompressedFits::SetDecompressFilename() {
     // Determines temporary directory and filename with zip extension removed
-    // Sets decompressed filename _unzip_file to tmpdir/filename.fits.
-    if (!_unzip_file.empty()) {
+    // Sets decompressed filename _unzip_filename to tmpdir/filename.fits.
+    if (!_unzip_filename.empty()) {
         return;
     }
 
@@ -406,5 +436,5 @@ void CompressedFits::SetDecompressFilename() {
     fs::path zip_path(_filename);
     tmp_path /= zip_path.filename().stem();
 
-    _unzip_file = tmp_path.string();
+    _unzip_filename = tmp_path.string();
 }
