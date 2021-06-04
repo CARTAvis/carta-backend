@@ -36,7 +36,7 @@ private:
     void SetDecompressFilename();
 
     // Extended file info
-    bool IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext);
+    bool IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext, long long& data_size);
     void ParseFitsCard(casacore::String& fits_card, casacore::String& keyword, casacore::String& value, casacore::String& comment);
     void AddHeaderEntry(
         casacore::String& keyword, casacore::String& value, casacore::String& comment, CARTA::FileInfoExtended& file_info_ext);

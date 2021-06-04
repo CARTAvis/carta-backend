@@ -7,6 +7,7 @@
 #include "CompressedFits.h"
 
 #include <chrono>
+#include <cmath>
 
 #include "../Logger/Logger.h"
 #include "../Util.h"
@@ -39,19 +40,12 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     CARTA::FileInfoExtended file_info_ext;
 
     bool in_image_headers(false);
+    long long data_size(1);
     auto t_start_get_hdu = std::chrono::high_resolution_clock::now();
 
     while (!gzeof(zip_file)) {
-        size_t bufsize;
-        if (in_image_headers) {
-            // Read entire block for headers
-            bufsize = FITS_BLOCK_SIZE;
-        } else {
-            // Read beginning of block to check for new HDU
-            bufsize = FITS_CARD_SIZE * INITIAL_HEADERS_SIZE;
-        }
-
         // Read headers
+        size_t bufsize(FITS_BLOCK_SIZE);
         int err(0);
         std::string buffer(bufsize, 0);
         size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
@@ -60,66 +54,73 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
             const char* error_string = gzerror(zip_file, &err);
             spdlog::debug("gzread failed with error {}", error_string);
             spdlog::error("Error reading gz file into buffer");
+
+            gzclose(zip_file);
             return false;
         }
 
         if ((buffer.substr(0, 6) == "SIMPLE") || (buffer.substr(0, 8) == "XTENSION")) {
-            // New hdu: read initial headers
-            t_start_get_hdu = std::chrono::high_resolution_clock::now();
+            // New hdu: read initial headers to determine if image
             hdu++;
-            in_image_headers = IsImageHdu(buffer, file_info_ext);
+            data_size = 1;
+
+            in_image_headers = IsImageHdu(buffer, file_info_ext, data_size);
 
             if (!in_image_headers) {
                 file_info_ext.clear_header_entries();
             }
         }
 
-        // Size of rest of block - to read or skip
-        size_t block_size = FITS_BLOCK_SIZE - bufsize;
+        // Continue parsing headers and add to file info
+        size_t buffer_index(INITIAL_HEADERS_SIZE * FITS_CARD_SIZE);
+        while (buffer_index < bytes_read) {
+            casacore::String fits_card = buffer.substr(buffer_index, FITS_CARD_SIZE);
+            buffer_index += FITS_CARD_SIZE;
 
-        if (in_image_headers) {
-            if (block_size > 0) {
-                // Read rest of block after initial headers
-                buffer.resize(block_size, 0);
-                bytes_read = gzread(zip_file, buffer.data(), block_size);
+            fits_card.trim();
+            if (fits_card.empty()) {
+                continue;
             }
 
-            // Continue parsing headers and add to file info
-            size_t buffer_index(0);
-            while (buffer_index < bytes_read) {
-                casacore::String fits_card = buffer.substr(buffer_index, FITS_CARD_SIZE);
-                buffer_index += FITS_CARD_SIZE;
+            casacore::String keyword, value, comment;
+            ParseFitsCard(fits_card, keyword, value, comment);
 
-                fits_card.trim();
-                if (fits_card.empty()) {
-                    continue;
+            if (keyword != "END") {
+                if (in_image_headers) {
+                    AddHeaderEntry(keyword, value, comment, file_info_ext);
                 }
 
-                casacore::String keyword, value, comment;
-                ParseFitsCard(fits_card, keyword, value, comment);
-
-                if (keyword != "END") {
-                    AddHeaderEntry(keyword, value, comment, file_info_ext);
-                } else {
-                    // At last header "END", add entry to map
+                if (keyword.startsWith("NAXIS")) {
+                    try {
+                        auto naxis = std::stoi(value);
+                        data_size *= naxis;
+                    } catch (std::invalid_argument) {
+                        spdlog::debug("Invalid {} value: {}, skipping hdu", keyword, value);
+                        in_image_headers = false;
+                        break;
+                    }
+                }
+            } else {
+                // END of header
+                if (in_image_headers) {
+                    // add entry to map
                     std::string hduname = std::to_string(hdu);
                     hdu_info_map[hduname] = file_info_ext;
-
-                    auto t_end_get_hdu = std::chrono::high_resolution_clock::now();
-                    auto dt_get_hdu = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_hdu - t_start_get_hdu).count();
-                    spdlog::performance("Get hdu {} headers in {:.3f} ms", hdu, dt_get_hdu * 1e-3);
-
-                    // Reset for next hdu
-                    file_info_ext.clear_header_entries();
-                    in_image_headers = false;
-
-                    // Stop parsing block
-                    break;
                 }
+
+                // Skip data blocks
+                if (data_size > 1) {
+                    auto ndata_blocks = std::ceil((float)data_size / (float) FITS_BLOCK_SIZE);
+                    gzseek(zip_file, ndata_blocks * FITS_BLOCK_SIZE, SEEK_CUR);
+                }
+
+                // Reset for next hdu
+                file_info_ext.clear_header_entries();
+                in_image_headers = false;
+
+                // Stop parsing block
+                break;
             }
-        } else {
-            // Skip to end of block
-            gzseek(zip_file, block_size, SEEK_CUR);
         }
     }
 
@@ -127,7 +128,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
     auto t_end_get_hdu_info = std::chrono::high_resolution_clock::now();
     auto dt_get_hdu_info = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_hdu_info - t_start_get_hdu_info).count();
-    spdlog::performance("Get hdu info in {:.3f} ms", dt_get_hdu_info * 1e-3);
+    spdlog::performance("Get hdu info map in {:.3f} ms", dt_get_hdu_info * 1e-3);
     return true;
 }
 
@@ -155,7 +156,7 @@ gzFile CompressedFits::OpenGzFile() {
     return zip_file;
 }
 
-bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext) {
+bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext, long long& data_size) {
     // Parse initial header strings (FITS standard: SIMPLE/XTENSION, BITPIX, NAXIS) to determine whether to include this HDU
 
     // Check first header value
@@ -164,14 +165,12 @@ bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended
     ParseFitsCard(header, keyword, value, comment);
     bool is_image = ((keyword == "SIMPLE") && (value == "T")) || ((keyword == "XTENSION") && (value == "IMAGE"));
 
-    if (!is_image) {
-        return false;
+    // Add header to file info
+    if (is_image) {
+        AddHeaderEntry(keyword, value, comment, file_info_ext);
     }
 
-    // Add header to file info
-    AddHeaderEntry(keyword, value, comment, file_info_ext);
-
-    // Check other initial headers
+    // Check other initial headers and calculate data size (for skipping blocks)
     bool bitpix_ok(false), naxis_ok(false);
     for (auto i = 1; i < INITIAL_HEADERS_SIZE; ++i) {
         header = fits_block.substr(i * FITS_CARD_SIZE, FITS_CARD_SIZE);
@@ -184,26 +183,41 @@ bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended
             auto found = std::find(std::begin(valid_bitpix), std::end(valid_bitpix), value);
             bitpix_ok = (found != std::end(valid_bitpix));
 
-            if (!bitpix_ok) {
+            try {
+                auto bitpix = std::stoi(value);
+                data_size *= abs(bitpix / 8);
+            } catch (std::invalid_argument) {
+                data_size = 0;
                 return false;
             }
         } else if (keyword == "NAXIS") {
             try {
-                naxis_ok = std::stoi(value) >= 2;
-            } catch (std::invalid_argument) {
-                // stoi failed
-            }
+                auto naxis = std::stoi(value);
+                naxis_ok = naxis >= 2;
 
-            if (!naxis_ok) {
+                if (naxis == 0) {
+                    data_size = 0;
+                }
+            } catch (std::invalid_argument) {
+                data_size = 0;
+                return false;
+            }
+        } else if (keyword.startsWith("NAXIS")) {
+            try {
+                auto naxis = std::stoi(value);
+                data_size *= naxis;
+            } catch (std::invalid_argument) {
                 return false;
             }
         }
 
-        // Add header to file info
-        AddHeaderEntry(keyword, value, comment, file_info_ext);
+        if (is_image) {
+            // Add header to file info
+            AddHeaderEntry(keyword, value, comment, file_info_ext);
+        }
     }
 
-    return bitpix_ok && naxis_ok;
+    return is_image && bitpix_ok && naxis_ok;
 }
 
 void CompressedFits::ParseFitsCard(
@@ -300,8 +314,8 @@ unsigned long long CompressedFits::GetDecompressSize() {
 
     // Seek end of FITS blocks and accumulate size
     size_t seek_bufsize(FITS_BLOCK_SIZE - 1);
-    unsigned long long unzip_size(0);
     std::string buffer(1, 0);
+    unsigned long long unzip_size(0);
 
     while (!gzeof(zip_file)) {
         // Read 1 byte, seek to end of block
@@ -317,8 +331,10 @@ unsigned long long CompressedFits::GetDecompressSize() {
             return 0;
         }
 
-        size_t bytes_seek = gzseek(zip_file, seek_bufsize, SEEK_CUR);
-        if (bytes_seek == -1) {
+        auto offset = gzseek(zip_file, seek_bufsize, SEEK_CUR);
+        spdlog::debug("GetDecompressedSize: gzseek returned offset {}", offset);
+
+        if (offset == -1) {
             gzclose(zip_file);
 
             const char* error_string = gzerror(zip_file, &err);
@@ -327,7 +343,7 @@ unsigned long long CompressedFits::GetDecompressSize() {
             return 0;
         }
 
-        unzip_size = bytes_seek;
+        unzip_size = offset;
     }
 
     gzclose(zip_file);
