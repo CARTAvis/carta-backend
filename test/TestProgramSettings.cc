@@ -9,29 +9,19 @@
 
 #include "SessionManager/ProgramSettings.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-
-namespace fs = std::filesystem;
-#endif
+#include "CommonTestUtilities.h"
 
 #include <fstream>
 #include <iostream>
 
 #define GTEST_COUT std::cerr << "[          ] [ DEBUG ]"
 
-using namespace std;
-
-class ProgramSettingsTest : public ::testing::Test {
+class ProgramSettingsTest : public ::testing::Test, public FileFinder {
 public:
     carta::ProgramSettings default_settings;
 
     // Utility for converting vector of string values to
-    static auto SettingsFromVector(vector<string> argVector) {
+    static auto SettingsFromVector(std::vector<std::string> argVector) {
         std::vector<char*> cstrings;
         cstrings.reserve(argVector.size());
 
@@ -44,16 +34,27 @@ public:
         return std::move(settings);
     }
 
-    static auto SettingsFromString(const string& argString) {
-        vector<string> argVector;
+    static auto SettingsFromString(const std::string& argString) {
+        std::vector<std::string> argVector;
 
-        string token;
-        istringstream stream(argString);
+        std::string token;
+        std::istringstream stream(argString);
         while (std::getline(stream, token, ' ')) {
             argVector.push_back(token);
         }
         return SettingsFromVector(argVector);
     }
+
+    void SetUp() {
+        working_directory = fs::current_path();
+    }
+
+    void TearDown() {
+        fs::current_path(working_directory);
+    }
+
+private:
+    fs::path working_directory;
 };
 
 TEST_F(ProgramSettingsTest, DefaultConstructor) {
@@ -126,103 +127,102 @@ TEST_F(ProgramSettingsTest, OverrideDeprecatedRoot) {
 TEST_F(ProgramSettingsTest, OverrideDeprecatedBase) {
     auto settings = SettingsFromVector({"carta_backend", "--base", "/tmp2", "/tmp"});
     EXPECT_EQ(settings.starting_folder, "/tmp");
-    auto image_dir = fs::current_path() / "data/images";
+    auto image_dir = TestRoot() / "data/images";
     settings = SettingsFromVector({"carta_backend", "--base", "/tmp2", image_dir.string()});
     EXPECT_EQ(settings.starting_folder, image_dir.string());
 }
 
 TEST_F(ProgramSettingsTest, StartingFolderFromPositional) {
-    auto image_dir = fs::current_path() / "data/images";
+    auto image_dir = TestRoot() / "data/images";
     auto settings = SettingsFromVector({"carta_backend", image_dir.string()});
     EXPECT_EQ(settings.starting_folder, image_dir.string());
     EXPECT_TRUE(settings.files.empty());
 }
 
 TEST_F(ProgramSettingsTest, IgnoreInvalidFolder) {
-    auto image_dir = fs::current_path() / "data/images_invalid";
+    auto image_dir = TestRoot() / "data/images_invalid";
     auto settings = SettingsFromVector({"carta_backend", image_dir.string()});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     EXPECT_TRUE(settings.files.empty());
 }
 
 TEST_F(ProgramSettingsTest, IgnoreInvalidFile) {
-    auto fits_image = fs::current_path() / "data/images/fits/invalid.fits";
-    auto settings = SettingsFromVector({"carta_backend", fits_image.string()});
+    auto fits_image_path = FitsImagePath("invalid.fits");
+    auto settings = SettingsFromVector({"carta_backend", fits_image_path});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     EXPECT_TRUE(settings.files.empty());
 }
 
 TEST_F(ProgramSettingsTest, FileImageFromPositional) {
-    auto image_dir = fs::current_path() / "data/images";
-    auto fits_image = image_dir / "fits/noise_10px_10px.fits";
-    auto settings = SettingsFromVector({"carta_backend", fits_image.string()});
+    auto fits_image_path = FitsImagePath("noise_10px_10px.fits");
+    auto settings = SettingsFromVector({"carta_backend", fits_image_path});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     ASSERT_EQ(settings.files.size(), 1);
     // substr to remove leading "/" from expected path
-    EXPECT_EQ(settings.files[0], fits_image.string().substr(1));
+    EXPECT_EQ(settings.files[0], fits_image_path.substr(1));
 }
 
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
-    auto image_dir = fs::current_path() / "data/images";
-    string image_path_string = "data/images/fits/noise_10px_10px.fits";
-    auto image_path = image_dir / "fits/noise_10px_10px.fits";
-    auto settings = SettingsFromVector({"carta_backend", image_path_string});
+    auto absolute_image_path = FitsImagePath("noise_10px_10px.fits");
+    fs::current_path(TestRoot());
+    std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], image_path.string().substr(1));
+    EXPECT_EQ(settings.files[0], absolute_image_path.substr(1));
 }
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
-    auto image_dir = fs::current_path() / "data/images";
-    string image_path_string = "./data/images/fits/noise_10px_10px.fits";
-    auto image_path = image_dir / "fits/noise_10px_10px.fits";
-    auto settings = SettingsFromVector({"carta_backend", image_path_string});
+    auto absolute_image_path = FitsImagePath("noise_10px_10px.fits");
+    fs::current_path(TestRoot());
+    std::string relative_image_path = "./data/images/fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], image_path.string().substr(1));
+    EXPECT_EQ(settings.files[0], absolute_image_path.substr(1));
 }
 
 TEST_F(ProgramSettingsTest, FileImageRelativeToTopLevel) {
-    auto top_level_dir = fs::current_path() / "data/images";
+    auto top_level_path = (TestRoot() / "data/images").string();
+    fs::current_path(TestRoot());
 
-    string image_path_string = "data/images/fits/noise_10px_10px.fits";
-    auto settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
+    std::string relative_image_path = "data/images/fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
 
-    image_path_string = "./data/images/fits/noise_10px_10px.fits";
-    settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
+    relative_image_path = "./data/images/fits/noise_10px_10px.fits";
+    settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
 
-    image_path_string = "../test/data/images/fits/noise_10px_10px.fits";
-    settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
+    relative_image_path = "../test/data/images/fits/noise_10px_10px.fits";
+    settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_path, relative_image_path});
     ASSERT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
 }
 
 TEST_F(ProgramSettingsTest, CasaImageSetFromPositional) {
-    auto image_dir = fs::current_path() / "data/images";
-    auto casa_image = image_dir / "casa/noise_10px_10px.im";
-    auto settings = SettingsFromVector({"carta_backend", casa_image.string()});
+    auto casa_image_path = CasaImagePath("noise_10px_10px.im");
+    auto settings = SettingsFromVector({"carta_backend", casa_image_path});
     EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], casa_image.string().substr(1));
+    EXPECT_EQ(settings.files[0], casa_image_path.substr(1));
 }
 
 TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
-    auto image_dir = fs::current_path() / "data/images";
-    auto casa_image = image_dir / "casa/noise_10px_10px.im";
-    auto fits_image = image_dir / "fits/noise_10px_10px.fits";
-    auto hdf5_image = image_dir / "hdf5/noise_10px_10px.hdf5";
-    auto settings = SettingsFromVector({"carta_backend", fits_image.string(), casa_image.string(), hdf5_image.string()});
-    ASSERT_EQ(settings.files.size(), 3);
-    EXPECT_EQ(settings.files[0], fits_image.string().substr(1));
-    EXPECT_EQ(settings.files[1], casa_image.string().substr(1));
-    EXPECT_EQ(settings.files[2], hdf5_image.string().substr(1));
+    auto casa_image_path = CasaImagePath("noise_10px_10px.im");
+    auto fits_image_path = FitsImagePath("noise_10px_10px.fits");
+    auto hdf5_image_path = Hdf5ImagePath("noise_10px_10px.hdf5");
 
-    settings = SettingsFromVector({"carta_backend", casa_image.string(), fits_image.string(), hdf5_image.string()});
+    auto settings = SettingsFromVector({"carta_backend", fits_image_path, casa_image_path, hdf5_image_path});
     ASSERT_EQ(settings.files.size(), 3);
-    EXPECT_EQ(settings.files[0], casa_image.string().substr(1));
-    EXPECT_EQ(settings.files[1], fits_image.string().substr(1));
-    EXPECT_EQ(settings.files[2], hdf5_image.string().substr(1));
+    EXPECT_EQ(settings.files[0], fits_image_path.substr(1));
+    EXPECT_EQ(settings.files[1], casa_image_path.substr(1));
+    EXPECT_EQ(settings.files[2], hdf5_image_path.substr(1));
+
+    settings = SettingsFromVector({"carta_backend", casa_image_path, fits_image_path, hdf5_image_path});
+    ASSERT_EQ(settings.files.size(), 3);
+    EXPECT_EQ(settings.files[0], casa_image_path.substr(1));
+    EXPECT_EQ(settings.files[1], fits_image_path.substr(1));
+    EXPECT_EQ(settings.files[2], hdf5_image_path.substr(1));
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
@@ -263,7 +263,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
-    const std::string input = "./data/settings-good-fields.json";
+    const std::string input = DataPath("settings-good-fields.json");
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     EXPECT_EQ(j.size(), 13);
@@ -283,7 +283,8 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
-    const std::string input = "./data/settings-bad-fields.json";
+    fs::current_path(TestRoot());
+    const std::string input = DataPath("settings-bad-fields.json");
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
@@ -291,7 +292,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
 }
 
 TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
-    const std::string input = "./data/settings-good-fields.json";
+    const std::string input = DataPath("settings-good-fields.json");
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);
@@ -311,7 +312,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
 }
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
-    const std::string input = "./data/settings-bad-fields.json";
+    const std::string input = DataPath("settings-bad-fields.json");
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
     settings.SetSettingsFromJSON(j);

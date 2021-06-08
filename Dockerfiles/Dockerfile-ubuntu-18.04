@@ -7,8 +7,8 @@ RUN \
   apt-get install -y apt-utils autoconf bison build-essential byobu cmake curl default-jre dialog emacs \
     fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libcurl4-gnutls-dev \
     libpugixml-dev libcfitsio-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
-    libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool \
-    libxml2-dev libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
+    libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev libzstd-dev \
+    libgsl-dev man pkg-config python-pip python3-pip python3-numpy python3-astropy \
     software-properties-common unzip vim wcslib-dev wget uuid-dev && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
 
