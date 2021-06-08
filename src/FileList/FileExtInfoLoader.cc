@@ -62,12 +62,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 bool is_casacore_fits(image_type == "FITSImage");
                 bool is_carta_fits(image_type == "CartaFitsImage");
 
-                casacore::CoordinateSystem coord_sys(image->coordinates());
                 casacore::ImageFITSHeaderInfo fhi;
-
                 bool use_fits_header(false);
-                if ((coord_sys.linearAxesNumbers().size() == 2) && is_casacore_fits) {
-                    // dummy linear system when there is a wcslib error, get original headers
+
+                if (is_casacore_fits) {
+                    // Get original headers
                     casacore::String filename(image->name());
                     casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk);
 
@@ -839,25 +838,33 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
     // split ctype1 and ctype2 into type and projection
     std::unordered_map<std::string, std::string> names = {
         {"RA", "Right Ascension"}, {"DEC", "Declination"}, {"GLON", "Longitude"}, {"GLAT", "Latitude"}};
-    // split ctype1
-    std::vector<std::string> type_proj;
-    SplitString(ctype1, '-', type_proj);
-    coord_name1 = type_proj[0];
+
+    auto delim_pos = ctype1.find("--");
+    if (delim_pos != std::string::npos) {
+        coord_name1 = ctype1.substr(0, delim_pos);
+        projection = ctype1.substr(delim_pos, std::string::npos);
+        auto proj_start = projection.find_first_not_of('-');
+        projection = projection.substr(proj_start, std::string::npos);
+    } else {
+        coord_name1 = ctype1;
+    }
+
     if (radesys.empty() && (coord_name1 == "GLON")) {
         radesys = "GALACTIC";
     }
+
     if (names.count(coord_name1)) {
         coord_name1 = names[coord_name1];
     }
-    size_t split_size(type_proj.size());
-    if (split_size > 1) {
-        projection = type_proj[split_size - 1];
+
+    delim_pos = ctype2.find("--");
+    if (delim_pos != std::string::npos) {
+        // split ctype2
+        coord_name2 = ctype2.substr(0, delim_pos);
+    } else {
+        coord_name2 = ctype2;
     }
 
-    // split ctype2
-    type_proj.clear();
-    SplitString(ctype2, '-', type_proj);
-    coord_name2 = type_proj[0];
     if (names.count(coord_name2)) {
         coord_name2 = names[coord_name2];
     }
