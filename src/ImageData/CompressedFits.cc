@@ -110,8 +110,8 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
                 // Skip data blocks
                 if (data_size > 1) {
-                    auto ndata_blocks = std::ceil((float)data_size / (float) FITS_BLOCK_SIZE);
-                    gzseek(zip_file, ndata_blocks * FITS_BLOCK_SIZE, SEEK_CUR);
+                    auto nblocks_data = std::ceil((float)data_size / (float)FITS_BLOCK_SIZE);
+                    gzseek(zip_file, nblocks_data * FITS_BLOCK_SIZE, SEEK_CUR);
                 }
 
                 // Reset for next hdu
@@ -313,14 +313,18 @@ unsigned long long CompressedFits::GetDecompressSize() {
     }
 
     // Seek end of FITS blocks and accumulate size
-    size_t seek_bufsize(FITS_BLOCK_SIZE - 1);
-    std::string buffer(1, 0);
+    size_t bufsize(FITS_BLOCK_SIZE);
     unsigned long long unzip_size(0);
+
+    bool in_hdu(false);
+    int data_size(1);
 
     while (!gzeof(zip_file)) {
         // Read 1 byte, seek to end of block
         int err(0);
-        size_t bytes_read = gzread(zip_file, buffer.data(), 1);
+        std::string buffer(bufsize, 0);
+        size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
+        unzip_size += bytes_read;
 
         if (bytes_read == -1) {
             gzclose(zip_file);
@@ -331,15 +335,49 @@ unsigned long long CompressedFits::GetDecompressSize() {
             return 0;
         }
 
-        unzip_size = gzseek(zip_file, seek_bufsize, SEEK_CUR);
+        if (!in_hdu && ((buffer.substr(0, 6) == "SIMPLE") || (buffer.substr(0, 8) == "XTENSION"))) {
+            in_hdu = true;
+            data_size = 1;
+        }
 
-        if (unzip_size == -1) {
-            gzclose(zip_file);
+        if (in_hdu) {
+            int buffer_index(0);
+            while (buffer_index < bytes_read) {
+                casacore::String fits_card = buffer.substr(buffer_index, FITS_CARD_SIZE);
+                buffer_index += FITS_CARD_SIZE;
 
-            const char* error_string = gzerror(zip_file, &err);
-            spdlog::debug("gzseek failed with error: {}", error_string);
-            spdlog::error("Error reading buffer for FITS gz file.");
-            return 0;
+                casacore::String keyword, value, comment;
+                ParseFitsCard(fits_card, keyword, value, comment);
+
+                if (keyword.startsWith("NAXIS") || (keyword == "BITPIX")) {
+                    if (keyword == "BITPIX") {
+                        auto bitpix = std::stoi(value);
+                        data_size *= abs(bitpix / 8);
+                    } else if (keyword == "NAXIS") {
+                        auto naxis = std::stoi(value);
+                        if (naxis == 0) {
+                            data_size = 0;
+                        }
+                    } else if (keyword.startsWith("NAXIS")) {
+                        auto naxis = std::stoi(value);
+                        data_size *= naxis;
+                    }
+                } else if (keyword == "END") {
+                    // Skip data blocks
+                    if (data_size > 1) {
+                        auto nblocks_data = std::ceil((float)data_size / (float)FITS_BLOCK_SIZE);
+                        auto blocks_size = nblocks_data * FITS_BLOCK_SIZE;
+                        unzip_size += blocks_size;
+                        gzseek(zip_file, blocks_size, SEEK_CUR);
+                    }
+
+                    // Reset for next hdu
+                    in_hdu = false;
+
+                    // Stop parsing block
+                    break;
+                }
+            }
         }
     }
 
@@ -374,8 +412,9 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
     std::ofstream out_file(_unzip_filename, std::ios_base::out | std::ios_base::binary);
 
     // Read and decompress file, write to output file
-    size_t bufsize(FITS_BLOCK_SIZE);
+    // Set large buffer size
     int err(0);
+    size_t bufsize(FITS_BLOCK_SIZE);
 
     while (!gzeof(zip_file)) {
         // Read and decompress file into buffer
