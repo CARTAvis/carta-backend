@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 
-#include <casacore/images/Images/ImageFITSConverter.h>
+#include <casacore/casa/BasicSL/String.h>
 
 #include <carta-protobuf/file_info.pb.h>
 

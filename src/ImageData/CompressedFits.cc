@@ -331,10 +331,9 @@ unsigned long long CompressedFits::GetDecompressSize() {
             return 0;
         }
 
-        auto offset = gzseek(zip_file, seek_bufsize, SEEK_CUR);
-        spdlog::debug("GetDecompressedSize: gzseek returned offset {}", offset);
+        unzip_size = gzseek(zip_file, seek_bufsize, SEEK_CUR);
 
-        if (offset == -1) {
+        if (unzip_size == -1) {
             gzclose(zip_file);
 
             const char* error_string = gzerror(zip_file, &err);
@@ -342,8 +341,6 @@ unsigned long long CompressedFits::GetDecompressSize() {
             spdlog::error("Error reading buffer for FITS gz file.");
             return 0;
         }
-
-        unzip_size = offset;
     }
 
     gzclose(zip_file);
