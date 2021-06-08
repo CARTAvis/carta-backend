@@ -26,42 +26,32 @@ std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {
 
     std::string filename = fmt::format("{:x}.fits", std::hash<std::string>{}(params));
     fs::path fitspath = (root / "data" / "generated" / filename);
+    std::string fitspath_str = fitspath.string();
 
     if (!fs::exists(fitspath)) {
         std::string generator_path = (root / "bin" / "make_image.py").string();
-        std::string fitscmd = fmt::format("{} -s 0 -o {} {}", generator_path, fitspath.string(), params);
+        std::string fitscmd = fmt::format("{} -s 0 -o {} {}", generator_path, fitspath_str, params);
         auto result = system(fitscmd.c_str());
-        generated_images.insert(fitspath.string());
     }
 
-    return fitspath.string();
+    return fitspath_str;
 }
 
 std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params) {
     fs::path root = TestRoot();
 
-    std::string fitspath = GeneratedFitsImagePath(params);
-    std::string hdf5path = fmt::format("{}.hdf5", fitspath);
+    std::string fitspath_str = GeneratedFitsImagePath(params);
+    std::string hdf5path_str = fmt::format("{}.hdf5", fitspath_str);
+    fs::path hdf5path = fs::path(hdf5path_str);
 
-    if (!fs::exists(fs::path(hdf5path))) {
+    if (!fs::exists(hdf5path)) {
         std::string converter_path = (root / "bin" / "fits2idia").string();
-        std::string hdf5cmd = fmt::format("{} -o {} {}", converter_path, hdf5path, fitspath);
+        std::string hdf5cmd = fmt::format("{} -o {} {}", converter_path, hdf5path_str, fitspath_str);
         auto result = system(hdf5cmd.c_str());
-        generated_images.insert(hdf5path);
     }
 
-    return hdf5path;
+    return hdf5path_str;
 }
-
-void ImageGenerator::DeleteImages() {
-    for (auto imgpath : generated_images) {
-        std::string rmcmd = fmt::format("rm {}", imgpath);
-        auto result = system(rmcmd.c_str());
-    }
-    generated_images.clear();
-}
-
-std::unordered_set<std::string> ImageGenerator::generated_images;
 
 std::string FileFinder::DataPath(const std::string& filename) {
     return (TestRoot() / "data" / filename).string();
@@ -89,7 +79,12 @@ std::string FileFinder::XmlTablePath(const std::string& filename) {
 
 CartaEnvironment::~CartaEnvironment() {}
 
+void CartaEnvironment::SetUp() {
+    // create directory for generated images
+    fs::create_directory(TestRoot() / "data" / "generated");
+}
+
 void CartaEnvironment::TearDown() {
-    // delete all generated images
-    ImageGenerator::DeleteImages();
+    // delete directory of generated images
+    fs::remove_all(TestRoot() / "data" / "generated");
 }

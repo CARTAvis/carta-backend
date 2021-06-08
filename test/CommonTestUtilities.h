@@ -30,10 +30,6 @@ class ImageGenerator {
 public:
     static std::string GeneratedFitsImagePath(const std::string& params);
     static std::string GeneratedHdf5ImagePath(const std::string& params);
-    static void DeleteImages();
-
-private:
-    static std::unordered_set<std::string> generated_images;
 };
 
 class FileFinder {
@@ -49,6 +45,7 @@ public:
 class CartaEnvironment : public ::testing::Environment {
 public:
     virtual ~CartaEnvironment();
+    void SetUp() override;
     void TearDown() override;
 };
 
