@@ -364,14 +364,18 @@ string IPAsText(string_view binary) {
     return result;
 }
 
-string GetAuthToken(uWS::HttpRequest* http_request) {
+bool ValidateAuthToken(uWS::HttpRequest* http_request, const string& required_token) {
+    // Always allow if the required token is empty
+    if (required_token.empty()) {
+        return true;
+    }
     // First try the cookie auth token
     string cookie_header = string(http_request->getHeader("cookie"));
     if (!cookie_header.empty()) {
         regex header_regex("carta-auth-token=(.+?)(?:;|$)");
         smatch sm;
-        if (regex_search(cookie_header, sm, header_regex) && sm.size() == 2) {
-            return sm[1];
+        if (regex_search(cookie_header, sm, header_regex) && sm.size() == 2 && sm[1] == required_token) {
+            return true;
         }
     }
 
@@ -379,17 +383,17 @@ string GetAuthToken(uWS::HttpRequest* http_request) {
     string auth_header = string(http_request->getHeader("authorization"));
     regex auth_regex(R"(^Bearer\s+(\S+)$)");
     smatch sm;
-    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2) {
-        return sm[1].str();
+    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2 && sm[1] == required_token) {
+        return true;
     }
 
     // Try the URL query
     auto query_token = http_request->getQuery("token");
-    if (!query_token.empty()) {
-        return string(query_token);
+    if (!query_token.empty() && query_token == required_token) {
+        return true;
     }
     // Finally, fall back to the non-standard auth token header
-    return string(http_request->getHeader("carta-auth-token"));
+    return string(http_request->getHeader("carta-auth-token")) == required_token;
 }
 
 bool FindExecutablePath(string& path) {

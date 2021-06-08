@@ -29,22 +29,20 @@
 
 typedef casacore::Matrix<float> Matrix2F;
 
-using namespace std;
-
 class BlockSmoothingTest : public ::testing::Test {
 public:
-    const vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
+    const std::vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
 
-    random_device rd;
-    mt19937 mt;
-    uniform_real_distribution<float> float_random;
-    uniform_int_distribution<int> size_random;
+    std::random_device rd;
+    std::mt19937 mt;
+    std::uniform_real_distribution<float> float_random;
+    std::uniform_int_distribution<int> size_random;
 
     BlockSmoothingTest() {
-        mt = mt19937(rd());
-        float_random = uniform_real_distribution<float>(0, 1.0f);
+        mt = std::mt19937(rd());
+        float_random = std::uniform_real_distribution<float>(0, 1.0f);
         // Random image widths and heights in range [512, 1024]
-        size_random = uniform_int_distribution<int>(512, 1024);
+        size_random = std::uniform_int_distribution<int>(512, 1024);
     }
 
     Matrix2F RandomMatrix(size_t rows, size_t columns, float nan_fraction) {
@@ -67,7 +65,7 @@ public:
     bool IsNAN(const Matrix2F& m) {
         for (auto i = 0; i < m.nrow(); i++) {
             for (auto j = 0; j < m.ncolumn(); j++) {
-                if (isfinite(m(i, j))) {
+                if (std::isfinite(m(i, j))) {
                     return false;
                 }
             }
@@ -78,7 +76,7 @@ public:
     bool MatchingNANs(const Matrix2F& m1, const Matrix2F& m2) {
         for (auto i = 0; i < m1.nrow(); i++) {
             for (auto j = 0; j < m1.ncolumn(); j++) {
-                if (isfinite(m1(i, j)) != isfinite(m2(i, j))) {
+                if (std::isfinite(m1(i, j)) != std::isfinite(m2(i, j))) {
                     return false;
                 }
             }
@@ -92,7 +90,7 @@ public:
         for (auto i = 0; i < m.nrow(); i++) {
             for (auto j = 0; j < m.ncolumn(); j++) {
                 auto val = m(i, j);
-                if (isfinite(val)) {
+                if (std::isfinite(val)) {
                     has_vals = true;
                     sum += val;
                 }
@@ -107,9 +105,9 @@ public:
         for (auto i = 0; i < m.nrow(); i++) {
             for (auto j = 0; j < m.ncolumn(); j++) {
                 auto val = m(i, j);
-                if (isfinite(val)) {
+                if (std::isfinite(val)) {
                     has_vals = true;
-                    max_val = max(max_val, val);
+                    max_val = std::max(max_val, val);
                 }
             }
         }
@@ -157,7 +155,7 @@ TEST_F(BlockSmoothingTest, TestControl) {
                 auto sum_error = nansum(abs_diff);
                 auto max_error = nanmax(abs_diff);
                 EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
-                if (isfinite(sum_error)) {
+                if (std::isfinite(sum_error)) {
                     EXPECT_GE(sum_error, 0);
                     EXPECT_GE(max_error, 0);
                 }
@@ -177,7 +175,7 @@ TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
                 auto sum_error = nansum(abs_diff);
                 auto max_error = nanmax(abs_diff);
                 EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
-                if (isfinite(sum_error)) {
+                if (std::isfinite(sum_error)) {
                     EXPECT_LE(sum_error, MAX_SUM_ERROR);
                     EXPECT_LE(max_error, MAX_ABS_ERROR);
                 }
@@ -221,7 +219,7 @@ TEST_F(BlockSmoothingTest, TestAVXAccuracy) {
                 auto max_error = nanmax(abs_diff);
 
                 EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_avx), true);
-                if (isfinite(sum_error)) {
+                if (std::isfinite(sum_error)) {
                     EXPECT_LE(sum_error, MAX_SUM_ERROR);
                     EXPECT_LE(max_error, MAX_ABS_ERROR);
                 }

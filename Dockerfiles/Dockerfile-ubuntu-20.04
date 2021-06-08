@@ -10,7 +10,7 @@ RUN \
     libgrpc-dev libgrpc++-dev libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libprotobuf-dev libpugixml-dev libreadline-dev libssl-dev libstarlink-ast-dev \
     libtool libtbb-dev libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler-grpc \
-    software-properties-common unzip wcslib-dev wget uuid-dev
+    python3-numpy python3-astropy software-properties-common unzip wcslib-dev wget uuid-dev
 
 # Get carta dependencies
 # carta-casacore and zfp from cartavis-team PPA and casacore-data from KERN
