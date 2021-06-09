@@ -92,7 +92,7 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
 
 template <class T>
 std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::createMoments(
-    casacore::Bool do_temp, const casacore::String& out_file_name, casacore::Bool remove_axis) {
+    const casacore::String& out_file_name, casacore::Bool remove_axis) {
     if (!goodParameterStatus_p) {
         throw casacore::AipsError("Internal status of class is bad.  You have ignored errors");
     }
@@ -111,13 +111,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
 
     casacore::String moment_axis_units = csys.worldAxisUnits()(worldMomentAxis_p);
     spdlog::info("Moment axis type is {}.", csys.worldAxisNames()(worldMomentAxis_p));
-
-    // Check that input and output image names aren't the same, if there is only one output image
-    if (moments_p.nelements() == 1 && !do_temp) {
-        if (!out_file_name.empty() && (out_file_name == _image->name())) {
-            throw casacore::AipsError("Input image and output image have same name");
-        }
-    }
 
     // Set output images shape and coordinates.
     casacore::IPosition out_image_shape;
@@ -139,39 +132,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         good_units = this->_setOutThings(suffix, moment_units, image_units, moment_axis_units, moments_p(i), convertToVelocity_p);
 
         // Create output image(s). Either casacore::PagedImage or TempImage
-        SPIIT output_image;
-
-        if (!do_temp) {
-            // Get the name of the original image file
-            const casacore::String in = _image->name(false);
-            casacore::String out_temp_file_name;
-
-            if (moments_p.size() == 1) {
-                if (out_file_name.empty()) {
-                    out_temp_file_name = in + suffix;
-                } else {
-                    out_temp_file_name = out_file_name;
-                }
-            } else {
-                if (out_file_name.empty()) {
-                    out_temp_file_name = in + suffix;
-                } else {
-                    out_temp_file_name = out_file_name + suffix;
-                }
-            }
-
-            if (!overWriteOutput_p) {
-                casacore::NewFile new_file;
-                casacore::String error;
-                if (!new_file.valueOK(out_temp_file_name, error)) {
-                    throw casacore::AipsError(error);
-                }
-            }
-            output_image.reset(new casacore::PagedImage<T>(out_image_shape, out_csys, out_temp_file_name));
-
-        } else {
-            output_image.reset(new casacore::TempImage<T>(casacore::TiledShape(out_image_shape), out_csys));
-        }
+        SPIIT output_image = std::make_shared<casacore::TempImage<T>>(casacore::TiledShape(out_image_shape), out_csys);
 
         ThrowIf(!output_image, "Failed to create output file");
         output_image->setMiscInfo(_image->miscInfo());

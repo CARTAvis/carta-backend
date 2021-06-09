@@ -134,7 +134,7 @@ public:
         carta_image_moments.setMoments(moments);
         carta_image_moments.setMomentAxis(moments_axis);
         carta_image_moments.setInExCludeRange(include_pix, exclude_pix);
-        auto carta_results = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
+        auto carta_results = carta_image_moments.createMoments("carta_image_moments", remove_axis);
 
         // check the consistency of casa/carta results
         EXPECT_EQ(casa_results.size(), carta_results.size());

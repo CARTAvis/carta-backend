@@ -57,7 +57,6 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
             if (!_image_moments->setMomentAxis(_axis)) {
                 _error_msg = _image_moments->errorMessage();
             } else {
-                casacore::Bool do_temp = true;
                 casacore::Bool remove_axis = false;
                 casacore::String out_file = GetOutputFileName();
                 std::size_t found = out_file.find_last_of("/");
@@ -66,7 +65,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
 
                     // Do calculations and save collapse results in the memory
-                    auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
+                    auto result_images = _image_moments->createMoments(out_file, remove_axis);
 
                     for (int i = 0; i < result_images.size(); ++i) {
                         // Set temp moment file name

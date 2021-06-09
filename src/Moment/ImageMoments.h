@@ -39,11 +39,8 @@ public:
         return false;
     }
 
-    // This is the function that does all the computational work. The output vector will hold PagedImages or TempImages (do_temp = true).
-    // If do_temp is true, the out_file_name is not used. If you create PagedImages, out_file_name is the root name for the output files.
-    // If you don't set this variable, the default state of the class is to set the output name root to the name of the input file.
     std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> createMoments(
-        casacore::Bool do_temp, const casacore::String& out_file_name, casacore::Bool remove_axis = true);
+        const casacore::String& out_file_name, casacore::Bool remove_axis = true);
 
     // Get coordinate system
     const casacore::CoordinateSystem& coordinates() {
