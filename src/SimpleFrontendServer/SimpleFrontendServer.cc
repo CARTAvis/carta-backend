@@ -35,7 +35,7 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_tok
 }
 
 void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
-    // Dynamic routes for preferences and layouts
+    // Dynamic routes for preferences, layouts and snippets
     app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
     app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
     app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
@@ -195,7 +195,7 @@ void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
     }
     AddNoCacheHeaders(res);
 
-    // Read layout JSON file
+    // Read preferences JSON file
     json existing_preferences = GetExistingPreferences();
     if (!existing_preferences.empty()) {
         res->writeHeader("Content-Type", "application/json");
@@ -327,8 +327,8 @@ void SimpleFrontendServer::HandleSetObject(const std::string& object_type, Res* 
     }
     AddNoCacheHeaders(res);
 
-    WaitForData(res, req, [this, res](const string& buffer) {
-        auto status = SetObjectFromString("layout", buffer);
+    WaitForData(res, req, [this, object_type, res](const string& buffer) {
+        auto status = SetObjectFromString(object_type, buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
             res->end(success_string);
@@ -345,8 +345,8 @@ void SimpleFrontendServer::HandleClearObject(const std::string& object_type, Res
     }
     AddNoCacheHeaders(res);
 
-    WaitForData(res, req, [this, res](const string& buffer) {
-        auto status = ClearObjectFromString("layout", buffer);
+    WaitForData(res, req, [this, object_type, res](const string& buffer) {
+        auto status = ClearObjectFromString(object_type, buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
             res->end(success_string);
