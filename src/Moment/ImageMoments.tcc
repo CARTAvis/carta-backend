@@ -13,6 +13,8 @@
 #include "../Logger/Logger.h"
 #include "../Util.h"
 
+static const casacore::uInt MAX_MEMORY = 1e8; // maximum memory usage for the chunk data (Bytes)
+
 using namespace carta;
 
 template <class T>
@@ -344,15 +346,14 @@ casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casac
     casacore::uInt axis_length = lat_in_shape[axis];
     chunk_shape[axis] = axis_length;
 
-    // arbitrary, but reasonable, max memory limit in bytes for storing arrays in bytes
-    static const casacore::uInt limit = 2e7; // Set the limit of memory usage (Bytes)
+    // maximum memory limit in bytes for storing arrays
     static const casacore::uInt size_of_T = sizeof(T);
     static const casacore::uInt size_of_Bool = sizeof(casacore::Bool);
     casacore::uInt chunk_mult = lattice_in.isMasked() ? size_of_T + size_of_Bool : size_of_T;
     casacore::uInt sub_chunk_size = chunk_mult * axis_length; // Memory size for a sub-chunk (Bytes), i.e., memory for a specific axis line
 
     // integer division
-    const casacore::uInt chunk_size = limit / sub_chunk_size; // Chunk size, i.e., number of pixels on display axes
+    const casacore::uInt chunk_size = MAX_MEMORY / sub_chunk_size; // Chunk size, i.e., number of pixels on display axes
     if (chunk_size <= 1) {
         // can only go row by row
         return chunk_shape;
