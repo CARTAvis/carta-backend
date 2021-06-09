@@ -10,7 +10,6 @@
 #include <regex>
 #include <vector>
 
-#include "Constants.h"
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
 #include "Util.h"
@@ -40,9 +39,12 @@ void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
     app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
     app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
     app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
-    app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetLayouts(res, req); });
-    app.put("/api/database/layout", [&](auto res, auto req) { HandleSetLayout(res, req); });
-    app.del("/api/database/layout", [&](auto res, auto req) { HandleClearLayout(res, req); });
+    app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
+    app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
+    app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+    app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
+    app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
+    app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
     app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
 
     // Static routes for all other files
@@ -178,7 +180,7 @@ void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<v
 
     string buffer;
     // Adapted from https://github.com/uNetworking/uWebSockets/issues/805#issuecomment-452182209
-    res->onData([res, req, callback, buffer = std::move(buffer)](std::string_view data, bool last) mutable {
+    res->onData([callback, buffer = std::move(buffer)](std::string_view data, bool last) mutable {
         buffer.append(data.data(), data.length());
         if (last) {
             callback(buffer);
@@ -305,20 +307,20 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
     });
 }
 
-void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
+void SimpleFrontendServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
     AddNoCacheHeaders(res);
 
-    json existing_layouts = GetExistingLayouts();
+    json existing_objects = GetExistingObjects(object_type);
     res->writeHeader("Content-Type", "application/json");
-    json body = {{"success", true}, {"layouts", existing_layouts}};
+    json body = {{"success", true}, {(object_type + "s"), existing_objects}};
     res->writeStatus(HTTP_200)->end(body.dump());
 }
 
-void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
+void SimpleFrontendServer::HandleSetObject(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -326,7 +328,7 @@ void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
     AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
-        auto status = SetLayoutFromString(buffer);
+        auto status = SetObjectFromString("layout", buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
             res->end(success_string);
@@ -336,7 +338,7 @@ void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
     });
 }
 
-void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
+void SimpleFrontendServer::HandleClearObject(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -344,7 +346,7 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
     AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
-        auto status = ClearLayoutFromString(buffer);
+        auto status = ClearObjectFromString("layout", buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
             res->end(success_string);
@@ -354,43 +356,48 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
     });
 }
 
-nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
-    auto layout_folder = _config_folder / "layouts";
-    json layouts = json::object();
-    if (fs::exists(layout_folder)) {
-        for (auto& p : fs::directory_iterator(layout_folder)) {
+nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& object_type) {
+    auto object_folder = _config_folder / (object_type + "s");
+    json objects = json::object();
+    if (fs::exists(object_folder)) {
+        for (auto& p : fs::directory_iterator(object_folder)) {
             try {
                 string filename = p.path().filename().string();
-                regex layout_regex(R"(^(.+)\.json$)");
+                regex object_regex(R"(^(.+)\.json$)");
                 smatch sm;
-                if (fs::is_regular_file(p) && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
-                    string layout_name = sm[1];
+                if (fs::is_regular_file(p) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                    string object_name = sm[1];
                     ifstream file(p.path().string());
                     string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-                    json layout = json::parse(json_string);
-                    layouts[layout_name] = layout;
+                    json obj = json::parse(json_string);
+                    objects[object_name] = obj;
                 }
             } catch (exception e) {
                 spdlog::warn(e.what());
             }
         }
     }
-    return layouts;
+    return objects;
 }
 
-bool SimpleFrontendServer::WriteLayoutFile(const string& layout_name, nlohmann::json& obj) {
+bool SimpleFrontendServer::WriteObjectFile(const std::string& object_type, const string& object_name, nlohmann::json& obj) {
     if (_read_only_mode) {
-        spdlog::warn("Writing layouts file is not allowed in read-only mode");
+        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return false;
     }
 
-    auto layout_path = _config_folder / "layouts" / (layout_name + ".json");
+    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
 
     try {
-        fs::create_directories(layout_path.parent_path());
-        ofstream file(layout_path.string());
+        fs::create_directories(object_path.parent_path());
+        ofstream file(object_path.string());
         // Ensure correct schema value is written
-        obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
+        if (object_type == "layout") {
+            obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
+        } else if (object_type == "snippet") {
+            obj["$schema"] = CARTA_SNIPPET_SCHEMA_URL;
+        }
+
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
@@ -400,14 +407,15 @@ bool SimpleFrontendServer::WriteLayoutFile(const string& layout_name, nlohmann::
     }
 }
 
-std::string_view SimpleFrontendServer::SetLayoutFromString(const string& buffer) {
+std::string_view SimpleFrontendServer::SetObjectFromString(const std::string& object_type, const string& buffer) {
     try {
+        string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
-        if (post_data["layoutName"].is_string()) {
-            string layout_name = post_data["layoutName"];
-            auto layout = post_data["layout"];
-            if (!layout_name.empty() && layout.is_object()) {
-                return WriteLayoutFile(layout_name, layout) ? HTTP_200 : HTTP_400;
+        if (post_data[field_name].is_string()) {
+            string object_name = post_data[field_name];
+            auto object_data = post_data[object_type];
+            if (!object_name.empty() && object_data.is_object()) {
+                return WriteObjectFile(object_type, object_name, object_data) ? HTTP_200 : HTTP_400;
             }
         }
         return HTTP_400;
@@ -420,20 +428,21 @@ std::string_view SimpleFrontendServer::SetLayoutFromString(const string& buffer)
     }
 }
 
-std::string_view SimpleFrontendServer::ClearLayoutFromString(const string& buffer) {
+std::string_view SimpleFrontendServer::ClearObjectFromString(const std::string& object_type, const string& buffer) {
     if (_read_only_mode) {
-        spdlog::warn("Writing layouts file is not allowed in read-only mode");
+        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return HTTP_400;
     }
 
     try {
+        string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
-        if (post_data["layoutName"].is_string()) {
-            string layout_name = post_data["layoutName"];
-            if (!layout_name.empty()) {
-                auto layout_path = _config_folder / "layouts" / (layout_name + ".json");
-                if (fs::exists(layout_path) && fs::is_regular_file(layout_path)) {
-                    fs::remove(layout_path);
+        if (post_data[field_name].is_string()) {
+            string object_name = post_data[field_name];
+            if (!object_name.empty()) {
+                auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+                if (fs::exists(object_path) && fs::is_regular_file(object_path)) {
+                    fs::remove(object_path);
                     return HTTP_200;
                 }
             }
