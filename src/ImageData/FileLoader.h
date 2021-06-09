@@ -157,7 +157,7 @@ public:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     // Determine axes used for image raster data
-    void GetRenderAxes(std::vector<int>& axes);
+    std::vector<int> GetRenderAxes();
 
     // Image Data
     // Check to see if the file has a particular HDU/group/table/etc

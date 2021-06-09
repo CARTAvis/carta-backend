@@ -283,8 +283,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
-                    std::vector<int> render_axes;
-                    _loader->GetRenderAxes(render_axes);
+                    std::vector<int> render_axes = _loader->GetRenderAxes();
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
                     AddComputedEntries(extended_info, image, render_axes, radesys, use_fits_header);
                     file_ok = true;

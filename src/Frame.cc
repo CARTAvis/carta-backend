@@ -79,8 +79,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     }
 
     // Determine which axes are rendered, e.g. for pV images
-    std::vector<int> render_axes;
-    _loader->GetRenderAxes(render_axes);
+    std::vector<int> render_axes = _loader->GetRenderAxes();
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
 
