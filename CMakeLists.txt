@@ -5,6 +5,7 @@ include_directories(src)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+set(CMAKE_LINK_DIRECTORIES_BEFORE ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -44,6 +45,72 @@ endif ()
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+FIND_PACKAGE(CURL REQUIRED)
+FIND_PACKAGE(ZFP CONFIG REQUIRED)
+FIND_PACKAGE(PkgConfig REQUIRED)
+
+FIND_PACKAGE(PUGIXML QUIET)
+if (PUGIXML_FOUND)
+    message(STATUS "Found pugixml using find_package")
+else ()
+        PKG_SEARCH_MODULE(PUGIXML REQUIRED pugixml)
+        if (PUGIXML_FOUND)
+        message(STATUS "Found pugixml using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find pugixml")
+    endif ()
+endif()
+
+FIND_PACKAGE(CFITSIO QUIET)
+if (CFITSIO_FOUND)
+    message(STATUS "Found cfitsio using find_package")
+else ()
+    PKG_SEARCH_MODULE(CFITSIO REQUIRED cfitsio)
+    if (CFITSIO_FOUND)
+        message(STATUS "Found cfitsio using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find cfitsio")
+    endif ()
+endif()
+
+FIND_PACKAGE(WCSLIB QUIET)
+if (WCSLIB_FOUND)
+    message(STATUS "Found wcslib using find_package")
+else ()
+    PKG_SEARCH_MODULE(WCSLIB REQUIRED wcslib)
+    if (WCSLIB_FOUND)
+        message(STATUS "Found wcslib using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find wcslib")
+    endif ()
+endif()
+
+PKG_SEARCH_MODULE(UUID REQUIRED uuid)
+if (UUID_FOUND)
+    message(STATUS "Found uuid using pkg-config")
+else ()
+    message(FATAL_ERROR "Could not find uuid")
+endif ()
+
+PKG_SEARCH_MODULE(ZSTD REQUIRED libzstd)
+if (ZSTD_FOUND)
+    message(STATUS "zstd found using pkg-config")
+else ()
+    message(FATAL_ERROR "Could not find zstd")
+endif ()
+
+FIND_PACKAGE(TBB QUIET)
+if (TBB_FOUND)
+    message(STATUS "Found TBB using find_package")
+else ()
+    PKG_SEARCH_MODULE(TBB REQUIRED tbb)
+    if (TBB_FOUND)
+        message(STATUS "Found TBB using pkg-config")
+    else()
+        message(FATAL_ERROR "TBB not found")
+    endif ()
+endif()
+
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
@@ -52,8 +119,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
-INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
@@ -122,6 +189,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        wcs
         casa_casa
         casa_coordinates
         casa_tables
@@ -156,6 +224,8 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
+        src/ImageData/CartaFitsImage.cc
+        src/ImageData/StokesFilesConnector.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Region/CrtfImportExport.cc
@@ -169,6 +239,7 @@ set(SOURCE_FILES
         src/Table/TableView.cc
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
+        src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc
@@ -201,8 +272,12 @@ install(TARGETS carta_backend
 install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
     DESTINATION bin)
 
+install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
+    DESTINATION share/carta)
+
 # Tests
 option(test "Build tests." OFF)
 if (test)
+    FIND_PACKAGE(GTest REQUIRED)
     add_subdirectory(test)
 endif ()

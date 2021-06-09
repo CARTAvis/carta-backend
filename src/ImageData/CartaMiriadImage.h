@@ -23,10 +23,6 @@ public:
     CartaMiriadImage(const CartaMiriadImage& other);
     ~CartaMiriadImage();
 
-    inline bool Valid() {
-        return _valid;
-    };
-
     inline casacore::SpectralCoordinate::SpecType NativeType() {
         return _native_type;
     }
@@ -55,7 +51,6 @@ private:
 
     casacore::String _filename;
     casacore::MaskSpecifier _mask_spec;
-    bool _valid;
     bool _is_open;
     int _file_handle;
     casacore::SpectralCoordinate::SpecType _native_type;

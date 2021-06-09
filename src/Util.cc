@@ -6,16 +6,27 @@
 
 #include "Util.h"
 
+#include <fitsio.h>
 #include <climits>
+#include <cmath>
 #include <fstream>
 #include <regex>
 
 #include <casacore/casa/OS/File.h>
 
+#include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
+#endif
+
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
 #endif
 
 using namespace std;
@@ -114,7 +125,32 @@ uint32_t GetMagicNumber(const string& filename) {
         input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
     }
+
     return magic_number;
+}
+
+bool IsCompressedFits(const std::string& filename) {
+    // Check if gzip file, then check .fits extension
+    bool is_fits(false);
+    auto magic_number = GetMagicNumber(filename);
+    if ((magic_number == GZ_MAGIC_NUMBER) || (magic_number == BZ_MAGIC_NUMBER)) {
+        fs::path bgz_path(filename);
+        is_fits = (bgz_path.stem().extension().string() == ".fits");
+    }
+
+    return is_fits;
+}
+
+std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam) {
+    std::string result;
+    result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
+    result += fmt::format("minor: {:.6f} {} ", gaussian_beam.getMinor().getValue(), gaussian_beam.getMinor().getUnit());
+    result += fmt::format("pa: {:.6f} {}", gaussian_beam.getPA().getValue(), gaussian_beam.getPA().getUnit());
+    return result;
+}
+
+std::string GetQuantityInfo(const casacore::Quantity& quantity) {
+    return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
 }
 
 void SplitString(string& input, char delim, vector<string>& parts) {
@@ -152,6 +188,10 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
 
 CARTA::FileType GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
+    if (IsCompressedFits(filename)) {
+        return CARTA::FileType::FITS;
+    }
+
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
         case casacore::ImageOpener::IMAGECONCAT:
@@ -169,6 +209,50 @@ CARTA::FileType GetCartaFileType(const string& filename) {
         case casacore::ImageOpener::NEWSTAR:
         default:
             return CARTA::FileType::UNKNOWN;
+    }
+}
+
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
+    prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
+    casacore::CoordinateSystem coord_sys(image->coordinates());
+    if (coord_sys.hasSpectralAxis()) { // prefer spectral axis native type
+        casacore::SpectralCoordinate::SpecType native_type;
+        if (image->imageType() == "CartaMiriadImage") { // workaround to get correct native type
+            carta::CartaMiriadImage* miriad_image = static_cast<carta::CartaMiriadImage*>(image);
+            native_type = miriad_image->NativeType();
+        } else {
+            native_type = coord_sys.spectralCoordinate().nativeType();
+        }
+        switch (native_type) {
+            case casacore::SpectralCoordinate::FREQ: {
+                break;
+            }
+            case casacore::SpectralCoordinate::VRAD:
+            case casacore::SpectralCoordinate::BETA: {
+                prefer_velocity = true;
+                break;
+            }
+            case casacore::SpectralCoordinate::VOPT: {
+                prefer_velocity = true;
+
+                // Check doppler type; oddly, native type can be VOPT but doppler is RADIO--?
+                casacore::MDoppler::Types vel_doppler(coord_sys.spectralCoordinate().velocityDoppler());
+                if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
+                    optical_velocity = true;
+                }
+                break;
+            }
+            case casacore::SpectralCoordinate::WAVE: {
+                prefer_wavelength = true;
+                break;
+            }
+            case casacore::SpectralCoordinate::AWAV: {
+                prefer_wavelength = true;
+                air_wavelength = true;
+                break;
+            }
+        }
     }
 }
 
@@ -193,7 +277,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = numeric_limits<double>::quiet_NaN();
+            double nan_value = nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -211,7 +295,7 @@ void FillStatisticsValuesFromMap(
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = numeric_limits<double>::quiet_NaN();
+                value = nan("");
             }
         }
 
@@ -222,33 +306,46 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-void ConvertCoordinateToAxes(const string& coordinate, int& axis_index, int& stokes_index) {
-    // converts profile string into axis, stokes index into image shape
-    // axis
-    char axis_char(coordinate.back());
-    if (axis_char == 'x') {
-        axis_index = 0;
-    } else if (axis_char == 'y') {
-        axis_index = 1;
-    } else if (axis_char == 'z') {
-        axis_index = -1; // not used
+int GetStokesValue(const CARTA::StokesType& stokes_type) {
+    int stokes_value(-1);
+    switch (stokes_type) {
+        case CARTA::StokesType::I:
+            stokes_value = 1;
+            break;
+        case CARTA::StokesType::Q:
+            stokes_value = 2;
+            break;
+        case CARTA::StokesType::U:
+            stokes_value = 3;
+            break;
+        case CARTA::StokesType::V:
+            stokes_value = 4;
+            break;
+        default:
+            break;
     }
+    return stokes_value;
+}
 
-    // stokes
-    if (coordinate.size() == 2) {
-        char stokes_char(coordinate.front());
-        if (stokes_char == 'I') {
-            stokes_index = 0;
-        } else if (stokes_char == 'Q') {
-            stokes_index = 1;
-        } else if (stokes_char == 'U') {
-            stokes_index = 2;
-        } else if (stokes_char == 'V') {
-            stokes_index = 3;
-        }
-    } else {
-        stokes_index = -1;
+CARTA::StokesType GetStokesType(int stokes_value) {
+    CARTA::StokesType stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
+    switch (stokes_value) {
+        case 1:
+            stokes_type = CARTA::StokesType::I;
+            break;
+        case 2:
+            stokes_type = CARTA::StokesType::Q;
+            break;
+        case 3:
+            stokes_type = CARTA::StokesType::U;
+            break;
+        case 4:
+            stokes_type = CARTA::StokesType::V;
+            break;
+        default:
+            break;
     }
+    return stokes_type;
 }
 
 string IPAsText(string_view binary) {
@@ -267,15 +364,18 @@ string IPAsText(string_view binary) {
     return result;
 }
 
-string GetAuthToken(uWS::HttpRequest* http_request) {
-    string req_token;
+bool ValidateAuthToken(uWS::HttpRequest* http_request, const string& required_token) {
+    // Always allow if the required token is empty
+    if (required_token.empty()) {
+        return true;
+    }
     // First try the cookie auth token
     string cookie_header = string(http_request->getHeader("cookie"));
     if (!cookie_header.empty()) {
         regex header_regex("carta-auth-token=(.+?)(?:;|$)");
         smatch sm;
-        if (regex_search(cookie_header, sm, header_regex) && sm.size() == 2) {
-            return sm[1];
+        if (regex_search(cookie_header, sm, header_regex) && sm.size() == 2 && sm[1] == required_token) {
+            return true;
         }
     }
 
@@ -283,13 +383,17 @@ string GetAuthToken(uWS::HttpRequest* http_request) {
     string auth_header = string(http_request->getHeader("authorization"));
     regex auth_regex(R"(^Bearer\s+(\S+)$)");
     smatch sm;
-    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2) {
-        return sm[1].str();
+    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2 && sm[1] == required_token) {
+        return true;
     }
 
+    // Try the URL query
+    auto query_token = http_request->getQuery("token");
+    if (!query_token.empty() && query_token == required_token) {
+        return true;
+    }
     // Finally, fall back to the non-standard auth token header
-    // TODO: Should this be supported any more? Where is it used?
-    return string(http_request->getHeader("carta-auth-token"));
+    return string(http_request->getHeader("carta-auth-token")) == required_token;
 }
 
 bool FindExecutablePath(string& path) {

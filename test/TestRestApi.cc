@@ -14,23 +14,15 @@
 #include "Logger/Logger.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
+#include "CommonTestUtilities.h"
 
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-
-namespace fs = std::filesystem;
-#endif
-
-using namespace std;
 using json = nlohmann::json;
 
 // Allows testing of protected methods in SimpleFrontendServer without polluting the original class
 class TestSimpleFrontendServer : public carta::SimpleFrontendServer {
 public:
-    TestSimpleFrontendServer(fs::path root_folder, std::string auth_token) : carta::SimpleFrontendServer(root_folder, auth_token) {}
+    TestSimpleFrontendServer(fs::path root_folder, std::string auth_token, bool read_only_mode)
+        : carta::SimpleFrontendServer(root_folder, auth_token, read_only_mode) {}
     FRIEND_TEST(RestApiTest, UpdatePreferencesFromString);
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
     FRIEND_TEST(RestApiTest, GetExistingPrefs);
@@ -48,11 +40,14 @@ public:
     FRIEND_TEST(RestApiTest, DeleteLayoutIgnoresInvalidKeys);
     FRIEND_TEST(RestApiTest, DeleteLayoutMissingName);
     FRIEND_TEST(RestApiTest, SetLayout);
+    FRIEND_TEST(RestApiTest, SetPrefsReadOnly);
+    FRIEND_TEST(RestApiTest, SetLayoutReadOnly);
 };
 
 class RestApiTest : public ::testing::Test {
 public:
     std::unique_ptr<TestSimpleFrontendServer> _frontend_server;
+    std::unique_ptr<TestSimpleFrontendServer> _frontend_server_read_only_mode;
     fs::path preferences_path;
     fs::path layouts_path;
     json example_options;
@@ -87,22 +82,23 @@ public:
         })"_json;
     }
     void SetUp() {
-        _frontend_server.reset(new TestSimpleFrontendServer("/", "my_test_key"));
+        _frontend_server.reset(new TestSimpleFrontendServer("/", "my_test_key", false));
+        _frontend_server_read_only_mode.reset(new TestSimpleFrontendServer("/", "my_test_key", true));
         fs::remove(preferences_path);
         fs::remove_all(layouts_path);
     }
 
     void WriteDefaultPrefs() {
         fs::create_directories(preferences_path.parent_path());
-        ofstream(preferences_path.string()) << example_options.dump(4);
+        std::ofstream(preferences_path.string()) << example_options.dump(4);
     }
 
     void WriteDefaultLayouts() {
         fs::create_directories(layouts_path);
-        ofstream((layouts_path / "test_layout.json").string()) << example_options.dump(4);
-        ofstream((layouts_path / "test_layout2.json").string()) << example_options.dump();
-        ofstream((layouts_path / "test_layout3.json").string()) << "this is not a json file!";
-        ofstream((layouts_path / "bad_layout_name").string()) << example_options.dump(4);
+        std::ofstream((layouts_path / "test_layout.json").string()) << example_options.dump(4);
+        std::ofstream((layouts_path / "test_layout2.json").string()) << example_options.dump();
+        std::ofstream((layouts_path / "test_layout3.json").string()) << "this is not a json file!";
+        std::ofstream((layouts_path / "bad_layout_name").string()) << example_options.dump(4);
     }
 
     void TearDown() {
@@ -112,6 +108,9 @@ public:
         fs::remove(preferences_path.parent_path());
         fs::remove(preferences_path.parent_path().parent_path());
     }
+
+private:
+    fs::path working_directory;
 };
 
 TEST_F(RestApiTest, EmptyStartingPrefs) {
@@ -248,4 +247,30 @@ TEST_F(RestApiTest, SetLayout) {
     auto existing_layouts = _frontend_server->GetExistingLayouts();
     EXPECT_EQ(existing_layouts["created_layout"], example_layout);
     EXPECT_TRUE(existing_layouts["test_layout2"].is_null());
+}
+
+TEST_F(RestApiTest, SetPrefsReadOnly) {
+    json keys = {{"keys"}, example_options};
+    auto status = _frontend_server_read_only_mode->UpdatePreferencesFromString(keys.dump());
+    EXPECT_EQ(status, HTTP_500);
+
+    WriteDefaultPrefs();
+    keys = {{"keys", {"beamType"}}};
+    status = _frontend_server_read_only_mode->ClearPreferencesFromString(keys.dump());
+    EXPECT_EQ(status, HTTP_500);
+
+    keys = {{"keys", {"beamType", "beamColor"}}};
+    status = _frontend_server_read_only_mode->ClearPreferencesFromString(keys.dump());
+    EXPECT_EQ(status, HTTP_500);
+}
+
+TEST_F(RestApiTest, SetLayoutReadOnly) {
+    json body = {{"layoutName", "created_layout"}, {"layout", example_layout}};
+    auto status = _frontend_server_read_only_mode->SetLayoutFromString(body.dump());
+    EXPECT_EQ(status, HTTP_400);
+
+    WriteDefaultLayouts();
+    body = {{"layoutName", "test_layout"}};
+    status = _frontend_server_read_only_mode->ClearLayoutFromString(body.dump());
+    EXPECT_EQ(status, HTTP_400);
 }

@@ -90,7 +90,7 @@ private:
     float _pre_progress;
     MomentProgressCallback _progress_callback;
     std::chrono::high_resolution_clock::time_point _start_time;
-    bool _first_report;
+    bool _first_report_made;
 };
 
 } // namespace carta
