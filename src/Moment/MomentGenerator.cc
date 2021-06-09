@@ -123,29 +123,11 @@ void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) 
 
 void MomentGenerator::SetMomentTypes(const CARTA::MomentRequest& moment_request) {
     int moments_size(moment_request.moments_size());
-
-    // Check whether to remove the median coordinate moment type
-    bool remove_median_coord(false);
-    for (int i = 0; i < moments_size; ++i) {
-        if (moment_request.moments(i) == CARTA::Moment::MEDIAN_COORDINATE) {
-            if (((_include_pix.size() == 2) && (_include_pix[0] * _include_pix[1] < 0)) || (_include_pix.empty() && _exclude_pix.empty())) {
-                remove_median_coord = true;
-                break;
-            }
-        }
-    }
-
-    if (remove_median_coord && moments_size > 0) {
-        _moments.resize(moments_size - 1);
-    } else {
-        _moments.resize(moments_size);
-    }
+    _moments.resize(moments_size);
 
     // Fill moment types to calculate
     for (int i = 0, j = 0; i < moments_size; ++i) {
-        if (moment_request.moments(i) != CARTA::Moment::MEDIAN_COORDINATE || !remove_median_coord) {
-            _moments[j++] = GetMomentMode(moment_request.moments(i));
-        }
+        _moments[j++] = GetMomentMode(moment_request.moments(i));
     }
 }
 

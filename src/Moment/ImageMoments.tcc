@@ -112,9 +112,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     casacore::String moment_axis_units = csys.worldAxisUnits()(worldMomentAxis_p);
     spdlog::info("Moment axis type is {}.", csys.worldAxisNames()(worldMomentAxis_p));
 
-    // If the moment axis is a spectral axis, indicate we want to convert to velocity. Check the user's requests are allowed
-    _checkMethod();
-
     // Check that input and output image names aren't the same, if there is only one output image
     if (moments_p.nelements() == 1 && !do_temp) {
         if (!out_file_name.empty() && (out_file_name == _image->name())) {
