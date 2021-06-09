@@ -126,12 +126,7 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
 }
 
 bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* req) {
-    // Always allow if the auth token is empty
-    if (_auth_token.empty()) {
-        return true;
-    }
-
-    return _auth_token == GetAuthToken(req);
+    return ValidateAuthToken(req, _auth_token);
 }
 
 void SimpleFrontendServer::AddNoCacheHeaders(Res* res) {

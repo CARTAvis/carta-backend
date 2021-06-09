@@ -74,7 +74,7 @@ void FillStatisticsValuesFromMap(
 
 std::string IPAsText(std::string_view binary);
 
-std::string GetAuthToken(uWS::HttpRequest* http_request);
+bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
 
 // ************ Region Helpers *************
 

@@ -13,18 +13,11 @@
 #include <casacore/images/Images/PagedImage.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "CommonTestUtilities.h"
 
-using namespace std;
 using namespace carta;
 
-class MomentTest : public ::testing::Test {
+class MomentTest : public ::testing::Test, public FileFinder {
 public:
     static bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0) {
         bool image_ok(false);
@@ -158,25 +151,25 @@ public:
 };
 
 TEST_F(MomentTest, CheckConsistency) {
-    string file_name = "data/images/fits/M17_SWex_unittest.fits";
+    std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
-    if (OpenImage(image, file_name)) {
+    if (OpenImage(image, file_path)) {
         GenerateMoments(image, moment_axis);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_name);
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path);
     }
 }
 
 TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
-    string file_name = "data/images/fits/small_perplanebeam.fits";
+    std::string file_path = FitsImagePath("small_perplanebeam.fits");
     std::shared_ptr<casacore::ImageInterface<float>> image;
     int moment_axis(2);
 
-    if (OpenImage(image, file_name)) {
+    if (OpenImage(image, file_path)) {
         GenerateMoments(image, moment_axis);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_name);
+        spdlog::warn("Fail to open the file {}! Ignore the Moment test.", file_path);
     }
 }

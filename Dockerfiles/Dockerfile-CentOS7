@@ -10,16 +10,21 @@ RUN \
 RUN \
   yum -y install centos-release-openstack-train && \
   yum -y install epel-release && \
-  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel cmake3 curl-devel flex \
+  yum install -y autoconf automake bison blas-devel bzip2 cmake3 curl-devel flex \
     git git-lfs gsl-devel grpc-devel grpc-plugins gtest-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
-    make openssl-devel protobuf-devel pugixml-devel readline-devel subversion systemd-devel wcslib-devel wget \
+    make openssl-devel protobuf-devel pugixml-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
     zlib-devel libuuid-devel zfp-devel && \
-  ln -s /usr/bin/cmake3 /usr/bin/cmake
+  ln -s /usr/bin/cmake3 /usr/bin/cmake && \
+  pip3 install numpy astropy
 
-# CARTA will have a problem finding the .h files in /usr/include/cfitsio/
-RUN \
+# Install newer cfitsio as default cfitsio 3.37 does not have a function used by fits2idia 
+RUN \ 
   source /etc/bashrc && \
-  cp /usr/include/cfitsio/* /usr/include/
+  cd /root && \ 
+  wget http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.47.tar.gz && \
+  tar -xvf cfitsio-3.47.tar.gz && cd cfitsio-3.47 && \
+  ./configure --prefix=/usr/local && make && make install && \
+  cd /root && rm -rf cfitsio-3.47 cfitsio-3.47.tar.gz
 
 # Get geodetic and ephemerides casa-data
 RUN \
@@ -78,6 +83,7 @@ EXPOSE 3002
 EXPOSE 50051
 
 ENV LD_LIBRARY_PATH "/usr/local/lib"
+ENV PKG_CONFIG_PATH "/usr/local/lib/pkgconfig"
 
 ENV HOME /root
 WORKDIR /root
