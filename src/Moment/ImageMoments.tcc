@@ -21,7 +21,7 @@ template <class T>
 ImageMoments<T>::ImageMoments(
     const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor)
     : casa::MomentsBase<T>(os, true, true), _stop(false), _image_2d_convolver(nullptr), _progress_monitor(nullptr) {
-    SetNewImage(image);
+    _image.reset(image.cloneII());
     if (progress_monitor) { // set the progress meter
         _progress_monitor = std::make_unique<casa::ImageMomentsProgress>();
         _progress_monitor->setProgressMonitor(progress_monitor);
@@ -29,23 +29,7 @@ ImageMoments<T>::ImageMoments(
 }
 
 template <class T>
-casacore::Bool ImageMoments<T>::SetNewImage(const casacore::ImageInterface<T>& image) {
-    T* dummy = nullptr;
-    casacore::DataType imageType = casacore::whatType(dummy);
-    ThrowIf(imageType != casacore::TpFloat && imageType != casacore::TpDouble,
-        "Moments can only be evaluated for Float or Double valued images");
-
-    // Make a clone of the image
-    _image.reset(image.cloneII());
-    return true;
-}
-
-template <class T>
 casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
-    if (!goodParameterStatus_p) {
-        throw casacore::AipsError("Internal class status is bad");
-    }
-
     // reset the number of steps have done for the beam convolution
     _steps_for_beam_convolution = 0;
 
@@ -53,16 +37,13 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
     if (momentAxis_p < 0) {
         momentAxis_p = _image->coordinates().spectralAxisNumber();
         if (momentAxis_p == -1) {
-            goodParameterStatus_p = false;
-            throw casacore::AipsError("There is no spectral axis in this image -- specify the axis");
+            throw casacore::AipsError("There is no spectral axis in this image; specify the axis");
         }
     } else {
         if (momentAxis_p < 0 || momentAxis_p > casacore::Int(_image->ndim() - 1)) {
-            goodParameterStatus_p = false;
             throw casacore::AipsError("Illegal moment axis; out of range");
         }
         if (_image->shape()(momentAxis_p) <= 0) {
-            goodParameterStatus_p = false;
             throw casacore::AipsError("Illegal moment axis; it has no pixels");
         }
     }
@@ -95,10 +76,6 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
 template <class T>
 std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::createMoments(
     const casacore::String& out_file_name, casacore::Bool remove_axis) {
-    if (!goodParameterStatus_p) {
-        throw casacore::AipsError("Internal status of class is bad.  You have ignored errors");
-    }
-
     // check whether the calculation is cancelled
     if (_stop) {
         return std::vector<std::shared_ptr<casacore::MaskedLattice<T>>>();
@@ -107,9 +84,9 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     // Find spectral axis use a copy of the coordinate system here since, if the image has multiple beams, "_image" will change and hence a
     // reference to its casacore::CoordinateSystem will disappear causing a seg fault.
     casacore::CoordinateSystem csys = _image->coordinates();
-    casacore::Int spectralAxis = csys.spectralAxisNumber(false);
+    casacore::Int spectral_axis = csys.spectralAxisNumber(false);
 
-    convertToVelocity_p = (momentAxis_p == spectralAxis) && (csys.spectralCoordinate().restFrequency() > 0);
+    convertToVelocity_p = (momentAxis_p == spectral_axis) && (csys.spectralCoordinate().restFrequency() > 0);
 
     casacore::String moment_axis_units = csys.worldAxisUnits()(worldMomentAxis_p);
     spdlog::info("Moment axis type is {}.", csys.worldAxisNames()(worldMomentAxis_p));
@@ -133,7 +110,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         casacore::Unit moment_units;
         good_units = this->_setOutThings(suffix, moment_units, image_units, moment_axis_units, moments_p(i), convertToVelocity_p);
 
-        // Create output image(s). Either casacore::PagedImage or TempImage
+        // Create output image(s)
         SPIIT output_image = std::make_shared<casacore::TempImage<T>>(casacore::TiledShape(out_image_shape), out_csys);
 
         ThrowIf(!output_image, "Failed to create output file");
@@ -158,9 +135,8 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     // Create appropriate MomentCalculator object
-    shared_ptr<casa::MomentCalcBase<T>> moment_calculator;
-    SPIIT empty_smoothed_image;
-    moment_calculator.reset(new casa::MomentClip<T>(empty_smoothed_image, *this, os_p, output_images.size()));
+    std::shared_ptr<casa::MomentCalcBase<T>> moment_calculator =
+        std::make_shared<casa::MomentClip<T>>(nullptr, *this, os_p, output_images.size());
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
     casacore::uInt out_images_size = output_images.size();
@@ -200,12 +176,12 @@ template <class T>
 void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out,
     const casacore::MaskedLattice<T>& lattice_in, casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis) {
     // First verify that all the output lattices have the same shape and tile shape
-    const casacore::uInt n_out = lattice_out.nelements(); // Number of output lattices
-    AlwaysAssert(n_out > 0, AipsError);
+    const casacore::uInt moments = lattice_out.nelements(); // moments types
+    AlwaysAssert(moments > 0, AipsError);
 
     const casacore::IPosition out_shape(lattice_out[0]->shape());
     const casacore::uInt out_dim = out_shape.nelements();
-    for (casacore::uInt i = 1; i < n_out; ++i) {
+    for (casacore::uInt i = 1; i < moments; ++i) {
         AlwaysAssert(lattice_out[i]->shape() == out_shape, AipsError);
     }
 
@@ -216,10 +192,9 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     casacore::Bool use_mask = lattice_in.isMasked() ? casacore::True : (!collapser.canHandleNullMask());
     const casacore::uInt in_ndim = in_shape.size();
     const casacore::IPosition display_axes = IPosition::makeAxisPath(in_ndim).otherAxes(in_ndim, IPosition(1, collapse_axis));
-    const casacore::uInt n_display_axes = display_axes.size();
 
-    casacore::Vector<T> result(n_out);                   // Resulting values for a slice
-    casacore::Vector<casacore::Bool> result_mask(n_out); // Resulting masks for a slice
+    casacore::Vector<T> result(moments);                   // Resulting values for a slice
+    casacore::Vector<casacore::Bool> result_mask(moments); // Resulting masks for a slice
 
     // Read in larger chunks than before, because that was very inefficient and brought NRAO cluster to a snail's pace, and then do the
     // accounting for the input lines in memory
@@ -254,14 +229,14 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         chunk_slice_end = chunk_slice_end_at_chunk_iter_begin;
         casacore::IPosition result_array_shape = chunk_shape;
         result_array_shape[collapse_axis] = 1;
-        std::vector<casacore::Array<T>> result_arrays(n_out);                   // Resulting value arrays for a chunk
-        std::vector<casacore::Array<casacore::Bool>> result_array_masks(n_out); // Resulting mask arrays for a chunk
+        std::vector<casacore::Array<T>> result_arrays(moments);                   // Resulting value arrays for a chunk
+        std::vector<casacore::Array<casacore::Bool>> result_array_masks(moments); // Resulting mask arrays for a chunk
 
         // Need to initialize this way rather than doing it in the constructor, because using a single Array in the constructor means that
         // all Arrays in the vector reference the same Array.
-        for (casacore::uInt k = 0; k < n_out; k++) {
-            result_arrays[k] = Array<T>(result_array_shape);
-            result_array_masks[k] = Array<Bool>(result_array_shape);
+        for (casacore::uInt k = 0; k < moments; k++) {
+            result_arrays[k] = casacore::Array<T>(result_array_shape);
+            result_array_masks[k] = casacore::Array<casacore::Bool>(result_array_shape);
         }
 
         // Iterate through a chunk, slice by slice on the output image display axes
@@ -280,12 +255,12 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             collapser.multiProcess(result, result_mask, data, mask, cur_pos);
 
             // Fill partial results in a chunk
-            for (uInt k = 0; k < n_out; ++k) {
+            for (uInt k = 0; k < moments; ++k) {
                 result_arrays[k](chunk_slice_start) = result[k];
                 result_array_masks[k](chunk_slice_start) = result_mask[k];
             }
 
-            done = True; // The scan of this chunk is complete
+            done = casacore::True; // The scan of this chunk is complete
 
             // Report the number of slices have done
             if (_progress_monitor) {
@@ -294,12 +269,12 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             }
 
             // Proceed to the next slice on the display axes
-            for (casacore::uInt k = 0; k < n_display_axes; ++k) {
+            for (casacore::uInt k = 0; k < display_axes.size(); ++k) {
                 casacore::uInt dax = display_axes[k];
                 if (chunk_slice_start[dax] < chunk_shape[dax] - 1) {
                     ++chunk_slice_start[dax];
                     ++chunk_slice_end[dax];
-                    done = False;
+                    done = casacore::False;
                     break;
                 } else {
                     chunk_slice_start[dax] = 0;
@@ -313,8 +288,8 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         }
 
         // Put partial results in the output lattices (as a chunk size)
-        for (casacore::uInt k = 0; k < n_out; ++k) {
-            casacore::IPosition result_pos = in_ndim == out_dim ? iter_pos : iter_pos.removeAxes(casacore::IPosition(1, collapse_axis));
+        for (casacore::uInt k = 0; k < moments; ++k) {
+            casacore::IPosition result_pos = (in_ndim == out_dim) ? iter_pos : iter_pos.removeAxes(casacore::IPosition(1, collapse_axis));
             casacore::Bool keep_axis = result_arrays[k].ndim() == lattice_out[k]->ndim();
             if (!keep_axis) {
                 result_arrays[k].removeDegenerate(display_axes);

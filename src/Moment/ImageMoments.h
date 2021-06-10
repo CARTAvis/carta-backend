@@ -29,16 +29,13 @@ template <class T>
 class ImageMoments : public casa::MomentsBase<T> {
 public:
     ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casa::ImageMomentsProgressMonitor* progress_monitor);
-
     ~ImageMoments() = default;
 
     casacore::Bool setMomentAxis(const Int moment_axis);
-
     casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes, const casacore::Vector<casacore::Int>& kernel_types,
         const casacore::Vector<casacore::Quantum<casacore::Double>>& kernel_widths) {
         return false;
     }
-
     std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> createMoments(
         const casacore::String& out_file_name, casacore::Bool remove_axis = true);
 
@@ -56,11 +53,9 @@ public:
     void StopCalculation();
 
 private:
-    SPCIIT _image = SPCIIT(nullptr);
+    SPCIIT _image;
     std::unique_ptr<casa::ImageMomentsProgress> _progress_monitor;
     std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
-
-    casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
 
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
@@ -77,13 +72,10 @@ private:
 
 protected:
     using casa::MomentsBase<T>::os_p;
-    using casa::MomentsBase<T>::goodParameterStatus_p;
     using casa::MomentsBase<T>::momentAxis_p;
     using casa::MomentsBase<T>::worldMomentAxis_p;
     using casa::MomentsBase<T>::moments_p;
-    using casa::MomentsBase<T>::overWriteOutput_p;
     using casa::MomentsBase<T>::convertToVelocity_p;
-    using casa::MomentsBase<T>::_checkMethod;
 };
 
 } // namespace carta
