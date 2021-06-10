@@ -5,6 +5,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock-matchers.h>
 
 #include "Frame.h"
 #include "ImageData/FileLoader.h"
@@ -12,6 +13,9 @@
 #include "CommonTestUtilities.h"
 
 using namespace carta;
+
+using ::testing::Pointwise;
+using ::testing::FloatNear;
 
 class SpatialProfileTest : public ::testing::Test, public ImageGenerator {
 public:
@@ -59,12 +63,12 @@ TEST_F(SpatialProfileTest, SubTileHdf5Image) {
     EXPECT_EQ(x_profile.end(), 10);
     auto x_vals = ProfileValues(x_profile);
     EXPECT_EQ(x_vals.size(), 10);
+    // TODO use a helper function to get these values dynamically?
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), {0.35738, -1.20832, -0.00445413, 0.656475, -1.28836, 0.395122, 0.429864, 0.696043, -1.18412, -0.661703}));
     
     EXPECT_EQ(y_profile.start(), 0);
     EXPECT_EQ(y_profile.end(), 10);
     auto y_vals = ProfileValues(y_profile);
     EXPECT_EQ(y_vals.size(), 10);
-    
-    // TODO content of profiles
-    // TODO helper function for directly accessing the data in an image?
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), {0.361595, -0.732267, 0.0940123, 0.355373, -0.313923, 0.395122, -0.258573, -1.32043, 0.630412, 1.03145}));
 }
