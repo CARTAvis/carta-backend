@@ -4,7 +4,7 @@
     "no_http": true,
     "no_browser": true,
     "host": "helloworld",
-    "port": 1234,
+    "port": [1234],
     "grpc_port": 5678,
     "omp_threads": 10,
     "top_level_folder": "/tmp",

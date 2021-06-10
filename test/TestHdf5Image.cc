@@ -3,6 +3,7 @@
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
+#include <unordered_set>
 
 #include <gtest/gtest.h>
 
@@ -18,13 +19,13 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    FRIEND_TEST(FitsImageTest, ExampleFriendTest);
+    FRIEND_TEST(Hdf5ImageTest, ExampleFriendTest);
 };
 
-class FitsImageTest : public ::testing::Test, public ImageGenerator {};
+class Hdf5ImageTest : public ::testing::Test, public ImageGenerator {};
 
-TEST_F(FitsImageTest, BasicLoadingTest) {
-    auto path_string = GeneratedFitsImagePath("10 10");
+TEST_F(Hdf5ImageTest, BasicLoadingTest) {
+    auto path_string = GeneratedHdf5ImagePath("10 10");
     std::unique_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     EXPECT_NE(loader.get(), nullptr);
     std::unique_ptr<Frame> frame(new Frame(0, loader.release(), "0"));
@@ -32,16 +33,16 @@ TEST_F(FitsImageTest, BasicLoadingTest) {
     EXPECT_TRUE(frame->IsValid());
 }
 
-TEST_F(FitsImageTest, ExampleFriendTest) {
-    auto path_string = GeneratedFitsImagePath("10 10");
+TEST_F(Hdf5ImageTest, ExampleFriendTest) {
+    auto path_string = GeneratedHdf5ImagePath("10 10");
     // TestFrame used instead of Frame if access to protected values is required
     std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
     EXPECT_TRUE(frame->_open_image_error.empty());
 }
 
-TEST_F(FitsImageTest, CorrectShape2dImage) {
-    auto path_string = GeneratedFitsImagePath("10 10");
+TEST_F(Hdf5ImageTest, CorrectShape2dImage) {
+    auto path_string = GeneratedHdf5ImagePath("10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -53,8 +54,8 @@ TEST_F(FitsImageTest, CorrectShape2dImage) {
     EXPECT_EQ(frame->NumStokes(), 1);
 }
 
-TEST_F(FitsImageTest, CorrectShape3dImage) {
-    auto path_string = GeneratedFitsImagePath("10 10 10");
+TEST_F(Hdf5ImageTest, CorrectShape3dImage) {
+    auto path_string = GeneratedHdf5ImagePath("10 10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -68,8 +69,8 @@ TEST_F(FitsImageTest, CorrectShape3dImage) {
     EXPECT_EQ(frame->StokesAxis(), -1);
 }
 
-TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
-    auto path_string = GeneratedFitsImagePath("10 10 10 1");
+TEST_F(Hdf5ImageTest, CorrectShapeDegenerate3dImages) {
+    auto path_string = GeneratedHdf5ImagePath("10 10 10 1");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -84,7 +85,7 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = GeneratedFitsImagePath("10 10 1 10");
+    path_string = GeneratedHdf5ImagePath("10 10 1 10");
     frame.reset(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -99,8 +100,8 @@ TEST_F(FitsImageTest, CorrectShapeDegenerate3dImages) {
     EXPECT_EQ(frame->StokesAxis(), 2);
 }
 
-TEST_F(FitsImageTest, CorrectShape4dImages) {
-    auto path_string = GeneratedFitsImagePath("10 10 5 2");
+TEST_F(Hdf5ImageTest, CorrectShape4dImages) {
+    auto path_string = GeneratedHdf5ImagePath("10 10 5 2");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 
@@ -115,7 +116,7 @@ TEST_F(FitsImageTest, CorrectShape4dImages) {
     EXPECT_EQ(frame->StokesAxis(), 3);
 
     // CASA-generated images often have spectral and Stokes axes swapped
-    path_string = GeneratedFitsImagePath("10 10 2 5");
+    path_string = GeneratedHdf5ImagePath("10 10 2 5");
     frame.reset(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     EXPECT_TRUE(frame->IsValid());
 

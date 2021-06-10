@@ -72,7 +72,7 @@ void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::
 
 std::string IPAsText(std::string_view binary);
 
-std::string GetAuthToken(uWS::HttpRequest* http_request);
+bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
 
 // ************ Region Helpers *************
 

@@ -17,17 +17,15 @@
 #include "Timer/Timer.h"
 #endif
 
-using namespace std;
-
 class HistogramTest : public ::testing::Test {
 public:
-    random_device rd;
-    mt19937 mt;
-    uniform_real_distribution<float> float_random;
+    std::random_device rd;
+    std::mt19937 mt;
+    std::uniform_real_distribution<float> float_random;
 
     HistogramTest() {
-        mt = mt19937(rd());
-        float_random = uniform_real_distribution<float>(0, 1.0f);
+        mt = std::mt19937(rd());
+        float_random = std::uniform_real_distribution<float>(0, 1.0f);
     }
 
     static bool CompareResults(const carta::Histogram& a, const carta::Histogram& b) {

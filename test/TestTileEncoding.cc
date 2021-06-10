@@ -11,8 +11,6 @@
 
 #include "DataStream/Tile.h"
 
-using namespace std;
-
 TEST(TileEncodingTest, InvalidInput) {
     // Layer can be from 0 to 12
     ASSERT_EQ(Tile::Encode(0, 0, -1), -1);
@@ -32,10 +30,10 @@ TEST(TileEncodingTest, OutOfBounds) {
 }
 
 TEST(TileEncodingTest, RoundTrip) {
-    random_device rd;
-    mt19937 mt(rd());
-    uniform_int_distribution<> layer_random(0, 12);
-    uniform_real_distribution<float> float_random(0, 1);
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<> layer_random(0, 12);
+    std::uniform_real_distribution<float> float_random(0, 1);
 
     for (auto i = 0; i < 10000; i++) {
         int32_t layer = layer_random(mt);
@@ -56,14 +54,14 @@ TEST(TileEncodingTest, RoundTrip) {
 TEST(TileEncoding, PerformanceTestEncoding) {
     int32_t layer = 12;
     int64_t encoded_val = 0;
-    auto t_start = chrono::high_resolution_clock::now();
+    auto t_start = std::chrono::high_resolution_clock::now();
     for (auto i = 0; i < 1000; i++) {
         for (auto j = 0; j < 1000; j++) {
             encoded_val += Tile::Encode(i, j, layer);
         }
     }
-    auto t_end = chrono::high_resolution_clock::now();
-    float dt = chrono::duration_cast<chrono::microseconds>(t_end - t_start).count() / 1000.0f;
+    auto t_end = std::chrono::high_resolution_clock::now();
+    float dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count() / 1000.0f;
     ASSERT_EQ(encoded_val, 203373043500000);
     ASSERT_LT(dt, 2.0f);
 }
@@ -74,7 +72,7 @@ TEST(TileEncoding, PerformanceTestDecoding) {
     int64_t encoded_val = 0;
     int64_t counter = 0;
 
-    auto t_start = chrono::high_resolution_clock::now();
+    auto t_start = std::chrono::high_resolution_clock::now();
 
     for (auto i = 0; i < 1000; i++) {
         for (auto j = 0; j < 1000; j++) {
@@ -84,8 +82,8 @@ TEST(TileEncoding, PerformanceTestDecoding) {
         encoded_val += layer_width;
     }
 
-    auto t_end = chrono::high_resolution_clock::now();
-    float dt = chrono::duration_cast<chrono::microseconds>(t_end - t_start).count() / 1000.0f;
+    auto t_end = std::chrono::high_resolution_clock::now();
+    float dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count() / 1000.0f;
     ASSERT_EQ(counter, 2046486240);
     ASSERT_LT(dt, 2.0f);
 }
