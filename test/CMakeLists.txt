@@ -42,6 +42,7 @@ set(TEST_SOURCES
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
+        TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc
