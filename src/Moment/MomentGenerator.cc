@@ -155,9 +155,11 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
         // Clear the inclusive array
         _include_pix.resize(0);
     } else {
-        // Clear inclusive and exclusive array
+        // set pixel range is for all values
         _include_pix.resize(0);
-        _exclude_pix.resize(0);
+        _exclude_pix.resize(2);
+        _exclude_pix[0] = std::numeric_limits<float>::max();
+        _exclude_pix[1] = std::numeric_limits<float>::max();
     }
 }
 

@@ -104,23 +104,28 @@ public:
         carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr);
 
         // set moment types
-        casacore::Vector<casacore::Int> moments(12);
+        casacore::Vector<casacore::Int> moments(13);
         moments[0] = 0;   // AVERAGE
         moments[1] = 1;   // INTEGRATED
         moments[2] = 2;   // WEIGHTED_MEAN_COORDINATE
         moments[3] = 3;   // WEIGHTED_DISPERSION_COORDINATE
         moments[4] = 4;   // MEDIAN
-        moments[5] = 6;   // STANDARD_DEVIATION
-        moments[6] = 7;   // RMS
-        moments[7] = 8;   // ABS_MEAN_DEVIATION
-        moments[8] = 9;   // MAXIMUM
-        moments[9] = 10;  // MAXIMUM_COORDINATE
-        moments[10] = 11; // MINIMUM
-        moments[11] = 12; // MINIMUM_COORDINATE
+        moments[5] = 5;   // MEDIAN_COORDINATE
+        moments[6] = 6;   // STANDARD_DEVIATION
+        moments[7] = 7;   // RMS
+        moments[8] = 8;   // ABS_MEAN_DEVIATION
+        moments[9] = 9;   // MAXIMUM
+        moments[10] = 10; // MAXIMUM_COORDINATE
+        moments[11] = 11; // MINIMUM
+        moments[12] = 12; // MINIMUM_COORDINATE
+
+        // set pixel range is for all values
+        casacore::Vector<float> include_pix;
+        casacore::Vector<float> exclude_pix(2);
+        exclude_pix[0] = std::numeric_limits<float>::max();
+        exclude_pix[1] = std::numeric_limits<float>::max();
 
         // the other settings
-        casacore::Vector<float> include_pix;
-        casacore::Vector<float> exclude_pix;
         casacore::Bool do_temp(true);
         casacore::Bool remove_axis(false);
 
