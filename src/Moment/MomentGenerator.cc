@@ -10,7 +10,7 @@
 
 using namespace carta;
 
-using IM = ImageMoments<casacore::Float>;
+using IM = ImageMoments<float>;
 
 static const int FIRST_PROGRESS_AFTER_MILLI_SECS = 5000;
 static const float PROGRESS_REPORT_INTERVAL = 0.1;
@@ -77,8 +77,8 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                         int moment_file_id = (file_id + 1) * ID_MULTIPLIER + moment_type;
 
                         // Fill results
-                        std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-                            dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
+                        std::shared_ptr<casacore::ImageInterface<float>> moment_image =
+                            dynamic_pointer_cast<casacore::ImageInterface<float>>(result_images[i]);
                         collapse_results.push_back(CollapseResult(moment_file_id, out_file_name, moment_image));
                     }
                     _success = true;
@@ -165,13 +165,13 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 
 void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_region) {
     // Reset the sub-image
-    _sub_image.reset(new casacore::SubImage<casacore::Float>(*_image, image_region));
+    _sub_image.reset(new casacore::SubImage<float>(*_image, image_region));
 
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
 
     // Make an ImageMoments object and overwrite the output file if it already exists
-    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this));
+    _image_moments.reset(new IM(casacore::SubImage<float>(*_sub_image), os, this));
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {

@@ -57,8 +57,8 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
             GetGaussianInfo(max_beam));
 
         // reset the image 2D convolver
-        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(
-            _image, std::make_pair(dir_axes[0], dir_axes[1]), max_beam, _progress_monitor.get()));
+        _image_2d_convolver.reset(
+            new carta::Image2DConvolver<float>(_image, std::make_pair(dir_axes[0], dir_axes[1]), max_beam, _progress_monitor.get()));
         auto image_copy = _image_2d_convolver->DoConvolve();                // do long calculation
         _steps_for_beam_convolution = _image_2d_convolver->GetTotalSteps(); // set number of steps have done for the beam convolution
 

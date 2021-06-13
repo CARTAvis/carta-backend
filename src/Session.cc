@@ -433,7 +433,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 }
 
 bool Session::OnOpenFile(
-    int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image, CARTA::OpenFileAck* open_file_ack) {
+    int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<float>> image, CARTA::OpenFileAck* open_file_ack) {
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;

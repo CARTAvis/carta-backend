@@ -24,8 +24,8 @@ namespace carta {
 struct CollapseResult {
     int file_id;
     std::string name;
-    std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
-    CollapseResult(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    CollapseResult(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<float>> image_) {
         file_id = file_id_;
         name = name_;
         image = image_;
@@ -72,8 +72,8 @@ private:
     int _stokes_axis;
 
     // Moments settings
-    std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
-    std::unique_ptr<ImageMoments<casacore::Float>> _image_moments;
+    std::unique_ptr<casacore::ImageInterface<float>> _sub_image;
+    std::unique_ptr<ImageMoments<float>> _image_moments;
     casacore::Vector<casacore::Int> _moments; // Moment types
     int _axis;                                // Moment axis
     casacore::Vector<float> _include_pix;
@@ -81,8 +81,8 @@ private:
     casacore::String _error_msg;
     bool _success;
     bool _cancel;
-    std::unordered_map<CARTA::Moment, ImageMoments<casacore::Float>::MomentTypes> _moment_map;
-    std::unordered_map<ImageMoments<casacore::Float>::MomentTypes, casacore::String> _moment_suffix_map;
+    std::unordered_map<CARTA::Moment, ImageMoments<float>::MomentTypes> _moment_map;
+    std::unordered_map<ImageMoments<float>::MomentTypes, casacore::String> _moment_suffix_map;
 
     // Progress parameters
     int _total_steps;

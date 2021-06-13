@@ -55,7 +55,7 @@ public:
 private:
     SPCIIT _image;
     std::unique_ptr<casa::ImageMomentsProgress> _progress_monitor;
-    std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
+    std::unique_ptr<carta::Image2DConvolver<float>> _image_2d_convolver;
 
     // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
     void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
