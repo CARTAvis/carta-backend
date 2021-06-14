@@ -1104,6 +1104,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         // Do calculations
         std::vector<carta::CollapseResult> collapse_results;
         CARTA::MomentResponse moment_response;
+        auto t_start = std::chrono::high_resolution_clock::now();
         if (region_id > 0) {
             _region_handler->CalculateMoments(
                 file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
@@ -1116,6 +1117,9 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
                 frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
         }
+        auto t_end = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+        spdlog::performance("Image moments: collapse a cube image in {:.3f} ms", dt * 1e-3);
 
         // Open moments images from the cache, open files acknowledgements will be sent to the frontend
         for (int i = 0; i < collapse_results.size(); ++i) {

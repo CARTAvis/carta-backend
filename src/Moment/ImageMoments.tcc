@@ -13,7 +13,7 @@
 #include "../Logger/Logger.h"
 #include "../Util.h"
 
-static const casacore::uInt MAX_MEMORY = 1e8; // maximum memory usage for the chunk data (Bytes)
+static const casacore::uInt MAX_MEMORY = 2e7; // maximum memory usage for the chunk data (Bytes)
 
 using namespace carta;
 
@@ -205,6 +205,17 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
     // Get a chunk shape and used it to set the data iterator
     casacore::IPosition chunk_shape_init = ChunkShape(collapse_axis, lattice_in);
+
+    casacore::IPosition hdf5_chunk_shape(in_ndim, 1);
+    hdf5_chunk_shape[0] = 512;
+    hdf5_chunk_shape[1] = 512;
+
+    auto nice_shape = lattice_in.niceCursorShape();
+    if (nice_shape == hdf5_chunk_shape) {
+        chunk_shape_init[0] = nice_shape[0];
+        chunk_shape_init[1] = nice_shape[1];
+    }
+
     casacore::LatticeStepper my_stepper(in_shape, chunk_shape_init, LatticeStepper::RESIZE);
     casacore::RO_MaskedLatticeIterator<T> lat_iter(lattice_in, my_stepper);
 
