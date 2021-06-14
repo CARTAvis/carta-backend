@@ -9,6 +9,7 @@
 
 #include <unordered_set>
 
+#include <fitsio.h>
 #include <gtest/gtest.h>
 #include <spdlog/fmt/fmt.h>
 
@@ -40,6 +41,22 @@ public:
     static std::string Hdf5ImagePath(const std::string& filename);
     static std::string FitsTablePath(const std::string& filename);
     static std::string XmlTablePath(const std::string& filename);
+};
+
+class FitsDataReader {
+public:
+    FitsDataReader();
+    FitsDataReader(const std::string& imgpath);
+    ~FitsDataReader();
+    std::vector<float> ReadSubset(std::vector<long> start, std::vector<long> end);
+    float ReadPointXY(long x, long y, long channel = 0, int stokes = 0);
+    std::vector<float> ReadProfileX(long y, long channel = 0, int stokes = 0);
+    std::vector<float> ReadProfileY(long x, long channel = 0, int stokes = 0);
+
+private:
+    fitsfile* _imgfile;
+    int _N;
+    long _stokes, _depth, _height, _width;
 };
 
 class CartaEnvironment : public ::testing::Environment {

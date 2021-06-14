@@ -5,6 +5,7 @@
 */
 
 #include <functional>
+#include <stdexcept>
 
 #include "CommonTestUtilities.h"
 
@@ -75,6 +76,103 @@ std::string FileFinder::FitsTablePath(const std::string& filename) {
 
 std::string FileFinder::XmlTablePath(const std::string& filename) {
     return (TestRoot() / "data" / "tables" / "xml" / filename).string();
+}
+
+FitsDataReader::FitsDataReader() {}
+
+FitsDataReader::FitsDataReader(const std::string& imgpath) {
+    int status(0);
+
+    fits_open_file(&_imgfile, imgpath.c_str(), READONLY, &status);
+
+    if (status != 0) {
+        throw std::runtime_error(fmt::format("Could not open FITS file. Error status: {}", status));
+    }
+
+    int bitpix;
+    fits_get_img_type(_imgfile, &bitpix, &status);
+
+    if (status != 0) {
+        throw std::runtime_error(fmt::format("Could not read image type. Error status: {}", status));
+    }
+
+    if (bitpix != -32) {
+        throw std::runtime_error("Currently only supports FP32 files");
+    }
+
+    fits_get_img_dim(_imgfile, &_N, &status);
+
+    if (status != 0) {
+        throw std::runtime_error(fmt::format("Could not read image dimensions. Error status: {}", status));
+    }
+
+    if (_N < 2 || _N > 4) {
+        throw std::runtime_error("Currently only supports 2D, 3D and 4D cubes");
+    }
+
+    long dims[4];
+    fits_get_img_size(_imgfile, 4, dims, &status);
+
+    if (status != 0) {
+        throw std::runtime_error(fmt::format("Could not read image size. Error status: {}", status));
+    }
+
+    _stokes = _N == 4 ? dims[3] : 1;
+    _depth = _N >= 3 ? dims[2] : 1;
+    _height = dims[1];
+    _width = dims[0];
+}
+
+FitsDataReader::~FitsDataReader() {
+    int status(0);
+
+    if (_imgfile) {
+        fits_close_file(_imgfile, &status);
+    }
+}
+
+std::vector<float> FitsDataReader::ReadSubset(std::vector<long> start, std::vector<long> end) {
+    int status(0);
+    std::vector<float> result;
+
+    long fpixel[_N];
+    long lpixel[_N];
+    long inc[_N];
+    long result_size = 1;
+
+    for (int d = 0; d < _N; d++) {
+        // Truncate or extend the first and last pixel array to the image dimensions
+        // ...and convert from 0-indexing to 1-indexing
+        fpixel[d] = d < start.size() ? start[d] + 1 : 1;
+        lpixel[d] = d < end.size() ? end[d] + 1 : 1;
+        // Set the increment to 1
+        inc[d] = 1;
+
+        // Calculate the expected result size
+        result_size *= lpixel[d] - fpixel[d] + 1;
+    }
+
+    result.resize(result_size);
+
+    fits_read_subset(_imgfile, TFLOAT, fpixel, lpixel, inc, NULL, result.data(), NULL, &status);
+
+    if (status != 0) {
+        throw std::runtime_error(fmt::format("Could not read image data. Error status: {}", status));
+    }
+
+    return result;
+}
+
+float FitsDataReader::ReadPointXY(long x, long y, long channel, int stokes) {
+    return ReadSubset({x, y, channel, stokes}, {x, y, channel, stokes})[0];
+}
+
+std::vector<float> FitsDataReader::ReadProfileX(long y, long channel, int stokes) {
+    return ReadSubset({0, y, channel, stokes}, {_width - 1, y, channel, stokes});
+}
+
+std::vector<float> FitsDataReader::ReadProfileY(long x, long channel, int stokes) {
+    return ReadSubset({x, 0, channel, stokes}, {x, _height - 1, channel, stokes});
 }
 
 CartaEnvironment::~CartaEnvironment() {}
