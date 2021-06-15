@@ -71,3 +71,40 @@ TEST_F(SpatialProfileTest, SubTileFitsImage) {
     EXPECT_EQ(y_vals.size(), 10);
     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
 }
+
+// TEST_F(SpatialProfileTest, SubTileHdf5Image) {
+//     auto path_string = GeneratedHdf5ImagePath("10 10");
+//     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+//     Hdf5DataReader reader(path_string);
+// 
+//     // These will be replaced by objects in the mipmap branch
+//     std::vector<std::string> profiles = {"x", "y"};
+//     frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+//     frame->SetCursor(5, 5);
+// 
+//     CARTA::SpatialProfileData data;
+//     frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+// 
+//     EXPECT_EQ(data.file_id(), 0);
+//     EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
+//     EXPECT_EQ(data.x(), 5);
+//     EXPECT_EQ(data.y(), 5);
+//     EXPECT_EQ(data.channel(), 0);
+//     EXPECT_EQ(data.stokes(), 0);
+//     EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5));
+//     EXPECT_EQ(data.profiles_size(), 2);
+// 
+//     auto [x_profile, y_profile] = GetProfiles(data);
+// 
+//     EXPECT_EQ(x_profile.start(), 0);
+//     EXPECT_EQ(x_profile.end(), 10);
+//     auto x_vals = ProfileValues(x_profile);
+//     EXPECT_EQ(x_vals.size(), 10);
+//     EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5)));
+// 
+//     EXPECT_EQ(y_profile.start(), 0);
+//     EXPECT_EQ(y_profile.end(), 10);
+//     auto y_vals = ProfileValues(y_profile);
+//     EXPECT_EQ(y_vals.size(), 10);
+//     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
+// }

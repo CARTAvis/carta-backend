@@ -45,10 +45,9 @@ public:
 
 class FitsDataReader {
 public:
-    FitsDataReader();
     FitsDataReader(const std::string& imgpath);
     ~FitsDataReader();
-    std::vector<float> ReadSubset(std::vector<long> start, std::vector<long> end);
+    std::vector<float> ReadRegion(std::vector<long> start, std::vector<long> end);
     float ReadPointXY(long x, long y, long channel = 0, int stokes = 0);
     std::vector<float> ReadProfileX(long y, long channel = 0, int stokes = 0);
     std::vector<float> ReadProfileY(long x, long channel = 0, int stokes = 0);
@@ -58,6 +57,21 @@ private:
     int _N;
     long _stokes, _depth, _height, _width;
 };
+
+// class Hdf5DataReader {
+// public:
+//     Hdf5DataReader(const std::string& imgpath);
+//     ~Hdf5DataReader();
+//     std::vector<float> ReadRegion(std::vector<long> start, std::vector<long> end);
+//     float ReadPointXY(long x, long y, long channel = 0, int stokes = 0);
+//     std::vector<float> ReadProfileX(long y, long channel = 0, int stokes = 0);
+//     std::vector<float> ReadProfileY(long x, long channel = 0, int stokes = 0);
+// 
+// private:
+//     H5::H5File _imgfile;
+//     int _N;
+//     long _stokes, _depth, _height, _width;
+// };
 
 class CartaEnvironment : public ::testing::Environment {
 public:

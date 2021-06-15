@@ -78,8 +78,6 @@ std::string FileFinder::XmlTablePath(const std::string& filename) {
     return (TestRoot() / "data" / "tables" / "xml" / filename).string();
 }
 
-FitsDataReader::FitsDataReader() {}
-
 FitsDataReader::FitsDataReader(const std::string& imgpath) {
     int status(0);
 
@@ -131,7 +129,7 @@ FitsDataReader::~FitsDataReader() {
     }
 }
 
-std::vector<float> FitsDataReader::ReadSubset(std::vector<long> start, std::vector<long> end) {
+std::vector<float> FitsDataReader::ReadRegion(std::vector<long> start, std::vector<long> end) {
     int status(0);
     std::vector<float> result;
 
@@ -143,8 +141,9 @@ std::vector<float> FitsDataReader::ReadSubset(std::vector<long> start, std::vect
     for (int d = 0; d < _N; d++) {
         // Truncate or extend the first and last pixel array to the image dimensions
         // ...and convert from 0-indexing to 1-indexing
+        // ...and convert end vector from exclusive to inclusive
         fpixel[d] = d < start.size() ? start[d] + 1 : 1;
-        lpixel[d] = d < end.size() ? end[d] + 1 : 1;
+        lpixel[d] = d < end.size() ? end[d] : 1;
         // Set the increment to 1
         inc[d] = 1;
 
@@ -164,16 +163,40 @@ std::vector<float> FitsDataReader::ReadSubset(std::vector<long> start, std::vect
 }
 
 float FitsDataReader::ReadPointXY(long x, long y, long channel, int stokes) {
-    return ReadSubset({x, y, channel, stokes}, {x, y, channel, stokes})[0];
+    return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
 }
 
 std::vector<float> FitsDataReader::ReadProfileX(long y, long channel, int stokes) {
-    return ReadSubset({0, y, channel, stokes}, {_width - 1, y, channel, stokes});
+    return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
 }
 
 std::vector<float> FitsDataReader::ReadProfileY(long x, long channel, int stokes) {
-    return ReadSubset({x, 0, channel, stokes}, {x, _height - 1, channel, stokes});
+    return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
 }
+
+// Hdf5DataReader(const std::string& imgpath) {
+//     // TODO TODO TODO
+// }
+// 
+// ~Hdf5DataReader() {
+//     // TODO TODO TODO
+// }
+// 
+// std::vector<float> ReadRegion(std::vector<long> start, std::vector<long> end) {
+//     // TODO TODO TODO
+// }
+// 
+// float ReadPointXY(long x, long y, long channel = 0, int stokes = 0) {
+//     // TODO TODO TODO
+// }
+// 
+// std::vector<float> ReadProfileX(long y, long channel = 0, int stokes = 0) {
+//     // TODO TODO TODO
+// }
+// 
+// std::vector<float> ReadProfileY(long x, long channel = 0, int stokes = 0) {
+//     // TODO TODO TODO
+// }
 
 CartaEnvironment::~CartaEnvironment() {}
 
