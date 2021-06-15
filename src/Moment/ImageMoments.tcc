@@ -13,7 +13,7 @@
 #include "../Logger/Logger.h"
 #include "../Util.h"
 
-static const casacore::uInt MAX_MEMORY = 2e8; // maximum memory usage for the chunk data (Bytes)
+static const casacore::uInt MAX_MEMORY = 32e6; // maximum memory usage for the chunk data (Bytes)
 
 using namespace carta;
 
