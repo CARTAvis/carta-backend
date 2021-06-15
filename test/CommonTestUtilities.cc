@@ -78,6 +78,18 @@ std::string FileFinder::XmlTablePath(const std::string& filename) {
     return (TestRoot() / "data" / "tables" / "xml" / filename).string();
 }
 
+float DataReader::ReadPointXY(hsize_t x, hsize_t y, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
+}
+
+std::vector<float> DataReader::ReadProfileX(hsize_t y, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
+}
+
+std::vector<float> DataReader::ReadProfileY(hsize_t x, hsize_t channel, hsize_t stokes) {
+    return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
+}
+
 FitsDataReader::FitsDataReader(const std::string& imgpath) {
     int status(0);
 
@@ -107,18 +119,22 @@ FitsDataReader::FitsDataReader(const std::string& imgpath) {
     if (_N < 2 || _N > 4) {
         throw std::runtime_error("Currently only supports 2D, 3D and 4D cubes");
     }
+    
+    std::vector<long> dims(_N);
 
-    long dims[4];
-    fits_get_img_size(_imgfile, 4, dims, &status);
+    fits_get_img_size(_imgfile, _N, dims.data(), &status);
 
     if (status != 0) {
         throw std::runtime_error(fmt::format("Could not read image size. Error status: {}", status));
     }
-
-    _stokes = _N == 4 ? dims[3] : 1;
-    _depth = _N >= 3 ? dims[2] : 1;
-    _height = dims[1];
-    _width = dims[0];
+    
+    for (auto& d : dims) {
+        _dims.push_back(d);
+    }
+    _stokes = _N == 4 ? _dims[3] : 1;
+    _depth = _N >= 3 ? _dims[2] : 1;
+    _height = _dims[1];
+    _width = _dims[0];
 }
 
 FitsDataReader::~FitsDataReader() {
@@ -129,7 +145,7 @@ FitsDataReader::~FitsDataReader() {
     }
 }
 
-std::vector<float> FitsDataReader::ReadRegion(std::vector<long> start, std::vector<long> end) {
+std::vector<float> FitsDataReader::ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) {
     int status(0);
     std::vector<float> result;
 
@@ -162,41 +178,47 @@ std::vector<float> FitsDataReader::ReadRegion(std::vector<long> start, std::vect
     return result;
 }
 
-float FitsDataReader::ReadPointXY(long x, long y, long channel, int stokes) {
-    return ReadRegion({x, y, channel, stokes}, {x + 1, y + 1, channel + 1, stokes + 1})[0];
+Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
+    _imgfile = H5::H5File(imgpath, H5F_ACC_RDONLY);
+    auto group = _imgfile.openGroup("0");
+    _dataset = group.openDataSet("DATA");
+    
+    auto data_space = _dataset.getSpace();
+    _N = data_space.getSimpleExtentNdims();
+    _dims.resize(_N);
+    data_space.getSimpleExtentDims(_dims.data(), NULL);
+
+    _stokes = _N == 4 ? _dims[3] : 1;
+    _depth = _N >= 3 ? _dims[2] : 1;
+    _height = _dims[1];
+    _width = _dims[0];
 }
 
-std::vector<float> FitsDataReader::ReadProfileX(long y, long channel, int stokes) {
-    return ReadRegion({0, y, channel, stokes}, {_width, y + 1, channel + 1, stokes + 1});
+Hdf5DataReader::~Hdf5DataReader() {
 }
 
-std::vector<float> FitsDataReader::ReadProfileY(long x, long channel, int stokes) {
-    return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
-}
+std::vector<float> Hdf5DataReader::ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) {
+    std::vector<float> result;
+    std::vector<hsize_t> h5_start;
+    std::vector<hsize_t> h5_count;
+    hsize_t result_size = 1;
 
-// Hdf5DataReader(const std::string& imgpath) {
-//     // TODO TODO TODO
-// }
-// 
-// ~Hdf5DataReader() {
-//     // TODO TODO TODO
-// }
-// 
-// std::vector<float> ReadRegion(std::vector<long> start, std::vector<long> end) {
-//     // TODO TODO TODO
-// }
-// 
-// float ReadPointXY(long x, long y, long channel = 0, int stokes = 0) {
-//     // TODO TODO TODO
-// }
-// 
-// std::vector<float> ReadProfileX(long y, long channel = 0, int stokes = 0) {
-//     // TODO TODO TODO
-// }
-// 
-// std::vector<float> ReadProfileY(long x, long channel = 0, int stokes = 0) {
-//     // TODO TODO TODO
-// }
+    for (int d = 0; d < _N; d++) {
+        // Calculate the expected result size
+        h5_start.insert(h5_start.begin(), d < start.size() ? start[d] : 0);
+        h5_count.insert(h5_count.begin(), d < start.size() ? end[d] - start[d] : 1);
+        result_size *= end[d] - start[d];
+    }
+    
+    result.resize(result_size);
+    H5::DataSpace mem_space(1, &result_size);
+    
+    auto file_space = _dataset.getSpace();
+    file_space.selectHyperslab(H5S_SELECT_SET, h5_count.data(), h5_start.data());
+    _dataset.read(result.data(), H5::PredType::NATIVE_FLOAT, mem_space, file_space);
+    
+    return result;
+}
 
 CartaEnvironment::~CartaEnvironment() {}
 
