@@ -169,7 +169,7 @@ std::vector<float> FitsDataReader::ReadRegion(std::vector<hsize_t> start, std::v
 
     result.resize(result_size);
 
-    fits_read_subset(_imgfile, TFLOAT, fpixel, lpixel, inc, NULL, result.data(), NULL, &status);
+    fits_read_subset(_imgfile, TFLOAT, fpixel, lpixel, inc, nullptr, result.data(), nullptr, &status);
 
     if (status != 0) {
         throw std::runtime_error(fmt::format("Could not read image data. Error status: {}", status));
@@ -186,7 +186,7 @@ Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     auto data_space = _dataset.getSpace();
     _N = data_space.getSimpleExtentNdims();
     _dims.resize(_N);
-    data_space.getSimpleExtentDims(_dims.data(), NULL);
+    data_space.getSimpleExtentDims(_dims.data(), nullptr);
 
     _stokes = _N == 4 ? _dims[3] : 1;
     _depth = _N >= 3 ? _dims[2] : 1;
