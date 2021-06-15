@@ -33,7 +33,7 @@ public:
         memcpy(values.data(), buffer.data(), buffer.size());
         return values;
     }
-    
+
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }

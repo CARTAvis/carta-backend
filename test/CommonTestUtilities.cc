@@ -119,7 +119,7 @@ FitsDataReader::FitsDataReader(const std::string& imgpath) {
     if (_N < 2 || _N > 4) {
         throw std::runtime_error("Currently only supports 2D, 3D and 4D cubes");
     }
-    
+
     std::vector<long> dims(_N);
 
     fits_get_img_size(_imgfile, _N, dims.data(), &status);
@@ -127,7 +127,7 @@ FitsDataReader::FitsDataReader(const std::string& imgpath) {
     if (status != 0) {
         throw std::runtime_error(fmt::format("Could not read image size. Error status: {}", status));
     }
-    
+
     for (auto& d : dims) {
         _dims.push_back(d);
     }
@@ -182,7 +182,7 @@ Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _imgfile = H5::H5File(imgpath, H5F_ACC_RDONLY);
     auto group = _imgfile.openGroup("0");
     _dataset = group.openDataSet("DATA");
-    
+
     auto data_space = _dataset.getSpace();
     _N = data_space.getSimpleExtentNdims();
     _dims.resize(_N);
@@ -194,8 +194,7 @@ Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _width = _dims[0];
 }
 
-Hdf5DataReader::~Hdf5DataReader() {
-}
+Hdf5DataReader::~Hdf5DataReader() {}
 
 std::vector<float> Hdf5DataReader::ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) {
     std::vector<float> result;
@@ -209,14 +208,14 @@ std::vector<float> Hdf5DataReader::ReadRegion(std::vector<hsize_t> start, std::v
         h5_count.insert(h5_count.begin(), d < start.size() ? end[d] - start[d] : 1);
         result_size *= end[d] - start[d];
     }
-    
+
     result.resize(result_size);
     H5::DataSpace mem_space(1, &result_size);
-    
+
     auto file_space = _dataset.getSpace();
     file_space.selectHyperslab(H5S_SELECT_SET, h5_count.data(), h5_start.data());
     _dataset.read(result.data(), H5::PredType::NATIVE_FLOAT, mem_space, file_space);
-    
+
     return result;
 }
 

@@ -9,8 +9,8 @@
 
 #include <unordered_set>
 
-#include <fitsio.h>
 #include <H5Cpp.h>
+#include <fitsio.h>
 #include <gtest/gtest.h>
 #include <spdlog/fmt/fmt.h>
 
@@ -50,6 +50,7 @@ public:
     float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
     std::vector<float> ReadProfileX(hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
     std::vector<float> ReadProfileY(hsize_t x, hsize_t channel = 0, hsize_t stokes = 0);
+
 protected:
     int _N;
     std::vector<hsize_t> _dims;
@@ -61,6 +62,7 @@ public:
     FitsDataReader(const std::string& imgpath);
     ~FitsDataReader();
     std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) override;
+
 private:
     fitsfile* _imgfile;
 };
@@ -70,6 +72,7 @@ public:
     Hdf5DataReader(const std::string& imgpath);
     ~Hdf5DataReader();
     std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) override;
+
 private:
     H5::H5File _imgfile;
     H5::DataSet _dataset;
