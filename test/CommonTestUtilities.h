@@ -70,7 +70,7 @@ private:
 class Hdf5DataReader : public DataReader {
 public:
     Hdf5DataReader(const std::string& imgpath);
-    ~Hdf5DataReader();
+    ~Hdf5DataReader() = default;
     std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) override;
 
 private:

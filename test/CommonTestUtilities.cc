@@ -194,8 +194,6 @@ Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _width = _dims[0];
 }
 
-Hdf5DataReader::~Hdf5DataReader() {}
-
 std::vector<float> Hdf5DataReader::ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) {
     std::vector<float> result;
     std::vector<hsize_t> h5_start;
