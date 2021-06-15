@@ -33,6 +33,10 @@ public:
         memcpy(values.data(), buffer.data(), buffer.size());
         return values;
     }
+    
+    void SetUp() {
+        setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
+    }
 };
 
 TEST_F(SpatialProfileTest, SubTileFitsImage) {
@@ -73,7 +77,6 @@ TEST_F(SpatialProfileTest, SubTileFitsImage) {
 }
 
 TEST_F(SpatialProfileTest, SubTileHdf5Image) {
-    setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0); // TODO put this in the test setup
     auto path_string = GeneratedHdf5ImagePath("10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     Hdf5DataReader reader(path_string);
