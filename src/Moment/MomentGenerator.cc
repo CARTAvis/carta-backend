@@ -126,6 +126,13 @@ void MomentGenerator::SetMomentTypes(const CARTA::MomentRequest& moment_request)
 
     // Fill moment types to calculate
     for (int i = 0, j = 0; i < moments_size; ++i) {
+        if (moment_request.moments(i) == CARTA::Moment::MEDIAN_COORDINATE) {
+            if (((_include_pix.size() == 2) && (_include_pix[0] * _include_pix[1] < 0)) || (_include_pix.empty() && _exclude_pix.empty())) {
+                spdlog::warn(
+                    "Request for the median coordinate moment, but it is only available with a pixel range that is either all positive or "
+                    "all negative");
+            }
+        }
         _moments[j++] = GetMomentMode(moment_request.moments(i));
     }
 }
