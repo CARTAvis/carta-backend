@@ -14,6 +14,7 @@
 #include <casacore/casa/Quanta/MVAngle.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
+#include <casacore/fits/FITS/fits.h>
 #include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
@@ -21,6 +22,7 @@
 #include <casacore/measures/Measures/MFrequency.h>
 
 #include "../ImageData/CartaFitsImage.h"
+#include "../ImageData/CartaHdf5Image.h"
 
 using namespace carta;
 
@@ -61,6 +63,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 casacore::String image_type(image->imageType());
                 bool is_casacore_fits(image_type == "FITSImage");
                 bool is_carta_fits(image_type == "CartaFitsImage");
+                bool is_carta_hdf5(image_type == "CartaHdf5Image");
 
                 casacore::CoordinateSystem coord_sys(image->coordinates());
                 casacore::ImageFITSHeaderInfo fhi;
@@ -88,6 +91,38 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             use_fits_header = true;
                         }
                     }
+                } else if (is_carta_hdf5) {
+                    carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image);
+                    casacore::Vector<casacore::String> headers = hdf5_image->Hdf5ToFITSHeaderStrings();
+                    size_t nheaders(headers.size()), header_index(0);
+                    int block_count(0);
+
+                    casacore::FitsKeywordList kwlist;
+                    casacore::FITSErrorHandler errhandler = casacore::FITSError::defaultHandler;
+                    casacore::FitsKeyCardTranslator translator;
+
+                    while (header_index < nheaders) {
+                        // Put block of 36 headers into single string
+                        casacore::String block_string;
+
+                        for (size_t i = 0; i < 36; ++i) {
+                            header_index = (block_count * 36) + i;
+                            if (header_index == nheaders) {
+                                // Fill rest of block string
+                                block_string.resize(80 * (36 - i), ' ');
+                                break;
+                            } else {
+                                block_string += headers(header_index);
+                            }
+                        }
+
+                        // Parse string into keyword list
+                        translator.parse(block_string.c_str(), kwlist, block_count, errhandler, false);
+                        ++block_count;
+                    }
+
+                    fhi.kw = kwlist;
+                    use_fits_header = true;
                 }
 
                 if (!use_fits_header) {
