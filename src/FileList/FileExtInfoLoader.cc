@@ -14,7 +14,6 @@
 #include <casacore/casa/Quanta/MVAngle.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/fits.h>
 #include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
