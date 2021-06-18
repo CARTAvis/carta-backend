@@ -48,8 +48,8 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
+Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
+    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -1653,7 +1653,10 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                         GetId(), GetAddress(), expected_buffered_amount);
                 }
                 std::string_view sv(msg.first.data(), msg.first.size());
-                _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                if (!_socket->send(sv, uWS::OpCode::BINARY, msg.second)) {
+                    auto backpressure = _socket->getBufferedAmount();
+                    spdlog::info("Backpressure increased to {} kB", backpressure / 1024.0);
+                }
             }
         }
     });
