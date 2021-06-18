@@ -74,7 +74,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     int spectral_axis;
     std::string log_message;
     if (!_loader->FindCoordinateAxes(_image_shape, spectral_axis, _z_axis, _stokes_axis, log_message)) {
-        _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
+        _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
@@ -93,6 +93,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+        _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
     }

@@ -154,8 +154,9 @@ void Session::ConnectCalled() {
 // File browser info
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-    const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message) {
-    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu_name supplied and FITS image
+    const std::string& folder, const std::string& filename, const std::string& hdu_key, std::string& message) {
+    // Fill CARTA::FileInfo and CARTA::FileInfoExtended
+    // Map all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
 
     try {
@@ -174,30 +175,28 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             return file_info_ok;
         }
 
-        // Extended file info in response is map<hdu_name, FileInfoExtended>
+        // Extended file info in response is map<hdu_key, FileInfoExtended>
         std::vector<std::string> hdu_list;
-        if (hdu_name.empty()) {
+        if (hdu_key.empty()) {
             if (file_info.type() == CARTA::FileType::FITS) {
-                // Get list of HDUs; FITS hdus moved to file info response
+                // Get list of HDUs for file info response map
                 FitsHduList fits_hdu_list = FitsHduList(full_name);
-                fits_hdu_list.GetHduList(hdu_list);
+                fits_hdu_list.GetHduList(hdu_list, message);
+
                 if (hdu_list.empty()) { // FitsHduList failed
-                    message = fmt::format("Failed to determine HDU info for {}.", filename);
                     return file_info_ok;
-                } else {
-                    hdu_list.push_back(hdu_list[0]);
                 }
             } else if (file_info.hdu_list_size() > 0) {
                 hdu_list.push_back(file_info.hdu_list(0)); // use first
             }
         } else {
-            hdu_list.push_back(hdu_name);
+            hdu_list.push_back(hdu_key);
         }
 
         _loader.reset(carta::FileLoader::GetLoader(full_name));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
-        // FileExtendedInfo for each hdu_name
+        // FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
 
@@ -301,10 +300,14 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 }
 
 void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg result_msg;
     _file_list_handler->OnFileListRequest(request, response, result_msg);
-    SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+    if (!response.cancel()) {
+        SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+    }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
     }
@@ -320,6 +323,9 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     if (success) {
         // add extended info map to message
         *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+    } else {
+        // log error
+        spdlog::error(message);
     }
 
     // complete response message
@@ -329,10 +335,14 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 }
 
 void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::RegionListResponse response;
     FileListHandler::ResultMsg result_msg;
     _file_list_handler->OnRegionListRequest(request, response, result_msg);
-    SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    if (!response.cancel()) {
+        SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
     }
@@ -1050,9 +1060,13 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 }
 
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    _table_controller->SetProgressCallBack(progress_callback);
     CARTA::CatalogListResponse file_list_response;
     _table_controller->OnFileListRequest(file_list_request, file_list_response);
-    SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    if (!file_list_response.cancel()) {
+        SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    }
 }
 
 void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
@@ -1995,6 +2009,18 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
         _scripting_response.erase(scripting_request_id);
 
         return true;
+    }
+}
+
+void Session::StopImageFileList() {
+    if (_file_list_handler) {
+        _file_list_handler->StopGettingFileList();
+    }
+}
+
+void Session::StopCatalogFileList() {
+    if (_table_controller) {
+        _table_controller->StopGettingFileList();
     }
 }
 

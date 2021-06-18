@@ -16,7 +16,6 @@
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
-#include "../ImageData/CartaHdf5Image.h"
 #include "../ImageData/FileLoader.h"
 
 class FileExtInfoLoader {
@@ -29,9 +28,11 @@ private:
     // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
     void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);
+
     // Image shape, nchannels, nstokes
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
         int stokes_axis, const std::vector<int>& render_axes);
+
     // Info about xy axes
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
         const std::vector<int>& display_axes, casacore::String& radesys, bool use_fits_header);
@@ -39,11 +40,15 @@ private:
 
     // FITS keyword conversion
     bool GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist);
-    // convert MVAngle to string; returns Quantity string if not direction
+    int GetFitsBitpix(casacore::ImageInterface<float>* image);
+
+    // Convert MVAngle to string; returns Quantity string if not direction
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);
-    // Convert Quantities to deg and return format string
+
+    // Convert Quantities and return formatted string
     std::string ConvertCoordsToDeg(const casacore::Quantity& coord0, const casacore::Quantity& coord1);
     std::string ConvertIncrementToArcsec(const casacore::Quantity& inc0, const casacore::Quantity& inc1);
+
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
         std::string& projection);
 

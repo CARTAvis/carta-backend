@@ -22,7 +22,7 @@ namespace carta {
 struct ProgramSettings {
     bool version = false;
     bool help = false;
-    int port = -1;
+    std::vector<int> port;
     int grpc_port = -1;
     int omp_thread_count = OMP_THREAD_COUNT;
     std::string top_level_folder = "/";
@@ -42,6 +42,8 @@ struct ProgramSettings {
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
 
+    std::string browser;
+
     bool no_user_config = false;
     bool no_system_config = false;
 
@@ -52,7 +54,6 @@ struct ProgramSettings {
     // clang-format off
     std::unordered_map<std::string, int*> int_keys_map{
         {"verbosity", &verbosity},
-        {"port", &port},
         {"grpc_port", &grpc_port},
         {"omp_threads", &omp_thread_count},
         {"exit_timeout", &wait_time},
@@ -72,7 +73,12 @@ struct ProgramSettings {
     std::unordered_map<std::string, std::string*> strings_keys_map{
         {"host", &host},
         {"top_level_folder", &top_level_folder},
-        {"frontend_folder", &frontend_folder}
+        {"frontend_folder", &frontend_folder},
+        {"browser", &browser}
+    };
+
+    std::unordered_map<std::string, std::vector<int>*> vector_int_keys_map {
+        {"port", &port}
     };
     // clang-format on
 
@@ -97,6 +103,19 @@ struct ProgramSettings {
         std::for_each(debug_msgs.begin(), debug_msgs.end(), [](const std::string& msg) { spdlog::debug(msg); });
         warning_msgs.clear();
         debug_msgs.clear();
+    }
+
+    std::string GenerateBrowserCommand(const std::string& url) {
+        const std::string wildcard = "CARTA_URL";
+        auto wildcard_pos = browser.find(wildcard);
+        std::string cmd;
+        if (wildcard_pos != std::string::npos) {
+            cmd = fmt::format(
+                "{0}{2}{1}", browser.substr(0, wildcard_pos), browser.substr(wildcard_pos + wildcard.size(), browser.size()), url);
+        } else {
+            cmd = fmt::format("{} {}", browser, url);
+        }
+        return cmd;
     }
 };
 } // namespace carta

@@ -19,6 +19,8 @@ FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename
     _type = GetCartaFileType(filename);
 }
 
+FileInfoLoader::FileInfoLoader(const std::string& filename, const CARTA::FileType& type) : _filename(filename), _type(type) {}
+
 bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     // Fill FileInfo submessage with type, size, hdus
     bool success(false);

@@ -10,8 +10,8 @@ RUN \
   dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
          gcc-c++ grpc-devel grpc-plugins gtest-devel git git-lfs gsl-devel hdf5-devel lapack-devel \ 
          libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
-         pugixml-devel readline-devel subversion tbb-devel wcslib-devel wget zlib-devel libuuid-devel \
-         zfp-devel
+         python36 python3-numpy python3-astropy pugixml-devel readline-devel subversion tbb-devel \
+         wcslib-devel wget zlib-devel libuuid-devel zfp-devel
 
 # CARTA will have a problem finding the .h files in /usr/include/cfitsio/
 RUN \

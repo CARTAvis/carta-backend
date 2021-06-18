@@ -13,8 +13,6 @@
 
 #include "../src/Timer/Timer.h"
 
-using namespace std;
-
 class TimerTest : public ::testing::Test {
 public:
     // Test for 0.1 ms accuracy
@@ -23,10 +21,10 @@ public:
 
     double block_for_millis(double millis) {
         volatile double dt = 0;
-        auto t_start = chrono::steady_clock::now();
+        auto t_start = std::chrono::steady_clock::now();
         while (dt < millis) {
-            auto now = chrono::steady_clock::now();
-            dt = chrono::duration_cast<chrono::microseconds>(now - t_start).count() / 1000.0;
+            auto now = std::chrono::steady_clock::now();
+            dt = std::chrono::duration_cast<std::chrono::microseconds>(now - t_start).count() / 1000.0;
         }
         return dt;
     }

@@ -12,6 +12,11 @@ using namespace carta;
 
 using IM = ImageMoments<casacore::Float>;
 
+static const int FIRST_PROGRESS_AFTER_MILLI_SECS = 5000;
+static const float PROGRESS_REPORT_INTERVAL = 0.1;
+static const float PROCESS_COMPLETED = 1;
+static const int ID_MULTIPLIER = 1000;
+
 MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image)
     : _filename(filename), _image(image), _sub_image(nullptr), _image_moments(nullptr), _success(false), _cancel(false) {
     SetMomentTypeMaps();
@@ -40,6 +45,12 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
     // Calculate moments
     try {
+        // Start the timer
+        _start_time = std::chrono::high_resolution_clock::now();
+
+        // Reset the first progress report
+        _first_report_made = false;
+
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
         } else {
@@ -54,12 +65,6 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
 
-                    // Start the timer
-                    _start_time = std::chrono::high_resolution_clock::now();
-
-                    // Reset the first progress report
-                    _first_report = false;
-
                     // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
 
@@ -70,7 +75,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
                         // Set a temp moment file Id. Todo: find another better way to assign the temp file Id
                         int moment_type = _moments[i];
-                        int moment_file_id = (file_id + 1) * OUTPUT_ID_MULTIPLIER + moment_type;
+                        int moment_file_id = (file_id + 1) * ID_MULTIPLIER + moment_type;
 
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
@@ -182,11 +187,8 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
 
-    // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
-
-    // Set moment calculation progress monitor
-    _image_moments->SetProgressMonitor(this);
+    // Make an ImageMoments object and overwrite the output file if it already exists
+    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
@@ -240,25 +242,25 @@ void MomentGenerator::setStepCount(int count) {
 
 void MomentGenerator::setStepsCompleted(int count) {
     _progress = (float)count / _total_steps;
-    if (_progress > MOMENT_COMPLETE) {
-        _progress = MOMENT_COMPLETE;
+    if (_progress > PROCESS_COMPLETED) {
+        _progress = PROCESS_COMPLETED;
     }
 
-    if (!_first_report) {
+    if (!_first_report_made) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(current_time - _start_time).count();
-        if (dt >= REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS) {
+        if (dt >= FIRST_PROGRESS_AFTER_MILLI_SECS) {
             _progress_callback(_progress);
-            _first_report = true;
+            _first_report_made = true;
         }
     }
 
     // Update the progress report every percent
-    if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
+    if ((_progress - _pre_progress) >= PROGRESS_REPORT_INTERVAL) {
         _progress_callback(_progress);
         _pre_progress = _progress;
-        if (!_first_report) {
-            _first_report = true;
+        if (!_first_report_made) {
+            _first_report_made = true;
         }
     }
 }

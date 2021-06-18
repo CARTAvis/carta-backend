@@ -10,4 +10,4 @@ fi
 
 export SERVER_IP
 
-carta_backend $@
+carta_backend "$@"

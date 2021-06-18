@@ -25,6 +25,10 @@
 using namespace carta;
 
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
+    if (IsCompressedFits(filename)) {
+        return new FitsLoader(filename, true);
+    }
+
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);
@@ -248,47 +252,52 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
         return false;
     }
 
-    if (data.shape() != slicer.length()) {
-        try {
+    try {
+        if (data.shape() != slicer.length()) {
             data.resize(slicer.length());
-        } catch (casacore::AipsError& err) {
-            return false;
         }
-    }
 
-    // Get data slice with mask applied.
-    // Apply slicer to image first to get appropriate cursor, and use read-only iterator
-    casacore::SubImage<float> subimage(*image, slicer);
-    casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
-    for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
-        casacore::Array<float> cursor_data = lattice_iter.cursor();
+        // Get data slice with mask applied.
+        // Apply slicer to image first to get appropriate cursor, and use read-only iterator
+        casacore::SubImage<float> subimage(*image, slicer);
+        casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
 
-        if (image->isMasked()) {
-            casacore::Array<float> masked_data(cursor_data); // reference the same storage
-            const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
-            // Apply cursor mask to cursor data: set masked values to NaN.
-            // booleans are used to delete copy of data if necessary
-            bool del_mask_ptr;
-            const bool* pCursorMask = cursor_mask.getStorage(del_mask_ptr);
-            bool del_data_ptr;
-            float* pMaskedData = masked_data.getStorage(del_data_ptr);
-            for (size_t i = 0; i < cursor_data.nelements(); ++i) {
-                if (!pCursorMask[i]) {
-                    pMaskedData[i] = NAN;
+        for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
+            casacore::Array<float> cursor_data = lattice_iter.cursor();
+
+            if (image->isMasked()) {
+                casacore::Array<float> masked_data(cursor_data); // reference the same storage
+                const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
+
+                // Apply cursor mask to cursor data: set masked values to NaN.
+                // booleans are used to delete copy of data if necessary
+                bool del_mask_ptr;
+                const bool* pCursorMask = cursor_mask.getStorage(del_mask_ptr);
+
+                bool del_data_ptr;
+                float* pMaskedData = masked_data.getStorage(del_data_ptr);
+
+                for (size_t i = 0; i < cursor_data.nelements(); ++i) {
+                    if (!pCursorMask[i]) {
+                        pMaskedData[i] = NAN;
+                    }
                 }
+
+                // free storage for cursor arrays
+                cursor_mask.freeStorage(pCursorMask, del_mask_ptr);
+                masked_data.putStorage(pMaskedData, del_data_ptr);
             }
 
-            // free storage for cursor arrays
-            cursor_mask.freeStorage(pCursorMask, del_mask_ptr);
-            masked_data.putStorage(pMaskedData, del_data_ptr);
+            casacore::IPosition cursor_shape(lattice_iter.cursorShape());
+            casacore::IPosition cursor_position(lattice_iter.position());
+            casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
+            data(cursor_slicer) = cursor_data;
         }
-
-        casacore::IPosition cursor_shape(lattice_iter.cursorShape());
-        casacore::IPosition cursor_position(lattice_iter.position());
-        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
-        data(cursor_slicer) = cursor_data;
+        return true;
+    } catch (casacore::AipsError& err) {
+        spdlog::error("Error loading image data: {}", err.getMesg());
+        return false;
     }
-    return true;
 }
 
 bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
