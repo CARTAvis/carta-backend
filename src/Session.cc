@@ -1653,9 +1653,9 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                         GetId(), GetAddress(), expected_buffered_amount);
                 }
                 std::string_view sv(msg.first.data(), msg.first.size());
-                if (!_socket->send(sv, uWS::OpCode::BINARY, msg.second)) {
-                    auto backpressure = _socket->getBufferedAmount();
-                    spdlog::info("Backpressure increased to {} kB", backpressure / 1024.0);
+                auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                if (status == uWS::WebSocket<false, true, PerSocketData>::BACKPRESSURE) {
+                    spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
                 }
             }
         }
