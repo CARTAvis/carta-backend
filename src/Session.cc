@@ -560,7 +560,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
                             compression_type == CARTA::CompressionType::NONE);
                     } else {
-                        spdlog::error("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
+                        spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
                     }
                 }
             }
