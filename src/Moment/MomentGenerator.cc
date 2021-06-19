@@ -6,11 +6,11 @@
 
 #include "MomentGenerator.h"
 
-#include "../Logger/Logger.h"
+#include "Logger/Logger.h"
 
 using namespace carta;
 
-using IM = ImageMoments<casacore::Float>;
+using IM = casa::ImageMoments<casacore::Float>;
 
 static const int FIRST_PROGRESS_AFTER_MILLI_SECS = 5000;
 static const float PROGRESS_REPORT_INTERVAL = 0.1;
@@ -106,7 +106,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
 void MomentGenerator::StopCalculation() {
     if (_image_moments) {
-        _image_moments->StopCalculation();
+        //_image_moments->StopCalculation();
         _cancel = true;
     }
 }
@@ -188,7 +188,8 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     casacore::LogIO os(log);
 
     // Make an ImageMoments object and overwrite the output file if it already exists
-    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, this, true));
+    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, true, true));
+    _image_moments->setProgressMonitor(this);
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
