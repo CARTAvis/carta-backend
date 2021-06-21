@@ -34,6 +34,15 @@ public:
         return values;
     }
 
+    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(std::string coordinate, int start = 0, int end = 0, int mip = 0) {
+        CARTA::SetSpatialRequirements_SpatialConfig conf;
+        conf.set_coordinate(coordinate);
+        conf.set_start(start);
+        conf.set_end(end);
+        conf.set_mip(mip);
+        return conf;
+    }
+
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }
@@ -44,8 +53,7 @@ TEST_F(SpatialProfileTest, SubTileFitsImage) {
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     FitsDataReader reader(path_string);
 
-    // These will be replaced by objects in the mipmap branch
-    std::vector<std::string> profiles = {"x", "y"};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
     frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
     frame->SetCursor(5, 5);
 
@@ -65,12 +73,14 @@ TEST_F(SpatialProfileTest, SubTileFitsImage) {
 
     EXPECT_EQ(x_profile.start(), 0);
     EXPECT_EQ(x_profile.end(), 10);
+    EXPECT_EQ(x_profile.mip(), 0);
     auto x_vals = ProfileValues(x_profile);
     EXPECT_EQ(x_vals.size(), 10);
     EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5)));
 
     EXPECT_EQ(y_profile.start(), 0);
     EXPECT_EQ(y_profile.end(), 10);
+    EXPECT_EQ(y_profile.mip(), 0);
     auto y_vals = ProfileValues(y_profile);
     EXPECT_EQ(y_vals.size(), 10);
     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
@@ -81,8 +91,7 @@ TEST_F(SpatialProfileTest, SubTileHdf5Image) {
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     Hdf5DataReader reader(path_string);
 
-    // These will be replaced by objects in the mipmap branch
-    std::vector<std::string> profiles = {"x", "y"};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
     frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
     frame->SetCursor(5, 5);
 
@@ -102,12 +111,14 @@ TEST_F(SpatialProfileTest, SubTileHdf5Image) {
 
     EXPECT_EQ(x_profile.start(), 0);
     EXPECT_EQ(x_profile.end(), 10);
+    EXPECT_EQ(x_profile.mip(), 0);
     auto x_vals = ProfileValues(x_profile);
     EXPECT_EQ(x_vals.size(), 10);
     EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5)));
 
     EXPECT_EQ(y_profile.start(), 0);
     EXPECT_EQ(y_profile.end(), 10);
+    EXPECT_EQ(y_profile.mip(), 0);
     auto y_vals = ProfileValues(y_profile);
     EXPECT_EQ(y_vals.size(), 10);
     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
