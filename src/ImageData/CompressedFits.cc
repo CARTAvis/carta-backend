@@ -41,6 +41,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
     bool in_image_headers(false);
     long long data_size(1);
+    size_t buffer_index(0);
     auto t_start_get_hdu = std::chrono::high_resolution_clock::now();
 
     while (!gzeof(zip_file)) {
@@ -49,6 +50,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
         int err(0);
         std::string buffer(bufsize, 0);
         size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
+        buffer_index = 0;
 
         if (bytes_read == -1) {
             const char* error_string = gzerror(zip_file, &err);
@@ -65,6 +67,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
             data_size = 1;
 
             in_image_headers = IsImageHdu(buffer, file_info_ext, data_size);
+            buffer_index = INITIAL_HEADERS_SIZE * FITS_CARD_SIZE;
 
             if (!in_image_headers) {
                 file_info_ext.clear_header_entries();
@@ -72,7 +75,6 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
         }
 
         // Continue parsing headers and add to file info
-        size_t buffer_index(INITIAL_HEADERS_SIZE * FITS_CARD_SIZE);
         while (buffer_index < bytes_read) {
             casacore::String fits_card = buffer.substr(buffer_index, FITS_CARD_SIZE);
             buffer_index += FITS_CARD_SIZE;
