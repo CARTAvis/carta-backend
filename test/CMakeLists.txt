@@ -24,6 +24,14 @@ enable_testing()
 find_package(GTest)
 include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
+find_package(HDF5 REQUIRED COMPONENTS CXX)
+if (HDF5_FOUND)
+    include_directories(${HDF5_INCLUDE_DIR})
+    set(LINK_LIBS ${LINK_LIBS} ${HDF5_LIBRARIES})
+else ()
+    message(FATAL_ERROR "Could not find HDF5.")
+endif ()
+
 ExternalProject_Add(fits2idia
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/fits2idia
   INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
@@ -42,6 +50,7 @@ set(TEST_SOURCES
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
+        TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc
