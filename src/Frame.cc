@@ -1031,10 +1031,17 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         int requested_start(start);
         int requested_end(end);
 
+        int decimated_start(start);
+        int decimated_end(end);
+
         // Round the endpoints if we're going to decimate
         if (mip >= 2 && !_loader->HasMip(2)) {
-            start = std::ceil((float)start / (mip * 2)) * mip * 2;
-            end = std::ceil((float)end / (mip * 2)) * mip * 2;
+            // These values will be used to resize the decimated data
+            decimated_start = std::ceil((float)start / (mip * 2)) * 2;
+            decimated_end = std::ceil((float)end / (mip * 2)) * 2;
+            // These values will be used to fetch the data to decimate
+            start = decimated_start * mip;
+            end = decimated_end * mip;
             end = config.coordinate() == "x" ? std::min(end, _width) : std::min(end, _height);
         }
 
@@ -1154,7 +1161,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     profile[i / mip + 1] = *it_min;
                 }
             }
-            profile.resize(requested_end - requested_start); // shrink the profile to the downsampled size
+            profile.resize(decimated_end - decimated_start); // shrink the profile to the downsampled size
         }
 
         if (have_profile) {
