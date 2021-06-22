@@ -78,6 +78,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         // Parse header into name, value, comment (if exist)
                         casacore::String name(header), value, comment;
                         auto eq_pos = header.find('=', 0);
+                        bool quoted_value(false);
 
                         if (eq_pos != std::string::npos) {
                             name = header.substr(0, eq_pos);
@@ -87,10 +88,13 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             if (slash_pos == std::string::npos) {
                                 value = header.substr(eq_pos + 1, slash_pos);
                             } else {
-                                value = header.substr(eq_pos + 1, slash_pos - eq_pos);
+                                value = header.substr(eq_pos + 1, slash_pos - (eq_pos + 1));
                             }
 
                             value.trim();
+                            if (value[0] == '\'') {
+                                quoted_value = true;
+                            }
                             value.gsub("'", "");
 
                             if (name == "SIMPLE") {
@@ -119,35 +123,61 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                             auto entry = extended_info.add_header_entries();
                             entry->set_name(name);
-                            *entry->mutable_value() = value;
-                            entry->set_comment(comment);
 
-                            if (value.contains(".")) {
-                                try {
-                                    // Set double value
-                                    double dvalue = std::stod(value);
-                                    entry->set_numeric_value(dvalue);
-                                    entry->set_entry_type(CARTA::EntryType::FLOAT);
+                            if (!value.empty()) {
+                                *entry->mutable_value() = value;
 
-                                    if (name == ("CRVAL" + stokes_ctype_num)) {
-                                        _loader->SetFirstStokesType((int)dvalue);
-                                    } else if (name == ("CDELT" + stokes_ctype_num)) {
-                                        _loader->SetDeltaStokesIndex((int)dvalue);
+                                if (!quoted_value) {
+                                    // try to convert value to numeric
+                                    if (value.contains(".")) {
+                                        try {
+                                            double dvalue = std::stod(value);
+                                            entry->set_numeric_value(dvalue);
+                                            entry->set_entry_type(CARTA::EntryType::FLOAT);
+
+                                            if (name == ("CRVAL" + stokes_ctype_num)) {
+                                                _loader->SetFirstStokesType((int)dvalue);
+                                            } else if (name == ("CDELT" + stokes_ctype_num)) {
+                                                _loader->SetDeltaStokesIndex((int)dvalue);
+                                            }
+                                        } catch (std::invalid_argument) {
+                                            // Not a number - set string value only
+                                            entry->set_entry_type(CARTA::EntryType::STRING);
+                                        } catch (std::out_of_range) {
+                                            try {
+                                                char* endptr(nullptr);
+                                                long double ldvalue = std::strtold(value.c_str(), &endptr);
+                                                entry->set_numeric_value(ldvalue);
+                                                entry->set_entry_type(CARTA::EntryType::FLOAT);
+                                            } catch (std::out_of_range) {
+                                                entry->set_entry_type(CARTA::EntryType::STRING);
+                                            }
+                                        }
+                                    } else {
+                                        try {
+                                            // int numeric value
+                                            int ivalue = std::stoi(value);
+                                            entry->set_numeric_value(ivalue);
+                                            entry->set_entry_type(CARTA::EntryType::INT);
+                                        } catch (std::invalid_argument) {
+                                            // Not a number - set string value only
+                                            entry->set_entry_type(CARTA::EntryType::STRING);
+                                        } catch (std::out_of_range) {
+                                            try {
+                                                // long numeric value
+                                                long lvalue = std::stol(value);
+                                                entry->set_numeric_value(lvalue);
+                                                entry->set_entry_type(CARTA::EntryType::INT);
+                                            } catch (std::out_of_range) {
+                                                entry->set_entry_type(CARTA::EntryType::STRING);
+                                            }
+                                        }
                                     }
-                                } catch (std::invalid_argument) {
-                                    // Set string value only
-                                    entry->set_entry_type(CARTA::EntryType::STRING);
                                 }
-                            } else {
-                                try {
-                                    // Set int value
-                                    int ivalue = std::stoi(value);
-                                    entry->set_numeric_value(ivalue);
-                                    entry->set_entry_type(CARTA::EntryType::INT);
-                                } catch (std::invalid_argument) {
-                                    // Set string value only
-                                    entry->set_entry_type(CARTA::EntryType::STRING);
-                                }
+                            }
+
+                            if (!comment.empty()) {
+                                entry->set_comment(comment);
                             }
                         }
                     }
