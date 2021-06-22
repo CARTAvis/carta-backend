@@ -21,8 +21,8 @@ pipeline {
                         sh "git submodule update --init --recursive"
                         dir ('build') {
                            sh "rm -rf *"
-                           sh "cp ../../cmake-command.sh ."
-                           sh "./cmake-command.sh"
+                           sh "cp ../../cmake-command2.sh ."
+                           sh "./cmake-command2.sh"
                            sh "make -j\$(nproc)"
                            echo "Preparing for upcoming ICD tests"
                            sh "rm -rf carta-backend-ICD-test"
@@ -118,24 +118,6 @@ pipeline {
         }
         stage('Unit Tests') {
             parallel {
-                stage('CentOS7') {
-                    agent {
-                        label "centos7-1"
-                    }
-                    steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
-                        {
-                        dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml:centos7_test_detail.xml"
-                        }
-                        }
-                    }
-                    post {
-                        always {
-                            junit 'build/test/centos7_test_detail.xml'
-                        }
-                    }
-                }
                 stage('Ubuntu') {
                     agent {
                         label "ubuntu-1"
