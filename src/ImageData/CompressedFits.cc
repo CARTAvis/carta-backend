@@ -410,7 +410,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
     auto zip_file = OpenGzFile();
 
     // Open output fits file
-    spdlog::debug("Decompressing FITS file to {}", _unzip_filename);
+    spdlog::info("Decompressing FITS file to {}", _unzip_filename);
     std::ofstream out_file(_unzip_filename, std::ios_base::out | std::ios_base::binary);
 
     // Read and decompress file, write to output file
