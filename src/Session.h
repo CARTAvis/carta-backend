@@ -56,9 +56,14 @@
 #include "Table/TableController.h"
 #include "Util.h"
 
+struct PerSocketData {
+    uint32_t session_id;
+    string address;
+};
+
 class Session {
 public:
-    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+    Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
         std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false);
     ~Session();
 
@@ -244,7 +249,7 @@ private:
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // uWebSockets
-    uWS::WebSocket<false, true>* _socket;
+    uWS::WebSocket<false, true, PerSocketData>* _socket;
     uWS::Loop* _loop;
 
     uint32_t _id;
