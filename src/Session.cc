@@ -1654,7 +1654,7 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                 }
                 std::string_view sv(msg.first.data(), msg.first.size());
                 auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
-                if (status == uWS::WebSocket<false, true, PerSocketData>::BACKPRESSURE) {
+                if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
                     spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
                 }
             }
