@@ -7,6 +7,12 @@
 #include "WebBrowser.h"
 #include "Logger/Logger.h"
 
+#include <boost/process/async_system.hpp>
+#include <boost/process/child.hpp>
+#include <boost/process/io.hpp>
+#include <boost/process/spawn.hpp>
+#include <boost/process/system.hpp>
+
 #include <cstdlib>
 #include <iostream>
 
@@ -38,9 +44,9 @@ void WebBrowser::ParseCmd() {
     const std::string wildcard = "CARTA_URL";
     auto wildcard_pos = _cmd.find(wildcard);
     if (wildcard_pos != std::string::npos) {
-        _cmd = fmt::format("{0}{2}{1}", _cmd.substr(0, wildcard_pos), _cmd.substr(wildcard_pos + wildcard.size(), _cmd.size()), _url);
+        _cmd = fmt::format("{0}{2}\"{1}\"", _cmd.substr(0, wildcard_pos), _cmd.substr(wildcard_pos + wildcard.size(), _cmd.size()), _url);
     } else {
-        _cmd = fmt::format("{} {}", _cmd, _url);
+        _cmd = fmt::format("{} \"{}\"", _cmd, _url);
     }
     /*
         plus what's missing
@@ -63,13 +69,15 @@ void WebBrowser::OpenSystemBrowser() {
 }
 
 void WebBrowser::OpenBrowser() {
-    auto cmd = _cmd;
-    auto ans = system(cmd.c_str());
-    std::cout << "coconut: " << ans << std::endl;
-    spdlog::debug("Result from executed command {}", ans);
-    if (ans) {
-        _status = false;
-        _error = "Failed to open the browser. Check the custom input at --browser.";
+    spdlog::debug("Attempted to open user provided browser command.");
+    pid_t pid = fork();
+    if (pid < 0) {
+        // fork fails
+    } else if (pid == 0) {
+        pid_t sid = setsid();
+        std::system(_cmd.c_str());
+    } else {
+        // parent
     }
 }
 
