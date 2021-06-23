@@ -44,6 +44,7 @@ public:
     }
 
     static std::vector<float> Decimated(std::vector<float> full_resolution, int mip) {
+        // Decimate profile in 1D
         size_t num_decimated_pairs = std::ceil((float)full_resolution.size() / (mip * 2));
         std::vector<float> result(num_decimated_pairs * 2);
         for (size_t i = 0; i < num_decimated_pairs; i++) {
@@ -59,12 +60,33 @@ public:
         return result;
     }
 
+    static std::vector<float> Downsampled(std::vector<std::vector<float>> profiles) {
+        // Downsample profile in 2D; autodetect mip from number of adjacent profiles provided
+        int mip = profiles.size();
+        size_t width = profiles[0].size();
+        size_t num_downsampled = std::ceil((float)width / mip);
+        std::vector<float> result(num_downsampled, 0);
+        std::vector<float> count(num_downsampled, 0);
+
+        for (size_t b = 0; b < num_downsampled; b++) {
+            for (size_t i = b * mip; i < std::min((b + 1) * mip, width); i++) {
+                for (size_t j = 0; j < mip; j++) {
+                    result[b] += profiles[j][i];
+                    count[b]++;
+                }
+            }
+            result[b] /= count[b];
+        }
+
+        return result;
+    }
+
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }
 };
 
-TEST_F(SpatialProfileTest, SubTileFitsImageProfile) {
+TEST_F(SpatialProfileTest, SmallFitsProfile) {
     auto path_string = GeneratedFitsImagePath("10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     FitsDataReader reader(path_string);
@@ -102,7 +124,7 @@ TEST_F(SpatialProfileTest, SubTileFitsImageProfile) {
     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
 }
 
-TEST_F(SpatialProfileTest, SubTileHdf5ImageProfile) {
+TEST_F(SpatialProfileTest, SmallHdf5Profile) {
     auto path_string = GeneratedHdf5ImagePath("10 10");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     Hdf5DataReader reader(path_string);
@@ -141,11 +163,11 @@ TEST_F(SpatialProfileTest, SubTileHdf5ImageProfile) {
 }
 
 TEST_F(SpatialProfileTest, LowResFitsProfile) {
-    auto path_string = GeneratedFitsImagePath("100 100");
+    auto path_string = GeneratedFitsImagePath("130 100");
     std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
     FitsDataReader reader(path_string);
 
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 4), SpatialConfig("y", 0, 0, 4)};
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 2), SpatialConfig("y", 0, 0, 2)};
     frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
     frame->SetCursor(50, 50);
 
@@ -157,16 +179,54 @@ TEST_F(SpatialProfileTest, LowResFitsProfile) {
     auto [x_profile, y_profile] = GetProfiles(data);
 
     EXPECT_EQ(x_profile.start(), 0);
-    EXPECT_EQ(x_profile.end(), 100);
-    EXPECT_EQ(x_profile.mip(), 4);
+    EXPECT_EQ(x_profile.end(), 130);
+    EXPECT_EQ(x_profile.mip(), 2);
     auto x_vals = ProfileValues(x_profile);
-    EXPECT_EQ(x_vals.size(), 26);
-    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileX(50), 4)));
+    EXPECT_EQ(x_vals.size(), 66);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileX(50), 2)));
 
     EXPECT_EQ(y_profile.start(), 0);
     EXPECT_EQ(y_profile.end(), 100);
-    EXPECT_EQ(y_profile.mip(), 4);
+    EXPECT_EQ(y_profile.mip(), 2);
     auto y_vals = ProfileValues(y_profile);
-    EXPECT_EQ(y_vals.size(), 26);
-    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileY(50), 4)));
+    EXPECT_EQ(y_vals.size(), 50);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileY(50), 2)));
 }
+
+TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
+    auto path_string = GeneratedHdf5ImagePath("130 100");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    Hdf5DataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 2), SpatialConfig("y", 0, 0, 2)};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(50, 50);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 0);
+    EXPECT_EQ(x_profile.end(), 130);
+    EXPECT_EQ(x_profile.mip(), 2);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 65);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)})));
+
+    EXPECT_EQ(y_profile.start(), 0);
+    EXPECT_EQ(y_profile.end(), 100);
+    EXPECT_EQ(y_profile.mip(), 2);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 50);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)})));
+}
+
+// TODO: HDF5, mip requested but no mips available
+// TODO: HDF5, mip requested but only lower mips available
+// TODO: HDF5, full res, start and end
+// TODO: HDF5, mip, start and end
+// TODO: FITS, full res, start and end
+// TODO: FITS, mip, start and end
