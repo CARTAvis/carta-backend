@@ -81,6 +81,12 @@ public:
         return result;
     }
 
+    static std::vector<float> Segment(std::vector<float> profile, size_t start, size_t end) {
+        std::vector<float> result;
+        std::copy(profile.begin() + start, profile.begin() + end, std::back_inserter(result));
+        return result;
+    }
+
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }
@@ -290,7 +296,138 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileY(50), 2)));
 }
 
-// TODO: HDF5, full res, start and end
-// TODO: HDF5, mip, start and end
-// TODO: FITS, full res, start and end
-// TODO: FITS, mip, start and end
+TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
+    auto path_string = GeneratedFitsImagePath("400 300");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    FitsDataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 0), SpatialConfig("y", 100, 200, 0)};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(150, 150);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 100);
+    EXPECT_EQ(x_profile.end(), 200);
+    EXPECT_EQ(x_profile.mip(), 0);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 100);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileX(150), 100, 200)));
+
+    EXPECT_EQ(y_profile.start(), 100);
+    EXPECT_EQ(y_profile.end(), 200);
+    EXPECT_EQ(y_profile.mip(), 0);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 100);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileY(150), 100, 200)));
+}
+
+TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
+    auto path_string = GeneratedHdf5ImagePath("400 300");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    Hdf5DataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 0), SpatialConfig("y", 100, 200, 0)};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(150, 150);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 100);
+    EXPECT_EQ(x_profile.end(), 200);
+    EXPECT_EQ(x_profile.mip(), 0);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 100);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileX(150), 100, 200)));
+
+    EXPECT_EQ(y_profile.start(), 100);
+    EXPECT_EQ(y_profile.end(), 200);
+    EXPECT_EQ(y_profile.mip(), 0);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 100);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileY(150), 100, 200)));
+}
+
+TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
+    auto path_string = GeneratedFitsImagePath("400 300");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    FitsDataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 4), SpatialConfig("y", 100, 200, 4)};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(150, 150);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 100);
+    EXPECT_EQ(x_profile.end(), 200);
+    EXPECT_EQ(x_profile.mip(), 4);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 24);
+    // Data to decimate has endpoints rounded up to mip*2
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Decimated(Segment(reader.ReadProfileX(150), 104, 200), 4)));
+
+    EXPECT_EQ(y_profile.start(), 100);
+    EXPECT_EQ(y_profile.end(), 200);
+    EXPECT_EQ(y_profile.mip(), 4);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 24);
+    // Data to decimate has endpoints rounded up to mip*2
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(Segment(reader.ReadProfileY(150), 104, 200), 4)));
+}
+
+TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
+    auto path_string = GeneratedHdf5ImagePath("400 300");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    Hdf5DataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 4), SpatialConfig("y", 100, 200, 4)};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(150, 150);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 100);
+    EXPECT_EQ(x_profile.end(), 200);
+    EXPECT_EQ(x_profile.mip(), 4);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 25);
+    // Downsampled region is selected so that it includes the requested row
+    EXPECT_THAT(x_vals,
+        Pointwise(FloatNear(1e-5),
+            Segment(Downsampled({reader.ReadProfileX(148), reader.ReadProfileX(149), reader.ReadProfileX(150), reader.ReadProfileX(151)}),
+                25, 50)));
+
+    EXPECT_EQ(y_profile.start(), 100);
+    EXPECT_EQ(y_profile.end(), 200);
+    EXPECT_EQ(y_profile.mip(), 4);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 25);
+    // Downsampled region is selected so that it includes the requested column
+    EXPECT_THAT(y_vals,
+        Pointwise(FloatNear(1e-5),
+            Segment(Downsampled({reader.ReadProfileY(148), reader.ReadProfileY(149), reader.ReadProfileY(150), reader.ReadProfileY(151)}),
+                25, 50)));
+}
+
+// TODO: HDF5, full res, multiple chunks

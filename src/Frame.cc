@@ -1110,16 +1110,20 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 mip /= 2;
             }
 
+            // Select the bounds of data to downsample so that it contains the requested row or column
+
             CARTA::ImageBounds bounds;
 
             if (config.coordinate() == "x") {
                 bounds.set_x_min(start);
                 bounds.set_x_max(end);
-                bounds.set_y_min(y);
-                bounds.set_y_max(y + mip);
+                int y_floor = std::floor((float)y / mip) * mip;
+                bounds.set_y_min(y_floor);
+                bounds.set_y_max(y_floor + mip);
             } else if (config.coordinate() == "y") {
-                bounds.set_x_min(x);
-                bounds.set_x_max(x + mip);
+                int x_floor = std::floor((float)x / mip) * mip;
+                bounds.set_x_min(x_floor);
+                bounds.set_x_max(x_floor + mip);
                 bounds.set_y_min(start);
                 bounds.set_y_max(end);
             }
