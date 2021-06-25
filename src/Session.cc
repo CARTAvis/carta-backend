@@ -48,8 +48,8 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
+Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
+    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -560,7 +560,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
                             compression_type == CARTA::CompressionType::NONE);
                     } else {
-                        spdlog::error("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
+                        spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
                     }
                 }
             }
@@ -1653,7 +1653,10 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                         GetId(), GetAddress(), expected_buffered_amount);
                 }
                 std::string_view sv(msg.first.data(), msg.first.size());
-                _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
+                    spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                }
             }
         }
     });

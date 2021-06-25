@@ -35,7 +35,7 @@ private:
 
     // Info about xy axes
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-        const std::vector<int>& display_axes, casacore::String& radesys, bool use_fits_header);
+        const std::vector<int>& display_axes, casacore::String& radesys, bool use_image_for_entries);
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, std::string& radesys);
 
     // FITS keyword conversion
