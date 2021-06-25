@@ -178,7 +178,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                     auto directory_info = file_list.add_subdirectories();
                                     directory_info->set_name(dir_name);
                                     directory_info->set_date(cc_file.modifyTime());
-                                    directory_info->set_item_count(GetNumItems(dir_name));
+                                    directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
                                     break;
                                 }
                                 default:

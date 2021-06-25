@@ -225,13 +225,15 @@ void TableController::OnFileListRequest(
                 try {
                     // Try to construct a directory iterator. If it fails, the directory is inaccessible
                     auto test_directory_iterator = fs::directory_iterator(entry);
-                    auto dir_info = file_list_response.add_subdirectories();
-                    dir_info->set_item_count(GetNumItems(entry.path().string()));
+
+                    auto directory_info = file_list_response.add_subdirectories();
+                    directory_info->set_name(entry.path().filename().string());
+                    directory_info->set_item_count(GetNumItems(entry.path().string()));
 
                     // Fill in file time
                     struct stat file_stats;
                     stat(entry.path().c_str(), &file_stats);
-                    dir_info->set_date(file_stats.st_mtim.tv_sec);
+                    directory_info->set_date(file_stats.st_mtim.tv_sec);
                 } catch (fs::filesystem_error) {
                     // Skip inaccessible folders
                     continue;
