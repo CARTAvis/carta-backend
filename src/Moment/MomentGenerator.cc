@@ -106,7 +106,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
 void MomentGenerator::StopCalculation() {
     if (_image_moments) {
-        //_image_moments->StopCalculation();
+        _image_moments->stopCalculation();
         _cancel = true;
     }
 }
