@@ -6,6 +6,19 @@ import re
 import argparse
 
 class Test:
+    TESTS = {}
+    
+    def __init_subclass__(cls, **kwargs):
+        name = cls.__name__.lower()
+        if name not in Test.TESTS:
+            Test.TESTS[name] = cls
+    
+    @classmethod
+    def get_tests(cls, testname):
+        if testname == "all":
+            return cls.TESTS.values()
+        return (cls.TESTS[testname],)
+    
     @staticmethod
     def cpp_files(directory):
         for root, dirs, files in os.walk(directory):
@@ -104,15 +117,9 @@ class Style(Test):
     def fix(directories, quiet):
         raise NotImplementedError()
 
-TESTS = {
-    "header": Header,
-    "format" : Format,
-    "style": Style,
-}
-
 if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description="Check or fix code format, style, or copyright and licence headers.")
-    parser.add_argument('test', help="Test to perform (header, format, style or all)", choices=(*TESTS.keys(), "all"))
+    parser.add_argument('test', help="Test to perform (header, format, style or all)", choices=(*Test.TESTS.keys(), "all"))
     parser.add_argument('command', help="Command (check or fix).", choices=("check", "fix"))
     parser.add_argument('-d', '--directory', help="Location of the root directory; can be used multiple times. Defaults to the `src' and `test' subdirectories in the current directory.", default=[], action="append")
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
@@ -122,17 +129,12 @@ if __name__ == "__main__":
     if not args.directory:
         args.directory.extend(["src", "test"])
         
-    if args.test == "all":
-        tests = TESTS.keys()
-    else:
-        tests = (args.test,)
-        
     status = 0
     
-    for test in tests:
+    for test in Test.get_tests(args.test):
         if args.command == "check":
-            status |= TESTS[test].check(set(args.directory), args.quiet)
+            status |= test.check(set(args.directory), args.quiet)
         elif args.command == "fix":
-            TESTS[test].fix(set(args.directory), args.quiet)
+            test.fix(set(args.directory), args.quiet)
                 
     sys.exit(status)
