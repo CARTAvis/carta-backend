@@ -69,3 +69,14 @@ TEST(UtilTest, TopIsRoot) {
     EXPECT_TRUE(IsSubdirectory(pwd.string(), "/"));
     EXPECT_TRUE(IsSubdirectory("./", "/"));
 }
+
+TEST(UtilTest, ItemCountValidFolder) {
+    auto pwd = TestRoot();
+    EXPECT_EQ(GetNumItems((pwd / "data/tables").string()), 2);
+    EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 6);
+}
+
+TEST(UtilTest, ItemCountMissingFolder) {
+    auto pwd = TestRoot();
+    EXPECT_EQ(GetNumItems((pwd / "data/missing_folder").string()), -1);
+}
