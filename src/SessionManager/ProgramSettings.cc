@@ -192,6 +192,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
+        ("starting_folder", "set starting folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
@@ -297,6 +298,7 @@ end.
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
+    applyOptionalArgument(starting_folder, "starting_folder", result);
     vector<fs::path> file_paths;
 
     for (const auto& arg : positional_arguments) {
