@@ -198,7 +198,7 @@ class Style(Test):
 
 if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description="Check or fix copyright and licence headers, code format, missing newlines at the ends of files, or code style.")
-    parser.add_argument('test', help=f"Test to perform (or all tests; style is currently excluded from all).", choices=(*Test.TESTS.keys(), "all"))
+    parser.add_argument('test', help="Test to perform (or all tests; style is currently excluded from all).", choices=(*Test.TESTS.keys(), "all"))
     parser.add_argument('command', help="Command to perform.", choices=("check", "fix"))
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
     parser.add_argument('--clang-format', help="Path to custom clang-format executable.", default=Format.executable)
