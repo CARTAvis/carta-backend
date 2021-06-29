@@ -131,7 +131,46 @@ class Format(Test):
             print(process.stderr.decode())
         
         return process.returncode
+
+class Newline(Test):
+    @staticmethod
+    def check(directories, quiet):
+        status = 0
+        out = (lambda *args: None) if quiet else print
         
+        for directory in directories:
+            for filename in Test.cpp_files(directory):
+                with open(filename) as f:
+                    data = f.read()
+                    
+                if data[-1] == "\n":
+                    pass
+                else:
+                    out("Missing newline at end of", filename)
+                    status = 1
+        
+        return status
+    
+    @staticmethod
+    def fix(directories, quiet):
+        out = (lambda *args: None) if quiet else print
+        
+        for directory in directories:
+            for filename in Test.cpp_files(directory):
+                with open(filename) as f:
+                    data = f.read()
+                    
+                if data[-1] == "\n":
+                    pass
+                else:
+                    out("Missing newline at end of", filename)
+                    out("Fixing...")
+                    with open(filename, "w") as f:
+                        f.write(data)
+                        f.write("\n")
+        
+        return 0
+
 class Style(Test):
     EXCLUDE_FROM_ALL = True
     
@@ -159,25 +198,21 @@ class Style(Test):
         return 1
 
 if __name__ == "__main__":    
-    parser = argparse.ArgumentParser(description="Check or fix code format, style, or copyright and licence headers.")
-    parser.add_argument('test', help="Test to perform (header, format, style or all; style is currently excluded from all).", choices=(*Test.TESTS.keys(), "all"))
-    parser.add_argument('command', help="Command (check or fix).", choices=("check", "fix"))
-    parser.add_argument('-d', '--directory', help="Location of the root directory; can be used multiple times. Defaults to the `src' and `test' subdirectories in the current directory.", default=[], action="append")
+    parser = argparse.ArgumentParser(description="Check or fix copyright and licence headers, code format, missing newlines at the ends of files, or code style.")
+    parser.add_argument('test', help=f"Test to perform (or all tests; style is currently excluded from all).", choices=(*Test.TESTS.keys(), "all"))
+    parser.add_argument('command', help="Command to perform.", choices=("check", "fix"))
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
     args = parser.parse_args()
     
     # TODO custom clang-format executable
     
-    # We have to do it like this because the append action doesn't clear the default list
-    if not args.directory:
-        args.directory.extend(["src", "test"])
-        
+    directories = ("src", "test")
     status = 0
     
     for test in Test.get_tests(args.test):
         if args.command == "check":
-            status |= test.check(set(args.directory), args.quiet)
+            status |= test.check(set(directories), args.quiet)
         elif args.command == "fix":
-            status |= test.fix(set(args.directory), args.quiet)
+            status |= test.fix(set(directories), args.quiet)
                 
     sys.exit(status)
