@@ -12,6 +12,7 @@ class Test:
     SHELL_FILE_REGEX = r".*\.\(cc\|h\|tcc\)$"
     EXCLUDE_FROM_ALL = False
     
+    quiet = False
     out = print
     
     def __init_subclass__(cls, **kwargs):
@@ -105,12 +106,14 @@ class Header(Test):
         return 0
 
 class Format(Test):
+    executable = "clang-format"
+    
     @staticmethod
     def check(directories):        
         find_files = fr"find {' '.join(directories)} -regex '{Test.SHELL_FILE_REGEX}'"
-        process = subprocess.run(fr"{find_files} -exec clang-format {{}} \; | diff -u <({find_files} -exec cat {{}} \;) -", shell=True, executable="/bin/bash", capture_output=True)
+        process = subprocess.run(fr"{find_files} -exec {Format.executable} {{}} \; | diff -u <({find_files} -exec cat {{}} \;) -", shell=True, executable="/bin/bash", capture_output=True)
         
-        if process.stdout and not quiet:
+        if process.stdout and not Test.quiet:
             print(process.stdout.decode())
         
         if process.stderr:
@@ -121,9 +124,9 @@ class Format(Test):
     @staticmethod
     def fix(directories):
         find_files = fr"find {' '.join(directories)} -regex '{Test.SHELL_FILE_REGEX}'"
-        process = subprocess.run(fr"{find_files} | xargs clang-format -i", shell=True, executable="/bin/bash", capture_output=True)
+        process = subprocess.run(fr"{find_files} | xargs {Format.executable} -i", shell=True, executable="/bin/bash", capture_output=True)
                 
-        if process.stdout and not quiet:
+        if process.stdout and not Test.quiet:
             print(process.stdout.decode())
         
         if process.stderr:
@@ -177,7 +180,7 @@ class Style(Test):
         tidy_regex = f"\"$PWD/({'|'.join(directories)})/.*\""
         process = subprocess.run(fr"run-clang-tidy -quiet -extra-arg-before=-fno-caret-diagnostics -p build -header-filter={tidy_regex} {tidy_regex}", shell=True, executable="/bin/bash", capture_output=True)
                 
-        if process.stdout and not quiet:
+        if process.stdout and not Test.quiet:
             print(process.stdout.decode())
         
         if process.stderr:
@@ -189,7 +192,7 @@ class Style(Test):
     
     @staticmethod
     def fix(directories):
-        if not quiet:
+        if not Test.quiet:
             print("Automatic style fixes are not yet implemented.")
         return 1
 
@@ -198,12 +201,14 @@ if __name__ == "__main__":
     parser.add_argument('test', help=f"Test to perform (or all tests; style is currently excluded from all).", choices=(*Test.TESTS.keys(), "all"))
     parser.add_argument('command', help="Command to perform.", choices=("check", "fix"))
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
+    parser.add_argument('--clang-format', help="Path to custom clang-format executable.", default="clang-format")
     args = parser.parse_args()
-    
-    # TODO custom clang-format executable
-    
+        
     if args.quiet:
+        Test.quiet = True
         Test.out = lambda *args: None
+    
+    Format.executable = args.clang_format
     
     directories = ("src", "test")
     status = 0
