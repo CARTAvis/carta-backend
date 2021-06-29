@@ -23,24 +23,24 @@ class Test:
     @classmethod
     def get_tests(cls, testname):
         if testname == "all":
-            return tuple(test for test in cls.TESTS.values() if not test.EXCLUDE_FROM_ALL)
+            return tuple(testclass for testclass in cls.TESTS.values() if not testclass.EXCLUDE_FROM_ALL)
         return (cls.TESTS[testname],)
     
-    @staticmethod
-    def cpp_files(directory):
+    @classmethod
+    def cpp_files(cls, directory):
         for root, dirs, files in os.walk(directory):
             dirs[:] = [d for d in dirs]
             for basename in files:
-                if re.match(Test.PYTHON_FILE_REGEX, basename):
+                if re.match(cls.PYTHON_FILE_REGEX, basename):
                     filename = os.path.join(root, basename)
                     yield filename
     
-    @staticmethod
-    def check(directories):
+    @classmethod
+    def check(cls, directories):
         raise NotImplementedError()
     
-    @staticmethod
-    def fix(directories):
+    @classmethod
+    def fix(cls, directories):
         raise NotImplementedError()
 
 class Header(Test):
@@ -58,48 +58,48 @@ class Header(Test):
 \*/
 """
     
-    @staticmethod
-    def check(directories):
+    @classmethod
+    def check(cls, directories):
         status = 0
         
         for directory in directories:
-            for filename in Test.cpp_files(directory):
+            for filename in cls.cpp_files(directory):
                 with open(filename) as f:
                     data = f.read()
                     
-                if re.search(re.escape(Header.HEADER), data):
+                if re.search(re.escape(cls.HEADER), data):
                     pass
-                elif re.search(Header.FUZZY_HEADER_MATCH, data):
-                    Test.out("Bad header found in", filename)
+                elif re.search(cls.FUZZY_HEADER_MATCH, data):
+                    cls.out("Bad header found in", filename)
                     status = 1
                 else:
-                    Test.out("No header found in", filename)
+                    cls.out("No header found in", filename)
                     status = 1
         
         return status
     
-    @staticmethod
-    def fix(directories):
+    @classmethod
+    def fix(cls, directories):
         for directory in directories:
-            for filename in Test.cpp_files(directory):
+            for filename in cls.cpp_files(directory):
                 with open(filename) as f:
                     data = f.read()
                     
-                if re.search(re.escape(Header.HEADER), data):
+                if re.search(re.escape(cls.HEADER), data):
                     pass
                 
-                elif re.search(Header.FUZZY_HEADER_MATCH, data):
-                    Test.out("Bad header found in", filename)
-                    Test.out("Fixing...")
-                    data = re.sub(Header.FUZZY_HEADER_MATCH, Header.HEADER, data)
+                elif re.search(cls.FUZZY_HEADER_MATCH, data):
+                    cls.out("Bad header found in", filename)
+                    cls.out("Fixing...")
+                    data = re.sub(cls.FUZZY_HEADER_MATCH, cls.HEADER, data)
                     with open(filename, "w") as f:
                         f.write(data)
 
                 else:
-                    Test.out("No header found in", filename)
-                    Test.out("Fixing...")
+                    cls.out("No header found in", filename)
+                    cls.out("Fixing...")
                     with open(filename, "w") as f:
-                        f.write(Header.HEADER)
+                        f.write(cls.HEADER)
                         f.write("\n")
                         f.write(data)
         
@@ -108,12 +108,12 @@ class Header(Test):
 class Format(Test):
     executable = "clang-format"
     
-    @staticmethod
-    def check(directories):        
-        find_files = fr"find {' '.join(directories)} -regex '{Test.SHELL_FILE_REGEX}'"
-        process = subprocess.run(fr"{find_files} -exec {Format.executable} {{}} \; | diff -u <({find_files} -exec cat {{}} \;) -", shell=True, executable="/bin/bash", capture_output=True)
+    @classmethod
+    def check(cls, directories):        
+        find_files = fr"find {' '.join(directories)} -regex '{cls.SHELL_FILE_REGEX}'"
+        process = subprocess.run(fr"{find_files} -exec {cls.executable} {{}} \; | diff -u <({find_files} -exec cat {{}} \;) -", shell=True, executable="/bin/bash", capture_output=True)
         
-        if process.stdout and not Test.quiet:
+        if process.stdout and not cls.quiet:
             print(process.stdout.decode())
         
         if process.stderr:
@@ -121,12 +121,12 @@ class Format(Test):
         
         return process.returncode
     
-    @staticmethod
-    def fix(directories):
-        find_files = fr"find {' '.join(directories)} -regex '{Test.SHELL_FILE_REGEX}'"
-        process = subprocess.run(fr"{find_files} | xargs {Format.executable} -i", shell=True, executable="/bin/bash", capture_output=True)
+    @classmethod
+    def fix(cls, directories):
+        find_files = fr"find {' '.join(directories)} -regex '{cls.SHELL_FILE_REGEX}'"
+        process = subprocess.run(fr"{find_files} | xargs {cls.executable} -i", shell=True, executable="/bin/bash", capture_output=True)
                 
-        if process.stdout and not Test.quiet:
+        if process.stdout and not cls.quiet:
             print(process.stdout.decode())
         
         if process.stderr:
@@ -135,35 +135,35 @@ class Format(Test):
         return process.returncode
 
 class Newline(Test):
-    @staticmethod
-    def check(directories):
+    @classmethod
+    def check(cls, directories):
         status = 0
         
         for directory in directories:
-            for filename in Test.cpp_files(directory):
+            for filename in cls.cpp_files(directory):
                 with open(filename) as f:
                     data = f.read()
                     
                 if data[-1] == "\n":
                     pass
                 else:
-                    Test.out("Missing newline at end of", filename)
+                    cls.out("Missing newline at end of", filename)
                     status = 1
         
         return status
     
-    @staticmethod
-    def fix(directories):
+    @classmethod
+    def fix(cls, directories):
         for directory in directories:
-            for filename in Test.cpp_files(directory):
+            for filename in cls.cpp_files(directory):
                 with open(filename) as f:
                     data = f.read()
                     
                 if data[-1] == "\n":
                     pass
                 else:
-                    Test.out("Missing newline at end of", filename)
-                    Test.out("Fixing...")
+                    cls.out("Missing newline at end of", filename)
+                    cls.out("Fixing...")
                     with open(filename, "w") as f:
                         f.write(data)
                         f.write("\n")
@@ -173,14 +173,14 @@ class Newline(Test):
 class Style(Test):
     EXCLUDE_FROM_ALL = True
     
-    @staticmethod
-    def check(directories):
+    @classmethod
+    def check(cls, directories):
         status = 0
         
         tidy_regex = f"\"$PWD/({'|'.join(directories)})/.*\""
         process = subprocess.run(fr"run-clang-tidy -quiet -extra-arg-before=-fno-caret-diagnostics -p build -header-filter={tidy_regex} {tidy_regex}", shell=True, executable="/bin/bash", capture_output=True)
                 
-        if process.stdout and not Test.quiet:
+        if process.stdout and not cls.quiet:
             print(process.stdout.decode())
         
         if process.stderr:
@@ -190,9 +190,9 @@ class Style(Test):
         
         return status
     
-    @staticmethod
-    def fix(directories):
-        if not Test.quiet:
+    @classmethod
+    def fix(cls, directories):
+        if not cls.quiet:
             print("Automatic style fixes are not yet implemented.")
         return 1
 
