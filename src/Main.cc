@@ -46,12 +46,6 @@ carta::ProgramSettings settings;
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
 
-// Apply ws->getUserData and return one of these
-struct PerSocketData {
-    uint32_t session_id;
-    string address;
-};
-
 void DeleteSession(int session_id) {
     Session* session = sessions[session_id];
     if (session) {
@@ -99,8 +93,8 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 }
 
 // Called on connection. Creates session objects and assigns UUID to it
-void OnConnect(uWS::WebSocket<false, true>* ws) {
-    auto socket_data = static_cast<PerSocketData*>(ws->getUserData());
+void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws) {
+    auto socket_data = ws->getUserData();
     if (!socket_data) {
         spdlog::error("Error handling WebSocket connection: Socket data does not exist");
         return;
@@ -126,7 +120,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view message) {
+void OnDisconnect(uWS::WebSocket<false, true, PerSocketData>* ws, int code, std::string_view message) {
     // Skip server-forced disconnects
 
     spdlog::debug("WebSocket closed with code {} and message '{}'.", code, message);
@@ -145,8 +139,8 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
     ws->close();
 }
 
-void OnDrain(uWS::WebSocket<false, true>* ws) {
-    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+void OnDrain(uWS::WebSocket<false, true, PerSocketData>* ws) {
+    uint32_t session_id = ws->getUserData()->session_id;
     Session* session = sessions[session_id];
     if (session) {
         spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
@@ -157,7 +151,7 @@ void OnDrain(uWS::WebSocket<false, true>* ws) {
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS::OpCode op_code) {
+void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (!session) {
@@ -715,7 +709,7 @@ int main(int argc, char* argv[]) {
                 spdlog::info("CARTA is accessible at {}", frontend_url);
             }
 
-            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
+            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior<PerSocketData>){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
                                             .maxBackpressure = MAX_BACKPRESSURE,
                                             .upgrade = OnUpgrade,
