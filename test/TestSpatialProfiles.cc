@@ -491,3 +491,123 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
     EXPECT_EQ(y_vals.size(), 500);
     EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileY(1250), 1000, 1500)));
 }
+
+TEST_F(SpatialProfileTest, FitsChannelChange) {
+    auto path_string = GeneratedFitsImagePath("10 10 2");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    FitsDataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(5, 5);
+    std::string msg;
+    frame->SetImageChannels(1, 0, msg);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.file_id(), 0);
+    EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
+    EXPECT_EQ(data.x(), 5);
+    EXPECT_EQ(data.y(), 5);
+    EXPECT_EQ(data.channel(), 1);
+    EXPECT_EQ(data.stokes(), 0);
+    EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5, 1));
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 0);
+    EXPECT_EQ(x_profile.end(), 10);
+    EXPECT_EQ(x_profile.mip(), 0);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 10);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5, 1)));
+
+    EXPECT_EQ(y_profile.start(), 0);
+    EXPECT_EQ(y_profile.end(), 10);
+    EXPECT_EQ(y_profile.mip(), 0);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 10);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5, 1)));
+}
+
+TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
+    auto path_string = GeneratedHdf5ImagePath("10 10 2");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    Hdf5DataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(5, 5);
+    std::string msg;
+    frame->SetImageChannels(1, 0, msg);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.file_id(), 0);
+    EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
+    EXPECT_EQ(data.x(), 5);
+    EXPECT_EQ(data.y(), 5);
+    EXPECT_EQ(data.channel(), 1);
+    EXPECT_EQ(data.stokes(), 0);
+    EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5, 1));
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 0);
+    EXPECT_EQ(x_profile.end(), 10);
+    EXPECT_EQ(x_profile.mip(), 0);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 10);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5, 1)));
+
+    EXPECT_EQ(y_profile.start(), 0);
+    EXPECT_EQ(y_profile.end(), 10);
+    EXPECT_EQ(y_profile.mip(), 0);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 10);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5, 1)));
+}
+
+TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
+    auto path_string = GeneratedHdf5ImagePath("1000 1000 2");
+    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    Hdf5DataReader reader(path_string);
+
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
+    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetCursor(5, 5);
+    std::string msg;
+    frame->SetImageChannels(1, 0, msg);
+
+    CARTA::SpatialProfileData data;
+    frame->FillSpatialProfileData(CURSOR_REGION_ID, data);
+
+    EXPECT_EQ(data.file_id(), 0);
+    EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
+    EXPECT_EQ(data.x(), 5);
+    EXPECT_EQ(data.y(), 5);
+    EXPECT_EQ(data.channel(), 1);
+    EXPECT_EQ(data.stokes(), 0);
+    EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5, 1));
+    EXPECT_EQ(data.profiles_size(), 2);
+
+    auto [x_profile, y_profile] = GetProfiles(data);
+
+    EXPECT_EQ(x_profile.start(), 0);
+    EXPECT_EQ(x_profile.end(), 1000);
+    EXPECT_EQ(x_profile.mip(), 0);
+    auto x_vals = ProfileValues(x_profile);
+    EXPECT_EQ(x_vals.size(), 1000);
+    EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5, 1)));
+
+    EXPECT_EQ(y_profile.start(), 0);
+    EXPECT_EQ(y_profile.end(), 1000);
+    EXPECT_EQ(y_profile.mip(), 0);
+    auto y_vals = ProfileValues(y_profile);
+    EXPECT_EQ(y_vals.size(), 1000);
+    EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5, 1)));
+}
