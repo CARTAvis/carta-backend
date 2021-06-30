@@ -36,6 +36,7 @@ bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
+int GetNumItems(const std::string& path);
 
 std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
 std::string GetQuantityInfo(const casacore::Quantity& quantity);
