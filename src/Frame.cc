@@ -263,12 +263,14 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 _z_index = new_z;
                 _stokes_index = new_stokes;
 
+                // invalidate the image cache
+                InvalidateImageCache();
+
                 if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
                 } else {
-                    // invalidate the image cache, but don't load the new cache here
-                    InvalidateImageCache();
+                    // Don't reload the full channel cache here because we may not need it
 
                     if (_loader->UseTileCache()) {
                         // invalidate / clear the full resolution tile cache
