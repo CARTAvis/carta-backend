@@ -86,5 +86,7 @@ TEST(UtilTest, StringCompare) {
     EXPECT_FALSE(ConstantTimeStringCompare("hello w1rld", "hello world"));
     EXPECT_FALSE(ConstantTimeStringCompare("hello w1rld", "hello w2rld"));
     EXPECT_FALSE(ConstantTimeStringCompare("hello w", "hello world"));
-    EXPECT_FALSE(ConstantTimeStringCompare("hello world", "hello w"));
+    EXPECT_TRUE(ConstantTimeStringCompare("", ""));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello world", ""));
+    EXPECT_FALSE(ConstantTimeStringCompare("", "hello world"));
 }
