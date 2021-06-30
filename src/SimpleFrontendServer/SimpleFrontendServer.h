@@ -28,6 +28,11 @@ namespace carta {
 #define HTTP_500 "500 Internal Server Error"
 #define HTTP_501 "501 Not Implemented"
 
+// Schema URLs
+#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
+#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
+#define CARTA_SNIPPET_SCHEMA_URL "https://cartavis.github.io/schemas/snippet_schema_1.json"
+
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;
 
@@ -44,9 +49,9 @@ protected:
     nlohmann::json GetExistingPreferences();
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
-    nlohmann::json GetExistingLayouts();
-    std::string_view SetLayoutFromString(const std::string& buffer);
-    std::string_view ClearLayoutFromString(const std::string& buffer);
+    nlohmann::json GetExistingObjects(const std::string& object_type);
+    std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
+    std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);
@@ -54,7 +59,7 @@ private:
     void AddNoCacheHeaders(Res* res);
 
     bool WritePreferencesFile(nlohmann::json& obj);
-    bool WriteLayoutFile(const std::string& layout_name, nlohmann::json& obj);
+    bool WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
 
     void HandleStaticRequest(Res* res, Req* req);
@@ -62,9 +67,9 @@ private:
     void HandleGetPreferences(Res* res, Req* req);
     void HandleSetPreferences(Res* res, Req* req);
     void HandleClearPreferences(Res* res, Req* req);
-    void HandleGetLayouts(Res* res, Req* req);
-    void HandleSetLayout(Res* res, Req* req);
-    void HandleClearLayout(Res* res, Req* req);
+    void HandleGetObjects(const std::string& object_type, Res* res, Req* req);
+    void HandleSetObject(const std::string& object_type, Res* res, Req* req);
+    void HandleClearObject(const std::string& object_type, Res* res, Req* req);
 
     fs::path _http_root_folder;
     fs::path _config_folder;
