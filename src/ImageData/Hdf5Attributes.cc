@@ -14,9 +14,8 @@
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
 
-casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(hid_t group_hid) {
+void Hdf5Attributes::ReadAttributes(hid_t group_hid, casacore::Vector<casacore::String>& headers) {
     // Reads attributes into FITS-format "name = value" strings
-    casacore::Vector<casacore::String> headers;
     int num_attrs = H5Aget_num_attrs(group_hid);
     headers.resize(num_attrs + 1);
 
@@ -49,8 +48,6 @@ casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(hid_t group_hi
     // Iterate over the attributes using the order in which they were written
     H5Aiterate2(group_hid, H5_INDEX_CRT_ORDER, H5_ITER_INC, nullptr, attr_info, &headers);
     headers(num_attrs) = "END";
-
-    return headers;
 }
 
 std::string Hdf5Attributes::ReadScalar(hid_t attr_id, hid_t data_type_id, const std::string& name) {

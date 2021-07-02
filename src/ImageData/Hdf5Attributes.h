@@ -16,7 +16,7 @@
 class Hdf5Attributes {
 public:
     // Iterate over the attributes and convert them to FITS header entries
-    static casacore::Vector<casacore::String> ReadAttributes(hid_t group_hid);
+    static void ReadAttributes(hid_t group_hid, casacore::Vector<casacore::String>& headers);
 
 private:
     // Read a scalar value (int, float, string) and add it to the record.

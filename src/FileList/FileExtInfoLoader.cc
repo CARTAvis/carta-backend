@@ -72,7 +72,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 if (is_carta_hdf5) {
                     carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image);
-                    casacore::Vector<casacore::String> headers = hdf5_image->Hdf5ToFITSHeaderStrings();
+                    casacore::Vector<casacore::String> headers = hdf5_image->FITSHeaderStrings();
 
                     for (auto& header : headers) {
                         // Parse header into name, value, comment (if exist)

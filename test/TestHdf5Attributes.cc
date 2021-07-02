@@ -19,7 +19,10 @@ class Hdf5AttributesTest : public ::testing::Test, public ImageGenerator {};
 TEST_F(Hdf5AttributesTest, TestAttributes) {
     auto path_string = GeneratedHdf5ImagePath("10 10 -H 'BSCALE=1.0'");
     Hdf5DataReader reader(path_string);
-    auto attributes = Hdf5Attributes::ReadAttributes(reader.GroupId());
+
+    casacore::Vector<casacore::String> attributes;
+    Hdf5Attributes::ReadAttributes(reader.GroupId(), attributes);
+
     EXPECT_EQ(attributes.size(), 11);
 
     auto padded = [](std::string s) { return fmt::format("{:<80}", s); };
