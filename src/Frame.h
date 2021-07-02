@@ -14,6 +14,7 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 
 #include <tbb/queuing_rw_mutex.h>
@@ -37,6 +38,14 @@
 #include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
+
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 struct ContourSettings {
     std::vector<double> levels;
@@ -139,8 +148,6 @@ public:
     // Spectral: cursor
     bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);
     bool FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed);
-    void IncreaseZProfileCount();
-    void DecreaseZProfileCount();
 
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void WaitForTaskCancellation();
@@ -170,15 +177,16 @@ public:
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<carta::CollapseResult>& collapse_results);
     void StopMomentCalc();
-    void IncreaseMomentsCount();
-    void DecreaseMomentsCount();
 
-    // Save as a new file or convert it between CASA/FITS formats
-    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
+    // Save as a new file or export sub-image to CASA/FITS format
+    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
+        std::shared_ptr<Region> image_region);
 
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
 
-private:
+    std::shared_mutex& GetActiveTaskMutex();
+
+protected:
     // Validate z and stokes index values
     bool CheckZ(int z);
     bool CheckStokes(int stokes);
@@ -207,11 +215,18 @@ private:
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
 
+    // Export image
+    bool ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
+    bool ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
+    void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
+    casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
+    casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
+        casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
+
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
     }
-
     // Get the full name of image file
     std::string GetFileName() {
         return _loader->GetFileName();
@@ -220,7 +235,6 @@ private:
     casacore::ImageInterface<float>* GetImage() {
         return _loader->GetImage();
     }
-
     // Setup
     uint32_t _session_id;
 
@@ -254,11 +268,8 @@ private:
     tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;            // only one disk access at a time
 
-    // Z profile counter, so Frame is not destroyed until finished
-    std::atomic<int> _z_profile_count;
-
-    // Moments counter, so Frame is not destroyed until finished
-    std::atomic<int> _moments_count;
+    // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
+    mutable std::shared_mutex _active_task_mutex;
 
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;

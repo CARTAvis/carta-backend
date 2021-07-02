@@ -5,6 +5,7 @@ include_directories(src)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+set(CMAKE_LINK_DIRECTORIES_BEFORE ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -35,6 +36,8 @@ option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64" AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
 elseif (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 else ()
@@ -45,9 +48,20 @@ endif ()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FIND_PACKAGE(CURL REQUIRED)
-FIND_PACKAGE(PUGIXML REQUIRED)
 FIND_PACKAGE(ZFP CONFIG REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
+
+FIND_PACKAGE(PUGIXML QUIET)
+if (PUGIXML_FOUND)
+    message(STATUS "Found pugixml using find_package")
+else ()
+        PKG_SEARCH_MODULE(PUGIXML REQUIRED pugixml)
+        if (PUGIXML_FOUND)
+        message(STATUS "Found pugixml using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find pugixml")
+    endif ()
+endif()
 
 FIND_PACKAGE(CFITSIO QUIET)
 if (CFITSIO_FOUND)
@@ -99,7 +113,7 @@ else ()
     endif ()
 endif()
 
-FIND_PACKAGE(HDF5)
+FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
@@ -107,8 +121,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
-INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
@@ -177,6 +191,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        wcs
         casa_casa
         casa_coordinates
         casa_tables
@@ -211,6 +226,7 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
+        src/ImageData/CartaFitsImage.cc
         src/ImageData/StokesFilesConnector.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
@@ -225,6 +241,7 @@ set(SOURCE_FILES
         src/Table/TableView.cc
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
+        src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc

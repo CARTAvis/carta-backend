@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <limits> // for numeric limits
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -45,12 +46,6 @@ carta::ProgramSettings settings;
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
 
-// Apply ws->getUserData and return one of these
-struct PerSocketData {
-    uint32_t session_id;
-    string address;
-};
-
 void DeleteSession(int session_id) {
     Session* session = sessions[session_id];
     if (session) {
@@ -64,7 +59,7 @@ void DeleteSession(int session_id) {
             delete session;
             sessions.erase(session_id);
         } else {
-            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->DecreaseRefCount());
+            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->GetRefCount());
         }
     } else {
         spdlog::warn("Could not delete session {}: not found!", session_id);
@@ -80,21 +75,10 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
         address = IPAsText(http_response->getRemoteAddress());
     }
 
-    // Check if there's a token to be matched
-    if (!auth_token.empty()) {
-        string req_token = GetAuthToken(http_request);
-
-        if (!req_token.empty()) {
-            if (req_token != auth_token) {
-                spdlog::error("Incorrect auth token supplied! Closing WebSocket connection");
-                http_response->close();
-                return;
-            }
-        } else {
-            spdlog::error("No auth token supplied! Closing WebSocket connection");
-            http_response->close();
-            return;
-        }
+    if (!ValidateAuthToken(http_request, auth_token)) {
+        spdlog::error("Incorrect or missing auth token supplied! Closing WebSocket connection");
+        http_response->close();
+        return;
     }
 
     session_number++;
@@ -109,8 +93,8 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 }
 
 // Called on connection. Creates session objects and assigns UUID to it
-void OnConnect(uWS::WebSocket<false, true>* ws) {
-    auto socket_data = static_cast<PerSocketData*>(ws->getUserData());
+void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws) {
+    auto socket_data = ws->getUserData();
     if (!socket_data) {
         spdlog::error("Error handling WebSocket connection: Socket data does not exist");
         return;
@@ -123,8 +107,8 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] = new Session(
-        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port);
+    sessions[session_id] = new Session(ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder,
+        file_list_handler, settings.grpc_port, settings.read_only_mode);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -136,7 +120,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view message) {
+void OnDisconnect(uWS::WebSocket<false, true, PerSocketData>* ws, int code, std::string_view message) {
     // Skip server-forced disconnects
 
     spdlog::debug("WebSocket closed with code {} and message '{}'.", code, message);
@@ -155,8 +139,8 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
     ws->close();
 }
 
-void OnDrain(uWS::WebSocket<false, true>* ws) {
-    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+void OnDrain(uWS::WebSocket<false, true, PerSocketData>* ws) {
+    uint32_t session_id = ws->getUserData()->session_id;
     Session* session = sessions[session_id];
     if (session) {
         spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
@@ -167,7 +151,7 @@ void OnDrain(uWS::WebSocket<false, true>* ws) {
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS::OpCode op_code) {
+void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (!session) {
@@ -293,15 +277,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     }
                     break;
                 }
-                case CARTA::EventType::FILE_LIST_REQUEST: {
-                    CARTA::FileListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnFileListRequest(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad FILE_LIST_REQUEST message!");
-                    }
-                    break;
-                }
                 case CARTA::EventType::OPEN_FILE: {
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -315,15 +290,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
                     tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
-                    break;
-                }
-                case CARTA::EventType::REGION_LIST_REQUEST: {
-                    CARTA::RegionListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegionListRequest(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad REGION_LIST_REQUEST message!");
-                    }
                     break;
                 }
                 case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
@@ -392,15 +358,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->OnSetSpectralRequirements(message);
                     } else {
                         spdlog::warn("Bad SET_SPECTRAL_REQUIREMENTS message!");
-                    }
-                    break;
-                }
-                case CARTA::EventType::CATALOG_LIST_REQUEST: {
-                    CARTA::CatalogListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFileList(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -474,6 +431,19 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->OnConcatStokesFiles(message, head.request_id);
                     } else {
                         spdlog::warn("Bad CONCAT_STOKES_FILES message!");
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_FILE_LIST: {
+                    CARTA::StopFileList message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.file_list_type() == CARTA::Image) {
+                            session->StopImageFileList();
+                        } else {
+                            session->StopCatalogFileList();
+                        }
+                    } else {
+                        spdlog::warn("Bad STOP_FILE_LIST message!");
                     }
                     break;
                 }
@@ -566,6 +536,7 @@ int main(int argc, char* argv[]) {
         }
 
         InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages);
+        settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
@@ -639,7 +610,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path, auth_token);
+                http_server = new SimpleFrontendServer(frontend_path, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
                     http_server->RegisterRoutes(app);
                 } else {
@@ -649,38 +620,42 @@ int main(int argc, char* argv[]) {
         }
 
         bool port_ok(false);
+        int port(-1);
 
-        if (settings.port < 0) {
-            settings.port = DEFAULT_SOCKET_PORT;
-            int num_listen_retries(0);
-            while (!port_ok) {
-                if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
-                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, settings.port - 1);
-                    break;
-                }
-                app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
-                    if (token) {
-                        port_ok = true;
-                    } else {
-                        spdlog::warn("Port {} is already in use. Trying next port.", settings.port);
-                        ++settings.port;
-                        ++num_listen_retries;
-                    }
-                });
-            }
-        } else {
+        if (settings.port.size() == 1) {
             // If the user specifies a valid port, we should not try other ports
-            app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+            port = settings.port.size() == 1 ? settings.port[0] : DEFAULT_SOCKET_PORT;
+            app.listen(settings.host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                 if (token) {
                     port_ok = true;
                 } else {
-                    spdlog::error("Could not listen on port {}!\n", settings.port);
+                    spdlog::error("Could not listen on port {}!\n", port);
                 }
             });
+        } else {
+            port = settings.port.size() > 0 ? settings.port[0] : DEFAULT_SOCKET_PORT;
+            const unsigned short port_start = port;
+            const unsigned short port_end = settings.port.size() > 1
+                                                ? (settings.port[1] == -1 ? std::numeric_limits<unsigned short>::max() : settings.port[1])
+                                                : port + MAX_SOCKET_PORT_TRIALS;
+            while (!port_ok) {
+                if (port > port_end) {
+                    spdlog::error("Unable to listen on the port range {}-{}!", port_start, port - 1);
+                    break;
+                }
+                app.listen(settings.host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+                    if (token) {
+                        port_ok = true;
+                    } else {
+                        spdlog::warn("Port {} is already in use. Trying next port.", port);
+                        ++port;
+                    }
+                });
+            }
         }
 
         if (port_ok) {
-            string start_info = fmt::format("Listening on port {} with top level folder {}, starting folder {}", settings.port,
+            string start_info = fmt::format("Listening on port {} with top level folder {}, starting folder {}", port,
                 settings.top_level_folder, settings.starting_folder);
             if (settings.omp_thread_count > 0) {
                 start_info += fmt::format(", and {} OpenMP worker threads", settings.omp_thread_count);
@@ -698,7 +673,7 @@ int main(int argc, char* argv[]) {
                         default_host_string = "localhost";
                     }
                 }
-                string frontend_url = fmt::format("http://{}:{}", default_host_string, settings.port);
+                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
                 string query_url;
                 if (!auth_token.empty()) {
                     query_url += fmt::format("/?token={}", auth_token);
@@ -713,20 +688,28 @@ int main(int argc, char* argv[]) {
                     frontend_url += query_url;
                 }
                 if (!settings.no_browser) {
+                    if (settings.browser.size() > 0) {
+                        auto cmd = settings.GenerateBrowserCommand(frontend_url);
+                        auto cmd_result = system(cmd.c_str());
+                        if (cmd_result) {
+                            spdlog::warn("Failed to open the browser. Check the custom input at --browser.");
+                        }
+                    } else {
 #if defined(__APPLE__)
-                    string open_command = "open";
+                        string open_command = "open";
 #else
-                    string open_command = "xdg-open";
+                        string open_command = "xdg-open";
 #endif
-                    auto open_result = system(fmt::format("{} \"{}\"", open_command, frontend_url).c_str());
-                    if (open_result) {
-                        spdlog::warn("Failed to open the default browser automatically.");
+                        auto open_result = system(fmt::format("{} \"{}\"", open_command, frontend_url).c_str());
+                        if (open_result) {
+                            spdlog::warn("Failed to open the default browser automatically.");
+                        }
                     }
                 }
                 spdlog::info("CARTA is accessible at {}", frontend_url);
             }
 
-            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
+            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior<PerSocketData>){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
                                             .maxBackpressure = MAX_BACKPRESSURE,
                                             .upgrade = OnUpgrade,

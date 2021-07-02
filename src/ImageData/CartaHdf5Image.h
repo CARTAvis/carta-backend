@@ -30,10 +30,6 @@ public:
     CartaHdf5Image(const CartaHdf5Image& other);
     ~CartaHdf5Image() override;
 
-    inline bool Valid() {
-        return _valid;
-    };
-
     inline const casacore::CountedPtr<casacore::HDF5Group> Group() const {
         return _lattice.group();
     };
@@ -61,6 +57,8 @@ public:
     casacore::Lattice<bool>& pixelMask() override;
     casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) override;
 
+    casacore::Vector<casacore::String> Hdf5ToFITSHeaderStrings();
+
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
     inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
@@ -68,10 +66,8 @@ private:
         return im->_lattice.file();
     }
 
-    bool SetUpImage();
-    casacore::Vector<casacore::String> Hdf5ToFITSHeaderStrings();
+    void SetUpImage();
 
-    bool _valid;
     casacore::MaskSpecifier _mask_spec;
     casacore::HDF5Lattice<float> _lattice;
     casacore::Lattice<bool>* _pixel_mask;

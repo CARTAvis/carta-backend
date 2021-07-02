@@ -56,10 +56,15 @@
 #include "Table/TableController.h"
 #include "Util.h"
 
+struct PerSocketData {
+    uint32_t session_id;
+    string address;
+};
+
 class Session {
 public:
-    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1);
+    Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false);
     ~Session();
 
     // CARTA ICD
@@ -159,6 +164,9 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
+    int GetRefCount() {
+        return _ref_count;
+    }
     void WaitForTaskCancellation();
     void ConnectCalled();
     static int NumberOfSessions() {
@@ -202,6 +210,9 @@ public:
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
+    void StopImageFileList();
+    void StopCatalogFileList();
+
     void UpdateLastMessageTimestamp();
     std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
 
@@ -240,7 +251,7 @@ private:
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // uWebSockets
-    uWS::WebSocket<false, true>* _socket;
+    uWS::WebSocket<false, true, PerSocketData>* _socket;
     uWS::Loop* _loop;
 
     uint32_t _id;
@@ -248,6 +259,7 @@ private:
     std::string _top_level_folder;
     std::string _starting_folder;
     int _grpc_port;
+    bool _read_only_mode;
 
     // File browser
     FileListHandler* _file_list_handler;

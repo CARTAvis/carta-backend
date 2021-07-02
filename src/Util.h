@@ -9,11 +9,13 @@
 
 #include <cassert>
 #include <string>
+#include <unordered_map>
 
 #include <uWebSockets/HttpContext.h>
 
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
+#include <casacore/scimath/Mathematics/GaussianBeam.h>
 
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
@@ -22,11 +24,23 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
+// Valid for little-endian only
+#define BZ_MAGIC_NUMBER 0x39685A42
+#define FITS_MAGIC_NUMBER 0x504D4953
+#define GZ_MAGIC_NUMBER 0x08088B1F
+#define HDF5_MAGIC_NUMBER 0x46444889
+#define XML_MAGIC_NUMBER 0x6D783F3C
+
 // ************ Utilities *************
 bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
+bool IsCompressedFits(const std::string& filename);
+int GetNumItems(const std::string& path);
+
+std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
+std::string GetQuantityInfo(const casacore::Quantity& quantity);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
@@ -61,7 +75,8 @@ void FillStatisticsValuesFromMap(
 
 std::string IPAsText(std::string_view binary);
 
-std::string GetAuthToken(uWS::HttpRequest* http_request);
+bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
+bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 
 // ************ Region Helpers *************
 
@@ -132,5 +147,10 @@ struct PointXy {
         return (x_in_image && y_in_image);
     }
 };
+
+// Map for enmu CARTA:FileType to string
+static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileType::CASA, "CASA"}, {CARTA::FileType::CRTF, "CRTF"},
+    {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
+    {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
 #endif // CARTA_BACKEND__UTIL_H_

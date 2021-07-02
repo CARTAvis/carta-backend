@@ -42,6 +42,33 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::FILE_LIST_REQUEST: {
+            CARTA::FileListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnFileListRequest(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad FILE_LIST_REQUEST message!");
+            }
+            break;
+        }
+        case CARTA::EventType::REGION_LIST_REQUEST: {
+            CARTA::RegionListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnRegionListRequest(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad REGION_LIST_REQUEST message!");
+            }
+            break;
+        }
+        case CARTA::EventType::CATALOG_LIST_REQUEST: {
+            CARTA::CatalogListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnCatalogFileList(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
+            }
+            break;
+        }
         default: {
             spdlog::warn("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;

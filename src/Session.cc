@@ -48,8 +48,8 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port)
+Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
+    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -58,6 +58,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
+      _read_only_mode(read_only_mode),
       _loader(nullptr),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
@@ -153,8 +154,9 @@ void Session::ConnectCalled() {
 // File browser info
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-    const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message) {
-    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu_name supplied and FITS image
+    const std::string& folder, const std::string& filename, const std::string& hdu_key, std::string& message) {
+    // Fill CARTA::FileInfo and CARTA::FileInfoExtended
+    // Map all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
 
     try {
@@ -173,30 +175,28 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             return file_info_ok;
         }
 
-        // Extended file info in response is map<hdu_name, FileInfoExtended>
+        // Extended file info in response is map<hdu_key, FileInfoExtended>
         std::vector<std::string> hdu_list;
-        if (hdu_name.empty()) {
+        if (hdu_key.empty()) {
             if (file_info.type() == CARTA::FileType::FITS) {
-                // Get list of HDUs; FITS hdus moved to file info response
+                // Get list of HDUs for file info response map
                 FitsHduList fits_hdu_list = FitsHduList(full_name);
-                fits_hdu_list.GetHduList(hdu_list);
+                fits_hdu_list.GetHduList(hdu_list, message);
+
                 if (hdu_list.empty()) { // FitsHduList failed
-                    message = fmt::format("Failed to determine HDU info for {}.", filename);
                     return file_info_ok;
-                } else {
-                    hdu_list.push_back(hdu_list[0]);
                 }
             } else if (file_info.hdu_list_size() > 0) {
                 hdu_list.push_back(file_info.hdu_list(0)); // use first
             }
         } else {
-            hdu_list.push_back(hdu_name);
+            hdu_list.push_back(hdu_key);
         }
 
         _loader.reset(carta::FileLoader::GetLoader(full_name));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
-        // FileExtendedInfo for each hdu_name
+        // FileInfoExtended for each hdu
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
 
@@ -285,7 +285,12 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_message(status);
     ack_message.set_session_type(type);
 
-    uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    uint32_t feature_flags;
+    if (_read_only_mode) {
+        feature_flags = CARTA::ServerFeatureFlags::READ_ONLY;
+    } else {
+        feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
+    }
     if (_grpc_port >= 0) {
         feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
         ack_message.set_grpc_port(_grpc_port);
@@ -295,10 +300,14 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 }
 
 void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg result_msg;
     _file_list_handler->OnFileListRequest(request, response, result_msg);
-    SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+    if (!response.cancel()) {
+        SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+    }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
     }
@@ -314,6 +323,9 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     if (success) {
         // add extended info map to message
         *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+    } else {
+        // log error
+        spdlog::error(message);
     }
 
     // complete response message
@@ -323,10 +335,14 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 }
 
 void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    _file_list_handler->SetProgressCallback(progress_callback);
     CARTA::RegionListResponse response;
     FileListHandler::ResultMsg result_msg;
     _file_list_handler->OnRegionListRequest(request, response, result_msg);
-    SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    if (!response.cancel()) {
+        SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
     }
@@ -544,7 +560,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
                             compression_type == CARTA::CompressionType::NONE);
                     } else {
-                        spdlog::error("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
+                        spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
                     }
                 }
             }
@@ -739,22 +755,30 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             return;
         }
 
-        // Export filename (optional, for server-side export)
-        std::string directory(message.directory()), filename(message.file());
-        std::string abs_filename;
-        if (!directory.empty() && !filename.empty()) {
-            // export file is on server, form path with filename
-            casacore::Path top_level_path(_top_level_folder);
-            top_level_path.append(directory);
-            top_level_path.append(filename);
-            abs_filename = top_level_path.absoluteName();
-        }
-
-        std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
-
         CARTA::ExportRegionAck export_ack;
-        _region_handler->ExportRegion(
-            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+        if (_read_only_mode) {
+            string error = "Exporting region is not allowed in read-only mode";
+            spdlog::error(error);
+            SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
+            export_ack.set_success(false);
+            export_ack.set_message(error);
+        } else {
+            // Export filename (optional, for server-side export)
+            std::string directory(message.directory()), filename(message.file());
+            std::string abs_filename;
+            if (!directory.empty() && !filename.empty()) {
+                // export file is on server, form path with filename
+                casacore::Path top_level_path(_top_level_folder);
+                top_level_path.append(directory);
+                top_level_path.append(filename);
+                abs_filename = top_level_path.absoluteName();
+            }
+
+            std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+
+            _region_handler->ExportRegion(
+                file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
+        }
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -1029,9 +1053,13 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 }
 
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::ListProgress progress) { SendEvent(CARTA::EventType::FILE_LIST_PROGRESS, request_id, progress); };
+    _table_controller->SetProgressCallBack(progress_callback);
     CARTA::CatalogListResponse file_list_response;
     _table_controller->OnFileListRequest(file_list_request, file_list_response);
-    SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    if (!file_list_response.cancel()) {
+        SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    }
 }
 
 void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
@@ -1084,11 +1112,9 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 
-            frame->IncreaseMomentsCount();
             if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
                 frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
-            frame->DecreaseMomentsCount();
         }
 
         // Open moments images from the cache, open files acknowledgements will be sent to the frontend
@@ -1115,9 +1141,28 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
+    int region_id(save_file.region_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
+        auto active_frame = _frames.at(file_id);
+        if (_read_only_mode) {
+            string error = "Saving files is not allowed in read-only mode";
+            spdlog::error(error);
+            SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(error);
+        } else if (region_id) {
+            std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
+            if (active_frame->GetImageRegion(file_id, _region)) {
+                active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
+            } else {
+                save_file_ack.set_success(false);
+                save_file_ack.set_message("The selected region is entirely outside the image.");
+            }
+        } else {
+            // Save full image
+            _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack, nullptr);
+        }
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
@@ -1611,6 +1656,11 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                     std::string_view sv(msg.first.data(), msg.first.size());
                     _socket->send(sv, uWS::OpCode::BINARY, msg.second);
                 }
+                std::string_view sv(msg.first.data(), msg.first.size());
+                auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
+                    spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                }
             }
         });
     }
@@ -1959,6 +2009,18 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
         _scripting_response.erase(scripting_request_id);
 
         return true;
+    }
+}
+
+void Session::StopImageFileList() {
+    if (_file_list_handler) {
+        _file_list_handler->StopGettingFileList();
+    }
+}
+
+void Session::StopCatalogFileList() {
+    if (_table_controller) {
+        _table_controller->StopGettingFileList();
     }
 }
 

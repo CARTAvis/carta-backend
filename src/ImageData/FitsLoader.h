@@ -9,13 +9,14 @@
 
 #include <casacore/images/Images/FITSImage.h>
 
+#include "CartaFitsImage.h"
 #include "FileLoader.h"
 
 namespace carta {
 
 class FitsLoader : public FileLoader {
 public:
-    FitsLoader(const std::string& file);
+    FitsLoader(const std::string& filename, bool is_compressed = false);
 
     void OpenFile(const std::string& hdu) override;
 
@@ -23,18 +24,35 @@ public:
     ImageRef GetImage() override;
 
 private:
+    bool _is_compressed;
     casacore::uInt _hdu;
-    std::unique_ptr<casacore::FITSImage> _image;
+    std::unique_ptr<casacore::ImageInterface<float>> _image;
 };
 
-FitsLoader::FitsLoader(const std::string& filename) : FileLoader(filename) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_compressed) : FileLoader(filename), _is_compressed(is_compressed), _hdu(-1) {}
 
 void FitsLoader::OpenFile(const std::string& hdu) {
+    // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
+
     if (!_image || (hdu_num != _hdu)) {
-        _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        if (_is_compressed) {
+            throw(casacore::AipsError("Compressed FITS gz/bz format not supported yet."));
+        }
+
+        try {
+            _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        } catch (const casacore::AipsError& err) {
+            try {
+                // casacore::FITSImage failed, try CartaFitsImage
+                _image.reset(new carta::CartaFitsImage(_filename, hdu_num));
+            } catch (const casacore::AipsError& err) {
+                spdlog::error(err.getMesg());
+            }
+        }
+
         if (!_image) {
-            throw(casacore::AipsError("Error opening image"));
+            throw(casacore::AipsError("Error loading FITS image."));
         }
 
         _hdu = hdu_num;
