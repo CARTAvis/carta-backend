@@ -8,20 +8,24 @@
 
 #include "Util.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
+#include "CommonTestUtilities.h"
 
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
+class UtilTest : public ::testing::Test {
+public:
+    void SetUp() {
+        working_directory = fs::current_path();
+    }
 
-namespace fs = std::filesystem;
-#endif
+    void TearDown() {
+        fs::current_path(working_directory);
+    }
 
-using namespace std;
+private:
+    fs::path working_directory;
+};
 
 TEST(UtilTest, SubdirectoryAbs) {
-    auto pwd = fs::current_path();
+    auto pwd = TestRoot();
     EXPECT_TRUE(IsSubdirectory((pwd / "data").string(), pwd.string()));
     EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "data").string()));
     EXPECT_TRUE(IsSubdirectory((pwd / "data/images").string(), pwd.string()));
@@ -33,6 +37,7 @@ TEST(UtilTest, SubdirectoryAbs) {
 }
 
 TEST(UtilTest, SubdirectoryRel) {
+    fs::current_path(TestRoot());
     EXPECT_TRUE(IsSubdirectory("./data", "./"));
     EXPECT_FALSE(IsSubdirectory("./", "./data"));
     EXPECT_TRUE(IsSubdirectory("./data/images", "./"));
@@ -44,7 +49,7 @@ TEST(UtilTest, SubdirectoryRel) {
 }
 
 TEST(UtilTest, SubdirectorySelf) {
-    auto pwd = fs::current_path();
+    auto pwd = TestRoot();
     EXPECT_TRUE(IsSubdirectory("/", "/"));
     EXPECT_TRUE(IsSubdirectory("./", "./"));
     EXPECT_TRUE(IsSubdirectory(pwd.string(), pwd.string()));
@@ -53,14 +58,35 @@ TEST(UtilTest, SubdirectorySelf) {
 }
 
 TEST(UtilTest, ParentNotSubdirectory) {
-    auto pwd = fs::current_path();
+    auto pwd = TestRoot();
     EXPECT_FALSE(IsSubdirectory(pwd.parent_path().string(), pwd.string()));
     EXPECT_FALSE(IsSubdirectory((pwd / "..").string(), pwd.string()));
     EXPECT_FALSE(IsSubdirectory("../", "./"));
 }
 
 TEST(UtilTest, TopIsRoot) {
-    auto pwd = fs::current_path();
+    auto pwd = TestRoot();
     EXPECT_TRUE(IsSubdirectory(pwd.string(), "/"));
     EXPECT_TRUE(IsSubdirectory("./", "/"));
+}
+
+TEST(UtilTest, ItemCountValidFolder) {
+    auto pwd = TestRoot();
+    EXPECT_EQ(GetNumItems((pwd / "data/tables").string()), 2);
+    EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 6);
+}
+
+TEST(UtilTest, ItemCountMissingFolder) {
+    auto pwd = TestRoot();
+    EXPECT_EQ(GetNumItems((pwd / "data/missing_folder").string()), -1);
+}
+
+TEST(UtilTest, StringCompare) {
+    EXPECT_TRUE(ConstantTimeStringCompare("hello world", "hello world"));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello w1rld", "hello world"));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello w1rld", "hello w2rld"));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello w", "hello world"));
+    EXPECT_TRUE(ConstantTimeStringCompare("", ""));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello world", ""));
+    EXPECT_FALSE(ConstantTimeStringCompare("", "hello world"));
 }

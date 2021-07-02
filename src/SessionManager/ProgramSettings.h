@@ -22,7 +22,7 @@ namespace carta {
 struct ProgramSettings {
     bool version = false;
     bool help = false;
-    int port = -1;
+    std::vector<int> port;
     int grpc_port = -1;
     int omp_thread_count = OMP_THREAD_COUNT;
     std::string top_level_folder = "/";
@@ -54,7 +54,6 @@ struct ProgramSettings {
     // clang-format off
     std::unordered_map<std::string, int*> int_keys_map{
         {"verbosity", &verbosity},
-        {"port", &port},
         {"grpc_port", &grpc_port},
         {"omp_threads", &omp_thread_count},
         {"exit_timeout", &wait_time},
@@ -76,6 +75,10 @@ struct ProgramSettings {
         {"top_level_folder", &top_level_folder},
         {"frontend_folder", &frontend_folder},
         {"browser", &browser}
+    };
+
+    std::unordered_map<std::string, std::vector<int>*> vector_int_keys_map {
+        {"port", &port}
     };
     // clang-format on
 

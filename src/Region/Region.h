@@ -155,7 +155,8 @@ private:
     // Control points converted to pixel coords in output image, returned in LCRegion Record format for export
     casacore::TableRecord GetRegionPointsRecord(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    casacore::TableRecord GetControlPointsRecord(int ndim);
+    casacore::TableRecord GetControlPointsRecord(const casacore::IPosition& shape);
+    void CompleteLCRegionRecord(casacore::TableRecord& record, const casacore::IPosition& shape);
     casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
