@@ -15,7 +15,7 @@
 
 class Hdf5Attributes {
 public:
-    // casacore::HDF5Record::doReadRecord modified to not iterate through links
+    // Iterate over the attributes and convert them to FITS header entries
     static casacore::Vector<casacore::String> ReadAttributes(hid_t group_hid);
 
 private:

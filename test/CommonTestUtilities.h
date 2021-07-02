@@ -72,9 +72,11 @@ public:
     Hdf5DataReader(const std::string& imgpath);
     ~Hdf5DataReader() = default;
     std::vector<float> ReadRegion(std::vector<hsize_t> start, std::vector<hsize_t> end) override;
+    hid_t GroupId();
 
 private:
     H5::H5File _imgfile;
+    H5::Group _group;
     H5::DataSet _dataset;
 };
 
