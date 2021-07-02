@@ -32,7 +32,7 @@ casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(hid_t group_hi
         atype = H5Aget_type(attr);
         aspace = H5Aget_space(attr);
         rank = H5Sget_simple_extent_ndims(aspace);
-        ret = H5Sget_simple_extent_dims(aspace, sdim, NULL);
+        ret = H5Sget_simple_extent_dims(aspace, sdim, nullptr);
 
         if (rank == 0 || ret == 0) {
             std::string value = Hdf5Attributes::ReadScalar(attr, atype, name);
@@ -47,7 +47,7 @@ casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(hid_t group_hi
     };
 
     // Iterate over the attributes using the order in which they were written
-    H5Aiterate2(group_hid, H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, attr_info, &headers);
+    H5Aiterate2(group_hid, H5_INDEX_CRT_ORDER, H5_ITER_INC, nullptr, attr_info, &headers);
     headers(num_attrs) = "END";
 
     return headers;
