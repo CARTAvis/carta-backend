@@ -4,17 +4,17 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# InterfaceConstants.h: definitions used in the Interface Control Document
+//# Constants.h: definitions used in the Interface Control Document
 //* Others added for implementation
-#ifndef CARTA_BACKEND__INTERFACECONSTANTS_H_
-#define CARTA_BACKEND__INTERFACECONSTANTS_H_
+#ifndef CARTA_BACKEND__CONSTANTS_H_
+#define CARTA_BACKEND__CONSTANTS_H_
 
 // version
-#define VERSION_ID "2.0.0-dev.21.01.22"
+#define VERSION_ID "2.0.0-dev.21.04.27"
 
 // thread counts
-#define OMP_THREAD_COUNT 4
-#define THREAD_COUNT 3
+#define OMP_THREAD_COUNT -1
+#define TBB_TASK_THREAD_COUNT 3
 
 // file ids
 #define ALL_FILES -1
@@ -25,11 +25,11 @@
 #define CURSOR_REGION_ID 0
 #define ALL_REGIONS -10
 
-// channels
-#define DEFAULT_CHANNEL 0
-#define CURRENT_CHANNEL -1
-#define ALL_CHANNELS -2
-#define CHANNEL_NOT_SET -3
+// z axis
+#define DEFAULT_Z 0
+#define CURRENT_Z -1
+#define ALL_Z -2
+#define Z_NOT_SET -3
 
 // stokes
 #define DEFAULT_STOKES 0
@@ -45,8 +45,8 @@
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 
-// spectral profile calculation
-#define INIT_DELTA_CHANNEL 10
+// z profile calculation
+#define INIT_DELTA_Z 10
 #define TARGET_DELTA_TIME 50 // milliseconds
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
@@ -54,18 +54,6 @@
 
 // scripting timeouts
 #define SCRIPTING_TIMEOUT 10 // seconds
-
-// catalog files
-#define ALL_CATALOG_DATA -1
-#define TARGET_PARTIAL_CATALOG_FILTER_TIME 500
-#define CATALOG_FILTER_COMPLETE 1.0
-#define CATALOG_ROW_CHUNK 10000
-
-// image moments
-#define REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS 5000
-#define REPORT_PROGRESS_EVERY_FACTOR 0.1
-#define MOMENT_COMPLETE 1.0
-#define OUTPUT_ID_MULTIPLIER 1000
 
 // CARTA default region style
 #define REGION_COLOR "#2EE6D6"
@@ -75,8 +63,33 @@
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
 
+// file list
+#define FILE_LIST_FIRST_PROGRESS_AFTER_SECS 5
+#define FILE_LIST_PROGRESS_INTERVAL_SECS 2
+
+// uWebSockets setting
+#define MAX_BACKPRESSURE 256 * 1024 * 1024
+
 // socket port
 #define DEFAULT_SOCKET_PORT 3002
 #define MAX_SOCKET_PORT_TRIALS 100
 
-#endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
+// logger
+#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
+#define ROTATED_LOG_FILES 5
+#define STDOUT_TAG "stdout"
+#define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+#define PERF_TAG "performance"
+#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
+
+// User preferences
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
+// Frontend folder
+#ifndef CARTA_DEFAULT_FRONTEND_FOLDER
+#define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
+#endif
+
+#endif // CARTA_BACKEND__CONSTANTS_H_

@@ -5,8 +5,13 @@ include_directories(src)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+set(CMAKE_LINK_DIRECTORIES_BEFORE ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
+
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
 
@@ -18,10 +23,6 @@ else ()
     message(WARNING "OpenMP not found!")
 endif ()
 
-# Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
-
-
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
 # increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
 # processes only, set EnableAvx to ON
@@ -29,7 +30,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 
-if (EnableAvx)
+# Automatically detect if building on an ARM based system such as the Apple M1.
+# It will replace SSE functions with ARM NEON functions using sse2neon.h from 
+# https://github.com/DLTcollab/sse2neon, redistributable under the MIT License.
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64" AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ARM_ARCH_ -march=armv8-a+fp+simd+crypto+crc")
+elseif (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
@@ -38,17 +47,82 @@ endif ()
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-FIND_PACKAGE(HDF5)
+FIND_PACKAGE(CURL REQUIRED)
+FIND_PACKAGE(ZFP CONFIG REQUIRED)
+FIND_PACKAGE(PkgConfig REQUIRED)
+
+FIND_PACKAGE(PUGIXML QUIET)
+if (PUGIXML_FOUND)
+    message(STATUS "Found pugixml using find_package")
+else ()
+        PKG_SEARCH_MODULE(PUGIXML REQUIRED pugixml)
+        if (PUGIXML_FOUND)
+        message(STATUS "Found pugixml using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find pugixml")
+    endif ()
+endif()
+
+FIND_PACKAGE(CFITSIO QUIET)
+if (CFITSIO_FOUND)
+    message(STATUS "Found cfitsio using find_package")
+else ()
+    PKG_SEARCH_MODULE(CFITSIO REQUIRED cfitsio)
+    if (CFITSIO_FOUND)
+        message(STATUS "Found cfitsio using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find cfitsio")
+    endif ()
+endif()
+
+FIND_PACKAGE(WCSLIB QUIET)
+if (WCSLIB_FOUND)
+    message(STATUS "Found wcslib using find_package")
+else ()
+    PKG_SEARCH_MODULE(WCSLIB REQUIRED wcslib)
+    if (WCSLIB_FOUND)
+        message(STATUS "Found wcslib using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find wcslib")
+    endif ()
+endif()
+
+PKG_SEARCH_MODULE(UUID REQUIRED uuid)
+if (UUID_FOUND)
+    message(STATUS "Found uuid using pkg-config")
+else ()
+    message(FATAL_ERROR "Could not find uuid")
+endif ()
+
+PKG_SEARCH_MODULE(ZSTD REQUIRED libzstd)
+if (ZSTD_FOUND)
+    message(STATUS "zstd found using pkg-config")
+else ()
+    message(FATAL_ERROR "Could not find zstd")
+endif ()
+
+FIND_PACKAGE(TBB QUIET)
+if (TBB_FOUND)
+    message(STATUS "Found TBB using find_package")
+else ()
+    PKG_SEARCH_MODULE(TBB REQUIRED tbb)
+    if (TBB_FOUND)
+        message(STATUS "Found TBB using pkg-config")
+    else()
+        message(FATAL_ERROR "TBB not found")
+    endif ()
+endif()
+
+FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
-INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
@@ -99,14 +173,15 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 # Include uWebSockets headers and build the uSockets lib
+include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
+add_subdirectory(third-party/spdlog)
 
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
-        fmt
         uSockets
         uuid
         z
@@ -116,6 +191,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        wcs
         casa_casa
         casa_coordinates
         casa_tables
@@ -135,6 +211,7 @@ set(SOURCE_FILES
         src/Main.cc
         src/Session.cc
         src/Frame.cc
+        src/Logger/Logger.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc
@@ -149,6 +226,8 @@ set(SOURCE_FILES
         src/ImageData/Hdf5Loader.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
+        src/ImageData/CartaFitsImage.cc
+        src/ImageData/StokesFilesConnector.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Region/CrtfImportExport.cc
@@ -162,10 +241,13 @@ set(SOURCE_FILES
         src/Table/TableView.cc
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
+        src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
+        src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
+        src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)
 
 add_definitions(-DHAVE_HDF5)
@@ -178,8 +260,26 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
+if (CartaUserFolderPrefix)
+    add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
+endif (CartaUserFolderPrefix)
+
+if (CartaDefaultFrontendFolder)
+    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+endif (CartaDefaultFrontendFolder)
+
+install(TARGETS carta_backend
+    RUNTIME DESTINATION bin)
+
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
+    DESTINATION bin)
+
+install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
+    DESTINATION share/carta)
+
 # Tests
 option(test "Build tests." OFF)
 if (test)
+    FIND_PACKAGE(GTest REQUIRED)
     add_subdirectory(test)
 endif ()

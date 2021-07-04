@@ -6,10 +6,11 @@
 
 #include "TableController.h"
 
-#include <fmt/format.h>
 #include <sys/stat.h>
 
-#include "../Util.h"
+#include "Logger/Logger.h"
+#include "Timer/ListProgressReporter.h"
+#include "Util.h"
 
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec
@@ -18,7 +19,8 @@
 using namespace carta;
 using namespace std;
 
-TableController::TableController(const string& root, const string& base) : _root_folder(root), _base_folder(base) {}
+TableController::TableController(const string& top_level_folder, const string& starting_folder)
+    : _top_level_folder(top_level_folder), _starting_folder(starting_folder) {}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();
@@ -182,7 +184,7 @@ void TableController::OnFilterRequest(
 
 void TableController::OnFileListRequest(
     const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response) {
-    fs::path root_path(_root_folder);
+    fs::path root_path(_top_level_folder);
     fs::path file_path = GetPath(file_list_request.directory());
 
     if (!fs::exists(file_path) || !fs::is_directory(file_path)) {
@@ -201,12 +203,37 @@ void TableController::OnFileListRequest(
     file_list_response.set_parent(parent_path.string());
 
     try {
+        // get total number of files or directories under the directory
+        auto total_regular_files =
+            std::count_if(fs::directory_iterator(file_path), fs::directory_iterator{}, (bool (*)(const fs::path&))fs::is_regular_file);
+        auto total_directories =
+            std::count_if(fs::directory_iterator(file_path), fs::directory_iterator{}, (bool (*)(const fs::path&))fs::is_directory);
+        auto total_files = total_regular_files + total_directories;
+
+        // initialize variables for the progress report and the interruption option
+        _stop_getting_file_list = false;
+        _first_report_made = false;
+        ListProgressReporter progress_reporter(total_files, _progress_callback);
+
         for (const auto& entry : fs::directory_iterator(file_path)) {
+            if (_stop_getting_file_list) {
+                file_list_response.set_cancel(true);
+                break;
+            }
+
             if (fs::is_directory(entry)) {
                 try {
                     // Try to construct a directory iterator. If it fails, the directory is inaccessible
                     auto test_directory_iterator = fs::directory_iterator(entry);
-                    file_list_response.add_subdirectories(entry.path().filename().string());
+
+                    auto directory_info = file_list_response.add_subdirectories();
+                    directory_info->set_name(entry.path().filename().string());
+                    directory_info->set_item_count(GetNumItems(entry.path().string()));
+
+                    // Fill in file time
+                    struct stat file_stats;
+                    stat(entry.path().c_str(), &file_stats);
+                    directory_info->set_date(file_stats.st_mtim.tv_sec);
                 } catch (fs::filesystem_error) {
                     // Skip inaccessible folders
                     continue;
@@ -232,6 +259,17 @@ void TableController::OnFileListRequest(
                 struct stat file_stats;
                 stat(entry.path().c_str(), &file_stats);
                 file_info->set_date(file_stats.st_mtim.tv_sec);
+            }
+
+            // update the progress and get the difference between the current time and start time
+            auto dt = progress_reporter.UpdateProgress();
+
+            // report the progress if it fits the conditions
+            if (!_first_report_made && dt > FILE_LIST_FIRST_PROGRESS_AFTER_SECS) {
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Catalog);
+                _first_report_made = true;
+            } else if (_first_report_made && dt > FILE_LIST_PROGRESS_INTERVAL_SECS) {
+                progress_reporter.ReportFileListProgress(CARTA::FileListType::Catalog);
             }
         }
         file_list_response.set_success(true);
@@ -306,7 +344,7 @@ void TableController::ApplyFilter(const CARTA::FilterConfig& filter_config, Tabl
     string column_name = filter_config.column_name();
     auto column = view.GetTable()[column_name];
     if (!column) {
-        fmt::print("Could not filter on non-existing column \"{}\"", column_name);
+        spdlog::error("Could not filter on non-existing column \"{}\"", column_name);
         return;
     }
 
@@ -360,10 +398,10 @@ bool TableController::FilterParamsChanged(const std::vector<CARTA::FilterConfig>
     return false;
 }
 fs::path TableController::GetPath(std::string directory, std::string name) {
-    fs::path file_path(_root_folder);
+    fs::path file_path(_top_level_folder);
     if (directory == "$BASE") {
-        // Replace $BASE macro with the base folder
-        file_path /= _base_folder;
+        // Replace $BASE macro with the starting folder
+        file_path /= _starting_folder;
     } else {
         // Strip meaningless directory paths
         if (directory == "." || directory == "./") {

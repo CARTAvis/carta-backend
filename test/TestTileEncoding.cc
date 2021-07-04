@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -7,14 +7,11 @@
 #include <chrono>
 #include <random>
 
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../src/DataStream/Tile.h"
+#include "DataStream/Tile.h"
 
-using namespace std;
-
-TEST(TileEncoding, InvalidInput) {
+TEST(TileEncodingTest, InvalidInput) {
     // Layer can be from 0 to 12
     ASSERT_EQ(Tile::Encode(0, 0, -1), -1);
     ASSERT_EQ(Tile::Encode(0, 0, 13), -1);
@@ -25,18 +22,18 @@ TEST(TileEncoding, InvalidInput) {
     ASSERT_EQ(Tile::Encode(0, 4096, 12), -1);
 }
 
-TEST(TileEncoding, OutOfBounds) {
+TEST(TileEncodingTest, OutOfBounds) {
     // X and Y coordinates from 0 to 2^layer -1
     ASSERT_EQ(Tile::Encode(0, 1024, 10), -1);
     ASSERT_EQ(Tile::Encode(0, 256, 8), -1);
     ASSERT_EQ(Tile::Encode(0, 4, 2), -1);
 }
 
-TEST(TileEncoding, RoundTrip) {
-    random_device rd;
-    mt19937 mt(rd());
-    uniform_int_distribution<> layer_random(0, 12);
-    uniform_real_distribution<float> float_random(0, 1);
+TEST(TileEncodingTest, RoundTrip) {
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<> layer_random(0, 12);
+    std::uniform_real_distribution<float> float_random(0, 1);
 
     for (auto i = 0; i < 10000; i++) {
         int32_t layer = layer_random(mt);
@@ -52,18 +49,19 @@ TEST(TileEncoding, RoundTrip) {
     }
 }
 
+#ifdef COMPILE_PERFORMANCE_TESTS
+
 TEST(TileEncoding, PerformanceTestEncoding) {
     int32_t layer = 12;
     int64_t encoded_val = 0;
-    auto t_start = chrono::high_resolution_clock::now();
+    auto t_start = std::chrono::high_resolution_clock::now();
     for (auto i = 0; i < 1000; i++) {
         for (auto j = 0; j < 1000; j++) {
             encoded_val += Tile::Encode(i, j, layer);
         }
     }
-    auto t_end = chrono::high_resolution_clock::now();
-    float dt = chrono::duration_cast<chrono::microseconds>(t_end - t_start).count() / 1000.0f;
-    fmt::print("Encoded 1M coordinates in {} ms", dt);
+    auto t_end = std::chrono::high_resolution_clock::now();
+    float dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count() / 1000.0f;
     ASSERT_EQ(encoded_val, 203373043500000);
     ASSERT_LT(dt, 2.0f);
 }
@@ -74,7 +72,7 @@ TEST(TileEncoding, PerformanceTestDecoding) {
     int64_t encoded_val = 0;
     int64_t counter = 0;
 
-    auto t_start = chrono::high_resolution_clock::now();
+    auto t_start = std::chrono::high_resolution_clock::now();
 
     for (auto i = 0; i < 1000; i++) {
         for (auto j = 0; j < 1000; j++) {
@@ -84,14 +82,10 @@ TEST(TileEncoding, PerformanceTestDecoding) {
         encoded_val += layer_width;
     }
 
-    auto t_end = chrono::high_resolution_clock::now();
-    float dt = chrono::duration_cast<chrono::microseconds>(t_end - t_start).count() / 1000.0f;
-    fmt::print("Decoded 1M coordinates in {} ms", dt);
+    auto t_end = std::chrono::high_resolution_clock::now();
+    float dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count() / 1000.0f;
     ASSERT_EQ(counter, 2046486240);
     ASSERT_LT(dt, 2.0f);
 }
 
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+#endif

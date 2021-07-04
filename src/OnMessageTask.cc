@@ -9,10 +9,8 @@
 #include <algorithm>
 #include <cstring>
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-
 #include "EventHeader.h"
+#include "Logger/Logger.h"
 #include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {
@@ -22,7 +20,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpatialRequirements(message);
             } else {
-                fmt::print("Bad SET_SPATIAL_REQUIREMENTS message!\n");
+                spdlog::warn("Bad SET_SPATIAL_REQUIREMENTS message!");
             }
             break;
         }
@@ -31,7 +29,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
             } else {
-                fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
+                spdlog::warn("Bad SET_STATS_REQUIREMENTS message!");
             }
             break;
         }
@@ -40,12 +38,39 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnMomentRequest(message, _header.request_id);
             } else {
-                fmt::print("Bad MOMENT_REQUEST message!\n");
+                spdlog::warn("Bad MOMENT_REQUEST message!");
+            }
+            break;
+        }
+        case CARTA::EventType::FILE_LIST_REQUEST: {
+            CARTA::FileListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnFileListRequest(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad FILE_LIST_REQUEST message!");
+            }
+            break;
+        }
+        case CARTA::EventType::REGION_LIST_REQUEST: {
+            CARTA::RegionListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnRegionListRequest(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad REGION_LIST_REQUEST message!");
+            }
+            break;
+        }
+        case CARTA::EventType::CATALOG_LIST_REQUEST: {
+            CARTA::CatalogListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnCatalogFileList(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
             }
             break;
         }
         default: {
-            fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
+            spdlog::warn("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
         }
     }

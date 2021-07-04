@@ -39,7 +39,7 @@ struct TableViewCache {
 
 class TableController {
 public:
-    TableController(const std::string& root, const std::string& base);
+    TableController(const std::string& top_level_folder, const std::string& starting_folder);
     void OnFileListRequest(const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response);
     void OnFileInfoRequest(const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response);
     void OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
@@ -47,16 +47,28 @@ public:
     void OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request,
         std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback);
 
+    void StopGettingFileList() {
+        _stop_getting_file_list = true;
+    }
+    void SetProgressCallBack(const std::function<void(CARTA::ListProgress)>& progress_callback) {
+        _progress_callback = progress_callback;
+    }
+
 protected:
     void PopulateHeaders(google::protobuf::RepeatedPtrField<CARTA::CatalogHeader>* headers, const Table& table);
     void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
     static bool FilterParamsChanged(const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column,
         CARTA::SortingType sorting_type, const TableViewCache& cached_config);
     fs::path GetPath(std::string directory, std::string name = "");
-    std::string _root_folder;
-    std::string _base_folder;
+    std::string _top_level_folder;
+    std::string _starting_folder;
     std::unordered_map<int, Table> _tables;
     std::unordered_map<int, TableViewCache> _view_cache;
+
+private:
+    volatile bool _stop_getting_file_list;
+    volatile bool _first_report_made;
+    std::function<void(CARTA::ListProgress)> _progress_callback;
 };
 } // namespace carta
 #endif // CARTA_BACKEND_TABLE_TABLECONTROLLER_H_

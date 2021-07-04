@@ -1,42 +1,40 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
-
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../src/Table/Table.h"
+#include "Table/Table.h"
+#include "Util.h"
 
-using namespace std;
+#include "CommonTestUtilities.h"
+
 using namespace carta;
 
-string test_base;
+class FitsTableTest : public ::testing::Test, public FileFinder {};
 
-string test_path(const string& filename) {
-    return fmt::format("{}/{}", test_base, filename);
-}
-TEST(BasicParsing, ParseIvoaExampleHeaderOnly) {
-    Table table(test_path("ivoa_example.fits"), true);
+TEST_F(FitsTableTest, ParseIvoaExampleHeaderOnly) {
+    std::cout << FitsTablePath("test.fits") << std::endl;
+    Table table(FitsTablePath("ivoa_example.fits"), true);
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 0);
 }
 
-TEST(BasicParsing, ParseIvoaExample) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, ParseIvoaExample) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 3);
 }
 
-TEST(ParsedTable, CorrectFieldCount) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectFieldCount) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumColumns(), 6);
 }
 
-TEST(ParsedTable, CorrectFieldNames) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectFieldNames) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_EQ(table[0]->name, "RA");
     EXPECT_EQ(table[1]->name, "Dec");
     EXPECT_EQ(table[2]->name, "Name");
@@ -45,8 +43,8 @@ TEST(ParsedTable, CorrectFieldNames) {
     EXPECT_EQ(table[5]->name, "R");
 }
 
-TEST(ParsedTable, CorrectFieldUnits) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectFieldUnits) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_EQ(table[0]->unit, "deg");
     EXPECT_EQ(table[1]->unit, "deg");
     EXPECT_TRUE(table[2]->unit.empty());
@@ -55,8 +53,8 @@ TEST(ParsedTable, CorrectFieldUnits) {
     EXPECT_EQ(table[5]->unit, "Mpc");
 }
 
-TEST(ParsedTable, CorrectFieldTypes) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectFieldTypes) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_EQ(table[0]->data_type, CARTA::Float);
     EXPECT_EQ(table[1]->data_type, CARTA::Float);
     EXPECT_EQ(table[2]->data_type, CARTA::String);
@@ -65,8 +63,8 @@ TEST(ParsedTable, CorrectFieldTypes) {
     EXPECT_EQ(table[5]->data_type, CARTA::Float);
 }
 
-TEST(ParsedTable, CorrectFieldSizes) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectFieldSizes) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_EQ(table[0]->data_type_size, 4);
     EXPECT_EQ(table[1]->data_type_size, 4);
     EXPECT_EQ(table[2]->data_type_size, 6);
@@ -75,8 +73,8 @@ TEST(ParsedTable, CorrectFieldSizes) {
     EXPECT_EQ(table[5]->data_type_size, 4);
 }
 
-TEST(ParsedTable, CorrectNameLookups) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectNameLookups) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_EQ(table["RA"]->name, "RA");
     EXPECT_EQ(table["Dec"]->name, "Dec");
     EXPECT_EQ(table["Name"]->name, "Name");
@@ -87,23 +85,23 @@ TEST(ParsedTable, CorrectNameLookups) {
     EXPECT_EQ(table[""], nullptr);
 }
 
-TEST(ParsedTable, CorrectColumnTypes) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectColumnTypes) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_NE(DataColumn<float>::TryCast(table["RA"]), nullptr);
     EXPECT_EQ(DataColumn<double>::TryCast(table["RA"]), nullptr);
 
-    EXPECT_NE(DataColumn<string>::TryCast(table["Name"]), nullptr);
+    EXPECT_NE(DataColumn<std::string>::TryCast(table["Name"]), nullptr);
     EXPECT_EQ(DataColumn<int>::TryCast(table["Name"]), nullptr);
 
     EXPECT_NE(DataColumn<int>::TryCast(table["RVel"]), nullptr);
-    EXPECT_EQ(DataColumn<string>::TryCast(table["RVel"]), nullptr);
+    EXPECT_EQ(DataColumn<std::string>::TryCast(table["RVel"]), nullptr);
 
     EXPECT_NE(DataColumn<int16_t>::TryCast(table["e_RVel"]), nullptr);
     EXPECT_EQ(DataColumn<int>::TryCast(table["e_RVel"]), nullptr);
 }
 
-TEST(ParsedTable, CorrectDataValues) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CorrectDataValues) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto& col1_vals = DataColumn<float>::TryCast(table["RA"])->entries;
     EXPECT_EQ(col1_vals.size(), 3);
@@ -115,7 +113,7 @@ TEST(ParsedTable, CorrectDataValues) {
     EXPECT_FLOAT_EQ(col2_vals[0], 41.27f);
     EXPECT_FLOAT_EQ(col2_vals[1], -63.85f);
 
-    auto& col3_vals = DataColumn<string>::TryCast(table["Name"])->entries;
+    auto& col3_vals = DataColumn<std::string>::TryCast(table["Name"])->entries;
     EXPECT_EQ(col3_vals.size(), 3);
     EXPECT_EQ(col3_vals[0], "N 224");
     EXPECT_EQ(col3_vals[1], "N 6744");
@@ -126,8 +124,8 @@ TEST(ParsedTable, CorrectDataValues) {
     EXPECT_EQ(col5_vals[1], 6);
 }
 
-TEST(Filtering, FailOnWrongFilterType) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, FailOnWrongFilterType) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_FALSE(table.View().StringFilter(table["dummy"], "N 224"));
     EXPECT_FALSE(table.View().StringFilter(table["RA"], "N 224"));
 
@@ -135,14 +133,14 @@ TEST(Filtering, FailOnWrongFilterType) {
     EXPECT_FALSE(table.View().NumericFilter(table["Name"], CARTA::RangeClosed, 0, 100));
 }
 
-TEST(Filtering, PassOnCorrectFilterType) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, PassOnCorrectFilterType) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_TRUE(table.View().StringFilter(table["Name"], "N 224"));
     EXPECT_TRUE(table.View().NumericFilter(table["RA"], CARTA::RangeClosed, 0, 100));
 }
 
-TEST(Filtering, CaseSensitiveStringFilter) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CaseSensitiveStringFilter) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     view.StringFilter(table["Name"], "N 224");
@@ -153,8 +151,8 @@ TEST(Filtering, CaseSensitiveStringFilter) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST(Filtering, CaseInsensitiveStringFilter) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, CaseInsensitiveStringFilter) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     view.StringFilter(table["Name"], "N 224", true);
@@ -165,13 +163,13 @@ TEST(Filtering, CaseInsensitiveStringFilter) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST(Filtering, FailFilterExtractMistypedValues) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, FailFilterExtractMistypedValues) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     auto double_vals = view.Values<double>(table["RA"]);
     EXPECT_TRUE(double_vals.empty());
-    auto string_vals = view.Values<string>(table["RA"]);
+    auto string_vals = view.Values<std::string>(table["RA"]);
     EXPECT_TRUE(string_vals.empty());
 
     view.StringFilter(table["Name"], "N 6744");
@@ -179,12 +177,12 @@ TEST(Filtering, FailFilterExtractMistypedValues) {
     EXPECT_TRUE(float_vals.empty());
 }
 
-TEST(Filtering, FilterExtractValues) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, FilterExtractValues) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::GreaterOrEqual, 10);
-    auto string_vals = view.Values<string>(table["Name"]);
+    auto string_vals = view.Values<std::string>(table["Name"]);
     EXPECT_EQ(string_vals.size(), 3);
     EXPECT_EQ(string_vals[0], "N 224");
 
@@ -194,8 +192,8 @@ TEST(Filtering, FilterExtractValues) {
     EXPECT_FLOAT_EQ(float_vals[0], 287.43f);
 }
 
-TEST(Filtering, NumericFilterEqual) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, NumericFilterEqual) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::Equal, 287.43);
     EXPECT_EQ(view.NumRows(), 1);
@@ -204,8 +202,8 @@ TEST(Filtering, NumericFilterEqual) {
     EXPECT_EQ(view.NumRows(), 1);
 }
 
-TEST(Filtering, NumericFilterNotEqual) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, NumericFilterNotEqual) {
+    Table table(FitsTablePath("ivoa_example.fits"));
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::NotEqual, 287.43);
     EXPECT_EQ(view.NumRows(), 2);
@@ -214,8 +212,8 @@ TEST(Filtering, NumericFilterNotEqual) {
     EXPECT_EQ(view.NumRows(), 2);
 }
 
-TEST(Filtering, NumericFilterGreater) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, NumericFilterGreater) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::GreaterOrEqual, 10);
@@ -226,8 +224,8 @@ TEST(Filtering, NumericFilterGreater) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST(Filtering, NumericFilterLesser) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, NumericFilterLesser) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::LessorOrEqual, 300);
@@ -238,8 +236,8 @@ TEST(Filtering, NumericFilterLesser) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST(Filtering, NumericFilterRange) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, NumericFilterRange) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::RangeClosed, 10, 300);
@@ -250,15 +248,15 @@ TEST(Filtering, NumericFilterRange) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
-TEST(Sorting, FailSortMissingColummn) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, FailSortMissingColummn) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     EXPECT_FALSE(view.SortByColumn(nullptr));
 }
 
-TEST(Sorting, SortNumericAscending) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, SortNumericAscending) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     EXPECT_TRUE(view.SortByColumn(table["RA"]));
@@ -268,8 +266,8 @@ TEST(Sorting, SortNumericAscending) {
     EXPECT_FLOAT_EQ(vals[2], 287.43f);
 }
 
-TEST(Sorting, SortNumericDescending) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, SortNumericDescending) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     EXPECT_TRUE(view.SortByColumn(table["RA"], false));
@@ -279,8 +277,8 @@ TEST(Sorting, SortNumericDescending) {
     EXPECT_FLOAT_EQ(vals[2], 10.68f);
 }
 
-TEST(Sorting, SortNumericSubset) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, SortNumericSubset) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     // Ascending sort
     auto view = table.View();
@@ -291,48 +289,48 @@ TEST(Sorting, SortNumericSubset) {
     EXPECT_FLOAT_EQ(vals[1], 287.43f);
 }
 
-TEST(Sorting, SortStringAscending) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, SortStringAscending) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     EXPECT_TRUE(view.SortByColumn(table["Name"]));
-    auto vals = view.Values<string>(table["Name"]);
+    auto vals = view.Values<std::string>(table["Name"]);
     EXPECT_EQ(vals[0], "N 224");
     EXPECT_EQ(vals[1], "N 598");
     EXPECT_EQ(vals[2], "N 6744");
 }
 
-TEST(Sorting, SortStringDescending) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, SortStringDescending) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     auto view = table.View();
     EXPECT_TRUE(view.SortByColumn(table["Name"], false));
-    auto vals = view.Values<string>(table["Name"]);
+    auto vals = view.Values<std::string>(table["Name"]);
     EXPECT_EQ(vals[0], "N 6744");
     EXPECT_EQ(vals[1], "N 598");
     EXPECT_EQ(vals[2], "N 224");
 }
 
-TEST(Sorting, SortStringSubset) {
-    Table table(test_path("ivoa_example.fits"));
+TEST_F(FitsTableTest, SortStringSubset) {
+    Table table(FitsTablePath("ivoa_example.fits"));
 
     // Ascending sort
     auto view = table.View();
     view.NumericFilter(table["RA"], CARTA::RangeClosed, 11, 300);
     EXPECT_TRUE(view.SortByColumn(table["Name"]));
-    auto vals = view.Values<string>(table["Name"]);
+    auto vals = view.Values<std::string>(table["Name"]);
     EXPECT_EQ(vals[0], "N 598");
     EXPECT_EQ(vals[1], "N 6744");
 }
 
-TEST(Arrays, ParseArrayFile) {
-    Table table(test_path("array_types.fits"));
+TEST_F(FitsTableTest, ParseArrayFile) {
+    Table table(FitsTablePath("array_types.fits"));
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 3);
 }
 
-TEST(Arrays, IgnoreArrayTypes) {
-    Table table(test_path("array_types.fits"));
+TEST_F(FitsTableTest, IgnoreArrayTypes) {
+    Table table(FitsTablePath("array_types.fits"));
     EXPECT_EQ(table["FixedArray"]->data_type, CARTA::UnsupportedType);
     EXPECT_EQ(table["BoundedArray"]->data_type, CARTA::UnsupportedType);
     EXPECT_EQ(table["UnboundedArray"]->data_type, CARTA::UnsupportedType);
@@ -341,8 +339,8 @@ TEST(Arrays, IgnoreArrayTypes) {
     EXPECT_EQ(table["UnboundedArray2D"]->data_type, CARTA::UnsupportedType);
 }
 
-TEST(Arrays, CorrectScalarData) {
-    Table table(test_path("array_types.fits"));
+TEST_F(FitsTableTest, CorrectScalarData) {
+    Table table(FitsTablePath("array_types.fits"));
     auto& scalar1_vals = DataColumn<float>::TryCast(table["Scalar1"])->entries;
     auto& scalar2_vals = DataColumn<float>::TryCast(table["Scalar2"])->entries;
     EXPECT_FLOAT_EQ(scalar1_vals[0], 1.0f);
@@ -351,13 +349,4 @@ TEST(Arrays, CorrectScalarData) {
     EXPECT_FLOAT_EQ(scalar2_vals[0], 2.0f);
     EXPECT_FLOAT_EQ(scalar2_vals[1], 4.0f);
     EXPECT_FLOAT_EQ(scalar2_vals[2], 6.0f);
-}
-
-int main(int argc, char** argv) {
-    auto env_base = getenv("FITS_TEST_DIR");
-    if (env_base) {
-        test_base = env_base;
-    }
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

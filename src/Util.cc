@@ -6,91 +6,115 @@
 
 #include "Util.h"
 
+#include <fitsio.h>
+#include <climits>
+#include <cmath>
+#include <fstream>
+#include <regex>
+
+#include <casacore/casa/OS/File.h>
+
+#include "ImageData/CartaMiriadImage.h"
+#include "Logger/Logger.h"
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace std;
 
-namespace carta {
-
-void Log(uint32_t id, const string& log_message) {
-    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    string time_string = ctime(&time);
-    time_string = time_string.substr(0, time_string.length() - 1);
-
-    fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
-}
-
-} // namespace carta
-
-bool CheckRootBaseFolders(string& root, string& base) {
-    if (root == "base" && base == "root") {
-        fmt::print("ERROR: Must set root or base directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    if (root == "base")
-        root = base;
-    if (base == "root")
-        base = root;
-
-    // check root
-    casacore::File root_folder(root);
-    if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        root = root_folder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            root = root_folder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (root.empty())
-            root = "/";
-    }
-    // check base
-    casacore::File base_folder(base);
-    if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        base = base_folder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            base = base_folder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (base.empty())
-            base = "/";
-    }
-    // check if base is same as or subdir of root
-    if (base != root) {
-        bool is_subdirectory(false);
-        casacore::Path base_path(base);
-        casacore::String parent_string(base_path.dirName()), root_string(root);
-        if (parent_string == root_string)
-            is_subdirectory = true;
-        while (!is_subdirectory && (parent_string != root_string)) { // navigate up directory tree
-            base_path = casacore::Path(parent_string);
-            parent_string = base_path.dirName();
-            if (parent_string == root_string) {
-                is_subdirectory = true;
-            } else if (parent_string == "/") {
-                break;
-            }
-        }
-        if (!is_subdirectory) {
-            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
+bool CheckFolderPaths(string& top_level_string, string& starting_string) {
+    // TODO: is this code needed at all? Was it a weird workaround?
+    {
+        if (top_level_string == "base" && starting_string == "root") {
+            spdlog::critical("Must set top level or starting directory. Exiting carta.");
             return false;
         }
+        if (top_level_string == "base")
+            top_level_string = starting_string;
+        if (starting_string == "root")
+            starting_string = top_level_string;
+    }
+    // TODO: Migrate to std::filesystem
+    // check top level
+    casacore::File top_level_folder(top_level_string);
+    if (!(top_level_folder.exists() && top_level_folder.isDirectory(true) && top_level_folder.isReadable() &&
+            top_level_folder.isExecutable())) {
+        spdlog::critical("Invalid top level directory, does not exist or is not a readable directory. Exiting carta.");
+        return false;
+    }
+    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+    try {
+        top_level_string = top_level_folder.path().resolvedName(); // fails on top level folder /
+    } catch (casacore::AipsError& err) {
+        try {
+            top_level_string = top_level_folder.path().absoluteName();
+        } catch (casacore::AipsError& err) {
+            spdlog::error(err.getMesg());
+        }
+        if (top_level_string.empty())
+            top_level_string = "/";
+    }
+    // check starting folder
+    casacore::File starting_folder(starting_string);
+    if (!(starting_folder.exists() && starting_folder.isDirectory(true) && starting_folder.isReadable() &&
+            starting_folder.isExecutable())) {
+        spdlog::warn("Invalid starting directory, using the provided top level directory instead.");
+        starting_string = top_level_string;
+    } else {
+        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+        try {
+            starting_string = starting_folder.path().resolvedName(); // fails on top level folder /
+        } catch (casacore::AipsError& err) {
+            try {
+                starting_string = starting_folder.path().absoluteName();
+            } catch (casacore::AipsError& err) {
+                spdlog::error(err.getMesg());
+            }
+            if (starting_string.empty())
+                starting_string = "/";
+        }
+    }
+    bool is_subdirectory = IsSubdirectory(starting_string, top_level_string);
+    if (!is_subdirectory) {
+        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
+        return false;
     }
     return true;
+}
+
+bool IsSubdirectory(string folder, string top_folder) {
+    folder = casacore::Path(folder).absoluteName();
+    top_folder = casacore::Path(top_folder).absoluteName();
+    if (top_folder.empty()) {
+        return true;
+    }
+    if (folder == top_folder) {
+        return true;
+    }
+    casacore::Path folder_path(folder);
+    string parent_string(folder_path.dirName());
+    if (parent_string == top_folder) {
+        return true;
+    }
+    while (parent_string != top_folder) { // navigate up directory tree
+        folder_path = casacore::Path(parent_string);
+        parent_string = folder_path.dirName();
+        if (parent_string == top_folder) {
+            return true;
+        } else if (parent_string == "/") {
+            break;
+        }
+    }
+    return false;
 }
 
 uint32_t GetMagicNumber(const string& filename) {
@@ -101,7 +125,32 @@ uint32_t GetMagicNumber(const string& filename) {
         input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
     }
+
     return magic_number;
+}
+
+bool IsCompressedFits(const std::string& filename) {
+    // Check if gzip file, then check .fits extension
+    bool is_fits(false);
+    auto magic_number = GetMagicNumber(filename);
+    if ((magic_number == GZ_MAGIC_NUMBER) || (magic_number == BZ_MAGIC_NUMBER)) {
+        fs::path bgz_path(filename);
+        is_fits = (bgz_path.stem().extension().string() == ".fits");
+    }
+
+    return is_fits;
+}
+
+std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam) {
+    std::string result;
+    result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
+    result += fmt::format("minor: {:.6f} {} ", gaussian_beam.getMinor().getValue(), gaussian_beam.getMinor().getUnit());
+    result += fmt::format("pa: {:.6f} {}", gaussian_beam.getPA().getValue(), gaussian_beam.getPA().getUnit());
+    return result;
+}
+
+std::string GetQuantityInfo(const casacore::Quantity& quantity) {
+    return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
 }
 
 void SplitString(string& input, char delim, vector<string>& parts) {
@@ -139,6 +188,10 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
 
 CARTA::FileType GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
+    if (IsCompressedFits(filename)) {
+        return CARTA::FileType::FITS;
+    }
+
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
         case casacore::ImageOpener::IMAGECONCAT:
@@ -159,15 +212,58 @@ CARTA::FileType GetCartaFileType(const string& filename) {
     }
 }
 
-void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results) {
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
+    prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
+    casacore::CoordinateSystem coord_sys(image->coordinates());
+    if (coord_sys.hasSpectralAxis()) { // prefer spectral axis native type
+        casacore::SpectralCoordinate::SpecType native_type;
+        if (image->imageType() == "CartaMiriadImage") { // workaround to get correct native type
+            carta::CartaMiriadImage* miriad_image = static_cast<carta::CartaMiriadImage*>(image);
+            native_type = miriad_image->NativeType();
+        } else {
+            native_type = coord_sys.spectralCoordinate().nativeType();
+        }
+        switch (native_type) {
+            case casacore::SpectralCoordinate::FREQ: {
+                break;
+            }
+            case casacore::SpectralCoordinate::VRAD:
+            case casacore::SpectralCoordinate::BETA: {
+                prefer_velocity = true;
+                break;
+            }
+            case casacore::SpectralCoordinate::VOPT: {
+                prefer_velocity = true;
+
+                // Check doppler type; oddly, native type can be VOPT but doppler is RADIO--?
+                casacore::MDoppler::Types vel_doppler(coord_sys.spectralCoordinate().velocityDoppler());
+                if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
+                    optical_velocity = true;
+                }
+                break;
+            }
+            case casacore::SpectralCoordinate::WAVE: {
+                prefer_wavelength = true;
+                break;
+            }
+            case casacore::SpectralCoordinate::AWAV: {
+                prefer_wavelength = true;
+                air_wavelength = true;
+                break;
+            }
+        }
+    }
+}
+
+void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
     if (histogram == nullptr) {
         return;
     }
-
-    histogram->set_num_bins(results.num_bins);
-    histogram->set_bin_width(results.bin_width);
-    histogram->set_first_bin_center(results.bin_center);
-    *histogram->mutable_bins() = {results.histogram_bins.begin(), results.histogram_bins.end()};
+    histogram->set_num_bins(hist.GetNbins());
+    histogram->set_bin_width(hist.GetBinWidth());
+    histogram->set_first_bin_center(hist.GetBinCenter());
+    *histogram->mutable_bins() = {hist.GetHistogramBins().begin(), hist.GetHistogramBins().end()};
     histogram->set_mean(stats.mean);
     histogram->set_std_dev(stats.stdDev);
 }
@@ -181,7 +277,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = numeric_limits<double>::quiet_NaN();
+            double nan_value = nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -199,7 +295,7 @@ void FillStatisticsValuesFromMap(
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = numeric_limits<double>::quiet_NaN();
+                value = nan("");
             }
         }
 
@@ -210,33 +306,46 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-void ConvertCoordinateToAxes(const string& coordinate, int& axis_index, int& stokes_index) {
-    // converts profile string into axis, stokes index into image shape
-    // axis
-    char axis_char(coordinate.back());
-    if (axis_char == 'x') {
-        axis_index = 0;
-    } else if (axis_char == 'y') {
-        axis_index = 1;
-    } else if (axis_char == 'z') {
-        axis_index = -1; // not used
+int GetStokesValue(const CARTA::StokesType& stokes_type) {
+    int stokes_value(-1);
+    switch (stokes_type) {
+        case CARTA::StokesType::I:
+            stokes_value = 1;
+            break;
+        case CARTA::StokesType::Q:
+            stokes_value = 2;
+            break;
+        case CARTA::StokesType::U:
+            stokes_value = 3;
+            break;
+        case CARTA::StokesType::V:
+            stokes_value = 4;
+            break;
+        default:
+            break;
     }
+    return stokes_value;
+}
 
-    // stokes
-    if (coordinate.size() == 2) {
-        char stokes_char(coordinate.front());
-        if (stokes_char == 'I') {
-            stokes_index = 0;
-        } else if (stokes_char == 'Q') {
-            stokes_index = 1;
-        } else if (stokes_char == 'U') {
-            stokes_index = 2;
-        } else if (stokes_char == 'V') {
-            stokes_index = 3;
-        }
-    } else {
-        stokes_index = -1;
+CARTA::StokesType GetStokesType(int stokes_value) {
+    CARTA::StokesType stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
+    switch (stokes_value) {
+        case 1:
+            stokes_type = CARTA::StokesType::I;
+            break;
+        case 2:
+            stokes_type = CARTA::StokesType::Q;
+            break;
+        case 3:
+            stokes_type = CARTA::StokesType::U;
+            break;
+        case 4:
+            stokes_type = CARTA::StokesType::V;
+            break;
+        default:
+            break;
     }
+    return stokes_type;
 }
 
 string IPAsText(string_view binary) {
@@ -254,11 +363,83 @@ string IPAsText(string_view binary) {
 
     return result;
 }
-string GetAuthTokenFromCookie(const string& header) {
-    regex header_regex("carta-auth-token=(.+?)(?:;|$)");
-    smatch sm;
-    if (regex_search(header, sm, header_regex) && sm.size() == 2) {
-        return sm[1];
+
+bool ValidateAuthToken(uWS::HttpRequest* http_request, const string& required_token) {
+    // Always allow if the required token is empty
+    if (required_token.empty()) {
+        return true;
     }
-    return string();
+    // First try the cookie auth token
+    string cookie_header = string(http_request->getHeader("cookie"));
+    if (!cookie_header.empty()) {
+        regex header_regex("carta-auth-token=(.+?)(?:;|$)");
+        smatch sm;
+        if (regex_search(cookie_header, sm, header_regex) && sm.size() == 2 && sm[1] == required_token) {
+            return true;
+        }
+    }
+
+    // Try the standard authorization bearer token approach
+    string auth_header = string(http_request->getHeader("authorization"));
+    regex auth_regex(R"(^Bearer\s+(\S+)$)");
+    smatch sm;
+    if (regex_search(auth_header, sm, auth_regex) && sm.size() == 2 && ConstantTimeStringCompare(sm[1], required_token)) {
+        return true;
+    }
+
+    // Try the URL query
+    auto query_token = http_request->getQuery("token");
+    if (!query_token.empty() && ConstantTimeStringCompare(string(query_token), required_token)) {
+        return true;
+    }
+    // Finally, fall back to the non-standard auth token header
+    return ConstantTimeStringCompare(string(http_request->getHeader("carta-auth-token")), required_token);
+}
+
+bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
+    // Early exit when lengths are unequal. This is not a problem in our case
+    if (a.length() != b.length()) {
+        return false;
+    }
+
+    volatile int d = 0;
+    for (int i = 0; i < a.length(); i++) {
+        d |= a[i] ^ b[i];
+    }
+
+    return d == 0;
+}
+
+bool FindExecutablePath(string& path) {
+    char path_buffer[PATH_MAX + 1];
+#ifdef __APPLE__
+    uint32_t len = sizeof(path_buffer);
+
+    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
+        return false;
+    }
+#else
+    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
+
+    if (len == -1) {
+        return false;
+    }
+
+    path_buffer[len] = 0;
+#endif
+    path = path_buffer;
+    return true;
+}
+
+int GetNumItems(const string& path) {
+    try {
+        int counter = 0;
+        auto it = fs::directory_iterator(path);
+        for (const auto f : it) {
+            counter++;
+        }
+        return counter;
+    } catch (exception) {
+        return -1;
+    }
 }

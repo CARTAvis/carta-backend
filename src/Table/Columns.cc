@@ -6,11 +6,13 @@
 
 #include "Columns.h"
 
-#include <fitsio.h>
-
 #include <memory>
 
+#include <fitsio.h>
+#include <spdlog/fmt/fmt.h>
+
 #include "DataColumn.tcc"
+#include "Threading.h"
 
 namespace carta {
 using namespace std;
@@ -213,9 +215,9 @@ void DataColumn<string>::SortIndices(IndexList& indices, bool ascending) const {
 
     // Perform ascending or descending sort
     if (ascending) {
-        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) { return entries[a] < entries[b]; });
+        parallel_sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) { return entries[a] < entries[b]; });
     } else {
-        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) { return entries[a] > entries[b]; });
+        parallel_sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) { return entries[a] > entries[b]; });
     }
 }
 

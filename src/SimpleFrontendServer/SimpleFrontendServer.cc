@@ -6,29 +6,58 @@
 
 #include "SimpleFrontendServer.h"
 
-#include <filesystem>
 #include <fstream>
+#include <regex>
 #include <vector>
 
-#include <fmt/format.h>
-
+#include "Logger/Logger.h"
 #include "MimeTypes.h"
+#include "Util.h"
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace carta {
-SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
-    _http_root_folder = root_folder;
+
+const string success_string = json({{"success", true}}).dump();
+
+SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token, bool read_only_mode)
+    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode) {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
-        fmt::print("Serving CARTA frontend from {}\n", fs::canonical(_http_root_folder).string());
+        spdlog::info("Serving CARTA frontend from {}", fs::canonical(_http_root_folder).string());
     } else {
-        fmt::print("Could not find CARTA frontend files in directory {}.\n", _http_root_folder.string());
+        spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
     }
+
+    _config_folder = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config";
 }
 
-void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
+    // Dynamic routes for preferences, layouts and snippets
+    app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
+    app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
+    app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
+    app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
+    app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
+    app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+    app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
+    app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
+    app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
+    app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+
+    // Static routes for all other files
+    app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
+}
+
+void SimpleFrontendServer::HandleGetConfig(Res* res, Req* _req) {
+    json runtime_config = {{"apiAddress", "/api"}};
+    res->writeHeader("Content-Type", "application/json");
+    res->writeStatus(HTTP_200)->end(runtime_config.dump());
+}
+
+void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     string_view url = req->getUrl();
     fs::path path = _http_root_folder;
     if (url.empty() || url == "/") {
@@ -54,7 +83,7 @@ void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::Htt
 
     if (fs::exists(path) && fs::is_regular_file(path)) {
         // Check file size
-        ifstream file(path, ios::binary | ios::ate);
+        ifstream file(path.string(), ios::binary | ios::ate);
         streamsize size = file.tellg();
         file.seekg(0, ios::beg);
 
@@ -94,8 +123,338 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
         return false;
     }
     // Check that index.html can be read
-    ifstream index_file(folder);
+    ifstream index_file(folder.string());
     return index_file.good();
+}
+
+bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* req) {
+    return ValidateAuthToken(req, _auth_token);
+}
+
+void SimpleFrontendServer::AddNoCacheHeaders(Res* res) {
+    res->writeHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
+    res->writeHeader("Expires", "-1");
+    res->writeHeader("Pragma", "no-cache");
+}
+
+json SimpleFrontendServer::GetExistingPreferences() {
+    auto preferences_path = _config_folder / "preferences.json";
+    if (!fs::exists(preferences_path)) {
+        return {{"version", 1}};
+    }
+
+    try {
+        ifstream file(preferences_path.string());
+        string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        return json::parse(json_string);
+    } catch (exception) {
+        return {};
+    }
+}
+
+bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing preferences file is not allowed in read-only mode");
+        return false;
+    }
+
+    auto preferences_path = _config_folder / "preferences.json";
+
+    try {
+        fs::create_directories(preferences_path.parent_path().string());
+        ofstream file(preferences_path.string());
+        // Ensure correct schema and version values are written
+        obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
+        obj["version"] = 1;
+        auto json_string = obj.dump(4);
+        file << json_string;
+        return true;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return false;
+    }
+}
+
+void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<void(const string&)>& callback) {
+    res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
+
+    string buffer;
+    // Adapted from https://github.com/uNetworking/uWebSockets/issues/805#issuecomment-452182209
+    res->onData([callback, buffer = std::move(buffer)](std::string_view data, bool last) mutable {
+        buffer.append(data.data(), data.length());
+        if (last) {
+            callback(buffer);
+        }
+    });
+}
+
+void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    // Read preferences JSON file
+    json existing_preferences = GetExistingPreferences();
+    if (!existing_preferences.empty()) {
+        res->writeHeader("Content-Type", "application/json");
+        json body = {{"success", true}, {"preferences", existing_preferences}};
+        res->writeStatus(HTTP_200)->end(body.dump());
+    } else {
+        res->writeStatus(HTTP_500)->end();
+    }
+}
+
+std::string_view SimpleFrontendServer::UpdatePreferencesFromString(const string& buffer) {
+    try {
+        json update_data = json::parse(buffer);
+        json existing_data = GetExistingPreferences();
+
+        // Update each preference key-value pair
+        int modified_key_count = 0;
+        for (auto& [key, value] : update_data.items()) {
+            existing_data[key] = value;
+            modified_key_count++;
+        }
+
+        if (modified_key_count) {
+            spdlog::debug("Updated {} preferences", modified_key_count);
+            if (WritePreferencesFile(existing_data)) {
+                return HTTP_200;
+            } else {
+                return HTTP_500;
+            }
+        } else {
+            return HTTP_200;
+        }
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    }
+}
+
+void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    WaitForData(res, req, [this, res](const string& buffer) {
+        auto status = UpdatePreferencesFromString(buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
+        }
+    });
+}
+
+std::string_view SimpleFrontendServer::ClearPreferencesFromString(const string& buffer) {
+    try {
+        json post_data = json::parse(buffer);
+        auto keys_array = post_data["keys"];
+        if (keys_array.is_array() && keys_array.size()) {
+            json existing_data = GetExistingPreferences();
+            int modified_key_count = 0;
+            if (!existing_data.empty()) {
+                for (auto& key : keys_array) {
+                    if (key.is_string()) {
+                        auto key_string = key.get<string>();
+                        if (existing_data.count(key_string)) {
+                            existing_data.erase(key_string);
+                            modified_key_count++;
+                        }
+                    }
+                }
+                if (modified_key_count) {
+                    spdlog::debug("Cleared {} preferences", modified_key_count);
+                    if (WritePreferencesFile(existing_data)) {
+                        return HTTP_200;
+                    }
+                } else {
+                    return HTTP_200;
+                }
+            }
+        } else {
+            return HTTP_400;
+        }
+        return HTTP_500;
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    }
+}
+
+void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    WaitForData(res, req, [this, res](const string& buffer) {
+        auto status = ClearPreferencesFromString(buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
+        }
+    });
+}
+
+void SimpleFrontendServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    json existing_objects = GetExistingObjects(object_type);
+    res->writeHeader("Content-Type", "application/json");
+    json body = {{"success", true}, {(object_type + "s"), existing_objects}};
+    res->writeStatus(HTTP_200)->end(body.dump());
+}
+
+void SimpleFrontendServer::HandleSetObject(const std::string& object_type, Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    WaitForData(res, req, [this, object_type, res](const string& buffer) {
+        auto status = SetObjectFromString(object_type, buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
+        }
+    });
+}
+
+void SimpleFrontendServer::HandleClearObject(const std::string& object_type, Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    WaitForData(res, req, [this, object_type, res](const string& buffer) {
+        auto status = ClearObjectFromString(object_type, buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
+        }
+    });
+}
+
+nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& object_type) {
+    auto object_folder = _config_folder / (object_type + "s");
+    json objects = json::object();
+    if (fs::exists(object_folder)) {
+        for (auto& p : fs::directory_iterator(object_folder)) {
+            try {
+                string filename = p.path().filename().string();
+                regex object_regex(R"(^(.+)\.json$)");
+                smatch sm;
+                if (fs::is_regular_file(p) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                    string object_name = sm[1];
+                    ifstream file(p.path().string());
+                    string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+                    json obj = json::parse(json_string);
+                    objects[object_name] = obj;
+                }
+            } catch (exception e) {
+                spdlog::warn(e.what());
+            }
+        }
+    }
+    return objects;
+}
+
+bool SimpleFrontendServer::WriteObjectFile(const std::string& object_type, const string& object_name, nlohmann::json& obj) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
+        return false;
+    }
+
+    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+
+    try {
+        fs::create_directories(object_path.parent_path());
+        ofstream file(object_path.string());
+        // Ensure correct schema value is written
+        if (object_type == "layout") {
+            obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
+        } else if (object_type == "snippet") {
+            obj["$schema"] = CARTA_SNIPPET_SCHEMA_URL;
+        }
+
+        auto json_string = obj.dump(4);
+        file << json_string;
+        return true;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return false;
+    }
+}
+
+std::string_view SimpleFrontendServer::SetObjectFromString(const std::string& object_type, const string& buffer) {
+    try {
+        string field_name = object_type + "Name";
+        json post_data = json::parse(buffer);
+        if (post_data[field_name].is_string()) {
+            string object_name = post_data[field_name];
+            auto object_data = post_data[object_type];
+            if (!object_name.empty() && object_data.is_object()) {
+                return WriteObjectFile(object_type, object_name, object_data) ? HTTP_200 : HTTP_400;
+            }
+        }
+        return HTTP_400;
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return HTTP_500;
+    }
+}
+
+std::string_view SimpleFrontendServer::ClearObjectFromString(const std::string& object_type, const string& buffer) {
+    if (_read_only_mode) {
+        spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
+        return HTTP_400;
+    }
+
+    try {
+        string field_name = object_type + "Name";
+        json post_data = json::parse(buffer);
+        if (post_data[field_name].is_string()) {
+            string object_name = post_data[field_name];
+            if (!object_name.empty()) {
+                auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+                if (fs::exists(object_path) && fs::is_regular_file(object_path)) {
+                    fs::remove(object_path);
+                    return HTTP_200;
+                }
+            }
+        }
+        return HTTP_400;
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return HTTP_500;
+    }
 }
 
 } // namespace carta

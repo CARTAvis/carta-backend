@@ -4,13 +4,11 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef __CARTA_H__
-#define __CARTA_H__
+#include <gtest/gtest.h>
+#include "CommonTestUtilities.h"
 
-namespace CARTA {
-extern int global_thread_count;
-
-const int MAX_TILING_TASKS = 8;
-} // namespace CARTA
-
-#endif // __CARTA_H__
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    testing::AddGlobalTestEnvironment(new CartaEnvironment());
+    return RUN_ALL_TESTS();
+}
