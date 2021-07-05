@@ -24,7 +24,7 @@ class SessionTest : public ::testing::Test {
 public:
     SessionTest() {
         uint32_t session_id(0);
-        std::string address("127.0.0.1");
+        std::string address("");
         std::string top_level_folder("/");
         std::string starting_folder("data/images");
         int grpc_port(-1);
@@ -40,7 +40,7 @@ public:
 
     void TestOnRegisterViewer() {
         uint32_t session_id(0);
-        uint16_t icd_version(20);
+        uint16_t icd_version(ICD_VERSION);
         uint32_t request_id(0);
         CARTA::RegisterViewer message;
         message.set_session_id(session_id);
