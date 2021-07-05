@@ -76,6 +76,7 @@ void FillStatisticsValuesFromMap(
 std::string IPAsText(std::string_view binary);
 
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
+bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 
 // ************ Region Helpers *************
 
