@@ -128,9 +128,9 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
     // Determine which axes will be rendered
     std::vector<int> render_axes;
     GetRenderAxes(render_axes);
-    size_t width = shape(render_axes[0]);
-    size_t height = shape(render_axes[1]);
-    _image_plane_size = width * height;
+    _width = shape(render_axes[0]);
+    _height = shape(render_axes[1]);
+    _image_plane_size = _width * _height;
 
     // Spectral and stokes axis
     spectral_axis = coord_sys.spectralAxisNumber();
@@ -749,6 +749,26 @@ bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
+    return false;
+}
+
+bool FileLoader::GetDownsampledRasterData(
+    std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
+    // Must be implemented in subclasses
+    return false;
+}
+
+bool FileLoader::GetChunk(
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
+    // Must be implemented in subclasses
+    return false;
+}
+
+bool FileLoader::HasMip(int mip) const {
+    return false;
+}
+
+bool FileLoader::UseTileCache() const {
     return false;
 }
 
