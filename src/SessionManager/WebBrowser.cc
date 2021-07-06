@@ -7,13 +7,9 @@
 #include "WebBrowser.h"
 #include "Logger/Logger.h"
 
-#include <boost/process/async_system.hpp>
-#include <boost/process/child.hpp>
-#include <boost/process/io.hpp>
-#include <boost/process/spawn.hpp>
-#include <boost/process/system.hpp>
-
-#include <cstdlib>
+#include <signal.h>
+// #include <unistd.h> // use signal instead
+// #include <cstdlib>
 #include <iostream>
 
 namespace carta {
@@ -25,10 +21,10 @@ WebBrowser::WebBrowser(const std::string& url, const std::string& browser_cmd) {
         ParseCmd();
     }
     if (_cmd.size() > 0) {
-        spdlog::debug("WebBrowser: custom command now is {}, attempting to open browser", _cmd);
+        spdlog::debug("WebBrowser: custom command is {}, attempting to open the browser now.", _cmd);
         OpenBrowser();
     } else {
-        spdlog::debug("WebBrowser: using default browser", _cmd);
+        spdlog::debug("WebBrowser: using default browser.");
         OpenSystemBrowser();
     }
 }
@@ -38,9 +34,6 @@ void WebBrowser::ParseCmd() {
         _cmd.pop_back();
         _isBkg = true; // so that we know what to do with commands ending with &
     }
-    /*
-        plus what's missing
-    */
     const std::string wildcard = "CARTA_URL";
     auto wildcard_pos = _cmd.find(wildcard);
     if (wildcard_pos != std::string::npos) {
@@ -48,9 +41,6 @@ void WebBrowser::ParseCmd() {
     } else {
         _cmd = fmt::format("{} \"{}\"", _cmd, _url);
     }
-    /*
-        plus what's missing
-    */
 }
 
 void WebBrowser::OpenSystemBrowser() {
@@ -70,14 +60,42 @@ void WebBrowser::OpenSystemBrowser() {
 
 void WebBrowser::OpenBrowser() {
     spdlog::debug("Attempted to open user provided browser command.");
+    spdlog::debug("Attempted command with CARTA url substituted: {}", _cmd);
+
     pid_t pid = fork();
-    if (pid < 0) {
-        // fork fails
-    } else if (pid == 0) {
-        pid_t sid = setsid();
-        std::system(_cmd.c_str());
-    } else {
-        // parent
+    if (pid == 0) {
+        spdlog::debug("pid == {}", pid);
+        struct sigaction noaction;
+        memset(&noaction, 0, sizeof(noaction));
+        noaction.sa_handler = SIG_IGN;
+        ::sigaction(SIGPIPE, &noaction, 0);
+        ::setsid();
+
+        // double fork
+        pid_t pid2 = fork();
+        if (pid2 == 0) {
+            spdlog::debug("pid2 == {}", pid2);
+            char* commands[] = {"/opt/X11/bin/glxgears", NULL};
+            auto result = ::execv("/opt/X11/bin/glxgears", commands);
+            std::cout << "execv result: " << result << std::endl;
+            struct sigaction noaction;
+            memset(&noaction, 0, sizeof(noaction));
+            noaction.sa_handler = SIG_IGN;
+            ::sigaction(SIGPIPE, &noaction, 0);
+            ::_exit(1);
+        } else if (pid2 == -1) {
+            struct sigaction noaction;
+            memset(&noaction, 0, sizeof(noaction));
+            noaction.sa_handler = SIG_IGN;
+            ::sigaction(SIGPIPE, &noaction, 0);
+            if (::chdir("/") == -1) {
+                spdlog::debug("Failed to change dir to \"/\"");
+            }
+            ::_exit(1);
+        }
+    }
+    if (pid == -1) {
+        spdlog::debug("pid == {}", pid);
     }
 }
 
