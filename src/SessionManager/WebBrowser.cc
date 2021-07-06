@@ -74,30 +74,24 @@ void WebBrowser::OpenBrowser() {
     }
 #else
     pid_t pid = fork();
-
     if (pid == 0) {
-        spdlog::debug("pid == {}", pid);
         struct sigaction noaction;
         memset(&noaction, 0, sizeof(noaction));
         noaction.sa_handler = SIG_IGN;
         ::sigaction(SIGPIPE, &noaction, 0);
         ::setsid();
-
         // double fork
         pid_t pid2 = fork();
         if (pid2 == 0) {
-            spdlog::debug("pid2 == {}", pid2);
-
             char* args[] = {const_cast<char*>(_args[0].c_str()), const_cast<char*>(_args[1].c_str()), NULL};
-
             auto result = ::execv(_args[0].c_str(), args);
-            std::cout << "execv result: " << result << std::endl;
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
             noaction.sa_handler = SIG_IGN;
             ::sigaction(SIGPIPE, &noaction, 0);
             ::_exit(1);
         } else if (pid2 == -1) {
+            spdlog::debug("Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
             noaction.sa_handler = SIG_IGN;
@@ -105,14 +99,14 @@ void WebBrowser::OpenBrowser() {
             if (::chdir("/") == -1) {
                 spdlog::debug("Failed to change dir to \"/\"");
             }
-            ::_exit(1);
+            ::_exit(0);
         } else if (pid2 != 0) {
             // kill this child parent so that we don't endup with a zoombie process
             ::_exit(1);
         }
     }
     if (pid == -1) {
-        spdlog::debug("pid == {}", pid);
+        spdlog::debug("Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
         struct sigaction noaction;
         memset(&noaction, 0, sizeof(noaction));
         noaction.sa_handler = SIG_IGN;
