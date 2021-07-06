@@ -63,6 +63,7 @@ void WebBrowser::OpenBrowser() {
     spdlog::debug("Attempted command with CARTA url substituted: {}", _cmd);
 
     pid_t pid = fork();
+
     if (pid == 0) {
         spdlog::debug("pid == {}", pid);
         struct sigaction noaction;
@@ -92,10 +93,18 @@ void WebBrowser::OpenBrowser() {
                 spdlog::debug("Failed to change dir to \"/\"");
             }
             ::_exit(1);
+        } else if (pid2 != 0) {
+            // kill this child parent so that we don't endup with a zoombie process
+            ::_exit(1);
         }
     }
     if (pid == -1) {
         spdlog::debug("pid == {}", pid);
+        struct sigaction noaction;
+        memset(&noaction, 0, sizeof(noaction));
+        noaction.sa_handler = SIG_IGN;
+        ::sigaction(SIGPIPE, &noaction, 0);
+        ::_exit(0);
     }
 }
 
