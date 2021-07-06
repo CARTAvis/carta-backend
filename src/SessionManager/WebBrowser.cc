@@ -36,9 +36,9 @@ void WebBrowser::ParseCmd() {
     const std::string wildcard = "CARTA_URL";
     auto wildcard_pos = _cmd.find(wildcard);
     if (wildcard_pos != std::string::npos) {
-        _cmd = fmt::format("{0}{2}\"{1}\"", _cmd.substr(0, wildcard_pos), _cmd.substr(wildcard_pos + wildcard.size(), _cmd.size()), _url);
+        _cmd = fmt::format("{0}{2} {1}", _cmd.substr(0, wildcard_pos), _cmd.substr(wildcard_pos + wildcard.size(), _cmd.size()), _url);
     } else {
-        _cmd = fmt::format("{} \"{}\"", _cmd, _url);
+        _cmd = fmt::format("{} {}", _cmd, _url);
     }
 #if defined(__APPLE__)
 #else
@@ -87,8 +87,10 @@ void WebBrowser::OpenBrowser() {
         pid_t pid2 = fork();
         if (pid2 == 0) {
             spdlog::debug("pid2 == {}", pid2);
-            char* commands[] = {"/opt/X11/bin/glxgears", NULL};
-            auto result = ::execv("/opt/X11/bin/glxgears", args);
+
+            char* args[] = {const_cast<char*>(_args[0].c_str()), const_cast<char*>(_args[1].c_str()), NULL};
+
+            auto result = ::execv(_args[0].c_str(), args);
             std::cout << "execv result: " << result << std::endl;
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
