@@ -584,6 +584,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
 
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     auto file_id(message.file_id());
+    std::unique_lock<std::mutex> lock(_frame_mutex);
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         std::string err_message;
