@@ -8,6 +8,7 @@
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_WEBBROWSER_H_
 
 #include <string>
+#include <vector>
 
 namespace carta {
 class WebBrowser {
@@ -28,6 +29,7 @@ private:
     bool _status;
     bool _isBkg;
     std::string _cmd;
+    std::vector<std::string> _args;
     std::string _url;
     std::string _error;
 };

@@ -8,9 +8,8 @@
 #include "Logger/Logger.h"
 
 #include <signal.h>
-// #include <unistd.h> // use signal instead
-// #include <cstdlib>
-#include <iostream>
+#include <queue>
+#include <sstream>
 
 namespace carta {
 
@@ -41,6 +40,11 @@ void WebBrowser::ParseCmd() {
     } else {
         _cmd = fmt::format("{} \"{}\"", _cmd, _url);
     }
+#if defined(__APPLE__)
+#else
+    std::istringstream isstream(_cmd);
+    std::copy(std::istream_iterator<std::string>(isstream), std::istream_iterator<std::string>(), std::back_inserter(_args));
+#endif
 }
 
 void WebBrowser::OpenSystemBrowser() {
@@ -61,7 +65,14 @@ void WebBrowser::OpenSystemBrowser() {
 void WebBrowser::OpenBrowser() {
     spdlog::debug("Attempted to open user provided browser command.");
     spdlog::debug("Attempted command with CARTA url substituted: {}", _cmd);
-
+#if defined(__APPLE__)
+    std::string cmd = "open -a " + _cmd;
+    const int ans = std::system(cmd.c_str());
+    if (ans) {
+        _status = false;
+        _error = "Failed to open the default browser automatically.";
+    }
+#else
     pid_t pid = fork();
 
     if (pid == 0) {
@@ -77,7 +88,7 @@ void WebBrowser::OpenBrowser() {
         if (pid2 == 0) {
             spdlog::debug("pid2 == {}", pid2);
             char* commands[] = {"/opt/X11/bin/glxgears", NULL};
-            auto result = ::execv("/opt/X11/bin/glxgears", commands);
+            auto result = ::execv("/opt/X11/bin/glxgears", args);
             std::cout << "execv result: " << result << std::endl;
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
@@ -106,6 +117,7 @@ void WebBrowser::OpenBrowser() {
         ::sigaction(SIGPIPE, &noaction, 0);
         ::_exit(0);
     }
+#endif
 }
 
 } // namespace carta
