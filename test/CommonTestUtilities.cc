@@ -188,6 +188,7 @@ Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _dims.resize(_N);
     data_space.getSimpleExtentDims(_dims.data(), nullptr);
 
+    std::reverse(_dims.begin(), _dims.end());
     _stokes = _N == 4 ? _dims[3] : 1;
     _depth = _N >= 3 ? _dims[2] : 1;
     _height = _dims[1];
