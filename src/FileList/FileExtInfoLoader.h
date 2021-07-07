@@ -49,6 +49,7 @@ private:
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
         const std::vector<int>& display_axes, casacore::String& radesys, bool use_image_for_entries);
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes);
+    void AddBeamEntryFromHeaders(CARTA::FileInfoExtended& extended_info);
 
     // FITS keyword conversion
     bool GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist);

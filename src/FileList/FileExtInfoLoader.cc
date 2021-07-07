@@ -56,6 +56,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
             // Use headers in FileInfoExtended to create computed entries
             AddComputedEntriesFromHeaders(hdu_info.second, render_axes);
+            AddBeamEntryFromHeaders(hdu_info.second);
         }
     } else {
         // Get list of image HDUs
@@ -1016,6 +1017,46 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         entry->set_name("Pixel unit");
         entry->set_value(bunit);
         entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+}
+
+void FileExtInfoLoader::AddBeamEntryFromHeaders(CARTA::FileInfoExtended& extended_info) {
+    // Add restoring beam to computed entries
+    casacore::Quantity bmaj, bmin, bpa;
+    casacore::Unit unit("deg"); // FITS standard unit
+    bool have_bmaj(false), have_bmin(false), have_bpa(false), have_all(false);
+
+    for (int i = 0; i < extended_info.header_entries_size(); ++i) {
+        auto entry = extended_info.header_entries(i);
+        auto entry_name = entry.name();
+
+        // Single beam; TBD: per-plane beams
+        if (entry_name.find("BMAJ") == 0) {
+            bmaj = casacore::Quantity(entry.numeric_value(), unit);
+            have_bmaj = true;
+        } else if (entry_name.find("BMIN") == 0) {
+            bmin = casacore::Quantity(entry.numeric_value(), unit);
+            have_bmin = true;
+        } else if (entry_name.find("BPA") == 0) {
+            bpa = casacore::Quantity(entry.numeric_value(), unit);
+            have_bpa = true;
+        }
+
+        have_all = have_bmaj && have_bmin && have_bpa;
+        if (have_all) {
+            break;
+        }
+    }
+
+    if (have_all) {
+        bmaj.convert(casacore::Unit("arcsec"));
+        bmin.convert(casacore::Unit("arcsec"));
+
+        auto entry = extended_info.add_computed_entries();
+        entry->set_entry_type(CARTA::EntryType::STRING);
+        entry->set_name("Restoring beam");
+        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", bmaj.getValue(), bmin.getValue(), bpa.getValue());
+        entry->set_value(beam_info);
     }
 }
 
