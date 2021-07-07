@@ -711,7 +711,7 @@ int main(int argc, char* argv[]) {
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior<PerSocketData>){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 256 * 1024 * 1024,
-                                            .maxBackpressure = MAX_BACKPRESSURE,
+                                            .maxBackpressure = 0,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
