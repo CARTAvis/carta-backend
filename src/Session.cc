@@ -48,8 +48,8 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
+Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
+    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -379,6 +379,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     if (info_loaded) {
         // create Frame for image; Frame owns loader
         auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu));
+        // query loader for mipmap dataset
+        bool has_mipmaps(_loader->HasMip(2));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -404,6 +406,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
+                if (has_mipmaps) {
+                    feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+                }
             }
             ack.set_file_feature_flags(feature_flags);
             std::vector<CARTA::Beam> beams;
@@ -560,7 +565,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
                             compression_type == CARTA::CompressionType::NONE);
                     } else {
-                        spdlog::error("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
+                        spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
                     }
                 }
             }
@@ -584,6 +589,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
 
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     auto file_id(message.file_id());
+    std::unique_lock<std::mutex> lock(_frame_mutex);
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         std::string err_message;
@@ -619,8 +625,9 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
     if (_frames.count(file_id)) { // reference Frame for Region exists
         if (message.has_spatial_requirements()) {
             auto requirements = message.spatial_requirements();
-            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(),
-                std::vector<std::string>(requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()));
+            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+                requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()};
+            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(), profiles);
         }
         if (_frames.at(file_id)->SetCursor(message.point().x(), message.point().y())) { // cursor changed
             SendSpatialProfileData(file_id, CURSOR_REGION_ID);
@@ -794,8 +801,9 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
             string error = fmt::format("Spatial requirements not valid for non-cursor region ", region_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
         } else {
-            if (_frames.at(file_id)->SetSpatialRequirements(
-                    region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+                message.spatial_profiles().begin(), message.spatial_profiles().end()};
+            if (_frames.at(file_id)->SetSpatialRequirements(region_id, profiles)) {
                 SendSpatialProfileData(file_id, region_id);
             } else {
                 string error = fmt::format("Spatial profiles not valid for region id {}", region_id);
@@ -1653,7 +1661,10 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
                         GetId(), GetAddress(), expected_buffered_amount);
                 }
                 std::string_view sv(msg.first.data(), msg.first.size());
-                _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
+                    spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                }
             }
         }
     });

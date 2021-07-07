@@ -37,6 +37,7 @@ bool IsSubdirectory(std::string folder, std::string top_folder);
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
+int GetNumItems(const std::string& path);
 
 std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
 std::string GetQuantityInfo(const casacore::Quantity& quantity);
@@ -75,6 +76,7 @@ void FillStatisticsValuesFromMap(
 std::string IPAsText(std::string_view binary);
 
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
+bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 
 // ************ Region Helpers *************
 

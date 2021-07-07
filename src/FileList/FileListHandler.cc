@@ -130,7 +130,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
-
                 try {
                     bool is_region_file(false);
 
@@ -176,7 +175,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 case casacore::ImageOpener::UNKNOWN: {
                                     // UNKNOWN directories are directories
                                     casacore::String dir_name(cc_file.path().baseName());
-                                    file_list.add_subdirectories(dir_name);
+                                    auto directory_info = file_list.add_subdirectories();
+                                    directory_info->set_name(dir_name);
+                                    directory_info->set_date(cc_file.modifyTime());
+                                    directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
                                     break;
                                 }
                                 default:
