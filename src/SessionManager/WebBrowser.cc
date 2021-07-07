@@ -83,8 +83,22 @@ void WebBrowser::OpenBrowser() {
         // double fork
         pid_t pid2 = fork();
         if (pid2 == 0) {
-            char* args[] = {const_cast<char*>(_args[0].c_str()), const_cast<char*>(_args[1].c_str()), NULL};
-            auto result = ::execv(_args[0].c_str(), args);
+            char** args;
+            args = (char**)malloc((_args.size() + 1) * sizeof(*args));
+            if (args == nullptr) {
+                spdlog::debug("Can't process command line argumet - This should almost never happen.");
+                ::exit(0);
+            }
+            for (int i = 0; i < _args.size(); ++i) {
+                args[i] = (char*)malloc(_args[i].size() * sizeof(*args[i]));
+                if (args[i] == nullptr) {
+                    spdlog::debug("Can't process command line argumet - This should almost never happen.");
+                    ::exit(0);
+                }
+                strcpy(args[i], _args[i].c_str());
+            }
+            args[_args.size()] = NULL; // args need to be NULL terminated, C-style
+            auto result = ::execv(args[0], args);
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
             noaction.sa_handler = SIG_IGN;
