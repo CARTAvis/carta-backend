@@ -159,11 +159,13 @@ void CartaHdf5Image::SetUpImage() {
     // Set up coordinate system, image info, misc info from image header entries
     try {
         // convert header entries to FITS header strings
-        casacore::Vector<casacore::String> fits_header_strings = Hdf5ToFITSHeaderStrings();
-        if (!fits_header_strings.empty()) {
+        // Convert specified Hdf5 attributes to FITS-format strings.
+        casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
+        Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid(), _fits_header_strings);
+        if (!_fits_header_strings.empty()) {
             // extract HDF5 headers for MiscInfo
             casacore::String schema, converter, converter_version, date;
-            for (auto& header : fits_header_strings) {
+            for (auto& header : _fits_header_strings) {
                 std::vector<std::string> kw_value;
                 if (header.contains("SCHEMA_VERSION")) {
                     SplitString(header, '=', kw_value);
@@ -197,7 +199,7 @@ void CartaHdf5Image::SetUpImage() {
             casacore::IPosition image_shape(shape());
             bool drop_stokes(true);
             casacore::CoordinateSystem coordinate_system = casacore::ImageFITSConverter::getCoordinateSystem(
-                stokes_fits_value, unused_headers_rec, fits_header_strings, log, which_rep, image_shape, drop_stokes);
+                stokes_fits_value, unused_headers_rec, _fits_header_strings, log, which_rep, image_shape, drop_stokes);
             setCoordinateInfo(coordinate_system);
 
             // set image units
@@ -238,10 +240,8 @@ void CartaHdf5Image::SetUpImage() {
     }
 }
 
-casacore::Vector<casacore::String> CartaHdf5Image::Hdf5ToFITSHeaderStrings() {
-    // Convert specified Hdf5 attributes to FITS-format strings.
-    casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
-    return Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid());
+casacore::Vector<casacore::String> CartaHdf5Image::FITSHeaderStrings() {
+    return _fits_header_strings;
 }
 
 casacore::uInt CartaHdf5Image::advisedMaxPixels() const {
