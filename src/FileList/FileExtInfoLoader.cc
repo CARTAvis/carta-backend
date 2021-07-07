@@ -197,8 +197,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     casacore::ImageFITSHeaderInfo fhi;
                     casacore::CoordinateSystem coord_sys(image->coordinates());
 
-                    if ((coord_sys.linearAxesNumbers().size() == 2) && is_casacore_fits) {
-                        // dummy linear system when there is a wcslib error, get original headers
+                    if (is_casacore_fits) {
+                        // Get original headers
                         casacore::String filename(image->name());
                         casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk);
 
