@@ -54,23 +54,22 @@ void WebBrowser::OpenSystemBrowser() {
     std::string cmd = "xdg-open";
 #endif
     cmd = fmt::format("{} \"{}\"", cmd, _url).c_str();
-    spdlog::debug("Attemping to open the default browser with: {}", cmd);
+    spdlog::debug("WebBrowser: Trying to launch CARTA with the default browser using: {}", cmd);
     const int ans = std::system(cmd.c_str());
     if (ans) {
         _status = false;
-        _error = "Failed to open the default browser automatically.";
+        _error = "WebBrowser: Failed to open the default browser automatically.";
     }
 }
 
 void WebBrowser::OpenBrowser() {
-    spdlog::debug("Attempted to open user provided browser command.");
-    spdlog::debug("Attempted command with CARTA url substituted: {}", _cmd);
+    spdlog::debug("WebBrowser: Trying to launch CARTA with user provided browser command: {}", _cmd);
 #if defined(__APPLE__)
     std::string cmd = "open -a " + _cmd;
     const int ans = std::system(cmd.c_str());
     if (ans) {
         _status = false;
-        _error = "Failed to open the default browser automatically.";
+        _error = "WebBrowser: Failed to open the browser automatically.";
     }
 #else
     pid_t pid = fork();
@@ -86,13 +85,19 @@ void WebBrowser::OpenBrowser() {
             char** args;
             args = (char**)malloc((_args.size() + 1) * sizeof(*args));
             if (args == nullptr) {
-                spdlog::debug("Can't process command line argumet - This should almost never happen.");
+                spdlog::debug(
+                    "WebBrowser: Can't process command line argumet - This should almost never happen. The browser won't start "
+                    "automatically.");
+                _error = "WebBrowser: Failed to open the browser automatically.";
                 ::exit(0);
             }
             for (int i = 0; i < _args.size(); ++i) {
                 args[i] = (char*)malloc(_args[i].size() * sizeof(*args[i]));
                 if (args[i] == nullptr) {
-                    spdlog::debug("Can't process command line argumet - This should almost never happen.");
+                    spdlog::debug(
+                        "WebBrowser: Can't process command line argumet - This should almost never happen. The browser won't start "
+                        "automatically.");
+                    _error = "WebBrowser: Failed to open the browser automatically.";
                     ::exit(0);
                 }
                 strcpy(args[i], _args[i].c_str());
@@ -105,13 +110,14 @@ void WebBrowser::OpenBrowser() {
             ::sigaction(SIGPIPE, &noaction, 0);
             ::_exit(1);
         } else if (pid2 == -1) {
-            spdlog::debug("Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
+            spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
+            _error = "WebBrowser: Failed to open the browser automatically.";
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
             noaction.sa_handler = SIG_IGN;
             ::sigaction(SIGPIPE, &noaction, 0);
             if (::chdir("/") == -1) {
-                spdlog::debug("Failed to change dir to \"/\"");
+                spdlog::debug("WebBrowser: Failed to change dir to \"/\"");
             }
             ::_exit(0);
         } else if (pid2 != 0) {
@@ -120,7 +126,8 @@ void WebBrowser::OpenBrowser() {
         }
     }
     if (pid == -1) {
-        spdlog::debug("Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
+        spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
+        _error = "WebBrowser: Failed to open the browser automatically.";
         struct sigaction noaction;
         memset(&noaction, 0, sizeof(noaction));
         noaction.sa_handler = SIG_IGN;
