@@ -420,7 +420,7 @@ void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view 
                     if (message.ParseFromArray(event_buf, event_length)) {
                         tsk = new (tbb::task::allocate_root(session->Context())) OnSplataloguePingTask(session, message, head.request_id);
                     } else {
-                        fmt::print("Bad SPLATALOGUE_PING message!\n");
+                        spdlog::warn("Bad SPLATALOGUE_PING message!\n");
                     }
                     break;
                 }
