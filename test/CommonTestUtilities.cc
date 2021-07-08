@@ -180,14 +180,15 @@ std::vector<float> FitsDataReader::ReadRegion(std::vector<hsize_t> start, std::v
 
 Hdf5DataReader::Hdf5DataReader(const std::string& imgpath) {
     _imgfile = H5::H5File(imgpath, H5F_ACC_RDONLY);
-    auto group = _imgfile.openGroup("0");
-    _dataset = group.openDataSet("DATA");
+    _group = _imgfile.openGroup("0");
+    _dataset = _group.openDataSet("DATA");
 
     auto data_space = _dataset.getSpace();
     _N = data_space.getSimpleExtentNdims();
     _dims.resize(_N);
     data_space.getSimpleExtentDims(_dims.data(), nullptr);
 
+    std::reverse(_dims.begin(), _dims.end());
     _stokes = _N == 4 ? _dims[3] : 1;
     _depth = _N >= 3 ? _dims[2] : 1;
     _height = _dims[1];
@@ -215,6 +216,10 @@ std::vector<float> Hdf5DataReader::ReadRegion(std::vector<hsize_t> start, std::v
     _dataset.read(result.data(), H5::PredType::NATIVE_FLOAT, mem_space, file_space);
 
     return result;
+}
+
+hid_t Hdf5DataReader::GroupId() {
+    return _group.getId();
 }
 
 CartaEnvironment::~CartaEnvironment() {}

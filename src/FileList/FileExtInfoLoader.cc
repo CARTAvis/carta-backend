@@ -40,6 +40,15 @@ bool FileExtInfoLoader::FillFileExtInfo(
     if (_loader && _loader->CanOpenFile(message)) {
         file_ok = FillFileInfoFromImage(extended_info, hdu, message);
     }
+
+    bool has_mips = _loader->HasMip(2);
+    if (has_mips) {
+        auto has_mip_entry = extended_info.add_computed_entries();
+        has_mip_entry->set_name("Has mipmaps");
+        has_mip_entry->set_value("T");
+        has_mip_entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
     return file_ok;
 }
 
@@ -72,7 +81,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 if (is_carta_hdf5) {
                     carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image);
-                    casacore::Vector<casacore::String> headers = hdf5_image->Hdf5ToFITSHeaderStrings();
+                    casacore::Vector<casacore::String> headers = hdf5_image->FITSHeaderStrings();
 
                     for (auto& header : headers) {
                         // Parse header into name, value, comment (if exist)
