@@ -126,11 +126,10 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
     }
 
     // Determine which axes will be rendered
-    std::vector<int> render_axes;
-    GetRenderAxes(render_axes);
-    _width = shape(render_axes[0]);
-    _height = shape(render_axes[1]);
-    _image_plane_size = _width * _height;
+    std::vector<int> render_axes = GetRenderAxes();
+    size_t width = shape(render_axes[0]);
+    size_t height = shape(render_axes[1]);
+    _image_plane_size = width * height;
 
     // Spectral and stokes axis
     spectral_axis = coord_sys.spectralAxisNumber();
@@ -204,11 +203,13 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
     return true;
 }
 
-void FileLoader::GetRenderAxes(std::vector<int>& axes) {
+std::vector<int> FileLoader::GetRenderAxes() {
     // Determine which axes will be rendered
+    std::vector<int> axes;
+
     if (!_render_axes.empty()) {
         axes = _render_axes;
-        return;
+        return axes;
     }
 
     // Default unless PV image
@@ -218,8 +219,13 @@ void FileLoader::GetRenderAxes(std::vector<int>& axes) {
     if (GetShape(shape) && shape.size() > 2) {
         casacore::CoordinateSystem coord_system;
         if (GetCoordinateSystem(coord_system)) {
-            // Check for PV image: [Linear, Spectral] axes
-            if (coord_system.hasLinearCoordinate()) {
+            // Normally, use direction axes
+            if (coord_system.hasDirectionCoordinate()) {
+                casacore::Vector<casacore::Int> dir_axes = coord_system.directionAxesNumbers();
+                axes[0] = dir_axes[0];
+                axes[1] = dir_axes[1];
+            } else if (coord_system.hasLinearCoordinate()) {
+                // Check for PV image: [Linear, Spectral] axes
                 // Returns -1 if no spectral axis
                 int spectral_axis = coord_system.spectralAxisNumber();
 
@@ -244,6 +250,7 @@ void FileLoader::GetRenderAxes(std::vector<int>& axes) {
     }
 
     _render_axes = axes;
+    return axes;
 }
 
 bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
