@@ -55,6 +55,7 @@ void SpectralLineCrawler::Ping(CARTA::SplataloguePong& splatalogue_pong) {
     curl_easy_setopt(curl_handle, CURLOPT_URL, SPLATALOGUE_URL);
     curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1L); // return header only
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 20L);
 
     /* check splatalogue, success if get HTTP 200 OK */
     CURLcode res = curl_easy_perform(curl_handle);
@@ -91,6 +92,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &readBuffer);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineCrawler::WriteMemoryCallback);
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 300L);
 
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
