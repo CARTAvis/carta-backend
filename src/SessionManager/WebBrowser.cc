@@ -8,8 +8,10 @@
 #include "Logger/Logger.h"
 
 #include <signal.h>
+#include <stdio.h>
 #include <queue>
 #include <sstream>
+#include <stdexcept>
 
 namespace carta {
 
@@ -28,6 +30,44 @@ WebBrowser::WebBrowser(const std::string& url, const std::string& browser_cmd) {
     }
 }
 
+// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
+std::string exec(const char* cmd) {
+    char buffer[128];
+    std::string result = "";
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe)
+        throw std::runtime_error("popen() failed!");
+    try {
+        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
+
+std::string find_path(std::string prog) {
+    std::string path;
+    std::vector<std::string> finders = {"which", "type", "command -v", "whereis"};
+    for (const auto& finder : finders) {
+        auto call = finder + " " + prog;
+        path = exec(call.c_str());
+        auto prog2 = path.substr(path.size() - prog.size() - 1, path.size());
+        if (path[0] == '/') {
+            break;
+        } else {
+            path = "";
+        }
+    }
+    if (path.size() > 0) {
+        return path.substr(0, path.size() - 1);
+    }
+    return path;
+}
+
 void WebBrowser::ParseCmd() {
     if (_cmd[_cmd.size() - 1] == '&') {
         _cmd.pop_back();
@@ -44,6 +84,16 @@ void WebBrowser::ParseCmd() {
 #else
     std::istringstream isstream(_cmd);
     std::copy(std::istream_iterator<std::string>(isstream), std::istream_iterator<std::string>(), std::back_inserter(_args));
+    if (_args[0][0] != '/') {
+        // find path, and replace it
+        auto path = find_path(_args[0]);
+        if (path.size() > 0) {
+            spdlog::debug("I found {} in PATH: {}.", _args[0], path);
+            _args[0] = path;
+        } else {
+            spdlog::debug("Can't find {} in PATH, please check.", _args[0]);
+        }
+    }
 #endif
 }
 
@@ -104,6 +154,10 @@ void WebBrowser::OpenBrowser() {
             }
             args[_args.size()] = NULL; // args need to be NULL terminated, C-style
             auto result = ::execv(args[0], args);
+            if (result == -1) {
+                spdlog::debug("WebBrowser: execv failed. CARTA can't start with the requiered settings in --browser.", result);
+                _error = "WebBrowser: Failed to open the browser automatically.";
+            }
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
             noaction.sa_handler = SIG_IGN;
