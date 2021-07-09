@@ -56,7 +56,11 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
             // Use headers in FileInfoExtended to create computed entries
             AddComputedEntriesFromHeaders(hdu_info.second, render_axes);
-            AddBeamEntryFromHeaders(hdu_info.second);
+
+            const casacore::ImageBeamSet beam_set = cfits.GetBeamSet();
+            if (!beam_set.empty()) {
+                AddBeamEntry(hdu_info.second, beam_set);
+            }
         }
     } else {
         // Get list of image HDUs
@@ -175,19 +179,38 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         if (eq_pos != std::string::npos) {
                             name = header.substr(0, eq_pos);
                             name.trim();
-
-                            auto slash_pos = header.find('/', eq_pos);
-                            if (slash_pos == std::string::npos) {
-                                value = header.substr(eq_pos + 1, slash_pos);
-                            } else {
-                                value = header.substr(eq_pos + 1, slash_pos - (eq_pos + 1));
-                            }
-
+                            value = header.substr(eq_pos + 1);
                             value.trim();
+
+                            auto end_quote = std::string::npos;
                             if (value[0] == '\'') {
                                 quoted_value = true;
+                                end_quote = value.find('\'', 1);
+                            } else if (value[0] == '"') {
+                                quoted_value = true;
+                                end_quote = value.find('"', 1);
                             }
-                            value.gsub("'", "");
+
+                            if (quoted_value) {
+                                value = value.substr(1, end_quote - 1);
+
+                                auto slash_pos = header.find('/', end_quote + 1);
+                                if (slash_pos != std::string::npos) {
+                                    comment = header.substr(slash_pos + 1);
+                                    comment.trim();
+                                }
+                            } else {
+                                auto slash_pos = header.find('/', eq_pos);
+                                if (slash_pos == std::string::npos) {
+                                    value = header.substr(eq_pos + 1);
+                                    value.trim();
+                                } else {
+                                    value = header.substr(eq_pos + 1, slash_pos - (eq_pos + 1));
+                                    value.trim();
+                                    comment = header.substr(slash_pos + 1);
+                                    comment.trim();
+                                }
+                            }
 
                             if (name == "SIMPLE") {
                                 try {
@@ -196,11 +219,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                                 } catch (std::invalid_argument& err) {
                                     // not numeric
                                 }
-                            }
-
-                            if (slash_pos != std::string::npos) {
-                                comment = header.substr(slash_pos, std::string::npos);
-                                comment.trim();
                             }
                         }
 
@@ -273,7 +291,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             }
                         }
                     }
-
                     use_image_for_entries = false;
                 } else {
                     // Add FitsKeywordList to ImageFITSHeaderInfo
@@ -330,9 +347,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
                     // Computed entries for rendered image axes (not always 0 and 1)
-                    std::vector<int> render_axes;
-                    _loader->GetRenderAxes(render_axes);
-
+                    std::vector<int> render_axes = _loader->GetRenderAxes();
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
                     AddComputedEntries(extended_info, image, render_axes, radesys, use_image_for_entries);
 
@@ -772,29 +787,21 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    casacore::String brightness_unit(image->units().getName());
-    if (!brightness_unit.empty()) {
-        auto entry = extended_info.add_computed_entries();
-        entry->set_name("Pixel unit");
-        entry->set_value(brightness_unit);
-        entry->set_entry_type(CARTA::EntryType::STRING);
+    if (use_image_for_entries) {
+        casacore::String brightness_unit(image->units().getName());
+
+        if (!brightness_unit.empty()) {
+            auto entry = extended_info.add_computed_entries();
+            entry->set_name("Pixel unit");
+            entry->set_value(brightness_unit);
+            entry->set_entry_type(CARTA::EntryType::STRING);
+        }
     }
 
     casacore::ImageInfo image_info(image->imageInfo());
     if (image_info.hasBeam()) {
-        auto entry = extended_info.add_computed_entries();
-        entry->set_entry_type(CARTA::EntryType::STRING);
-        casacore::GaussianBeam gaussian_beam;
-        if (image_info.hasSingleBeam()) {
-            gaussian_beam = image_info.restoringBeam();
-            entry->set_name("Restoring beam");
-        } else if (image_info.hasMultipleBeams()) {
-            gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
-            entry->set_name("Median area beam");
-        }
-        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
-            gaussian_beam.getPA("deg").getValue());
-        entry->set_value(beam_info);
+        const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
+        AddBeamEntry(extended_info, beam_set);
     }
 }
 
@@ -1020,42 +1027,25 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
     }
 }
 
-void FileExtInfoLoader::AddBeamEntryFromHeaders(CARTA::FileInfoExtended& extended_info) {
-    // Add restoring beam to computed entries
-    casacore::Quantity bmaj, bmin, bpa;
-    casacore::Unit unit("deg"); // FITS standard unit
-    bool have_bmaj(false), have_bmin(false), have_bpa(false), have_all(false);
-
-    for (int i = 0; i < extended_info.header_entries_size(); ++i) {
-        auto entry = extended_info.header_entries(i);
-        auto entry_name = entry.name();
-
-        // Single beam; TBD: per-plane beams
-        if (entry_name.find("BMAJ") == 0) {
-            bmaj = casacore::Quantity(entry.numeric_value(), unit);
-            have_bmaj = true;
-        } else if (entry_name.find("BMIN") == 0) {
-            bmin = casacore::Quantity(entry.numeric_value(), unit);
-            have_bmin = true;
-        } else if (entry_name.find("BPA") == 0) {
-            bpa = casacore::Quantity(entry.numeric_value(), unit);
-            have_bpa = true;
-        }
-
-        have_all = have_bmaj && have_bmin && have_bpa;
-        if (have_all) {
-            break;
-        }
+void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set) {
+    // Add restoring/median beam to computed entries.
+    casacore::GaussianBeam gaussian_beam;
+    std::string entry_name;
+    if (beam_set.hasSingleBeam()) {
+        gaussian_beam = beam_set.getBeam();
+        entry_name = "Restoring beam";
+    } else if (beam_set.hasMultiBeam()) {
+        gaussian_beam = beam_set.getMedianAreaBeam();
+        entry_name = "Median area beam";
     }
 
-    if (have_all) {
-        bmaj.convert(casacore::Unit("arcsec"));
-        bmin.convert(casacore::Unit("arcsec"));
+    if (!gaussian_beam.isNull()) {
+        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
+            gaussian_beam.getPA("deg").getValue());
 
         auto entry = extended_info.add_computed_entries();
+        entry->set_name(entry_name);
         entry->set_entry_type(CARTA::EntryType::STRING);
-        entry->set_name("Restoring beam");
-        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", bmaj.getValue(), bmin.getValue(), bpa.getValue());
         entry->set_value(beam_info);
     }
 }
