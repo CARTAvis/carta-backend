@@ -46,11 +46,11 @@ bool RegionImportExport::AddExportRegion(
     if (pixel_coord) {
         casa::AnnotationBase::unitInit(); // enable "pix" unit
     }
-
-    bool converted(false);
-    // Return control points and rotation as Quantity; rotation updated for ellipse only
-    std::vector<casacore::Quantity> control_points;
     casacore::Quantity rotation(region_state.rotation, "deg");
+
+    // Convert control points and rotation to Quantity; rotation updated for ellipse only
+    std::vector<casacore::Quantity> control_points;
+    bool converted(false);
     switch (region_state.type) {
         case CARTA::RegionType::POINT:
             converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
@@ -62,14 +62,17 @@ bool RegionImportExport::AddExportRegion(
             converted = ConvertRecordToEllipse(region_state, region_record, pixel_coord, control_points, rotation);
             break;
         case CARTA::RegionType::POLYGON:
-            converted = ConvertRecordToPolygon(region_record, pixel_coord, control_points);
+        case CARTA::RegionType::LINE:
+        case CARTA::RegionType::POLYLINE: {
+            converted = ConvertRecordToPolygonLine(region_record, pixel_coord, control_points);
             break;
+        }
         default:
             break;
     }
 
     if (converted) {
-        return AddExportRegion(region_state, region_style, control_points, rotation); // add to CRTF or DS9 export
+        return AddExportRegion(region_state.type, region_style, control_points, rotation); // CRTF or DS9 export
     }
 
     return converted;
@@ -192,11 +195,13 @@ void RegionImportExport::ParseRegionParameters(
 
 bool RegionImportExport::ConvertPointToPixels(
     std::string& region_frame, std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords) {
+    // Convert point Quantities to pixels in image coord sys
+    // Point is defined by 2 quantities, x and y
     if (point.size() != 2) {
         return false;
     }
 
-    // must have matched coordinates
+    // x and y must have matched pixel/world types
     casacore::String unit0(point[0].getUnit()), unit1(point[1].getUnit());
     bool x_is_pix = unit0.contains("pix");
     bool y_is_pix = unit1.contains("pix");
@@ -204,7 +209,7 @@ bool RegionImportExport::ConvertPointToPixels(
         return false;
     }
 
-    // if unit is pixels, just get values
+    // If unit is pixels, just get values
     if (x_is_pix) {
         pixel_coords.resize(2);
         pixel_coords(0) = point[0].getValue();
@@ -212,51 +217,56 @@ bool RegionImportExport::ConvertPointToPixels(
         return true;
     }
 
+    // Convert world to pixel coords
+    bool converted_to_pixel(false);
     if (_coord_sys->hasDirectionCoordinate()) {
-        casacore::MDirection::Types image_direction_type = _coord_sys->directionCoordinate().directionType();
+        try {
+            casacore::MDirection::Types image_direction_type = _coord_sys->directionCoordinate().directionType();
 
-        casacore::MDirection::Types region_direction_type;
-        if (region_frame.empty()) {
-            region_direction_type = image_direction_type;
-        } else {
-            casacore::MDirection::getType(region_direction_type, region_frame);
-        }
-
-        // Make MDirection from wcs parameter
-        casacore::MDirection direction(point[0], point[1], region_direction_type);
-
-        // Convert to image direction
-        if (region_direction_type != image_direction_type) {
-            try {
-                direction = casacore::MDirection::Convert(direction, image_direction_type)();
-            } catch (casacore::AipsError& err) {
-                _import_errors.append("Conversion of region parameters to image coordinate system failed.\n");
-                return false;
+            casacore::MDirection::Types region_direction_type;
+            if (region_frame.empty()) {
+                region_direction_type = image_direction_type;
+            } else {
+                casacore::MDirection::getType(region_direction_type, region_frame);
             }
-        }
 
-        // Convert world to pixel coordinates (uses wcslib wcss2p(); pixels are not fractional)
-        bool pixel_ok = _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
-        if (!pixel_ok) {
-            _import_errors.append("Conversion of region parameters to image pixel coordinates failed.\n");
+            // Make MDirection from wcs parameter
+            casacore::MDirection direction(point[0], point[1], region_direction_type);
+
+            // Convert to image direction
+            if (region_direction_type != image_direction_type) {
+                direction = casacore::MDirection::Convert(direction, image_direction_type)();
+            }
+
+            // Convert world to pixel coordinates. Uses wcslib wcss2p(); pixels are not fractional
+            converted_to_pixel = _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
+        } catch (const casacore::AipsError& err) {
+            _import_errors.append("Conversion of region parameters to image coordinate system failed.\n");
+            return converted_to_pixel;
         }
-        return pixel_ok;
     }
 
-    return false;
+    if (!converted_to_pixel) {
+        _import_errors.append("Conversion of region parameters to image pixel coordinates failed.\n");
+    }
+
+    return converted_to_pixel;
 }
 
-double RegionImportExport::WorldToPixelLength(casacore::Quantity world_length, unsigned int pixel_axis) {
-    // world->pixel conversion of ellipse radius or box width.
+double RegionImportExport::WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis) {
+    // world->pixel conversion of ellipse/circle radius or box width.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+    if (input.getUnit() == "pix") {
+        return input.getValue();
+    }
 
     // Convert to world axis units
     casacore::Vector<casacore::String> units = _coord_sys->worldAxisUnits();
-    world_length.convert(units[pixel_axis]);
+    input.convert(units[pixel_axis]);
 
     // Find pixel length
     casacore::Vector<casacore::Double> increments(_coord_sys->increment());
-    return fabs(world_length.getValue() / increments[pixel_axis]);
+    return fabs(input.getValue() / increments[pixel_axis]);
 }
 
 std::string RegionImportExport::FormatColor(const std::string& color) {
@@ -452,14 +462,18 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     return false;
 }
 
-bool RegionImportExport::ConvertRecordToPolygon(
+bool RegionImportExport::ConvertRecordToPolygonLine(
     const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
     // Convert casacore Record to polygon Quantity control points
     // Polygon is an LCPolygon with x, y arrays in pixel coordinates
+    casacore::String region_name = region_record.asString("name");
     casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
     casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
-    size_t npoints(x.size() - 1); // remove last point, same as the first to enclose region
-    size_t naxes(_image_shape.size());
+    size_t npoints(x.size());
+    if (region_name == "LCPolygon") {
+        // ignore last point, same as the first to enclose region
+        npoints -= 1;
+    }
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
@@ -485,6 +499,7 @@ bool RegionImportExport::ConvertRecordToPolygon(
     }
 
     // Convert pixel coords to world coords
+    size_t naxes(_image_shape.size());
     casacore::Matrix<casacore::Double> world_coords(naxes, npoints);
     casacore::Matrix<casacore::Double> pixel_coords(naxes, npoints);
     pixel_coords = 0.0;
