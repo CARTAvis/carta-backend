@@ -34,14 +34,15 @@ public:
     ~Ds9ImportExport() override;
 
     // Export regions
-    // Convert to DS9 string and add to vector
+    // RegionState control points for pixel coords in reference image
     bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) override;
+
     // Print regions to file or vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(const RegionState& region_state, const RegionStyle& style, const std::vector<casacore::Quantity>& control_points,
+    bool AddExportRegion(CARTA::RegionType region_type, const RegionStyle& style, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) override;
 
 private:
@@ -64,7 +65,7 @@ private:
     RegionState ImportCircleRegion(std::vector<std::string>& parameters);
     RegionState ImportEllipseRegion(std::vector<std::string>& parameters);
     RegionState ImportRectangleRegion(std::vector<std::string>& parameters);
-    RegionState ImportPolygonRegion(std::vector<std::string>& parameters);
+    RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters);
     RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Convert DS9 syntax -> CASA

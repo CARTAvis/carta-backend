@@ -202,7 +202,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     casacore::CoordinateSystem* output_csys = frame->CoordinateSystem();
 
     if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
-        // Export failed
+        // Export fails, cannot convert to world coordinates
         delete output_csys;
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
@@ -237,12 +237,12 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             std::vector<int> dash_list = {carta_region_style.dash_list().begin(), carta_region_style.dash_list().end()};
             RegionStyle region_style(carta_region_style.name(), carta_region_style.color(), carta_region_style.line_width(), dash_list);
 
-            // Use RegionState control points with reference file id for pixel export
             if ((region_state.reference_file_id == file_id) && pixel_coord) {
+                // Use RegionState control points with reference file id for pixel export
                 region_added = exporter->AddExportRegion(region_state, region_style);
             } else {
                 try {
-                    // Get converted lattice region parameters (pixel) as a Record
+                    // Use Record containing pixel coords of region converted to output image
                     casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, *output_csys, output_shape);
                     if (!region_record.empty()) {
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
@@ -660,8 +660,12 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
 }
 
 casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id) {
-    // Returns 2D region with no extension; nullptr if outside image
+    // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
+    if (_regions.at(region_id)->IsAnnotation()) { // true if line or polyline
+        return nullptr;
+    }
+
     return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id));
 }
 
