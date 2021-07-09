@@ -64,10 +64,12 @@ public:
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
-    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types);
+    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+        const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
 
     // Calculations
-    bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id);
+    bool FillRegionHistogramData(
+        std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
@@ -91,7 +93,6 @@ private:
     // Clear cache for changed region
     void ClearRegionCache(int region_id);
 
-    // Spectral requirements helpers
     // Check if spectral config has been changed/cancelled
     bool HasSpectralRequirements(int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats);
     // Set all requirements "new" when region changes
@@ -101,13 +102,13 @@ private:
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region);
-    bool GetRegionHistogramData(
-        int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
+    bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
+        std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
-        int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
+        int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
