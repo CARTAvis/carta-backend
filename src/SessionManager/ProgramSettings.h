@@ -105,19 +105,6 @@ struct ProgramSettings {
         warning_msgs.clear();
         debug_msgs.clear();
     }
-
-    std::string GenerateBrowserCommand(const std::string& url) {
-        const std::string wildcard = "CARTA_URL";
-        auto wildcard_pos = browser.find(wildcard);
-        std::string cmd;
-        if (wildcard_pos != std::string::npos) {
-            cmd = fmt::format(
-                "{0}{2}{1}", browser.substr(0, wildcard_pos), browser.substr(wildcard_pos + wildcard.size(), browser.size()), url);
-        } else {
-            cmd = fmt::format("{} {}", browser, url);
-        }
-        return cmd;
-    }
 };
 } // namespace carta
 #endif // CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
