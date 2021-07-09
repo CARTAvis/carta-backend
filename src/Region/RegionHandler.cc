@@ -1346,4 +1346,12 @@ bool RegionHandler::GetRegionStatsData(
     return false;
 }
 
+bool RegionHandler::GetRegionType(int region_id, CARTA::RegionType& region_type) {
+    if (_regions.count(region_id)) {
+        region_type = _regions[region_id]->GetRegionState().type;
+        return true;
+    }
+    return false;
+}
+
 } // namespace carta

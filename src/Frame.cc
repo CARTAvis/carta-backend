@@ -960,10 +960,6 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 // Spatial Requirements and Data
 
 bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
-    if (region_id != CURSOR_REGION_ID) {
-        return false;
-    }
-
     _cursor_spatial_configs.clear();
     for (auto& profile : spatial_profiles) {
         _cursor_spatial_configs.push_back(profile);
@@ -972,11 +968,8 @@ bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSp
 }
 
 bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data) {
-    // Fill spatial profile message for cursor only
-    // Send even if no requirements, to update value of data at cursor
-    if (region_id != CURSOR_REGION_ID) {
-        return false;
-    }
+    // Fill spatial profile message for cursor/point region only
+    // Send even if no requirements, to update value of data at cursor/point region
 
     // frontend does not set cursor outside of image, but just in case:
     if (!_cursor.InImage(_width, _height)) {
