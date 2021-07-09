@@ -116,16 +116,15 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
             }
             break;
         }
+        case CARTA::RegionType::LINE:
+        case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            std::ostringstream os; // format varies based on npoints
-            os << "polygon(";
-            os << std::fixed << std::setprecision(2) << points[0].x() << ", " << points[0].y();
+            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_state.type], points[0].x(), points[0].y());
             for (size_t i = 1; i < points.size(); ++i) {
-                os << "," << points[i].x() << "," << points[i].y();
+                region_line += fmt::format(", {:.2f}, {:.2f}", points[i].x(), points[i].y());
             }
-            os << ")";
-            region_line = os.str();
+            region_line += ")";
             break;
         }
         default:
@@ -142,16 +141,16 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+bool Ds9ImportExport::AddExportRegion(const CARTA::RegionType region_type, const RegionStyle& region_style,
     const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
-    // Add region using values from LCRegion Record (pixel or converted to world)
+    // Add region using Quantities
     float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
     std::string region_line;
     if (_pixel_coord) {
-        region_line = AddExportRegionPixel(region_state.type, control_points, angle);
+        region_line = AddExportRegionPixel(region_type, control_points, angle);
     } else {
-        region_line = AddExportRegionWorld(region_state.type, control_points, angle);
+        region_line = AddExportRegionWorld(region_type, control_points, angle);
     }
 
     // Add region style and add to list
@@ -353,10 +352,8 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
         region_state = ImportEllipseRegion(parameters);
     } else if (region_type.find("box") != std::string::npos) {
         region_state = ImportRectangleRegion(parameters);
-    } else if (region_type.find("polygon") != std::string::npos) {
-        region_state = ImportPolygonRegion(parameters);
-    } else if (region_type.find("line") != std::string::npos) {
-        _import_errors.append("DS9 line region not supported.\n");
+    } else if ((region_type.find("poly") != std::string::npos) || (region_type.find("line") != std::string::npos)) {
+        region_state = ImportPolygonLineRegion(parameters);
     } else if (region_type.find("vector") != std::string::npos) {
         _import_errors.append("DS9 vector region not supported.\n");
     } else if (region_type.find("text") != std::string::npos) {
@@ -646,16 +643,18 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
     return region_state;
 }
 
-RegionState Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters) {
+RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& parameters) {
     // Import DS9 polygon into RegionState
     // polygon x1 y1 x2 y2 x3 y3 ...
     RegionState region_state;
 
     size_t nparam(parameters.size());
-    if ((nparam % 2) != 1) { // parameters[0] is "polygon"
+    if ((nparam % 2) != 1) { // parameters[0] is region name
         _import_errors.append("polygon syntax error, odd number of arguments.\n");
         return region_state;
     }
+
+    std::string region_name(parameters[0]);
 
     // convert strings to Quantities
     std::vector<casacore::Quantity> param_quantities;
@@ -713,6 +712,12 @@ RegionState Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& param
 
     // Set RegionState
     CARTA::RegionType type(CARTA::RegionType::POLYGON);
+    if (region_name == "line") {
+        type = CARTA::RegionType::LINE;
+    } else if (region_name == "polyline") {
+        type = CARTA::RegionType::POLYLINE;
+    }
+
     float rotation(0.0);
     region_state = RegionState(_file_id, type, control_points, rotation);
     return region_state;
@@ -871,7 +876,7 @@ void Ds9ImportExport::AddHeader() {
 }
 
 std::string Ds9ImportExport::AddExportRegionPixel(
-    CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle) {
+    const CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle) {
     // Add region using Record (pixel or world)
     std::string region;
 
@@ -903,16 +908,15 @@ std::string Ds9ImportExport::AddExportRegionPixel(
             }
             break;
         }
+        case CARTA::RegionType::LINE:
+        case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            std::ostringstream os; // format varies based on npoints
-            os << "polygon(";
-            os << std::fixed << std::setprecision(4) << control_points[0].getValue() << ", " << control_points[1].getValue();
-            for (size_t i = 2; i < control_points.size(); i += 2) {
-                os << ", " << control_points[i].getValue() << ", " << control_points[i + 1].getValue();
+            region = fmt::format("{}({:.4f}", _region_names[type], control_points[0].getValue());
+            for (size_t i = 1; i < control_points.size(); ++i) {
+                region += fmt::format(", {:.4f}", control_points[i].getValue());
             }
-            os << ")";
-            region = os.str();
+            region += ")";
             break;
         }
         default:
@@ -974,23 +978,23 @@ std::string Ds9ImportExport::AddExportRegionWorld(
             }
             break;
         }
+        case CARTA::RegionType::LINE:
+        case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            std::ostringstream os; // format varies based on npoints
-            os << "polygon(";
+            region = fmt::format("{}(", _region_names[type]);
             if (_file_ref_frame.empty()) { // linear coordinates
-                os << std::fixed << std::setprecision(6) << control_points[0].getValue();
+                region += fmt::format("{:.4f}", control_points[0].getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {
-                    os << "," << std::fixed << std::setprecision(6) << control_points[i].getValue();
+                    region += fmt::format(", {:.4f}", control_points[i].getValue());
                 }
             } else {
-                os << std::fixed << std::setprecision(6) << control_points[0].get("deg").getValue();
+                region += fmt::format("{:.4f}", control_points[0].get("deg").getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {
-                    os << "," << std::fixed << std::setprecision(6) << control_points[i].get("deg").getValue();
+                    region += fmt::format(", {:.4f}", control_points[i].get("deg").getValue());
                 }
             }
-            os << ")";
-            region = os.str();
+            region += ")";
             break;
         }
         default:
