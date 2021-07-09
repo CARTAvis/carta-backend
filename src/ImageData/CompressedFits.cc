@@ -39,9 +39,12 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     int hdu(-1);
     CARTA::FileInfoExtended file_info_ext;
 
-    bool in_image_headers(false);
+    bool in_image_headers(false), in_beam_table(false);
     long long data_size(1);
     size_t buffer_index(0);
+    BeamInfo beam_info;
+    casacore::String beam_unit("deg");
+
     auto t_start_get_hdu = std::chrono::high_resolution_clock::now();
 
     while (!gzeof(zip_file)) {
@@ -65,11 +68,18 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
             // New hdu: read initial headers to determine if image
             hdu++;
             data_size = 1;
+            beam_info.clear();
 
             in_image_headers = IsImageHdu(buffer, file_info_ext, data_size);
             buffer_index = INITIAL_HEADERS_SIZE * FITS_CARD_SIZE;
 
             if (!in_image_headers) {
+                auto first_entry = file_info_ext.header_entries(0);
+                std::string value(first_entry.value());
+                if ((first_entry.name() == "XTENSION") && (value.find("BEAMS") != std::string::npos)) {
+                    in_beam_table = true;
+                }
+
                 file_info_ext.clear_header_entries();
             }
         }
@@ -86,6 +96,9 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
             casacore::String keyword, value, comment;
             ParseFitsCard(fits_card, keyword, value, comment);
+            if (in_beam_table) {
+                spdlog::debug("PDEBUG beam table header: {} = {}", keyword, value);
+            }
 
             if (keyword != "END") {
                 if (in_image_headers) {
@@ -101,6 +114,12 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                         in_image_headers = false;
                         break;
                     }
+                } else if (keyword == "BMAJ") {
+                    beam_info.bmaj = value + beam_unit;
+                } else if (keyword == "BMIN") {
+                    beam_info.bmin = value + beam_unit;
+                } else if (keyword == "BPA") {
+                    beam_info.bpa = value + beam_unit;
                 }
             } else {
                 // END of header
@@ -108,17 +127,26 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                     // add entry to map
                     std::string hduname = std::to_string(hdu);
                     hdu_info_map[hduname] = file_info_ext;
+
+                    if (beam_info.defined()) {
+                        SetBeam(beam_info);
+                    }
                 }
 
                 // Skip data blocks
                 if (data_size > 1) {
                     auto nblocks_data = std::ceil((float)data_size / (float)FITS_BLOCK_SIZE);
-                    gzseek(zip_file, nblocks_data * FITS_BLOCK_SIZE, SEEK_CUR);
+                    if (in_beam_table) {
+                        ReadBeamsTable(zip_file, nblocks_data);
+                    } else {
+                        gzseek(zip_file, nblocks_data * FITS_BLOCK_SIZE, SEEK_CUR);
+                    }
                 }
 
                 // Reset for next hdu
                 file_info_ext.clear_header_entries();
                 in_image_headers = false;
+                in_beam_table = false;
 
                 // Stop parsing block
                 break;
@@ -295,6 +323,36 @@ void CompressedFits::AddHeaderEntry(
 
     if (!comment.empty()) {
         entry->set_comment(comment);
+    }
+}
+
+void CompressedFits::SetBeam(BeamInfo& beam_info) {
+    // Set beam in ImageBeamSet using info
+    try {
+        casacore::Quantity bmajq, bminq, bpaq;
+        casacore::readQuantity(bmajq, beam_info.bmaj);
+        casacore::readQuantity(bminq, beam_info.bmin);
+        casacore::readQuantity(bpaq, beam_info.bpa);
+
+        casacore::GaussianBeam beam(bmajq, bminq, bpaq);
+        _beam_set = casacore::ImageBeamSet(beam);
+    } catch (casacore::AipsError& err) {
+        spdlog::debug("Failed to set beam information: {}", err.getMesg());
+    }
+}
+
+void CompressedFits::ReadBeamsTable(gzFile zip_file, int nblocks) {
+    // Read Beams table into ImageBeamSet
+    size_t buffer_index(0);
+
+    for (int i = 0; i < nblocks; ++i) {
+        size_t bufsize(FITS_BLOCK_SIZE);
+        int err(0);
+        std::string buffer(bufsize, 0);
+        size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
+        buffer_index = 0;
+
+        // TODO read buffer and set beams
     }
 }
 

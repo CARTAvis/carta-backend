@@ -12,10 +12,28 @@
 #include <string>
 
 #include <casacore/casa/BasicSL/String.h>
+#include <casacore/images/Images/ImageBeamSet.h>
 
 #include <carta-protobuf/file_info.pb.h>
 
 // Read compressed FITS file headers
+
+// Struct to hold beam header values
+struct BeamInfo {
+    std::string bmaj;
+    std::string bmin;
+    std::string bpa;
+
+    bool defined() {
+        return !bmaj.empty() && !bmin.empty() && !bpa.empty();
+    }
+
+    void clear() {
+        bmaj.clear();
+        bmin.clear();
+        bpa.clear();
+    }
+};
 
 namespace carta {
 
@@ -25,6 +43,11 @@ public:
 
     // Headers for file info
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
+
+    // Beams for file info and opening image
+    inline const casacore::ImageBeamSet& GetBeamSet() {
+        return _beam_set;
+    }
 
     // File decompression
     unsigned long long GetDecompressSize();
@@ -40,9 +63,12 @@ private:
     void ParseFitsCard(casacore::String& fits_card, casacore::String& keyword, casacore::String& value, casacore::String& comment);
     void AddHeaderEntry(
         casacore::String& keyword, casacore::String& value, casacore::String& comment, CARTA::FileInfoExtended& file_info_ext);
+    void SetBeam(BeamInfo& beam_info);
+    void ReadBeamsTable(gzFile zip_file, int nblocks);
 
     std::string _filename;
     std::string _unzip_filename;
+    casacore::ImageBeamSet _beam_set;
 };
 
 } // namespace carta
