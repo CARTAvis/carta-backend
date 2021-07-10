@@ -40,6 +40,15 @@ bool FileExtInfoLoader::FillFileExtInfo(
     if (_loader && _loader->CanOpenFile(message)) {
         file_ok = FillFileInfoFromImage(extended_info, hdu, message);
     }
+
+    bool has_mips = _loader->HasMip(2);
+    if (has_mips) {
+        auto has_mip_entry = extended_info.add_computed_entries();
+        has_mip_entry->set_name("Has mipmaps");
+        has_mip_entry->set_value("T");
+        has_mip_entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
     return file_ok;
 }
 
@@ -72,7 +81,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 if (is_carta_hdf5) {
                     carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image);
-                    casacore::Vector<casacore::String> headers = hdf5_image->Hdf5ToFITSHeaderStrings();
+                    casacore::Vector<casacore::String> headers = hdf5_image->FITSHeaderStrings();
 
                     for (auto& header : headers) {
                         // Parse header into name, value, comment (if exist)
@@ -188,8 +197,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     casacore::ImageFITSHeaderInfo fhi;
                     casacore::CoordinateSystem coord_sys(image->coordinates());
 
-                    if ((coord_sys.linearAxesNumbers().size() == 2) && is_casacore_fits) {
-                        // dummy linear system when there is a wcslib error, get original headers
+                    if (is_casacore_fits) {
+                        // Get original headers
                         casacore::String filename(image->name());
                         casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk);
 
@@ -402,9 +411,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
-                    std::vector<int> render_axes;
-                    _loader->GetRenderAxes(render_axes);
-
+                    std::vector<int> render_axes = _loader->GetRenderAxes();
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
                     AddComputedEntries(extended_info, image, render_axes, radesys, use_image_for_entries);
 
@@ -960,25 +967,33 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
     // split ctype1 and ctype2 into type and projection
     std::unordered_map<std::string, std::string> names = {
         {"RA", "Right Ascension"}, {"DEC", "Declination"}, {"GLON", "Longitude"}, {"GLAT", "Latitude"}};
-    // split ctype1
-    std::vector<std::string> type_proj;
-    SplitString(ctype1, '-', type_proj);
-    coord_name1 = type_proj[0];
+
+    auto delim_pos = ctype1.find("--");
+    if (delim_pos != std::string::npos) {
+        coord_name1 = ctype1.substr(0, delim_pos);
+        projection = ctype1.substr(delim_pos, std::string::npos);
+        auto proj_start = projection.find_first_not_of('-');
+        projection = projection.substr(proj_start, std::string::npos);
+    } else {
+        coord_name1 = ctype1;
+    }
+
     if (radesys.empty() && (coord_name1 == "GLON")) {
         radesys = "GALACTIC";
     }
+
     if (names.count(coord_name1)) {
         coord_name1 = names[coord_name1];
     }
-    size_t split_size(type_proj.size());
-    if (split_size > 1) {
-        projection = type_proj[split_size - 1];
+
+    delim_pos = ctype2.find("--");
+    if (delim_pos != std::string::npos) {
+        // split ctype2
+        coord_name2 = ctype2.substr(0, delim_pos);
+    } else {
+        coord_name2 = ctype2;
     }
 
-    // split ctype2
-    type_proj.clear();
-    SplitString(ctype2, '-', type_proj);
-    coord_name2 = type_proj[0];
     if (names.count(coord_name2)) {
         coord_name2 = names[coord_name2];
     }

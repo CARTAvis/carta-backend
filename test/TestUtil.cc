@@ -69,3 +69,24 @@ TEST(UtilTest, TopIsRoot) {
     EXPECT_TRUE(IsSubdirectory(pwd.string(), "/"));
     EXPECT_TRUE(IsSubdirectory("./", "/"));
 }
+
+TEST(UtilTest, ItemCountValidFolder) {
+    auto pwd = TestRoot();
+    EXPECT_EQ(GetNumItems((pwd / "data/tables").string()), 2);
+    EXPECT_EQ(GetNumItems((pwd / "data/tables/xml").string()), 6);
+}
+
+TEST(UtilTest, ItemCountMissingFolder) {
+    auto pwd = TestRoot();
+    EXPECT_EQ(GetNumItems((pwd / "data/missing_folder").string()), -1);
+}
+
+TEST(UtilTest, StringCompare) {
+    EXPECT_TRUE(ConstantTimeStringCompare("hello world", "hello world"));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello w1rld", "hello world"));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello w1rld", "hello w2rld"));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello w", "hello world"));
+    EXPECT_TRUE(ConstantTimeStringCompare("", ""));
+    EXPECT_FALSE(ConstantTimeStringCompare("hello world", ""));
+    EXPECT_FALSE(ConstantTimeStringCompare("", "hello world"));
+}

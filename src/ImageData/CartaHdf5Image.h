@@ -57,7 +57,7 @@ public:
     casacore::Lattice<bool>& pixelMask() override;
     casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) override;
 
-    casacore::Vector<casacore::String> Hdf5ToFITSHeaderStrings();
+    casacore::Vector<casacore::String> FITSHeaderStrings();
 
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
@@ -72,6 +72,7 @@ private:
     casacore::HDF5Lattice<float> _lattice;
     casacore::Lattice<bool>* _pixel_mask;
     casacore::IPosition _shape;
+    casacore::Vector<casacore::String> _fits_header_strings;
 };
 
 } // namespace carta

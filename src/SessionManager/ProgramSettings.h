@@ -73,6 +73,7 @@ struct ProgramSettings {
     std::unordered_map<std::string, std::string*> strings_keys_map{
         {"host", &host},
         {"top_level_folder", &top_level_folder},
+        {"starting_folder", &starting_folder},
         {"frontend_folder", &frontend_folder},
         {"browser", &browser}
     };

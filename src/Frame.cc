@@ -43,6 +43,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
+      _tile_cache(0),
       _x_axis(0),
       _y_axis(1),
       _z_axis(-1),
@@ -51,6 +52,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _stokes_index(DEFAULT_STOKES),
       _depth(1),
       _num_stokes(1),
+      _image_cache_valid(false),
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -79,8 +81,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     }
 
     // Determine which axes are rendered, e.g. for pV images
-    std::vector<int> render_axes;
-    _loader->GetRenderAxes(render_axes);
+    std::vector<int> render_axes = _loader->GetRenderAxes();
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
 
@@ -89,10 +90,19 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
-    if (!FillImageCache()) {
+    // load full image cache for loaders that don't use the tile cache and mipmaps
+    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
+    }
+
+    // reset the tile cache if the loader will use it
+    if (_loader->UseTileCache()) {
+        int tiles_x = (_width - 1) / TILE_SIZE + 1;
+        int tiles_y = (_height - 1) / TILE_SIZE + 1;
+        int tile_cache_capacity = std::min(MAX_TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
+        _tile_cache.Reset(_z_index, _stokes_index, tile_cache_capacity);
     }
 
     // set default histogram requirements
@@ -251,7 +261,22 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             if (z_ok && stokes_ok) {
                 _z_index = new_z;
                 _stokes_index = new_stokes;
-                FillImageCache();
+
+                // invalidate the image cache
+                InvalidateImageCache();
+
+                if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
+                    // Reload the full channel cache for loaders which use it
+                    FillImageCache();
+                } else {
+                    // Don't reload the full channel cache here because we may not need it
+
+                    if (_loader->UseTileCache()) {
+                        // invalidate / clear the full resolution tile cache
+                        _tile_cache.Reset(_z_index, _stokes_index);
+                    }
+                }
+
                 updated = true;
             } else {
                 message = fmt::format("Channel {} or Stokes {} is invalid in image", new_z, new_stokes);
@@ -269,8 +294,15 @@ bool Frame::SetCursor(float x, float y) {
 
 bool Frame::FillImageCache() {
     // get image data for z, stokes
+
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+
+    // Exit early *after* acquiring lock if the cache has already been loaded by another thread
+    if (_image_cache_valid) {
+        return true;
+    }
+
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
@@ -281,10 +313,17 @@ bool Frame::FillImageCache() {
     auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
     auto dt_set_image_cache =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _image_shape(0), _image_shape(1),
-        dt_set_image_cache * 1e-3, (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt_set_image_cache * 1e-3,
+        (float)(_width * _height) / dt_set_image_cache);
 
+    _image_cache_valid = true;
     return true;
+}
+
+void Frame::InvalidateImageCache() {
+    bool write_lock(true);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+    _image_cache_valid = false;
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
@@ -298,7 +337,7 @@ void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
 
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid || _image_cache.empty()) {
+    if (!_valid || !_image_cache_valid) {
         return false;
     }
 
@@ -371,11 +410,11 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     tile_ptr->set_x(tile.x);
     tile_ptr->set_y(tile.y);
 
-    std::vector<float> tile_image_data;
+    std::shared_ptr<std::vector<float>> tile_data_ptr;
     int tile_width;
     int tile_height;
-    if (GetRasterTileData(tile_image_data, tile, tile_width, tile_height)) {
-        size_t tile_image_data_size = sizeof(float) * tile_image_data.size(); // tile image data size in bytes
+    if (GetRasterTileData(tile_data_ptr, tile, tile_width, tile_height)) {
+        size_t tile_image_data_size = sizeof(float) * tile_data_ptr->size(); // tile image data size in bytes
 
         if (ZStokesChanged(z, stokes)) {
             return false;
@@ -383,10 +422,10 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
         tile_ptr->set_width(tile_width);
         tile_ptr->set_height(tile_height);
         if (compression_type == CARTA::CompressionType::NONE) {
-            tile_ptr->set_image_data(tile_image_data.data(), sizeof(float) * tile_image_data.size());
+            tile_ptr->set_image_data(tile_data_ptr->data(), sizeof(float) * tile_data_ptr->size());
             return true;
         } else if (compression_type == CARTA::CompressionType::ZFP) {
-            auto nan_encodings = GetNanEncodingsBlock(tile_image_data, 0, tile_width, tile_height);
+            auto nan_encodings = GetNanEncodingsBlock(*tile_data_ptr, 0, tile_width, tile_height);
             tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
 
             if (ZStokesChanged(z, stokes)) {
@@ -399,7 +438,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
-            Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
+            Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             float compression_ratio = (float)tile_image_data_size / (float)compressed_size;
             bool use_high_precision(false);
 
@@ -407,7 +446,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 // re-compress the data with a higher precision
                 std::vector<char> compression_buffer_hq;
                 size_t compressed_size_hq;
-                Compress(tile_image_data, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
+                Compress(*tile_data_ptr, 0, compression_buffer_hq, compressed_size_hq, tile_width, tile_height, HIGH_COMPRESSION_QUALITY);
                 float compression_ratio_hq = (float)tile_image_data_size / (float)compressed_size_hq;
 
                 if (compression_ratio_hq > 10) {
@@ -444,10 +483,9 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     return false;
 }
 
-bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height) {
-    int tile_size = 256;
-    int mip = Tile::LayerToMip(tile.layer, _width, _height, tile_size, tile_size);
-    int tile_size_original = tile_size * mip;
+bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height) {
+    int mip = Tile::LayerToMip(tile.layer, _width, _height, TILE_SIZE, TILE_SIZE);
+    int tile_size_original = TILE_SIZE * mip;
 
     // crop to image size
     CARTA::ImageBounds bounds;
@@ -460,7 +498,31 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     const int req_width = bounds.x_max() - bounds.x_min();
     width = std::ceil((float)req_width / mip);
     height = std::ceil((float)req_height / mip);
-    return GetRasterData(tile_data, bounds, mip, true);
+
+    std::vector<float> tile_data;
+    bool loaded_data(0);
+
+    if (mip > 1) {
+        // Try to load downsampled data from the image file
+        loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
+    } else if (!_image_cache_valid && _loader->UseTileCache()) {
+        // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
+        tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        if (tile_data_ptr) {
+            return true;
+        }
+    }
+
+    // Fall back to using the full image cache.
+    if (!loaded_data) {
+        loaded_data = GetRasterData(tile_data, bounds, mip, true);
+    }
+
+    if (loaded_data) {
+        tile_data_ptr = std::make_shared<std::vector<float>>(tile_data);
+    }
+
+    return loaded_data;
 }
 
 // ****************************************************
@@ -479,6 +541,9 @@ bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
 }
 
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
+    // Always use the full image cache (for now)
+    FillImageCache();
+
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
@@ -894,7 +959,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 // ****************************************************
 // Spatial Requirements and Data
 
-bool Frame::SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles) {
+bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
     if (region_id != CURSOR_REGION_ID) {
         return false;
     }
@@ -920,15 +985,28 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
     auto t_start_spatial_profile = std::chrono::high_resolution_clock::now();
 
-    ssize_t num_image_cols(_width), num_image_rows(_height);
+    // The starting index of the tile which contains this index.
+    // A custom tile size can be specified so that this can be reused to calculate a chunk index.
+    auto tile_index = [](int index, int size = TILE_SIZE) { return (index / size) * size; };
+
+    // The real size of the tile with this starting index, given the full size of this dimension
+    auto tile_size = [](int tile_index, int total_size) { return std::min(TILE_SIZE, total_size - tile_index); };
+
     int x, y;
     _cursor.ToIndex(x, y); // convert float to index into image array
     float cursor_value(0.0);
-    if (!_image_cache.empty()) {
+
+    if (_image_cache_valid) {
         bool write_lock(false);
         tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-        cursor_value = _image_cache[(y * num_image_cols) + x];
+        cursor_value = _image_cache[(y * _width) + x];
         cache_lock.release();
+    } else if (_loader->UseTileCache()) {
+        int tile_x = tile_index(x);
+        int tile_y = tile_index(y);
+        auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
+        auto tile_width = tile_size(tile_x, _width);
+        cursor_value = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
     }
 
     // set message fields
@@ -939,44 +1017,167 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     spatial_data.set_value(cursor_value);
 
     // add profiles
-    int end(0);
     std::vector<float> profile;
     bool write_lock(false);
-    for (auto& coordinate : _cursor_spatial_configs) { // string coordinate
+
+    for (auto& config : _cursor_spatial_configs) {
+        size_t start(config.start());
+        size_t end(config.end());
+        int mip(config.mip());
+
+        if (!end) {
+            end = config.coordinate() == "x" ? _width : _height;
+        }
+
+        int requested_start(start);
+        int requested_end(end);
+
+        int decimated_start(start);
+        int decimated_end(end);
+
+        // Round the endpoints if we're going to decimate
+        if (mip >= 2 && !_loader->HasMip(2)) {
+            // These values will be used to resize the decimated data
+            decimated_start = std::ceil((float)start / (mip * 2)) * 2;
+            decimated_end = std::ceil((float)end / (mip * 2)) * 2;
+            // These values will be used to fetch the data to decimate
+            start = decimated_start * mip;
+            end = decimated_end * mip;
+            end = config.coordinate() == "x" ? std::min(end, _width) : std::min(end, _height);
+        }
+
+        profile.clear();
         bool have_profile(false);
-        // can no longer select stokes, so can use image cache
-        if (coordinate == "x") {
-            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-            auto x_start = y * num_image_cols;
-            profile.clear();
-            profile.reserve(_width);
-            for (unsigned int j = 0; j < _width; ++j) {
-                auto idx = x_start + j;
-                profile.push_back(_image_cache[idx]);
+
+        // can no longer select stokes, so can use image cache or tile cache
+
+        if (_loader->UseTileCache() &&
+            (mip < 2 || !_loader->HasMip(2))) { // Use tile cache to return full resolution data or prepare data for decimation
+            profile.resize(end - start);
+
+            if (config.coordinate() == "x") {
+                int tile_y = tile_index(y);
+                bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
+
+                for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
+                    auto key = TileCache::Key(tile_x, tile_y);
+                    // The cursor has moved outside this chunk row
+                    if (!ignore_interrupt && (tile_index(_cursor.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
+                        return have_profile;
+                    }
+                    auto tile = _tile_cache.Get(key, _loader, _image_mutex);
+                    auto tile_width = tile_size(tile_x, _width);
+                    auto tile_height = tile_size(tile_y, _height);
+
+                    // copy contiguous row
+                    auto y_offset = tile->begin() + tile_width * (y - tile_y);
+                    auto tile_start = y_offset + max(start - tile_x, 0);
+                    auto tile_end = y_offset + min(end - tile_x, tile_width);
+                    auto profile_start = profile.begin() + max(tile_x - start, 0);
+                    std::copy(tile_start, tile_end, profile_start);
+                }
+
+                have_profile = true;
+
+            } else if (config.coordinate() == "y") {
+                int tile_x = tile_index(x);
+                bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
+
+                for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
+                    auto key = TileCache::Key(tile_x, tile_y);
+                    // The cursor has moved outside this chunk column
+                    if (!ignore_interrupt && (tile_index(_cursor.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
+                        return have_profile;
+                    }
+                    auto tile = _tile_cache.Get(key, _loader, _image_mutex);
+                    auto tile_width = tile_size(tile_x, _width);
+                    auto tile_height = tile_size(tile_y, _height);
+
+                    // copy non-contiguous column
+
+                    auto tile_start = max(start - tile_y, 0);
+                    auto tile_end = min(end - tile_y, tile_height);
+                    auto profile_start = max(tile_y - start, 0);
+
+                    for (int j = tile_start; j < tile_end; j++) {
+                        profile[profile_start + j - tile_start] = (*tile)[(j * tile_width) + (x - tile_x)];
+                    }
+                }
+
+                have_profile = true;
             }
-            cache_lock.release();
-            end = _width;
-            have_profile = true;
-        } else if (coordinate == "y") {
-            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-            profile.clear();
-            profile.reserve(_height);
-            for (unsigned int j = 0; j < _height; ++j) {
-                auto idx = (j * num_image_cols) + x;
-                profile.push_back(_image_cache[idx]);
+        } else if (mip >= 2 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+            while (!_loader->HasMip(mip)) {
+                mip /= 2;
             }
-            cache_lock.release();
-            end = _height;
+
+            // Select the bounds of data to downsample so that it contains the requested row or column
+
+            CARTA::ImageBounds bounds;
+
+            if (config.coordinate() == "x") {
+                bounds.set_x_min(start);
+                bounds.set_x_max(end);
+                int y_floor = std::floor((float)y / mip) * mip;
+                bounds.set_y_min(y_floor);
+                bounds.set_y_max(y_floor + mip);
+            } else if (config.coordinate() == "y") {
+                int x_floor = std::floor((float)x / mip) * mip;
+                bounds.set_x_min(x_floor);
+                bounds.set_x_max(x_floor + mip);
+                bounds.set_y_min(start);
+                bounds.set_y_max(end);
+            }
+
+            if (_loader->GetDownsampledRasterData(profile, _z_index, _stokes_index, bounds, mip, _image_mutex)) {
+                have_profile = true;
+            }
+        } else { // Use image cache to return full resolution data or prepare data for decimation
+            profile.reserve(end - start);
+
+            if (config.coordinate() == "x") {
+                auto x_start = y * _width;
+                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                for (unsigned int j = start; j < end; ++j) {
+                    auto idx = x_start + j;
+                    profile.push_back(_image_cache[idx]);
+                }
+                cache_lock.release();
+            } else if (config.coordinate() == "y") {
+                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                for (unsigned int j = start; j < end; ++j) {
+                    auto idx = (j * _width) + x;
+                    profile.push_back(_image_cache[idx]);
+                }
+                cache_lock.release();
+            }
             have_profile = true;
+        }
+
+        // decimate the profile in-place, attempting to preserve order
+        if (have_profile && mip >= 2 && !_loader->HasMip(2)) {
+            for (size_t i = 0; i < profile.size(); i += mip * 2) {
+                auto [it_min, it_max] = std::minmax_element(profile.begin() + i, std::min(profile.begin() + i + mip * 2, profile.end()));
+                if (std::distance(it_min, it_max) > 0) {
+                    profile[i / mip] = *it_min;
+                    profile[i / mip + 1] = *it_max;
+                } else {
+                    profile[i / mip] = *it_max;
+                    profile[i / mip + 1] = *it_min;
+                }
+            }
+            profile.resize(decimated_end - decimated_start); // shrink the profile to the downsampled size
         }
 
         if (have_profile) {
             // add SpatialProfile to message
             auto spatial_profile = spatial_data.add_profiles();
-            spatial_profile->set_coordinate(coordinate);
-            spatial_profile->set_start(0);
-            spatial_profile->set_end(end);
+            spatial_profile->set_coordinate(config.coordinate());
+            // Should these be set to the rounded endpoints if the data is downsampled or decimated?
+            spatial_profile->set_start(requested_start);
+            spatial_profile->set_end(requested_end);
             spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+            spatial_profile->set_mip(mip);
         }
     }
 
@@ -990,7 +1191,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
 // ****************************************************
 // Spectral Requirements and Data
-
 bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs) {
     if (region_id != CURSOR_REGION_ID) {
         return false;
@@ -1083,7 +1283,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         spectral_profile->set_stats_type(config.all_stats[0]);
 
         // Send spectral profile data if cursor inside image
-        if (start_cursor.InImage(_image_shape(0), _image_shape(1))) {
+        if (start_cursor.InImage(_width, _height)) {
             int stokes;
             if (!GetStokesTypeIndex(coordinate, stokes)) {
                 continue;

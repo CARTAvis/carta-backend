@@ -38,6 +38,7 @@
 #include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
+#include "TileCache.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -144,7 +145,7 @@ public:
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
     // Spatial: cursor
-    bool SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles);
+    bool SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data);
 
     // Spectral: cursor
@@ -198,10 +199,11 @@ protected:
 
     // Cache image plane data for current z, stokes
     bool FillImageCache();
+    void InvalidateImageCache();
 
     // Downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-    bool GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height);
+    bool GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);
 
     // Fill vector for given z and stokes
     void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);
@@ -248,7 +250,7 @@ protected:
     volatile bool _connected = true;
 
     // Image loader for image type
-    std::unique_ptr<carta::FileLoader> _loader;
+    std::shared_ptr<carta::FileLoader> _loader;
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
@@ -267,8 +269,13 @@ protected:
 
     // Image data cache and mutex
     std::vector<float> _image_cache;    // image data for current z, stokes
+    bool _image_cache_valid;            // cached image data is valid for current z and stokes
     tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;            // only one disk access at a time
+    bool _cache_loaded;                 // channel cache is set
+    TileCache _tile_cache;              // cache for full-resolution image tiles
+    std::mutex _ignore_interrupt_X_mutex;
+    std::mutex _ignore_interrupt_Y_mutex;
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _active_task_mutex;
@@ -277,7 +284,7 @@ protected:
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
     std::vector<CARTA::StatsType> _image_required_stats;
-    std::vector<std::string> _cursor_spatial_configs;
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
     std::mutex _spectral_mutex;
 
