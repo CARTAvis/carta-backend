@@ -48,6 +48,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+using namespace carta;
+
 struct ContourSettings {
     std::vector<double> levels;
     CARTA::SmoothingMode smoothing_mode;

@@ -49,7 +49,6 @@ set(TEST_SOURCES
         TestHdf5Image.cc
         TestHistogram.cc
         TestMain.cc
-        TestMoment.cc
         TestProgramSettings.cc
         TestSpatialProfiles.cc
         TestTileEncoding.cc

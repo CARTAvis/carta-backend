@@ -9,13 +9,14 @@
 
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
+
+#include <imageanalysis/ImageAnalysis/ImageMoments.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 
 #include <chrono>
 #include <thread>
 
-#include "../Constants.h"
-#include "ImageMoments.h"
+#include "Constants.h"
 
 using MomentProgressCallback = std::function<void(float)>;
 
@@ -73,7 +74,7 @@ private:
 
     // Moments settings
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
-    std::unique_ptr<ImageMoments<casacore::Float>> _image_moments;
+    std::unique_ptr<casa::ImageMoments<casacore::Float>> _image_moments;
     casacore::Vector<casacore::Int> _moments; // Moment types
     int _axis;                                // Moment axis
     casacore::Vector<float> _include_pix;
@@ -81,8 +82,8 @@ private:
     casacore::String _error_msg;
     bool _success;
     bool _cancel;
-    std::unordered_map<CARTA::Moment, ImageMoments<casacore::Float>::MomentTypes> _moment_map;
-    std::unordered_map<ImageMoments<casacore::Float>::MomentTypes, casacore::String> _moment_suffix_map;
+    std::unordered_map<CARTA::Moment, casa::ImageMoments<casacore::Float>::MomentTypes> _moment_map;
+    std::unordered_map<casa::ImageMoments<casacore::Float>::MomentTypes, casacore::String> _moment_suffix_map;
 
     // Progress parameters
     int _total_steps;
