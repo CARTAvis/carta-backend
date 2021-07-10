@@ -90,14 +90,22 @@ public:
     inline RegionState GetRegionState() {
         return _region_state;
     }
+
     inline int GetReferenceFileId() {
         return _region_state.reference_file_id;
     }
+
     inline bool IsRotbox() {
         return ((_region_state.type == CARTA::RegionType::RECTANGLE) && (_region_state.rotation != 0.0));
     }
+
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
+    }
+
+    inline bool IsAnnotation() {
+        CARTA::RegionType type = _region_state.type;
+        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
     }
 
     // Communication
@@ -144,7 +152,7 @@ private:
     std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
     double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
-    bool ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
+    bool ConvertPointsToImagePixels(const std::vector<CARTA::Point>& points, const casacore::CoordinateSystem& output_csys,
         casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
     // Region applied to any image; used for export
@@ -161,6 +169,9 @@ private:
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
+    casacore::TableRecord GetAnnotationRegionRecord(
+        int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
+    void CompleteRegionRecord(casacore::TableRecord& record, const casacore::IPosition& image_shape);
 
     // Utilities to convert control points
     // Input: CARTA::Point. Returns: point (x, y) in reference world coords

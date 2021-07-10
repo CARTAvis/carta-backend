@@ -379,6 +379,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     if (info_loaded) {
         // create Frame for image; Frame owns loader
         auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu));
+        // query loader for mipmap dataset
+        bool has_mipmaps(_loader->HasMip(2));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -404,6 +406,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
+                if (has_mipmaps) {
+                    feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+                }
             }
             ack.set_file_feature_flags(feature_flags);
             std::vector<CARTA::Beam> beams;
@@ -584,6 +589,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
 
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     auto file_id(message.file_id());
+    std::unique_lock<std::mutex> lock(_frame_mutex);
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         std::string err_message;
@@ -619,8 +625,9 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
     if (_frames.count(file_id)) { // reference Frame for Region exists
         if (message.has_spatial_requirements()) {
             auto requirements = message.spatial_requirements();
-            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(),
-                std::vector<std::string>(requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()));
+            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+                requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()};
+            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(), profiles);
         }
         if (_frames.at(file_id)->SetCursor(message.point().x(), message.point().y())) { // cursor changed
             SendSpatialProfileData(file_id, CURSOR_REGION_ID);
@@ -794,8 +801,9 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
             string error = fmt::format("Spatial requirements not valid for non-cursor region ", region_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
         } else {
-            if (_frames.at(file_id)->SetSpatialRequirements(
-                    region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+                message.spatial_profiles().begin(), message.spatial_profiles().end()};
+            if (_frames.at(file_id)->SetSpatialRequirements(region_id, profiles)) {
                 SendSpatialProfileData(file_id, region_id);
             } else {
                 string error = fmt::format("Spatial profiles not valid for region id {}", region_id);
@@ -2032,6 +2040,6 @@ std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp(
     return _last_message_timestamp;
 }
 
-void Session::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> cb) {
-    cb(_out_msgs);
+void Session::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback) {
+    callback(_out_msgs);
 }

@@ -157,7 +157,7 @@ public:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     // Determine axes used for image raster data
-    void GetRenderAxes(std::vector<int>& axes);
+    std::vector<int> GetRenderAxes();
 
     // Image Data
     // Check to see if the file has a particular HDU/group/table/etc
@@ -184,6 +184,13 @@ public:
     virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
         float& progress);
+    virtual bool GetDownsampledRasterData(
+        std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
+    virtual bool GetChunk(
+        std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex);
+
+    virtual bool HasMip(int mip) const;
+    virtual bool UseTileCache() const;
 
     // Get the full name of image file
     virtual std::string GetFileName();
@@ -199,7 +206,7 @@ protected:
 
     // Axes, dimension values
     size_t _num_dims, _image_plane_size;
-    size_t _depth, _num_stokes;
+    size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
     std::vector<int> _render_axes;
 

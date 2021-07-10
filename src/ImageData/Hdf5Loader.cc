@@ -34,7 +34,29 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
                 new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
                     DataSetToString(FileInfo::Data::SWIZZLED), selected_hdu));
         }
+
+        // save the data layout and known mips
+        auto dset = _image->Lattice().array();
+        _layout = H5Pget_layout(H5Dget_create_plist(dset->getHid()));
+
+        if (HasData("MipMaps/DATA")) {
+            casacore::HDF5Group mipmap_group(_image->Group()->getHid(), "MipMaps/DATA", true);
+            for (auto& name : casacore::HDF5Group::linkNames(mipmap_group)) {
+                std::regex re("DATA_XY_(\\d+)");
+                std::smatch match;
+                if (std::regex_match(name, match, re) && match.size() > 1) {
+                    _mipmaps[std::stoi(match.str(1))] = std::unique_ptr<casacore::HDF5Lattice<float>>(
+                        new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
+                            fmt::format("MipMaps/DATA/{}", name), hdu));
+                }
+            }
+        }
     }
+}
+
+bool Hdf5Loader::HasData(std::string ds_name) const {
+    auto group_ptr = _image->Group();
+    return casacore::HDF5Group::exists(*group_ptr, ds_name);
 }
 
 // We assume that the main image dataset is always loaded and therefore available.
@@ -52,12 +74,11 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
         case FileInfo::Data::MASK:
             return ((_image != nullptr) && _image->hasPixelMask());
         default:
-            auto group_ptr = _image->Group();
-            std::string data(DataSetToString(ds));
-            if (data.empty()) {
+            std::string ds_name(DataSetToString(ds));
+            if (ds_name.empty()) {
                 return false;
             }
-            return casacore::HDF5Group::exists(*group_ptr, data);
+            return HasData(ds_name);
     }
 }
 
@@ -70,6 +91,11 @@ typename Hdf5Loader::ImageRef Hdf5Loader::GetImage() {
 casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData() {
     // swizzled data returns a Lattice
     return _swizzled_image.get();
+}
+
+casacore::Lattice<float>* Hdf5Loader::LoadMipMapData(int mip) {
+    // mipmap data returns a Lattice
+    return _mipmaps[mip].get();
 }
 
 std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
@@ -119,6 +145,10 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
         default:
             return (um.find(ds) != um.end()) ? um[ds] : "";
     }
+}
+
+bool Hdf5Loader::HasMip(int mip) const {
+    return _mipmaps.find(mip) != _mipmaps.end();
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -375,6 +405,81 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     }
 
     return true;
+}
+
+bool Hdf5Loader::GetDownsampledRasterData(
+    std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
+    if (!HasMip(mip)) {
+        return false;
+    }
+
+    bool data_ok(false);
+
+    const int xmin = std::ceil((float)bounds.x_min() / mip);
+    const int ymin = std::ceil((float)bounds.y_min() / mip);
+    const int xmax = std::ceil((float)bounds.x_max() / mip);
+    const int ymax = std::ceil((float)bounds.y_max() / mip);
+
+    const int w = xmax - xmin;
+    const int h = ymax - ymin;
+
+    casacore::Slicer slicer;
+    if (_num_dims == 4) {
+        slicer = casacore::Slicer(IPos(4, xmin, ymin, z, stokes), IPos(4, w, h, 1, 1));
+    } else if (_num_dims == 3) {
+        slicer = casacore::Slicer(IPos(3, xmin, ymin, z), IPos(3, w, h, 1));
+    } else if (_num_dims == 2) {
+        slicer = casacore::Slicer(IPos(2, xmin, ymin), IPos(2, w, h));
+    } else {
+        return false;
+    }
+
+    data.resize(w * h);
+    casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+
+    std::lock_guard<std::mutex> lguard(image_mutex);
+    try {
+        LoadMipMapData(mip)->doGetSlice(tmp, slicer);
+        data_ok = true;
+    } catch (casacore::AipsError& err) {
+        std::cerr << "Could not load MipMap data. AIPS ERROR: " << err.getMesg() << std::endl;
+    }
+
+    return data_ok;
+}
+
+bool Hdf5Loader::GetChunk(
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
+    bool data_ok(false);
+
+    data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
+    data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
+
+    casacore::Slicer slicer;
+    if (_num_dims == 4) {
+        slicer = casacore::Slicer(IPos(4, min_x, min_y, z, stokes), IPos(4, data_width, data_height, 1, 1));
+    } else if (_num_dims == 3) {
+        slicer = casacore::Slicer(IPos(3, min_x, min_y, z), IPos(3, data_width, data_height, 1));
+    } else if (_num_dims == 2) {
+        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, data_width, data_height));
+    }
+
+    data.resize(data_width * data_height);
+    casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+
+    std::lock_guard<std::mutex> lguard(image_mutex);
+    try {
+        GetSlice(tmp, slicer);
+        data_ok = true;
+    } catch (casacore::AipsError& err) {
+        std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;
+    }
+
+    return data_ok;
+}
+
+bool Hdf5Loader::UseTileCache() const {
+    return _layout == H5D_CHUNKED;
 }
 
 } // namespace carta

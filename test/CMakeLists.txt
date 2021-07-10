@@ -45,6 +45,7 @@ set(TEST_SOURCES
         TestBlockSmooth.cc
         TestFitsTable.cc
         TestFitsImage.cc
+        TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
         TestMain.cc
