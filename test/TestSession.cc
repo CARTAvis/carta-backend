@@ -39,18 +39,29 @@ public:
     }
 
     void TestOnRegisterViewer() {
-        uint32_t session_id(0);
         uint16_t icd_version(ICD_VERSION);
         uint32_t request_id(0);
+
         CARTA::RegisterViewer message;
+        uint32_t session_id(0);
+        string api_key;
+        uint32_t client_feature_flags(5);
         message.set_session_id(session_id);
+        message.set_api_key(api_key);
+        message.set_client_feature_flags(client_feature_flags);
+
+        auto t_start = std::chrono::high_resolution_clock::now();
+
         _session->OnRegisterViewer(message, icd_version, request_id);
 
         _session->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
             std::pair<std::vector<char>, bool> messages_pair;
-            EXPECT_EQ(messages_queue.unsafe_size(), 1);
 
             while (messages_queue.try_pop(messages_pair)) {
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
+                EXPECT_LT(dt, 100); // expect to receive the message within 100 ms
+
                 std::vector<char> message = messages_pair.first;
                 carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
 
@@ -63,9 +74,11 @@ public:
                 int event_length = message.size() - sizeof(carta::EventHeader);
                 register_viewer_ack.ParseFromArray(event_buf, event_length);
 
-                EXPECT_EQ(register_viewer_ack.session_id(), session_id);
                 EXPECT_TRUE(register_viewer_ack.success());
+                EXPECT_EQ(register_viewer_ack.session_id(), session_id);
                 EXPECT_EQ(register_viewer_ack.session_type(), CARTA::SessionType::NEW);
+                EXPECT_EQ(register_viewer_ack.user_layouts_size(), 0);
+                EXPECT_EQ(register_viewer_ack.user_layouts_size(), 0);
 
                 spdlog::info("Register viewer ack message: {}", register_viewer_ack.message());
             }
