@@ -660,9 +660,14 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
         // log error
+        CARTA::RegionType region_type;
         if (!success) {
             err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
             SendLogEvent(err_message, {"region"}, CARTA::ErrorSeverity::DEBUG);
+        } else if ((_region_handler->GetRegionType(region_id, region_type) && region_type == CARTA::RegionType::POINT)) {
+            // send the spatial profile data if it is a point region
+            _frames.at(file_id)->SetCursor(points[0].x(), points[0].y());
+            SendSpatialProfileData(file_id, region_id);
         }
     } else {
         err_message = fmt::format("Cannot set region, file id {} not found", file_id);
