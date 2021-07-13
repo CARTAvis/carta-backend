@@ -39,10 +39,11 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     int hdu(-1);
     CARTA::FileInfoExtended file_info_ext;
 
-    bool in_image_headers(false), in_beam_table(false);
+    bool in_image_headers(false), in_beam_headers(false);
     long long data_size(1);
     size_t buffer_index(0);
     BeamInfo beam_info;
+    BeamTableInfo beam_table_info;
     casacore::String beam_unit("deg");
 
     auto t_start_get_hdu = std::chrono::high_resolution_clock::now();
@@ -65,26 +66,34 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
         }
 
         if ((buffer.substr(0, 6) == "SIMPLE") || (buffer.substr(0, 8) == "XTENSION")) {
-            // New hdu: read initial headers to determine if image
+            // New hdu
             hdu++;
             data_size = 1;
             beam_info.clear();
+            beam_table_info.clear();
 
+            // Read initial headers to determine if image
             in_image_headers = IsImageHdu(buffer, file_info_ext, data_size);
             buffer_index = INITIAL_HEADERS_SIZE * FITS_CARD_SIZE;
 
             if (!in_image_headers) {
-                auto first_entry = file_info_ext.header_entries(0);
-                std::string value(first_entry.value());
-                if ((first_entry.name() == "XTENSION") && (value.find("BEAMS") != std::string::npos)) {
-                    in_beam_table = true;
+                file_info_ext.clear_header_entries();
+                buffer.resize(bytes_read);
+
+                // Read headers to determine if beam table and set info
+                in_beam_headers = IsBeamTable(buffer, beam_table_info);
+                if (in_beam_headers && beam_table_info.is_defined()) {
+                    ReadBeamsTable(zip_file, beam_table_info);
+                    in_beam_headers = false;
+                    beam_table_info.clear();
+                    continue;
                 }
 
-                file_info_ext.clear_header_entries();
+                buffer_index = bytes_read;
             }
         }
 
-        // Continue parsing headers and add to file info
+        // Continue parsing headers and add to file info and/or data size to skip data
         while (buffer_index < bytes_read) {
             casacore::String fits_card = buffer.substr(buffer_index, FITS_CARD_SIZE);
             buffer_index += FITS_CARD_SIZE;
@@ -96,21 +105,28 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
             casacore::String keyword, value, comment;
             ParseFitsCard(fits_card, keyword, value, comment);
-            if (in_beam_table) {
-                spdlog::debug("PDEBUG beam table header: {} = {}", keyword, value);
-            }
 
             if (keyword != "END") {
                 if (in_image_headers) {
                     AddHeaderEntry(keyword, value, comment, file_info_ext);
                 }
 
-                if (keyword.startsWith("NAXIS")) {
+                if (in_beam_headers) {
+                    if (keyword == "NCHAN") {
+                        beam_table_info.nchan = std::stoi(value);
+                    } else if (keyword == "NPOL") {
+                        beam_table_info.npol = std::stoi(value);
+                    }
+                }
+
+                // Determine data size and store beam info in image headers
+                if (keyword.startsWith("NAXIS") && !in_beam_headers) {
                     try {
                         auto naxis = std::stoi(value);
                         data_size *= naxis;
                     } catch (std::invalid_argument) {
-                        spdlog::debug("Invalid {} value: {}, skipping hdu", keyword, value);
+                        spdlog::debug("Invalid {} value: {}, skipping hdu {}", keyword, value, hdu);
+                        file_info_ext.clear_header_entries();
                         in_image_headers = false;
                         break;
                     }
@@ -124,21 +140,22 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
             } else {
                 // END of header
                 if (in_image_headers) {
-                    // add entry to map
+                    // Add entry to file info map
                     std::string hduname = std::to_string(hdu);
                     hdu_info_map[hduname] = file_info_ext;
 
+                    // Add beam to beam set
                     if (beam_info.defined()) {
                         SetBeam(beam_info);
                     }
                 }
 
-                // Skip data blocks
-                if (data_size > 1) {
-                    auto nblocks_data = std::ceil((float)data_size / (float)FITS_BLOCK_SIZE);
-                    if (in_beam_table) {
-                        ReadBeamsTable(zip_file, nblocks_data);
-                    } else {
+                if (in_beam_headers) {
+                    ReadBeamsTable(zip_file, beam_table_info);
+                } else {
+                    // Skip data blocks
+                    if (data_size > 1) {
+                        auto nblocks_data = std::ceil((float)data_size / (float)FITS_BLOCK_SIZE);
                         gzseek(zip_file, nblocks_data * FITS_BLOCK_SIZE, SEEK_CUR);
                     }
                 }
@@ -146,7 +163,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                 // Reset for next hdu
                 file_info_ext.clear_header_entries();
                 in_image_headers = false;
-                in_beam_table = false;
+                in_beam_headers = false;
 
                 // Stop parsing block
                 break;
@@ -186,7 +203,7 @@ gzFile CompressedFits::OpenGzFile() {
     return zip_file;
 }
 
-bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended& file_info_ext, long long& data_size) {
+bool CompressedFits::IsImageHdu(const std::string& fits_block, CARTA::FileInfoExtended& file_info_ext, long long& data_size) {
     // Parse initial header strings (FITS standard: SIMPLE/XTENSION, BITPIX, NAXIS) to determine whether to include this HDU
 
     // Check first header value
@@ -253,7 +270,6 @@ bool CompressedFits::IsImageHdu(std::string& fits_block, CARTA::FileInfoExtended
 void CompressedFits::ParseFitsCard(
     casacore::String& fits_card, casacore::String& keyword, casacore::String& value, casacore::String& comment) {
     // Extract parts of FITS header.
-
     // Split keyword, remainder of line
     std::vector<std::string> keyword_remainder;
     SplitString(fits_card, '=', keyword_remainder);
@@ -326,8 +342,75 @@ void CompressedFits::AddHeaderEntry(
     }
 }
 
+bool CompressedFits::IsBeamTable(const std::string& fits_block, BeamTableInfo& beam_table_info) {
+    // Read BINTABLE headers to determine whether it is a beam table
+    bool is_beam_table(false);
+
+    size_t buffer_index(0);
+    while (buffer_index < fits_block.size()) {
+        casacore::String fits_card = fits_block.substr(buffer_index, FITS_CARD_SIZE);
+        buffer_index += FITS_CARD_SIZE;
+
+        fits_card.trim();
+        if (fits_card.empty()) {
+            continue;
+        }
+
+        if (fits_card == "END") {
+            break;
+        }
+
+        if (fits_card.startsWith("XTENSION") && (fits_card.find("BINTABLE") == std::string::npos)) {
+            // Not BINTABLE extension
+            beam_table_info.clear();
+            return false;
+        }
+
+        if (fits_card.startsWith("EXTNAME")) {
+            if (fits_card.find("BEAMS") == std::string::npos) {
+                // Not BEAMS extension
+                beam_table_info.clear();
+                return false;
+            } else {
+                is_beam_table = true;
+            }
+        }
+
+        casacore::String keyword, value, comment;
+        ParseFitsCard(fits_card, keyword, value, comment);
+
+        if (keyword == "NAXIS1") {
+            beam_table_info.nbytes_per_row = std::stoi(value);
+        } else if (keyword == "NAXIS2") {
+            beam_table_info.nrow = std::stoi(value);
+        } else if (keyword == "TFIELDS") {
+            beam_table_info.ncol = std::stoi(value);
+        } else if (keyword == "NCHAN") {
+            beam_table_info.nchan = std::stoi(value);
+        } else if (keyword == "NPOL") {
+            beam_table_info.npol = std::stoi(value);
+        } else if (keyword.startsWith("TTYPE") || keyword.startsWith("TUNIT")) {
+            // Store column info
+            std::string index_str(1, keyword.lastchar());
+            int index = std::atoi(index_str.c_str());
+
+            if (beam_table_info.column_info.size() < index) {
+                beam_table_info.column_info.resize(index);
+            }
+
+            if (keyword.startsWith("TTYPE")) {
+                beam_table_info.column_info[index - 1].name = value;
+            } else if (keyword.startsWith("TUNIT")) {
+                beam_table_info.column_info[index - 1].unit = value;
+            }
+        }
+    }
+
+    return is_beam_table;
+}
+
 void CompressedFits::SetBeam(BeamInfo& beam_info) {
-    // Set beam in ImageBeamSet using info
+    // Set beam in ImageBeamSet using beam info
     try {
         casacore::Quantity bmajq, bminq, bpaq;
         casacore::readQuantity(bmajq, beam_info.bmaj);
@@ -341,18 +424,69 @@ void CompressedFits::SetBeam(BeamInfo& beam_info) {
     }
 }
 
-void CompressedFits::ReadBeamsTable(gzFile zip_file, int nblocks) {
-    // Read Beams table into ImageBeamSet
-    size_t buffer_index(0);
+void CompressedFits::ReadBeamsTable(gzFile zip_file, BeamTableInfo& beam_table_info) {
+    // Read Beams table into ImageBeamSet.  Location of zip_file offset must be beginning of table.
+    int nchan(beam_table_info.nchan), npol(beam_table_info.npol), nrow(beam_table_info.nrow);
 
-    for (int i = 0; i < nblocks; ++i) {
-        size_t bufsize(FITS_BLOCK_SIZE);
-        int err(0);
-        std::string buffer(bufsize, 0);
-        size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
-        buffer_index = 0;
+    _beam_set.resize(nchan, npol);
+    _beam_set.set(casacore::GaussianBeam::NULL_BEAM);
 
-        // TODO read buffer and set beams
+    size_t bufsize(FITS_BLOCK_SIZE);
+    unsigned char buffer[bufsize];
+    int err(0), nrow_read(0);
+
+    while (nrow_read < beam_table_info.nrow) {
+        size_t bytes_read = gzread(zip_file, buffer, bufsize);
+
+        auto nrow_in_block = bytes_read / beam_table_info.nbytes_per_row;
+        auto nrow_to_read = nrow - nrow_read;
+        if (nrow_in_block > nrow_to_read) {
+            nrow_in_block = nrow_to_read;
+        }
+
+        nrow_read += nrow_in_block;
+        int buffer_index(0);
+
+        for (int i = 0; i < nrow_in_block; ++i) {
+            casacore::Quantity bmajq, bminq, bpaq;
+            int chan, pol;
+
+            for (auto& column : beam_table_info.column_info) {
+                unsigned char num_buffer[4];
+#if defined(AIPS_LITTLE_ENDIAN)
+                num_buffer[3] = buffer[buffer_index++];
+                num_buffer[2] = buffer[buffer_index++];
+                num_buffer[1] = buffer[buffer_index++];
+                num_buffer[0] = buffer[buffer_index++];
+#else
+                num_buffer[0] = buffer[buffer_index++];
+                num_buffer[1] = buffer[buffer_index++];
+                num_buffer[2] = buffer[buffer_index++];
+                num_buffer[3] = buffer[buffer_index++];
+#endif
+
+                std::string column_name(column.name);
+                if (column_name == "BMAJ") {
+                    float fval = (*(float*)num_buffer);
+                    bmajq = casacore::Quantity(fval, column.unit);
+                } else if (column_name == "BMIN") {
+                    float fval = (*(float*)num_buffer);
+                    bminq = casacore::Quantity(fval, column.unit);
+                } else if (column_name == "BPA") {
+                    float fval = (*(float*)num_buffer);
+                    bpaq = casacore::Quantity(fval, column.unit);
+                } else if (column_name == "CHAN") {
+                    int ival = (*(int*)num_buffer);
+                    chan = ival;
+                } else if (column_name == "POL") {
+                    int ival = (*(int*)num_buffer);
+                    pol = ival;
+                }
+            }
+
+            casacore::GaussianBeam beam(bmajq, bminq, bpaq);
+            _beam_set.setBeam(chan, pol, beam);
+        }
     }
 }
 
