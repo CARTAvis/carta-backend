@@ -667,7 +667,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
         // send spatial profile data if it is a point region
         if (_region_handler->IsPointRegion(region_id)) {
-            _frames.at(file_id)->SetCursor(points[0].x(), points[0].y());
+            _frames.at(file_id)->SetPointRegion(region_id, points[0].x(), points[0].y());
             SendSpatialProfileData(file_id, region_id);
         }
     } else {

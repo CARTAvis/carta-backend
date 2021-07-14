@@ -115,7 +115,8 @@ public:
     bool SetImageChannels(int new_z, int new_stokes, std::string& message);
 
     // Cursor
-    bool SetCursor(float x, float y);
+    bool SetCursor(float x, float y); // will be replaced by the SetPointRegion
+    bool SetPointRegion(int region_id, float x, float y);
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
@@ -259,8 +260,8 @@ protected:
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
 
-    // Current cursor position
-    PointXy _cursor;
+    // Current point regions positions
+    std::unordered_map<int, PointXy> _point_regions;
 
     // Contour settings
     ContourSettings _contour_settings;
