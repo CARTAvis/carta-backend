@@ -966,9 +966,9 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 // Spatial Requirements and Data
 
 bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
-    _cursor_spatial_configs.clear();
+    _point_regions_spatial_configs[region_id].clear();
     for (auto& profile : spatial_profiles) {
-        _cursor_spatial_configs.push_back(profile);
+        _point_regions_spatial_configs[region_id].push_back(profile);
     }
     return true;
 }
@@ -1019,7 +1019,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     std::vector<float> profile;
     bool write_lock(true);
 
-    for (auto& config : _cursor_spatial_configs) {
+    for (auto& config : _point_regions_spatial_configs[region_id]) {
         size_t start(config.start());
         size_t end(config.end());
         int mip(config.mip());
