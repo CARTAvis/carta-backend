@@ -660,12 +660,13 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
         // log error
-        CARTA::RegionType region_type;
         if (!success) {
             err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
             SendLogEvent(err_message, {"region"}, CARTA::ErrorSeverity::DEBUG);
-        } else if ((_region_handler->GetRegionType(region_id, region_type) && region_type == CARTA::RegionType::POINT)) {
-            // send the spatial profile data if it is a point region
+        }
+
+        // send spatial profile data if it is a point region
+        if (_region_handler->IsPointRegion(region_id)) {
             _frames.at(file_id)->SetCursor(points[0].x(), points[0].y());
             SendSpatialProfileData(file_id, region_id);
         }
@@ -803,8 +804,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
     if (_frames.count(file_id)) {
         auto region_id = message.region_id();
         CARTA::RegionType region_type;
-        if (region_id == CURSOR_REGION_ID ||
-            (_region_handler->GetRegionType(region_id, region_type) && region_type == CARTA::RegionType::POINT)) {
+        if ((region_id == CURSOR_REGION_ID) || _region_handler->IsPointRegion(region_id)) {
             std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
                 message.spatial_profiles().begin(), message.spatial_profiles().end()};
             if (_frames.at(file_id)->SetSpatialRequirements(region_id, profiles)) {
@@ -1381,8 +1381,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
     CARTA::RegionType region_type;
-    if (region_id == CURSOR_REGION_ID ||
-        (_region_handler->GetRegionType(region_id, region_type) && region_type == CARTA::RegionType::POINT)) {
+    if ((region_id == CURSOR_REGION_ID) || (_region_handler->IsPointRegion(region_id))) {
         // Cursor spatial profile
         if (_frames.count(file_id)) {
             CARTA::SpatialProfileData spatial_profile_data;

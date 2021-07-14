@@ -77,7 +77,7 @@ public:
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<carta::CollapseResult>& collapse_results);
 
-    bool GetRegionType(int region_id, CARTA::RegionType& region_type);
+    bool IsPointRegion(int region_id);
 
 private:
     // Get unique region id (max id + 1)

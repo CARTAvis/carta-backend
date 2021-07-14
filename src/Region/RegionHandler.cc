@@ -1346,10 +1346,11 @@ bool RegionHandler::GetRegionStatsData(
     return false;
 }
 
-bool RegionHandler::GetRegionType(int region_id, CARTA::RegionType& region_type) {
+bool RegionHandler::IsPointRegion(int region_id) {
     if (_regions.count(region_id)) {
-        region_type = _regions[region_id]->GetRegionState().type;
-        return true;
+        if (_regions[region_id]->GetRegionState().type == CARTA::RegionType::POINT) {
+            return true;
+        }
     }
     return false;
 }
