@@ -127,9 +127,9 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
 
     // Determine which axes will be rendered
     std::vector<int> render_axes = GetRenderAxes();
-    size_t width = shape(render_axes[0]);
-    size_t height = shape(render_axes[1]);
-    _image_plane_size = width * height;
+    _width = shape(render_axes[0]);
+    _height = shape(render_axes[1]);
+    _image_plane_size = _width * _height;
 
     // Spectral and stokes axis
     spectral_axis = coord_sys.spectralAxisNumber();
