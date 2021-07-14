@@ -751,6 +751,14 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
 
+        casacore::String brightness_unit(image->units().getName());
+        if (!brightness_unit.empty()) {
+            auto entry = extended_info.add_computed_entries();
+            entry->set_name("Pixel unit");
+            entry->set_value(brightness_unit);
+            entry->set_entry_type(CARTA::EntryType::STRING);
+        }
+
         if (coord_system.hasDirectionCoordinate()) {
             // add RADESYS
             casacore::String direction_frame = casacore::MDirection::showType(coord_system.directionCoordinate().directionType());
@@ -770,35 +778,23 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             entry->set_value(direction_frame);
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
+        if (coord_system.hasSpectralAxis()) {
+            casacore::String spectral_frame = casacore::MFrequency::showType(coord_system.spectralCoordinate().frequencySystem(true));
+            auto entry = extended_info.add_computed_entries();
+            entry->set_name("Spectral frame");
+            entry->set_value(spectral_frame);
+            entry->set_entry_type(CARTA::EntryType::STRING);
+            casacore::String vel_doppler = casacore::MDoppler::showType(coord_system.spectralCoordinate().velocityDoppler());
+            entry = extended_info.add_computed_entries();
+            entry->set_name("Velocity definition");
+            entry->set_value(vel_doppler);
+            entry->set_entry_type(CARTA::EntryType::STRING);
+        }
     } else {
         AddComputedEntriesFromHeaders(extended_info, display_axes);
     }
 
-    if (coord_system.hasSpectralAxis()) {
-        casacore::String spectral_frame = casacore::MFrequency::showType(coord_system.spectralCoordinate().frequencySystem(true));
-        auto entry = extended_info.add_computed_entries();
-        entry->set_name("Spectral frame");
-        entry->set_value(spectral_frame);
-        entry->set_entry_type(CARTA::EntryType::STRING);
-        casacore::String vel_doppler = casacore::MDoppler::showType(coord_system.spectralCoordinate().velocityDoppler());
-        entry = extended_info.add_computed_entries();
-        entry->set_name("Velocity definition");
-        entry->set_value(vel_doppler);
-        entry->set_entry_type(CARTA::EntryType::STRING);
-    }
-
-    if (use_image_for_entries) {
-        casacore::String brightness_unit(image->units().getName());
-
-        if (!brightness_unit.empty()) {
-            auto entry = extended_info.add_computed_entries();
-            entry->set_name("Pixel unit");
-            entry->set_value(brightness_unit);
-            entry->set_entry_type(CARTA::EntryType::STRING);
-        }
-    }
-
-    casacore::ImageInfo image_info(image->imageInfo());
+    casacore::ImageInfo image_info = image->imageInfo();
     if (image_info.hasBeam()) {
         const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
         AddBeamEntry(extended_info, beam_set);
@@ -906,9 +902,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         if (need_frame && ((entry_name.find("EQUINOX") == 0) || (entry_name.find("EPOCH") == 0))) {
             need_frame = false;
             frame = entry.value();
-            if (frame.contains("2000")) {
+            double numval = entry.numeric_value();
+            if (frame.contains("2000") || (numval == 2000.0)) {
                 frame = "J2000";
-            } else if (frame.contains("1950")) {
+            } else if (frame.contains("1950") || (numval == 1950.0)) {
                 frame = "B1950";
             }
         }
@@ -989,6 +986,13 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
+    if (!bunit.empty()) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("Pixel unit");
+        entry->set_value(bunit);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
     if (!need_radesys || !need_frame) {
         std::string direction_frame;
         if (need_radesys) {
@@ -1016,13 +1020,6 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Spectral frame");
         entry->set_value(specsys);
-        entry->set_entry_type(CARTA::EntryType::STRING);
-    }
-
-    if (!bunit.empty()) {
-        auto entry = extended_info.add_computed_entries();
-        entry->set_name("Pixel unit");
-        entry->set_value(bunit);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
