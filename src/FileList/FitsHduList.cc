@@ -19,7 +19,11 @@ FitsHduList::FitsHduList(const std::string& filename) {
 
 void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& error) {
     // Returns list of hdu num and ext name for primary array and image extensions.
-    // Note: DO NOT USE for compressed FITS, open decompresses entire file.
+
+    // DO NOT USE for compressed FITS, fits_open_file decompresses entire file.
+    if (IsCompressedFits(_filename)) {
+        throw(casacore::AipsError("Use CompressedFits for HDU header map."));
+    }
 
     // Open file read-only
     fitsfile* fptr(nullptr);
