@@ -1017,7 +1017,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
     // add profiles
     std::vector<float> profile;
-    bool write_lock(true);
+    bool write_lock(false);
 
     for (auto& config : _point_regions_spatial_configs[region_id]) {
         size_t start(config.start());
