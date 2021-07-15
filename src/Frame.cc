@@ -982,6 +982,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         return false;
     }
 
+    if (!_point_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
+        return false;
+    }
+
     auto t_start_spatial_profile = std::chrono::high_resolution_clock::now();
 
     // The starting index of the tile which contains this index.
