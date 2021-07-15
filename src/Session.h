@@ -237,6 +237,7 @@ private:
     // Send data streams
     bool SendContourData(int file_id, bool ignore_empty = true);
     bool SendSpatialProfileData(int file_id, int region_id);
+    void SendSpatialProfileData(int file_id);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
     void UpdateImageData(int file_id, bool send_image_histogram, bool z_changed, bool stokes_changed);

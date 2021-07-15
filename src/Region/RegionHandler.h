@@ -78,6 +78,7 @@ public:
         std::vector<carta::CollapseResult>& collapse_results);
 
     bool IsPointRegion(int region_id);
+    std::vector<int> GetPointRegionIds();
 
 private:
     // Get unique region id (max id + 1)

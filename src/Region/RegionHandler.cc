@@ -1355,4 +1355,14 @@ bool RegionHandler::IsPointRegion(int region_id) {
     return false;
 }
 
+std::vector<int> RegionHandler::GetPointRegionIds() {
+    std::vector<int> results;
+    for (auto& region : _regions) {
+        if (IsPointRegion(region.first)) {
+            results.push_back(region.first);
+        }
+    }
+    return results;
+}
+
 } // namespace carta

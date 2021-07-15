@@ -1399,6 +1399,16 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
     return data_sent;
 }
 
+void Session::SendSpatialProfileData(int file_id) {
+    SendSpatialProfileData(file_id, CURSOR_REGION_ID);
+    if (_region_handler) {
+        auto point_region_ids = _region_handler->GetPointRegionIds();
+        for (auto point_region_id : point_region_ids) {
+            SendSpatialProfileData(file_id, point_region_id);
+        }
+    }
+}
+
 bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
@@ -1600,7 +1610,7 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
                 SendRegionHistogramData(file_id, IMAGE_REGION_ID);
             }
             SendRegionStatsData(file_id, IMAGE_REGION_ID);
-            SendSpatialProfileData(file_id, CURSOR_REGION_ID);
+            SendSpatialProfileData(file_id);
         }
     }
 }
