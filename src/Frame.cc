@@ -287,14 +287,16 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 }
 
 bool Frame::SetCursor(float x, float y) {
-    bool changed = ((x != _point_regions[CURSOR_REGION_ID].x) || (y != _point_regions[CURSOR_REGION_ID].y));
-    _point_regions[CURSOR_REGION_ID] = PointXy(x, y);
-    return changed;
+    return SetPointRegion(CURSOR_REGION_ID, x, y);
 }
 
 bool Frame::SetPointRegion(int region_id, float x, float y) {
-    bool changed = ((x != _point_regions[region_id].x) || (y != _point_regions[region_id].y));
-    _point_regions[region_id] = PointXy(x, y);
+    bool changed(true);
+    if (_point_regions.count(region_id) && (x == _point_regions[region_id].x) && (y == _point_regions[region_id].y)) {
+        changed = false;
+    } else {
+        _point_regions[region_id] = PointXy(x, y);
+    }
     return changed;
 }
 

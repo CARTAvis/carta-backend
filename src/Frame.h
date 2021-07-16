@@ -115,7 +115,7 @@ public:
     bool SetImageChannels(int new_z, int new_stokes, std::string& message);
 
     // Cursor
-    bool SetCursor(float x, float y); // will be replaced by the SetPointRegion
+    bool SetCursor(float x, float y);
     bool SetPointRegion(int region_id, float x, float y);
 
     // Raster data
