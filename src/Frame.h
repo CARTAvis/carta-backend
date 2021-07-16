@@ -260,7 +260,7 @@ protected:
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
 
-    // Current point regions positions
+    // Current cursor/point regions positions
     std::unordered_map<int, PointXy> _point_regions;
 
     // Contour settings

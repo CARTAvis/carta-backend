@@ -968,7 +968,9 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 // Spatial Requirements and Data
 
 bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
-    _point_regions_spatial_configs[region_id].clear();
+    if (_point_regions_spatial_configs.count(region_id)) {
+        _point_regions_spatial_configs[region_id].clear();
+    }
     for (auto& profile : spatial_profiles) {
         _point_regions_spatial_configs[region_id].push_back(profile);
     }
@@ -979,7 +981,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     // Fill spatial profile message for cursor/point region only
     // Send even if no requirements, to update value of data at cursor/point region
 
-    // frontend does not set point region outside of image, but just in case:
+    // frontend does not set cursor/point region outside of image, but just in case:
     if (!_point_regions[region_id].InImage(_width, _height)) {
         return false;
     }
@@ -1066,7 +1068,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
                 for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
-                    // The point region has moved outside this chunk row
+                    // The cursor/point region has moved outside this chunk row
                     if (!ignore_interrupt && (tile_index(_point_regions[region_id].y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
                         return have_profile;
                     }
@@ -1249,6 +1251,11 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
     // No spectral profile requirements
     if (_cursor_spectral_configs.empty()) {
+        return false;
+    }
+
+    // No cursor
+    if (!_point_regions.count(region_id)) {
         return false;
     }
 
