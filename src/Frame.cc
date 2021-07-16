@@ -981,12 +981,12 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     // Fill spatial profile message for cursor/point region only
     // Send even if no requirements, to update value of data at cursor/point region
 
-    // frontend does not set cursor/point region outside of image, but just in case:
-    if (!_point_regions[region_id].InImage(_width, _height)) {
+    if (!_point_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
         return false;
     }
 
-    if (!_point_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
+    // frontend does not set cursor/point region outside of image, but just in case:
+    if (!_point_regions[region_id].InImage(_width, _height)) {
         return false;
     }
 
