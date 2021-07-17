@@ -13,11 +13,6 @@
 #include "Session.h"
 #include "Threading.h"
 
-#ifdef COMPILE_PERFORMANCE_TESTS
-#include <spdlog/fmt/fmt.h>
-#include "Timer/Timer.h"
-#endif
-
 using namespace std;
 
 class ICDTest : public ::testing::Test {
