@@ -48,10 +48,10 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
+        TestICD.cc
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
-        TestSession.cc
         TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestTimer.cc
