@@ -20,11 +20,11 @@
 
 using namespace std;
 
-class SessionTest : public ::testing::Test {
+class ICDTest : public ::testing::Test {
 public:
-    SessionTest() {
+    ICDTest() {
         uint32_t session_id(0);
-        std::string address("");
+        std::string address;
         std::string top_level_folder("/");
         std::string starting_folder("data/images");
         int grpc_port(-1);
@@ -33,22 +33,20 @@ public:
         _session = new Session(nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port);
     }
 
-    ~SessionTest() {
+    ~ICDTest() {
         delete _session;
         delete _file_list_handler;
     }
 
-    void TestOnRegisterViewer() {
-        uint16_t icd_version(ICD_VERSION);
-        uint32_t request_id(0);
-
+    void TestOnRegisterViewer(uint32_t session_id, string api_key, uint32_t client_feature_flags, CARTA::SessionType expected_session_type,
+        bool expected_message) {
         CARTA::RegisterViewer message;
-        uint32_t session_id(0);
-        string api_key;
-        uint32_t client_feature_flags(5);
         message.set_session_id(session_id);
         message.set_api_key(api_key);
         message.set_client_feature_flags(client_feature_flags);
+
+        uint16_t icd_version(ICD_VERSION);
+        uint32_t request_id(0);
 
         auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -76,11 +74,14 @@ public:
 
                 EXPECT_TRUE(register_viewer_ack.success());
                 EXPECT_EQ(register_viewer_ack.session_id(), session_id);
-                EXPECT_EQ(register_viewer_ack.session_type(), CARTA::SessionType::NEW);
+                EXPECT_EQ(register_viewer_ack.session_type(), expected_session_type);
+                EXPECT_EQ(register_viewer_ack.user_preferences_size(), 0);
                 EXPECT_EQ(register_viewer_ack.user_layouts_size(), 0);
-                EXPECT_EQ(register_viewer_ack.user_layouts_size(), 0);
-
-                spdlog::info("Register viewer ack message: {}", register_viewer_ack.message());
+                if (expected_message) {
+                    EXPECT_GT(register_viewer_ack.message().length(), 0);
+                } else {
+                    EXPECT_EQ(register_viewer_ack.message().length(), 0);
+                }
             }
         });
     }
@@ -90,6 +91,19 @@ private:
     Session* _session;
 };
 
-TEST_F(SessionTest, TestOnRegisterViewer) {
-    TestOnRegisterViewer();
+TEST_F(ICDTest, ACCESS_CARTA_DEFAULT) {
+    TestOnRegisterViewer(0, "", 5, CARTA::SessionType::NEW, true);
+}
+
+TEST_F(ICDTest, ACCESS_CARTA_KNOWN_DEFAULT) {
+    TestOnRegisterViewer(9999, "", 5, CARTA::SessionType::RESUMED, true);
+}
+
+TEST_F(ICDTest, ACCESS_CARTA_NO_CLIENT_FEATURE) {
+    TestOnRegisterViewer(0, "", 0, CARTA::SessionType::NEW, true);
+}
+
+TEST_F(ICDTest, ACCESS_CARTA_SAME_ID_TWICE) {
+    TestOnRegisterViewer(12345, "", 5, CARTA::SessionType::RESUMED, true);
+    TestOnRegisterViewer(12345, "", 5, CARTA::SessionType::RESUMED, true);
 }
