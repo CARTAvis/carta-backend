@@ -42,6 +42,7 @@ ExternalProject_Add(fits2idia
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
+        DummyBackend.cc
         TestBlockSmooth.cc
         TestFitsTable.cc
         TestFitsImage.cc
