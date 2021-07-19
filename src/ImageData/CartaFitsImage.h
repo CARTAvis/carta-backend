@@ -11,6 +11,7 @@
 #define CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
 
 #include <casacore/casa/Utilities/DataType.h>
+#include <casacore/images/Images/ImageInfo.h>
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/lattices/Lattices/TiledShape.h>
 
@@ -72,6 +73,7 @@ private:
     bool AddLinearCoordinate(casacore::CoordinateSystem& coord_sys, const ::wcsprm& wcs, std::vector<int>& linear_axes);
     void SetCoordSysOrder(casacore::CoordinateSystem& coord_sys, int naxes, std::vector<int>& special_axes, std::vector<int>& lin_axes);
     void SetHeaderRec(char* header, casacore::RecordInterface& header_rec);
+    void ReadBeamsTable(casacore::ImageInfo& image_info);
     void AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore::RecordInterface& header_rec);
 
     // Pixel mask
