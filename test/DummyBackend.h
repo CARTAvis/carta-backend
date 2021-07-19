@@ -16,7 +16,12 @@ public:
     ~DummyBackend();
 
     void ReceiveMessage(CARTA::RegisterViewer message);
+    void ReceiveMessage(CARTA::CloseFile message);
+    void ReceiveMessage(CARTA::OpenFile message);
+    void ReceiveMessage(CARTA::SetImageChannels message);
+
     void CheckRegisterViewerAck(uint32_t expected_session_id, CARTA::SessionType expected_session_type, bool expected_message);
+    void CheckOpenFileAck();
 
 private:
     FileListHandler* _file_list_handler;

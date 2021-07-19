@@ -5,8 +5,11 @@
 */
 
 #include "DummyBackend.h"
+#include "OnMessageTask.h"
 
 #include <gtest/gtest.h>
+#include <tbb/parallel_for.h>
+#include <tbb/task_group.h>
 
 static const uint16_t DUMMY_ICD_VERSION(ICD_VERSION);
 static const uint32_t DUMMY_REQUEST_ID(0);
@@ -29,6 +32,29 @@ DummyBackend::~DummyBackend() {
 
 void DummyBackend::ReceiveMessage(CARTA::RegisterViewer message) {
     _session->OnRegisterViewer(message, DUMMY_ICD_VERSION, DUMMY_REQUEST_ID);
+}
+
+void DummyBackend::ReceiveMessage(CARTA::CloseFile message) {
+    _session->OnCloseFile(message);
+}
+
+void DummyBackend::ReceiveMessage(CARTA::OpenFile message) {
+    _session->OnOpenFile(message, DUMMY_REQUEST_ID);
+}
+
+void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
+    _session->ImageChannelLock(message.file_id());
+    OnMessageTask* tsk = nullptr;
+    if (!_session->ImageChannelTaskTestAndSet(message.file_id())) {
+        tsk = new (tbb::task::allocate_root(_session->Context())) SetImageChannelsTask(_session, message.file_id());
+    }
+    // has its own queue to keep channels in order during animation
+    _session->AddToSetChannelQueue(message, DUMMY_REQUEST_ID);
+    _session->ImageChannelUnlock(message.file_id());
+
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::CheckRegisterViewerAck(uint32_t expected_session_id, CARTA::SessionType expected_session_type, bool expected_message) {
@@ -57,5 +83,32 @@ void DummyBackend::CheckRegisterViewerAck(uint32_t expected_session_id, CARTA::S
                 }
             }
         }
+    });
+}
+
+void DummyBackend::CheckOpenFileAck() {
+    _session->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
+        std::pair<std::vector<char>, bool> messages_pair;
+        while (messages_queue.try_pop(messages_pair)) {
+            std::vector<char> message = messages_pair.first;
+            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
+
+            if (head.type == CARTA::EventType::OPEN_FILE_ACK) {
+                CARTA::OpenFileAck open_file_ack;
+                char* event_buf = message.data() + sizeof(carta::EventHeader);
+                int event_length = message.size() - sizeof(carta::EventHeader);
+                open_file_ack.ParseFromArray(event_buf, event_length);
+                EXPECT_TRUE(open_file_ack.success());
+            }
+
+            if (head.type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
+                CARTA::RegionHistogramData region_histogram_data;
+                char* event_buf = message.data() + sizeof(carta::EventHeader);
+                int event_length = message.size() - sizeof(carta::EventHeader);
+                region_histogram_data.ParseFromArray(event_buf, event_length);
+                EXPECT_GE(region_histogram_data.histograms_size(), 0);
+            }
+        }
+        EXPECT_EQ(messages_queue.unsafe_size(), 0);
     });
 }
