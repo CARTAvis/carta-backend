@@ -7,7 +7,6 @@
 #ifndef CARTA_BACKEND__DUMMYBACKEND_H_
 #define CARTA_BACKEND__DUMMYBACKEND_H_
 
-#include "Logger/Logger.h"
 #include "Session.h"
 
 class DummyBackend {
@@ -20,8 +19,7 @@ public:
     void ReceiveMessage(CARTA::OpenFile message);
     void ReceiveMessage(CARTA::SetImageChannels message);
 
-    void CheckRegisterViewerAck(uint32_t expected_session_id, CARTA::SessionType expected_session_type, bool expected_message);
-    void CheckOpenFileAck();
+    void CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback);
 
 private:
     FileListHandler* _file_list_handler;

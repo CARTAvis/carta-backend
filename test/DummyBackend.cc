@@ -7,10 +7,6 @@
 #include "DummyBackend.h"
 #include "OnMessageTask.h"
 
-#include <gtest/gtest.h>
-#include <tbb/parallel_for.h>
-#include <tbb/task_group.h>
-
 static const uint16_t DUMMY_ICD_VERSION(ICD_VERSION);
 static const uint32_t DUMMY_REQUEST_ID(0);
 
@@ -57,58 +53,6 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
     }
 }
 
-void DummyBackend::CheckRegisterViewerAck(uint32_t expected_session_id, CARTA::SessionType expected_session_type, bool expected_message) {
-    _session->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
-        std::pair<std::vector<char>, bool> messages_pair;
-        while (messages_queue.try_pop(messages_pair)) {
-            std::vector<char> message = messages_pair.first;
-            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
-            EXPECT_EQ(head.type, CARTA::EventType::REGISTER_VIEWER_ACK);
-
-            if (head.type == CARTA::EventType::REGISTER_VIEWER_ACK) {
-                CARTA::RegisterViewerAck register_viewer_ack;
-                char* event_buf = message.data() + sizeof(carta::EventHeader);
-                int event_length = message.size() - sizeof(carta::EventHeader);
-                register_viewer_ack.ParseFromArray(event_buf, event_length);
-
-                EXPECT_TRUE(register_viewer_ack.success());
-                EXPECT_EQ(register_viewer_ack.session_id(), expected_session_id);
-                EXPECT_EQ(register_viewer_ack.session_type(), expected_session_type);
-                EXPECT_EQ(register_viewer_ack.user_preferences_size(), 0);
-                EXPECT_EQ(register_viewer_ack.user_layouts_size(), 0);
-                if (expected_message) {
-                    EXPECT_GT(register_viewer_ack.message().length(), 0);
-                } else {
-                    EXPECT_EQ(register_viewer_ack.message().length(), 0);
-                }
-            }
-        }
-    });
-}
-
-void DummyBackend::CheckOpenFileAck() {
-    _session->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
-        std::pair<std::vector<char>, bool> messages_pair;
-        while (messages_queue.try_pop(messages_pair)) {
-            std::vector<char> message = messages_pair.first;
-            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
-
-            if (head.type == CARTA::EventType::OPEN_FILE_ACK) {
-                CARTA::OpenFileAck open_file_ack;
-                char* event_buf = message.data() + sizeof(carta::EventHeader);
-                int event_length = message.size() - sizeof(carta::EventHeader);
-                open_file_ack.ParseFromArray(event_buf, event_length);
-                EXPECT_TRUE(open_file_ack.success());
-            }
-
-            if (head.type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
-                CARTA::RegionHistogramData region_histogram_data;
-                char* event_buf = message.data() + sizeof(carta::EventHeader);
-                int event_length = message.size() - sizeof(carta::EventHeader);
-                region_histogram_data.ParseFromArray(event_buf, event_length);
-                EXPECT_GE(region_histogram_data.histograms_size(), 0);
-            }
-        }
-        EXPECT_EQ(messages_queue.unsafe_size(), 0);
-    });
+void DummyBackend::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback) {
+    _session->CheckMessagesQueue(callback);
 }
