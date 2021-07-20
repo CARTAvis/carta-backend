@@ -1391,7 +1391,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
             }
         }
     } else {
-        string error = fmt::format("Spatial profiles not valid for non-cursor or non-point region ", region_id);
+        string error = fmt::format("Spatial profiles not valid for non-point region {}", region_id);
         SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
     return data_sent;
