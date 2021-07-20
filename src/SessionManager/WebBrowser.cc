@@ -72,7 +72,7 @@ void WebBrowser::OpenBrowser() {
         _error = "WebBrowser: Failed to open the browser automatically.";
     }
 #else
-    std::string cmd = "bash -c \"" + _cmd + "\"";
+    std::string cmd = "bash -c \"" + _cmd + " & disown $!\"";
     const int ans = std::system(cmd.c_str());
     if (ans) {
         _status = false;
