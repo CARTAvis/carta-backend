@@ -443,3 +443,29 @@ int GetNumItems(const string& path) {
         return -1;
     }
 }
+
+// https://stackoverflow.com/a/46931770/1727322
+std::vector<std::string> split_string(const std::string& s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        result.push_back(item);
+    }
+
+    return result;
+}
+
+// quick alternative to bp::search_path that allows us to remove
+// boost:filesystem dependency
+fs::path search_path(std::string filename) {
+    auto path_strings = split_string(std::getenv("PATH"), ':');
+    for (auto& p : path_strings) {
+        fs::path base_path(p);
+        base_path /= filename;
+        if (fs::exists(base_path)) {
+            return base_path;
+        }
+    }
+    return fs::path();
+}

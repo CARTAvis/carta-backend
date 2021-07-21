@@ -8,6 +8,7 @@
 #define CARTA_BACKEND__UTIL_H_
 
 #include <cassert>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -24,6 +25,8 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
+namespace fs = std::filesystem;
+
 // Valid for little-endian only
 #define BZ_MAGIC_NUMBER 0x39685A42
 #define FITS_MAGIC_NUMBER 0x504D4953
@@ -38,6 +41,9 @@ bool CheckFolderPaths(std::string& top_level_string, std::string& starting_strin
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 int GetNumItems(const std::string& path);
+
+std::vector<std::string> split_string(const std::string& s, char delim);
+fs::path search_path(std::string filename);
 
 std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
 std::string GetQuantityInfo(const casacore::Quantity& quantity);
