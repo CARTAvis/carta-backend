@@ -27,6 +27,7 @@ private:
     void OpenSystemBrowser();
     void OpenBrowser();
     bool _status;
+    bool _path_exists;
     std::string _cmd;
     std::vector<std::string> _args;
     std::string _url;

@@ -9,9 +9,38 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <filesystem>
 #include <queue>
 #include <sstream>
 #include <stdexcept>
+
+namespace fs = std::filesystem;
+
+// https://stackoverflow.com/a/46931770/1727322
+std::vector<std::string> split_string(const std::string& s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        result.push_back(item);
+    }
+
+    return result;
+}
+
+// quick alternative to bp::search_path that allows us to remove
+// boost:filesystem dependency
+fs::path search_path(std::string filename) {
+    auto path_strings = split_string(std::getenv("PATH"), ':');
+    for (auto& p : path_strings) {
+        fs::path base_path(p);
+        base_path /= filename;
+        if (fs::exists(base_path)) {
+            return base_path;
+        }
+    }
+    return fs::path();
+}
 
 namespace carta {
 
@@ -21,51 +50,13 @@ WebBrowser::WebBrowser(const std::string& url, const std::string& browser_cmd) {
         _cmd = browser_cmd;
         ParseCmd();
     }
-    if (_cmd.size() > 0) {
+    if (_cmd.size() > 0 && _path_exists) {
         spdlog::debug("WebBrowser: custom command is {}, attempting to open the browser now.", _cmd);
         OpenBrowser();
     } else {
         spdlog::debug("WebBrowser: using default browser.");
         OpenSystemBrowser();
     }
-}
-
-// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
-std::string exec(const char* cmd) {
-    char buffer[128];
-    std::string result = "";
-    FILE* pipe = popen(cmd, "r");
-    if (!pipe)
-        throw std::runtime_error("popen() failed!");
-    try {
-        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
-            result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-    pclose(pipe);
-    return result;
-}
-
-std::string find_path(std::string prog) {
-    std::string path;
-    std::vector<std::string> finders = {"which", "type", "command -v", "whereis"};
-    for (const auto& finder : finders) {
-        auto call = finder + " " + prog;
-        path = exec(call.c_str());
-        auto prog2 = path.substr(path.size() - prog.size() - 1, path.size());
-        if (path[0] == '/') {
-            break;
-        } else {
-            path = "";
-        }
-    }
-    if (path.size() > 0) {
-        return path.substr(0, path.size() - 1);
-    }
-    return path;
 }
 
 void WebBrowser::ParseCmd() {
@@ -83,16 +74,17 @@ void WebBrowser::ParseCmd() {
 #else
     std::istringstream isstream(_cmd);
     std::copy(std::istream_iterator<std::string>(isstream), std::istream_iterator<std::string>(), std::back_inserter(_args));
-    if (_args[0][0] != '/') {
-        // find path, and replace it
-        auto path = find_path(_args[0]);
-        if (path.size() > 0) {
-            spdlog::debug("I found {} in PATH: {}.", _args[0], path);
-            _args[0] = path;
-        } else {
-            spdlog::debug("Can't find {} in PATH, please check.", _args[0]);
-        }
+    fs::path path(_args[0]);
+    if (!fs::exists(path)) {
+        path = search_path(_args[0]);
     }
+
+    if (path.empty()) {
+        spdlog::debug("Can't find {} in PATH, please check.", _args[0]);
+    } else {
+        _path_exists = true;
+    }
+    _args[0] = path.string();
 #endif
 }
 
