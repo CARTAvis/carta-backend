@@ -140,7 +140,6 @@ void WebBrowser::OpenBrowser() {
             auto result = ::execv(args[0], args.data());
             if (result == -1) {
                 spdlog::debug("WebBrowser: execv failed. CARTA can't start with the requiered settings in --browser.", result);
-                _error = "WebBrowser: Failed to open the browser automatically.";
             }
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
@@ -149,7 +148,6 @@ void WebBrowser::OpenBrowser() {
             ::_exit(1);
         } else if (pid2 == -1) {
             spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
-            _error = "WebBrowser: Failed to open the browser automatically.";
             struct sigaction noaction;
             memset(&noaction, 0, sizeof(noaction));
             noaction.sa_handler = SIG_IGN;
