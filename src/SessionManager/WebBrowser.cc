@@ -71,7 +71,6 @@ std::string find_path(std::string prog) {
 void WebBrowser::ParseCmd() {
     if (_cmd[_cmd.size() - 1] == '&') {
         _cmd.pop_back();
-        _isBkg = true; // so that we know what to do with commands ending with &
     }
     const std::string wildcard = "CARTA_URL";
     auto wildcard_pos = _cmd.find(wildcard);

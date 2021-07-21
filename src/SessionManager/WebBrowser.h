@@ -27,7 +27,6 @@ private:
     void OpenSystemBrowser();
     void OpenBrowser();
     bool _status;
-    bool _isBkg;
     std::string _cmd;
     std::vector<std::string> _args;
     std::string _url;
