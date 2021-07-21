@@ -124,51 +124,36 @@ void WebBrowser::OpenBrowser() {
 #else
     pid_t pid = fork();
     if (pid == 0) {
-        struct sigaction noaction;
-        memset(&noaction, 0, sizeof(noaction));
-        noaction.sa_handler = SIG_IGN;
-        ::sigaction(SIGPIPE, &noaction, 0);
-        ::setsid();
+        setsid();
         // double fork
         pid_t pid2 = fork();
+        signal(SIGHUP, SIG_IGN);
+        signal(SIGPIPE, SIG_IGN);
         if (pid2 == 0) {
             std::vector<char*> args;
             for (auto& arg : _args) {
                 args.push_back(const_cast<char*>(arg.c_str()));
             }
             args.push_back(nullptr);
-            auto result = ::execv(args[0], args.data());
+            auto result = execv(args[0], args.data());
             if (result == -1) {
                 spdlog::debug("WebBrowser: execv failed. CARTA can't start with the requiered settings in --browser.", result);
             }
-            struct sigaction noaction;
-            memset(&noaction, 0, sizeof(noaction));
-            noaction.sa_handler = SIG_IGN;
-            ::sigaction(SIGPIPE, &noaction, 0);
-            ::_exit(1);
+            _exit(1);
         } else if (pid2 == -1) {
             spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
-            struct sigaction noaction;
-            memset(&noaction, 0, sizeof(noaction));
-            noaction.sa_handler = SIG_IGN;
-            ::sigaction(SIGPIPE, &noaction, 0);
-            if (::chdir("/") == -1) {
+            if (chdir("/") == -1) {
                 spdlog::debug("WebBrowser: Failed to change dir to \"/\"");
             }
-            ::_exit(0);
+            _exit(0);
         } else if (pid2 != 0) {
             // kill this child parent so that we don't endup with a zoombie process
-            ::_exit(1);
+            _exit(1);
         }
     }
     if (pid == -1) {
         spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
-        _error = "WebBrowser: Failed to open the browser automatically.";
-        struct sigaction noaction;
-        memset(&noaction, 0, sizeof(noaction));
-        noaction.sa_handler = SIG_IGN;
-        ::sigaction(SIGPIPE, &noaction, 0);
-        ::_exit(0);
+        _exit(0);
     }
 #endif
 }
