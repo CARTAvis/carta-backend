@@ -13,6 +13,7 @@
 #include <queue>
 #include <sstream>
 #include <stdexcept>
+#include <unistd.h>
 
 namespace fs = std::filesystem;
 
@@ -126,6 +127,13 @@ void WebBrowser::OpenBrowser() {
                 args.push_back(const_cast<char*>(arg.c_str()));
             }
             args.push_back(nullptr);
+
+            // redirect output using unistd
+            int fd = open("/dev/null", O_WRONLY);
+            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDERR_FILENO);
+            close(fd);
+
             auto result = execv(args[0], args.data());
             if (result == -1) {
                 spdlog::debug("WebBrowser: execv failed. CARTA can't start with the requiered settings in --browser.", result);
