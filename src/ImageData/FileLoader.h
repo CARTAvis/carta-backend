@@ -131,7 +131,7 @@ inline casacore::uInt GetFitsHdu(const std::string& hdu) {
 
 class FileLoader {
 public:
-    using ImageRef = casacore::ImageInterface<float>*;
+    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
     using IPos = casacore::IPosition;
 
     FileLoader(const std::string& filename);
@@ -145,9 +145,10 @@ public:
     virtual bool CanOpenFile(std::string& error);
     // Do anything required to open the file at given HDU (set up cache size, Image object)
     virtual void OpenFile(const std::string& hdu) = 0;
+    virtual void CloseFile();
 
     // Return the opened casacore image
-    virtual ImageRef GetImage() = 0;
+    virtual ImageRef GetImage();
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
@@ -161,7 +162,7 @@ public:
 
     // Image Data
     // Check to see if the file has a particular HDU/group/table/etc
-    virtual bool HasData(FileInfo::Data ds) const = 0;
+    virtual bool HasData(FileInfo::Data ds) const;
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
 
@@ -201,14 +202,19 @@ public:
     virtual bool GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index);
 
 protected:
-    // Full name of the image file
+    // Full name and hdu of the image file
     std::string _filename;
+    std::string _hdu;
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
     // Axes, dimension values
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
     std::vector<int> _render_axes;
+
+    // Pixel mask
+    bool _has_pixel_mask;
 
     // Storage for z-plane and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _z_stats;

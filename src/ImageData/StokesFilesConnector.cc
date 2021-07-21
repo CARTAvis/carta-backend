@@ -85,10 +85,10 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         // modify the original image and extend the image coordinate system with a stokes coordinate
         for (auto& loader : _loaders) {
             auto stokes_type = loader.first;
-            auto* image = loader.second->GetImage();
+            auto image = loader.second->GetImage();
             try {
                 extended_images[stokes_type] =
-                    std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, coord_sys[stokes_type]);
+                    std::make_shared<casacore::ExtendImage<float>>(*(image.get()), new_image_shape, coord_sys[stokes_type]);
             } catch (const casacore::AipsError& error) {
                 return fail_exit(fmt::format("Failed to extend the image: {}", error.getMesg()));
             }

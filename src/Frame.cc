@@ -1559,10 +1559,12 @@ bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callba
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
+    auto image = GetImage();
 
     if (!_moment_generator) {
-        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), image.get());
     }
+
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(
@@ -1614,9 +1616,9 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     }
 
     // Modify image to export
-    auto image = GetImage();
-    auto image_shape = image->shape();
+    auto image_shape = ImageShape();
 
+    casacore::ImageInterface<float>* image;
     casacore::SubImage<float> sub_image;
     casacore::LCRegion* image_region;
     casacore::IPosition region_shape;

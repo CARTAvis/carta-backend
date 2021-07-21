@@ -65,10 +65,45 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
-FileLoader::FileLoader(const std::string& filename) : _filename(filename) {}
+FileLoader::FileLoader(const std::string& filename) : _filename(filename), _num_dims(0), _has_pixel_mask(false) {}
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
+}
+
+typename FileLoader::ImageRef FileLoader::GetImage() {
+    if (!_image) {
+        OpenFile(_hdu);
+    }
+
+    return _image;
+}
+
+void FileLoader::CloseFile() {
+    // Destroy image if only the loader owns it
+    if (_image.unique()) {
+        _image.reset();
+    }
+}
+
+bool FileLoader::HasData(FileInfo::Data dl) const {
+    switch (dl) {
+        case FileInfo::Data::Image:
+            return true;
+        case FileInfo::Data::XY:
+            return _num_dims >= 2;
+        case FileInfo::Data::XYZ:
+            return _num_dims >= 3;
+        case FileInfo::Data::XYZW:
+            return _num_dims >= 4;
+        case FileInfo::Data::MASK: {
+            return _has_pixel_mask;
+        }
+        default:
+            break;
+    }
+
+    return false;
 }
 
 bool FileLoader::GetShape(IPos& shape) {
