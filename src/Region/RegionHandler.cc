@@ -873,6 +873,9 @@ bool RegionHandler::GetRegionHistogramData(
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
                     FillHistogramFromResults(histogram, stats, hist);
+
+                    // Fill in the cached message
+                    histogram_messages.emplace_back(histogram_message);
                     continue;
                 }
             }
