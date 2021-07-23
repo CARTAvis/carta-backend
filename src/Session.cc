@@ -1188,6 +1188,12 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
     }
 }
 
+void Session::OnSplataloguePing(uint32_t request_id) {
+    CARTA::SplataloguePong splatalogue_pong;
+    carta::SpectralLineCrawler::Ping(splatalogue_pong);
+    SendEvent(CARTA::EventType::SPLATALOGUE_PONG, request_id, splatalogue_pong);
+}
+
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
     CARTA::SpectralLineResponse spectral_line_response;
     carta::SpectralLineCrawler::SendRequest(
