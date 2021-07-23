@@ -32,12 +32,11 @@ public:
     void OpenFile(const std::string& hdu) override;
 
 private:
-    bool _is_gz;
     std::string _unzip_file;
     casacore::uInt _hdunum;
 };
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename), _is_gz(is_gz) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, is_gz) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file

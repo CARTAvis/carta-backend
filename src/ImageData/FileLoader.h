@@ -134,7 +134,7 @@ public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
     using IPos = casacore::IPosition;
 
-    FileLoader(const std::string& filename);
+    FileLoader(const std::string& filename, bool is_gz = false);
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
@@ -205,6 +205,7 @@ protected:
     // Full name and hdu of the image file
     std::string _filename;
     std::string _hdu;
+    bool _is_gz;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
     // Save image properties; only reopen for data or beams

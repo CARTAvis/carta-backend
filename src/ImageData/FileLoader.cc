@@ -65,7 +65,8 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
-FileLoader::FileLoader(const std::string& filename) : _filename(filename), _num_dims(0), _has_pixel_mask(false) {}
+FileLoader::FileLoader(const std::string& filename, bool is_gz)
+    : _filename(filename), _is_gz(is_gz), _num_dims(0), _has_pixel_mask(false) {}
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
@@ -80,9 +81,11 @@ typename FileLoader::ImageRef FileLoader::GetImage() {
 }
 
 void FileLoader::CloseImage() {
-    // Destroy image if only the loader owns it
-    if (_image.unique()) {
-        _image.reset();
+    // Destroy image if only the loader owns it unless it has been decompressed
+    if (!_is_gz) {
+        if (_image.unique()) {
+            _image.reset();
+        }
     }
 }
 
