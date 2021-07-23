@@ -25,7 +25,13 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 // Valid for little-endian only
 #define BZ_MAGIC_NUMBER 0x39685A42
@@ -42,8 +48,7 @@ uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 int GetNumItems(const std::string& path);
 
-std::vector<std::string> split_string(const std::string& s, char delim);
-fs::path search_path(std::string filename);
+fs::path SearchPath(std::string filename);
 
 std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
 std::string GetQuantityInfo(const casacore::Quantity& quantity);
