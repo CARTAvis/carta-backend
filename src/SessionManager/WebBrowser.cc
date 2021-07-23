@@ -11,12 +11,17 @@
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <filesystem>
 #include <queue>
 #include <sstream>
 #include <stdexcept>
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 namespace carta {
 
@@ -26,9 +31,11 @@ WebBrowser::WebBrowser(const std::string& url, const std::string& browser_cmd) {
         _cmd = browser_cmd;
         ParseCmd();
     }
-    if (_cmd.size() > 0 && _path_exists) {
-        spdlog::debug("WebBrowser: custom command is {}, attempting to open the browser now.", _cmd);
-        OpenBrowser();
+    if (_cmd.size() > 0) {
+        if (_path_exists) {
+            spdlog::debug("WebBrowser: custom command is {}, attempting to open the browser now.", _cmd);
+            OpenBrowser();
+        }
     } else {
         spdlog::debug("WebBrowser: using default browser.");
         OpenSystemBrowser();
@@ -52,11 +59,11 @@ void WebBrowser::ParseCmd() {
     std::copy(std::istream_iterator<std::string>(isstream), std::istream_iterator<std::string>(), std::back_inserter(_args));
     fs::path path(_args[0]);
     if (!fs::exists(path)) {
-        path = search_path(_args[0]);
+        path = SearchPath(_args[0]);
     }
 
     if (path.empty()) {
-        spdlog::debug("Can't find {} in PATH, please check.", _args[0]);
+        spdlog::warn("Can't find {} in PATH, please check.", _args[0]);
     } else {
         _path_exists = true;
     }
@@ -111,11 +118,11 @@ void WebBrowser::OpenBrowser() {
 
             auto result = execv(args[0], args.data());
             if (result == -1) {
-                spdlog::debug("WebBrowser: execv failed. CARTA can't start with the requiered settings in --browser.", result);
+                spdlog::debug("WebBrowser: execv failed. CARTA can't start with the required settings in --browser.", result);
             }
             _exit(1);
         } else if (pid2 == -1) {
-            spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
+            spdlog::warn("WebBrowser: Failed to fork a new process. CARTA can't start with the required settings in --browser.");
             if (chdir("/") == -1) {
                 spdlog::debug("WebBrowser: Failed to change dir to \"/\"");
             }
@@ -126,7 +133,7 @@ void WebBrowser::OpenBrowser() {
         }
     }
     if (pid == -1) {
-        spdlog::debug("WebBrowser: Failed to fork a new process. CARTA can't start with the requiered settings in --browser.");
+        spdlog::warn("WebBrowser: Failed to fork a new process. CARTA can't start with the required settings in --browser.");
         _exit(0);
     }
 #endif

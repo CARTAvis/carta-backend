@@ -26,8 +26,8 @@ private:
     void ParseCmd();
     void OpenSystemBrowser();
     void OpenBrowser();
-    bool _status;
-    bool _path_exists;
+    bool _status = true;
+    bool _path_exists = false;
     std::string _cmd;
     std::vector<std::string> _args;
     std::string _url;
