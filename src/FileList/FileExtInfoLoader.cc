@@ -348,6 +348,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
                     // Computed entries for rendered image axes (not always 0 and 1)
                     std::vector<int> render_axes = _loader->GetRenderAxes();
+
+                    // Describe rendered axes
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
                     AddComputedEntries(extended_info, image.get(), render_axes, radesys, use_image_for_entries);
 
@@ -356,6 +358,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
             } else { // image failed
                 message = "Image could not be opened.";
             }
+
+            _loader->CloseImage();
         } catch (casacore::AipsError& err) {
             message = err.getMesg();
             if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
@@ -666,14 +670,12 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
     const std::vector<int>& display_axes, casacore::String& radesys, bool use_image_for_entries) {
     // Add computed entries to extended file info
-    casacore::CoordinateSystem coord_system(image->coordinates());
-
-    // Set initial coordinate-related entries
     if (use_image_for_entries) {
         // Use image coordinate system
         int display_axis0(display_axes[0]), display_axis1(display_axes[1]);
 
         // add computed_entries to extended info (ensures the proper order in file browser)
+        casacore::CoordinateSystem coord_system(image->coordinates());
         casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
         casacore::Vector<casacore::String> axis_units = coord_system.worldAxisUnits();
         casacore::Vector<casacore::Double> reference_pixels = coord_system.referencePixel();
@@ -791,6 +793,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
     } else {
+        // Use header_entries in extended info
         AddComputedEntriesFromHeaders(extended_info, display_axes);
     }
 

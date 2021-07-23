@@ -116,8 +116,8 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
         for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
             auto stokes_type = static_cast<CARTA::StokesType>(i);
             if (_loaders.count(stokes_type)) {
-                casacore::StokesCoordinate& stokes_coord =
-                    const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
+                auto image = _loaders[stokes_type]->GetImage();
+                casacore::StokesCoordinate& stokes_coord = const_cast<casacore::StokesCoordinate&>(image->coordinates().stokesCoordinate());
                 if (stokes_coord.stokes().size() != 1) {
                     return fail_exit("Stokes coordinate has no or multiple stokes types!");
                 }
@@ -128,7 +128,7 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
                 stokes_coord.setStokes(vec);
 
                 try {
-                    concatenated_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
+                    concatenated_image->setImage(*(image.get()), casacore::False);
                 } catch (const casacore::AipsError& error) {
                     return fail_exit(fmt::format("Failed to concatenate images: {}", error.getMesg()));
                 }

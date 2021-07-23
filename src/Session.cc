@@ -1216,6 +1216,9 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
         spdlog::error("Fail to concatenate stokes files!");
     }
 
+    // Clear loaders to free images
+    _stokes_files_connector->ClearCache();
+
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
     return success;
 }

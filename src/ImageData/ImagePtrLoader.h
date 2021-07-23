@@ -20,8 +20,11 @@ public:
 
 ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) : FileLoader("") {
     _image = image;
-    _num_dims = _image->shape().size();
+
+    _image_shape = _image->shape();
+    _num_dims = _image_shape.size();
     _has_pixel_mask = _image->hasPixelMask();
+    _coord_sys = _image->coordinates();
 }
 
 void ImagePtrLoader::OpenFile(const std::string& /*hdu*/) {}

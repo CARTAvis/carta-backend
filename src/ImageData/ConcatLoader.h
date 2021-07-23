@@ -28,11 +28,15 @@ void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(this->GetFileName() + "/imageconcat.json");
         _image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));
+
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
-        _num_dims = _image->shape().size();
+
+        _image_shape = _image->shape();
+        _num_dims = _image_shape.size();
         _has_pixel_mask = _image->hasPixelMask();
+        _coord_sys = _image->coordinates();
     }
 }
 
