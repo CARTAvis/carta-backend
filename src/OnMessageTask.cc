@@ -146,7 +146,7 @@ tbb::task* SpectralProfileTask::execute() {
 }
 
 tbb::task* OnSplataloguePingTask::execute() {
-    _session->OnSplataloguePing(_message, _request_id);
+    _session->OnSplataloguePing(_request_id);
     return nullptr;
 }
 

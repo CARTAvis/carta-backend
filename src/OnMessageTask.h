@@ -148,12 +148,10 @@ public:
 
 class OnSplataloguePingTask : public OnMessageTask {
     tbb::task* execute() override;
-    CARTA::SplataloguePing _message;
     uint32_t _request_id;
 
 public:
-    OnSplataloguePingTask(Session* session, CARTA::SplataloguePing message, uint32_t request_id) : OnMessageTask(session) {
-        _message = message;
+    OnSplataloguePingTask(Session* session, uint32_t request_id) : OnMessageTask(session) {
         _request_id = request_id;
     }
     ~OnSplataloguePingTask() = default;
