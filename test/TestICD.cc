@@ -128,6 +128,37 @@ public:
             }
             EXPECT_EQ(messages_queue.unsafe_size(), 0);
         });
+
+        CARTA::SetImageChannels set_image_channels_msg;
+        set_image_channels_msg.set_file_id(0);
+        set_image_channels_msg.set_channel(0);
+        set_image_channels_msg.set_stokes(0);
+        CARTA::AddRequiredTiles* required_tiles = set_image_channels_msg.mutable_required_tiles();
+        required_tiles->set_file_id(0);
+        required_tiles->set_compression_quality(11);
+        required_tiles->set_compression_type(CARTA::CompressionType::ZFP);
+        required_tiles->add_tiles(0);
+
+        _dummy_backend->ReceiveMessage(set_image_channels_msg);
+
+        _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
+            std::pair<std::vector<char>, bool> messages_pair;
+            while (messages_queue.try_pop(messages_pair)) {
+                std::vector<char> message = messages_pair.first;
+                carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
+
+                if (head.type == CARTA::EventType::RASTER_TILE_DATA) {
+                    CARTA::RasterTileData raster_tile_data;
+                    char* event_buf = message.data() + sizeof(carta::EventHeader);
+                    int event_length = message.size() - sizeof(carta::EventHeader);
+                    raster_tile_data.ParseFromArray(event_buf, event_length);
+                    EXPECT_EQ(raster_tile_data.file_id(), 0);
+                    EXPECT_EQ(raster_tile_data.channel(), 0);
+                    EXPECT_EQ(raster_tile_data.stokes(), 0);
+                }
+            }
+            EXPECT_EQ(messages_queue.unsafe_size(), 0);
+        });
     }
 
 private:

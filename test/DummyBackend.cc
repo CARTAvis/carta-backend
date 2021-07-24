@@ -5,7 +5,6 @@
 */
 
 #include "DummyBackend.h"
-#include "OnMessageTask.h"
 
 static const uint16_t DUMMY_ICD_VERSION(ICD_VERSION);
 static const uint32_t DUMMY_REQUEST_ID(0);
@@ -22,7 +21,12 @@ DummyBackend::DummyBackend() {
 }
 
 DummyBackend::~DummyBackend() {
-    delete _session;
+    if (_session) {
+        _session->WaitForTaskCancellation();
+        if (!_session->DecreaseRefCount()) {
+            delete _session;
+        }
+    }
     delete _file_list_handler;
 }
 
@@ -40,16 +44,17 @@ void DummyBackend::ReceiveMessage(CARTA::OpenFile message) {
 
 void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
     _session->ImageChannelLock(message.file_id());
-    OnMessageTask* tsk = nullptr;
-    if (!_session->ImageChannelTaskTestAndSet(message.file_id())) {
-        tsk = new (tbb::task::allocate_root(_session->Context())) SetImageChannelsTask(_session, message.file_id());
-    }
-    // has its own queue to keep channels in order during animation
     _session->AddToSetChannelQueue(message, DUMMY_REQUEST_ID);
     _session->ImageChannelUnlock(message.file_id());
 
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
+    _session->ImageChannelLock(message.file_id());
+    std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
+    bool tester = _session->_set_channel_queues[message.file_id()].try_pop(request_pair);
+    _session->ImageChannelTaskSetIdle(message.file_id());
+    _session->ImageChannelUnlock(message.file_id());
+
+    if (tester) {
+        _session->ExecuteSetChannelEvt(request_pair);
     }
 }
 

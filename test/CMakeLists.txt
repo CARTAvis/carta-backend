@@ -49,7 +49,6 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
-        TestICD.cc
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
@@ -59,6 +58,13 @@ set(TEST_SOURCES
         TestUtil.cc
         TestRestApi.cc
         TestVoTable.cc)
+
+set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
+set(TEST_ICD_SOURCES
+        CommonTestUtilities.cc
+        DummyBackend.cc
+        TestICD.cc
+        TestMain.cc)
 
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})
@@ -78,3 +84,8 @@ target_link_libraries(${BINARY}
         ${TEST_COMMON_LIBS}
         ${LINK_LIBS})
 
+add_executable(${TEST_ICD_BINARY} ${SOURCES} ${TEST_ICD_SOURCES})
+add_test(NAME ${TEST_ICD_BINARY} COMMAND ${TEST_ICD_BINARY})
+target_link_libraries(${TEST_ICD_BINARY}
+        ${TEST_COMMON_LIBS}
+        ${LINK_LIBS})
