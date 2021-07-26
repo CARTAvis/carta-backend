@@ -32,10 +32,15 @@ WebBrowser::WebBrowser(const std::string& url, const std::string& browser_cmd) {
         ParseCmd();
     }
     if (_cmd.size() > 0) {
+#if defined(__APPLE__)
+        spdlog::debug("WebBrowser: custom command is {}, attempting to open the browser now.", _cmd);
+        OpenBrowser();
+#else
         if (_path_exists) {
             spdlog::debug("WebBrowser: custom command is {}, attempting to open the browser now.", _cmd);
             OpenBrowser();
         }
+#endif
     } else {
         spdlog::debug("WebBrowser: using default browser.");
         OpenSystemBrowser();
