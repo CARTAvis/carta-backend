@@ -264,6 +264,11 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             data.resize(slicer.length());
         }
 
+        if (image->imageType() == "CartaFitsImage") {
+            // Read subset with cfitsio
+            return image->doGetSlice(data, slicer);
+        }
+
         // Get data slice with mask applied.
         // Apply slicer to image first to get appropriate cursor, and use read-only iterator
         casacore::SubImage<float> subimage(*image, slicer);
@@ -300,6 +305,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
             data(cursor_slicer) = cursor_data;
         }
+
         return true;
     } catch (casacore::AipsError& err) {
         spdlog::error("Error loading image data: {}", err.getMesg());

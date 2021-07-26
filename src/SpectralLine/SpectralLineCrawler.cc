@@ -18,6 +18,11 @@
 
 using namespace carta;
 
+#ifndef SPLATALOGUE_URL
+#define SPLATALOGUE_URL "https://splatalogue.online"
+#endif
+
+#define HTTP_OK 200
 #define REST_FREQUENCY_COLUMN_INDEX 2
 #define INTENSITY_LIMIT_WORKAROUND 0.000001
 #define NUM_HEADERS 18
@@ -39,6 +44,36 @@ SpectralLineCrawler::SpectralLineCrawler() {}
 
 SpectralLineCrawler::~SpectralLineCrawler() {}
 
+void SpectralLineCrawler::Ping(CARTA::SplataloguePong& splatalogue_pong) {
+    /* init the curl session */
+    CURL* curl_handle = curl_easy_init();
+    if (curl_handle == nullptr) {
+        splatalogue_pong.set_success(false);
+        splatalogue_pong.set_message("Init curl failed.");
+        return;
+    }
+    curl_easy_setopt(curl_handle, CURLOPT_URL, SPLATALOGUE_URL);
+    curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1L); // return header only
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 20L);
+
+    /* check splatalogue, success if get HTTP 200 OK */
+    CURLcode res = curl_easy_perform(curl_handle);
+    long http_code = 0;
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+    if (res == CURLE_OK && http_code == HTTP_OK) {
+        splatalogue_pong.set_success(true);
+    } else {
+        splatalogue_pong.set_success(false);
+        splatalogue_pong.set_message(fmt::format(
+            "Connecting to Splatalogue ({}) failed: {}, HTTP status code: {}", SPLATALOGUE_URL, curl_easy_strerror(res), http_code));
+    }
+
+    /* cleanup curl stuff */
+    curl_easy_cleanup(curl_handle);
+    return;
+}
+
 /*
     References:
     1. curl example https://curl.haxx.se/libcurl/c/getinmemory.html
@@ -57,14 +92,10 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &readBuffer);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineCrawler::WriteMemoryCallback);
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 300L);
 
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
-#ifdef SPLATALOGUE_URL
-    std::string splatalog_url = SPLATALOGUE_URL;
-#else
-    std::string splatalog_url = "https://splatalogue.online";
-#endif
     std::string base = "/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
     std::string intensityLimit =
         std::isnan(line_intensity_lower_limit)
@@ -85,7 +116,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     auto freqMinString = fmt::format(freqMin == std::floor(freqMin) ? "{:.0f}" : "{}", freqMin);
     auto freqMaxString = fmt::format(freqMax == std::floor(freqMax) ? "{:.0f}" : "{}", freqMax);
     std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", freqMinString, freqMaxString);
-    std::string URL = splatalog_url + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
+    std::string URL = SPLATALOGUE_URL + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
                       miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 

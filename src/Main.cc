@@ -24,6 +24,7 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "SessionManager/ProgramSettings.h"
+#include "SessionManager/WebBrowser.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
 #include "Util.h"
@@ -415,6 +416,15 @@ void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view 
                     }
                     break;
                 }
+                case CARTA::EventType::SPLATALOGUE_PING: {
+                    CARTA::SplataloguePing message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context())) OnSplataloguePingTask(session, head.request_id);
+                    } else {
+                        spdlog::warn("Bad SPLATALOGUE_PING message!\n");
+                    }
+                    break;
+                }
                 case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -687,23 +697,11 @@ int main(int argc, char* argv[]) {
                 if (!query_url.empty()) {
                     frontend_url += query_url;
                 }
+
                 if (!settings.no_browser) {
-                    if (settings.browser.size() > 0) {
-                        auto cmd = settings.GenerateBrowserCommand(frontend_url);
-                        auto cmd_result = system(cmd.c_str());
-                        if (cmd_result) {
-                            spdlog::warn("Failed to open the browser. Check the custom input at --browser.");
-                        }
-                    } else {
-#if defined(__APPLE__)
-                        string open_command = "open";
-#else
-                        string open_command = "xdg-open";
-#endif
-                        auto open_result = system(fmt::format("{} \"{}\"", open_command, frontend_url).c_str());
-                        if (open_result) {
-                            spdlog::warn("Failed to open the default browser automatically.");
-                        }
+                    WebBrowser wb(frontend_url, settings.browser);
+                    if (!wb.Status()) {
+                        spdlog::warn(wb.Error());
                     }
                 }
                 spdlog::info("CARTA is accessible at {}", frontend_url);

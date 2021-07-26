@@ -95,6 +95,7 @@ public:
     void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id, bool silent = false);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
+    void OnSplataloguePing(uint32_t request_id);
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
@@ -222,10 +223,13 @@ public:
 private:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-        const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message);
+        const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message);
     // File info for open file
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
         const std::string& filename, const std::string& hdu_name, std::string& message);
+    bool FillFileInfo(
+        CARTA::FileInfo& file_info, const std::string& folder, const std::string& filename, std::string& fullname, std::string& message);
+
     // File info for open moments image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
         const std::string& filename, std::string& message);
