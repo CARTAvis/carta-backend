@@ -959,7 +959,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     WaitForTaskCancellation();
 
     // Clear the message queue
-    _out_msgs.clear();
+    ClearMessagesQueue();
 
     // Reconnect the session
     ConnectCalled();
@@ -2042,4 +2042,8 @@ std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp(
 
 void Session::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback) {
     callback(_out_msgs);
+}
+
+void Session::ClearMessagesQueue() {
+    _out_msgs.clear();
 }

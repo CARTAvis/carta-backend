@@ -20,6 +20,7 @@ public:
     void ReceiveMessage(CARTA::SetImageChannels message);
 
     void CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback);
+    void ClearMessagesQueue();
 
 private:
     FileListHandler* _file_list_handler;

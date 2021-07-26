@@ -61,3 +61,7 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
 void DummyBackend::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback) {
     _session->CheckMessagesQueue(callback);
 }
+
+void DummyBackend::ClearMessagesQueue() {
+    _session->ClearMessagesQueue();
+}

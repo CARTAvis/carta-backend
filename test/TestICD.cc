@@ -98,6 +98,7 @@ public:
                 }
             }
         });
+        _dummy_backend->ClearMessagesQueue();
 
         CARTA::CloseFile close_file_msg;
         close_file_msg.set_file_id(-1);
@@ -135,6 +136,7 @@ public:
                 }
             }
         });
+        _dummy_backend->ClearMessagesQueue();
 
         CARTA::SetImageChannels set_image_channels_msg;
         set_image_channels_msg.set_file_id(0);
@@ -164,6 +166,7 @@ public:
                 }
             }
         });
+        _dummy_backend->ClearMessagesQueue();
 
         CARTA::OpenFile open_file_msg2;
         open_file_msg2.set_directory(Hdf5ImagePath(""));
@@ -196,6 +199,7 @@ public:
                 }
             }
         });
+        _dummy_backend->ClearMessagesQueue();
 
         CARTA::SetImageChannels set_image_channels_msg2;
         set_image_channels_msg2.set_file_id(0);
@@ -210,25 +214,22 @@ public:
         _dummy_backend->ReceiveMessage(set_image_channels_msg2);
         _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
             std::pair<std::vector<char>, bool> messages_pair;
-            int count = 0;
             while (messages_queue.try_pop(messages_pair)) {
                 std::vector<char> message = messages_pair.first;
                 carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
 
                 if (head.type == CARTA::EventType::RASTER_TILE_DATA) {
-                    ++count;
-                    if (count == 2) {
-                        CARTA::RasterTileData raster_tile_data;
-                        char* event_buf = message.data() + sizeof(carta::EventHeader);
-                        int event_length = message.size() - sizeof(carta::EventHeader);
-                        raster_tile_data.ParseFromArray(event_buf, event_length);
-                        EXPECT_EQ(raster_tile_data.file_id(), 0);
-                        EXPECT_EQ(raster_tile_data.channel(), 2);
-                        EXPECT_EQ(raster_tile_data.stokes(), 1);
-                    }
+                    CARTA::RasterTileData raster_tile_data;
+                    char* event_buf = message.data() + sizeof(carta::EventHeader);
+                    int event_length = message.size() - sizeof(carta::EventHeader);
+                    raster_tile_data.ParseFromArray(event_buf, event_length);
+                    EXPECT_EQ(raster_tile_data.file_id(), 0);
+                    EXPECT_EQ(raster_tile_data.channel(), 2);
+                    EXPECT_EQ(raster_tile_data.stokes(), 1);
                 }
             }
         });
+        _dummy_backend->ClearMessagesQueue();
 
         CARTA::SetImageChannels set_image_channels_msg3;
         set_image_channels_msg3.set_file_id(1);
@@ -243,25 +244,22 @@ public:
         _dummy_backend->ReceiveMessage(set_image_channels_msg3);
         _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
             std::pair<std::vector<char>, bool> messages_pair;
-            int count = 0;
             while (messages_queue.try_pop(messages_pair)) {
                 std::vector<char> message = messages_pair.first;
                 carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
 
                 if (head.type == CARTA::EventType::RASTER_TILE_DATA) {
-                    ++count;
-                    if (count == 3) {
-                        CARTA::RasterTileData raster_tile_data;
-                        char* event_buf = message.data() + sizeof(carta::EventHeader);
-                        int event_length = message.size() - sizeof(carta::EventHeader);
-                        raster_tile_data.ParseFromArray(event_buf, event_length);
-                        EXPECT_EQ(raster_tile_data.file_id(), 1);
-                        EXPECT_EQ(raster_tile_data.channel(), 12);
-                        EXPECT_EQ(raster_tile_data.stokes(), 0);
-                    }
+                    CARTA::RasterTileData raster_tile_data;
+                    char* event_buf = message.data() + sizeof(carta::EventHeader);
+                    int event_length = message.size() - sizeof(carta::EventHeader);
+                    raster_tile_data.ParseFromArray(event_buf, event_length);
+                    EXPECT_EQ(raster_tile_data.file_id(), 1);
+                    EXPECT_EQ(raster_tile_data.channel(), 12);
+                    EXPECT_EQ(raster_tile_data.stokes(), 0);
                 }
             }
         });
+        _dummy_backend->ClearMessagesQueue();
     }
 
 private:
