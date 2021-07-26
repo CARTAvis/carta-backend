@@ -69,12 +69,19 @@ public:
             return;
         }
 
+        string sample_file_name_str2 = Hdf5ImagePath("M17_SWex.hdf5");
+        fs::path sample_file_name2(sample_file_name_str2);
+        if (!fs::exists(sample_file_name2)) {
+            spdlog::warn("File {} does not exist. Ignore the test.", sample_file_name_str2);
+            return;
+        }
+
         CARTA::RegisterViewer register_viewer_msg;
         register_viewer_msg.set_session_id(0);
         register_viewer_msg.set_api_key("");
         register_viewer_msg.set_client_feature_flags(5);
-        _dummy_backend->ReceiveMessage(register_viewer_msg);
 
+        _dummy_backend->ReceiveMessage(register_viewer_msg);
         _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
             std::pair<std::vector<char>, bool> messages_pair;
             while (messages_queue.try_pop(messages_pair)) {
@@ -94,6 +101,7 @@ public:
 
         CARTA::CloseFile close_file_msg;
         close_file_msg.set_file_id(-1);
+
         _dummy_backend->ReceiveMessage(close_file_msg);
 
         CARTA::OpenFile open_file_msg;
@@ -102,8 +110,8 @@ public:
         open_file_msg.set_file_id(0);
         open_file_msg.set_hdu("0");
         open_file_msg.set_render_mode(CARTA::RenderMode::RASTER);
-        _dummy_backend->ReceiveMessage(open_file_msg);
 
+        _dummy_backend->ReceiveMessage(open_file_msg);
         _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
             std::pair<std::vector<char>, bool> messages_pair;
             while (messages_queue.try_pop(messages_pair)) {
@@ -126,7 +134,6 @@ public:
                     EXPECT_GE(region_histogram_data.histograms_size(), 0);
                 }
             }
-            EXPECT_EQ(messages_queue.unsafe_size(), 0);
         });
 
         CARTA::SetImageChannels set_image_channels_msg;
@@ -140,7 +147,6 @@ public:
         required_tiles->add_tiles(0);
 
         _dummy_backend->ReceiveMessage(set_image_channels_msg);
-
         _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
             std::pair<std::vector<char>, bool> messages_pair;
             while (messages_queue.try_pop(messages_pair)) {
@@ -157,7 +163,104 @@ public:
                     EXPECT_EQ(raster_tile_data.stokes(), 0);
                 }
             }
-            EXPECT_EQ(messages_queue.unsafe_size(), 0);
+        });
+
+        CARTA::OpenFile open_file_msg2;
+        open_file_msg2.set_directory(Hdf5ImagePath(""));
+        open_file_msg2.set_file("M17_SWex.hdf5");
+        open_file_msg2.set_file_id(1);
+        open_file_msg2.set_hdu("0");
+        open_file_msg2.set_render_mode(CARTA::RenderMode::RASTER);
+
+        _dummy_backend->ReceiveMessage(open_file_msg2);
+        _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
+            std::pair<std::vector<char>, bool> messages_pair;
+            while (messages_queue.try_pop(messages_pair)) {
+                std::vector<char> message = messages_pair.first;
+                carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
+
+                if (head.type == CARTA::EventType::OPEN_FILE_ACK) {
+                    CARTA::OpenFileAck open_file_ack;
+                    char* event_buf = message.data() + sizeof(carta::EventHeader);
+                    int event_length = message.size() - sizeof(carta::EventHeader);
+                    open_file_ack.ParseFromArray(event_buf, event_length);
+                    EXPECT_TRUE(open_file_ack.success());
+                }
+
+                if (head.type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
+                    CARTA::RegionHistogramData region_histogram_data;
+                    char* event_buf = message.data() + sizeof(carta::EventHeader);
+                    int event_length = message.size() - sizeof(carta::EventHeader);
+                    region_histogram_data.ParseFromArray(event_buf, event_length);
+                    EXPECT_GE(region_histogram_data.histograms_size(), 0);
+                }
+            }
+        });
+
+        CARTA::SetImageChannels set_image_channels_msg2;
+        set_image_channels_msg2.set_file_id(0);
+        set_image_channels_msg2.set_channel(2);
+        set_image_channels_msg2.set_stokes(1);
+        CARTA::AddRequiredTiles* required_tiles2 = set_image_channels_msg2.mutable_required_tiles();
+        required_tiles2->set_file_id(0);
+        required_tiles2->set_compression_quality(11);
+        required_tiles2->set_compression_type(CARTA::CompressionType::ZFP);
+        required_tiles2->add_tiles(0);
+
+        _dummy_backend->ReceiveMessage(set_image_channels_msg2);
+        _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
+            std::pair<std::vector<char>, bool> messages_pair;
+            int count = 0;
+            while (messages_queue.try_pop(messages_pair)) {
+                std::vector<char> message = messages_pair.first;
+                carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
+
+                if (head.type == CARTA::EventType::RASTER_TILE_DATA) {
+                    ++count;
+                    if (count == 2) {
+                        CARTA::RasterTileData raster_tile_data;
+                        char* event_buf = message.data() + sizeof(carta::EventHeader);
+                        int event_length = message.size() - sizeof(carta::EventHeader);
+                        raster_tile_data.ParseFromArray(event_buf, event_length);
+                        EXPECT_EQ(raster_tile_data.file_id(), 0);
+                        EXPECT_EQ(raster_tile_data.channel(), 2);
+                        EXPECT_EQ(raster_tile_data.stokes(), 1);
+                    }
+                }
+            }
+        });
+
+        CARTA::SetImageChannels set_image_channels_msg3;
+        set_image_channels_msg3.set_file_id(1);
+        set_image_channels_msg3.set_channel(12);
+        set_image_channels_msg3.set_stokes(0);
+        CARTA::AddRequiredTiles* required_tiles3 = set_image_channels_msg3.mutable_required_tiles();
+        required_tiles3->set_file_id(1);
+        required_tiles3->set_compression_quality(11);
+        required_tiles3->set_compression_type(CARTA::CompressionType::ZFP);
+        required_tiles3->add_tiles(0);
+
+        _dummy_backend->ReceiveMessage(set_image_channels_msg3);
+        _dummy_backend->CheckMessagesQueue([=](tbb::concurrent_queue<std::pair<std::vector<char>, bool>> messages_queue) {
+            std::pair<std::vector<char>, bool> messages_pair;
+            int count = 0;
+            while (messages_queue.try_pop(messages_pair)) {
+                std::vector<char> message = messages_pair.first;
+                carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
+
+                if (head.type == CARTA::EventType::RASTER_TILE_DATA) {
+                    ++count;
+                    if (count == 3) {
+                        CARTA::RasterTileData raster_tile_data;
+                        char* event_buf = message.data() + sizeof(carta::EventHeader);
+                        int event_length = message.size() - sizeof(carta::EventHeader);
+                        raster_tile_data.ParseFromArray(event_buf, event_length);
+                        EXPECT_EQ(raster_tile_data.file_id(), 1);
+                        EXPECT_EQ(raster_tile_data.channel(), 12);
+                        EXPECT_EQ(raster_tile_data.stokes(), 0);
+                    }
+                }
+            }
         });
     }
 
