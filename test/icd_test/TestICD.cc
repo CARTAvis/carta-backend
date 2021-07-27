@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include "CommonTestUtilities.h"
+#include "../CommonTestUtilities.h"
 #include "DummyBackend.h"
 
 using namespace std;

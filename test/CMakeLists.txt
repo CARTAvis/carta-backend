@@ -42,7 +42,6 @@ ExternalProject_Add(fits2idia
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
-        DummyBackend.cc
         TestBlockSmooth.cc
         TestFitsTable.cc
         TestFitsImage.cc
@@ -62,8 +61,8 @@ set(TEST_SOURCES
 set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
 set(TEST_ICD_SOURCES
         CommonTestUtilities.cc
-        DummyBackend.cc
-        TestICD.cc
+        icd_test/DummyBackend.cc
+        icd_test/TestICD.cc
         TestMain.cc)
 
 # Add all the sources in the main project and remove Main.cc
