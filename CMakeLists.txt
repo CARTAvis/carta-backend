@@ -228,6 +228,7 @@ set(SOURCE_FILES
         src/ImageData/CartaMiriadImage.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/StokesFilesConnector.cc
+        src/ImageData/CompressedFits.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Region/CrtfImportExport.cc
@@ -244,6 +245,7 @@ set(SOURCE_FILES
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
+        src/SessionManager/WebBrowser.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
