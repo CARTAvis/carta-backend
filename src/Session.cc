@@ -2052,3 +2052,10 @@ void Session::UpdateLastMessageTimestamp() {
 std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
     return _last_message_timestamp;
 }
+
+void Session::CloseCachedImage(const std::string& directory, const std::string& file) {
+    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file);
+    for (auto& frame : _frames) {
+        frame.second->CloseCachedImage(fullname);
+    }
+}

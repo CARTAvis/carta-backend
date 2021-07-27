@@ -122,7 +122,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         spdlog::warn("Session {}: {}", session_id, _open_image_error);
     }
 
-    _loader->CloseImage();
+    _loader->CloseImageIfUpdated();
 }
 
 bool Frame::IsValid() {
@@ -176,7 +176,7 @@ int Frame::StokesAxis() {
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     std::string error;
     bool beams_ok = _loader->GetBeams(beams, error);
-    _loader->CloseImage();
+    _loader->CloseImageIfUpdated();
 
     if (!beams_ok) {
         spdlog::warn("Session {}: {}", _session_id, error);
@@ -1513,7 +1513,7 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& da
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool data_ok = _loader->GetSlice(tmp, slicer);
-    _loader->CloseImage();
+    _loader->CloseImageIfUpdated();
     ulock.unlock();
     return data_ok;
 }
@@ -1524,7 +1524,7 @@ bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(region, sub_image);
-    _loader->CloseImage();
+    _loader->CloseImageIfUpdated();
     ulock.unlock();
 
     if (subimage_ok) {
@@ -1541,7 +1541,7 @@ bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::St
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(slicer, sub_image);
-    _loader->CloseImage();
+    _loader->CloseImageIfUpdated();
     ulock.unlock();
 
     if (subimage_ok) {
@@ -1576,7 +1576,7 @@ bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callba
         _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), image.get());
     }
 
-    _loader->CloseImage();
+    _loader->CloseImageIfUpdated();
 
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
@@ -1644,7 +1644,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         if (region) {
             _loader->GetSubImage(LattRegionHolder(image_region), sub_image);
             image = sub_image.cloneII();
-            _loader->CloseImage();
+            _loader->CloseImageIfUpdated();
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
@@ -1989,4 +1989,10 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
+}
+
+void Frame::CloseCachedImage(const std::string& file) {
+    if (_loader->GetFileName() == file) {
+        _loader->CloseImageIfUpdated();
+    }
 }

@@ -217,6 +217,9 @@ public:
     void UpdateLastMessageTimestamp();
     std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
 
+    // Close cached image if it has been updated
+    void CloseCachedImage(const std::string& directory, const std::string& file);
+
 private:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,

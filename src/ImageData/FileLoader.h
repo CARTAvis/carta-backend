@@ -148,8 +148,8 @@ public:
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const;
 
-    // If no use count, destroy image to prevent caching
-    void CloseImage();
+    // If not in use, temp close image to prevent caching
+    void CloseImageIfUpdated();
 
     // Return the opened casacore image or its class name
     ImageRef GetImage();
@@ -206,6 +206,7 @@ protected:
     std::string _filename;
     std::string _hdu;
     bool _is_gz;
+    unsigned int _modify_time;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
     // Save image properties; only reopen for data or beams
@@ -244,6 +245,9 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
+
+    // Modify time changed
+    bool ImageUpdated();
 };
 
 } // namespace carta

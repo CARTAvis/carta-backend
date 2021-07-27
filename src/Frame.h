@@ -187,6 +187,8 @@ public:
 
     std::shared_mutex& GetActiveTaskMutex();
 
+    void CloseCachedImage(const std::string& file);
+
 protected:
     // Validate z and stokes index values
     bool CheckZ(int z);

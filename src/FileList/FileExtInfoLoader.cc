@@ -359,7 +359,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 message = "Image could not be opened.";
             }
 
-            _loader->CloseImage();
+            _loader->CloseImageIfUpdated();
         } catch (casacore::AipsError& err) {
             message = err.getMesg();
             if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"

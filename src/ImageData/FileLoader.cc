@@ -66,7 +66,10 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
 }
 
 FileLoader::FileLoader(const std::string& filename, bool is_gz)
-    : _filename(filename), _is_gz(is_gz), _num_dims(0), _has_pixel_mask(false) {}
+    : _filename(filename), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
+    // Set initial modify time
+    ImageUpdated();
+}
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
@@ -80,13 +83,24 @@ typename FileLoader::ImageRef FileLoader::GetImage() {
     return _image;
 }
 
-void FileLoader::CloseImage() {
-    // Destroy image if only the loader owns it unless it has been decompressed
-    if (!_is_gz) {
-        if (_image.unique()) {
-            _image.reset();
-        }
+void FileLoader::CloseImageIfUpdated() {
+    // Close image if updated when only the loader owns it unless decompressed
+    if (!_is_gz && _image.unique() && ImageUpdated()) {
+        _image->tempClose();
     }
+}
+
+bool FileLoader::ImageUpdated() {
+    bool changed(false);
+    casacore::File ccfile(_filename);
+    auto updated_time = ccfile.modifyTime();
+
+    if (updated_time != _modify_time) {
+        changed = true;
+        _modify_time = updated_time;
+    }
+
+    return changed;
 }
 
 bool FileLoader::HasData(FileInfo::Data dl) const {
@@ -829,8 +843,7 @@ double FileLoader::CalculateBeamArea() {
 
     auto& info = image->imageInfo();
 
-    image.reset();
-    CloseImage();
+    CloseImageIfUpdated();
 
     if (!info.hasSingleBeam() || !_coord_sys.hasDirectionCoordinate()) {
         return NAN;
