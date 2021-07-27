@@ -58,8 +58,8 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
     }
 }
 
-void DummyBackend::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback) {
-    _session->CheckMessagesQueue(callback);
+bool DummyBackend::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
+    return _session->TryPopMessagesQueue(message);
 }
 
 void DummyBackend::ClearMessagesQueue() {

@@ -2054,8 +2054,8 @@ std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp(
     return _last_message_timestamp;
 }
 
-void Session::CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback) {
-    callback(_out_msgs);
+bool Session::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
+    return _out_msgs.try_pop(message);
 }
 
 void Session::ClearMessagesQueue() {

@@ -217,7 +217,7 @@ public:
     void UpdateLastMessageTimestamp();
     std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
 
-    void CheckMessagesQueue(std::function<void(tbb::concurrent_queue<std::pair<std::vector<char>, bool>> out_msgs)> callback);
+    bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
     void ClearMessagesQueue();
 
 private:
