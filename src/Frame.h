@@ -197,7 +197,7 @@ protected:
     bool ZStokesChanged(int z, int stokes);
 
     // Cache image plane data for current z, stokes
-    bool FillImageCache();
+    bool FillImageCache(int stokes_index);
     void InvalidateImageCache();
 
     // Downsampled data from image cache
@@ -225,6 +225,9 @@ protected:
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
         casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
+
+    // Clear image caches for the other stokes
+    void ClearImageCachesForOtherStokes();
 
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {
@@ -267,12 +270,12 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    std::vector<float> _image_cache;    // image data for current z, stokes
-    bool _image_cache_valid;            // cached image data is valid for current z and stokes
-    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
-    std::mutex _image_mutex;            // only one disk access at a time
-    bool _cache_loaded;                 // channel cache is set
-    TileCache _tile_cache;              // cache for full-resolution image tiles
+    std::unordered_map<int, std::vector<float>> _image_caches;     // image data for current z, key is stokes
+    bool _image_cache_valid;                                       // cached image data is valid for current z and stokes
+    std::unordered_map<int, tbb::queuing_rw_mutex> _cache_mutexes; // allow concurrent reads but lock for write, key is stokes
+    std::mutex _image_mutex;                                       // only one disk access at a time
+    bool _cache_loaded;                                            // channel cache is set
+    TileCache _tile_cache;                                         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 

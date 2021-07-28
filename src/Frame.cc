@@ -91,7 +91,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache(CurrentStokes())) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -267,7 +267,9 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 
                 if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
                     // Reload the full channel cache for loaders which use it
-                    FillImageCache();
+                    FillImageCache(CurrentStokes());
+                    // Clear image caches for the other stokes with the old z
+                    ClearImageCachesForOtherStokes();
                 } else {
                     // Don't reload the full channel cache here because we may not need it
 
@@ -300,11 +302,11 @@ bool Frame::SetPointRegion(int region_id, float x, float y) {
     return changed;
 }
 
-bool Frame::FillImageCache() {
+bool Frame::FillImageCache(int stokes_index) {
     // get image data for z, stokes
 
     bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
 
     // Exit early *after* acquiring lock if the cache has already been loaded by another thread
     if (_image_cache_valid) {
@@ -312,8 +314,8 @@ bool Frame::FillImageCache() {
     }
 
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
-    casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    if (!GetSlicerData(section, _image_cache)) {
+    casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), stokes_index);
+    if (!GetSlicerData(section, _image_caches[stokes_index])) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
@@ -330,7 +332,7 @@ bool Frame::FillImageCache() {
 
 void Frame::InvalidateImageCache() {
     bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
     _image_cache_valid = false;
 }
 
@@ -375,16 +377,17 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     // read lock imageCache
     bool write_lock(false);
-    tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
+    tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutexes[CurrentStokes()], write_lock);
 
     auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        BlockSmooth(
-            _image_cache.data(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
+        BlockSmooth(_image_caches[CurrentStokes()].data(), image_data.data(), num_image_columns, num_image_rows, row_length_region,
+            num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-        NearestNeighbor(_image_cache.data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
+        NearestNeighbor(
+            _image_caches[CurrentStokes()].data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
     auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
@@ -550,18 +553,18 @@ bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
 
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     // Always use the full image cache (for now)
-    FillImageCache();
+    FillImageCache(CurrentStokes());
 
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_cache.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-            _contour_settings.chunk_size, partial_contour_callback);
+        TraceContours(_image_caches[CurrentStokes()].data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data,
+            index_data, _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -573,8 +576,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_width = _width - (2 * kernel_width);
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
-            _contour_settings.smoothing_factor);
+        smooth_successful = GaussianSmooth(_image_caches[CurrentStokes()].data(), dest_array.get(), source_width, source_height, dest_width,
+            dest_height, _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
@@ -788,11 +791,11 @@ bool Frame::GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if (_image_cache.empty() && !FillImageCache()) {
+            if (_image_caches[CurrentStokes()].empty() && !FillImageCache(CurrentStokes())) {
                 // cannot calculate
                 return false;
             }
-            CalcBasicStats(_image_cache, stats);
+            CalcBasicStats(_image_caches[CurrentStokes()], stats);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -856,12 +859,12 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if (_image_cache.empty() && !FillImageCache()) {
+        if (_image_caches[CurrentStokes()].empty() && !FillImageCache(CurrentStokes())) {
             return false;
         }
         bool write_lock(false);
-        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, stats, _image_cache);
+        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
+        hist = CalcHistogram(num_bins, stats, _image_caches[CurrentStokes()]);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -1005,8 +1008,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
     if (_image_cache_valid) {
         bool write_lock(false);
-        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-        cursor_value = _image_cache[(y * _width) + x];
+        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
+        cursor_value = _image_caches[CurrentStokes()][(y * _width) + x];
         cache_lock.release();
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
@@ -1144,17 +1147,17 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
             if (config.coordinate() == "x") {
                 auto x_start = y * _width;
-                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
                 for (unsigned int j = start; j < end; ++j) {
                     auto idx = x_start + j;
-                    profile.push_back(_image_cache[idx]);
+                    profile.push_back(_image_caches[CurrentStokes()][idx]);
                 }
                 cache_lock.release();
             } else if (config.coordinate() == "y") {
-                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
                 for (unsigned int j = start; j < end; ++j) {
                     auto idx = (j * _width) + x;
-                    profile.push_back(_image_cache[idx]);
+                    profile.push_back(_image_caches[CurrentStokes()][idx]);
                 }
                 cache_lock.release();
             }
@@ -1987,4 +1990,15 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
+}
+
+void Frame::ClearImageCachesForOtherStokes() {
+    for (auto& image_cache : _image_caches) {
+        int stokes_index = image_cache.first;
+        if (stokes_index != CurrentStokes()) {
+            bool write_lock(true);
+            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[stokes_index], write_lock);
+            image_cache.second.clear();
+        }
+    }
 }
