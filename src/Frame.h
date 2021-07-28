@@ -145,7 +145,7 @@ public:
 
     // Spatial: cursor
     bool SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data);
+    bool FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
 
     // Spectral: cursor
     bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);

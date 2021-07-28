@@ -1396,12 +1396,14 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
     if ((region_id == CURSOR_REGION_ID) || (_region_handler->IsPointRegion(region_id))) {
         // Cursor spatial profile
         if (_frames.count(file_id)) {
-            CARTA::SpatialProfileData spatial_profile_data;
-            if (_frames.at(file_id)->FillSpatialProfileData(region_id, spatial_profile_data)) {
-                spatial_profile_data.set_file_id(file_id);
-                spatial_profile_data.set_region_id(region_id);
-                SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_data);
-                data_sent = true;
+            std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec;
+            if (_frames.at(file_id)->FillSpatialProfileData(region_id, spatial_profile_data_vec)) {
+                for (auto& spatial_profile_data : spatial_profile_data_vec) {
+                    spatial_profile_data.set_file_id(file_id);
+                    spatial_profile_data.set_region_id(region_id);
+                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_data);
+                    data_sent = true;
+                }
             }
         }
     } else {

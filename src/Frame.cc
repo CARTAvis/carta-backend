@@ -980,7 +980,7 @@ bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSp
     return true;
 }
 
-bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data) {
+bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
     // Fill spatial profile message for cursor/point region only
     // Send even if no requirements, to update value of data at cursor/point region
 
@@ -1020,6 +1020,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     }
 
     // set message fields
+    CARTA::SpatialProfileData spatial_data;
     spatial_data.set_x(x);
     spatial_data.set_y(y);
     spatial_data.set_channel(CurrentZ());
@@ -1190,6 +1191,9 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             spatial_profile->set_mip(mip);
         }
     }
+
+    // Fill the spatial profile data with respect to the stokes in a vector
+    spatial_data_vec.emplace_back(spatial_data);
 
     auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
     auto dt_spatial_profile =
