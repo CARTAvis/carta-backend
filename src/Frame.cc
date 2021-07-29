@@ -1026,6 +1026,14 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
     for (auto& point_regions_spatial_config : point_regions_spatial_configs) {
         int stokes = point_regions_spatial_config.first;
 
+        bool is_current_stokes(true);
+        if (stokes != CurrentStokes()) {
+            if (_image_caches[stokes].empty() && !FillImageCache(stokes)) {
+                continue;
+            }
+            is_current_stokes = false;
+        }
+
         if (_image_cache_valid) {
             bool write_lock(false);
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[stokes], write_lock);
@@ -1058,7 +1066,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
             int mip(config.mip());
 
             if (!end) {
-                end = config.coordinate() == "x" ? _width : _height;
+                end = config.coordinate().back() == 'x' ? _width : _height;
             }
 
             int requested_start(start);
@@ -1075,7 +1083,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                 // These values will be used to fetch the data to decimate
                 start = decimated_start * mip;
                 end = decimated_end * mip;
-                end = config.coordinate() == "x" ? std::min(end, _width) : std::min(end, _height);
+                end = config.coordinate().back() == 'x' ? std::min(end, _width) : std::min(end, _height);
             }
 
             profile.clear();
@@ -1083,11 +1091,11 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
 
             // can no longer select stokes, so can use image cache or tile cache
 
-            if (_loader->UseTileCache() &&
-                (mip < 2 || !_loader->HasMip(2))) { // Use tile cache to return full resolution data or prepare data for decimation
+            if (_loader->UseTileCache() && (mip < 2 || !_loader->HasMip(2)) &&
+                is_current_stokes) { // Use tile cache to return full resolution data or prepare data for decimation
                 profile.resize(end - start);
 
-                if (config.coordinate() == "x") {
+                if (config.coordinate().back() == 'x') {
                     int tile_y = tile_index(y);
                     bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
 
@@ -1111,7 +1119,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
 
                     have_profile = true;
 
-                } else if (config.coordinate() == "y") {
+                } else if (config.coordinate().back() == 'y') {
                     int tile_x = tile_index(x);
                     bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
 
@@ -1138,7 +1146,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
 
                     have_profile = true;
                 }
-            } else if (mip >= 2 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+            } else if (mip >= 2 && _loader->HasMip(2) && is_current_stokes) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
@@ -1147,13 +1155,13 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
 
                 CARTA::ImageBounds bounds;
 
-                if (config.coordinate() == "x") {
+                if (config.coordinate().back() == 'x') {
                     bounds.set_x_min(start);
                     bounds.set_x_max(end);
                     int y_floor = std::floor((float)y / mip) * mip;
                     bounds.set_y_min(y_floor);
                     bounds.set_y_max(y_floor + mip);
-                } else if (config.coordinate() == "y") {
+                } else if (config.coordinate().back() == 'y') {
                     int x_floor = std::floor((float)x / mip) * mip;
                     bounds.set_x_min(x_floor);
                     bounds.set_x_max(x_floor + mip);
@@ -1167,7 +1175,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
             } else { // Use image cache to return full resolution data or prepare data for decimation
                 profile.reserve(end - start);
 
-                if (config.coordinate() == "x") {
+                if (config.coordinate().back() == 'x') {
                     auto x_start = y * _width;
                     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[stokes], write_lock);
                     for (unsigned int j = start; j < end; ++j) {
@@ -1175,7 +1183,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                         profile.push_back(_image_caches[stokes][idx]);
                     }
                     cache_lock.release();
-                } else if (config.coordinate() == "y") {
+                } else if (config.coordinate().back() == 'y') {
                     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[stokes], write_lock);
                     for (unsigned int j = start; j < end; ++j) {
                         auto idx = (j * _width) + x;
