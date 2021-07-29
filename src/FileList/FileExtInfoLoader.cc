@@ -137,7 +137,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
     if (_loader) {
         try {
             _loader->OpenFile(hdu);
-            casacore::ImageInterface<float>* image = _loader->GetImage();
+            auto image = _loader->GetImage();
 
             if (image) {
                 // Check dimensions
@@ -157,7 +157,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 int bitpix(0);
                 if (is_casacore_fits || is_carta_fits) {
-                    bitpix = GetFitsBitpix(image);
+                    bitpix = GetFitsBitpix(image.get());
                 }
 
                 // For computed entries:
@@ -167,7 +167,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 casacore::String stokes_ctype_num; // used to set stokes values in loader
 
                 if (is_carta_hdf5) {
-                    carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image);
+                    carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image.get());
                     casacore::Vector<casacore::String> headers = hdf5_image->FITSHeaderStrings();
 
                     for (auto& header : headers) {
@@ -324,7 +324,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         }
                     } else {
                         bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
-                        GetSpectralCoordPreferences(image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
+                        GetSpectralCoordPreferences(image.get(), prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
 
                         // Get image headers in FITS format
                         casacore::String error_string, origin_string;
@@ -333,9 +333,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         int bit_pix(-32);
                         float min_pix(1.0), max_pix(-1.0);
 
-                        if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity,
-                                bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength,
-                                prim_head, allow_append, origin_string, history)) {
+                        if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *(image.get()), prefer_velocity,
+                                optical_velocity, bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength,
+                                air_wavelength, prim_head, allow_append, origin_string, history)) {
                             message = error_string;
                             return info_ok;
                         }
@@ -348,14 +348,18 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
                     // Computed entries for rendered image axes (not always 0 and 1)
                     std::vector<int> render_axes = _loader->GetRenderAxes();
+
+                    // Describe rendered axes
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
-                    AddComputedEntries(extended_info, image, render_axes, radesys, use_image_for_entries);
+                    AddComputedEntries(extended_info, image.get(), render_axes, radesys, use_image_for_entries);
 
                     info_ok = true;
                 }
             } else { // image failed
                 message = "Image could not be opened.";
             }
+
+            _loader->CloseImageIfUpdated();
         } catch (casacore::AipsError& err) {
             message = err.getMesg();
             if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
@@ -666,14 +670,12 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
     const std::vector<int>& display_axes, casacore::String& radesys, bool use_image_for_entries) {
     // Add computed entries to extended file info
-    casacore::CoordinateSystem coord_system(image->coordinates());
-
-    // Set initial coordinate-related entries
     if (use_image_for_entries) {
         // Use image coordinate system
         int display_axis0(display_axes[0]), display_axis1(display_axes[1]);
 
         // add computed_entries to extended info (ensures the proper order in file browser)
+        casacore::CoordinateSystem coord_system(image->coordinates());
         casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
         casacore::Vector<casacore::String> axis_units = coord_system.worldAxisUnits();
         casacore::Vector<casacore::Double> reference_pixels = coord_system.referencePixel();
@@ -791,6 +793,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
     } else {
+        // Use header_entries in extended info
         AddComputedEntriesFromHeaders(extended_info, display_axes);
     }
 

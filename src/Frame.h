@@ -187,6 +187,8 @@ public:
 
     std::shared_mutex& GetActiveTaskMutex();
 
+    void CloseCachedImage(const std::string& file);
+
 protected:
     // Validate z and stokes index values
     bool CheckZ(int z);
@@ -234,7 +236,7 @@ protected:
         return _loader->GetFileName();
     }
     // Get image interface ptr
-    casacore::ImageInterface<float>* GetImage() {
+    std::shared_ptr<casacore::ImageInterface<float>> GetImage() {
         return _loader->GetImage();
     }
     // Setup

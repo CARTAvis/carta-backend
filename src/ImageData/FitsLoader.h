@@ -31,17 +31,12 @@ public:
 
     void OpenFile(const std::string& hdu) override;
 
-    bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetImage() override;
-
 private:
-    bool _is_gz;
     std::string _unzip_file;
-    casacore::uInt _hdu;
-    std::unique_ptr<casacore::ImageInterface<float>> _image;
+    casacore::uInt _hdu_num;
 };
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename), _is_gz(is_gz), _hdu(-1) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, is_gz) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
@@ -55,7 +50,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
     // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 
-    if (!_image || (hdu_num != _hdu)) {
+    if (!_image || (hdu_num != _hdu_num)) {
         bool gz_mem_ok(true);
 
         if (_is_gz) {
@@ -115,31 +110,14 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             throw(casacore::AipsError("Error loading FITS image."));
         }
 
-        _hdu = hdu_num;
-        _num_dims = _image->shape().size();
-    }
-}
+        _hdu = hdu;
+        _hdu_num = hdu_num;
 
-bool FitsLoader::HasData(FileInfo::Data dl) const {
-    switch (dl) {
-        case FileInfo::Data::Image:
-            return true;
-        case FileInfo::Data::XY:
-            return _num_dims >= 2;
-        case FileInfo::Data::XYZ:
-            return _num_dims >= 3;
-        case FileInfo::Data::XYZW:
-            return _num_dims >= 4;
-        case FileInfo::Data::MASK:
-            return ((_image != nullptr) && _image->hasPixelMask());
-        default:
-            break;
+        _image_shape = _image->shape();
+        _num_dims = _image_shape.size();
+        _has_pixel_mask = _image->hasPixelMask();
+        _coord_sys = _image->coordinates();
     }
-    return false;
-}
-
-typename FitsLoader::ImageRef FitsLoader::GetImage() {
-    return _image.get(); // nullptr if image not opened
 }
 
 } // namespace carta

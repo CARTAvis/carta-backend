@@ -18,15 +18,17 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
 
     // Open hdf5 image with specified hdu
     if (!_image || (selected_hdu != _hdu)) {
-        _image.reset(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), selected_hdu));
+        auto hdf5_image = new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), selected_hdu);
+        _image.reset(hdf5_image);
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
 
         _hdu = selected_hdu;
-
-        // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
-        _num_dims = _image->shape().size();
+        _image_shape = _image->shape();
+        _num_dims = _image_shape.size();
+        _has_pixel_mask = _image->hasPixelMask();
+        _coord_sys = _image->coordinates();
 
         // Load swizzled image lattice
         if (HasData(FileInfo::Data::SWIZZLED)) {
@@ -36,11 +38,11 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
         }
 
         // save the data layout and known mips
-        auto dset = _image->Lattice().array();
+        auto dset = hdf5_image->Lattice().array();
         _layout = H5Pget_layout(H5Dget_create_plist(dset->getHid()));
 
         if (HasData("MipMaps/DATA")) {
-            casacore::HDF5Group mipmap_group(_image->Group()->getHid(), "MipMaps/DATA", true);
+            casacore::HDF5Group mipmap_group(hdf5_image->Group()->getHid(), "MipMaps/DATA", true);
             for (auto& name : casacore::HDF5Group::linkNames(mipmap_group)) {
                 std::regex re("DATA_XY_(\\d+)");
                 std::smatch match;
@@ -55,7 +57,12 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
 }
 
 bool Hdf5Loader::HasData(std::string ds_name) const {
-    auto group_ptr = _image->Group();
+    if (!_image) {
+        return false;
+    }
+
+    CartaHdf5Image* hdf5_image = dynamic_cast<CartaHdf5Image*>(_image.get());
+    auto group_ptr = hdf5_image->Group();
     return casacore::HDF5Group::exists(*group_ptr, ds_name);
 }
 
@@ -72,7 +79,7 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
         case FileInfo::Data::XYZW:
             return _num_dims >= 4;
         case FileInfo::Data::MASK:
-            return ((_image != nullptr) && _image->hasPixelMask());
+            return _has_pixel_mask;
         default:
             std::string ds_name(DataSetToString(ds));
             if (ds_name.empty()) {
@@ -80,12 +87,6 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
             }
             return HasData(ds_name);
     }
-}
-
-// TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
-typename Hdf5Loader::ImageRef Hdf5Loader::GetImage() {
-    // returns opened image as ImageInterface*
-    return _image.get();
 }
 
 casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData() {
@@ -155,7 +156,13 @@ bool Hdf5Loader::HasMip(int mip) const {
 // same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this
 // complicated templating, at least for now.
 const Hdf5Loader::IPos Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
-    auto data_type = casacore::HDF5DataSet::getDataType(_image->Group()->getHid(), DataSetToString(ds));
+    auto image = GetImage();
+    if (!image) {
+        return IPos();
+    }
+
+    CartaHdf5Image* hdf5_image = dynamic_cast<CartaHdf5Image*>(image.get());
+    auto data_type = casacore::HDF5DataSet::getDataType(hdf5_image->Group()->getHid(), DataSetToString(ds));
 
     switch (data_type) {
         case casacore::TpInt: {
@@ -179,7 +186,13 @@ const Hdf5Loader::IPos Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
 // same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this
 // complicated templating, at least for now.
 casacore::ArrayBase* Hdf5Loader::GetStatsData(FileInfo::Data ds) {
-    auto data_type = casacore::HDF5DataSet::getDataType(_image->Group()->getHid(), DataSetToString(ds));
+    auto image = GetImage();
+    if (!image) {
+        throw casacore::HDF5Error("Cannot get dataset " + DataSetToString(ds) + " from invalid image.");
+    }
+
+    CartaHdf5Image* hdf5_image = dynamic_cast<CartaHdf5Image*>(image.get());
+    auto data_type = casacore::HDF5DataSet::getDataType(hdf5_image->Group()->getHid(), DataSetToString(ds));
 
     switch (data_type) {
         case casacore::TpInt: {
