@@ -19,13 +19,8 @@ public:
     MiriadLoader(const std::string& file);
 
     bool CanOpenFile(std::string& error) override;
+
     void OpenFile(const std::string& hdu) override;
-
-    bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetImage() override;
-
-private:
-    std::unique_ptr<casacore::MIRIADImage> _image;
 };
 
 MiriadLoader::MiriadLoader(const std::string& filename) : FileLoader(filename) {}
@@ -60,33 +55,16 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new CartaMiriadImage(_filename));
+
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
-        _num_dims = _image->shape().size();
-    }
-}
 
-bool MiriadLoader::HasData(FileInfo::Data dl) const {
-    switch (dl) {
-        case FileInfo::Data::Image:
-            return true;
-        case FileInfo::Data::XY:
-            return _num_dims >= 2;
-        case FileInfo::Data::XYZ:
-            return _num_dims >= 3;
-        case FileInfo::Data::XYZW:
-            return _num_dims >= 4;
-        case FileInfo::Data::MASK:
-            return ((_image != nullptr) && _image->hasPixelMask());
-        default:
-            break;
+        _image_shape = _image->shape();
+        _num_dims = _image_shape.size();
+        _has_pixel_mask = _image->hasPixelMask();
+        _coord_sys = _image->coordinates();
     }
-    return false;
-}
-
-typename MiriadLoader::ImageRef MiriadLoader::GetImage() {
-    return _image.get(); // nullptr if image not opened
 }
 
 } // namespace carta
