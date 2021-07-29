@@ -223,7 +223,7 @@ private:
         const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message);
     // File info for open file
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-        const std::string& filename, const std::string& hdu_name, std::string& message);
+        const std::string& filename, std::string& hdu_name, std::string& message);
     bool FillFileInfo(
         CARTA::FileInfo& file_info, const std::string& folder, const std::string& filename, std::string& fullname, std::string& message);
 
