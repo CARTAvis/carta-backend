@@ -46,6 +46,7 @@ grpc::Status CartaGrpcService::CallAction(
     auto action = request->action();
     auto parameters = request->parameters();
     auto async = request->async();
+    auto return_path = request->return_path();
 
     auto metadata = context->client_metadata();
 
@@ -69,7 +70,7 @@ grpc::Status CartaGrpcService::CallAction(
         _scripting_request_id = std::max(_scripting_request_id, 1u);
 
         auto session = _sessions[session_id].first;
-        session->SendScriptingRequest(_scripting_request_id, path, action, parameters, async);
+        session->SendScriptingRequest(_scripting_request_id, path, action, parameters, async, return_path);
 
         auto t_start = std::chrono::system_clock::now();
         while (!session->GetScriptingResponse(_scripting_request_id, reply)) {
