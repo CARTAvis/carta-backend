@@ -30,6 +30,7 @@
 #include "EventHeader.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
+#include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
@@ -194,7 +195,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-    const std::string& filename, const std::string& hdu_name, std::string& message) {
+    const std::string& filename, std::string& hdu, std::string& message) {
     // Fill FileInfoExtended for given file and hdu_name (may include extension name)
     bool file_info_ok(false);
 
@@ -205,9 +206,30 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             return file_info_ok;
         }
 
+        // Discern hdu for extended file info
+        if (hdu.empty()) {
+            if (file_info.hdu_list_size() > 0) {
+                hdu = file_info.hdu_list(0);
+            }
+
+            if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
+                // File info adds empty string for FITS
+                std::vector<std::string> hdu_list;
+                std::string message;
+                FitsHduList fits_hdu_list(fullname);
+                fits_hdu_list.GetHduList(hdu_list, message);
+
+                if (hdu_list.empty()) {
+                    return file_info_ok;
+                }
+
+                hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
+            }
+        }
+
         _loader.reset(carta::FileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
-        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu_name, message);
+        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
     }
@@ -362,7 +384,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     // Create Frame and send response message
     const auto& directory(message.directory());
     const auto& filename(message.file());
-    const auto& hdu(message.hdu());
+    std::string hdu(message.hdu());
     auto file_id(message.file_id());
 
     // response message:
@@ -377,13 +399,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
 
     if (info_loaded) {
-        std::string hdu_num(hdu);
-        if (hdu.find(":") != std::string::npos) {
-            hdu_num = hdu.substr(0, hdu.find(":"));
-        }
-
         // create Frame for image; Frame owns loader
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu_num));
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu));
 
         // query loader for mipmap dataset
         bool has_mipmaps(_loader->HasMip(2));
@@ -1222,6 +1239,9 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
         spdlog::error("Fail to concatenate stokes files!");
     }
 
+    // Clear loaders to free images
+    _stokes_files_connector->ClearCache();
+
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
     return success;
 }
@@ -1999,13 +2019,14 @@ void Session::CancelExistingAnimation() {
 }
 
 void Session::SendScriptingRequest(
-    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async) {
+    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path) {
     CARTA::ScriptingRequest message;
     message.set_scripting_request_id(scripting_request_id);
     message.set_target(target);
     message.set_action(action);
     message.set_parameters(parameters);
     message.set_async(async);
+    message.set_return_path(return_path);
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
 }
 
@@ -2052,6 +2073,13 @@ void Session::UpdateLastMessageTimestamp() {
 
 std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
     return _last_message_timestamp;
+}
+
+void Session::CloseCachedImage(const std::string& directory, const std::string& file) {
+    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file);
+    for (auto& frame : _frames) {
+        frame.second->CloseCachedImage(fullname);
+    }
 }
 
 bool Session::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {

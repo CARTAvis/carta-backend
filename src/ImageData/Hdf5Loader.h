@@ -28,7 +28,6 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetImage() override;
 
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
@@ -46,7 +45,6 @@ public:
 
 private:
     std::string _hdu;
-    std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
     std::unordered_map<int, std::unique_ptr<casacore::HDF5Lattice<float>>> _mipmaps;
 
