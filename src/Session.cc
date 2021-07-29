@@ -1995,13 +1995,14 @@ void Session::CancelExistingAnimation() {
 }
 
 void Session::SendScriptingRequest(
-    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async) {
+    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path) {
     CARTA::ScriptingRequest message;
     message.set_scripting_request_id(scripting_request_id);
     message.set_target(target);
     message.set_action(action);
     message.set_parameters(parameters);
     message.set_async(async);
+    message.set_return_path(return_path);
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
 }
 
