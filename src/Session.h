@@ -207,7 +207,8 @@ public:
     FileSettings _file_settings;
     std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
-    void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
+    void SendScriptingRequest(
+        uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
@@ -226,7 +227,7 @@ private:
         const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message);
     // File info for open file
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-        const std::string& filename, const std::string& hdu_name, std::string& message);
+        const std::string& filename, std::string& hdu_name, std::string& message);
     bool FillFileInfo(
         CARTA::FileInfo& file_info, const std::string& folder, const std::string& filename, std::string& fullname, std::string& message);
 
