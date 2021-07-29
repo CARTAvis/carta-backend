@@ -131,10 +131,10 @@ inline casacore::uInt GetFitsHdu(const std::string& hdu) {
 
 class FileLoader {
 public:
-    using ImageRef = casacore::ImageInterface<float>*;
+    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
     using IPos = casacore::IPosition;
 
-    FileLoader(const std::string& filename);
+    FileLoader(const std::string& filename, bool is_gz = false);
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
@@ -143,11 +143,16 @@ public:
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
-    // Do anything required to open the file at given HDU (set up cache size, Image object)
+    // Open and close file
     virtual void OpenFile(const std::string& hdu) = 0;
+    // Check to see if the file has a particular HDU/group/table/etc
+    virtual bool HasData(FileInfo::Data ds) const;
 
-    // Return the opened casacore image
-    virtual ImageRef GetImage() = 0;
+    // If not in use, temp close image to prevent caching
+    void CloseImageIfUpdated();
+
+    // Return the opened casacore image or its class name
+    ImageRef GetImage();
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
@@ -156,12 +161,8 @@ public:
     bool GetShape(IPos& shape);
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
-    // Determine axes used for image raster data
-    std::vector<int> GetRenderAxes();
+    std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
-    // Image Data
-    // Check to see if the file has a particular HDU/group/table/etc
-    virtual bool HasData(FileInfo::Data ds) const = 0;
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
 
@@ -193,7 +194,7 @@ public:
     virtual bool UseTileCache() const;
 
     // Get the full name of image file
-    virtual std::string GetFileName();
+    std::string GetFileName();
 
     // Handle stokes type index
     virtual void SetFirstStokesType(int stokes_value);
@@ -201,14 +202,24 @@ public:
     virtual bool GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index);
 
 protected:
-    // Full name of the image file
+    // Full name and hdu of the image file
     std::string _filename;
+    std::string _hdu;
+    bool _is_gz;
+    unsigned int _modify_time;
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
+    // Save image properties; only reopen for data or beams
     // Axes, dimension values
+    casacore::IPosition _image_shape;
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
     std::vector<int> _render_axes;
+    // Coordinate system
+    casacore::CoordinateSystem _coord_sys;
+    // Pixel mask
+    bool _has_pixel_mask;
 
     // Storage for z-plane and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _z_stats;
@@ -234,6 +245,9 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
+
+    // Modify time changed
+    bool ImageUpdated();
 };
 
 } // namespace carta
