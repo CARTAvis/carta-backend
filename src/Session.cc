@@ -1239,6 +1239,9 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
         spdlog::error("Fail to concatenate stokes files!");
     }
 
+    // Clear loaders to free images
+    _stokes_files_connector->ClearCache();
+
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
     return success;
 }
@@ -2066,4 +2069,11 @@ void Session::UpdateLastMessageTimestamp() {
 
 std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
     return _last_message_timestamp;
+}
+
+void Session::CloseCachedImage(const std::string& directory, const std::string& file) {
+    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file);
+    for (auto& frame : _frames) {
+        frame.second->CloseCachedImage(fullname);
+    }
 }

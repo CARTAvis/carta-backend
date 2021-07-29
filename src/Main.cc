@@ -281,6 +281,10 @@ void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view 
                 case CARTA::EventType::OPEN_FILE: {
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
+                        for (auto& session : sessions) {
+                            session.second->CloseCachedImage(message.directory(), message.file());
+                        }
+
                         session->OnOpenFile(message, head.request_id);
                     } else {
                         spdlog::warn("Bad OPEN_FILE message!");

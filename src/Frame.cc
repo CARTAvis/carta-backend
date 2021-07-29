@@ -121,6 +121,8 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         spdlog::warn("Session {}: {}", session_id, _open_image_error);
     }
+
+    _loader->CloseImageIfUpdated();
 }
 
 bool Frame::IsValid() {
@@ -174,9 +176,12 @@ int Frame::StokesAxis() {
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     std::string error;
     bool beams_ok = _loader->GetBeams(beams, error);
+    _loader->CloseImageIfUpdated();
+
     if (!beams_ok) {
         spdlog::warn("Session {}: {}", _session_id, error);
     }
+
     return beams_ok;
 }
 
@@ -1508,6 +1513,7 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& da
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool data_ok = _loader->GetSlice(tmp, slicer);
+    _loader->CloseImageIfUpdated();
     ulock.unlock();
     return data_ok;
 }
@@ -1518,11 +1524,14 @@ bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(region, sub_image);
+    _loader->CloseImageIfUpdated();
     ulock.unlock();
+
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
         return CalcStatsValues(stats_values, required_stats, sub_image, per_z);
     }
+
     return subimage_ok;
 }
 
@@ -1532,7 +1541,9 @@ bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::St
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(slicer, sub_image);
+    _loader->CloseImageIfUpdated();
     ulock.unlock();
+
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
         return CalcStatsValues(stats_values, required_stats, sub_image, per_z);
@@ -1561,8 +1572,12 @@ bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callba
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
-        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
+        auto image = _loader->GetImage();
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), image.get());
     }
+
+    _loader->CloseImageIfUpdated();
+
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(
@@ -1614,9 +1629,9 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     }
 
     // Modify image to export
-    auto image = GetImage();
-    auto image_shape = image->shape();
+    auto image_shape = ImageShape();
 
+    casacore::ImageInterface<float>* image;
     casacore::SubImage<float> sub_image;
     casacore::LCRegion* image_region;
     casacore::IPosition region_shape;
@@ -1629,6 +1644,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         if (region) {
             _loader->GetSubImage(LattRegionHolder(image_region), sub_image);
             image = sub_image.cloneII();
+            _loader->CloseImageIfUpdated();
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
@@ -1782,8 +1798,7 @@ bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs
 // Input save_file_msg as the parameters from the request, which gives input range
 // Return void
 void Frame::ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg) {
-    auto image = GetImage();
-    auto image_shape = image->shape();
+    auto image_shape = ImageShape();
 
     // Default for channels
     int channels_max = _z_axis > -1 ? image_shape[_z_axis] : 1;
@@ -1974,4 +1989,10 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
+}
+
+void Frame::CloseCachedImage(const std::string& file) {
+    if (_loader->GetFileName() == file) {
+        _loader->CloseImageIfUpdated();
+    }
 }
