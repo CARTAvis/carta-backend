@@ -296,7 +296,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
     try {
         auto image = GetImage();
 
-        if (!_image) {
+        if (!image) {
             return false;
         }
 
@@ -306,19 +306,19 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
 
         if (image->imageType() == "CartaFitsImage") {
             // Read subset with cfitsio
-            bool ok = _image->doGetSlice(data, slicer);
+            bool ok = image->doGetSlice(data, slicer);
             return ok;
         }
 
         // Get data slice with mask applied.
         // Apply slicer to image first to get appropriate cursor, and use read-only iterator
-        casacore::SubImage<float> subimage(*_image, slicer);
+        casacore::SubImage<float> subimage(*image, slicer);
         casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
 
         for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
             casacore::Array<float> cursor_data = lattice_iter.cursor();
 
-            if (_image->isMasked()) {
+            if (image->isMasked()) {
                 casacore::Array<float> masked_data(cursor_data); // reference the same storage
                 const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
 
@@ -357,7 +357,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
 bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
     // Get SubImage from Slicer
     auto image = GetImage();
-    if (!_image) {
+    if (!image) {
         return false;
     }
 

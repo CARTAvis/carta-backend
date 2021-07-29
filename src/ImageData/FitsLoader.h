@@ -33,7 +33,7 @@ public:
 
 private:
     std::string _unzip_file;
-    casacore::uInt _hdunum;
+    casacore::uInt _hdu_num;
 };
 
 FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, is_gz) {}
@@ -50,7 +50,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
     // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 
-    if (!_image || (hdu_num != _hdunum)) {
+    if (!_image || (hdu_num != _hdu_num)) {
         bool gz_mem_ok(true);
 
         if (_is_gz) {
@@ -111,7 +111,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         }
 
         _hdu = hdu;
-        _hdunum = hdu_num;
+        _hdu_num = hdu_num;
 
         _image_shape = _image->shape();
         _num_dims = _image_shape.size();
