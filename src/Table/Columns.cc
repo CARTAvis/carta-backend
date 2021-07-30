@@ -249,7 +249,7 @@ void DataColumn<bool>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t s
 
     for (auto i = 0; i < num_rows; i++) {
         char val = *ptr;
-        entries[i] = (val == 'T' || val == 't' || val == '1');
+        entries[i] = (val == 'T');
         ptr += stride;
     }
 }
