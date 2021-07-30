@@ -311,10 +311,10 @@ bool Frame::FillImageCache(int stokes_index) {
     // get image data for z, stokes
 
     bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[CurrentStokes()], write_lock);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes[stokes_index], write_lock);
 
     // Exit early *after* acquiring lock if the cache has already been loaded by another thread
-    if (_image_cache_valid) {
+    if (_image_cache_valid && (stokes_index == CurrentStokes())) {
         return true;
     }
 
