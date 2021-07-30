@@ -140,10 +140,7 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
     unique_ptr<Column> column;
 
     if (col_type == TSTRING) {
-        if (col_repeat == 1) {
-            // Single-character strings are treated as byte values
-            column = make_unique<DataColumn<uint8_t>>(col_name);
-        } else if (col_width == col_repeat) {
+        if (col_width == col_repeat) {
             // Only support single string columns (i.e. width is same size as repeat size)
             column = make_unique<DataColumn<string>>(col_name);
             column->data_type_size = col_repeat;
