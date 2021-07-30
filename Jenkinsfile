@@ -57,7 +57,7 @@ pipeline {
                            sh "rm -rf *"
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
-                           sh "make -j\$(nproc)"
+                           sh "make -j 8"
                            echo "Preparing for upcoming ICD tests"
                            sh "rm -rf carta-backend-ICD-test"
                            sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
@@ -1021,11 +1021,10 @@ def animator(){
              } else {
                  ret = true
              }
-             sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 5"
-             sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 5"
-             sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 3 of 5"
-             sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 4 of 5"
-             sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
+             sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 4"
+             sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 4"
+             sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 3 of 4"
+             sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 4 of 4"
         }
     }
 }
@@ -1071,16 +1070,15 @@ def region_manipulation(){
              } else {
                  ret = true
              }
-             sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 10"
-             sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 10"
-             sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 10"
-             sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 10"
-             sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 10"
-             sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 10"
-             sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 10"
-             sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 8 of 10"
-             sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 9 of 10"
-             sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 10 of 10"
+             sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 9"
+             sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 9"
+             sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 9"
+             sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 9"
+             sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 9"
+             sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 9"
+             sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 9"
+             sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 9"
+             sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 9 of 9"
          }
      }
 }
@@ -1191,9 +1189,8 @@ def match_tests(){
              } else {
                  ret = true
              }
-             sh "CI=true npm test src/test/MATCH_SPATIAL.test.ts # test 1 of 3"
-             sh "CI=true npm test src/test/MATCH_SPECTRAL.test.ts # test 2 of 3"
-             sh "CI=true npm test src/test/MATCH_STATS.test.ts # test 3 of 3"
+             sh "CI=true npm test src/test/MATCH_SPATIAL.test.ts # test 1 of 2"
+             sh "CI=true npm test src/test/MATCH_STATS.test.ts # test 2 of 2"
          }
      }
 }
