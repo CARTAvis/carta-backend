@@ -67,7 +67,7 @@ TEST_F(VoTableTest, ParseIvoaExample) {
 TEST_F(VoTableTest, CorrectFieldCount) {
     Table table(XmlTablePath("ivoa_example.xml"));
     EXPECT_TRUE(table.IsValid());
-    EXPECT_EQ(table.NumColumns(), 6);
+    EXPECT_EQ(table.NumColumns(), 8);
 }
 
 TEST_F(VoTableTest, CorrectFieldNames) {
@@ -78,6 +78,8 @@ TEST_F(VoTableTest, CorrectFieldNames) {
     EXPECT_EQ(table[3]->name, "RVel");
     EXPECT_EQ(table[4]->name, "e_RVel");
     EXPECT_EQ(table[5]->name, "R");
+    EXPECT_EQ(table[6]->name, "BooleanField");
+    EXPECT_EQ(table[7]->name, "SingleCharField");
 }
 
 TEST_F(VoTableTest, CorrectFieldUnits) {
@@ -88,6 +90,8 @@ TEST_F(VoTableTest, CorrectFieldUnits) {
     EXPECT_EQ(table[3]->unit, "km/s");
     EXPECT_EQ(table[4]->unit, "km/s");
     EXPECT_EQ(table[5]->unit, "Mpc");
+    EXPECT_TRUE(table[6]->unit.empty());
+    EXPECT_TRUE(table[7]->unit.empty());
 }
 
 TEST_F(VoTableTest, CorrectFieldTypes) {
@@ -98,6 +102,8 @@ TEST_F(VoTableTest, CorrectFieldTypes) {
     EXPECT_EQ(table[3]->data_type, CARTA::Int32);
     EXPECT_EQ(table[4]->data_type, CARTA::Int16);
     EXPECT_EQ(table[5]->data_type, CARTA::Float);
+    EXPECT_EQ(table[6]->data_type, CARTA::Bool);
+    EXPECT_EQ(table[7]->data_type, CARTA::String);
 }
 
 TEST_F(VoTableTest, CorrectFieldSizes) {
