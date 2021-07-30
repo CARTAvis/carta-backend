@@ -49,6 +49,8 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
         column = make_unique<DataColumn<float>>(name);
     } else if (type_string == "double") {
         column = make_unique<DataColumn<double>>(name);
+    } else if (type_string == "boolean") {
+        column = make_unique<DataColumn<bool>>(name);
     } else {
         column = make_unique<Column>(name);
     }
