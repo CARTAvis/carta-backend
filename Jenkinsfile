@@ -144,7 +144,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
                         {
                         dir ('build/test') {
-                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml"
+                            sh "export PATH=/usr/local/bin:$PATH && ./carta_backend_tests --gtest_filter=-SpatialProfileTest.*Hdf5*:SpatialProfileTest.*HDF5*:Hdf5AttributesTest.*:Hdf5ImageTest.* --gtest_output=xml:macos_test_detail.xml"
                         }
                         }
                     }
