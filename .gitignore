@@ -15,5 +15,4 @@ fabric.properties
 # CMake
 cmake-build-*/
 build/
-
-
+coverage/
