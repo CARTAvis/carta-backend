@@ -71,6 +71,8 @@ T DataColumn<T>::FromText(const pugi::xml_text& text) {
     // Parse properly based on template type or traits
     if constexpr (std::is_same_v<T, std::string>) {
         return text.as_string();
+    } else if constexpr (std::is_same_v<T, bool>) {
+        return text.as_bool();
     } else if constexpr (std::is_same_v<T, double>) {
         return text.as_double(std::numeric_limits<T>::quiet_NaN());
     } else if constexpr (std::is_floating_point_v<T>) {
