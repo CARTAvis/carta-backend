@@ -301,6 +301,26 @@ TEST_F(VoTableTest, NumericFilterRange) {
     EXPECT_EQ(view.NumRows(), 0);
 }
 
+TEST_F(VoTableTest, BooleanFilterEqual) {
+    Table table(XmlTablePath("ivoa_example.xml"));
+    auto view = table.View();
+    view.NumericFilter(table["BooleanField"], CARTA::Equal, 1);
+    EXPECT_EQ(view.NumRows(), 2);
+    view.Reset();
+    view.NumericFilter(table["BooleanField"], CARTA::Equal, 0);
+    EXPECT_EQ(view.NumRows(), 1);
+}
+
+TEST_F(VoTableTest, BooleanFilterNotEqual) {
+    Table table(XmlTablePath("ivoa_example.xml"));
+    auto view = table.View();
+    view.NumericFilter(table["BooleanField"], CARTA::NotEqual, 0);
+    EXPECT_EQ(view.NumRows(), 2);
+    view.Reset();
+    view.NumericFilter(table["BooleanField"], CARTA::NotEqual, 1);
+    EXPECT_EQ(view.NumRows(), 1);
+}
+
 TEST_F(VoTableTest, FailSortMissingColummn) {
     Table table(XmlTablePath("ivoa_example.xml"));
 
