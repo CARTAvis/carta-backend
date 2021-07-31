@@ -353,7 +353,7 @@ bool Frame::FillImageCache() {
     }
 
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
-    casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), CurrentStokes());
+    casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
@@ -1054,9 +1054,6 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
         if (!GetStokesTypeIndex(coordinate, stokes)) {
             continue;
         }
-        if (stokes < 0) {
-            stokes = CurrentStokes();
-        }
         point_regions_spatial_configs[stokes].push_back(config);
     }
 
@@ -1229,10 +1226,10 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                 profile.reserve(end - start);
 
                 if (config.coordinate().back() == 'x') {
-                    casacore::Slicer section = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(ALL_Z), stokes);
+                    casacore::Slicer section = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
                     GetSlicerData(section, profile);
                 } else if (config.coordinate().back() == 'y') {
-                    casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(ALL_Z), stokes);
+                    casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
                     GetSlicerData(section, profile);
                 }
                 have_profile = true;
@@ -1381,9 +1378,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             int stokes;
             if (!GetStokesTypeIndex(coordinate, stokes)) {
                 continue;
-            }
-            if (stokes < 0) {
-                stokes = CurrentStokes();
             }
 
             std::vector<float> spectral_data;
@@ -2072,7 +2066,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
             return false;
         }
     } else {
-        stokes_index = -1; // current stokes
+        stokes_index = CurrentStokes(); // current stokes
     }
     return true;
 }

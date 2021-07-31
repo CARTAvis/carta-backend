@@ -964,9 +964,6 @@ bool RegionHandler::FillSpectralProfileData(
                 if (!_frames.at(config_file_id)->GetStokesTypeIndex(coordinate, stokes_index)) {
                     continue;
                 }
-                if (stokes_index < 0) {
-                    stokes_index = _frames.at(config_file_id)->CurrentStokes();
-                }
 
                 // Return spectral profile for this requirement
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
