@@ -103,6 +103,7 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
+    casacore::Slicer GetImageSlicer(const AxisRange& z_range, int stokes);
     casacore::Slicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
     // Image view for z index
@@ -269,12 +270,12 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    std::vector<float> _image_caches;     // image data for current z, stokes
-    bool _image_cache_valid;              // cached image data is valid for current z and stokes
-    tbb::queuing_rw_mutex _cache_mutexes; // allow concurrent reads but lock for write
-    std::mutex _image_mutex;              // only one disk access at a time
-    bool _cache_loaded;                   // channel cache is set
-    TileCache _tile_cache;                // cache for full-resolution image tiles
+    std::vector<float> _image_cache;    // image data for current z, stokes
+    bool _image_cache_valid;            // cached image data is valid for current z and stokes
+    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+    std::mutex _image_mutex;            // only one disk access at a time
+    bool _cache_loaded;                 // channel cache is set
+    TileCache _tile_cache;              // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 

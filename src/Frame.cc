@@ -185,6 +185,10 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     return beams_ok;
 }
 
+casacore::Slicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
+    return GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
+}
+
 casacore::Slicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
     // Slicer to apply z range and stokes to image shape
     // Start with entire image
@@ -341,7 +345,7 @@ bool Frame::FillImageCache() {
     // get image data for z, stokes
 
     bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, write_lock);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
 
     // Exit early *after* acquiring lock if the cache has already been loaded by another thread
     if (_image_cache_valid) {
@@ -349,8 +353,8 @@ bool Frame::FillImageCache() {
     }
 
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
-    casacore::Slicer section = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(_z_index), CurrentStokes());
-    if (!GetSlicerData(section, _image_caches)) {
+    casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), CurrentStokes());
+    if (!GetSlicerData(section, _image_cache)) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
@@ -367,13 +371,13 @@ bool Frame::FillImageCache() {
 
 void Frame::InvalidateImageCache() {
     bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, write_lock);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
     _image_cache_valid = false;
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
     // fill matrix for given z and stokes
-    casacore::Slicer section = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(z), stokes);
+    casacore::Slicer section = GetImageSlicer(AxisRange(z), stokes);
     GetSlicerData(section, z_matrix);
 }
 
@@ -412,16 +416,16 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     // read lock imageCache
     bool write_lock(false);
-    tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutexes, write_lock);
+    tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
     auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
         BlockSmooth(
-            _image_caches.data(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
+            _image_cache.data(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-        NearestNeighbor(_image_caches.data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
+        NearestNeighbor(_image_cache.data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
     auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
@@ -594,10 +598,10 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     bool smooth_successful = false;
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, false);
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_caches.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+        TraceContours(_image_cache.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
             _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
@@ -610,7 +614,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_width = _width - (2 * kernel_width);
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(_image_caches.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
             _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
@@ -825,11 +829,11 @@ bool Frame::GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats) {
 
         if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
             // calculate histogram from image cache
-            if (_image_caches.empty() && !FillImageCache()) {
+            if (_image_cache.empty() && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
-            CalcBasicStats(_image_caches, stats);
+            CalcBasicStats(_image_cache, stats);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -893,12 +897,12 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
 
     if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
         // calculate histogram from current image cache
-        if (_image_caches.empty() && !FillImageCache()) {
+        if (_image_cache.empty() && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
-        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, write_lock);
-        hist = CalcHistogram(num_bins, stats, _image_caches);
+        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+        hist = CalcHistogram(num_bins, stats, _image_cache);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -975,7 +979,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
     auto t_start_image_stats = std::chrono::high_resolution_clock::now();
 
     // Calculate stats map using slicer
-    casacore::Slicer slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(z), stokes);
+    casacore::Slicer slicer = GetImageSlicer(AxisRange(z), stokes);
     bool per_z(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
     if (GetSlicerStats(slicer, _image_required_stats, per_z, stats_vector_map)) {
@@ -1067,8 +1071,8 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
 
         if (_image_cache_valid) {
             bool write_lock(false);
-            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, write_lock);
-            cursor_value = _image_caches[(y * _width) + x];
+            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+            cursor_value = _image_cache[(y * _width) + x];
             cache_lock.release();
         } else if (_loader->UseTileCache()) {
             int tile_x = tile_index(x);
@@ -1206,17 +1210,17 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
 
                 if (config.coordinate().back() == 'x') {
                     auto x_start = y * _width;
-                    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, write_lock);
+                    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                     for (unsigned int j = start; j < end; ++j) {
                         auto idx = x_start + j;
-                        profile.push_back(_image_caches[idx]);
+                        profile.push_back(_image_cache[idx]);
                     }
                     cache_lock.release();
                 } else if (config.coordinate().back() == 'y') {
-                    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutexes, write_lock);
+                    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                     for (unsigned int j = start; j < end; ++j) {
                         auto idx = (j * _width) + x;
-                        profile.push_back(_image_caches[idx]);
+                        profile.push_back(_image_cache[idx]);
                     }
                     cache_lock.release();
                 }
@@ -1225,10 +1229,10 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                 profile.reserve(end - start);
 
                 if (config.coordinate().back() == 'x') {
-                    casacore::Slicer section = GetImageSlicer(AxisRange(ALL_X), AxisRange(y), AxisRange(ALL_Z), stokes);
+                    casacore::Slicer section = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(ALL_Z), stokes);
                     GetSlicerData(section, profile);
                 } else if (config.coordinate().back() == 'y') {
-                    casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
+                    casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(ALL_Z), stokes);
                     GetSlicerData(section, profile);
                 }
                 have_profile = true;
@@ -1522,7 +1526,7 @@ bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, ca
         return false;
     }
     try {
-        casacore::Slicer slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
+        casacore::Slicer slicer = GetImageSlicer(z_range, stokes);
         casacore::LCSlicer lcslicer(slicer);
         casacore::ImageRegion this_region(lcslicer);
         image_region = this_region;
