@@ -7,15 +7,15 @@
 #include <gtest/gtest.h>
 
 #include "../CommonTestUtilities.h"
+#include "BackendTester.h"
 #include "DummyBackend.h"
 #include "ProtobufInterface.h"
 
 using namespace std;
 
-class TestAccessCarta : public ::testing::Test, public FileFinder {
+class TestAccessCarta : public ::testing::Test, public FileFinder, public BackendTester {
 public:
-    TestAccessCarta() : _dummy_backend(std::make_unique<DummyBackend>()) {}
-
+    TestAccessCarta() {}
     ~TestAccessCarta() = default;
 
     void AccessCarta(uint32_t session_id, string api_key, uint32_t client_feature_flags, CARTA::SessionType expected_session_type,
@@ -54,9 +54,6 @@ public:
             }
         }
     }
-
-private:
-    std::unique_ptr<DummyBackend> _dummy_backend;
 };
 
 TEST_F(TestAccessCarta, ACCESS_CARTA_DEFAULT) {

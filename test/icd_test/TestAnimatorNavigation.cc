@@ -7,15 +7,15 @@
 #include <gtest/gtest.h>
 
 #include "../CommonTestUtilities.h"
+#include "BackendTester.h"
 #include "DummyBackend.h"
 #include "ProtobufInterface.h"
 
 using namespace std;
 
-class TestAnimatorNavigation : public ::testing::Test, public FileFinder {
+class TestAnimatorNavigation : public ::testing::Test, public FileFinder, public BackendTester {
 public:
-    TestAnimatorNavigation() : _dummy_backend(std::make_unique<DummyBackend>()) {}
-
+    TestAnimatorNavigation() {}
     ~TestAnimatorNavigation() = default;
 
     void AnimatorNavigation() {
@@ -149,9 +149,6 @@ public:
             }
         }
     }
-
-private:
-    std::unique_ptr<DummyBackend> _dummy_backend;
 };
 
 TEST_F(TestAnimatorNavigation, ANIMATOR_NAVIGATION) {

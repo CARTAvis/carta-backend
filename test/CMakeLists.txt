@@ -61,6 +61,7 @@ set(TEST_SOURCES
 set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
 set(TEST_ICD_SOURCES
         CommonTestUtilities.cc
+        icd_test/BackendTester.cc
         icd_test/DummyBackend.cc
         icd_test/ProtobufInterface.cc
         icd_test/TestAccessCarta.cc
