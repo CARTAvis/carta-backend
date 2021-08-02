@@ -6,6 +6,15 @@
 
 #include "BackendTester.h"
 
+bool FileExists(string filename) {
+    fs::path fs_path_filename(filename);
+    if (!fs::exists(fs_path_filename)) {
+        spdlog::warn("File {} does not exist. Ignore the test.", filename);
+        return false;
+    }
+    return true;
+}
+
 ElapsedTimer::ElapsedTimer() {}
 
 void ElapsedTimer::Start() {

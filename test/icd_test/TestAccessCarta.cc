@@ -22,12 +22,12 @@ public:
         bool expected_message) {
         CARTA::RegisterViewer register_viewer = GetRegisterViewer(session_id, api_key, client_feature_flags);
 
-        ElapsedTimer t;
-        t.Start();
+        ElapsedTimer timer;
+        timer.Start();
 
         _dummy_backend->ReceiveMessage(register_viewer);
 
-        EXPECT_LT(t.Elapsed(), 100); // expect the process time within 100 ms
+        EXPECT_LT(timer.Elapsed(), 100); // expect the process time within 100 ms
 
         // Resulting message
         std::pair<std::vector<char>, bool> message_pair;

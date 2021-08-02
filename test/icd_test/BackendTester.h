@@ -11,6 +11,8 @@
 
 #include "DummyBackend.h"
 
+bool FileExists(string filename);
+
 class ElapsedTimer {
 public:
     ElapsedTimer();
