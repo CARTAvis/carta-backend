@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__DUMMYBACKEND_H_
-#define CARTA_BACKEND__DUMMYBACKEND_H_
+#ifndef CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_
+#define CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_
 
 #include "Session.h"
 
@@ -27,4 +27,4 @@ private:
     Session* _session;
 };
 
-#endif // CARTA_BACKEND__DUMMYBACKEND_H_
+#endif // CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_

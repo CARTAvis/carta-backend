@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__PROTOBUFINTERFACE_H_
-#define CARTA_BACKEND__PROTOBUFINTERFACE_H_
+#ifndef CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_
+#define CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_
 
 #include "Session.h"
 
@@ -21,4 +21,4 @@ CARTA::OpenFileAck GetOpenFileAck(std::vector<char>& message);
 CARTA::RegionHistogramData GetRegionHistogramData(std::vector<char>& message);
 CARTA::RasterTileData GetRasterTileData(std::vector<char>& message);
 
-#endif // CARTA_BACKEND__PROTOBUFINTERFACE_H_
+#endif // CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_

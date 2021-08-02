@@ -45,6 +45,7 @@ CARTA::SetImageChannels GetSetImageChannels(
 }
 
 //-------------------------------------------------------------------------
+
 CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

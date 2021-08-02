@@ -4,12 +4,24 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_BACKENDTESTER_H_
-#define CARTA_BACKEND_BACKENDTESTER_H_
+#ifndef CARTA_BACKEND_ICD_TEST_BACKENDTESTER_H_
+#define CARTA_BACKEND_ICD_TEST_BACKENDTESTER_H_
 
 #include <memory>
 
 #include "DummyBackend.h"
+
+class ElapsedTimer {
+public:
+    ElapsedTimer();
+    ~ElapsedTimer() = default;
+
+    void Start();
+    int Elapsed(); // milli seconds elapsed
+
+private:
+    std::chrono::high_resolution_clock::time_point _t_start;
+};
 
 class BackendTester {
 public:
@@ -20,4 +32,4 @@ protected:
     std::unique_ptr<DummyBackend> _dummy_backend;
 };
 
-#endif // CARTA_BACKEND_BACKENDTESTER_H_
+#endif // CARTA_BACKEND_ICD_TEST_BACKENDTESTER_H_
