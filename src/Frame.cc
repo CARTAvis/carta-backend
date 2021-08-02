@@ -1225,14 +1225,16 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
             } else { // When required stokes is not the current stokes
                 profile.reserve(end - start);
 
+                casacore::Slicer section;
                 if (config.coordinate().back() == 'x') {
-                    casacore::Slicer section = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
-                    GetSlicerData(section, profile);
+                    section = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
                 } else if (config.coordinate().back() == 'y') {
-                    casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
-                    GetSlicerData(section, profile);
+                    section = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
                 }
-                have_profile = true;
+
+                if (GetSlicerData(section, profile)) {
+                    have_profile = true;
+                }
             }
 
             // decimate the profile in-place, attempting to preserve order
