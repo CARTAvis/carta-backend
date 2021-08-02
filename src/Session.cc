@@ -329,6 +329,7 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
     _file_list_handler->OnFileListRequest(request, response, result_msg);
     if (!response.cancel()) {
         SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+        _current_folder = request.directory();
     }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);

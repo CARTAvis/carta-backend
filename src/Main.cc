@@ -24,6 +24,7 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "SessionManager/ProgramSettings.h"
+#include "SessionManager/ProgramSettingsHelpers.h"
 #include "SessionManager/WebBrowser.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
@@ -50,6 +51,7 @@ std::unordered_map<uint32_t, Session*> sessions;
 void DeleteSession(int session_id) {
     Session* session = sessions[session_id];
     if (session) {
+        carta::ProgramSettingsHelpers::SaveLastDirectory(session->GetAddress(), session->GetCurrentFolder());
         spdlog::info(
             "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
         session->WaitForTaskCancellation();
@@ -106,6 +108,20 @@ void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws) {
 
     // get the uWebsockets loop
     auto* loop = uWS::Loop::get();
+
+    if (!settings.drop_last_folder) {
+        spdlog::debug("coconut... updating starting folder");
+        string last_folder;
+        carta::ProgramSettingsHelpers::GetLastDirectory(address, last_folder);
+        spdlog::debug("coconut... updating starting folder, with {}", last_folder);
+        if (last_folder.size() > 0) {
+            if (settings.starting_folder[settings.starting_folder.size() - 1] == '/') {
+                settings.starting_folder.pop_back();
+            }
+            settings.starting_folder = settings.starting_folder + "/" + last_folder;
+        }
+        spdlog::debug("coconut... new starting folder is {}", settings.starting_folder);
+    }
 
     // create a Session
     sessions[session_id] = new Session(ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder,

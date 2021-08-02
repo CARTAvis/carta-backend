@@ -101,6 +101,9 @@ else ()
     message(FATAL_ERROR "Could not find zstd")
 endif ()
 
+INCLUDE_DIRECTORIES(/usr/local/opt/tbb@2020/include)
+LINK_DIRECTORIES(/usr/local/opt/tbb@2020/lib)
+
 FIND_PACKAGE(TBB QUIET)
 if (TBB_FOUND)
     message(STATUS "Found TBB using find_package")
@@ -245,6 +248,7 @@ set(SOURCE_FILES
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
+        src/SessionManager/ProgramSettingsHelpers.cc
         src/SessionManager/WebBrowser.cc
         src/OnMessageTask.cc
         src/FileSettings.cc

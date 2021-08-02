@@ -199,7 +199,8 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
-        ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
+        ("no_system_config", "ignore system configuration file", cxxopts::value<bool>())
+        ("drop_last_folder", "ignore saved last used folder", cxxopts::value<bool>());
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port (not secure; use with caution!)", cxxopts::value<bool>())

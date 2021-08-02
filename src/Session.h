@@ -221,6 +221,11 @@ public:
     // Close cached image if it has been updated
     void CloseCachedImage(const std::string& directory, const std::string& file);
 
+    // Getters
+    std::string GetCurrentFolder() const {
+        return _current_folder;
+    }
+
 private:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
@@ -264,6 +269,7 @@ private:
     std::string _address;
     std::string _top_level_folder;
     std::string _starting_folder;
+    std::string _current_folder;
     int _grpc_port;
     bool _read_only_mode;
 

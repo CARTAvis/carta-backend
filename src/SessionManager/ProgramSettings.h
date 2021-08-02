@@ -41,6 +41,7 @@ struct ProgramSettings {
     int init_wait_time = -1;
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
+    bool drop_last_folder = false;
 
     std::string browser;
 
@@ -67,7 +68,8 @@ struct ProgramSettings {
         {"log_protocol_messages", &log_protocol_messages},
         {"no_http", &no_http},
         {"no_browser", &no_browser},
-        {"read_only_mode", &read_only_mode}
+        {"read_only_mode", &read_only_mode},
+        {"drop_last_folder", &drop_last_folder}
     };
 
     std::unordered_map<std::string, std::string*> strings_keys_map{
