@@ -20,11 +20,14 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
 CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int32_t region_id);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
-CARTA::RegisterViewerAck GetRegisterViewerAck(std::vector<char>& message);
-CARTA::OpenFileAck GetOpenFileAck(std::vector<char>& message);
-CARTA::RegionHistogramData GetRegionHistogramData(std::vector<char>& message);
-CARTA::RasterTileData GetRasterTileData(std::vector<char>& message);
-CARTA::SpatialProfileData GetSpatialProfileData(std::vector<char>& message);
-CARTA::RegionStatsData GetRegionStatsData(std::vector<char>& message);
+
+template <typename T>
+T DecodeMessage(std::vector<char>& message) {
+    T decoded_message;
+    char* event_buf = message.data() + sizeof(carta::EventHeader);
+    int event_length = message.size() - sizeof(carta::EventHeader);
+    decoded_message.ParseFromArray(event_buf, event_length);
+    return decoded_message;
+}
 
 #endif // CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_

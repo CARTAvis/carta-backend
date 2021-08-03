@@ -89,57 +89,7 @@ CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int
     return set_histogram_requirements;
 }
 
-//-------------------------------------------------------------------------
-
 CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);
-}
-
-CARTA::RegisterViewerAck GetRegisterViewerAck(std::vector<char>& message) {
-    CARTA::RegisterViewerAck register_viewer_ack;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    register_viewer_ack.ParseFromArray(event_buf, event_length);
-    return register_viewer_ack;
-}
-
-CARTA::OpenFileAck GetOpenFileAck(std::vector<char>& message) {
-    CARTA::OpenFileAck open_file_ack;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    open_file_ack.ParseFromArray(event_buf, event_length);
-    return open_file_ack;
-}
-
-CARTA::RegionHistogramData GetRegionHistogramData(std::vector<char>& message) {
-    CARTA::RegionHistogramData region_histogram_data;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    region_histogram_data.ParseFromArray(event_buf, event_length);
-    return region_histogram_data;
-}
-
-CARTA::RasterTileData GetRasterTileData(std::vector<char>& message) {
-    CARTA::RasterTileData raster_tile_data;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    raster_tile_data.ParseFromArray(event_buf, event_length);
-    return raster_tile_data;
-}
-
-CARTA::SpatialProfileData GetSpatialProfileData(std::vector<char>& message) {
-    CARTA::SpatialProfileData spatial_profile_data;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    spatial_profile_data.ParseFromArray(event_buf, event_length);
-    return spatial_profile_data;
-}
-
-CARTA::RegionStatsData GetRegionStatsData(std::vector<char>& message) {
-    CARTA::RegionStatsData region_stats_data;
-    char* event_buf = message.data() + sizeof(carta::EventHeader);
-    int event_length = message.size() - sizeof(carta::EventHeader);
-    region_stats_data.ParseFromArray(event_buf, event_length);
-    return region_stats_data;
 }

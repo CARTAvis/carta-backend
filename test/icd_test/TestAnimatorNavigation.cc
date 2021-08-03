@@ -38,7 +38,7 @@ public:
             EXPECT_EQ(event_type, CARTA::EventType::REGISTER_VIEWER_ACK);
 
             if (event_type == CARTA::EventType::REGISTER_VIEWER_ACK) {
-                CARTA::RegisterViewerAck register_viewer_ack = GetRegisterViewerAck(message);
+                CARTA::RegisterViewerAck register_viewer_ack = DecodeMessage<CARTA::RegisterViewerAck>(message);
                 EXPECT_TRUE(register_viewer_ack.success());
             }
         }
@@ -60,12 +60,12 @@ public:
             CARTA::EventType event_type = GetEventType(message);
 
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
-                CARTA::OpenFileAck open_file_ack = GetOpenFileAck(message);
+                CARTA::OpenFileAck open_file_ack = DecodeMessage<CARTA::OpenFileAck>(message);
                 EXPECT_TRUE(open_file_ack.success());
             }
 
             if (event_type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
-                CARTA::RegionHistogramData region_histogram_data = GetRegionHistogramData(message);
+                CARTA::RegionHistogramData region_histogram_data = DecodeMessage<CARTA::RegionHistogramData>(message);
                 EXPECT_EQ(region_histogram_data.file_id(), 0);
                 EXPECT_EQ(region_histogram_data.stokes(), 0);
                 EXPECT_EQ(region_histogram_data.region_id(), -1);
@@ -90,7 +90,7 @@ public:
             CARTA::EventType event_type = GetEventType(message);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
-                CARTA::RasterTileData raster_tile_data = GetRasterTileData(message);
+                CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
                 EXPECT_EQ(raster_tile_data.file_id(), 0);
                 EXPECT_EQ(raster_tile_data.channel(), 0);
                 EXPECT_EQ(raster_tile_data.stokes(), 0);
@@ -105,12 +105,12 @@ public:
             CARTA::EventType event_type = GetEventType(message);
 
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
-                CARTA::OpenFileAck open_file_ack = GetOpenFileAck(message);
+                CARTA::OpenFileAck open_file_ack = DecodeMessage<CARTA::OpenFileAck>(message);
                 EXPECT_TRUE(open_file_ack.success());
             }
 
             if (event_type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
-                CARTA::RegionHistogramData region_histogram_data = GetRegionHistogramData(message);
+                CARTA::RegionHistogramData region_histogram_data = DecodeMessage<CARTA::RegionHistogramData>(message);
                 EXPECT_EQ(region_histogram_data.file_id(), 1);
                 EXPECT_EQ(region_histogram_data.stokes(), 0);
                 EXPECT_EQ(region_histogram_data.region_id(), -1);
@@ -135,7 +135,7 @@ public:
             CARTA::EventType event_type = GetEventType(message);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
-                CARTA::RasterTileData raster_tile_data = GetRasterTileData(message);
+                CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
                 EXPECT_EQ(raster_tile_data.file_id(), 0);
                 EXPECT_EQ(raster_tile_data.channel(), 2);
                 EXPECT_EQ(raster_tile_data.stokes(), 1);
@@ -155,7 +155,7 @@ public:
             CARTA::EventType event_type = GetEventType(message);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
-                CARTA::RasterTileData raster_tile_data = GetRasterTileData(message);
+                CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
                 EXPECT_EQ(raster_tile_data.file_id(), 1);
                 EXPECT_EQ(raster_tile_data.channel(), 12);
                 EXPECT_EQ(raster_tile_data.stokes(), 0);

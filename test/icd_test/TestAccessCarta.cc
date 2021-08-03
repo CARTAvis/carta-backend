@@ -38,8 +38,7 @@ public:
             EXPECT_EQ(event_type, CARTA::EventType::REGISTER_VIEWER_ACK);
 
             if (event_type == CARTA::EventType::REGISTER_VIEWER_ACK) {
-                CARTA::RegisterViewerAck register_viewer_ack = GetRegisterViewerAck(message);
-
+                CARTA::RegisterViewerAck register_viewer_ack = DecodeMessage<CARTA::RegisterViewerAck>(message);
                 EXPECT_TRUE(register_viewer_ack.success());
                 EXPECT_EQ(register_viewer_ack.session_id(), session_id);
                 EXPECT_EQ(register_viewer_ack.session_type(), expected_session_type);
