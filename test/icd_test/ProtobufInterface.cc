@@ -44,6 +44,51 @@ CARTA::SetImageChannels GetSetImageChannels(
     return set_image_channels;
 }
 
+CARTA::SetCursor GetSetCursor(int32_t file_id, float x, float y) {
+    CARTA::SetCursor set_cursor;
+    set_cursor.set_file_id(file_id);
+    auto point = set_cursor.mutable_point();
+    point->set_x(x);
+    point->set_y(y);
+    return set_cursor;
+}
+
+CARTA::SetSpatialRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id) {
+    CARTA::SetSpatialRequirements set_spatial_requirements;
+    set_spatial_requirements.set_file_id(file_id);
+    set_spatial_requirements.set_region_id(region_id);
+    auto spatial_requirement_x = set_spatial_requirements.add_spatial_profiles();
+    spatial_requirement_x->set_coordinate("x");
+    auto spatial_requirement_y = set_spatial_requirements.add_spatial_profiles();
+    spatial_requirement_y->set_coordinate("y");
+    return set_spatial_requirements;
+}
+
+CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id) {
+    CARTA::SetStatsRequirements set_stats_requirements;
+    set_stats_requirements.set_file_id(file_id);
+    set_stats_requirements.set_region_id(region_id);
+    set_stats_requirements.add_stats(CARTA::StatsType::NumPixels);
+    set_stats_requirements.add_stats(CARTA::StatsType::Sum);
+    set_stats_requirements.add_stats(CARTA::StatsType::Mean);
+    set_stats_requirements.add_stats(CARTA::StatsType::RMS);
+    set_stats_requirements.add_stats(CARTA::StatsType::Sigma);
+    set_stats_requirements.add_stats(CARTA::StatsType::SumSq);
+    set_stats_requirements.add_stats(CARTA::StatsType::Min);
+    set_stats_requirements.add_stats(CARTA::StatsType::Max);
+    return set_stats_requirements;
+}
+
+CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int32_t region_id) {
+    CARTA::SetHistogramRequirements set_histogram_requirements;
+    set_histogram_requirements.set_file_id(file_id);
+    set_histogram_requirements.set_region_id(region_id);
+    auto* histograms = set_histogram_requirements.add_histograms();
+    histograms->set_channel(-1);
+    histograms->set_num_bins(-1);
+    return set_histogram_requirements;
+}
+
 //-------------------------------------------------------------------------
 
 CARTA::EventType GetEventType(std::vector<char>& message) {
@@ -81,4 +126,20 @@ CARTA::RasterTileData GetRasterTileData(std::vector<char>& message) {
     int event_length = message.size() - sizeof(carta::EventHeader);
     raster_tile_data.ParseFromArray(event_buf, event_length);
     return raster_tile_data;
+}
+
+CARTA::SpatialProfileData GetSpatialProfileData(std::vector<char>& message) {
+    CARTA::SpatialProfileData spatial_profile_data;
+    char* event_buf = message.data() + sizeof(carta::EventHeader);
+    int event_length = message.size() - sizeof(carta::EventHeader);
+    spatial_profile_data.ParseFromArray(event_buf, event_length);
+    return spatial_profile_data;
+}
+
+CARTA::RegionStatsData GetRegionStatsData(std::vector<char>& message) {
+    CARTA::RegionStatsData region_stats_data;
+    char* event_buf = message.data() + sizeof(carta::EventHeader);
+    int event_length = message.size() - sizeof(carta::EventHeader);
+    region_stats_data.ParseFromArray(event_buf, event_length);
+    return region_stats_data;
 }

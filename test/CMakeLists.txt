@@ -65,6 +65,7 @@ set(TEST_ICD_SOURCES
         icd_test/DummyBackend.cc
         icd_test/ProtobufInterface.cc
         icd_test/TestAccessCarta.cc
+        icd_test/TestAnimatorDataStream.cc
         icd_test/TestAnimatorNavigation.cc
         TestMain.cc)
 

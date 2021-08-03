@@ -58,6 +58,27 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
     }
 }
 
+void DummyBackend::ReceiveMessage(CARTA::SetCursor message) {
+    _session->AddCursorSetting(message, DUMMY_REQUEST_ID);
+    _session->_file_settings.ExecuteOne("SET_CURSOR", message.file_id());
+}
+
+void DummyBackend::ReceiveMessage(CARTA::SetSpatialRequirements message) {
+    _session->OnSetSpatialRequirements(message);
+}
+
+void DummyBackend::ReceiveMessage(CARTA::SetStatsRequirements message) {
+    _session->OnSetStatsRequirements(message);
+}
+
+void DummyBackend::ReceiveMessage(CARTA::SetHistogramRequirements message) {
+    if (!message.histograms_size()) {
+        _session->CancelSetHistRequirements();
+    } else {
+        _session->OnSetHistogramRequirements(message, DUMMY_REQUEST_ID);
+    }
+}
+
 bool DummyBackend::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
     return _session->TryPopMessagesQueue(message);
 }

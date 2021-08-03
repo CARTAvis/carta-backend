@@ -18,6 +18,10 @@ public:
     void ReceiveMessage(CARTA::CloseFile message);
     void ReceiveMessage(CARTA::OpenFile message);
     void ReceiveMessage(CARTA::SetImageChannels message);
+    void ReceiveMessage(CARTA::SetCursor message);
+    void ReceiveMessage(CARTA::SetSpatialRequirements message);
+    void ReceiveMessage(CARTA::SetStatsRequirements message);
+    void ReceiveMessage(CARTA::SetHistogramRequirements message);
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
     void ClearMessagesQueue();
