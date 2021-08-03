@@ -1061,10 +1061,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
     for (auto& point_regions_spatial_config : point_regions_spatial_configs) {
         int stokes = point_regions_spatial_config.first;
 
-        bool is_current_stokes(true);
-        if (stokes != CurrentStokes()) {
-            is_current_stokes = false;
-        }
+        bool is_current_stokes(stokes == CurrentStokes());
 
         if (_image_cache_valid) {
             bool write_lock(false);
@@ -1133,9 +1130,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                     bounds.set_y_max(end);
                 }
 
-                if (_loader->GetDownsampledRasterData(profile, CurrentZ(), stokes, bounds, mip, _image_mutex)) {
-                    have_profile = true;
-                }
+                have_profile = _loader->GetDownsampledRasterData(profile, CurrentZ(), stokes, bounds, mip, _image_mutex);
             } else {
                 if (downsample) { // Round the endpoints if we're going to decimate
                     // These values will be used to resize the decimated data
@@ -1236,9 +1231,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                         section = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
                     }
 
-                    if (GetSlicerData(section, profile)) {
-                        have_profile = true;
-                    }
+                    have_profile = GetSlicerData(section, profile);
                 }
             }
 
