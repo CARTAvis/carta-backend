@@ -19,6 +19,7 @@
 
 class CartaGrpcService : public CARTA::script::CartaBackend::Service {
 public:
+    CartaGrpcService();
     CartaGrpcService(std::string auth_token);
     void AddSession(Session* session);
     void RemoveSession(Session* session);
@@ -31,6 +32,7 @@ private:
 
     static uint32_t _scripting_request_id;
     std::string _auth_token;
+    bool _debug_no_auth;
 };
 
 #endif // CARTA_BACKEND_GRPCSERVER_CARTAGRPCSERVICE_H_
