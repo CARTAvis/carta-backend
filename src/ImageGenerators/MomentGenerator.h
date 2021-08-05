@@ -15,22 +15,10 @@
 #include <thread>
 
 #include "../Constants.h"
+#include "ImageGenerator.h"
 #include "ImageMoments.h"
 
-using MomentProgressCallback = std::function<void(float)>;
-
 namespace carta {
-
-struct CollapseResult {
-    int file_id;
-    std::string name;
-    std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
-    CollapseResult(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
-        file_id = file_id_;
-        name = name_;
-        image = image_;
-    }
-};
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
@@ -39,7 +27,7 @@ public:
 
     // Calculate moments
     bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
-        const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<CollapseResult>& collapse_results);
 
     // Stop moments calculation
@@ -88,7 +76,7 @@ private:
     int _total_steps;
     float _progress;
     float _pre_progress;
-    MomentProgressCallback _progress_callback;
+    GeneratorProgressCallback _progress_callback;
     std::chrono::high_resolution_clock::time_point _start_time;
     bool _first_report_made;
 };
