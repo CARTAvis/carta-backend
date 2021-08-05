@@ -31,6 +31,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
@@ -1244,6 +1245,48 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
     return success;
+}
+
+void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {
+    int file_id(pv_request.file_id());
+    int region_id(pv_request.region_id());
+    int width(pv_request.width());
+    CARTA::PvResponse pv_response;
+
+    if (_frames.count(file_id)) {
+        if (!_region_handler || (region_id <= CURSOR_REGION_ID)) {
+            pv_response.set_success(false);
+            pv_response.set_message("Invalid region id.");
+        } else {
+            auto& frame = _frames.at(file_id);
+
+            // Set pv progress callback function
+            auto progress_callback = [&](float progress) {
+                CARTA::PvProgress pv_progress;
+                pv_progress.set_file_id(file_id);
+                pv_progress.set_progress(progress);
+                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+            };
+
+            carta::CollapseResult pv_image;
+            if (_region_handler->CalculatePvImage(file_id, region_id, frame, progress_callback, width, pv_response, pv_image)) {
+                auto* open_file_ack = pv_response.mutable_open_file_ack();
+                OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+            }
+
+            SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"PV"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
+    int file_id(stop_pv_calc.file_id());
+    if (_frames.count(file_id)) {
+        _frames.at(file_id)->StopPvCalc();
+    }
 }
 
 // ******** SEND DATA STREAMS *********

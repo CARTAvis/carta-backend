@@ -411,6 +411,15 @@ void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view 
                     }
                     break;
                 }
+                case CARTA::EventType::STOP_PV_CALC: {
+                    CARTA::StopPvCalc message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopPvCalc(message);
+                    } else {
+                        spdlog::warn("Bad STOP_PV_CALC message!");
+                    }
+                    break;
+                }
                 case CARTA::EventType::SAVE_FILE: {
                     CARTA::SaveFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {

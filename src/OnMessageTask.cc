@@ -69,6 +69,15 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::PV_REQUEST: {
+            CARTA::PvRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnPvRequest(message, _header.request_id);
+            } else {
+                spdlog::warn("Bad PV_REQUEST message!");
+            }
+            break;
+        }
         default: {
             spdlog::warn("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
