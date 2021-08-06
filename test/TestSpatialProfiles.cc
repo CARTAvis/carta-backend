@@ -20,7 +20,7 @@ using ::testing::Pointwise;
 class SpatialProfileTest : public ::testing::Test, public ImageGenerator {
 public:
     static std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
-        if (data.profiles(0).coordinate() == "x") {
+        if (data.profiles(0).coordinate().back() == 'x') {
             return {data.profiles(0), data.profiles(1)};
         } else {
             return {data.profiles(1), data.profiles(0)};
@@ -98,11 +98,11 @@ TEST_F(SpatialProfileTest, SmallFitsProfile) {
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -138,11 +138,11 @@ TEST_F(SpatialProfileTest, SmallHdf5Profile) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -178,11 +178,11 @@ TEST_F(SpatialProfileTest, LowResFitsProfile) {
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 2), SpatialConfig("y", 0, 0, 2)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(50, 50);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -211,11 +211,11 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 2), SpatialConfig("y", 0, 0, 2)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(50, 50);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -245,11 +245,11 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
 
     // mip 4 is requested, but the file only has a dataset for mip 2
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 4), SpatialConfig("y", 0, 0, 4)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(50, 50);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -280,11 +280,11 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
 
     // mip 2 is requested, but this file is too small to have mipmaps
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 0, 0, 2), SpatialConfig("y", 0, 0, 2)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(50, 50);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -314,11 +314,11 @@ TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 0), SpatialConfig("y", 100, 200, 0)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(150, 150);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -347,11 +347,11 @@ TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 0), SpatialConfig("y", 100, 200, 0)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(150, 150);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -380,11 +380,11 @@ TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 4), SpatialConfig("y", 100, 200, 4)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(150, 150);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -415,11 +415,11 @@ TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 100, 200, 4), SpatialConfig("y", 100, 200, 4)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(150, 150);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -454,11 +454,11 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullRes) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(150, 150);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -487,11 +487,11 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x", 1000, 1500), SpatialConfig("y", 1000, 1500)};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(1250, 1250);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.profiles_size(), 2);
@@ -520,13 +520,13 @@ TEST_F(SpatialProfileTest, FitsChannelChange) {
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
     std::string msg;
     frame->SetImageChannels(1, 0, msg);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -562,13 +562,13 @@ TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
     std::string msg;
     frame->SetImageChannels(1, 0, msg);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);
@@ -604,13 +604,13 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {SpatialConfig("x"), SpatialConfig("y")};
-    frame->SetSpatialRequirements(CURSOR_REGION_ID, profiles);
+    frame->SetSpatialRequirements(profiles);
     frame->SetCursor(5, 5);
     std::string msg;
     frame->SetImageChannels(1, 0, msg);
 
     std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(CURSOR_REGION_ID, data_vec);
+    frame->FillSpatialProfileData(data_vec);
 
     for (auto& data : data_vec) {
         EXPECT_EQ(data.file_id(), 0);

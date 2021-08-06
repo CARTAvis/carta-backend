@@ -117,7 +117,6 @@ public:
 
     // Cursor
     bool SetCursor(float x, float y);
-    bool SetPointRegion(int region_id, float x, float y);
 
     // Raster data
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int z, int stokes,
@@ -145,8 +144,10 @@ public:
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
     // Spatial: cursor
-    bool SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    void SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
+    bool FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    bool FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs,
+        std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
 
     // Spectral: cursor
     bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);
@@ -263,8 +264,8 @@ protected:
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
 
-    // Current cursor/point regions positions
-    std::unordered_map<int, PointXy> _point_regions;
+    // Current cursor position
+    PointXy _cursor;
 
     // Contour settings
     ContourSettings _contour_settings;
@@ -286,7 +287,7 @@ protected:
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
     std::vector<CARTA::StatsType> _image_required_stats;
-    std::unordered_map<int, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> _point_regions_spatial_configs;
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
     std::mutex _spectral_mutex;
 

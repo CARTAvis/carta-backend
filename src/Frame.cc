@@ -328,16 +328,8 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 }
 
 bool Frame::SetCursor(float x, float y) {
-    return SetPointRegion(CURSOR_REGION_ID, x, y);
-}
-
-bool Frame::SetPointRegion(int region_id, float x, float y) {
-    bool changed(true);
-    if (_point_regions.count(region_id) && (x == _point_regions[region_id].x) && (y == _point_regions[region_id].y)) {
-        changed = false;
-    } else {
-        _point_regions[region_id] = PointXy(x, y);
-    }
+    bool changed = ((x != _cursor.x) || (y != _cursor.y));
+    _cursor = PointXy(x, y);
     return changed;
 }
 
@@ -1008,26 +1000,27 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 // ****************************************************
 // Spatial Requirements and Data
 
-bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
-    if (_point_regions_spatial_configs.count(region_id)) {
-        _point_regions_spatial_configs[region_id].clear();
-    }
+void Frame::SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
+    _cursor_spatial_configs.clear();
     for (auto& profile : spatial_profiles) {
-        _point_regions_spatial_configs[region_id].push_back(profile);
+        _cursor_spatial_configs.push_back(profile);
     }
-    return true;
 }
 
-bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+bool Frame::FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+    if (_cursor_spatial_configs.empty()) {
+        return false;
+    }
+    return FillSpatialProfileData(_cursor, _cursor_spatial_configs, spatial_data_vec);
+}
+
+bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs,
+    std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
     // Fill spatial profile message for cursor/point region only
     // Send even if no requirements, to update value of data at cursor/point region
 
-    if (!_point_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
-        return false;
-    }
-
     // frontend does not set cursor/point region outside of image, but just in case:
-    if (!_point_regions[region_id].InImage(_width, _height)) {
+    if (!point.InImage(_width, _height)) {
         return false;
     }
 
@@ -1041,13 +1034,13 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
     auto tile_size = [](int tile_index, int total_size) { return std::min(TILE_SIZE, total_size - tile_index); };
 
     int x, y;
-    _point_regions[region_id].ToIndex(x, y); // convert float to index into image array
+    point.ToIndex(x, y); // convert float to index into image array
     float cursor_value(0.0);
 
     // Get point region spatial configs with respect to the stokes (key)
     std::unordered_map<int, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> point_regions_spatial_configs;
 
-    for (auto& config : _point_regions_spatial_configs[region_id]) {
+    for (auto& config : spatial_configs) {
         // Get stokes
         std::string coordinate(config.coordinate());
         int stokes;
@@ -1154,8 +1147,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                             for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
                                 auto key = TileCache::Key(tile_x, tile_y);
                                 // The cursor/point region has moved outside this chunk row
-                                if (!ignore_interrupt &&
-                                    (tile_index(_point_regions[region_id].y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
+                                if (!ignore_interrupt && (tile_index(point.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
                                     return have_profile;
                                 }
                                 auto tile = _tile_cache.Get(key, _loader, _image_mutex);
@@ -1179,8 +1171,7 @@ bool Frame::FillSpatialProfileData(int region_id, std::vector<CARTA::SpatialProf
                             for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
                                 auto key = TileCache::Key(tile_x, tile_y);
                                 // The point region has moved outside this chunk column
-                                if (!ignore_interrupt &&
-                                    (tile_index(_point_regions[region_id].x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
+                                if (!ignore_interrupt && (tile_index(point.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
                                     return have_profile;
                                 }
                                 auto tile = _tile_cache.Get(key, _loader, _image_mutex);
@@ -1333,14 +1324,9 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
-    // No cursor
-    if (!_point_regions.count(region_id)) {
-        return false;
-    }
-
     std::shared_lock lock(GetActiveTaskMutex());
 
-    PointXy start_cursor = _point_regions[region_id]; // if cursor changes, cancel profiles
+    PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
 
@@ -1350,7 +1336,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     ulock.unlock();
 
     for (auto& config : current_configs) {
-        if (!(_point_regions[region_id] == start_cursor) || !IsConnected()) {
+        if (!(_cursor == start_cursor) || !IsConnected()) {
             // cursor changed or file closed, cancel profiles
             return false;
         }
@@ -1449,8 +1435,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     }
 
                     // Check for cancel before sending
-                    if (!(_point_regions[region_id] == start_cursor) ||
-                        !IsConnected()) { // cursor changed or file closed, cancel all profiles
+                    if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
                         return false;
                     }
                     if (!HasSpectralConfig(config)) {

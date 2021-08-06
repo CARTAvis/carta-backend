@@ -652,7 +652,7 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
             auto requirements = message.spatial_requirements();
             std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
                 requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()};
-            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(), profiles);
+            _frames.at(file_id)->SetSpatialRequirements(profiles);
         }
         if (_frames.at(file_id)->SetCursor(message.point().x(), message.point().y())) { // cursor changed
             SendSpatialProfileData(file_id, CURSOR_REGION_ID);
@@ -692,7 +692,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
         // send spatial profile data if it is a point region
         if (_region_handler->IsPointRegion(region_id)) {
-            _frames.at(file_id)->SetPointRegion(region_id, points[0].x(), points[0].y());
+            _region_handler->SetPointRegion(region_id, points[0].x(), points[0].y());
             SendSpatialProfileData(file_id, region_id);
         }
     } else {
@@ -828,15 +828,14 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
         auto region_id = message.region_id();
-        if ((region_id == CURSOR_REGION_ID) || _region_handler->IsPointRegion(region_id)) {
-            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
-                message.spatial_profiles().begin(), message.spatial_profiles().end()};
-            if (_frames.at(file_id)->SetSpatialRequirements(region_id, profiles)) {
-                SendSpatialProfileData(file_id, region_id);
-            } else {
-                string error = fmt::format("Spatial profiles not valid for region id {}", region_id);
-                SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
-            }
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+            message.spatial_profiles().begin(), message.spatial_profiles().end()};
+        if (region_id == CURSOR_REGION_ID) {
+            _frames.at(file_id)->SetSpatialRequirements(profiles);
+            SendSpatialProfileData(file_id, region_id);
+        } else if (_region_handler->IsPointRegion(region_id)) {
+            _region_handler->SetSpatialRequirements(region_id, profiles);
+            SendSpatialProfileData(file_id, region_id);
         } else {
             string error = fmt::format("Spatial requirements not valid for non-cursor or non-point region ", region_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
@@ -1413,18 +1412,26 @@ void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fi
 bool Session::SendSpatialProfileData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
-    if ((region_id == CURSOR_REGION_ID) || (_region_handler->IsPointRegion(region_id))) {
+    std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec; // spatial profile with different stokes
+
+    auto send_results = [&](int file_id, int region_id, std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec) {
+        for (auto& spatial_profile_data : spatial_profile_data_vec) {
+            spatial_profile_data.set_file_id(file_id);
+            spatial_profile_data.set_region_id(region_id);
+            SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_data);
+            data_sent = true;
+        }
+    };
+
+    if ((region_id == CURSOR_REGION_ID) && _frames.count(file_id)) {
         // Cursor spatial profile
-        if (_frames.count(file_id)) {
-            std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec; // spatial profile with different stokes
-            if (_frames.at(file_id)->FillSpatialProfileData(region_id, spatial_profile_data_vec)) {
-                for (auto& spatial_profile_data : spatial_profile_data_vec) {
-                    spatial_profile_data.set_file_id(file_id);
-                    spatial_profile_data.set_region_id(region_id);
-                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_data);
-                    data_sent = true;
-                }
-            }
+        if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_data_vec)) {
+            send_results(file_id, region_id, spatial_profile_data_vec);
+        }
+    } else if (_region_handler->IsPointRegion(region_id) && _frames.count(file_id)) {
+        // Point region spatial profile
+        if (_region_handler->FillSpatialProfileData(region_id, _frames.at(file_id), spatial_profile_data_vec)) {
+            send_results(file_id, region_id, spatial_profile_data_vec);
         }
     } else {
         string error = fmt::format("Spatial profiles not valid for non-point region {}", region_id);
