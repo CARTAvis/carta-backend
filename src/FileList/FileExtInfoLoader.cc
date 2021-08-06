@@ -660,7 +660,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
         // header entry for number of stokes
         unsigned int nstokes = shape(stokes_axis);
         auto entry = extended_info.add_computed_entries();
-        entry->set_name("Number of stokes");
+        entry->set_name("Number of polarizations");
         entry->set_value(std::to_string(nstokes));
         entry->set_entry_type(CARTA::EntryType::INT);
         entry->set_numeric_value(nstokes);
