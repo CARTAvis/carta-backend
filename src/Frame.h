@@ -130,7 +130,8 @@ public:
 
     // Histograms: image and cube
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
-    bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& histogram_data);
+    bool FillRegionHistogramData(
+        std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
     bool FillHistogram(int z, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats);
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram& hist);
@@ -139,8 +140,8 @@ public:
     void CacheCubeHistogram(int stokes, carta::Histogram& hist);
 
     // Stats: image
-    bool SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types);
-    bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
+    bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
+    bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> stats_data_callback, int region_id, int file_id);
 
     // Spatial: cursor
     bool SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
@@ -163,7 +164,7 @@ public:
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const casacore::LattRegionHolder& region, std::vector<CARTA::StatsType>& required_stats, bool per_z,
+    bool GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
@@ -227,6 +228,8 @@ protected:
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
         casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
 
+    void InitImageHistogramConfigs();
+
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
@@ -283,7 +286,7 @@ protected:
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
-    std::vector<CARTA::StatsType> _image_required_stats;
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> _image_required_stats;
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
     std::mutex _spectral_mutex;
