@@ -1429,7 +1429,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
         }
     } else if (_region_handler->IsPointRegion(region_id) && _frames.count(file_id)) {
         // Point region spatial profile
-        if (_region_handler->FillSpatialProfileData(region_id, _frames.at(file_id), spatial_profile_data_vec)) {
+        if (_region_handler->FillSpatialProfileData(region_id, file_id, _frames.at(file_id), spatial_profile_data_vec)) {
             send_results(file_id, region_id, spatial_profile_data_vec);
         }
     } else {

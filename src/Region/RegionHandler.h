@@ -79,7 +79,8 @@ public:
 
     // Point regions
     void SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(int region_id, std::shared_ptr<Frame> frame, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    bool FillSpatialProfileData(
+        int region_id, int file_id, std::shared_ptr<Frame> frame, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
     bool IsPointRegion(int region_id);
     std::vector<int> GetPointRegionIds();
 

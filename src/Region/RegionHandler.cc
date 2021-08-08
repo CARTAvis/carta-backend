@@ -1356,17 +1356,20 @@ void RegionHandler::SetSpatialRequirements(
 }
 
 bool RegionHandler::FillSpatialProfileData(
-    int region_id, std::shared_ptr<Frame> frame, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+    int region_id, int file_id, std::shared_ptr<Frame> frame, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
     if (!_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
         return false;
     }
 
-    RegionState region_state = _regions.at(region_id)->GetRegionState();
-    if (region_state.control_points.empty()) {
+    // Map a point region (region_id) to an image (file_id)
+    _frames[file_id] = frame;
+    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    if (!lcregion) {
         return false;
     }
 
-    auto point = PointXy(region_state.control_points[0].x(), region_state.control_points[0].y());
+    casacore::IPosition origin = lcregion->boundingBox().start();
+    PointXy point(origin(0), origin(1));
 
     return frame->FillSpatialProfileData(point, _point_regions_spatial_configs[region_id], spatial_data_vec);
 }
