@@ -1343,26 +1343,32 @@ bool RegionHandler::GetRegionStatsData(
     return false;
 }
 
-void RegionHandler::SetPointRegion(int region_id, float x, float y) {
-    _point_regions[region_id] = PointXy(x, y);
-}
-
 void RegionHandler::SetSpatialRequirements(
     int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
     if (_point_regions_spatial_configs.count(region_id)) {
         _point_regions_spatial_configs[region_id].clear();
     }
     for (const auto& profile : spatial_profiles) {
         _point_regions_spatial_configs[region_id].push_back(profile);
     }
+    ulock.unlock();
 }
 
 bool RegionHandler::FillSpatialProfileData(
     int region_id, std::shared_ptr<Frame> frame, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
-    if (!_point_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
+    if (!_regions.count(region_id) || !_point_regions_spatial_configs.count(region_id)) {
         return false;
     }
-    return frame->FillSpatialProfileData(_point_regions[region_id], _point_regions_spatial_configs[region_id], spatial_data_vec);
+
+    RegionState region_state = _regions.at(region_id)->GetRegionState();
+    if (region_state.control_points.empty()) {
+        return false;
+    }
+
+    auto point = PointXy(region_state.control_points[0].x(), region_state.control_points[0].y());
+
+    return frame->FillSpatialProfileData(point, _point_regions_spatial_configs[region_id], spatial_data_vec);
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
