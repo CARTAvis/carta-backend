@@ -202,7 +202,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
     options.add_options("Deprecated and debug")
-        ("debug_no_auth", "accept all incoming WebSocket connections on the specified port (not secure; use with caution!)", cxxopts::value<bool>())
+        ("debug_no_auth", "accept all incoming WebSocket and gRPC connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
         ("threads", "[deprecated] no longer supported", cxxopts::value<int>(), "<threads>")
         ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<string>(), "<dir>")
         ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>");
