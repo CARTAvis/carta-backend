@@ -2032,22 +2032,46 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
         char stokes_char(coordinate.front());
         switch (stokes_char) {
             case 'I':
-                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::I, stokes_index);
+                if (_loader->GetStokesTypeIndex(CARTA::StokesType::I, stokes_index)) {
+                    stokes_ok = true;
+                } else if (NumStokes() > 0) {
+                    stokes_index = 0;
+                    stokes_ok = true;
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
+                }
                 break;
             case 'Q':
-                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::Q, stokes_index);
+                if (_loader->GetStokesTypeIndex(CARTA::StokesType::Q, stokes_index)) {
+                    stokes_ok = true;
+                } else if (NumStokes() > 1) {
+                    stokes_index = 1;
+                    stokes_ok = true;
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
+                }
                 break;
             case 'U':
-                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::U, stokes_index);
+                if (_loader->GetStokesTypeIndex(CARTA::StokesType::U, stokes_index)) {
+                    stokes_ok = true;
+                } else if (NumStokes() > 2) {
+                    stokes_index = 2;
+                    stokes_ok = true;
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
+                }
                 break;
             case 'V':
-                stokes_ok = _loader->GetStokesTypeIndex(CARTA::StokesType::V, stokes_index);
+                if (_loader->GetStokesTypeIndex(CARTA::StokesType::V, stokes_index)) {
+                    stokes_ok = true;
+                } else if (NumStokes() > 3) {
+                    stokes_index = 3;
+                    stokes_ok = true;
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
+                }
                 break;
             default:
                 break;
         }
         if (!stokes_ok) {
-            spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+            spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
             return false;
         }
     } else {
