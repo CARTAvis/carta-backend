@@ -49,7 +49,7 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
                 if (std::regex_match(name, match, re) && match.size() > 1) {
                     _mipmaps[std::stoi(match.str(1))] = std::unique_ptr<casacore::HDF5Lattice<float>>(
                         new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
-                            fmt::format("MipMaps/DATA/{}", name), hdu));
+                            fmt::format("MipMaps/DATA/{}", name), selected_hdu));
                 }
             }
         }

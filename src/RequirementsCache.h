@@ -58,11 +58,12 @@ struct CacheIdHash {
 // -------------------------------
 
 struct HistogramConfig {
+    std::string coordinate;
     int channel;
     int num_bins;
 
     HistogramConfig() {}
-    HistogramConfig(int chan, int bins) : channel(chan), num_bins(bins) {}
+    HistogramConfig(const std::string& coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
 };
 
 struct RegionHistogramConfig {
@@ -167,7 +168,7 @@ struct SpectralCache {
 // -------------------------------
 
 struct RegionStatsConfig {
-    std::vector<CARTA::StatsType> stats_types;
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs;
 };
 
 struct StatsCache {

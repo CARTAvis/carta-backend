@@ -49,6 +49,8 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
         column = make_unique<DataColumn<float>>(name);
     } else if (type_string == "double") {
         column = make_unique<DataColumn<double>>(name);
+    } else if (type_string == "boolean") {
+        column = make_unique<DataColumn<bool>>(name);
     } else {
         column = make_unique<Column>(name);
     }
@@ -111,6 +113,8 @@ std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
             return make_unique<DataColumn<int64_t>>(col_name);
         case TDOUBLE:
             return make_unique<DataColumn<double>>(col_name);
+        case TLOGICAL:
+            return make_unique<DataColumn<bool>>(col_name);
             // TODO: Consider supporting complex numbers through std::complex
         case TCOMPLEX:
         case TDBLCOMPLEX:
@@ -136,10 +140,7 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
     unique_ptr<Column> column;
 
     if (col_type == TSTRING) {
-        if (col_repeat == 1) {
-            // Single-character strings are treated as byte values
-            column = make_unique<DataColumn<uint8_t>>(col_name);
-        } else if (col_width == col_repeat) {
+        if (col_width == col_repeat) {
             // Only support single string columns (i.e. width is same size as repeat size)
             column = make_unique<DataColumn<string>>(col_name);
             column->data_type_size = col_repeat;
@@ -227,12 +228,30 @@ void DataColumn<bool>::FillColumnData(
     CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     column_data.set_data_type(CARTA::Bool);
     auto values = GetColumnData(fill_subset, indices, start, end);
-    std::vector<uint8_t> temp_data(values.size());
+    auto N = values.size();
+    std::vector<uint8_t> temp_data(N);
 
-    for (auto j = values.size() - 1; j >= 0; j--) {
-        temp_data[j] = values[j];
+    for (int i = 0; i < N; i++) {
+        temp_data[i] = values[i];
     }
     column_data.set_binary_data(temp_data.data(), temp_data.size());
+}
+
+// Specialisation for boolean type, because we need to convert from T/F characters to bool
+template <>
+void DataColumn<bool>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
+    // Shifts by the column's offset
+    ptr += data_offset;
+
+    if (!stride || !data_type_size || num_rows > entries.size()) {
+        return;
+    }
+
+    for (auto i = 0; i < num_rows; i++) {
+        char val = *ptr;
+        entries[i] = (val == 'T');
+        ptr += stride;
+    }
 }
 
 // String is a special case, because we store the data as a repeated string field instead of binary data
