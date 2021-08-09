@@ -80,11 +80,12 @@ public:
         std::vector<carta::CollapseResult>& collapse_results);
 
     // Point regions
-    void SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(
-        int region_id, int file_id, std::shared_ptr<Frame> frame, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
+    bool FillSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
     bool IsPointRegion(int region_id);
-    std::vector<int> GetPointRegionIds();
+    std::vector<int> GetPointRegionIds(int file_id);
+    std::vector<int> GetProjectedFileIds(int region_id);
 
 private:
     // Get unique region id (max id + 1)
@@ -139,7 +140,7 @@ private:
         CARTA::StatsType::Extrema};
 
     // Point regions configs, key is region id
-    std::unordered_map<int, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> _point_regions_spatial_configs;
+    std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
     std::mutex _spatial_mutex;
 };
 
