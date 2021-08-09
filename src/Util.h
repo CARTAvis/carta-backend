@@ -8,6 +8,7 @@
 #define CARTA_BACKEND__UTIL_H_
 
 #include <cassert>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -24,8 +25,15 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 // Valid for little-endian only
-#define BZ_MAGIC_NUMBER 0x39685A42
 #define FITS_MAGIC_NUMBER 0x504D4953
 #define GZ_MAGIC_NUMBER 0x08088B1F
 #define HDF5_MAGIC_NUMBER 0x46444889
@@ -38,6 +46,8 @@ bool CheckFolderPaths(std::string& top_level_string, std::string& starting_strin
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 int GetNumItems(const std::string& path);
+
+fs::path SearchPath(std::string filename);
 
 std::string GetGaussianInfo(const casacore::GaussianBeam& gaussian_beam);
 std::string GetQuantityInfo(const casacore::Quantity& quantity);
@@ -63,15 +73,13 @@ void GetSpectralCoordPreferences(
 
 // ************ Data Stream Helpers *************
 
-void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
-
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
     std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
 
-void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
+void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map);
 
 std::string IPAsText(std::string_view binary);
 

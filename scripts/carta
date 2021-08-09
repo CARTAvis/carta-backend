@@ -1,13 +1,14 @@
 #!/bin/bash
 
-if [ "$(uname)" == "Darwin" ]
-then
-    SERVER_IP=$(ipconfig getifaddr en0)
-elif [ "$(uname)" == "Linux" ]
-then
-    SERVER_IP=$(hostname -I | cut -d' ' -f1)
+if [ "$(uname)" == "Darwin" ]; then
+    FIRST_IP=$(ipconfig getifaddr en0)
+elif [ "$(uname)" == "Linux" ]; then
+    FIRST_IP=$(hostname -I | cut -d' ' -f1)
 fi
 
-export SERVER_IP
+# Only export env variable if it's not empty
+if [ ! -z $FIRST_IP ]; then
+    export SERVER_IP=$FIRST_IP
+fi
 
 carta_backend "$@"

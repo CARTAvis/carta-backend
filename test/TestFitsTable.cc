@@ -30,7 +30,7 @@ TEST_F(FitsTableTest, ParseIvoaExample) {
 TEST_F(FitsTableTest, CorrectFieldCount) {
     Table table(FitsTablePath("ivoa_example.fits"));
     EXPECT_TRUE(table.IsValid());
-    EXPECT_EQ(table.NumColumns(), 6);
+    EXPECT_EQ(table.NumColumns(), 8);
 }
 
 TEST_F(FitsTableTest, CorrectFieldNames) {
@@ -41,6 +41,8 @@ TEST_F(FitsTableTest, CorrectFieldNames) {
     EXPECT_EQ(table[3]->name, "RVel");
     EXPECT_EQ(table[4]->name, "e_RVel");
     EXPECT_EQ(table[5]->name, "R");
+    EXPECT_EQ(table[6]->name, "BooleanField");
+    EXPECT_EQ(table[7]->name, "SingleCharField");
 }
 
 TEST_F(FitsTableTest, CorrectFieldUnits) {
@@ -51,6 +53,8 @@ TEST_F(FitsTableTest, CorrectFieldUnits) {
     EXPECT_EQ(table[3]->unit, "km/s");
     EXPECT_EQ(table[4]->unit, "km/s");
     EXPECT_EQ(table[5]->unit, "Mpc");
+    EXPECT_TRUE(table[6]->unit.empty());
+    EXPECT_TRUE(table[7]->unit.empty());
 }
 
 TEST_F(FitsTableTest, CorrectFieldTypes) {
@@ -61,6 +65,8 @@ TEST_F(FitsTableTest, CorrectFieldTypes) {
     EXPECT_EQ(table[3]->data_type, CARTA::Int32);
     EXPECT_EQ(table[4]->data_type, CARTA::Int16);
     EXPECT_EQ(table[5]->data_type, CARTA::Float);
+    EXPECT_EQ(table[6]->data_type, CARTA::Bool);
+    EXPECT_EQ(table[7]->data_type, CARTA::String);
 }
 
 TEST_F(FitsTableTest, CorrectFieldSizes) {
@@ -246,6 +252,26 @@ TEST_F(FitsTableTest, NumericFilterRange) {
     EXPECT_EQ(view.NumRows(), 2);
     view.NumericFilter(table["RA"], CARTA::RangeClosed, 11, 14);
     EXPECT_EQ(view.NumRows(), 0);
+}
+
+TEST_F(FitsTableTest, BooleanFilterEqual) {
+    Table table(FitsTablePath("ivoa_example.fits"));
+    auto view = table.View();
+    view.NumericFilter(table["BooleanField"], CARTA::Equal, 1);
+    EXPECT_EQ(view.NumRows(), 2);
+    view.Reset();
+    view.NumericFilter(table["BooleanField"], CARTA::Equal, 0);
+    EXPECT_EQ(view.NumRows(), 1);
+}
+
+TEST_F(FitsTableTest, BooleanFilterNotEqual) {
+    Table table(FitsTablePath("ivoa_example.fits"));
+    auto view = table.View();
+    view.NumericFilter(table["BooleanField"], CARTA::NotEqual, 0);
+    EXPECT_EQ(view.NumRows(), 2);
+    view.Reset();
+    view.NumericFilter(table["BooleanField"], CARTA::NotEqual, 1);
+    EXPECT_EQ(view.NumRows(), 1);
 }
 
 TEST_F(FitsTableTest, FailSortMissingColummn) {
