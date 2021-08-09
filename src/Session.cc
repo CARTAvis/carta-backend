@@ -692,7 +692,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
         // Update the spatial profile data if it is a point region
         if (_region_handler->IsPointRegion(region_id)) {
-            SendSpatialProfileData(file_id);
+            SendSpatialProfileDataByRegionId(region_id);
         }
     } else {
         err_message = fmt::format("Cannot set region, file id {} not found", file_id);
@@ -1444,7 +1444,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
     return data_sent;
 }
 
-void Session::SendSpatialProfileData(int file_id) {
+void Session::SendSpatialProfileDataByFileId(int file_id) {
     // Update spatial profile data for the cursor
     SendSpatialProfileData(file_id, CURSOR_REGION_ID);
 
@@ -1453,11 +1453,18 @@ void Session::SendSpatialProfileData(int file_id) {
         // Get region ids with respect to the given file id
         auto point_region_ids = _region_handler->GetPointRegionIds(file_id);
         for (auto point_region_id : point_region_ids) {
-            // Get file ids with respect to the region id (if a region projects on multiple files)
-            auto projected_file_ids = _region_handler->GetProjectedFileIds(point_region_id);
-            for (auto projected_file_id : projected_file_ids) {
-                SendSpatialProfileData(projected_file_id, point_region_id);
-            }
+            SendSpatialProfileData(file_id, point_region_id);
+        }
+    }
+}
+
+void Session::SendSpatialProfileDataByRegionId(int region_id) {
+    // Update spatial profile data for point regions
+    if (_region_handler) {
+        // Get file ids with respect to the region id (if a region projects on multiple files)
+        auto projected_file_ids = _region_handler->GetProjectedFileIds(region_id);
+        for (auto projected_file_id : projected_file_ids) {
+            SendSpatialProfileData(projected_file_id, region_id);
         }
     }
 }
@@ -1655,7 +1662,7 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
                 SendRegionHistogramData(file_id, IMAGE_REGION_ID);
             }
             SendRegionStatsData(file_id, IMAGE_REGION_ID);
-            SendSpatialProfileData(file_id);
+            SendSpatialProfileDataByFileId(file_id);
         }
     }
 }
