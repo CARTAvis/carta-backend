@@ -21,7 +21,7 @@
 
 uint32_t CartaGrpcService::_scripting_request_id = 0;
 
-CartaGrpcService::CartaGrpcService() {}
+CartaGrpcService::CartaGrpcService(std::string auth_token) : _auth_token(auth_token) {}
 
 void CartaGrpcService::AddSession(Session* session) {
     // Map session to its ID, set connected to false
@@ -48,9 +48,24 @@ grpc::Status CartaGrpcService::CallAction(
     auto async = request->async();
     auto return_path = request->return_path();
 
+    auto metadata = context->client_metadata();
+
+    std::string token;
+
+    if (!_auth_token.empty()) {
+        for (auto& m : metadata) {
+            if (m.first == "token") {
+                token = std::string(m.second.begin(), m.second.size());
+                break;
+            }
+        }
+    }
+
     grpc::Status status(grpc::Status::OK);
 
-    if (_sessions.find(session_id) == _sessions.end()) {
+    if (!_auth_token.empty() && token != _auth_token) {
+        status = grpc::Status(grpc::StatusCode::PERMISSION_DENIED, "Invalid token.");
+    } else if (_sessions.find(session_id) == _sessions.end()) {
         status = grpc::Status(grpc::StatusCode::OUT_OF_RANGE, fmt::format("Invalid session ID {}.", session_id));
     } else {
         _scripting_request_id++;

@@ -10,7 +10,7 @@
 #define CARTA_BACKEND__CONSTANTS_H_
 
 // version
-#define VERSION_ID "2.0.0-dev.21.04.27"
+#define VERSION_ID "3.0.0-beta.1"
 
 // thread counts
 #define OMP_THREAD_COUNT -1
@@ -24,6 +24,12 @@
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
 #define ALL_REGIONS -10
+
+// x axis
+#define ALL_X -2
+
+// y axis
+#define ALL_Y -2
 
 // z axis
 #define DEFAULT_Z 0
