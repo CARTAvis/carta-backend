@@ -37,13 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* Upgraded to uWebSockets v19.2.0 to fix garbled ICD messages (#848).
-* Fixed issues with FITS headers processed by casacore (#460) by parsing the FITS header or HDF5 attributes directly.
-* Added missing setting keyword for the starting folder (#857).
-* Fixed a crash (#774) by adding a mutex lock.
-* Improve the speed of HDF5 header parsing (#861) by using H5Aiterate2 to iterate over HDF5 attributes.
+* Upgraded to uWebSockets v19.2.0 to fix garbled ICD messages ([#848](https://github.com/CARTAvis/carta-backend/issues/848)).
+* Fixed issues with FITS headers processed by casacore ([#460](https://github.com/CARTAvis/carta-backend/issues/460)) by parsing the FITS header or HDF5 attributes directly.
+* Added missing setting keyword for the starting folder ([#857](https://github.com/CARTAvis/carta-backend/issues/857)).
+* Fixed a crash ([#774](https://github.com/CARTAvis/carta-backend/issues/774)) by adding a mutex lock.
+* Improve the speed of HDF5 header parsing ([#861](https://github.com/CARTAvis/carta-backend/issues/861)) by using H5Aiterate2 to iterate over HDF5 attributes.
 * Added a fallback legacy heuristic for detecting that HDF5 attributes should be interpreted as boolean.
-* Fixed a caching bug affecting images which were changed on disk (#579).
+* Fixed a caching bug affecting images which were changed on disk ([#579](https://github.com/CARTAvis/carta-backend/issues/579)).
 * Fixed a wrapper script issue causing an invalid frontend URL to be generated on Linux without network access.
 
 ### Security
