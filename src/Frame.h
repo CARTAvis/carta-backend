@@ -104,6 +104,7 @@ public:
 
     // Slicer to set z and stokes ranges with full xy plane
     casacore::Slicer GetImageSlicer(const AxisRange& z_range, int stokes);
+    casacore::Slicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
     // Image view for z index
     inline void SetAnimationViewSettings(const CARTA::AddRequiredTiles& required_animation_tiles) {
@@ -144,8 +145,10 @@ public:
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> stats_data_callback, int region_id, int file_id);
 
     // Spatial: cursor
-    bool SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data);
+    void SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
+    bool FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    bool FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_configs,
+        std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
 
     // Spectral: cursor
     bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);

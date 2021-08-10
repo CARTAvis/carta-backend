@@ -25,6 +25,12 @@
 #define CURSOR_REGION_ID 0
 #define ALL_REGIONS -10
 
+// x axis
+#define ALL_X -2
+
+// y axis
+#define ALL_Y -2
+
 // z axis
 #define DEFAULT_Z 0
 #define CURRENT_Z -1
