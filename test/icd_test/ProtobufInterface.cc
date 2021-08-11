@@ -68,14 +68,15 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
     set_stats_requirements.set_region_id(region_id);
-    set_stats_requirements.add_stats(CARTA::StatsType::NumPixels);
-    set_stats_requirements.add_stats(CARTA::StatsType::Sum);
-    set_stats_requirements.add_stats(CARTA::StatsType::Mean);
-    set_stats_requirements.add_stats(CARTA::StatsType::RMS);
-    set_stats_requirements.add_stats(CARTA::StatsType::Sigma);
-    set_stats_requirements.add_stats(CARTA::StatsType::SumSq);
-    set_stats_requirements.add_stats(CARTA::StatsType::Min);
-    set_stats_requirements.add_stats(CARTA::StatsType::Max);
+    auto* stats_config = set_stats_requirements.add_stats_configs();
+    stats_config->add_stats_types(CARTA::StatsType::NumPixels);
+    stats_config->add_stats_types(CARTA::StatsType::Sum);
+    stats_config->add_stats_types(CARTA::StatsType::Mean);
+    stats_config->add_stats_types(CARTA::StatsType::RMS);
+    stats_config->add_stats_types(CARTA::StatsType::Sigma);
+    stats_config->add_stats_types(CARTA::StatsType::SumSq);
+    stats_config->add_stats_types(CARTA::StatsType::Min);
+    stats_config->add_stats_types(CARTA::StatsType::Max);
     return set_stats_requirements;
 }
 

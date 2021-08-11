@@ -67,13 +67,11 @@ public:
             if (event_type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
                 CARTA::RegionHistogramData region_histogram_data = DecodeMessage<CARTA::RegionHistogramData>(message);
                 EXPECT_EQ(region_histogram_data.file_id(), 0);
-                EXPECT_EQ(region_histogram_data.stokes(), 0);
                 EXPECT_EQ(region_histogram_data.region_id(), -1);
+                EXPECT_EQ(region_histogram_data.channel(), 0);
+                EXPECT_EQ(region_histogram_data.stokes(), 0);
                 EXPECT_EQ(region_histogram_data.progress(), 1);
-                EXPECT_GE(region_histogram_data.histograms_size(), 0);
-                if (region_histogram_data.histograms_size() > 0) {
-                    EXPECT_EQ(region_histogram_data.histograms(0).channel(), 0);
-                }
+                EXPECT_TRUE(region_histogram_data.has_histograms());
             }
         }
 
@@ -112,13 +110,11 @@ public:
             if (event_type == CARTA::EventType::REGION_HISTOGRAM_DATA) {
                 CARTA::RegionHistogramData region_histogram_data = DecodeMessage<CARTA::RegionHistogramData>(message);
                 EXPECT_EQ(region_histogram_data.file_id(), 1);
-                EXPECT_EQ(region_histogram_data.stokes(), 0);
                 EXPECT_EQ(region_histogram_data.region_id(), -1);
+                EXPECT_EQ(region_histogram_data.channel(), 0);
+                EXPECT_EQ(region_histogram_data.stokes(), 0);
                 EXPECT_EQ(region_histogram_data.progress(), 1);
-                EXPECT_GE(region_histogram_data.histograms_size(), 0);
-                if (region_histogram_data.histograms_size() > 0) {
-                    EXPECT_EQ(region_histogram_data.histograms(0).channel(), 0);
-                }
+                EXPECT_TRUE(region_histogram_data.has_histograms());
             }
         }
 
