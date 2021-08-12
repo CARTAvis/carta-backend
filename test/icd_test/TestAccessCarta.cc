@@ -4,16 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <gtest/gtest.h>
-
-#include "../CommonTestUtilities.h"
 #include "BackendTester.h"
-#include "DummyBackend.h"
 #include "ProtobufInterface.h"
 
 using namespace std;
 
-class TestAccessCarta : public ::testing::Test, public FileFinder, public BackendTester {
+class TestAccessCarta : public BackendTester {
 public:
     TestAccessCarta() {}
     ~TestAccessCarta() = default;

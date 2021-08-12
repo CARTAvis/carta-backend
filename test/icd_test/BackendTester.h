@@ -9,6 +9,9 @@
 
 #include <memory>
 
+#include <gtest/gtest.h>
+
+#include "../CommonTestUtilities.h"
 #include "DummyBackend.h"
 
 bool FileExists(string filename);
@@ -25,7 +28,7 @@ private:
     std::chrono::high_resolution_clock::time_point _t_start;
 };
 
-class BackendTester {
+class BackendTester : public ::testing::Test, public FileFinder {
 public:
     BackendTester();
     virtual ~BackendTester() = default;
