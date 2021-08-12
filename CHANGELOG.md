@@ -4,13 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0-beta.1b]
 
 ### Fixed
 
 * Fixed control points record for polygon / line / polyline ([#891](https://github.com/CARTAvis/carta-backend/issues/891)).
 * Fixed bug causing cube histogram to be generated even if it was available in an HDF5 file ([#899](https://github.com/CARTAvis/carta-backend/issues/899)).
-* Fixed bug of missing cursor values for matched images ([#900](https://github.com/CARTAvis/carta-backend/issues/900))
+* Fixed bug of missing cursor values for matched images ([#900](https://github.com/CARTAvis/carta-backend/issues/900)).
 
 ## [3.0.0-beta.1]
 
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added support for using mipmapped datasets in HDF5 files to load downsampled data.
 * Added a tile cache for loading full-resolution data from chunked HDF5 files.
 * Added mip and range options to spatial profile requests.
-* Added support for for LINE and POLYLINE regions.
+* Added support for LINE and POLYLINE regions.
 * Added support for fits.gz images using zlib.
 * Added ping pong test for spectral line query.
 * Added support for boolean columns in tables.
