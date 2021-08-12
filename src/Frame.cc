@@ -1036,9 +1036,6 @@ void Frame::SetSpatialRequirements(const std::vector<CARTA::SetSpatialRequiremen
 }
 
 bool Frame::FillSpatialProfileData(std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
-    if (_cursor_spatial_configs.empty()) {
-        return false;
-    }
     return FillSpatialProfileData(_cursor, _cursor_spatial_configs, spatial_data_vec);
 }
 
@@ -1063,8 +1060,36 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
     int x, y;
     point.ToIndex(x, y); // convert float to index into image array
-    float cursor_value(0.0);
 
+    float cursor_value_with_current_stokes(0.0);
+
+    // Get the cursor value with current stokes
+    if (_image_cache_valid) {
+        bool write_lock(false);
+        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+        cursor_value_with_current_stokes = _image_cache[(y * _width) + x];
+        cache_lock.release();
+    } else if (_loader->UseTileCache()) {
+        int tile_x = tile_index(x);
+        int tile_y = tile_index(y);
+        auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
+        auto tile_width = tile_size(tile_x, _width);
+        cursor_value_with_current_stokes = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
+    }
+
+    if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
+        CARTA::SpatialProfileData spatial_data;
+        spatial_data.set_x(x);
+        spatial_data.set_y(y);
+        spatial_data.set_channel(CurrentZ());
+        spatial_data.set_stokes(CurrentStokes());
+        spatial_data.set_value(cursor_value_with_current_stokes);
+
+        spatial_data_vec.push_back(spatial_data);
+        return true;
+    }
+
+    // When spatial configs is not empty
     // Get point region spatial configs with respect to the stokes (key)
     std::unordered_map<int, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>> point_regions_spatial_configs;
 
@@ -1084,17 +1109,17 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
         bool is_current_stokes(stokes == CurrentStokes());
 
-        if (_image_cache_valid) {
-            bool write_lock(false);
-            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-            cursor_value = _image_cache[(y * _width) + x];
-            cache_lock.release();
-        } else if (_loader->UseTileCache()) {
-            int tile_x = tile_index(x);
-            int tile_y = tile_index(y);
-            auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
-            auto tile_width = tile_size(tile_x, _width);
-            cursor_value = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
+        float cursor_value(0.0);
+
+        // Get the cursor value with stokes
+        if (is_current_stokes) {
+            cursor_value = cursor_value_with_current_stokes;
+        } else {
+            casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
+            std::vector<float> data;
+            if (GetSlicerData(section, data)) {
+                cursor_value = data[0];
+            }
         }
 
         // set message fields
