@@ -1524,7 +1524,9 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
     } else if (region_id < CURSOR_REGION_ID) {
         // Image or cube histogram
         if (_frames.count(file_id)) {
-            if (region_id == CUBE_REGION_ID) { // not in cache, calculate cube histogram
+            bool filled_by_frame(_frames.at(file_id)->FillRegionHistogramData(region_histogram_data_callback, region_id, file_id));
+
+            if (!filled_by_frame && region_id == CUBE_REGION_ID) { // not in cache, calculate cube histogram
                 CARTA::RegionHistogramData histogram_data;
                 histogram_data.set_file_id(file_id);
                 histogram_data.set_region_id(region_id);
@@ -1532,8 +1534,6 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, 0, histogram_data);
                     data_sent = true;
                 }
-            } else {
-                _frames.at(file_id)->FillRegionHistogramData(region_histogram_data_callback, region_id, file_id);
             }
         }
     } else {
