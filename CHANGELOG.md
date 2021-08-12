@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* Fixed bug of duplicate histogram calculation ([#905](https://github.com/CARTAvis/carta-backend/pull/905)).
+
 ## [3.0.0-beta.1b]
 
 ### Fixed
@@ -11,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed control points record for polygon / line / polyline ([#891](https://github.com/CARTAvis/carta-backend/issues/891)).
 * Fixed bug causing cube histogram to be generated even if it was available in an HDF5 file ([#899](https://github.com/CARTAvis/carta-backend/issues/899)).
 * Fixed bug of missing cursor values for matched images ([#900](https://github.com/CARTAvis/carta-backend/issues/900)).
-* Fixed bug of duplicate histogram calculation ([#905](https://github.com/CARTAvis/carta-backend/pull/905)).
 
 ## [3.0.0-beta.1]
 
