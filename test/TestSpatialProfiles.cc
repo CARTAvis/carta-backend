@@ -583,7 +583,7 @@ TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
         EXPECT_EQ(data.y(), y);
         EXPECT_EQ(data.channel(), channel);
         EXPECT_EQ(data.stokes(), spatial_config_stokes);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(x, y, channel, stokes));
+        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -715,7 +715,7 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
         EXPECT_EQ(data.y(), y);
         EXPECT_EQ(data.channel(), channel);
         EXPECT_EQ(data.stokes(), spatial_config_stokes);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(x, y, channel, stokes));
+        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);

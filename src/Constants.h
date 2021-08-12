@@ -10,7 +10,7 @@
 #define CARTA_BACKEND__CONSTANTS_H_
 
 // version
-#define VERSION_ID "3.0.0-beta.1"
+#define VERSION_ID "3.0.0-beta.1b"
 
 // thread counts
 #define OMP_THREAD_COUNT -1
