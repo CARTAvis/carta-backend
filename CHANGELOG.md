@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Fixed control points record for polygon / line / polyline ([#891](https://github.com/CARTAvis/carta-backend/issues/891)).
 * Fixed bug causing cube histogram to be generated even if it was available in an HDF5 file ([#899](https://github.com/CARTAvis/carta-backend/issues/899)).
+* Fixed bug of missing cursor values for matched images ([#900](https://github.com/CARTAvis/carta-backend/issues/900))
 
 ## [3.0.0-beta.1]
 
