@@ -940,10 +940,6 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 y(i) = _region_state.control_points[i].y();
             }
 
-            // LCPolygon::toRecord includes last point as first point to close region
-            x(npoints) = _region_state.control_points[0].x();
-            y(npoints) = _region_state.control_points[0].y();
-
             if (_region_state.type == CARTA::RegionType::POLYGON) {
                 // LCPolygon::toRecord includes first point as last point to close region
                 x.resize(npoints + 1, true);
