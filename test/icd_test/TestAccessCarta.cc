@@ -28,10 +28,11 @@ public:
         // Resulting message
         std::pair<std::vector<char>, bool> message_pair;
 
+        int message_count = 0;
+
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            EXPECT_EQ(event_type, CARTA::EventType::REGISTER_VIEWER_ACK);
 
             if (event_type == CARTA::EventType::REGISTER_VIEWER_ACK) {
                 CARTA::RegisterViewerAck register_viewer_ack = DecodeMessage<CARTA::RegisterViewerAck>(message);
@@ -46,7 +47,10 @@ public:
                     EXPECT_EQ(register_viewer_ack.message().length(), 0);
                 }
             }
+            ++message_count;
         }
+
+        EXPECT_EQ(message_count, 1);
     }
 };
 

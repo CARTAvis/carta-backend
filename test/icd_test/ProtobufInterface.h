@@ -20,6 +20,8 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
 CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int32_t region_id);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
+void LogReceiveEventType(const CARTA::EventType& event_type);
+void LogResponseEventType(const CARTA::EventType& event_type);
 
 template <typename T>
 T DecodeMessage(std::vector<char>& message) {
