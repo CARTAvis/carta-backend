@@ -49,7 +49,8 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
+    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode,
+    bool use_tbb_task)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -59,6 +60,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
       _read_only_mode(read_only_mode),
+      _use_tbb_task(use_tbb_task),
       _loader(nullptr),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
@@ -709,8 +711,12 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
     // update data streams if requirements set and region changed
     if (success && _region_handler->RegionChanged(region_id)) {
-        OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) RegionDataStreamsTask(this, ALL_FILES, region_id);
-        tbb::task::enqueue(*tsk);
+        if (_use_tbb_task) {
+            OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) RegionDataStreamsTask(this, ALL_FILES, region_id);
+            tbb::task::enqueue(*tsk);
+        } else {
+            RegionDataStreams(file_id, region_id);
+        }
     }
 
     return success;
@@ -916,9 +922,12 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         }
 
         if (requirements_set) {
-            // RESPONSE
-            OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
-            tbb::task::enqueue(*tsk);
+            if (_use_tbb_task) {
+                OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
+                tbb::task::enqueue(*tsk);
+            } else {
+                SendSpectralProfileData(file_id, region_id);
+            }
         } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
             string error = fmt::format("Spectral requirements not valid for region id {}", region_id);
             SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
@@ -2033,8 +2042,20 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
-            tbb::task::enqueue(*tsk);
+            if (_use_tbb_task) {
+                OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
+                tbb::task::enqueue(*tsk);
+            } else {
+                if (ExecuteAnimationFrame()) {
+                    if (CalculateAnimationFlowWindow() > CurrentFlowWindowSize()) {
+                        SetWaitingTask(true);
+                    } else {
+                        if (!WaitingFlowEvent()) {
+                            CancelAnimation();
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -64,7 +64,8 @@ struct PerSocketData {
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false);
+        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false,
+        bool use_tbb_task = true);
     ~Session();
 
     // CARTA ICD
@@ -271,6 +272,7 @@ private:
     std::string _starting_folder;
     int _grpc_port;
     bool _read_only_mode;
+    bool _use_tbb_task;
 
     // File browser
     FileListHandler* _file_list_handler;
