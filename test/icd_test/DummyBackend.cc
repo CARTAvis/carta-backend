@@ -15,9 +15,12 @@ DummyBackend::DummyBackend() {
     std::string top_level_folder("/");
     std::string starting_folder("data/images");
     int grpc_port(-1);
+    bool read_only_mode(false);
+    bool use_tbb_task(false);
 
     _file_list_handler = new FileListHandler(top_level_folder, starting_folder);
-    _session = new Session(nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port);
+    _session = new Session(nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port,
+        read_only_mode, use_tbb_task);
 }
 
 DummyBackend::~DummyBackend() {

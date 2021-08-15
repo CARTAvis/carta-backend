@@ -5,7 +5,6 @@
 */
 
 #include "BackendTester.h"
-#include "ProtobufInterface.h"
 
 using namespace std;
 

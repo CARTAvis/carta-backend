@@ -106,6 +106,42 @@ CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int
     return set_histogram_requirements;
 }
 
+CARTA::AddRequiredTiles GetAddRequiredTiles(int32_t file_id, CARTA::CompressionType compression_type, float compression_quality) {
+    LogReceiveEventType(CARTA::EventType::ADD_REQUIRED_TILES);
+
+    CARTA::AddRequiredTiles add_required_tiles;
+    add_required_tiles.set_file_id(file_id);
+    add_required_tiles.set_compression_type(compression_type);
+    add_required_tiles.set_compression_quality(compression_quality);
+    add_required_tiles.add_tiles(0);
+    return add_required_tiles;
+}
+
+CARTA::Point GetPoint(int x, int y) {
+    CARTA::Point point;
+    point.set_x(x);
+    point.set_y(y);
+    return point;
+}
+
+CARTA::SetRegion GetSetRegion(
+    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, vector<CARTA::Point> control_points, float rotation) {
+    LogReceiveEventType(CARTA::EventType::SET_REGION);
+
+    CARTA::SetRegion set_region;
+    set_region.set_file_id(file_id);
+    set_region.set_region_id(region_id);
+    auto* region_info = set_region.mutable_region_info();
+    region_info->set_region_type(region_type);
+    region_info->set_rotation(rotation);
+    for (auto control_point : control_points) {
+        auto* point = region_info->add_control_points();
+        point->set_x(control_point.x());
+        point->set_y(control_point.y());
+    }
+    return set_region;
+}
+
 CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

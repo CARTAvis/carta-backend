@@ -13,6 +13,7 @@
 
 #include "../CommonTestUtilities.h"
 #include "DummyBackend.h"
+#include "ProtobufInterface.h"
 
 bool FileExists(string filename);
 
