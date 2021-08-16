@@ -14,13 +14,12 @@ public:
     ~TestAnimatorNavigation() = default;
 
     void AnimatorNavigation() {
-        // check the existence of sample files
-        if (!FileExists(Hdf5ImagePath("HH211_IQU.hdf5"))) {
-            return;
-        }
-        if (!FileExists(Hdf5ImagePath("M17_SWex.hdf5"))) {
-            return;
-        }
+        // Generate two HDF5 images
+        auto first_filename_path_string = ImageGenerator::GeneratedHdf5ImagePath("1049 1049 5 3");
+        std::filesystem::path first_filename_path(first_filename_path_string);
+
+        auto second_filename_path_string = ImageGenerator::GeneratedHdf5ImagePath("640 800 25 1");
+        std::filesystem::path second_filename_path(second_filename_path_string);
 
         int message_count = 0;
 
@@ -48,7 +47,8 @@ public:
 
         _dummy_backend->ReceiveMessage(close_file);
 
-        CARTA::OpenFile open_file = GetOpenFile(Hdf5ImagePath(""), "HH211_IQU.hdf5", "0", 0, CARTA::RenderMode::RASTER);
+        CARTA::OpenFile open_file =
+            GetOpenFile(first_filename_path.parent_path(), first_filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
 
         ElapsedTimer timer;
         timer.Start();
@@ -109,7 +109,7 @@ public:
 
         EXPECT_EQ(message_count, 3);
 
-        open_file = GetOpenFile(Hdf5ImagePath(""), "M17_SWex.hdf5", "0", 1, CARTA::RenderMode::RASTER);
+        open_file = GetOpenFile(second_filename_path.parent_path(), second_filename_path.filename(), "0", 1, CARTA::RenderMode::RASTER);
 
         _dummy_backend->ReceiveMessage(open_file);
 

@@ -14,10 +14,9 @@ public:
     ~TestRegionRegister() = default;
 
     void RegionRegister() {
-        // check the existence of sample files
-        if (!FileExists(FitsImagePath("M17_SWex.fits"))) {
-            return;
-        }
+        // Generate a FITS image
+        auto filename_path_string = ImageGenerator::GeneratedFitsImagePath("640 800 25 1");
+        std::filesystem::path filename_path(filename_path_string);
 
         int message_count = 0;
 
@@ -45,7 +44,7 @@ public:
 
         _dummy_backend->ReceiveMessage(close_file);
 
-        CARTA::OpenFile open_file = GetOpenFile(FitsImagePath(""), "M17_SWex.fits", "0", 0, CARTA::RenderMode::RASTER);
+        CARTA::OpenFile open_file = GetOpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->ReceiveMessage(open_file);
 
