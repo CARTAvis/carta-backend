@@ -69,6 +69,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
 
     EXPECT_TRUE(settings.frontend_folder.empty());
     EXPECT_TRUE(settings.files.empty());
+    EXPECT_TRUE(settings.use_tbb_task);
 
     EXPECT_EQ(settings.port.size(), 0);
     EXPECT_EQ(settings.grpc_port, -1);
@@ -93,7 +94,8 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
-        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode");
+        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode"
+        " --use_tbb_task");
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
@@ -108,6 +110,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.debug_no_auth, true);
     EXPECT_EQ(settings.read_only_mode, true);
+    EXPECT_EQ(settings.use_tbb_task, true);
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesShort) {
@@ -240,7 +243,8 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "frontend_folder": "/var",
         "exit_timeout": 10,
         "initial_timeout": 11,
-        "read_only_mode": true
+        "read_only_mode": true,
+        "use_tbb_task": false
     })";
     nlohmann::json j = nlohmann::json::parse(json_string);
 
@@ -260,13 +264,14 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.read_only_mode, true);
+    EXPECT_EQ(settings.use_tbb_task, false);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     const std::string input = DataPath("settings-good-fields.json");
     carta::ProgramSettings settings;
     auto j = settings.JSONSettingsFromFile(input);
-    EXPECT_EQ(j.size(), 13);
+    EXPECT_EQ(j.size(), 14);
     EXPECT_EQ(j["verbosity"], 5);
     EXPECT_EQ(j["port"][0], 1234);
     EXPECT_EQ(j["grpc_port"], 5678);
@@ -280,6 +285,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     EXPECT_EQ(j["top_level_folder"], "/tmp");
     EXPECT_EQ(j["frontend_folder"], "/var");
     EXPECT_EQ(j["read_only_mode"], true);
+    EXPECT_EQ(j["use_tbb_task"], false);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
@@ -309,6 +315,7 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.read_only_mode, true);
+    EXPECT_EQ(settings.use_tbb_task, false);
 }
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
@@ -329,4 +336,5 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
     EXPECT_EQ(settings.read_only_mode, false);
+    EXPECT_EQ(settings.use_tbb_task, true);
 }
