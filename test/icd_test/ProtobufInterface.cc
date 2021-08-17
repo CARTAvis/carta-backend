@@ -142,6 +142,27 @@ CARTA::SetRegion GetSetRegion(
     return set_region;
 }
 
+CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id, string coordinate) {
+    LogReceiveEventType(CARTA::EventType::SET_STATS_REQUIREMENTS);
+
+    CARTA::SetStatsRequirements set_stats_requirements;
+    set_stats_requirements.set_file_id(file_id);
+    set_stats_requirements.set_region_id(region_id);
+    auto* stats_configs = set_stats_requirements.add_stats_configs();
+    stats_configs->set_coordinate(coordinate);
+    stats_configs->add_stats_types(CARTA::StatsType::NumPixels);
+    stats_configs->add_stats_types(CARTA::StatsType::Sum);
+    stats_configs->add_stats_types(CARTA::StatsType::FluxDensity);
+    stats_configs->add_stats_types(CARTA::StatsType::Mean);
+    stats_configs->add_stats_types(CARTA::StatsType::RMS);
+    stats_configs->add_stats_types(CARTA::StatsType::Sigma);
+    stats_configs->add_stats_types(CARTA::StatsType::SumSq);
+    stats_configs->add_stats_types(CARTA::StatsType::Min);
+    stats_configs->add_stats_types(CARTA::StatsType::Max);
+    stats_configs->add_stats_types(CARTA::StatsType::Extrema);
+    return set_stats_requirements;
+}
+
 CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);
