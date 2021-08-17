@@ -8,12 +8,12 @@
 
 using namespace std;
 
-class TestRegionStatisticsRectangle : public BackendTester {
+class TestRegionStatisticsEllipse : public BackendTester {
 public:
-    TestRegionStatisticsRectangle() {}
-    ~TestRegionStatisticsRectangle() = default;
+    TestRegionStatisticsEllipse() {}
+    ~TestRegionStatisticsEllipse() = default;
 
-    void RegionStatisticsRectangle() {
+    void RegionStatisticsEllipse() {
         // Generate a FITS image
         auto filename_path_string = ImageGenerator::GeneratedFitsImagePath("640 800 25 1");
         std::filesystem::path filename_path(filename_path_string);
@@ -74,7 +74,7 @@ public:
 
         EXPECT_EQ(message_count, 4);
 
-        auto set_region = GetSetRegion(0, -1, CARTA::RegionType::RECTANGLE, {GetPoint(212, 464), GetPoint(10, 10)}, 0);
+        auto set_region = GetSetRegion(0, -1, CARTA::RegionType::ELLIPSE, {GetPoint(114, 545), GetPoint(4, 2)}, 0);
 
         _dummy_backend->ReceiveMessage(set_region);
 
@@ -108,31 +108,31 @@ public:
                 EXPECT_EQ(region_stats_data.region_id(), 1);
                 for (int i = 0; i < region_stats_data.statistics_size(); ++i) {
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::NumPixels) {
-                        EXPECT_EQ(region_stats_data.statistics(i).value(), 121);
+                        EXPECT_EQ(region_stats_data.statistics(i).value(), 24);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Sum) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 15.13743);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 9.4404621);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Mean) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 0.12510273);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 0.3933526);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::RMS) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1.0475972);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 0.9301033);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Sigma) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1.0444252);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 0.86095959);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::SumSq) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 132.79263);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 20.762211);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Min) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), -2.82131);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), -1.3681358);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Max) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 2.9250579);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 2.129252);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Extrema) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 2.9250579);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 2.129252);
                     }
                 }
             }
@@ -143,6 +143,6 @@ public:
     }
 };
 
-TEST_F(TestRegionStatisticsRectangle, REGION_STATISTICS_RECTANGLE) {
-    RegionStatisticsRectangle();
+TEST_F(TestRegionStatisticsEllipse, REGION_STATISTICS_ELLIPSE) {
+    RegionStatisticsEllipse();
 }

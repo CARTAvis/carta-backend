@@ -8,12 +8,12 @@
 
 using namespace std;
 
-class TestRegionStatisticsRectangle : public BackendTester {
+class TestRegionStatisticsPolygon : public BackendTester {
 public:
-    TestRegionStatisticsRectangle() {}
-    ~TestRegionStatisticsRectangle() = default;
+    TestRegionStatisticsPolygon() {}
+    ~TestRegionStatisticsPolygon() = default;
 
-    void RegionStatisticsRectangle() {
+    void RegionStatisticsPolygon() {
         // Generate a FITS image
         auto filename_path_string = ImageGenerator::GeneratedFitsImagePath("640 800 25 1");
         std::filesystem::path filename_path(filename_path_string);
@@ -74,7 +74,7 @@ public:
 
         EXPECT_EQ(message_count, 4);
 
-        auto set_region = GetSetRegion(0, -1, CARTA::RegionType::RECTANGLE, {GetPoint(212, 464), GetPoint(10, 10)}, 0);
+        auto set_region = GetSetRegion(0, -1, CARTA::RegionType::POLYGON, {GetPoint(155, 552), GetPoint(134, 498), GetPoint(185, 509)}, 0);
 
         _dummy_backend->ReceiveMessage(set_region);
 
@@ -108,31 +108,31 @@ public:
                 EXPECT_EQ(region_stats_data.region_id(), 1);
                 for (int i = 0; i < region_stats_data.statistics_size(); ++i) {
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::NumPixels) {
-                        EXPECT_EQ(region_stats_data.statistics(i).value(), 121);
+                        EXPECT_EQ(region_stats_data.statistics(i).value(), 1265);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Sum) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 15.13743);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), -30.909576);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Mean) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 0.12510273);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), -0.024434447861110917);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::RMS) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1.0475972);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1.0214167309538988);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Sigma) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1.0444252);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1.021528273243882);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::SumSq) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 132.79263);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 1319.7645549147749);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Min) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), -2.82131);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), -3.2216286659240723);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Max) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 2.9250579);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 3.631831169128418);
                     }
                     if (region_stats_data.statistics(i).stats_type() == CARTA::StatsType::Extrema) {
-                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 2.9250579);
+                        EXPECT_FLOAT_EQ(region_stats_data.statistics(i).value(), 3.631831169128418);
                     }
                 }
             }
@@ -143,6 +143,6 @@ public:
     }
 };
 
-TEST_F(TestRegionStatisticsRectangle, REGION_STATISTICS_RECTANGLE) {
-    RegionStatisticsRectangle();
+TEST_F(TestRegionStatisticsPolygon, REGION_STATISTICS_POLYGON) {
+    RegionStatisticsPolygon();
 }

@@ -67,6 +67,8 @@ set(TEST_ICD_SOURCES
         icd_test/TestAccessCarta.cc
         icd_test/TestAnimatorDataStream.cc
         icd_test/TestAnimatorNavigation.cc
+        icd_test/TestRegionStatisticsEllipse.cc
+        icd_test/TestRegionStatisticsPolygon.cc
         icd_test/TestRegionStatisticsRectangle.cc
         icd_test/TestRegionRegister.cc
         TestMain.cc)
