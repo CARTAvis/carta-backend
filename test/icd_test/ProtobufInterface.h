@@ -23,6 +23,7 @@ CARTA::Point GetPoint(int x, int y);
 CARTA::SetRegion GetSetRegion(
     int32_t file_id, int32_t region_id, CARTA::RegionType region_type, vector<CARTA::Point> control_points, float rotation);
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id, string coordinate);
+CARTA::SetSpectralRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id, string coordinate);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
 void LogReceiveEventType(const CARTA::EventType& event_type);

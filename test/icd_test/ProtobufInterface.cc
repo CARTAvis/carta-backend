@@ -163,6 +163,27 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
     return set_stats_requirements;
 }
 
+CARTA::SetSpectralRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id, string coordinate) {
+    LogReceiveEventType(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS);
+
+    CARTA::SetSpectralRequirements set_spectral_requirements;
+    set_spectral_requirements.set_file_id(file_id);
+    set_spectral_requirements.set_region_id(region_id);
+    auto* spectral_profiles = set_spectral_requirements.add_spectral_profiles();
+    spectral_profiles->set_coordinate(coordinate);
+    spectral_profiles->add_stats_types(CARTA::StatsType::NumPixels);
+    spectral_profiles->add_stats_types(CARTA::StatsType::Sum);
+    spectral_profiles->add_stats_types(CARTA::StatsType::FluxDensity);
+    spectral_profiles->add_stats_types(CARTA::StatsType::Mean);
+    spectral_profiles->add_stats_types(CARTA::StatsType::RMS);
+    spectral_profiles->add_stats_types(CARTA::StatsType::Sigma);
+    spectral_profiles->add_stats_types(CARTA::StatsType::SumSq);
+    spectral_profiles->add_stats_types(CARTA::StatsType::Min);
+    spectral_profiles->add_stats_types(CARTA::StatsType::Max);
+    spectral_profiles->add_stats_types(CARTA::StatsType::Extrema);
+    return set_spectral_requirements;
+}
+
 CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);
