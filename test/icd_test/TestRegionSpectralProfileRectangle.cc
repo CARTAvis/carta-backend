@@ -56,7 +56,7 @@ public:
 
         EXPECT_EQ(message_count, 2);
 
-        auto add_required_tiles = GetAddRequiredTiles(0, CARTA::CompressionType::ZFP, 11);
+        auto add_required_tiles = GetAddRequiredTiles(0, CARTA::CompressionType::ZFP, 11, std::vector<float>{0});
 
         _dummy_backend->ReceiveMessage(add_required_tiles);
 
@@ -94,7 +94,7 @@ public:
 
         EXPECT_EQ(message_count, 1);
 
-        auto set_spectral_requirements = GetSetSpatialRequirements(0, 1, "z");
+        auto set_spectral_requirements = GetSetSpectralRequirements(0, 1, "z");
 
         _dummy_backend->ReceiveMessage(set_spectral_requirements);
 

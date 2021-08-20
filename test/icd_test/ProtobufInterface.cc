@@ -106,14 +106,17 @@ CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int
     return set_histogram_requirements;
 }
 
-CARTA::AddRequiredTiles GetAddRequiredTiles(int32_t file_id, CARTA::CompressionType compression_type, float compression_quality) {
+CARTA::AddRequiredTiles GetAddRequiredTiles(
+    int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles) {
     LogReceiveEventType(CARTA::EventType::ADD_REQUIRED_TILES);
 
     CARTA::AddRequiredTiles add_required_tiles;
     add_required_tiles.set_file_id(file_id);
     add_required_tiles.set_compression_type(compression_type);
     add_required_tiles.set_compression_quality(compression_quality);
-    add_required_tiles.add_tiles(0);
+    for (int i = 0; i < tiles.size(); ++i) {
+        add_required_tiles.add_tiles(tiles[i]);
+    }
     return add_required_tiles;
 }
 
@@ -163,7 +166,7 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
     return set_stats_requirements;
 }
 
-CARTA::SetSpectralRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id, string coordinate) {
+CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32_t region_id, string coordinate) {
     LogReceiveEventType(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS);
 
     CARTA::SetSpectralRequirements set_spectral_requirements;
@@ -183,6 +186,42 @@ CARTA::SetSpectralRequirements GetSetSpatialRequirements(int32_t file_id, int32_
     spectral_profiles->add_stats_types(CARTA::StatsType::Extrema);
     return set_spectral_requirements;
 }
+
+CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame, std::pair<int32_t, int32_t> start_frame,
+    std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame, CARTA::CompressionType compression_type,
+    float compression_quality, const std::vector<float>& tiles) {
+    LogReceiveEventType(CARTA::EventType::START_ANIMATION);
+
+    CARTA::StartAnimation start_animation;
+    auto* mutable_first_frame = start_animation.mutable_first_frame();
+    mutable_first_frame->set_channel(first_frame.first);
+    mutable_first_frame->set_stokes(first_frame.second);
+
+    auto* mutable_start_frame = start_animation.mutable_start_frame();
+    mutable_start_frame->set_channel(start_frame.first);
+    mutable_start_frame->set_stokes(start_frame.second);
+
+    auto* mutable_last_frame = start_animation.mutable_last_frame();
+    mutable_last_frame->set_channel(last_frame.first);
+    mutable_last_frame->set_stokes(last_frame.second);
+
+    auto* mutable_delta_frame = start_animation.mutable_delta_frame();
+    mutable_delta_frame->set_channel(delta_frame.first);
+    mutable_delta_frame->set_stokes(delta_frame.second);
+
+    auto* mutable_required_tiles = start_animation.mutable_required_tiles();
+    mutable_required_tiles->set_file_id(file_id);
+    mutable_required_tiles->set_compression_type(compression_type);
+    mutable_required_tiles->set_compression_quality(compression_quality);
+
+    for (int i = 0; i < tiles.size(); ++i) {
+        mutable_required_tiles->add_tiles(tiles[i]);
+    }
+
+    return start_animation;
+}
+
+//--------------------------------------------------------
 
 CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());

@@ -18,12 +18,16 @@ CARTA::SetCursor GetSetCursor(int32_t file_id, float x, float y);
 CARTA::SetSpatialRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id);
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id);
 CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int32_t region_id);
-CARTA::AddRequiredTiles GetAddRequiredTiles(int32_t file_id, CARTA::CompressionType compression_type, float compression_quality);
+CARTA::AddRequiredTiles GetAddRequiredTiles(
+    int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
 CARTA::Point GetPoint(int x, int y);
 CARTA::SetRegion GetSetRegion(
     int32_t file_id, int32_t region_id, CARTA::RegionType region_type, vector<CARTA::Point> control_points, float rotation);
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id, string coordinate);
-CARTA::SetSpectralRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id, string coordinate);
+CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32_t region_id, string coordinate);
+CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame, std::pair<int32_t, int32_t> start_frame,
+    std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame, CARTA::CompressionType compression_type,
+    float compression_quality, const std::vector<float>& tiles);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
 void LogReceiveEventType(const CARTA::EventType& event_type);
