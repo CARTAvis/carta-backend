@@ -13,7 +13,12 @@
 
 #include <carta-protobuf/enums.pb.h>
 
-#include "Constants.h"
+#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
+#define ROTATED_LOG_FILES 5
+#define STDOUT_TAG "stdout"
+#define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+#define PERF_TAG "performance"
+#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
 
 // customize the log function for performance
 namespace spdlog {

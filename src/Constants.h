@@ -83,14 +83,6 @@
 #define DEFAULT_SOCKET_PORT 3002
 #define MAX_SOCKET_PORT_TRIALS 100
 
-// logger
-#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
-#define ROTATED_LOG_FILES 5
-#define STDOUT_TAG "stdout"
-#define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
-#define PERF_TAG "performance"
-#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
-
 // User preferences
 #ifndef CARTA_USER_FOLDER_PREFIX
 #define CARTA_USER_FOLDER_PREFIX ".carta"
