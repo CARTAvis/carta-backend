@@ -11,6 +11,5 @@
     "frontend_folder": "/var",
     "exit_timeout": 10,
     "initial_timeout": 11,
-    "read_only_mode": true,
-    "use_tbb_task": false
+    "read_only_mode": true
 }

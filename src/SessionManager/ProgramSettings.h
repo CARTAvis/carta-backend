@@ -41,7 +41,6 @@ struct ProgramSettings {
     int init_wait_time = -1;
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
-    bool use_tbb_task = true;
 
     std::string browser;
 
@@ -68,8 +67,7 @@ struct ProgramSettings {
         {"log_protocol_messages", &log_protocol_messages},
         {"no_http", &no_http},
         {"no_browser", &no_browser},
-        {"read_only_mode", &read_only_mode},
-        {"use_tbb_task", &use_tbb_task}
+        {"read_only_mode", &read_only_mode}
     };
 
     std::unordered_map<std::string, std::string*> strings_keys_map{

@@ -11,6 +11,5 @@
     "frontend_folder": 1,
     "exit_timeout": false,
     "initial_timeout": false,
-    "read_only_mode": "yes",
-    "use_tbb_task": "no"
+    "read_only_mode": "yes"
 }

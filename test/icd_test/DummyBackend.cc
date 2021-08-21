@@ -6,6 +6,9 @@
 
 #include "DummyBackend.h"
 
+#include <chrono>
+#include <thread>
+
 static const uint16_t DUMMY_ICD_VERSION(ICD_VERSION);
 static const uint32_t DUMMY_REQUEST_ID(0);
 
@@ -16,11 +19,12 @@ DummyBackend::DummyBackend() {
     std::string starting_folder("data/images");
     int grpc_port(-1);
     bool read_only_mode(false);
-    bool use_tbb_task(false);
 
     _file_list_handler = new FileListHandler(top_level_folder, starting_folder);
-    _session = new Session(nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port,
-        read_only_mode, use_tbb_task);
+    _session = new Session(
+        nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port, read_only_mode);
+
+    _session->IncreaseRefCount(); // increase the reference count to avoid being deleted by the OnMessageTask
 }
 
 DummyBackend::~DummyBackend() {
@@ -139,6 +143,7 @@ void DummyBackend::ReceiveMessage(CARTA::RemoveRegion message) {
 
 void DummyBackend::ReceiveMessage(CARTA::SetSpectralRequirements message) {
     _session->OnSetSpectralRequirements(message);
+    WaitJobFinished();
 }
 
 void DummyBackend::ReceiveMessage(CARTA::CatalogFileInfoRequest message) {
@@ -215,4 +220,10 @@ bool DummyBackend::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& messa
 
 void DummyBackend::ClearMessagesQueue() {
     _session->ClearMessagesQueue();
+}
+
+void DummyBackend::WaitJobFinished() {
+    while (_session->GetRefCount() > 1) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
 }

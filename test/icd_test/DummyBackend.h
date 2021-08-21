@@ -55,6 +55,8 @@ public:
     void ClearMessagesQueue();
 
 private:
+    void WaitJobFinished();
+
     FileListHandler* _file_list_handler;
     Session* _session;
 };
