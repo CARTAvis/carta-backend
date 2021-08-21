@@ -224,7 +224,7 @@ void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view 
                         } else {
                             session->ResetHistContext();
                             tsk = new (tbb::task::allocate_root(session->HistContext()))
-                                SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                                SetHistogramRequirementsTask(session, message, head.request_id);
                         }
                     } else {
                         spdlog::warn("Bad SET_HISTOGRAM_REQUIREMENTS message!");

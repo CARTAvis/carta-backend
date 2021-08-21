@@ -5,6 +5,7 @@
 */
 
 #include "DummyBackend.h"
+#include "OnMessageTask.h"
 
 #include <chrono>
 #include <thread>
@@ -46,18 +47,18 @@ void DummyBackend::ReceiveMessage(CARTA::ResumeSession message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
+    OnMessageTask* tsk = nullptr;
     _session->ImageChannelLock(message.file_id());
+    if (!_session->ImageChannelTaskTestAndSet(message.file_id())) {
+        tsk = new (tbb::task::allocate_root(_session->Context())) SetImageChannelsTask(_session, message.file_id());
+    }
+    // has its own queue to keep channels in order during animation
     _session->AddToSetChannelQueue(message, DUMMY_REQUEST_ID);
     _session->ImageChannelUnlock(message.file_id());
 
-    _session->ImageChannelLock(message.file_id());
-    std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
-    bool tester = _session->_set_channel_queues[message.file_id()].try_pop(request_pair);
-    _session->ImageChannelTaskSetIdle(message.file_id());
-    _session->ImageChannelUnlock(message.file_id());
-
-    if (tester) {
-        _session->ExecuteSetChannelEvt(request_pair);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+        WaitJobFinished();
     }
 }
 
@@ -67,10 +68,17 @@ void DummyBackend::ReceiveMessage(CARTA::SetCursor message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetHistogramRequirements message) {
-    if (!message.histograms_size()) {
+    OnMessageTask* tsk = nullptr;
+    if (message.histograms_size() == 0) {
         _session->CancelSetHistRequirements();
     } else {
-        _session->OnSetHistogramRequirements(message, DUMMY_REQUEST_ID);
+        _session->ResetHistContext();
+        tsk = new (tbb::task::allocate_root(_session->HistContext())) SetHistogramRequirementsTask(_session, message, DUMMY_REQUEST_ID);
+    }
+
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+        WaitJobFinished();
     }
 }
 
@@ -81,15 +89,11 @@ void DummyBackend::ReceiveMessage(CARTA::CloseFile message) {
 void DummyBackend::ReceiveMessage(CARTA::StartAnimation message) {
     _session->CancelExistingAnimation();
     _session->BuildAnimationObject(message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->AnimationContext())) AnimationTask(_session);
 
-    if (_session->ExecuteAnimationFrame()) {
-        if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
-            _session->SetWaitingTask(true);
-        }
-    } else {
-        if (!_session->WaitingFlowEvent()) {
-            _session->CancelAnimation();
-        }
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+        WaitJobFinished();
     }
 }
 
