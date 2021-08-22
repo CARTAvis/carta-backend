@@ -85,7 +85,7 @@ public:
 
         _dummy_backend->ReceiveMessage(set_image_channels);
 
-        _dummy_backend->WaitJobFinished();
+        _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
 
@@ -110,12 +110,14 @@ public:
         CARTA::SetCursor set_cursor = GetSetCursor(0, 319, 378);
 
         _dummy_backend->ReceiveMessage(set_cursor);
+        _dummy_backend->WaitForJobFinished();
 
         CARTA::SetSpatialRequirements set_spatial_requirements = GetSetSpatialRequirements(0, 0);
 
         timer.Start();
 
         _dummy_backend->ReceiveMessage(set_spatial_requirements);
+        _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 100);
 
@@ -144,6 +146,8 @@ public:
 
         _dummy_backend->ReceiveMessage(set_stats_requirements);
 
+        _dummy_backend->WaitForJobFinished();
+
         EXPECT_LT(timer.Elapsed(), 100);
 
         message_count = 0;
@@ -169,7 +173,7 @@ public:
 
         _dummy_backend->ReceiveMessage(set_histogram_requirements);
 
-        _dummy_backend->WaitJobFinished();
+        _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 100);
 
@@ -200,7 +204,7 @@ public:
 
         _dummy_backend->ReceiveMessage(set_image_channels);
 
-        _dummy_backend->WaitJobFinished();
+        _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
 

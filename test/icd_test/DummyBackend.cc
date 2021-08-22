@@ -55,7 +55,6 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
     // has its own queue to keep channels in order during animation
     _session->AddToSetChannelQueue(message, DUMMY_REQUEST_ID);
     _session->ImageChannelUnlock(message.file_id());
-
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
@@ -63,7 +62,10 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
 
 void DummyBackend::ReceiveMessage(CARTA::SetCursor message) {
     _session->AddCursorSetting(message, DUMMY_REQUEST_ID);
-    _session->_file_settings.ExecuteOne("SET_CURSOR", message.file_id());
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) SetCursorTask(_session, message.file_id());
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetHistogramRequirements message) {
@@ -74,7 +76,6 @@ void DummyBackend::ReceiveMessage(CARTA::SetHistogramRequirements message) {
         _session->ResetHistContext();
         tsk = new (tbb::task::allocate_root(_session->HistContext())) SetHistogramRequirementsTask(_session, message, DUMMY_REQUEST_ID);
     }
-
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
@@ -88,7 +89,6 @@ void DummyBackend::ReceiveMessage(CARTA::StartAnimation message) {
     _session->CancelExistingAnimation();
     _session->BuildAnimationObject(message, DUMMY_REQUEST_ID);
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->AnimationContext())) AnimationTask(_session);
-
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
@@ -111,7 +111,10 @@ void DummyBackend::ReceiveMessage(CARTA::OpenFile message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::AddRequiredTiles message) {
-    _session->OnAddRequiredTiles(message, _session->AnimationRunning());
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnAddRequiredTilesTask(_session, message);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::RegionFileInfoRequest message) {
@@ -127,7 +130,10 @@ void DummyBackend::ReceiveMessage(CARTA::ExportRegion message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetContourParameters message) {
-    _session->OnSetContourParameters(message);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSetContourParametersTask(_session, message);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::ScriptingResponse message) {
@@ -144,7 +150,6 @@ void DummyBackend::ReceiveMessage(CARTA::RemoveRegion message) {
 
 void DummyBackend::ReceiveMessage(CARTA::SetSpectralRequirements message) {
     _session->OnSetSpectralRequirements(message);
-    WaitJobFinished();
 }
 
 void DummyBackend::ReceiveMessage(CARTA::CatalogFileInfoRequest message) {
@@ -172,11 +177,17 @@ void DummyBackend::ReceiveMessage(CARTA::SaveFile message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SplataloguePing message) {
-    _session->OnSplataloguePing(DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSplataloguePingTask(_session, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SpectralLineRequest message) {
-    _session->OnSpectralLineRequest(message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSpectralLineRequestTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::ConcatStokesFiles message) {
@@ -192,28 +203,48 @@ void DummyBackend::ReceiveMessage(CARTA::StopFileList message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetSpatialRequirements message) {
-    _session->OnSetSpatialRequirements(message);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetStatsRequirements message) {
-    _session->OnSetStatsRequirements(message);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::MomentRequest message) {
-    _session->OnMomentRequest(message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::FileListRequest message) {
-    _session->OnFileListRequest(message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::RegionListRequest message) {
-    _session->OnRegionListRequest(message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::CatalogListRequest message) {
-    _session->OnCatalogFileList(message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    if (tsk) {
+        tbb::task::enqueue(*tsk);
+    }
 }
+
+//--------------------------------------------------------------
 
 bool DummyBackend::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
     return _session->TryPopMessagesQueue(message);
@@ -223,7 +254,7 @@ void DummyBackend::ClearMessagesQueue() {
     _session->ClearMessagesQueue();
 }
 
-void DummyBackend::WaitJobFinished() {
+void DummyBackend::WaitForJobFinished() {
     while (_session->GetRefCount() > 1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }

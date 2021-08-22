@@ -7,7 +7,39 @@
 #ifndef CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_
 #define CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_
 
+#include "OnMessageTask.h"
 #include "Session.h"
+
+template <typename T>
+class GeneralMessageTask : public OnMessageTask {
+    tbb::task* execute() {
+        if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
+            _session->OnSetSpatialRequirements(_message);
+        } else if constexpr (std::is_same_v<T, CARTA::SetStatsRequirements>) {
+            _session->OnSetStatsRequirements(_message);
+        } else if constexpr (std::is_same_v<T, CARTA::MomentRequest>) {
+            _session->OnMomentRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::FileListRequest>) {
+            _session->OnFileListRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::RegionListRequest>) {
+            _session->OnRegionListRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::CatalogListRequest>) {
+            _session->OnCatalogFileList(_message, _request_id);
+        } else {
+            spdlog::warn("Bad event type in GeneralMessageType!");
+        }
+        return nullptr;
+    };
+
+    T _message;
+    uint32_t _request_id;
+
+public:
+    GeneralMessageTask(Session* session, T message, uint32_t request_id)
+        : OnMessageTask(session), _message(message), _request_id(request_id) {}
+
+    ~GeneralMessageTask() = default;
+};
 
 class DummyBackend {
 public:
@@ -53,7 +85,7 @@ public:
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
     void ClearMessagesQueue();
-    void WaitJobFinished(); // wait parallel calculations finished
+    void WaitForJobFinished(); // wait for parallel calculations finished
 
 private:
     FileListHandler* _file_list_handler;

@@ -58,10 +58,12 @@ public:
         auto add_required_tiles = GetAddRequiredTiles(0, CARTA::CompressionType::ZFP, 11, std::vector<float>{0});
 
         _dummy_backend->ReceiveMessage(add_required_tiles);
+        _dummy_backend->WaitForJobFinished();
 
         auto set_cursor = GetSetCursor(0, 1, 1);
 
         _dummy_backend->ReceiveMessage(set_cursor);
+        _dummy_backend->WaitForJobFinished();
 
         message_count = 0;
 
