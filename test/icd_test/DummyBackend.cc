@@ -5,7 +5,6 @@
 */
 
 #include "DummyBackend.h"
-#include "OnMessageTask.h"
 
 #include <chrono>
 #include <thread>
@@ -203,42 +202,48 @@ void DummyBackend::ReceiveMessage(CARTA::StopFileList message) {
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetSpatialRequirements message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::SetSpatialRequirements>(_session, message, DUMMY_REQUEST_ID);
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::SetStatsRequirements message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::SetStatsRequirements>(_session, message, DUMMY_REQUEST_ID);
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::MomentRequest message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk =
+        new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask<CARTA::MomentRequest>(_session, message, DUMMY_REQUEST_ID);
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::FileListRequest message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk =
+        new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask<CARTA::FileListRequest>(_session, message, DUMMY_REQUEST_ID);
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::RegionListRequest message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::RegionListRequest>(_session, message, DUMMY_REQUEST_ID);
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
 }
 
 void DummyBackend::ReceiveMessage(CARTA::CatalogListRequest message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::CatalogListRequest>(_session, message, DUMMY_REQUEST_ID);
     if (tsk) {
         tbb::task::enqueue(*tsk);
     }
