@@ -53,10 +53,9 @@ public:
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
     void ClearMessagesQueue();
+    void WaitJobFinished(); // wait parallel calculations finished
 
 private:
-    void WaitJobFinished();
-
     FileListHandler* _file_list_handler;
     Session* _session;
 };

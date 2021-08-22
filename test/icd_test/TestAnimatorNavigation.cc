@@ -89,6 +89,8 @@ public:
 
         _dummy_backend->ReceiveMessage(set_image_channels);
 
+        _dummy_backend->WaitJobFinished();
+
         EXPECT_LT(timer.Elapsed(), 200);
 
         message_count = 0;
@@ -145,6 +147,8 @@ public:
 
         _dummy_backend->ReceiveMessage(set_image_channels);
 
+        _dummy_backend->WaitJobFinished();
+
         EXPECT_LT(timer.Elapsed(), 200);
 
         message_count = 0;
@@ -170,6 +174,8 @@ public:
         timer.Start();
 
         _dummy_backend->ReceiveMessage(set_image_channels);
+
+        _dummy_backend->WaitJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
 

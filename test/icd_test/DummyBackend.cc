@@ -58,7 +58,6 @@ void DummyBackend::ReceiveMessage(CARTA::SetImageChannels message) {
 
     if (tsk) {
         tbb::task::enqueue(*tsk);
-        WaitJobFinished();
     }
 }
 
@@ -78,7 +77,6 @@ void DummyBackend::ReceiveMessage(CARTA::SetHistogramRequirements message) {
 
     if (tsk) {
         tbb::task::enqueue(*tsk);
-        WaitJobFinished();
     }
 }
 
@@ -93,7 +91,6 @@ void DummyBackend::ReceiveMessage(CARTA::StartAnimation message) {
 
     if (tsk) {
         tbb::task::enqueue(*tsk);
-        WaitJobFinished();
     }
 }
 
