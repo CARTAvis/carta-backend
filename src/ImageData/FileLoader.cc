@@ -853,21 +853,9 @@ double FileLoader::CalculateBeamArea() {
 }
 
 void FileLoader::SetFirstStokesType(int stokes_value) {
-    switch (stokes_value) {
-        case 1:
-            _stokes_indices[CARTA::StokesType::I] = 0;
-            break;
-        case 2:
-            _stokes_indices[CARTA::StokesType::Q] = 0;
-            break;
-        case 3:
-            _stokes_indices[CARTA::StokesType::U] = 0;
-            break;
-        case 4:
-            _stokes_indices[CARTA::StokesType::V] = 0;
-            break;
-        default:
-            break;
+    CARTA::StokesType stokes_type = GetStokesType(stokes_value);
+    if (stokes_type != CARTA::StokesType::STOKES_TYPE_NONE) {
+        _stokes_indices[stokes_type] = 0;
     }
 }
 
