@@ -41,10 +41,11 @@ public:
     ~GeneralMessageTask() = default;
 };
 
-class DummyBackend {
+class BackendModel {
 public:
-    DummyBackend();
-    ~DummyBackend();
+    BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
+        std::string top_level_folder, std::string starting_folder, int grpc_port, bool read_only_mode);
+    ~BackendModel();
 
     void ReceiveMessage(CARTA::RegisterViewer message);
     void ReceiveMessage(CARTA::ResumeSession message);

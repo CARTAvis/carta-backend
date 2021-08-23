@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 
 #include "../CommonTestUtilities.h"
-#include "DummyBackend.h"
+#include "BackendModel.h"
 #include "ProtobufInterface.h"
 
 bool FileExists(string filename);
@@ -35,7 +35,7 @@ public:
     virtual ~BackendTester() = default;
 
 protected:
-    std::unique_ptr<DummyBackend> _dummy_backend;
+    std::unique_ptr<BackendModel> _dummy_backend;
 };
 
 #endif // CARTA_BACKEND_ICD_TEST_BACKENDTESTER_H_
