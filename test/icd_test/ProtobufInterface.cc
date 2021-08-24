@@ -237,6 +237,18 @@ CARTA::AnimationFlowControl GetAnimationFlowControl(int32_t file_id, std::pair<i
     return animation_flow_control;
 }
 
+CARTA::StopAnimation GetStopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame) {
+    LogRequestedEventType(CARTA::EventType::STOP_ANIMATION);
+
+    CARTA::StopAnimation stop_animation;
+    stop_animation.set_file_id(file_id);
+    auto* mutable_end_frame = stop_animation.mutable_end_frame();
+    mutable_end_frame->set_channel(end_frame.first);
+    mutable_end_frame->set_stokes(end_frame.second);
+
+    return stop_animation;
+}
+
 //--------------------------------------------------------
 
 CARTA::EventType GetEventType(std::vector<char>& message) {
