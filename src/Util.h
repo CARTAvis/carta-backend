@@ -65,18 +65,21 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
 // stokes types and value conversion
-static std::unordered_map<CARTA::StokesType, int> StokesValues{{CARTA::StokesType::I, 1}, {CARTA::StokesType::Q, 2}, {CARTA::StokesType::U, 3},
-    {CARTA::StokesType::V, 4}, {CARTA::StokesType::RR, 5}, {CARTA::StokesType::LL, 6}, {CARTA::StokesType::RL, 7}, {CARTA::StokesType::LR, 8},
-    {CARTA::StokesType::XX, 9}, {CARTA::StokesType::YY, 10}, {CARTA::StokesType::XY, 11}, {CARTA::StokesType::YX, 12}};
-static std::unordered_map<int, CARTA::StokesType> StokesTypes{{1, CARTA::StokesType::I}, {2, CARTA::StokesType::Q}, {3, CARTA::StokesType::U},
-    {4, CARTA::StokesType::V}, {5, CARTA::StokesType::RR}, {6, CARTA::StokesType::LL}, {7, CARTA::StokesType::RL}, {8, CARTA::StokesType::LR},
-    {9, CARTA::StokesType::XX}, {10, CARTA::StokesType::YY}, {11, CARTA::StokesType::XY}, {12, CARTA::StokesType::YX}};
+static std::unordered_map<CARTA::StokesType, int> StokesValues{{CARTA::StokesType::I, 1}, {CARTA::StokesType::Q, 2},
+    {CARTA::StokesType::U, 3}, {CARTA::StokesType::V, 4}, {CARTA::StokesType::RR, 5}, {CARTA::StokesType::LL, 6},
+    {CARTA::StokesType::RL, 7}, {CARTA::StokesType::LR, 8}, {CARTA::StokesType::XX, 9}, {CARTA::StokesType::YY, 10},
+    {CARTA::StokesType::XY, 11}, {CARTA::StokesType::YX, 12}};
+static std::unordered_map<int, CARTA::StokesType> StokesTypes{{1, CARTA::StokesType::I}, {2, CARTA::StokesType::Q},
+    {3, CARTA::StokesType::U}, {4, CARTA::StokesType::V}, {5, CARTA::StokesType::RR}, {6, CARTA::StokesType::LL},
+    {7, CARTA::StokesType::RL}, {8, CARTA::StokesType::LR}, {9, CARTA::StokesType::XX}, {10, CARTA::StokesType::YY},
+    {11, CARTA::StokesType::XY}, {12, CARTA::StokesType::YX}};
 int GetStokesValue(const CARTA::StokesType& stokes_type);
 CARTA::StokesType GetStokesType(int stokes_value);
 
-static std::unordered_map<string, CARTA::StokesType> StokesStringTypes{{"I", CARTA::StokesType::I}, {"Q", CARTA::StokesType::Q}, {"U", CARTA::StokesType::U},
-    {"V", CARTA::StokesType::V}, {"RR", CARTA::StokesType::RR}, {"LL", CARTA::StokesType::LL}, {"RL", CARTA::StokesType::RL}, {"LR", CARTA::StokesType::LR},
-    {"XX", CARTA::StokesType::XX}, {"YY", CARTA::StokesType::YY}, {"XY", CARTA::StokesType::XY}, {"YX", CARTA::StokesType::YX}};
+static std::unordered_map<string, CARTA::StokesType> StokesStringTypes{{"I", CARTA::StokesType::I}, {"Q", CARTA::StokesType::Q},
+    {"U", CARTA::StokesType::U}, {"V", CARTA::StokesType::V}, {"RR", CARTA::StokesType::RR}, {"LL", CARTA::StokesType::LL},
+    {"RL", CARTA::StokesType::RL}, {"LR", CARTA::StokesType::LR}, {"XX", CARTA::StokesType::XX}, {"YY", CARTA::StokesType::YY},
+    {"XY", CARTA::StokesType::XY}, {"YX", CARTA::StokesType::YX}};
 
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
