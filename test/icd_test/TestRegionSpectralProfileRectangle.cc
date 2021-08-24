@@ -19,11 +19,11 @@ public:
             return;
         }
 
-        int message_count = 0;
+        std::atomic<int> message_count = 0;
 
         CARTA::RegisterViewer register_viewer = GetRegisterViewer(0, "", 5);
 
-        _dummy_backend->ReceiveMessage(register_viewer);
+        _dummy_backend->Receive(register_viewer);
 
         // Resulting message
         std::pair<std::vector<char>, bool> message_pair;
@@ -31,7 +31,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
             ++message_count;
         }
 
@@ -39,18 +39,18 @@ public:
 
         CARTA::CloseFile close_file = GetCloseFile(-1);
 
-        _dummy_backend->ReceiveMessage(close_file);
+        _dummy_backend->Receive(close_file);
 
         CARTA::OpenFile open_file = GetOpenFile(LargeImagePath(""), "M17_SWex.image", "0", 0, CARTA::RenderMode::RASTER);
 
-        _dummy_backend->ReceiveMessage(open_file);
+        _dummy_backend->Receive(open_file);
 
         message_count = 0;
 
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
             ++message_count;
         }
 
@@ -58,12 +58,12 @@ public:
 
         auto add_required_tiles = GetAddRequiredTiles(0, CARTA::CompressionType::ZFP, 11, std::vector<float>{0});
 
-        _dummy_backend->ReceiveMessage(add_required_tiles);
+        _dummy_backend->Receive(add_required_tiles);
         _dummy_backend->WaitForJobFinished();
 
         auto set_cursor = GetSetCursor(0, 1, 1);
 
-        _dummy_backend->ReceiveMessage(set_cursor);
+        _dummy_backend->Receive(set_cursor);
         _dummy_backend->WaitForJobFinished();
 
         message_count = 0;
@@ -71,7 +71,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
             ++message_count;
         }
 
@@ -79,14 +79,14 @@ public:
 
         auto set_region = GetSetRegion(0, -1, CARTA::RegionType::RECTANGLE, {GetPoint(83, 489), GetPoint(4, 6)}, 0);
 
-        _dummy_backend->ReceiveMessage(set_region);
+        _dummy_backend->Receive(set_region);
 
         message_count = 0;
 
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -98,7 +98,7 @@ public:
 
         auto set_spectral_requirements = GetSetSpectralRequirements(0, 1, "z");
 
-        _dummy_backend->ReceiveMessage(set_spectral_requirements);
+        _dummy_backend->Receive(set_spectral_requirements);
         _dummy_backend->WaitForJobFinished();
 
         message_count = 0;
@@ -106,7 +106,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::SPECTRAL_PROFILE_DATA) {
                 auto spectral_profile_data = DecodeMessage<CARTA::SpectralProfileData>(message);

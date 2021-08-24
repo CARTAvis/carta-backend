@@ -21,18 +21,18 @@ public:
         auto second_filename_path_string = ImageGenerator::GeneratedHdf5ImagePath("640 800 25 1");
         std::filesystem::path second_filename_path(second_filename_path_string);
 
-        int message_count = 0;
+        std::atomic<int> message_count = 0;
 
         CARTA::RegisterViewer register_viewer = GetRegisterViewer(0, "", 5);
 
-        _dummy_backend->ReceiveMessage(register_viewer);
+        _dummy_backend->Receive(register_viewer);
 
         // Resulting message
         std::pair<std::vector<char>, bool> message_pair;
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::REGISTER_VIEWER_ACK) {
                 CARTA::RegisterViewerAck register_viewer_ack = DecodeMessage<CARTA::RegisterViewerAck>(message);
@@ -45,7 +45,7 @@ public:
 
         CARTA::CloseFile close_file = GetCloseFile(-1);
 
-        _dummy_backend->ReceiveMessage(close_file);
+        _dummy_backend->Receive(close_file);
 
         CARTA::OpenFile open_file =
             GetOpenFile(first_filename_path.parent_path(), first_filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
@@ -53,7 +53,7 @@ public:
         ElapsedTimer timer;
         timer.Start();
 
-        _dummy_backend->ReceiveMessage(open_file);
+        _dummy_backend->Receive(open_file);
 
         EXPECT_LT(timer.Elapsed(), 200);
 
@@ -62,7 +62,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
                 CARTA::OpenFileAck open_file_ack = DecodeMessage<CARTA::OpenFileAck>(message);
@@ -87,7 +87,7 @@ public:
 
         timer.Start();
 
-        _dummy_backend->ReceiveMessage(set_image_channels);
+        _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
@@ -97,7 +97,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
@@ -112,14 +112,14 @@ public:
 
         open_file = GetOpenFile(second_filename_path.parent_path(), second_filename_path.filename(), "0", 1, CARTA::RenderMode::RASTER);
 
-        _dummy_backend->ReceiveMessage(open_file);
+        _dummy_backend->Receive(open_file);
 
         message_count = 0;
 
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
                 CARTA::OpenFileAck open_file_ack = DecodeMessage<CARTA::OpenFileAck>(message);
@@ -144,7 +144,7 @@ public:
 
         timer.Start();
 
-        _dummy_backend->ReceiveMessage(set_image_channels);
+        _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
@@ -154,7 +154,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
@@ -171,7 +171,7 @@ public:
 
         timer.Start();
 
-        _dummy_backend->ReceiveMessage(set_image_channels);
+        _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
@@ -181,7 +181,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponseEventType(event_type);
+            LogResponsiveEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);

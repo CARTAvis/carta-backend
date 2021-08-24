@@ -28,10 +28,11 @@ CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32
 CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame, std::pair<int32_t, int32_t> start_frame,
     std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame, CARTA::CompressionType compression_type,
     float compression_quality, const std::vector<float>& tiles);
+CARTA::AnimationFlowControl GetAnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
-void LogReceiveEventType(const CARTA::EventType& event_type);
-void LogResponseEventType(const CARTA::EventType& event_type);
+void LogRequestedEventType(const CARTA::EventType& event_type);
+void LogResponsiveEventType(const CARTA::EventType& event_type);
 
 template <typename T>
 T DecodeMessage(std::vector<char>& message) {

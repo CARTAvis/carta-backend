@@ -7,7 +7,7 @@
 #include "ProtobufInterface.h"
 
 CARTA::RegisterViewer GetRegisterViewer(uint32_t session_id, string api_key, uint32_t client_feature_flags) {
-    LogReceiveEventType(CARTA::EventType::REGISTER_VIEWER);
+    LogRequestedEventType(CARTA::EventType::REGISTER_VIEWER);
 
     CARTA::RegisterViewer register_viewer;
     register_viewer.set_session_id(session_id);
@@ -17,7 +17,7 @@ CARTA::RegisterViewer GetRegisterViewer(uint32_t session_id, string api_key, uin
 }
 
 CARTA::CloseFile GetCloseFile(int32_t file_id) {
-    LogReceiveEventType(CARTA::EventType::CLOSE_FILE);
+    LogRequestedEventType(CARTA::EventType::CLOSE_FILE);
 
     CARTA::CloseFile close_file;
     close_file.set_file_id(file_id);
@@ -25,7 +25,7 @@ CARTA::CloseFile GetCloseFile(int32_t file_id) {
 }
 
 CARTA::OpenFile GetOpenFile(string directory, string file, string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
-    LogReceiveEventType(CARTA::EventType::OPEN_FILE);
+    LogRequestedEventType(CARTA::EventType::OPEN_FILE);
 
     CARTA::OpenFile open_file;
     open_file.set_directory(directory);
@@ -38,7 +38,7 @@ CARTA::OpenFile GetOpenFile(string directory, string file, string hdu, int32_t f
 
 CARTA::SetImageChannels GetSetImageChannels(
     int32_t file_id, int32_t channel, int32_t stokes, CARTA::CompressionType compression_type, float compression_quality) {
-    LogReceiveEventType(CARTA::EventType::SET_IMAGE_CHANNELS);
+    LogRequestedEventType(CARTA::EventType::SET_IMAGE_CHANNELS);
 
     CARTA::SetImageChannels set_image_channels;
     set_image_channels.set_file_id(file_id);
@@ -53,7 +53,7 @@ CARTA::SetImageChannels GetSetImageChannels(
 }
 
 CARTA::SetCursor GetSetCursor(int32_t file_id, float x, float y) {
-    LogReceiveEventType(CARTA::EventType::SET_CURSOR);
+    LogRequestedEventType(CARTA::EventType::SET_CURSOR);
 
     CARTA::SetCursor set_cursor;
     set_cursor.set_file_id(file_id);
@@ -64,7 +64,7 @@ CARTA::SetCursor GetSetCursor(int32_t file_id, float x, float y) {
 }
 
 CARTA::SetSpatialRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id) {
-    LogReceiveEventType(CARTA::EventType::SET_SPATIAL_REQUIREMENTS);
+    LogRequestedEventType(CARTA::EventType::SET_SPATIAL_REQUIREMENTS);
 
     CARTA::SetSpatialRequirements set_spatial_requirements;
     set_spatial_requirements.set_file_id(file_id);
@@ -77,7 +77,7 @@ CARTA::SetSpatialRequirements GetSetSpatialRequirements(int32_t file_id, int32_t
 }
 
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id) {
-    LogReceiveEventType(CARTA::EventType::SET_STATS_REQUIREMENTS);
+    LogRequestedEventType(CARTA::EventType::SET_STATS_REQUIREMENTS);
 
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
@@ -95,7 +95,7 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
 }
 
 CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int32_t region_id) {
-    LogReceiveEventType(CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS);
+    LogRequestedEventType(CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS);
 
     CARTA::SetHistogramRequirements set_histogram_requirements;
     set_histogram_requirements.set_file_id(file_id);
@@ -108,7 +108,7 @@ CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int
 
 CARTA::AddRequiredTiles GetAddRequiredTiles(
     int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles) {
-    LogReceiveEventType(CARTA::EventType::ADD_REQUIRED_TILES);
+    LogRequestedEventType(CARTA::EventType::ADD_REQUIRED_TILES);
 
     CARTA::AddRequiredTiles add_required_tiles;
     add_required_tiles.set_file_id(file_id);
@@ -129,7 +129,7 @@ CARTA::Point GetPoint(int x, int y) {
 
 CARTA::SetRegion GetSetRegion(
     int32_t file_id, int32_t region_id, CARTA::RegionType region_type, vector<CARTA::Point> control_points, float rotation) {
-    LogReceiveEventType(CARTA::EventType::SET_REGION);
+    LogRequestedEventType(CARTA::EventType::SET_REGION);
 
     CARTA::SetRegion set_region;
     set_region.set_file_id(file_id);
@@ -146,7 +146,7 @@ CARTA::SetRegion GetSetRegion(
 }
 
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id, string coordinate) {
-    LogReceiveEventType(CARTA::EventType::SET_STATS_REQUIREMENTS);
+    LogRequestedEventType(CARTA::EventType::SET_STATS_REQUIREMENTS);
 
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
@@ -167,7 +167,7 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
 }
 
 CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32_t region_id, string coordinate) {
-    LogReceiveEventType(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS);
+    LogRequestedEventType(CARTA::EventType::SET_SPECTRAL_REQUIREMENTS);
 
     CARTA::SetSpectralRequirements set_spectral_requirements;
     set_spectral_requirements.set_file_id(file_id);
@@ -190,7 +190,7 @@ CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32
 CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame, std::pair<int32_t, int32_t> start_frame,
     std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame, CARTA::CompressionType compression_type,
     float compression_quality, const std::vector<float>& tiles) {
-    LogReceiveEventType(CARTA::EventType::START_ANIMATION);
+    LogRequestedEventType(CARTA::EventType::START_ANIMATION);
 
     CARTA::StartAnimation start_animation;
     auto* mutable_first_frame = start_animation.mutable_first_frame();
@@ -221,6 +221,22 @@ CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int3
     return start_animation;
 }
 
+CARTA::AnimationFlowControl GetAnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame) {
+    LogRequestedEventType(CARTA::EventType::ANIMATION_FLOW_CONTROL);
+
+    CARTA::AnimationFlowControl animation_flow_control;
+    animation_flow_control.set_file_id(file_id);
+    auto* mutable_received_frame = animation_flow_control.mutable_received_frame();
+    mutable_received_frame->set_channel(received_frame.first);
+    mutable_received_frame->set_stokes(received_frame.second);
+    animation_flow_control.set_animation_id(1);
+
+    const auto t_now = std::chrono::system_clock::now();
+    animation_flow_control.set_timestamp(t_now.time_since_epoch().count());
+
+    return animation_flow_control;
+}
+
 //--------------------------------------------------------
 
 CARTA::EventType GetEventType(std::vector<char>& message) {
@@ -228,10 +244,10 @@ CARTA::EventType GetEventType(std::vector<char>& message) {
     return static_cast<CARTA::EventType>(head.type);
 }
 
-void LogReceiveEventType(const CARTA::EventType& event_type) {
-    spdlog::info("==> {}", EventType_Name(event_type));
+void LogRequestedEventType(const CARTA::EventType& event_type) {
+    spdlog::info("<== {}", EventType_Name(event_type));
 }
 
-void LogResponseEventType(const CARTA::EventType& event_type) {
-    spdlog::info("<== {}", EventType_Name(event_type));
+void LogResponsiveEventType(const CARTA::EventType& event_type) {
+    spdlog::info("==> {}", EventType_Name(event_type));
 }

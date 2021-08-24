@@ -64,6 +64,7 @@ set(TEST_ICD_SOURCES
         icd_test/BackendModel.cc
         icd_test/BackendTester.cc
         icd_test/ProtobufInterface.cc
+        icd_test/TestAnimatorPlayback.cc
         icd_test/TestAccessCarta.cc
         icd_test/TestAnimatorDataStream.cc
         icd_test/TestAnimatorNavigation.cc

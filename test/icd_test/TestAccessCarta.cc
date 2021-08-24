@@ -20,14 +20,14 @@ public:
         ElapsedTimer timer;
         timer.Start();
 
-        _dummy_backend->ReceiveMessage(register_viewer);
+        _dummy_backend->Receive(register_viewer);
 
         EXPECT_LT(timer.Elapsed(), 100); // expect the process time within 100 ms
 
         // Resulting message
         std::pair<std::vector<char>, bool> message_pair;
 
-        int message_count = 0;
+        std::atomic<int> message_count = 0;
 
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;

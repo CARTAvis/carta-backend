@@ -222,7 +222,6 @@ public:
     void CloseCachedImage(const std::string& directory, const std::string& file);
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
-    void ClearMessagesQueue();
 
 private:
     // File info for file list (extended info for each hdu_name)
