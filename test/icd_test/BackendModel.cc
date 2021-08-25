@@ -60,20 +60,16 @@ void BackendModel::Receive(CARTA::SetImageChannels message) {
 void BackendModel::Receive(CARTA::SetCursor message) {
     _session->AddCursorSetting(message, DUMMY_REQUEST_ID);
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) SetCursorTask(_session, message.file_id());
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::SetHistogramRequirements message) {
-    OnMessageTask* tsk = nullptr;
     if (message.histograms_size() == 0) {
         _session->CancelSetHistRequirements();
     } else {
         _session->ResetHistContext();
-        tsk = new (tbb::task::allocate_root(_session->HistContext())) SetHistogramRequirementsTask(_session, message, DUMMY_REQUEST_ID);
-    }
-    if (tsk) {
+        OnMessageTask* tsk =
+            new (tbb::task::allocate_root(_session->HistContext())) SetHistogramRequirementsTask(_session, message, DUMMY_REQUEST_ID);
         tbb::task::enqueue(*tsk);
     }
 }
@@ -86,9 +82,7 @@ void BackendModel::Receive(CARTA::StartAnimation message) {
     _session->CancelExistingAnimation();
     _session->BuildAnimationObject(message, DUMMY_REQUEST_ID);
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->AnimationContext())) AnimationTask(_session);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::StopAnimation message) {
@@ -109,9 +103,7 @@ void BackendModel::Receive(CARTA::OpenFile message) {
 
 void BackendModel::Receive(CARTA::AddRequiredTiles message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnAddRequiredTilesTask(_session, message);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::RegionFileInfoRequest message) {
@@ -128,9 +120,7 @@ void BackendModel::Receive(CARTA::ExportRegion message) {
 
 void BackendModel::Receive(CARTA::SetContourParameters message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSetContourParametersTask(_session, message);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::ScriptingResponse message) {
@@ -175,16 +165,12 @@ void BackendModel::Receive(CARTA::SaveFile message) {
 
 void BackendModel::Receive(CARTA::SplataloguePing message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSplataloguePingTask(_session, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::SpectralLineRequest message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSpectralLineRequestTask(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::ConcatStokesFiles message) {
@@ -202,49 +188,37 @@ void BackendModel::Receive(CARTA::StopFileList message) {
 void BackendModel::Receive(CARTA::SetSpatialRequirements message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
         GeneralMessageTask<CARTA::SetSpatialRequirements>(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::SetStatsRequirements message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
         GeneralMessageTask<CARTA::SetStatsRequirements>(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::MomentRequest message) {
     OnMessageTask* tsk =
         new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask<CARTA::MomentRequest>(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::FileListRequest message) {
     OnMessageTask* tsk =
         new (tbb::task::allocate_root(_session->Context())) GeneralMessageTask<CARTA::FileListRequest>(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::RegionListRequest message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
         GeneralMessageTask<CARTA::RegionListRequest>(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 void BackendModel::Receive(CARTA::CatalogListRequest message) {
     OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
         GeneralMessageTask<CARTA::CatalogListRequest>(_session, message, DUMMY_REQUEST_ID);
-    if (tsk) {
-        tbb::task::enqueue(*tsk);
-    }
+    tbb::task::enqueue(*tsk);
 }
 
 //--------------------------------------------------------------

@@ -916,6 +916,7 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         }
 
         if (requirements_set) {
+            // RESPONSE
             OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
             tbb::task::enqueue(*tsk);
         } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
