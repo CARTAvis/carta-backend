@@ -24,6 +24,8 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
+#define DEFAULT_VERTEX_COUNT 1000
+
 struct RegionState {
     // struct used for region parameters
     int reference_file_id;

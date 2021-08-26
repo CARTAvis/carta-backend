@@ -22,6 +22,10 @@ fs::path TestRoot() {
     return root;
 }
 
+fs::path UserDirectory() {
+    return fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+}
+
 std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {
     fs::path root = TestRoot();
 

@@ -17,6 +17,8 @@
 
 #include "../Session.h"
 
+#define SCRIPTING_TIMEOUT 10 // seconds
+
 class CartaGrpcService : public CARTA::script::CartaBackend::Service {
 public:
     CartaGrpcService(std::string auth_token);

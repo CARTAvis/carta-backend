@@ -38,7 +38,7 @@ typedef uWS::HttpResponse<false> Res;
 
 class SimpleFrontendServer {
 public:
-    SimpleFrontendServer(fs::path root_folder, std::string auth_token, bool read_only_mode);
+    SimpleFrontendServer(fs::path root_folder, fs::path user_directory, std::string auth_token, bool read_only_mode);
     bool CanServeFrontend() {
         return _frontend_found;
     }

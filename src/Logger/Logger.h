@@ -13,6 +13,14 @@
 
 #include <carta-protobuf/enums.pb.h>
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 #define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
 #define ROTATED_LOG_FILES 5
 #define STDOUT_TAG "stdout"
@@ -30,7 +38,7 @@ constexpr auto performance = [](auto&&... args) {
 };
 } // namespace spdlog
 
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_);
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_, fs::path user_directory);
 
 void LogReceivedEventType(const CARTA::EventType& event_type);
 

@@ -29,6 +29,9 @@
 #include "Threading.h"
 #include "Util.h"
 
+#define TBB_TASK_THREAD_COUNT 3
+#define MAX_SOCKET_PORT_TRIALS 100
+
 using namespace std;
 
 // file list handler for the file browser
@@ -570,7 +573,7 @@ int main(int argc, char* argv[]) {
             exit(0);
         }
 
-        InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages);
+        InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         if (settings.wait_time >= 0) {
@@ -645,7 +648,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path, auth_token, settings.read_only_mode);
+                http_server = new SimpleFrontendServer(frontend_path, settings.user_directory, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
                     http_server->RegisterRoutes(app);
                 } else {

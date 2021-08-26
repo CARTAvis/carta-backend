@@ -27,6 +27,7 @@ namespace fs = std::filesystem;
 using namespace carta;
 
 fs::path TestRoot();
+fs::path UserDirectory();
 
 class ImageGenerator {
 public:

@@ -62,7 +62,6 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 
 // Image info: filename, type
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
-CARTA::FileType GetCartaFileType(const std::string& filename);
 
 // stokes types and value conversion
 int GetStokesValue(const CARTA::StokesType& stokes_type);
@@ -155,10 +154,5 @@ struct PointXy {
         return (x_in_image && y_in_image);
     }
 };
-
-// Map for enmu CARTA:FileType to string
-static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileType::CASA, "CASA"}, {CARTA::FileType::CRTF, "CRTF"},
-    {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
-    {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
 #endif // CARTA_BACKEND__UTIL_H_

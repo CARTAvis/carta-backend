@@ -186,32 +186,6 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
     return resolved_filename;
 }
 
-CARTA::FileType GetCartaFileType(const string& filename) {
-    // get casacore image type then convert to carta file type
-    if (IsCompressedFits(filename)) {
-        return CARTA::FileType::FITS;
-    }
-
-    switch (CasacoreImageType(filename)) {
-        case casacore::ImageOpener::AIPSPP:
-        case casacore::ImageOpener::IMAGECONCAT:
-        case casacore::ImageOpener::IMAGEEXPR:
-        case casacore::ImageOpener::COMPLISTIMAGE:
-            return CARTA::FileType::CASA;
-        case casacore::ImageOpener::FITS:
-            return CARTA::FileType::FITS;
-        case casacore::ImageOpener::MIRIAD:
-            return CARTA::FileType::MIRIAD;
-        case casacore::ImageOpener::HDF5:
-            return CARTA::FileType::HDF5;
-        case casacore::ImageOpener::GIPSY:
-        case casacore::ImageOpener::CAIPS:
-        case casacore::ImageOpener::NEWSTAR:
-        default:
-            return CARTA::FileType::UNKNOWN;
-    }
-}
-
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
     prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;

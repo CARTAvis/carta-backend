@@ -12,10 +12,6 @@
 // version
 #define VERSION_ID "3.0.0-beta.1b"
 
-// thread counts
-#define OMP_THREAD_COUNT -1
-#define TBB_TASK_THREAD_COUNT 3
-
 // file ids
 #define ALL_FILES -1
 
@@ -61,36 +57,11 @@
 #define TARGET_PARTIAL_REGION_TIME 1000
 #define PROFILE_COMPLETE 1.0
 
-// scripting timeouts
-#define SCRIPTING_TIMEOUT 10 // seconds
-
-// CARTA default region style
-#define REGION_COLOR "#2EE6D6"
-#define REGION_DASH_LENGTH 2
-#define REGION_LINE_WIDTH 2
-
-// Shared region polygon approximation
-#define DEFAULT_VERTEX_COUNT 1000
-
 // file list
 #define FILE_LIST_FIRST_PROGRESS_AFTER_SECS 5
 #define FILE_LIST_PROGRESS_INTERVAL_SECS 2
 
 // uWebSockets setting
 #define MAX_BACKPRESSURE 256 * 1024 * 1024
-
-// socket port
-#define DEFAULT_SOCKET_PORT 3002
-#define MAX_SOCKET_PORT_TRIALS 100
-
-// User preferences
-#ifndef CARTA_USER_FOLDER_PREFIX
-#define CARTA_USER_FOLDER_PREFIX ".carta"
-#endif
-
-// Frontend folder
-#ifndef CARTA_DEFAULT_FRONTEND_FOLDER
-#define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
-#endif
 
 #endif // CARTA_BACKEND__CONSTANTS_H_
