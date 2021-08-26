@@ -11,8 +11,9 @@
 
 using namespace carta;
 
-std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> stokes_type_map = {{CARTA::PolarizationType::I, casacore::Stokes::I},
-    {CARTA::PolarizationType::Q, casacore::Stokes::Q}, {CARTA::PolarizationType::U, casacore::Stokes::U}, {CARTA::PolarizationType::V, casacore::Stokes::V}};
+std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> stokes_type_map = {
+    {CARTA::PolarizationType::I, casacore::Stokes::I}, {CARTA::PolarizationType::Q, casacore::Stokes::Q},
+    {CARTA::PolarizationType::U, casacore::Stokes::U}, {CARTA::PolarizationType::V, casacore::Stokes::V}};
 
 std::set<std::string> allowed_hypercube_stokes = {"IQUV", "IQU", "QU", "QUV", "IV"};
 
@@ -197,7 +198,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
 
     for (int i = 0; i < message.stokes_files_size(); ++i) {
         auto stokes_file = message.stokes_files(i);
-        auto stokes_type = message.stokes_files(i).stokes_type();
+        auto stokes_type = message.stokes_files(i).polarization_type();
         casacore::String hdu(stokes_file.hdu());
         casacore::String full_name(GetResolvedFilename(_top_level_folder, stokes_file.directory(), stokes_file.file()));
 

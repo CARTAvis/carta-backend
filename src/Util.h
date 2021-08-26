@@ -76,9 +76,10 @@ static std::unordered_map<int, CARTA::PolarizationType> StokesTypes{{1, CARTA::P
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 
-static std::unordered_map<string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I}, {"Q", CARTA::PolarizationType::Q},
-    {"U", CARTA::PolarizationType::U}, {"V", CARTA::PolarizationType::V}, {"RR", CARTA::PolarizationType::RR}, {"LL", CARTA::PolarizationType::LL},
-    {"RL", CARTA::PolarizationType::RL}, {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
+static std::unordered_map<string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I},
+    {"Q", CARTA::PolarizationType::Q}, {"U", CARTA::PolarizationType::U}, {"V", CARTA::PolarizationType::V},
+    {"RR", CARTA::PolarizationType::RR}, {"LL", CARTA::PolarizationType::LL}, {"RL", CARTA::PolarizationType::RL},
+    {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
     {"XY", CARTA::PolarizationType::XY}, {"YX", CARTA::PolarizationType::YX}};
 
 void GetSpectralCoordPreferences(
