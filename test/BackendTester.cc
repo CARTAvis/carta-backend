@@ -27,13 +27,5 @@ int ElapsedTimer::Elapsed() {
 }
 
 BackendTester::BackendTester() {
-    uint32_t session_id(0);
-    std::string address;
-    std::string top_level_folder("/");
-    std::string starting_folder("data/images");
-    int grpc_port(-1);
-    bool read_only_mode(false);
-
-    _dummy_backend =
-        std::make_unique<BackendModel>(nullptr, nullptr, session_id, address, top_level_folder, starting_folder, grpc_port, read_only_mode);
+    _dummy_backend = BackendModel::GetDummyBackend();
 }

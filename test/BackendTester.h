@@ -11,8 +11,8 @@
 
 #include <gtest/gtest.h>
 
-#include "../CommonTestUtilities.h"
 #include "BackendModel.h"
+#include "CommonTestUtilities.h"
 #include "ProtobufInterface.h"
 
 bool FileExists(string filename);

@@ -22,7 +22,7 @@ set(TEST_COMMON_LIBS gtest gtest_main)
 
 enable_testing()
 find_package(GTest)
-include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 if (HDF5_FOUND)
@@ -58,23 +58,6 @@ set(TEST_SOURCES
         TestRestApi.cc
         TestVoTable.cc)
 
-set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
-set(TEST_ICD_SOURCES
-        CommonTestUtilities.cc
-        icd-test/BackendModel.cc
-        icd-test/BackendTester.cc
-        icd-test/ProtobufInterface.cc
-        icd-test/TestAnimatorPlayback.cc
-        icd-test/TestAccessCarta.cc
-        icd-test/TestAnimatorDataStream.cc
-        icd-test/TestAnimatorNavigation.cc
-        icd-test/TestRegionSpectralProfileRectangle.cc
-        icd-test/TestRegionStatisticsEllipse.cc
-        icd-test/TestRegionStatisticsPolygon.cc
-        icd-test/TestRegionStatisticsRectangle.cc
-        icd-test/TestRegionRegister.cc
-        TestMain.cc)
-
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})
     list(APPEND SOURCES ../${src_file})
@@ -93,8 +76,50 @@ target_link_libraries(${BINARY}
         ${TEST_COMMON_LIBS}
         ${LINK_LIBS})
 
-add_executable(${TEST_ICD_BINARY} ${SOURCES} ${TEST_ICD_SOURCES})
-add_test(NAME ${TEST_ICD_BINARY} COMMAND ${TEST_ICD_BINARY})
-target_link_libraries(${TEST_ICD_BINARY}
-        ${TEST_COMMON_LIBS}
-        ${LINK_LIBS})
+# Build ICD tests
+option(test-icd "Build ICD tests." OFF)
+if (test-icd)
+    set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
+    set(TEST_ICD_SOURCES
+            CommonTestUtilities.cc
+            BackendModel.cc
+            BackendTester.cc
+            ProtobufInterface.cc
+            icd-test/TestAnimatorPlayback.cc
+            icd-test/TestAccessCarta.cc
+            icd-test/TestAnimatorDataStream.cc
+            icd-test/TestAnimatorNavigation.cc
+            icd-test/TestRegionSpectralProfileRectangle.cc
+            icd-test/TestRegionStatisticsEllipse.cc
+            icd-test/TestRegionStatisticsPolygon.cc
+            icd-test/TestRegionStatisticsRectangle.cc
+            icd-test/TestRegionRegister.cc
+            TestMain.cc)
+
+    add_executable(${TEST_ICD_BINARY} ${SOURCES} ${TEST_ICD_SOURCES})
+    add_test(NAME ${TEST_ICD_BINARY} COMMAND ${TEST_ICD_BINARY})
+    target_link_libraries(${TEST_ICD_BINARY}
+            ${TEST_COMMON_LIBS}
+            ${LINK_LIBS})
+endif ()
+
+# Build performance tests
+option(test-performance "Build performance tests." OFF)
+if (test-performance)
+    find_package(benchmark REQUIRED)
+
+    set(TEST_PERF_BINARY ${CMAKE_PROJECT_NAME}_perf_tests)
+    set(TEST_PERF_SOURCES
+            CommonTestUtilities.cc
+            BackendModel.cc
+            BackendTester.cc
+            ProtobufInterface.cc
+            performance-test/TestOpenFiles.cc)
+
+    add_executable(${TEST_PERF_BINARY} ${SOURCES} ${TEST_PERF_SOURCES})
+    add_test(NAME ${TEST_PERF_BINARY} COMMAND ${TEST_PERF_BINARY})
+    target_link_libraries(${TEST_PERF_BINARY}
+            ${TEST_COMMON_LIBS}
+            ${LINK_LIBS}
+            benchmark::benchmark)
+endif ()

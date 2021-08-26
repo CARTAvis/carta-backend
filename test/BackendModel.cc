@@ -12,6 +12,18 @@
 static const uint16_t DUMMY_ICD_VERSION(ICD_VERSION);
 static const uint32_t DUMMY_REQUEST_ID(0);
 
+std::unique_ptr<BackendModel> BackendModel::GetDummyBackend() {
+    uint32_t session_id(0);
+    std::string address;
+    std::string top_level_folder("/");
+    std::string starting_folder("data/images");
+    int grpc_port(-1);
+    bool read_only_mode(false);
+
+    return std::make_unique<BackendModel>(
+        nullptr, nullptr, session_id, address, top_level_folder, starting_folder, grpc_port, read_only_mode);
+}
+
 BackendModel::BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
     std::string top_level_folder, std::string starting_folder, int grpc_port, bool read_only_mode) {
     _file_list_handler = new FileListHandler(top_level_folder, starting_folder);
@@ -225,6 +237,10 @@ void BackendModel::Receive(CARTA::CatalogListRequest message) {
 
 bool BackendModel::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
     return _session->TryPopMessagesQueue(message);
+}
+
+void BackendModel::ClearMessagesQueue() {
+    _session->ClearMessagesQueue();
 }
 
 void BackendModel::WaitForJobFinished() {

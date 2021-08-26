@@ -2119,3 +2119,7 @@ void Session::CloseCachedImage(const std::string& directory, const std::string& 
 bool Session::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
     return _out_msgs.try_pop(message);
 }
+
+void Session::ClearMessagesQueue() {
+    _out_msgs.clear();
+}

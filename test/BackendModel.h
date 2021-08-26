@@ -47,6 +47,8 @@ public:
         std::string top_level_folder, std::string starting_folder, int grpc_port, bool read_only_mode);
     ~BackendModel();
 
+    static std::unique_ptr<BackendModel> GetDummyBackend();
+
     void Receive(CARTA::RegisterViewer message);
     void Receive(CARTA::ResumeSession message);
     void Receive(CARTA::SetImageChannels message);
@@ -85,6 +87,7 @@ public:
     void Receive(CARTA::CatalogListRequest message);
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
+    void ClearMessagesQueue();
     void WaitForJobFinished(); // wait for parallel calculations finished
 
 private:
