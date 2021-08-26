@@ -2084,7 +2084,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
         bool stokes_ok(false);
         std::string stokes_string = coordinate.substr(0, coordinate.size() - 1);
         if (StokesStringTypes.count(stokes_string)) {
-            CARTA::StokesType stokes_type = StokesStringTypes[stokes_string];
+            CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
             if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
                 stokes_ok = true;
             } else {

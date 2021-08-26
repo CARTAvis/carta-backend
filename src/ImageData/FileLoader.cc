@@ -853,13 +853,13 @@ double FileLoader::CalculateBeamArea() {
 }
 
 void FileLoader::SetFirstStokesType(int stokes_value) {
-    CARTA::StokesType stokes_type = GetStokesType(stokes_value);
-    if (stokes_type != CARTA::StokesType::STOKES_TYPE_NONE) {
+    CARTA::PolarizationType stokes_type = GetStokesType(stokes_value);
+    if (stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE) {
         _stokes_indices[stokes_type] = 0;
     }
 }
 
-bool FileLoader::GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index) {
+bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     if (_stokes_indices.count(stokes_type)) {
         stokes_index = _stokes_indices[stokes_type];
         return true;

@@ -306,7 +306,7 @@ void FillStatisticsValuesFromMap(
     }
 }
 
-int GetStokesValue(const CARTA::StokesType& stokes_type) {
+int GetStokesValue(const CARTA::PolarizationType& stokes_type) {
     int stokes_value(-1);
     if (StokesValues.count(stokes_type)) {
         stokes_value = StokesValues[stokes_type];
@@ -314,8 +314,8 @@ int GetStokesValue(const CARTA::StokesType& stokes_type) {
     return stokes_value;
 }
 
-CARTA::StokesType GetStokesType(int stokes_value) {
-    CARTA::StokesType stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
+CARTA::PolarizationType GetStokesType(int stokes_value) {
+    CARTA::PolarizationType stokes_type = CARTA::PolarizationType::POLARIZATION_TYPE_NONE;
     if (StokesTypes.count(stokes_value)) {
         stokes_type = StokesTypes[stokes_value];
     }

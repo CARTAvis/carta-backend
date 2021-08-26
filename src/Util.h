@@ -65,21 +65,21 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
 // stokes types and value conversion
-static std::unordered_map<CARTA::StokesType, int> StokesValues{{CARTA::StokesType::I, 1}, {CARTA::StokesType::Q, 2},
-    {CARTA::StokesType::U, 3}, {CARTA::StokesType::V, 4}, {CARTA::StokesType::RR, 5}, {CARTA::StokesType::LL, 6},
-    {CARTA::StokesType::RL, 7}, {CARTA::StokesType::LR, 8}, {CARTA::StokesType::XX, 9}, {CARTA::StokesType::YY, 10},
-    {CARTA::StokesType::XY, 11}, {CARTA::StokesType::YX, 12}};
-static std::unordered_map<int, CARTA::StokesType> StokesTypes{{1, CARTA::StokesType::I}, {2, CARTA::StokesType::Q},
-    {3, CARTA::StokesType::U}, {4, CARTA::StokesType::V}, {5, CARTA::StokesType::RR}, {6, CARTA::StokesType::LL},
-    {7, CARTA::StokesType::RL}, {8, CARTA::StokesType::LR}, {9, CARTA::StokesType::XX}, {10, CARTA::StokesType::YY},
-    {11, CARTA::StokesType::XY}, {12, CARTA::StokesType::YX}};
-int GetStokesValue(const CARTA::StokesType& stokes_type);
-CARTA::StokesType GetStokesType(int stokes_value);
+static std::unordered_map<CARTA::PolarizationType, int> StokesValues{{CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2},
+    {CARTA::PolarizationType::U, 3}, {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::RR, 5}, {CARTA::PolarizationType::LL, 6},
+    {CARTA::PolarizationType::RL, 7}, {CARTA::PolarizationType::LR, 8}, {CARTA::PolarizationType::XX, 9}, {CARTA::PolarizationType::YY, 10},
+    {CARTA::PolarizationType::XY, 11}, {CARTA::PolarizationType::YX, 12}};
+static std::unordered_map<int, CARTA::PolarizationType> StokesTypes{{1, CARTA::PolarizationType::I}, {2, CARTA::PolarizationType::Q},
+    {3, CARTA::PolarizationType::U}, {4, CARTA::PolarizationType::V}, {5, CARTA::PolarizationType::RR}, {6, CARTA::PolarizationType::LL},
+    {7, CARTA::PolarizationType::RL}, {8, CARTA::PolarizationType::LR}, {9, CARTA::PolarizationType::XX}, {10, CARTA::PolarizationType::YY},
+    {11, CARTA::PolarizationType::XY}, {12, CARTA::PolarizationType::YX}};
+int GetStokesValue(const CARTA::PolarizationType& stokes_type);
+CARTA::PolarizationType GetStokesType(int stokes_value);
 
-static std::unordered_map<string, CARTA::StokesType> StokesStringTypes{{"I", CARTA::StokesType::I}, {"Q", CARTA::StokesType::Q},
-    {"U", CARTA::StokesType::U}, {"V", CARTA::StokesType::V}, {"RR", CARTA::StokesType::RR}, {"LL", CARTA::StokesType::LL},
-    {"RL", CARTA::StokesType::RL}, {"LR", CARTA::StokesType::LR}, {"XX", CARTA::StokesType::XX}, {"YY", CARTA::StokesType::YY},
-    {"XY", CARTA::StokesType::XY}, {"YX", CARTA::StokesType::YX}};
+static std::unordered_map<string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I}, {"Q", CARTA::PolarizationType::Q},
+    {"U", CARTA::PolarizationType::U}, {"V", CARTA::PolarizationType::V}, {"RR", CARTA::PolarizationType::RR}, {"LL", CARTA::PolarizationType::LL},
+    {"RL", CARTA::PolarizationType::RL}, {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
+    {"XY", CARTA::PolarizationType::XY}, {"YX", CARTA::PolarizationType::YX}};
 
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
