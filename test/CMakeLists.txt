@@ -61,18 +61,18 @@ set(TEST_SOURCES
 set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
 set(TEST_ICD_SOURCES
         CommonTestUtilities.cc
-        icd_test/BackendModel.cc
-        icd_test/BackendTester.cc
-        icd_test/ProtobufInterface.cc
-        icd_test/TestAnimatorPlayback.cc
-        icd_test/TestAccessCarta.cc
-        icd_test/TestAnimatorDataStream.cc
-        icd_test/TestAnimatorNavigation.cc
-        icd_test/TestRegionSpectralProfileRectangle.cc
-        icd_test/TestRegionStatisticsEllipse.cc
-        icd_test/TestRegionStatisticsPolygon.cc
-        icd_test/TestRegionStatisticsRectangle.cc
-        icd_test/TestRegionRegister.cc
+        icd-test/BackendModel.cc
+        icd-test/BackendTester.cc
+        icd-test/ProtobufInterface.cc
+        icd-test/TestAnimatorPlayback.cc
+        icd-test/TestAccessCarta.cc
+        icd-test/TestAnimatorDataStream.cc
+        icd-test/TestAnimatorNavigation.cc
+        icd-test/TestRegionSpectralProfileRectangle.cc
+        icd-test/TestRegionStatisticsEllipse.cc
+        icd-test/TestRegionStatisticsPolygon.cc
+        icd-test/TestRegionStatisticsRectangle.cc
+        icd-test/TestRegionRegister.cc
         TestMain.cc)
 
 # Add all the sources in the main project and remove Main.cc
