@@ -6,18 +6,14 @@
 
 #include "BackendTester.h"
 
-using namespace std;
-
 class TestAnimatorPlayback : public BackendTester {
 public:
     TestAnimatorPlayback() {}
     ~TestAnimatorPlayback() = default;
 
     void AnimatorPlayback() {
-        // Check the existence of the sample image
-        if (!FileExists(LargeImagePath("M17_SWex.image"))) {
-            return;
-        }
+        auto filename_path_string = ImageGenerator::GeneratedFitsImagePath("640 800 25 1");
+        std::filesystem::path filename_path(filename_path_string);
 
         std::atomic<int> message_count = 0;
 
@@ -41,7 +37,7 @@ public:
 
         _dummy_backend->Receive(close_file);
 
-        CARTA::OpenFile open_file = GetOpenFile(LargeImagePath(""), "M17_SWex.image", "0", 0, CARTA::RenderMode::RASTER);
+        CARTA::OpenFile open_file = GetOpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 
@@ -66,11 +62,11 @@ public:
         auto set_cursor = GetSetCursor(0, 1, 1);
 
         _dummy_backend->Receive(set_cursor);
+        _dummy_backend->WaitForJobFinished();
 
         auto set_spatial_requirements = GetSetSpatialRequirements(0, 0);
 
         _dummy_backend->Receive(set_spatial_requirements);
-
         _dummy_backend->WaitForJobFinished();
 
         message_count = 0;

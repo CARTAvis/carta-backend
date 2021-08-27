@@ -6,18 +6,14 @@
 
 #include "BackendTester.h"
 
-using namespace std;
-
 class TestRegionSpectralProfileRectangle : public BackendTester {
 public:
     TestRegionSpectralProfileRectangle() {}
     ~TestRegionSpectralProfileRectangle() = default;
 
     void RegionSpectralProfileRectangle() {
-        // Check the existence of the sample image
-        if (!FileExists(LargeImagePath("M17_SWex.image"))) {
-            return;
-        }
+        auto filename_path_string = ImageGenerator::GeneratedFitsImagePath("640 800 25 1");
+        std::filesystem::path filename_path(filename_path_string);
 
         std::atomic<int> message_count = 0;
 
@@ -41,7 +37,7 @@ public:
 
         _dummy_backend->Receive(close_file);
 
-        CARTA::OpenFile open_file = GetOpenFile(LargeImagePath(""), "M17_SWex.image", "0", 0, CARTA::RenderMode::RASTER);
+        CARTA::OpenFile open_file = GetOpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 
@@ -118,35 +114,18 @@ public:
                     }
 
                     string tmp = spectral_profile_data.profiles(i).raw_values_fp64();
-                    double values[tmp.size() / sizeof(double)];
+                    int array_size = tmp.size() / sizeof(double);
+                    EXPECT_EQ(array_size, 25);
+                    double values[array_size];
                     std::memcpy(values, tmp.data(), tmp.size());
 
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::Sum) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.86641662567853928);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::FluxDensity) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.039805308044335706);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::Mean) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.057761108378569286);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::RMS) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.05839547505408027);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::Sigma) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.0088853315888891247);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::SumSq) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.051150472601875663);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::Min) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.03859434649348259);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::Max) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.070224300026893616);
-                    }
-                    if (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::Extrema) {
-                        EXPECT_DOUBLE_EQ(values[10], 0.070224300026893616);
+                    for (auto value : values) {
+                        if ((spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::NumPixels) ||
+                            (spectral_profile_data.profiles(i).stats_type() == CARTA::StatsType::FluxDensity)) {
+                            EXPECT_TRUE(std::isnan(value));
+                        } else {
+                            EXPECT_TRUE(!std::isnan(value));
+                        }
                     }
                 }
             }

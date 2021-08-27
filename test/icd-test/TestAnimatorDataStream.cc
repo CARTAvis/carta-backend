@@ -6,8 +6,6 @@
 
 #include "BackendTester.h"
 
-using namespace std;
-
 class TestAnimatorDataStream : public BackendTester {
 public:
     TestAnimatorDataStream() {}
@@ -30,11 +28,6 @@ public:
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
             LogResponsiveEventType(event_type);
-
-            if (event_type == CARTA::EventType::REGISTER_VIEWER_ACK) {
-                CARTA::RegisterViewerAck register_viewer_ack = DecodeMessage<CARTA::RegisterViewerAck>(message);
-                EXPECT_TRUE(register_viewer_ack.success());
-            }
             ++message_count;
         }
 
@@ -84,7 +77,6 @@ public:
         timer.Start();
 
         _dummy_backend->Receive(set_image_channels);
-
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);
@@ -145,7 +137,6 @@ public:
         timer.Start();
 
         _dummy_backend->Receive(set_stats_requirements);
-
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 100);
@@ -172,7 +163,6 @@ public:
         timer.Start();
 
         _dummy_backend->Receive(set_histogram_requirements);
-
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 100);
@@ -203,7 +193,6 @@ public:
         timer.Start();
 
         _dummy_backend->Receive(set_image_channels);
-
         _dummy_backend->WaitForJobFinished();
 
         EXPECT_LT(timer.Elapsed(), 200);

@@ -6,8 +6,6 @@
 
 #include "BackendTester.h"
 
-using namespace std;
-
 class TestAnimatorNavigation : public BackendTester {
 public:
     TestAnimatorNavigation() {}

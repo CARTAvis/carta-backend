@@ -6,8 +6,6 @@
 
 #include "BackendTester.h"
 
-using namespace std;
-
 class TestAccessCarta : public BackendTester {
 public:
     TestAccessCarta() {}

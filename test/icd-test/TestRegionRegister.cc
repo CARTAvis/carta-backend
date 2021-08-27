@@ -6,8 +6,6 @@
 
 #include "BackendTester.h"
 
-using namespace std;
-
 class TestRegionRegister : public BackendTester {
 public:
     TestRegionRegister() {}
