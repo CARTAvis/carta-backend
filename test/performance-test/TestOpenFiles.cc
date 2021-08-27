@@ -10,18 +10,18 @@
 #include "BackendTester.h"
 #include "CommonTestUtilities.h"
 
-std::mutex stats_mutex;
-
-static void BMOpenFiles(benchmark::State& state, string filename) {
+static void BM_OpenFiles(benchmark::State& state, int omp_thread_count, string filename) {
     // Check the existence of the sample image
     if (!FileExists(FileFinder::LargeImagePath(filename))) {
         return;
     }
 
-    // Set threads number
+    // Set omp threads number
+    if (omp_thread_count < 1) {
+        omp_thread_count = omp_get_num_procs();
+    }
     tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
-    omp_set_num_threads(omp_get_num_procs());
-    spdlog::info("TBB task threads {}, OpenMP worker threads {}.", TBB_TASK_THREAD_COUNT, omp_get_num_procs());
+    omp_set_num_threads(omp_thread_count);
 
     // Set spdlog level
     spdlog::default_logger()->set_level(spdlog::level::err);
@@ -40,15 +40,48 @@ static void BMOpenFiles(benchmark::State& state, string filename) {
 
     // Start the benchmark test
     for (auto _ : state) {
-        std::unique_lock<std::mutex> lock(stats_mutex);
-        dummy_backend->Receive(close_file); // Close files
-        dummy_backend->Receive(open_file);  // Open a file
+        benchmark::DoNotOptimize(*dummy_backend); // is it necessary?
+        dummy_backend->Receive(close_file);
+        dummy_backend->Receive(open_file);
         dummy_backend->ClearMessagesQueue();
+        benchmark::ClobberMemory(); // is it necessary?
     }
 }
 
-BENCHMARK_CAPTURE(BMOpenFiles, CASA, "M17_SWex.image")->Arg(10)->DenseThreadRange(1, 8)->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BMOpenFiles, FITS, "M17_SWex.fits")->Arg(10)->DenseThreadRange(1, 8)->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BMOpenFiles, MIRIAD, "M17_SWex.miriad")->Arg(10)->DenseThreadRange(1, 8)->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_1, 1, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_2, 2, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_3, 3, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_4, 4, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_5, 5, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_6, 6, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_7, 7, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, CASA_8, 8, "M17_SWex.image")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_1, 1, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_2, 2, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_3, 3, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_4, 4, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_5, 5, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_6, 6, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_7, 7, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, FITS_8, 8, "M17_SWex.fits")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_1, 1, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_2, 2, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_3, 3, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_4, 4, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_5, 5, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_6, 6, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_7, 7, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, HDF5_8, 8, "M17_SWex.hdf5")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_1, 1, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_2, 2, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_3, 3, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_4, 4, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_5, 5, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_6, 6, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_7, 7, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_OpenFiles, MIRIAD_8, 8, "M17_SWex.miriad")->MeasureProcessCPUTime()->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();
