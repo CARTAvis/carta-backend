@@ -17,7 +17,8 @@ CARTA::SetImageChannels GetSetImageChannels(
 CARTA::SetCursor GetSetCursor(int32_t file_id, float x, float y);
 CARTA::SetSpatialRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id);
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id);
-CARTA::SetHistogramRequirements GetSetHistogramRequirements(int32_t file_id, int32_t region_id);
+CARTA::SetHistogramRequirements GetSetHistogramRequirements(
+    int32_t file_id, int32_t region_id, int32_t channel = -1, int32_t num_bins = -1);
 CARTA::AddRequiredTiles GetAddRequiredTiles(
     int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
 CARTA::Point GetPoint(int x, int y);
@@ -30,6 +31,11 @@ CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int3
     float compression_quality, const std::vector<float>& tiles);
 CARTA::AnimationFlowControl GetAnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
 CARTA::StopAnimation GetStopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame);
+CARTA::SetSpatialRequirements_SpatialConfig GetSpatialConfig(std::string coordinate, int start = 0, int end = 0, int mip = 0);
+CARTA::IntBounds GetIntBounds(int min, int max);
+CARTA::FloatBounds GetFloatBounds(float min, float max);
+CARTA::MomentRequest GetMomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis, CARTA::MomentMask moment_mask,
+    CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
 void LogRequestedEventType(const CARTA::EventType& event_type);
