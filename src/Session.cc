@@ -64,7 +64,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this) {
-    _histogram_progress = HISTOGRAM_COMPLETE;
+    _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
@@ -1273,7 +1273,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             }
 
             // To send periodic updates
-            _histogram_progress = HISTOGRAM_START;
+            _histogram_progress = 0.0;
             auto t_start = std::chrono::high_resolution_clock::now();
             int request_id(0);
             size_t depth(_frames.at(file_id)->Depth());
@@ -1366,7 +1366,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.set_region_id(CUBE_REGION_ID);
                     cube_histogram_message.set_channel(ALL_Z);
                     cube_histogram_message.set_stokes(stokes);
-                    cube_histogram_message.set_progress(HISTOGRAM_COMPLETE);
+                    cube_histogram_message.set_progress(1.0);
                     // fill histogram fields from last z histogram
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
@@ -1390,9 +1390,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     calculated = true;
                 }
             }
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = 1.0;
         } catch (std::out_of_range& range_error) {
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = 1.0;
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }

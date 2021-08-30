@@ -1450,7 +1450,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 auto t_start_profile = std::chrono::high_resolution_clock::now();
 
-                while (progress < PROFILE_COMPLETE) {
+                while (progress < 1.0) {
                     // start timer for slice
                     auto t_start_slice = std::chrono::high_resolution_clock::now();
 
@@ -1496,7 +1496,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         break;
                     }
 
-                    if (progress >= PROFILE_COMPLETE) {
+                    if (progress >= 1.0) {
                         spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send final profile message
                         cb(profile_message);

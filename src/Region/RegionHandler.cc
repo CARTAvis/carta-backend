@@ -837,7 +837,7 @@ bool RegionHandler::GetRegionHistogramData(
         CARTA::RegionHistogramData histogram_message;
         histogram_message.set_file_id(file_id);
         histogram_message.set_region_id(region_id);
-        histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
+        histogram_message.set_progress(1.0); // only cube histograms have partial results
         histogram_message.set_channel(z);
         histogram_message.set_stokes(stokes);
 
@@ -1039,7 +1039,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 results[stats_type] = profile;
             }
         }
-        progress = PROFILE_COMPLETE;
+        progress = 1.0;
         partial_results_callback(results, progress);
         return true;
     }
@@ -1047,7 +1047,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     // Get region to check if inside image
     casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
     if (!lcregion) {
-        progress = PROFILE_COMPLETE;
+        progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
         return true;
     }
@@ -1069,7 +1069,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 // Set results; there is only one required stat for point
                 std::vector<double> data(profile.begin(), profile.end());
                 results[required_stats[0]] = data;
-                progress = PROFILE_COMPLETE;
+                progress = 1.0;
                 partial_results_callback(results, progress);
             }
             return ok;
@@ -1087,7 +1087,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             auto t_latest = t_start;
 
             // Get partial profiles until complete (do once if cached)
-            while (progress < PROFILE_COMPLETE) {
+            while (progress < 1.0) {
                 // Cancel if region or frame is closing
                 if (!RegionFileIdsValid(region_id, file_id)) {
                     return false;
@@ -1111,7 +1111,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                     auto t_end = std::chrono::high_resolution_clock::now();
                     auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
 
-                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= PROFILE_COMPLETE)) {
+                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
                         // Copy partial profile to results
                         for (const auto& profile : partial_profiles) {
                             auto stats_type = profile.first;
@@ -1152,7 +1152,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
     // get stats data
-    while (progress < PROFILE_COMPLETE) {
+    while (progress < 1.0) {
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -1216,10 +1216,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
 
         // send partial result by the callback function
-        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= PROFILE_COMPLETE) {
+        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0) {
             t_partial_profile_start = std::chrono::high_resolution_clock::now();
             partial_results_callback(results, progress);
-            if (progress >= PROFILE_COMPLETE) {
+            if (progress >= 1.0) {
                 // cache results for all stats types
                 // TODO: cache and load partial profiles
                 _spectral_cache[cache_id] = SpectralCache(cache_results);
