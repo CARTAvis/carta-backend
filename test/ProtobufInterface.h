@@ -18,7 +18,7 @@ CARTA::SetCursor GetSetCursor(int32_t file_id, float x, float y);
 CARTA::SetSpatialRequirements GetSetSpatialRequirements(int32_t file_id, int32_t region_id);
 CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t region_id);
 CARTA::SetHistogramRequirements GetSetHistogramRequirements(
-    int32_t file_id, int32_t region_id, int32_t channel = -1, int32_t num_bins = -1);
+    int32_t file_id, int32_t region_id, int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
 CARTA::AddRequiredTiles GetAddRequiredTiles(
     int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
 CARTA::Point GetPoint(int x, int y);

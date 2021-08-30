@@ -77,32 +77,30 @@ target_link_libraries(${BINARY}
         ${LINK_LIBS})
 
 # Build ICD tests
-if (test-icd)
-    set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
-    set(TEST_ICD_SOURCES
-            CommonTestUtilities.cc
-            BackendModel.cc
-            BackendTester.cc
-            ProtobufInterface.cc
-            icd-test/TestAnimatorPlayback.cc
-            icd-test/TestAccessCarta.cc
-            icd-test/TestAnimatorDataStream.cc
-            icd-test/TestAnimatorNavigation.cc
-            icd-test/TestMomentsGenerator.cc
-            icd-test/TestPerCubeHistogram.cc
-            icd-test/TestRegionSpectralProfileRectangle.cc
-            icd-test/TestRegionStatisticsEllipse.cc
-            icd-test/TestRegionStatisticsPolygon.cc
-            icd-test/TestRegionStatisticsRectangle.cc
-            icd-test/TestRegionRegister.cc
-            icd-test/TestIcdMain.cc)
+set(TEST_ICD_BINARY ${CMAKE_PROJECT_NAME}_icd_tests)
+set(TEST_ICD_SOURCES
+        CommonTestUtilities.cc
+        BackendModel.cc
+        BackendTester.cc
+        ProtobufInterface.cc
+        icd-test/TestAnimatorPlayback.cc
+        icd-test/TestAccessCarta.cc
+        icd-test/TestAnimatorDataStream.cc
+        icd-test/TestAnimatorNavigation.cc
+        icd-test/TestMomentsGenerator.cc
+        icd-test/TestPerCubeHistogram.cc
+        icd-test/TestRegionSpectralProfileRectangle.cc
+        icd-test/TestRegionStatisticsEllipse.cc
+        icd-test/TestRegionStatisticsPolygon.cc
+        icd-test/TestRegionStatisticsRectangle.cc
+        icd-test/TestRegionRegister.cc
+        icd-test/TestIcdMain.cc)
 
-    add_executable(${TEST_ICD_BINARY} ${SOURCES} ${TEST_ICD_SOURCES})
-    add_test(NAME ${TEST_ICD_BINARY} COMMAND ${TEST_ICD_BINARY})
-    target_link_libraries(${TEST_ICD_BINARY}
-            ${TEST_COMMON_LIBS}
-            ${LINK_LIBS})
-endif ()
+add_executable(${TEST_ICD_BINARY} ${SOURCES} ${TEST_ICD_SOURCES})
+add_test(NAME ${TEST_ICD_BINARY} COMMAND ${TEST_ICD_BINARY})
+target_link_libraries(${TEST_ICD_BINARY}
+        ${TEST_COMMON_LIBS}
+        ${LINK_LIBS})
 
 # Build performance tests
 if (test-performance)

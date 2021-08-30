@@ -18,7 +18,7 @@ static void BM_PerCubeHistogram(benchmark::State& state, string filename) {
     auto register_viewer = GetRegisterViewer(0, "", 5);
     auto close_file = GetCloseFile(-1);
     auto open_file = GetOpenFile(FileFinder::LargeImagePath(""), filename, "0", 0, CARTA::RenderMode::RASTER);
-    auto histogram_requirements = GetSetHistogramRequirements(0, -2, -2, 1);
+    auto histogram_requirements = GetSetHistogramRequirements(0, -2, CUBE_REGION_ID, AUTO_BIN_SIZE);
 
     // Create a dummy backend and execute commands
     std::unique_ptr<BackendModel> dummy_backend = BackendModel::GetDummyBackend();

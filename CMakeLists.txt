@@ -282,7 +282,6 @@ install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
 
 # Tests
 option(test "Build tests." OFF)
-option(test-icd "Build ICD tests." OFF)
 option(test-performance "Build performance tests." OFF)
 
 if (test OR test-icd OR test-performance)
