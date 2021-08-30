@@ -61,7 +61,7 @@ struct ProgramSettings {
     nlohmann::json command_line_settings;
     bool system_settings_json_exists = false;
     bool user_settings_json_exists = false;
-    
+
     fs::path user_directory;
 
     // clang-format off
