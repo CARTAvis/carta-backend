@@ -106,7 +106,7 @@ target_link_libraries(${TEST_ICD_BINARY}
 if (test-performance)
     find_package(benchmark REQUIRED)
 
-    set(TEST_PERF_BINARY ${CMAKE_PROJECT_NAME}_perf_tests)
+    set(TEST_PERF_BINARY ${CMAKE_PROJECT_NAME}_performance_tests)
     set(TEST_PERF_SOURCES
             CommonTestUtilities.cc
             BackendModel.cc
