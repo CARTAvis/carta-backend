@@ -31,14 +31,12 @@
 #define DEFAULT_Z 0
 #define CURRENT_Z -1
 #define ALL_Z -2
-#define Z_NOT_SET -3
 
 // stokes
 #define DEFAULT_STOKES 0
 #define CURRENT_STOKES -1
 
 // raster image data
-#define MAX_SUBSETS 8
 #define TILE_SIZE 256
 #define CHUNK_SIZE 512
 #define MAX_TILE_CACHE_CAPACITY 4096
