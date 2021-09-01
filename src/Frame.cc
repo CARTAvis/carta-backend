@@ -1594,14 +1594,22 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         return false;
     }
 
-    data.resize(subimage_shape.product()); // must size correctly before sharing
-    casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
         casacore::IPosition start(subimage_shape.size(), 0);
         casacore::IPosition count(subimage_shape);
         casacore::Slicer slicer(start, count); // entire subimage
+
+        // Get image data
         std::unique_lock<std::mutex> ulock(_image_mutex);
-        sub_image.doGetSlice(tmp, slicer);
+        if (_loader->GetFileName().empty()) { // For the image in memory
+            casacore::Array<float> tmp;
+            sub_image.doGetSlice(tmp, slicer);
+            data = tmp.tovector();
+        } else {
+            data.resize(subimage_shape.product()); // must size correctly before sharing
+            casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+            sub_image.doGetSlice(tmp, slicer);
+        }
 
         // Get mask that defines region in subimage bounding box
         casacore::Array<bool> tmpmask;

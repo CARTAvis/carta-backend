@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+* Fixed region histograms for moment images ([#906](https://github.com/CARTAvis/carta-backend/issues/906)).
 * Fixed bug of duplicate histogram calculation ([#905](https://github.com/CARTAvis/carta-backend/pull/905)).
 
 ## [3.0.0-beta.1b]
