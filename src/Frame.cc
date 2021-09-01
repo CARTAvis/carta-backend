@@ -651,7 +651,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
     }
 
     if (region_id == IMAGE_REGION_ID) {
-        InitImageHistogramConfigs();
+        _image_histogram_configs.clear();
     } else {
         _cube_histogram_configs.clear();
     }
