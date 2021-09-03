@@ -101,28 +101,3 @@ add_test(NAME ${TEST_ICD_BINARY} COMMAND ${TEST_ICD_BINARY})
 target_link_libraries(${TEST_ICD_BINARY}
         ${TEST_COMMON_LIBS}
         ${LINK_LIBS})
-
-# Build performance tests
-if (test-performance)
-    find_package(benchmark REQUIRED)
-
-    set(TEST_PERF_BINARY ${CMAKE_PROJECT_NAME}_performance_tests)
-    set(TEST_PERF_SOURCES
-            CommonTestUtilities.cc
-            BackendModel.cc
-            BackendTester.cc
-            ProtobufInterface.cc
-            performance-test/TestMomentsGenerator.cc
-            performance-test/TestOpenFiles.cc
-            performance-test/TestPerCubeHistogram.cc
-            performance-test/TestRegionSpectralProfile.cc
-            performance-test/TestSpatialProfile.cc
-            performance-test/TestPerformanceMain.cc)
-
-    add_executable(${TEST_PERF_BINARY} ${SOURCES} ${TEST_PERF_SOURCES})
-    add_test(NAME ${TEST_PERF_BINARY} COMMAND ${TEST_PERF_BINARY})
-    target_link_libraries(${TEST_PERF_BINARY}
-            ${TEST_COMMON_LIBS}
-            ${LINK_LIBS}
-            benchmark::benchmark)
-endif ()

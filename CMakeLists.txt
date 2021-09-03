@@ -282,9 +282,7 @@ install(FILES "${CMAKE_SOURCE_DIR}/static/default_image/default.fits"
 
 # Tests
 option(test "Build tests." OFF)
-option(test-performance "Build performance tests." OFF)
-
-if (test OR test-performance)
+if (test)
     FIND_PACKAGE(GTest REQUIRED)
     add_subdirectory(test)
 endif ()
