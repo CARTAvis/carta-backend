@@ -48,12 +48,14 @@ public:
         CARTA::OpenFile open_file =
             GetOpenFile(first_filename_path.parent_path(), first_filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
 
-        ElapsedTimer timer;
-        timer.Start();
+        carta::Timer timer;
+        timer.Start("Animation");
 
         _dummy_backend->Receive(open_file);
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 
@@ -83,12 +85,14 @@ public:
 
         CARTA::SetImageChannels set_image_channels = GetSetImageChannels(0, 0, 0, CARTA::CompressionType::ZFP, 11);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 
@@ -140,12 +144,14 @@ public:
 
         set_image_channels = GetSetImageChannels(0, 2, 1, CARTA::CompressionType::ZFP, 11);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 
@@ -167,12 +173,14 @@ public:
 
         set_image_channels = GetSetImageChannels(1, 12, 0, CARTA::CompressionType::ZFP, 11);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 

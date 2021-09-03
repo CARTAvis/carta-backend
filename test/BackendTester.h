@@ -14,18 +14,7 @@
 #include "BackendModel.h"
 #include "CommonTestUtilities.h"
 #include "ProtobufUtilities.h"
-
-class ElapsedTimer {
-public:
-    ElapsedTimer();
-    ~ElapsedTimer() = default;
-
-    void Start();
-    int Elapsed(); // milli seconds elapsed
-
-private:
-    std::chrono::high_resolution_clock::time_point _t_start;
-};
+#include "Timer/Timer.h"
 
 class BackendTester : public ::testing::Test, public FileFinder {
 public:

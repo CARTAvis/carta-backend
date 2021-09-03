@@ -39,12 +39,14 @@ public:
 
         CARTA::OpenFile open_file = GetOpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
 
-        ElapsedTimer timer;
-        timer.Start();
+        carta::Timer timer;
+        timer.Start("Animation");
 
         _dummy_backend->Receive(open_file);
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 
@@ -74,12 +76,14 @@ public:
 
         CARTA::SetImageChannels set_image_channels = GetSetImageChannels(0, 0, 0, CARTA::CompressionType::ZFP, 11);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 
@@ -106,12 +110,14 @@ public:
 
         CARTA::SetSpatialRequirements set_spatial_requirements = GetSetSpatialRequirements(0, 0);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_spatial_requirements);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 100);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 100);
 
         message_count = 0;
 
@@ -134,12 +140,14 @@ public:
 
         CARTA::SetStatsRequirements set_stats_requirements = GetSetStatsRequirements(0, -1);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_stats_requirements);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 100);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 100);
 
         message_count = 0;
 
@@ -160,12 +168,14 @@ public:
 
         CARTA::SetHistogramRequirements set_histogram_requirements = GetSetHistogramRequirements(0, -1);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_histogram_requirements);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 100);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 100);
 
         message_count = 0;
 
@@ -190,12 +200,14 @@ public:
 
         set_image_channels = GetSetImageChannels(0, 12, 0, CARTA::CompressionType::ZFP, 11);
 
-        timer.Start();
+        timer.Start("Animation");
 
         _dummy_backend->Receive(set_image_channels);
         _dummy_backend->WaitForJobFinished();
 
-        EXPECT_LT(timer.Elapsed(), 200);
+        timer.End("Animation");
+
+        EXPECT_LT(timer.GetMeasurement("Animation").count(), 200);
 
         message_count = 0;
 
