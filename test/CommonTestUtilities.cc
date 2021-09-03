@@ -70,10 +70,6 @@ std::string FileFinder::Hdf5ImagePath(const std::string& filename) {
     return (TestRoot() / "data" / "images" / "hdf5" / filename).string();
 }
 
-std::string FileFinder::LargeImagePath(const std::string& filename) {
-    return (TestRoot() / "data" / "images" / "large" / filename).string();
-}
-
 std::string FileFinder::FitsTablePath(const std::string& filename) {
     return (TestRoot() / "data" / "tables" / "fits" / filename).string();
 }

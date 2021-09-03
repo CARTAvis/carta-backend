@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_
-#define CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_
+#ifndef CARTA_BACKEND_ICD_TEST_PROTOBUFUTILITIES_H_
+#define CARTA_BACKEND_ICD_TEST_PROTOBUFUTILITIES_H_
 
 #include "Session.h"
 
@@ -50,4 +50,4 @@ T DecodeMessage(std::vector<char>& message) {
     return decoded_message;
 }
 
-#endif // CARTA_BACKEND_ICD_TEST_PROTOBUFINTERFACE_H_
+#endif // CARTA_BACKEND_ICD_TEST_PROTOBUFUTILITIES_H_

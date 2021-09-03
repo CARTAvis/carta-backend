@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "ProtobufInterface.h"
+#include "ProtobufUtilities.h"
 
 CARTA::RegisterViewer GetRegisterViewer(uint32_t session_id, string api_key, uint32_t client_feature_flags) {
     CARTA::RegisterViewer register_viewer;

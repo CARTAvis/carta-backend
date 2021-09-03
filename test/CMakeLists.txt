@@ -42,6 +42,7 @@ ExternalProject_Add(fits2idia
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
+        ProtobufUtilities.cc
         TestBlockSmooth.cc
         TestFitsTable.cc
         TestFitsImage.cc
@@ -82,7 +83,7 @@ set(TEST_ICD_SOURCES
         CommonTestUtilities.cc
         BackendModel.cc
         BackendTester.cc
-        ProtobufInterface.cc
+        ProtobufUtilities.cc
         icd-test/TestAnimatorPlayback.cc
         icd-test/TestAccessCarta.cc
         icd-test/TestAnimatorDataStream.cc

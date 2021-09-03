@@ -40,7 +40,6 @@ public:
     static std::string FitsImagePath(const std::string& filename);
     static std::string CasaImagePath(const std::string& filename);
     static std::string Hdf5ImagePath(const std::string& filename);
-    static std::string LargeImagePath(const std::string& filename);
     static std::string FitsTablePath(const std::string& filename);
     static std::string XmlTablePath(const std::string& filename);
 };

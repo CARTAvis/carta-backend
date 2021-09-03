@@ -13,9 +13,7 @@
 
 #include "BackendModel.h"
 #include "CommonTestUtilities.h"
-#include "ProtobufInterface.h"
-
-bool FileExists(string filename);
+#include "ProtobufUtilities.h"
 
 class ElapsedTimer {
 public:

@@ -5,7 +5,7 @@
 */
 
 #include "BackendModel.h"
-#include "ProtobufInterface.h"
+#include "ProtobufUtilities.h"
 
 #include <chrono>
 #include <thread>
