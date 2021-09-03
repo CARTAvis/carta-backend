@@ -38,8 +38,6 @@ CARTA::MomentRequest GetMomentsRequest(int32_t file_id, int32_t region_id, CARTA
     CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range);
 
 CARTA::EventType GetEventType(std::vector<char>& message);
-void LogRequestedEventType(const CARTA::EventType& event_type);
-void LogResponsiveEventType(const CARTA::EventType& event_type);
 
 template <typename T>
 T DecodeMessage(std::vector<char>& message) {

@@ -27,7 +27,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -46,7 +46,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -67,7 +67,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -82,7 +82,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -102,7 +102,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::SPECTRAL_PROFILE_DATA) {
                 auto spectral_profile_data = DecodeMessage<CARTA::SpectralProfileData>(message);

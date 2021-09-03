@@ -45,7 +45,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::MOMENT_RESPONSE) {
                 auto moment_response = DecodeMessage<CARTA::MomentResponse>(message);

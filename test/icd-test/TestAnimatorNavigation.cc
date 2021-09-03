@@ -30,7 +30,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::REGISTER_VIEWER_ACK) {
                 CARTA::RegisterViewerAck register_viewer_ack = DecodeMessage<CARTA::RegisterViewerAck>(message);
@@ -60,7 +60,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
                 CARTA::OpenFileAck open_file_ack = DecodeMessage<CARTA::OpenFileAck>(message);
@@ -95,7 +95,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
@@ -117,7 +117,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
                 CARTA::OpenFileAck open_file_ack = DecodeMessage<CARTA::OpenFileAck>(message);
@@ -152,7 +152,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);
@@ -179,7 +179,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = DecodeMessage<CARTA::RasterTileData>(message);

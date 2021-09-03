@@ -277,11 +277,3 @@ CARTA::EventType GetEventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);
 }
-
-void LogRequestedEventType(const CARTA::EventType& event_type) {
-    spdlog::debug("<== {}", EventType_Name(event_type));
-}
-
-void LogResponsiveEventType(const CARTA::EventType& event_type) {
-    spdlog::debug("==> {}", EventType_Name(event_type));
-}

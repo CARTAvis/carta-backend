@@ -28,7 +28,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -47,7 +47,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -68,7 +68,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -83,7 +83,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -102,7 +102,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 2);
@@ -121,7 +121,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 3);
@@ -140,7 +140,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 4);
@@ -159,7 +159,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 5);
@@ -178,7 +178,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 6);
@@ -197,7 +197,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 7);
@@ -216,7 +216,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -235,7 +235,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -254,7 +254,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -273,7 +273,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -292,7 +292,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);

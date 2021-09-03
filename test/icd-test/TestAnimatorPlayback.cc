@@ -27,7 +27,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -46,7 +46,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -74,7 +74,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -115,7 +115,7 @@ public:
             }
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_SYNC) {
                 CARTA::RasterTileSync raster_tile_sync = DecodeMessage<CARTA::RasterTileSync>(message);
@@ -143,7 +143,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
@@ -180,7 +180,7 @@ public:
             }
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
 
             if (event_type == CARTA::EventType::RASTER_TILE_SYNC) {
                 CARTA::RasterTileSync raster_tile_sync = DecodeMessage<CARTA::RasterTileSync>(message);
@@ -208,7 +208,7 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = GetEventType(message);
-            LogResponsiveEventType(event_type);
+            LogSentEventType(event_type);
             ++message_count;
         }
 
