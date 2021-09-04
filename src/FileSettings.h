@@ -36,7 +36,7 @@ private:
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
     using cursor_iter = tbb::concurrent_unordered_map<uint32_t, cursor_info_t>::iterator;
-    // map is <fileId, cursor info>
+    // map is <file_id, cursor info>
     tbb::concurrent_unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
 

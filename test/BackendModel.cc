@@ -86,8 +86,8 @@ void BackendModel::Receive(CARTA::SetHistogramRequirements message) {
         _session->CancelSetHistRequirements();
     } else {
         _session->ResetHistContext();
-        OnMessageTask* tsk =
-            new (tbb::task::allocate_root(_session->HistContext())) SetHistogramRequirementsTask(_session, message, DUMMY_REQUEST_ID);
+        OnMessageTask* tsk = new (tbb::task::allocate_root(_session->HistContext()))
+            GeneralMessageTask<CARTA::SetHistogramRequirements>(_session, message, DUMMY_REQUEST_ID);
         tbb::task::enqueue(*tsk);
     }
 }
@@ -122,12 +122,14 @@ void BackendModel::Receive(CARTA::FileInfoRequest message) {
 
 void BackendModel::Receive(CARTA::OpenFile message) {
     LogReceivedEventType(CARTA::EventType::OPEN_FILE);
+    _session->CloseCachedImage(message.directory(), message.file());
     _session->OnOpenFile(message, DUMMY_REQUEST_ID);
 }
 
 void BackendModel::Receive(CARTA::AddRequiredTiles message) {
     LogReceivedEventType(CARTA::EventType::ADD_REQUIRED_TILES);
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnAddRequiredTilesTask(_session, message);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::AddRequiredTiles>(_session, message, DUMMY_REQUEST_ID);
     tbb::task::enqueue(*tsk);
 }
 
@@ -148,7 +150,8 @@ void BackendModel::Receive(CARTA::ExportRegion message) {
 
 void BackendModel::Receive(CARTA::SetContourParameters message) {
     LogReceivedEventType(CARTA::EventType::SET_CONTOUR_PARAMETERS);
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSetContourParametersTask(_session, message);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::SetContourParameters>(_session, message, DUMMY_REQUEST_ID);
     tbb::task::enqueue(*tsk);
 }
 
@@ -210,7 +213,8 @@ void BackendModel::Receive(CARTA::SplataloguePing message) {
 
 void BackendModel::Receive(CARTA::SpectralLineRequest message) {
     LogReceivedEventType(CARTA::EventType::SPECTRAL_LINE_REQUEST);
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) OnSpectralLineRequestTask(_session, message, DUMMY_REQUEST_ID);
+    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context()))
+        GeneralMessageTask<CARTA::SpectralLineRequest>(_session, message, DUMMY_REQUEST_ID);
     tbb::task::enqueue(*tsk);
 }
 
