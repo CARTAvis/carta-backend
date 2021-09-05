@@ -17,9 +17,9 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
+#include "Hdf5Attributes.h"
 #include "Logger/Logger.h"
 #include "Util/Util.h"
-#include "Hdf5Attributes.h"
 
 using namespace carta;
 
