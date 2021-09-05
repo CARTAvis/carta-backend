@@ -10,8 +10,8 @@
 #ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 #define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 
-#include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Logger/Logger.h"
+#include "Util/Util.h"
 
 using namespace carta;
 

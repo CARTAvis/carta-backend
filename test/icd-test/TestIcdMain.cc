@@ -13,7 +13,7 @@
 int main(int argc, char** argv) {
     cxxopts::Options options("carta-icd-test", "CARTA ICD test");
 
-    // Default settings
+    // Set global environment
     int verbosity(0);
     bool no_log(true);
     bool log_performance(false);

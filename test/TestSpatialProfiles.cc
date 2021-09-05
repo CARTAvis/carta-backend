@@ -7,11 +7,10 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include "CommonTestUtilities.h"
 #include "Frame.h"
 #include "ImageData/FileLoader.h"
-
-#include "CommonTestUtilities.h"
-#include "ProtobufUtilities.h"
+#include "Util/ProtobufUtilities.h"
 
 using namespace carta;
 

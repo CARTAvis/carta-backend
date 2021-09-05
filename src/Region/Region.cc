@@ -23,9 +23,9 @@
 #include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/MCDirection.h>
 
-#include "../Constants.h"
-#include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Constants.h"
+#include "Logger/Logger.h"
+#include "Util/Util.h"
 
 using namespace carta;
 

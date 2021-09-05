@@ -13,8 +13,8 @@
 
 #include "BackendModel.h"
 #include "CommonTestUtilities.h"
-#include "ProtobufUtilities.h"
 #include "Timer/Timer.h"
+#include "Util/ProtobufUtilities.h"
 
 class BackendTester : public ::testing::Test, public FileFinder {
 public:

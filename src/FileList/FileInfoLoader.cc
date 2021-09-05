@@ -13,7 +13,7 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
-#include "../Util.h"
+#include "Util/Util.h"
 
 FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
     _type = GetCartaFileType(filename);

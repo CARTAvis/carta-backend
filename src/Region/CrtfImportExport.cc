@@ -26,8 +26,8 @@
 
 #include <iomanip>
 
-#include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Logger/Logger.h"
+#include "Util/Util.h"
 
 using namespace carta;
 

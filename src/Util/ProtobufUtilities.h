@@ -4,10 +4,22 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_ICD_TEST_PROTOBUFUTILITIES_H_
-#define CARTA_BACKEND_ICD_TEST_PROTOBUFUTILITIES_H_
+#ifndef CARTA_BACKEND_UTIL_PROTOBUFUTILITIES_H_
+#define CARTA_BACKEND_UTIL_PROTOBUFUTILITIES_H_
 
 #include "Session.h"
+
+// ************ Data Stream Helpers *************
+
+void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
+
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
+    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+
+void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map);
+
+// ************ Create Request Messages *************
 
 CARTA::RegisterViewer GetRegisterViewer(uint32_t session_id, string api_key, uint32_t client_feature_flags);
 CARTA::CloseFile GetCloseFile(int32_t file_id);
@@ -37,6 +49,8 @@ CARTA::FloatBounds GetFloatBounds(float min, float max);
 CARTA::MomentRequest GetMomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis, CARTA::MomentMask moment_mask,
     CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range);
 
+// ************ Decode Messages *************
+
 CARTA::EventType GetEventType(std::vector<char>& message);
 
 template <typename T>
@@ -48,4 +62,4 @@ T DecodeMessage(std::vector<char>& message) {
     return decoded_message;
 }
 
-#endif // CARTA_BACKEND_ICD_TEST_PROTOBUFUTILITIES_H_
+#endif // CARTA_BACKEND_UTIL_PROTOBUFUTILITIES_H_

@@ -11,10 +11,10 @@
 
 #include <fitsio.h>
 
-#include "../Logger/Logger.h"
-#include "../Util.h"
 #include "DataColumn.tcc"
+#include "Logger/Logger.h"
 #include "Threading.h"
+#include "Util/Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

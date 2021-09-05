@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "Table/Table.h"
-#include "Util.h"
+#include "Util/Util.h"
 
 #include "CommonTestUtilities.h"
 

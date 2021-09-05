@@ -36,7 +36,7 @@
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
-#include "Util.h"
+#include "Util/Util.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
