@@ -5,6 +5,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <omp.h>
 #include <cxxopts/cxxopts.hpp>
 
 #include "CommonTestUtilities.h"
