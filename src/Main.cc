@@ -716,7 +716,16 @@ int main(int argc, char* argv[]) {
                 if (!settings.files.empty()) {
                     // TODO: Handle multiple files once the frontend supports this
                     query_url += query_url.empty() ? "/?" : "&";
-                    query_url += fmt::format("file={}", curl_easy_escape(nullptr, settings.files[0].c_str(), 0));
+                    if (settings.files.size() == 1) {
+                        query_url += fmt::format("file={}", curl_easy_escape(nullptr, settings.files[0].c_str(), 0));
+                    } else {
+                        int num_files = settings.files.size();
+                        query_url += "files=[";
+                        for (int i = 0; i < num_files; i++) {
+                            query_url += curl_easy_escape(nullptr, settings.files[i].c_str(), 0);
+                            query_url += (i == num_files - 1) ? "]" : ",";
+                        }
+                    }
                 }
 
                 if (!query_url.empty()) {
