@@ -79,6 +79,14 @@ public:
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<carta::CollapseResult>& collapse_results);
 
+    // Point regions
+    bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
+    bool FillSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    bool IsPointRegion(int region_id);
+    std::vector<int> GetPointRegionIds(int file_id);
+    std::vector<int> GetProjectedFileIds(int region_id);
+
 private:
     // Get unique region id (max id + 1)
     int GetNextRegionId();
@@ -130,6 +138,10 @@ private:
     std::vector<CARTA::StatsType> _spectral_stats = {CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity, CARTA::StatsType::Mean,
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
         CARTA::StatsType::Extrema};
+
+    // Point regions configs, key is region id
+    std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
+    std::mutex _spatial_mutex;
 };
 
 } // namespace carta

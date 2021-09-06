@@ -1375,4 +1375,89 @@ bool RegionHandler::GetRegionStatsData(
     return false;
 }
 
+bool RegionHandler::SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+    const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
+    // Clear all requirements for this file/region
+    ConfigId config_id(file_id, region_id);
+    if (_spatial_req.count(config_id)) {
+        std::unique_lock<std::mutex> ulock(_spatial_mutex);
+        _spatial_req[config_id].clear();
+        ulock.unlock();
+    }
+
+    // Set spatial profile requirements for given region and file
+    if (spatial_profiles.empty() && !RegionSet(region_id)) {
+        // Frontend clears requirements after region removed, prevent error in log by returning true.
+        return true;
+    }
+
+    if (!_regions.count(region_id)) {
+        spdlog::error("Spatial requirements failed: no region with id {}", region_id);
+        return false;
+    }
+
+    // Save frame pointer
+    _frames[file_id] = frame;
+
+    // Set new requirements for this file/region
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    _spatial_req[config_id] = spatial_profiles;
+    ulock.unlock();
+
+    return true;
+}
+
+bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+    ConfigId config_id(file_id, region_id);
+    if (!_regions.count(region_id) || !_frames.count(file_id) || !_spatial_req.count(config_id)) {
+        return false;
+    }
+
+    // Map a point region (region_id) to an image (file_id)
+    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    if (!lcregion) {
+        return false;
+    }
+
+    casacore::IPosition origin = lcregion->boundingBox().start();
+    PointXy point(origin(0), origin(1));
+
+    return _frames.at(file_id)->FillSpatialProfileData(point, _spatial_req.at(config_id), spatial_data_vec);
+}
+
+bool RegionHandler::IsPointRegion(int region_id) {
+    if (_regions.count(region_id)) {
+        if (_regions[region_id]->GetRegionState().type == CARTA::RegionType::POINT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<int> RegionHandler::GetPointRegionIds(int file_id) {
+    std::vector<int> results;
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    for (auto& region : _spatial_req) {
+        if (region.first.file_id == file_id) {
+            results.push_back(region.first.region_id);
+        }
+    }
+    ulock.unlock();
+
+    return results;
+}
+
+std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
+    std::vector<int> results;
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    for (auto& region : _spatial_req) {
+        if (region.first.region_id == region_id) {
+            results.push_back(region.first.file_id);
+        }
+    }
+    ulock.unlock();
+
+    return results;
+}
+
 } // namespace carta
