@@ -245,6 +245,7 @@ set(SOURCE_FILES
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
+        src/SessionManager/SessionManager.cc
         src/SessionManager/WebBrowser.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
