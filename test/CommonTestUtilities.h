@@ -28,6 +28,8 @@ using namespace carta;
 
 fs::path TestRoot();
 
+bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0);
+
 class ImageGenerator {
 public:
     static std::string GeneratedFitsImagePath(const std::string& params);

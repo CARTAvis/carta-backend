@@ -7,7 +7,12 @@
 #include <functional>
 #include <stdexcept>
 
+#include <casacore/casa/Exceptions.h>
+#include <casacore/images/Images/FITSImage.h>
+#include <casacore/images/Images/PagedImage.h>
+
 #include "CommonTestUtilities.h"
+#include "Logger/Logger.h"
 
 using namespace carta;
 
@@ -20,6 +25,28 @@ fs::path TestRoot() {
         root = fs::current_path();
     }
     return root;
+}
+
+bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num) {
+    bool image_ok(false);
+    try {
+        casacore::ImageOpener::ImageTypes image_types = casacore::ImageOpener::imageType(filename);
+        switch (image_types) {
+            case casacore::ImageOpener::AIPSPP:
+                image = std::make_shared<casacore::PagedImage<float>>(filename);
+                image_ok = true;
+                break;
+            case casacore::ImageOpener::FITS:
+                image = std::make_shared<casacore::FITSImage>(filename, 0, hdu_num);
+                image_ok = true;
+                break;
+            default:
+                break;
+        }
+    } catch (const casacore::AipsError& x) {
+        spdlog::error("Error on opening the file: {}", x.getMesg());
+    }
+    return image_ok;
 }
 
 std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {

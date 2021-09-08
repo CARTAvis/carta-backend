@@ -50,6 +50,7 @@ set(TEST_SOURCES
         TestHistogram.cc
         TestMain.cc
         TestMoment.cc
+        TestPolarizationCalculator.cc
         TestProgramSettings.cc
         TestSpatialProfiles.cc
         TestTileEncoding.cc

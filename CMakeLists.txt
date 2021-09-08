@@ -229,6 +229,7 @@ set(SOURCE_FILES
         src/ImageData/CartaFitsImage.cc
         src/ImageData/StokesFilesConnector.cc
         src/ImageData/CompressedFits.cc
+        src/ImageData/PolarizationCalculator.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Region/CrtfImportExport.cc
