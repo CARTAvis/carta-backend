@@ -21,7 +21,7 @@ class PolarizationCalculator {
 
 public:
     PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, string out_name = "", bool overwrite = false);
-    ~PolarizationCalculator();
+    ~PolarizationCalculator() = default;
 
     // Change the casacore::Stokes casacore::Coordinate for the given complex image to be of the specified casacore::Stokes type
     void FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type);

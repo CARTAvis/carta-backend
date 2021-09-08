@@ -15,8 +15,6 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageIn
     FindStokes();
 }
 
-PolarizationCalculator::~PolarizationCalculator() {}
-
 void PolarizationCalculator::FindStokes() {
     const auto& coord_sys = _image->coordinates();
     if (!coord_sys.hasPolarizationCoordinate()) {
