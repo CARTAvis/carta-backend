@@ -19,17 +19,18 @@
 namespace carta {
 class SessionManager {
 public:
+    using WSType = uWS::WebSocket<false, true, PerSocketData>;
     SessionManager(ProgramSettings& settings, std::string auth_token, FileListHandler* file_list_handler,
         std::shared_ptr<CartaGrpcService> grpc_service);
     void DeleteSession(int session_id);
     void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context);
     // Called on connection. Creates session objects and assigns UUID to it
-    void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws);
+    void OnConnect(WSType* ws);
     // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-    void OnDisconnect(uWS::WebSocket<false, true, PerSocketData>* ws, int code, std::string_view message);
-    void OnDrain(uWS::WebSocket<false, true, PerSocketData>* ws);
+    void OnDisconnect(WSType* ws, int code, std::string_view message);
+    void OnDrain(WSType* ws);
     // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-    void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view sv_message, uWS::OpCode op_code);
+    void OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code);
     void Listen(std::string host, std::vector<int> ports, int default_port, int& port);
     uWS::App& App();
     void RunApp();

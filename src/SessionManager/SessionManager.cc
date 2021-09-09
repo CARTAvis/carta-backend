@@ -68,7 +68,7 @@ void SessionManager::OnUpgrade(
         context);
 }
 
-void SessionManager::OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws) {
+void SessionManager::OnConnect(WSType* ws) {
     auto socket_data = ws->getUserData();
     if (!socket_data) {
         spdlog::error("Error handling WebSocket connection: Socket data does not exist");
@@ -94,7 +94,7 @@ void SessionManager::OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws) {
     spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
-void SessionManager::OnDisconnect(uWS::WebSocket<false, true, PerSocketData>* ws, int code, std::string_view message) {
+void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message) {
     // Skip server-forced disconnects
 
     spdlog::debug("WebSocket closed with code {} and message '{}'.", code, message);
@@ -113,7 +113,7 @@ void SessionManager::OnDisconnect(uWS::WebSocket<false, true, PerSocketData>* ws
     ws->close();
 }
 
-void SessionManager::OnDrain(uWS::WebSocket<false, true, PerSocketData>* ws) {
+void SessionManager::OnDrain(WSType* ws) {
     uint32_t session_id = ws->getUserData()->session_id;
     Session* session = _sessions[session_id];
     if (session) {
@@ -124,7 +124,7 @@ void SessionManager::OnDrain(uWS::WebSocket<false, true, PerSocketData>* ws) {
     }
 }
 
-void SessionManager::OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view sv_message, uWS::OpCode op_code) {
+void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = _sessions[session_id];
     if (!session) {
@@ -505,12 +505,10 @@ void SessionManager::RunApp() {
                                      .maxBackpressure = MAX_BACKPRESSURE,
                                      .upgrade = [=](uWS::HttpResponse<false>* res, uWS::HttpRequest* req,
                                                     struct us_socket_context_t* ctx) { OnUpgrade(res, req, ctx); },
-                                     .open = [=](uWS::WebSocket<false, true, PerSocketData>* ws) { OnConnect(ws); },
-                                     .message = [=](uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view msg,
-                                                    uWS::OpCode code) { OnMessage(ws, msg, code); },
-                                     .drain = [=](uWS::WebSocket<false, true, PerSocketData>* ws) { OnDrain(ws); },
-                                     .close = [=](uWS::WebSocket<false, true, PerSocketData>* ws, int code,
-                                                  std::string_view msg) { OnDisconnect(ws, code, msg); }})
+                                     .open = [=](WSType* ws) { OnConnect(ws); },
+                                     .message = [=](WSType* ws, std::string_view msg, uWS::OpCode code) { OnMessage(ws, msg, code); },
+                                     .drain = [=](WSType* ws) { OnDrain(ws); },
+                                     .close = [=](WSType* ws, int code, std::string_view msg) { OnDisconnect(ws, code, msg); }})
         .run();
 }
 
