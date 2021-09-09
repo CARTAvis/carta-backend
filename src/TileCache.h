@@ -17,6 +17,8 @@
 
 #include "ImageData/FileLoader.h"
 
+#define MAX_TILE_CACHE_CAPACITY 4096
+
 using TilePtr = std::shared_ptr<std::vector<float>>;
 
 struct TilePool : std::enable_shared_from_this<TilePool> {
