@@ -813,6 +813,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
     double min_float(std::numeric_limits<float>::min());
     double crval1(min_float), crval2(min_float), crpix1(min_float), crpix2(min_float), cdelt1(min_float), cdelt2(min_float);
+    int velref(-1);
 
     // Quit looking for key when have needed values
     bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
@@ -923,6 +924,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             specsys = entry.value();
         }
 
+        // Velocity definition
+        if (entry_name.find("VELREF") == 0) {
+            velref = entry.numeric_value();
+        }
+
         // Bunit
         if (entry_name.find("BUNIT") == 0) {
             bunit = entry.value();
@@ -1022,6 +1028,20 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Spectral frame");
         entry->set_value(specsys);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (velref > 0) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("Velocity definition");
+        // VELREF : 1 LSR, 2 HEL, 3 OBS, +256 Radio
+        if (velref < 4) {
+            entry->set_value("OPTICAL");
+        } else if (velref > 256) {
+            entry->set_value("RADIO");
+        } else {
+            entry->set_value("UNKNOWN");
+        }
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
