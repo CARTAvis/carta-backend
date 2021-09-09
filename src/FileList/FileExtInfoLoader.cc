@@ -295,7 +295,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 } else {
                     // Add FitsKeywordList to ImageFITSHeaderInfo
                     casacore::ImageFITSHeaderInfo fhi;
-                    casacore::CoordinateSystem coord_sys(image->coordinates());
 
                     if (is_casacore_fits) {
                         // Get original headers
@@ -812,8 +811,8 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
-    float min_float(std::numeric_limits<float>::min());
-    float crval1(min_float), crval2(min_float), crpix1(min_float), crpix2(min_float), cdelt1(min_float), cdelt2(min_float);
+    double min_float(std::numeric_limits<float>::min());
+    double crval1(min_float), crval2(min_float), crpix1(min_float), crpix2(min_float), cdelt1(min_float), cdelt2(min_float);
 
     // Quit looking for key when have needed values
     bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
