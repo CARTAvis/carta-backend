@@ -33,8 +33,8 @@ using namespace std;
 ProgramSettings settings;
 
 // file list handler for the file browser
-static FileListHandler* file_list_handler;
-static SimpleFrontendServer* http_server;
+static std::shared_ptr<FileListHandler> file_list_handler;
+static std::unique_ptr<SimpleFrontendServer> http_server;
 
 // grpc server for scripting client
 static std::shared_ptr<CartaGrpcService> carta_grpc_service;
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
         carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
 
         // One FileListHandler works for all sessions.
-        file_list_handler = new FileListHandler(settings.top_level_folder, settings.starting_folder);
+        file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
 
         // Start gRPC server for scripting client.
         std::shared_ptr<CartaGrpcService> carta_grpc_service;
@@ -205,7 +205,8 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server = new SimpleFrontendServer(frontend_path, settings.user_directory, auth_token, settings.read_only_mode);
+                http_server =
+                    std::make_unique<SimpleFrontendServer>(frontend_path, settings.user_directory, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
                     http_server->RegisterRoutes(session_manager->App());
                 } else {

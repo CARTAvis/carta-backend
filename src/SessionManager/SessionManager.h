@@ -20,7 +20,7 @@ namespace carta {
 class SessionManager {
 public:
     using WSType = uWS::WebSocket<false, true, PerSocketData>;
-    SessionManager(ProgramSettings& settings, std::string auth_token, FileListHandler* file_list_handler,
+    SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler>,
         std::shared_ptr<CartaGrpcService> grpc_service);
     void DeleteSession(int session_id);
     void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context);
@@ -44,7 +44,7 @@ private:
     // Shared objects
     ProgramSettings& _settings;
     std::string _auth_token;
-    FileListHandler* _file_list_handler;
+    std::shared_ptr<FileListHandler> _file_list_handler;
     std::shared_ptr<CartaGrpcService> _grpc_service;
 };
 } // namespace carta

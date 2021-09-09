@@ -12,8 +12,8 @@
 
 namespace carta {
 
-SessionManager::SessionManager(
-    ProgramSettings& settings, std::string auth_token, FileListHandler* file_list_handler, std::shared_ptr<CartaGrpcService> grpc_service)
+SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler,
+    std::shared_ptr<CartaGrpcService> grpc_service)
     : _session_number(0),
       _app(uWS::App()),
       _settings(settings),
