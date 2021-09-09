@@ -811,8 +811,8 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
-    double min_float(std::numeric_limits<double>::min());
-    double crval1(min_float), crval2(min_float), crpix1(min_float), crpix2(min_float), cdelt1(min_float), cdelt2(min_float);
+    double min_double(std::numeric_limits<double>::min());
+    double crval1(min_double), crval2(min_double), crpix1(min_double), crpix2(min_double), cdelt1(min_double), cdelt2(min_double);
     int velref(std::numeric_limits<int>::min());
 
     // Quit looking for key when have needed values
@@ -849,7 +849,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             } else if (entry_name.find("CRPIX" + suffix2) == 0) {
                 crpix2 = entry.numeric_value();
             }
-            if ((crpix1 != min_float) && (crpix2 != min_float)) {
+            if ((crpix1 != min_double) && (crpix2 != min_double)) {
                 need_crpix = false;
             }
         }
@@ -861,7 +861,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             } else if (entry_name.find("CRVAL" + suffix2) == 0) {
                 crval2 = entry.numeric_value();
             }
-            if ((crval1 != min_float) && (crval2 != min_float)) {
+            if ((crval1 != min_double) && (crval2 != min_double)) {
                 need_crval = false;
             }
         }
@@ -896,7 +896,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             } else if (entry_name.find("CDELT" + suffix2) == 0) {
                 cdelt2 = entry.numeric_value();
             }
-            if ((cdelt1 != min_float) && (cdelt2 != min_float)) {
+            if ((cdelt1 != min_double) && (cdelt2 != min_double)) {
                 need_cdelt = false;
             }
         }
