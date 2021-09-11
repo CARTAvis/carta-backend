@@ -93,9 +93,10 @@ public:
         std::pair<int32_t, int32_t> delta_frame = std::make_pair(delta_channel, stokes);
         tiles = {33554432.0, 33558528.0, 33562624.0, 33566720.0, 33554433.0, 33558529.0, 33562625.0, 33566721.0, 33554434.0, 33558530.0,
             33562626.0, 33566722.0};
+        int frame_rate(2);
 
         auto start_animation =
-            GetStartAnimation(0, first_frame, start_frame, last_frame, delta_frame, CARTA::CompressionType::ZFP, 9, tiles);
+            GetStartAnimation(0, first_frame, start_frame, last_frame, delta_frame, CARTA::CompressionType::ZFP, 9, tiles, frame_rate);
 
         int end_channel(10);
         std::pair<int32_t, int32_t> end_frame = std::make_pair(end_channel, stokes);
@@ -160,7 +161,8 @@ public:
         last_frame = std::make_pair(last_channel, stokes);
         delta_frame = std::make_pair(delta_channel, stokes);
 
-        start_animation = GetStartAnimation(0, first_frame, start_frame, last_frame, delta_frame, CARTA::CompressionType::ZFP, 9, tiles);
+        start_animation =
+            GetStartAnimation(0, first_frame, start_frame, last_frame, delta_frame, CARTA::CompressionType::ZFP, 9, tiles, frame_rate);
 
         end_channel = 18;
         end_frame = std::make_pair(end_channel, stokes);

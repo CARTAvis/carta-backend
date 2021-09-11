@@ -215,7 +215,7 @@ CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32
 
 CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame, std::pair<int32_t, int32_t> start_frame,
     std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame, CARTA::CompressionType compression_type,
-    float compression_quality, const std::vector<float>& tiles) {
+    float compression_quality, const std::vector<float>& tiles, int32_t frame_rate) {
     CARTA::StartAnimation start_animation;
     auto* mutable_first_frame = start_animation.mutable_first_frame();
     mutable_first_frame->set_channel(first_frame.first);
@@ -241,6 +241,8 @@ CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int3
     for (int i = 0; i < tiles.size(); ++i) {
         mutable_required_tiles->add_tiles(tiles[i]);
     }
+
+    start_animation.set_frame_rate(frame_rate);
 
     return start_animation;
 }

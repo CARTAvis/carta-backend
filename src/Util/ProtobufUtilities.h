@@ -40,7 +40,7 @@ CARTA::SetStatsRequirements GetSetStatsRequirements(int32_t file_id, int32_t reg
 CARTA::SetSpectralRequirements GetSetSpectralRequirements(int32_t file_id, int32_t region_id, string coordinate);
 CARTA::StartAnimation GetStartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame, std::pair<int32_t, int32_t> start_frame,
     std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame, CARTA::CompressionType compression_type,
-    float compression_quality, const std::vector<float>& tiles);
+    float compression_quality, const std::vector<float>& tiles, int32_t frame_rate = 5);
 CARTA::AnimationFlowControl GetAnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
 CARTA::StopAnimation GetStopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame);
 CARTA::SetSpatialRequirements_SpatialConfig GetSpatialConfig(std::string coordinate, int start = 0, int end = 0, int mip = 0);
