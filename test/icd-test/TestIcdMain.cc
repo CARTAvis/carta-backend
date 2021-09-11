@@ -6,6 +6,8 @@
 
 #include <gtest/gtest.h>
 #include <omp.h>
+#include <tbb/task.h>
+#include <tbb/task_scheduler_init.h>
 #include <cxxopts/cxxopts.hpp>
 
 #include "CommonTestUtilities.h"
@@ -44,6 +46,8 @@ int main(int argc, char** argv) {
     } else {
         omp_set_num_threads(omp_get_num_procs());
     }
+
+    tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
 
     InitLogger(no_log, verbosity, log_performance, log_protocol_messages);
 
