@@ -286,6 +286,6 @@ void BackendModel::ClearMessagesQueue() {
 
 void BackendModel::WaitForJobFinished() {
     while (_session->GetRefCount() > 1) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
     }
 }
