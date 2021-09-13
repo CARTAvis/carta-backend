@@ -322,7 +322,7 @@ bool RegionHandler::SetHistogramRequirements(
         // Make HistogramConfig vector of requirements
         std::vector<HistogramConfig> input_configs;
         for (auto& config : configs) {
-            HistogramConfig hist_config(config.channel(), config.num_bins());
+            HistogramConfig hist_config(config.coordinate(), config.channel(), config.num_bins());
             input_configs.push_back(hist_config);
         }
 
@@ -470,9 +470,9 @@ void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
 }
 
 bool RegionHandler::SetStatsRequirements(
-    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types) {
+    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs) {
     // Set stats data requirements for given region and file
-    if (stats_types.empty() && !RegionSet(region_id)) {
+    if (stats_configs.empty() && !RegionSet(region_id)) {
         // frontend clears requirements after region removed, prevent error in log
         return true;
     }
@@ -483,7 +483,7 @@ bool RegionHandler::SetStatsRequirements(
 
         // Set requirements
         ConfigId config_id(file_id, region_id);
-        _stats_req[config_id].stats_types = stats_types;
+        _stats_req[config_id].stats_configs = stats_configs;
         return true;
     }
     return false;
@@ -677,14 +677,13 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 
     try {
         casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id);
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
         if (applied_region == nullptr) {
             return false;
         }
 
         // Create LCBox with z range and stokes using a slicer
         casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes);
-        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
-        casacore::LCBox z_stokes_box(z_stokes_slicer, image_shape);
 
         // Set returned region
         // Combine applied region with z/stokes box
@@ -741,7 +740,8 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
 // ***** Fill histogram *****
 
-bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
+bool RegionHandler::FillRegionHistogramData(
+    std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id) {
     // Fill histogram data for given region and file
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
@@ -762,10 +762,12 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 }
 
                 // return histograms for this requirement
-                CARTA::RegionHistogramData histogram_message;
+                std::vector<CARTA::RegionHistogramData> histogram_messages;
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_message)) {
-                    cb(histogram_message); // send data
+                if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_messages)) {
+                    for (const auto& histogram_message : histogram_messages) {
+                        region_histogram_callback(histogram_message); // send histogram data with respect to stokes
+                    }
                     message_filled = true;
                 }
             }
@@ -785,9 +787,11 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 
                 // return histograms for this requirement
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                CARTA::RegionHistogramData histogram_message;
-                if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_message)) {
-                    cb(histogram_message); // send data
+                std::vector<CARTA::RegionHistogramData> histogram_messages;
+                if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_messages)) {
+                    for (const auto& histogram_message : histogram_messages) {
+                        region_histogram_callback(histogram_message); // send histogram data with respect to stokes
+                    }
                     message_filled = true;
                 }
             }
@@ -797,52 +801,58 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 }
 
 bool RegionHandler::GetRegionHistogramData(
-    int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message) {
+    int region_id, int file_id, const std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
 
-    int stokes(_frames.at(file_id)->CurrentStokes());
+    // Set channel range is the current channel
     int z(_frames.at(file_id)->CurrentZ());
-
-    // Set histogram fields
-    histogram_message.set_file_id(file_id);
-    histogram_message.set_region_id(region_id);
-    histogram_message.set_stokes(stokes);
-    histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
-
-    // Get image region
     AxisRange z_range(z);
-    casacore::ImageRegion region;
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
-        // region outside image, send default histogram
-        auto default_histogram = histogram_message.add_histograms();
-        default_histogram->set_channel(z);
-        default_histogram->set_num_bins(1);
-        default_histogram->set_bin_width(0.0);
-        default_histogram->set_first_bin_center(0.0);
-        std::vector<float> histogram_bins(1, 0.0);
-        *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
-        default_histogram->set_mean(NAN);
-        default_histogram->set_std_dev(NAN);
-        return true;
-    }
+
+    // Stokes type to be determined in each of histogram configs
+    int stokes;
 
     // Flags for calculations
-    bool have_region_data(false);
     bool have_basic_stats(false);
 
-    // Reuse data and stats for each histogram; results depend on num_bins
-    std::vector<float> data;
+    // Reuse the image region for each histogram
+    casacore::ImageRegion region;
+
+    // Reuse data with respect to stokes and stats for each histogram; results depend on num_bins
+    std::unordered_map<int, std::vector<float>> data;
     BasicStats<float> stats;
 
-    // Key for cache
-    CacheId cache_id = CacheId(file_id, region_id, stokes, z);
-
-    // Calculate histogram for each requirement
     for (auto& hist_config : configs) {
         // check for cancel
         if (!RegionFileIdsValid(region_id, file_id)) {
             return false;
+        }
+
+        // Get stokes index
+        if (!_frames.at(file_id)->GetStokesTypeIndex(hist_config.coordinate, stokes)) {
+            continue;
+        }
+
+        // Set histogram fields
+        CARTA::RegionHistogramData histogram_message;
+        histogram_message.set_file_id(file_id);
+        histogram_message.set_region_id(region_id);
+        histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
+        histogram_message.set_channel(z);
+        histogram_message.set_stokes(stokes);
+
+        // Get image region
+        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
+            // region outside image, send default histogram
+            auto* default_histogram = histogram_message.mutable_histograms();
+            default_histogram->set_num_bins(1);
+            default_histogram->set_bin_width(0.0);
+            default_histogram->set_first_bin_center(0.0);
+            std::vector<float> histogram_bins(1, 0.0);
+            *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
+            default_histogram->set_mean(NAN);
+            default_histogram->set_std_dev(NAN);
+            continue;
         }
 
         // number of bins may be set or calculated
@@ -852,15 +862,20 @@ bool RegionHandler::GetRegionHistogramData(
             num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
         }
 
+        // Key for cache
+        CacheId cache_id = CacheId(file_id, region_id, stokes, z);
+
         // check cache
         if (_histogram_cache.count(cache_id)) {
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
                 carta::Histogram hist;
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
-                    auto histogram = histogram_message.add_histograms();
-                    histogram->set_channel(z);
+                    auto* histogram = histogram_message.mutable_histograms();
                     FillHistogramFromResults(histogram, stats, hist);
+
+                    // Fill in the cached message
+                    histogram_messages.emplace_back(histogram_message);
                     continue;
                 }
             }
@@ -868,28 +883,30 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Calculate stats and/or histograms, not in cache
         // Get data in region
-        if (!have_region_data) {
-            have_region_data = _frames.at(file_id)->GetRegionData(region, data);
-            if (!have_region_data) {
+        if (!data.count(stokes)) {
+            if (!_frames.at(file_id)->GetRegionData(region, data[stokes])) {
+                spdlog::error("Failed to get data in the region!");
                 return false;
             }
         }
 
         // Calculate and cache stats
         if (!have_basic_stats) {
-            CalcBasicStats(data, stats);
+            CalcBasicStats(data[stokes], stats);
             _histogram_cache[cache_id].SetBasicStats(stats);
             have_basic_stats = true;
         }
 
         // Calculate and cache histogram for number of bins
-        Histogram histo = CalcHistogram(num_bins, stats, data);
+        Histogram histo = CalcHistogram(num_bins, stats, data[stokes]);
         _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
-        auto histogram = histogram_message.add_histograms();
-        histogram->set_channel(z);
+        auto* histogram = histogram_message.mutable_histograms();
         FillHistogramFromResults(histogram, stats, histo);
+
+        // Fill in the final result
+        histogram_messages.emplace_back(histogram_message);
     }
 
     auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
@@ -959,13 +976,9 @@ bool RegionHandler::FillSpectralProfileData(
                     continue;
                 }
 
-                // Get index into stokes axis for data message
                 int stokes_index;
                 if (!_frames.at(config_file_id)->GetStokesTypeIndex(coordinate, stokes_index)) {
                     continue;
-                }
-                if (stokes_index < 0) {
-                    stokes_index = _frames.at(config_file_id)->CurrentStokes();
                 }
 
                 // Return spectral profile for this requirement
@@ -1231,12 +1244,36 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
     }
 
     bool message_filled(false);
+
+    auto send_stats_results = [&](int region_id, int file_id, std::vector<CARTA::SetStatsRequirements_StatsConfig> stats_configs) {
+        for (auto stats_config : stats_configs) {
+            // Get stokes index
+            int stokes;
+            if (!_frames.at(file_id)->GetStokesTypeIndex(stats_config.coordinate(), stokes)) {
+                continue;
+            }
+
+            // Set required stats types
+            std::vector<CARTA::StatsType> required_stats;
+            for (int i = 0; i < stats_config.stats_types_size(); ++i) {
+                required_stats.push_back(stats_config.stats_types(i));
+            }
+
+            // Send stats results
+            CARTA::RegionStatsData stats_message;
+            if (GetRegionStatsData(region_id, file_id, stokes, required_stats, stats_message)) {
+                cb(stats_message); // send stats data with respect to stokes
+                message_filled = true;
+            }
+        }
+    };
+
     if (region_id > 0) {
         // Fill stats data for specific region with file_id requirement (specific file_id or all files)
         std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
         for (auto& region_config : region_configs) {
             if ((region_config.first.region_id == region_id) && ((region_config.first.file_id == file_id) || (file_id == ALL_FILES))) {
-                if (region_config.second.stats_types.empty()) { // no requirements
+                if (region_config.second.stats_configs.empty()) { // no requirements
                     continue;
                 }
                 int config_file_id(region_config.first.file_id);
@@ -1245,11 +1282,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // return stats for this requirement
-                CARTA::RegionStatsData stats_message;
-                if (GetRegionStatsData(region_id, config_file_id, region_config.second.stats_types, stats_message)) {
-                    cb(stats_message); // send data
-                    message_filled = true;
-                }
+                send_stats_results(region_id, config_file_id, region_config.second.stats_configs);
             }
         }
     } else {
@@ -1258,7 +1291,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
         for (auto& region_config : region_configs) {
             if (region_config.first.file_id == file_id) {
-                if (region_config.second.stats_types.empty()) { // no requirements
+                if (region_config.second.stats_configs.empty()) { // no requirements
                     continue;
                 }
                 int config_region_id(region_config.first.region_id);
@@ -1267,11 +1300,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // return stats for this requirement
-                CARTA::RegionStatsData stats_message;
-                if (GetRegionStatsData(config_region_id, file_id, region_config.second.stats_types, stats_message)) {
-                    cb(stats_message); // send data
-                    message_filled = true;
-                }
+                send_stats_results(config_region_id, file_id, region_config.second.stats_configs);
             }
         }
     }
@@ -1279,12 +1308,12 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 }
 
 bool RegionHandler::GetRegionStatsData(
-    int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
+    int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 
     int z(_frames.at(file_id)->CurrentZ());
-    int stokes(_frames.at(file_id)->CurrentStokes());
+    stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
 
     // Start filling message
     stats_message.set_file_id(file_id);
@@ -1344,6 +1373,91 @@ bool RegionHandler::GetRegionStatsData(
     }
 
     return false;
+}
+
+bool RegionHandler::SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+    const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
+    // Clear all requirements for this file/region
+    ConfigId config_id(file_id, region_id);
+    if (_spatial_req.count(config_id)) {
+        std::unique_lock<std::mutex> ulock(_spatial_mutex);
+        _spatial_req[config_id].clear();
+        ulock.unlock();
+    }
+
+    // Set spatial profile requirements for given region and file
+    if (spatial_profiles.empty() && !RegionSet(region_id)) {
+        // Frontend clears requirements after region removed, prevent error in log by returning true.
+        return true;
+    }
+
+    if (!_regions.count(region_id)) {
+        spdlog::error("Spatial requirements failed: no region with id {}", region_id);
+        return false;
+    }
+
+    // Save frame pointer
+    _frames[file_id] = frame;
+
+    // Set new requirements for this file/region
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    _spatial_req[config_id] = spatial_profiles;
+    ulock.unlock();
+
+    return true;
+}
+
+bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+    ConfigId config_id(file_id, region_id);
+    if (!_regions.count(region_id) || !_frames.count(file_id) || !_spatial_req.count(config_id)) {
+        return false;
+    }
+
+    // Map a point region (region_id) to an image (file_id)
+    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    if (!lcregion) {
+        return false;
+    }
+
+    casacore::IPosition origin = lcregion->boundingBox().start();
+    PointXy point(origin(0), origin(1));
+
+    return _frames.at(file_id)->FillSpatialProfileData(point, _spatial_req.at(config_id), spatial_data_vec);
+}
+
+bool RegionHandler::IsPointRegion(int region_id) {
+    if (_regions.count(region_id)) {
+        if (_regions[region_id]->GetRegionState().type == CARTA::RegionType::POINT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<int> RegionHandler::GetPointRegionIds(int file_id) {
+    std::vector<int> results;
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    for (auto& region : _spatial_req) {
+        if (region.first.file_id == file_id) {
+            results.push_back(region.first.region_id);
+        }
+    }
+    ulock.unlock();
+
+    return results;
+}
+
+std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
+    std::vector<int> results;
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
+    for (auto& region : _spatial_req) {
+        if (region.first.region_id == region_id) {
+            results.push_back(region.first.file_id);
+        }
+    }
+    ulock.unlock();
+
+    return results;
 }
 
 } // namespace carta

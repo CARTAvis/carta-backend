@@ -515,8 +515,26 @@ int StartGrpcService(int grpc_port) {
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selected_port);
 
+    std::string grpc_token = "";
+    bool fixed_grpc_token(false);
+
+    if (!settings.debug_no_auth) {
+        auto env_entry = getenv("CARTA_GRPC_TOKEN");
+
+        if (env_entry) {
+            grpc_token = env_entry;
+            fixed_grpc_token = true;
+        } else {
+            uuid_t token;
+            char token_string[37];
+            uuid_generate_random(token);
+            uuid_unparse(token, token_string);
+            grpc_token += token_string;
+        }
+    }
+
     // Register and start carta grpc server
-    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService());
+    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService(grpc_token));
     builder.RegisterService(carta_grpc_service.get());
     // By default ports can be reused; we don't want this
     builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
@@ -524,6 +542,9 @@ int StartGrpcService(int grpc_port) {
 
     if (selected_port > 0) { // available port found
         spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", selected_port);
+        if (!fixed_grpc_token && !settings.debug_no_auth) {
+            spdlog::info("CARTA gRPC token: {}", grpc_token);
+        }
         // Turn logging back on
         gpr_set_log_function(gpr_default_log);
         return 0;

@@ -73,15 +73,13 @@ void GetSpectralCoordPreferences(
 
 // ************ Data Stream Helpers *************
 
-void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
-
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
     std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
 
-void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
+void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map);
 
 std::string IPAsText(std::string_view binary);
 
