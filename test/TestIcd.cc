@@ -12,12 +12,14 @@
 #include "Timer/Timer.h"
 #include "Util/ProtobufUtilities.h"
 
-class TestIcd : public ::testing::Test, public FileFinder {
-    std::unique_ptr<BackendModel> _dummy_backend = BackendModel::GetDummyBackend();
+class IcdTest : public ::testing::Test, public FileFinder {
+    std::unique_ptr<BackendModel> _dummy_backend;
 
 public:
-    TestIcd() {}
-    ~TestIcd() = default;
+    IcdTest() {
+        _dummy_backend = BackendModel::GetDummyBackend();
+    }
+    ~IcdTest() = default;
 
     void AccessCarta(uint32_t session_id, string api_key, uint32_t client_feature_flags, CARTA::SessionType expected_session_type,
         bool expected_message) {
@@ -522,35 +524,35 @@ public:
     }
 };
 
-TEST_F(TestIcd, ACCESS_CARTA_DEFAULT) {
+TEST_F(IcdTest, AccessCartaDefault) {
     AccessCarta(0, "", 5, CARTA::SessionType::NEW, true);
 }
 
-TEST_F(TestIcd, ACCESS_CARTA_KNOWN_DEFAULT) {
+TEST_F(IcdTest, AccessCartaKnownDefault) {
     AccessCarta(9999, "", 5, CARTA::SessionType::RESUMED, true);
 }
 
-TEST_F(TestIcd, ACCESS_CARTA_NO_CLIENT_FEATURE) {
+TEST_F(IcdTest, AccessCartaNoClientFeature) {
     AccessCarta(0, "", 0, CARTA::SessionType::NEW, true);
 }
 
-TEST_F(TestIcd, ACCESS_CARTA_SAME_ID_TWICE) {
+TEST_F(IcdTest, AccessCartaSameIdTwice) {
     AccessCarta(12345, "", 5, CARTA::SessionType::RESUMED, true);
     AccessCarta(12345, "", 5, CARTA::SessionType::RESUMED, true);
 }
 
-TEST_F(TestIcd, ANIMATOR_DATA_STREAM) {
+TEST_F(IcdTest, AnimatorDataStream) {
     AnimatorDataStream();
 }
 
-TEST_F(TestIcd, ANIMATOR_NAVIGATION) {
+TEST_F(IcdTest, AnimatorNavigation) {
     AnimatorNavigation();
 }
 
-TEST_F(TestIcd, ANIMATOR_PLAYBACK) {
+TEST_F(IcdTest, AnimatorPlayback) {
     AnimatorPlayback();
 }
 
-TEST_F(TestIcd, REGION_REGISTER) {
+TEST_F(IcdTest, RegionRegister) {
     RegionRegister();
 }
