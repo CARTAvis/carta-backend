@@ -248,8 +248,8 @@ set(SOURCE_FILES
         src/SessionManager/WebBrowser.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
+        src/Util.cc
         src/Util/ProtobufUtilities.cc
-        src/Util/Util.cc
         src/TileCache.cc
         src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)

@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include "Util/Util.h"
+#include "Util.h"
 
 #include "CommonTestUtilities.h"
 

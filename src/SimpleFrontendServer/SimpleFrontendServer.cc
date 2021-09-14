@@ -12,7 +12,7 @@
 
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
-#include "Util/Util.h"
+#include "Util.h"
 
 using namespace std;
 using json = nlohmann::json;

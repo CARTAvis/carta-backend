@@ -14,10 +14,10 @@
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "../Frame.h"
+#include "../Util.h"
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
-#include "Util/Util.h"
 
 namespace carta {
 

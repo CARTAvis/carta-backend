@@ -27,7 +27,7 @@
 #include "SessionManager/WebBrowser.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
-#include "Util/Util.h"
+#include "Util.h"
 
 using namespace std;
 

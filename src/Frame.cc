@@ -25,8 +25,8 @@
 #include "DataStream/Smoothing.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
+#include "Util.h"
 #include "Util/ProtobufUtilities.h"
-#include "Util/Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

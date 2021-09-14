@@ -14,7 +14,7 @@
 #include <gtest/gtest.h>
 #include <spdlog/fmt/fmt.h>
 
-#include "Util/Util.h"
+#include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

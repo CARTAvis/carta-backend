@@ -15,13 +15,13 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
-#include "Constants.h"
+#include "../Constants.h"
+#include "../ImageStats/StatsCalculator.h"
+#include "../Logger/Logger.h"
+#include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
-#include "ImageStats/StatsCalculator.h"
-#include "Logger/Logger.h"
 #include "Util/ProtobufUtilities.h"
-#include "Util/Util.h"
 
 namespace carta {
 

@@ -9,8 +9,8 @@
 #include <chrono>
 #include <cmath>
 
-#include "Logger/Logger.h"
-#include "Util/Util.h"
+#include "../Logger/Logger.h"
+#include "../Util.h"
 
 #define FITS_BLOCK_SIZE 2880
 #define FITS_CARD_SIZE 80

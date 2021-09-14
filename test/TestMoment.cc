@@ -8,7 +8,7 @@
 
 #include "Logger/Logger.h"
 #include "Moment/ImageMoments.h"
-#include "Util/Util.h"
+#include "Util.h"
 
 #include <casacore/images/Images/PagedImage.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>

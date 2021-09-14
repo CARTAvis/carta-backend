@@ -11,6 +11,8 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
+#include "../Logger/Logger.h"
+#include "../Util.h"
 #include "CasaLoader.h"
 #include "CompListLoader.h"
 #include "ConcatLoader.h"
@@ -18,9 +20,7 @@
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
 #include "ImagePtrLoader.h"
-#include "Logger/Logger.h"
 #include "MiriadLoader.h"
-#include "Util/Util.h"
 
 using namespace carta;
 
