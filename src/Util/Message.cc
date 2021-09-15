@@ -318,7 +318,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
     return profile_message;
 }
 
-void FillStatisticsValuesFromMap(
+void Message::FillStatisticsValue(
     CARTA::RegionStatsData& stats_data, const vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {

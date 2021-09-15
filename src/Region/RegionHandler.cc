@@ -1318,7 +1318,7 @@ bool RegionHandler::GetRegionStatsData(
     if (_stats_cache.count(cache_id)) {
         std::map<CARTA::StatsType, double> stats_results;
         if (_stats_cache[cache_id].GetStats(stats_results)) {
-            FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+            Message::FillStatisticsValue(stats_message, required_stats, stats_results);
             return true;
         }
     }
@@ -1336,7 +1336,7 @@ bool RegionHandler::GetRegionStatsData(
                 stats_results[carta_stat] = nan("");
             }
         }
-        FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+        Message::FillStatisticsValue(stats_message, required_stats, stats_results);
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
         return true;
@@ -1353,7 +1353,7 @@ bool RegionHandler::GetRegionStatsData(
         }
 
         // add values to message
-        FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+        Message::FillStatisticsValue(stats_message, required_stats, stats_results);
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 

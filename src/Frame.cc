@@ -980,7 +980,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         // Use loader image stats
         auto& image_stats = _loader->GetImageStats(stokes, z);
         if (image_stats.full) {
-            FillStatisticsValuesFromMap(stats_data, required_stats, image_stats.basic_stats);
+            Message::FillStatisticsValue(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);
             continue;
         }
@@ -989,7 +989,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         int cache_key(CacheKey(z, stokes));
         if (_image_stats.count(cache_key)) {
             auto stats_map = _image_stats[cache_key];
-            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            Message::FillStatisticsValue(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
             continue;
         }
@@ -1008,7 +1008,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             }
 
             // complete message
-            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            Message::FillStatisticsValue(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
 
             // cache results
