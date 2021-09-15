@@ -26,7 +26,7 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Util.h"
-#include "Util/ProtobufUtilities.h"
+#include "Util/Message.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

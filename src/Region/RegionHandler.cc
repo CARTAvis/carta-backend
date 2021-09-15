@@ -21,7 +21,7 @@
 #include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
-#include "Util/ProtobufUtilities.h"
+#include "Util/Message.h"
 
 namespace carta {
 
