@@ -75,9 +75,9 @@ public:
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
 
     // Calculate moments
-    bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+    bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        std::vector<carta::CollapseResult>& collapse_results);
+        std::vector<carta::GeneratedImage>& collapse_results);
 
     // Point regions
     bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
@@ -86,6 +86,10 @@ public:
     bool IsPointRegion(int region_id);
     std::vector<int> GetPointRegionIds(int file_id);
     std::vector<int> GetProjectedFileIds(int region_id);
+
+    // Series of box regions along line
+    bool GetPvLineRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
+        std::vector<casacore::LCRegion*>& regions, std::string& message);
 
 private:
     // Get unique region id (max id + 1)
@@ -106,10 +110,12 @@ private:
     // Set all requirements "new" when region changes
     void UpdateNewSpectralRequirements(int region_id);
 
-    // Fill data stream messages
+    // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region);
+
+    // Fill data stream messages
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
         std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,

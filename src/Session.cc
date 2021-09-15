@@ -65,7 +65,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this) {
-    _histogram_progress = HISTOGRAM_COMPLETE;
+    _histogram_progress = CALCULATION_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
@@ -1140,7 +1140,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         };
 
         // Do calculations
-        std::vector<carta::CollapseResult> collapse_results;
+        std::vector<carta::GeneratedImage> collapse_results;
         CARTA::MomentResponse moment_response;
         if (region_id > 0) {
             _region_handler->CalculateMoments(
@@ -1264,22 +1264,30 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
         } else {
             auto& frame = _frames.at(file_id);
 
-            // Set pv progress callback function
-            auto progress_callback = [&](float progress) {
-                CARTA::PvProgress pv_progress;
-                pv_progress.set_file_id(file_id);
-                pv_progress.set_progress(progress);
-                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
-            };
+            std::vector<casacore::LCRegion*> pv_line_regions;
+            std::string error;
+            if (_region_handler->GetPvLineRegions(file_id, region_id, frame, width, pv_line_regions, error)) {
+                // Set pv progress callback function
+                auto progress_callback = [&](float progress) {
+                    CARTA::PvProgress pv_progress;
+                    pv_progress.set_file_id(file_id);
+                    pv_progress.set_progress(progress);
+                    SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+                };
 
-            carta::CollapseResult pv_image;
-            if (_region_handler->CalculatePvImage(file_id, region_id, frame, progress_callback, width, pv_response, pv_image)) {
-                auto* open_file_ack = pv_response.mutable_open_file_ack();
-                OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                carta::GeneratedImage pv_image;
+                if (frame->CalculatePvImage(file_id, progress_callback, pv_line_regions, pv_response, pv_image)) {
+                    auto* open_file_ack = pv_response.mutable_open_file_ack();
+                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                }
+            } else {
+                pv_response.set_success(false);
+                pv_response.set_message(error);
+                pv_response.set_cancel(false);
             }
-
-            SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
         }
+
+        SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"PV"}, CARTA::ErrorSeverity::DEBUG);
@@ -1409,7 +1417,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.set_region_id(CUBE_REGION_ID);
                     cube_histogram_message.set_channel(ALL_Z);
                     cube_histogram_message.set_stokes(stokes);
-                    cube_histogram_message.set_progress(HISTOGRAM_COMPLETE);
+                    cube_histogram_message.set_progress(CALCULATION_COMPLETE);
                     // fill histogram fields from last z histogram
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
@@ -1433,9 +1441,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     calculated = true;
                 }
             }
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = CALCULATION_COMPLETE;
         } catch (std::out_of_range& range_error) {
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = CALCULATION_COMPLETE;
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }

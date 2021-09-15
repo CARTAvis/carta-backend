@@ -7,30 +7,31 @@
 #ifndef CARTA_BACKEND_IMAGEGENERATORS_IMAGEGENERATOR_H_
 #define CARTA_BACKEND_IMAGEGENERATORS_IMAGEGENERATOR_H_
 
-using GeneratorProgressCallback = std::function<void(float)>;
+#include <casacore/images/Images/ImageInterface.h>
+
+#include <functional>
 
 #define FIRST_PROGRESS_AFTER_MILLI_SECS 5000
 #define PROGRESS_REPORT_INTERVAL 0.1
-#define PROCESS_COMPLETED 1.0
 #define ID_MULTIPLIER 1000
 
-#include <casacore/images/Images/ImageInterface.h>
+using GeneratorProgressCallback = std::function<void(float)>;
 
 namespace carta {
 
-struct CollapseResult {
+struct GeneratedImage {
     int file_id;
     std::string name;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
 
-    CollapseResult() {}
-    CollapseResult(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
+    GeneratedImage() {}
+    GeneratedImage(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
         file_id = file_id_;
         name = name_;
         image = image_;
     }
 };
 
-}
+} // namespace carta
 
 #endif // CARTA_BACKEND_IMAGEGENERATORS_IMAGEGENERATOR_H_

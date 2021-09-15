@@ -671,7 +671,7 @@ casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id)
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region) {
     // Returns 3D or 4D image region for region applied to image and extended by z-range and stokes
-    if (!RegionSet(region_id) || !FrameSet(file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
 
@@ -716,8 +716,8 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 }
 
 bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame,
-    MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<carta::CollapseResult>& collapse_results) {
+    GeneratorProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<carta::GeneratedImage>& collapse_results) {
     casacore::ImageRegion image_region;
     int z_min(moment_request.spectral_range().min());
     int z_max(moment_request.spectral_range().max());
@@ -727,6 +727,43 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
         frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
     }
     return !collapse_results.empty();
+}
+
+bool RegionHandler::GetPvLineRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
+    std::vector<casacore::LCRegion*>& regions, std::string& message) {
+    // Return set of rotated boxes (polygons), with centers along line(s) and width perpendicular to line(s), for calculating PV Image
+    // TODO: for now, just using control points, need to add intermediate points
+    if (!RegionSet(region_id)) {
+        message = "Invalid region id.";
+        return false;
+    }
+
+    auto region = _regions.at(region_id);
+
+    // Check if region is line type
+    if (!region->IsAnnotation()) {
+        message = "Region type not supported for PV generation.";
+        return false;
+    }
+
+    if (region->GetRegionState().type == CARTA::RegionType::POLYLINE) {
+        message = "Region type POLYLINE not supported yet for PV generation.";
+        return false;
+    }
+
+    // Control points converted to image (pixels)
+    std::vector<CARTA::Point> endpoints;
+    if (region->GetReferenceFileId() == file_id) {
+        endpoints = region->GetRegionState().control_points;
+    } else {
+        casacore::CoordinateSystem* image_csys = frame->CoordinateSystem();
+        auto record = region->GetImageRegionRecord(file_id, *image_csys, frame->ImageShape());
+        delete image_csys;
+        std::cout << "PDEBUG: line region record=" << record << std::endl;
+    }
+
+    message = "Pv line regions not implemented yet.";
+    return false; // TODO
 }
 
 // ********************************************************************
@@ -837,7 +874,7 @@ bool RegionHandler::GetRegionHistogramData(
         CARTA::RegionHistogramData histogram_message;
         histogram_message.set_file_id(file_id);
         histogram_message.set_region_id(region_id);
-        histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
+        histogram_message.set_progress(CALCULATION_COMPLETE); // only cube histograms have partial results
         histogram_message.set_channel(z);
         histogram_message.set_stokes(stokes);
 
@@ -1039,7 +1076,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 results[stats_type] = profile;
             }
         }
-        progress = PROFILE_COMPLETE;
+        progress = CALCULATION_COMPLETE;
         partial_results_callback(results, progress);
         return true;
     }
@@ -1047,7 +1084,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     // Get region to check if inside image
     casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
     if (!lcregion) {
-        progress = PROFILE_COMPLETE;
+        progress = CALCULATION_COMPLETE;
         partial_results_callback(results, progress); // region outside image, send NaNs
         return true;
     }
@@ -1069,7 +1106,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 // Set results; there is only one required stat for point
                 std::vector<double> data(profile.begin(), profile.end());
                 results[required_stats[0]] = data;
-                progress = PROFILE_COMPLETE;
+                progress = CALCULATION_COMPLETE;
                 partial_results_callback(results, progress);
             }
             return ok;
@@ -1087,7 +1124,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             auto t_latest = t_start;
 
             // Get partial profiles until complete (do once if cached)
-            while (progress < PROFILE_COMPLETE) {
+            while (progress < CALCULATION_COMPLETE) {
                 // Cancel if region or frame is closing
                 if (!RegionFileIdsValid(region_id, file_id)) {
                     return false;
@@ -1111,7 +1148,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                     auto t_end = std::chrono::high_resolution_clock::now();
                     auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
 
-                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= PROFILE_COMPLETE)) {
+                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= CALCULATION_COMPLETE)) {
                         // Copy partial profile to results
                         for (const auto& profile : partial_profiles) {
                             auto stats_type = profile.first;
@@ -1152,7 +1189,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
     // get stats data
-    while (progress < PROFILE_COMPLETE) {
+    while (progress < CALCULATION_COMPLETE) {
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -1216,10 +1253,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
 
         // send partial result by the callback function
-        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= PROFILE_COMPLETE) {
+        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= CALCULATION_COMPLETE) {
             t_partial_profile_start = std::chrono::high_resolution_clock::now();
             partial_results_callback(results, progress);
-            if (progress >= PROFILE_COMPLETE) {
+            if (progress >= CALCULATION_COMPLETE) {
                 // cache results for all stats types
                 // TODO: cache and load partial profiles
                 _spectral_cache[cache_id] = SpectralCache(cache_results);

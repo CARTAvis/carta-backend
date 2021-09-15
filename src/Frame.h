@@ -21,6 +21,7 @@
 
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
@@ -33,7 +34,9 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
+#include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
+#include "ImageGenerators/PvGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
@@ -178,10 +181,15 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
-    bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        std::vector<carta::CollapseResult>& collapse_results);
+        std::vector<carta::GeneratedImage>& collapse_results);
     void StopMomentCalc();
+
+    // PV image calculation
+    bool CalculatePvImage(int file_id, GeneratorProgressCallback progress_callback, const std::vector<casacore::LCRegion*>& pv_regions,
+        CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
+    void StopPvCalc();
 
     // Save as a new file or export sub-image to CASA/FITS format
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
@@ -300,8 +308,9 @@ protected:
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
 
-    // Moment generator
+    // Image generators
     std::unique_ptr<MomentGenerator> _moment_generator;
+    bool _stop_pv;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

@@ -47,10 +47,12 @@
 #define CHUNK_SIZE 512
 #define MAX_TILE_CACHE_CAPACITY 4096
 
-// histograms
+// calculations with progress updates
+#define CALCULATION_COMPLETE 1.0
+
+// histogram calculation
 #define AUTO_BIN_SIZE -1
 #define HISTOGRAM_START 0.0
-#define HISTOGRAM_COMPLETE 1.0
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 
@@ -59,7 +61,6 @@
 #define TARGET_DELTA_TIME 50 // milliseconds
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
-#define PROFILE_COMPLETE 1.0
 
 // scripting timeouts
 #define SCRIPTING_TIMEOUT 10 // seconds

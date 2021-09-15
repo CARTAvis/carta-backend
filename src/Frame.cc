@@ -1450,7 +1450,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 auto t_start_profile = std::chrono::high_resolution_clock::now();
 
-                while (progress < PROFILE_COMPLETE) {
+                while (progress < CALCULATION_COMPLETE) {
                     // start timer for slice
                     auto t_start_slice = std::chrono::high_resolution_clock::now();
 
@@ -1496,7 +1496,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         break;
                     }
 
-                    if (progress >= PROFILE_COMPLETE) {
+                    if (progress >= CALCULATION_COMPLETE) {
                         spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send final profile message
                         cb(profile_message);
@@ -1696,9 +1696,9 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
     return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
 }
 
-bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<carta::CollapseResult>& collapse_results) {
+    std::vector<carta::GeneratedImage>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
@@ -1722,6 +1722,59 @@ void Frame::StopMomentCalc() {
     if (_moment_generator) {
         _moment_generator->StopCalculation();
     }
+}
+
+bool Frame::CalculatePvImage(int file_id, GeneratorProgressCallback progress_callback, const std::vector<casacore::LCRegion*>& pv_regions,
+    CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
+    // Create spectral profile for each pv_region and add to PV image
+    bool pv_generated(false);
+    _stop_pv = false;
+    std::shared_lock lock(GetActiveTaskMutex());
+
+    auto image = _loader->GetImage();
+    PvGenerator pv_generator = PvGenerator(file_id, GetFileName(), image.get());
+    _loader->CloseImageIfUpdated();
+
+    pv_response.set_cancel(false); // assume we are going to finish
+    size_t nchan(Depth());
+    size_t nregion(pv_regions.size());
+    float progress(0.0);
+
+    for (size_t ichan = 0; ichan < nchan; ++ichan) {
+        casacore::Vector<double> pv_per_channel(nregion, 0.0);
+
+        for (size_t iregion = 0; iregion < nregion; ++iregion) {
+            // Check for cancel
+            if (_stop_pv) {
+                pv_response.set_message("PV generator cancelled.");
+                pv_response.set_cancel(true);
+                break;
+            }
+
+            // ImageRegion for pv_region[i]: ichan, CurrentStokes()
+            // GetRegionStats mean for ImageRegion
+            // set spatial profile in pv generator: ichan, CurrentStokes()
+        }
+
+        // Progress update
+        progress = (ichan + 1) / nchan;
+        if (progress < CALCULATION_COMPLETE) {
+            progress_callback(progress);
+        }
+    }
+
+    if (progress == CALCULATION_COMPLETE) {
+        pv_image = pv_generator.GetImage();
+    } else {
+        pv_response.set_message("PV generator did not complete.");
+    }
+
+    pv_response.set_success(pv_image.image.get() != nullptr);
+    return pv_generated;
+}
+
+void Frame::StopPvCalc() {
+    _stop_pv = true;
 }
 
 // Export modified image to file, for changed range of channels/stokes and chopped region
