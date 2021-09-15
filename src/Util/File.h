@@ -16,16 +16,8 @@
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 
-// Determine image type from filename
-inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
-    return casacore::ImageOpener::imageType(filename);
-}
-
 // stokes types and value conversion
 int GetStokesValue(const CARTA::StokesType& stokes_type);
 CARTA::StokesType GetStokesType(int stokes_value);
-
-void GetSpectralCoordPreferences(
-    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
 
 #endif // CARTA_BACKEND__UTIL_FILE_H_

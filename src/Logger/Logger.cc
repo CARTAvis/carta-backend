@@ -130,15 +130,3 @@ void FlushLogFile() {
         spdlog::get(PERF_TAG)->flush();
     }
 }
-
-std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
-    std::string result;
-    result += fmt::format("major: {:.6f} {} ", gaussian_beam.getMajor().getValue(), gaussian_beam.getMajor().getUnit());
-    result += fmt::format("minor: {:.6f} {} ", gaussian_beam.getMinor().getValue(), gaussian_beam.getMinor().getUnit());
-    result += fmt::format("pa: {:.6f} {}", gaussian_beam.getPA().getValue(), gaussian_beam.getPA().getUnit());
-    return result;
-}
-
-std::string FormatQuantity(const casacore::Quantity& quantity) {
-    return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
-}

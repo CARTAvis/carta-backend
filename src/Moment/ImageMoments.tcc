@@ -11,6 +11,7 @@
 #define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 
 #include "../Logger/Logger.h"
+#include "../Util/Casacore.h"
 
 using namespace carta;
 
