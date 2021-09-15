@@ -512,4 +512,20 @@ void SessionManager::RunApp() {
         .run();
 }
 
+std::string SessionManager::IPAsText(std::string_view binary) {
+    std::string result;
+    if (!binary.length()) {
+        return result;
+    }
+
+    unsigned char* b = (unsigned char*)binary.data();
+    if (binary.length() == 4) {
+        result = fmt::format("{0:d}.{1:d}.{2:d}.{3:d}", b[0], b[1], b[2], b[3]);
+    } else {
+        result = fmt::format("::{0:x}{1:x}:{2:d}.{3:d}.{4:d}.{5:d}", b[10], b[11], b[12], b[13], b[14], b[15]);
+    }
+
+    return result;
+}
+
 } // namespace carta

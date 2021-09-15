@@ -250,6 +250,12 @@ set(SOURCE_FILES
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
+        src/Util/File.cc
+        src/Util/Image.cc
+        src/Util/Message.cc
+        src/Util/Path.cc
+        src/Util/String.cc
+        src/Util/Token.cc
         src/TileCache.cc
         src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)

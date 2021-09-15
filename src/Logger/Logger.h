@@ -46,4 +46,7 @@ void LogSentEventType(const CARTA::EventType& event_type);
 
 void FlushLogFile();
 
+std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam);
+std::string FormatQuantity(const casacore::Quantity& quantity);
+
 #endif // CARTA_BACKEND_LOGGER_LOGGER_H_
