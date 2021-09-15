@@ -980,12 +980,8 @@ bool RegionHandler::FillSpectralProfileData(
                 // Return spectral profile for this requirement
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
                     [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                        CARTA::SpectralProfileData profile_message;
-                        profile_message.set_file_id(config_file_id);
-                        profile_message.set_region_id(config_region_id);
-                        profile_message.set_stokes(stokes_index);
-                        profile_message.set_progress(progress);
-                        FillSpectralProfileDataMessage(profile_message, coordinate, required_stats, results);
+                        CARTA::SpectralProfileData profile_message = Message::SpectralProfileData(
+                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
             }

@@ -47,7 +47,11 @@ public:
     static void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
     static void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center,
         const std::vector<int>& bins, double mean, double std_dev);
+    static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
+        std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
+        std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
 
+    // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
 
     template <typename T>
@@ -61,9 +65,6 @@ public:
 };
 
 // ************ Data Stream Helpers *************
-
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
-    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
 
 void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
     std::map<CARTA::StatsType, double>& stats_value_map);

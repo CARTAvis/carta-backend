@@ -294,8 +294,14 @@ void Message::FillHistogram(CARTA::Histogram* histogram, int num_bins, double bi
     }
 }
 
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, string& coordinate,
-    vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, vector<double>>& spectral_data) {
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
+    string& coordinate, vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, vector<double>>& spectral_data) {
+    CARTA::SpectralProfileData profile_message;
+    profile_message.set_file_id(file_id);
+    profile_message.set_region_id(region_id);
+    profile_message.set_stokes(stokes);
+    profile_message.set_progress(progress);
+
     for (auto stats_type : required_stats) {
         // one SpectralProfile per stats type
         auto new_profile = profile_message.add_profiles();
@@ -309,6 +315,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
         }
     }
+    return profile_message;
 }
 
 void FillStatisticsValuesFromMap(
