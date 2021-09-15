@@ -846,13 +846,8 @@ bool RegionHandler::GetRegionHistogramData(
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
-            default_histogram->set_num_bins(1);
-            default_histogram->set_bin_width(0.0);
-            default_histogram->set_first_bin_center(0.0);
-            std::vector<float> histogram_bins(1, 0.0);
-            *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
-            default_histogram->set_mean(NAN);
-            default_histogram->set_std_dev(NAN);
+            std::vector<int> histogram_bins(1, 0);
+            Message::FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
             continue;
         }
 
@@ -873,7 +868,7 @@ bool RegionHandler::GetRegionHistogramData(
                 carta::Histogram hist;
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
-                    FillHistogramFromResults(histogram, stats, hist);
+                    Message::FillHistogram(histogram, stats, hist);
 
                     // Fill in the cached message
                     histogram_messages.emplace_back(histogram_message);
@@ -904,7 +899,7 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Complete Histogram submessage
         auto* histogram = histogram_message.mutable_histograms();
-        FillHistogramFromResults(histogram, stats, histo);
+        Message::FillHistogram(histogram, stats, histo);
 
         // Fill in the final result
         histogram_messages.emplace_back(histogram_message);

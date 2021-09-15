@@ -730,7 +730,7 @@ bool Frame::FillRegionHistogramData(
                 carta::Histogram hist;
                 histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
-                    FillHistogramFromResults(histogram, stats, hist);
+                    Message::FillHistogram(histogram, stats, hist);
                     region_histogram_callback(histogram_data); // send region histogram data message
                 }
             }
@@ -777,12 +777,9 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
             double std_dev(current_stats.basic_stats[CARTA::StatsType::Sigma]);
 
             // fill message
-            histogram->set_num_bins(image_num_bins);
-            histogram->set_bin_width((max_val - min_val) / image_num_bins);
-            histogram->set_first_bin_center(min_val + (histogram->bin_width() / 2.0));
-            *histogram->mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
-            histogram->set_mean(mean);
-            histogram->set_std_dev(std_dev);
+            double bin_width = (max_val - min_val) / image_num_bins;
+            double first_bin_center = min_val + (histogram->bin_width() / 2.0);
+            Message::FillHistogram(histogram, image_num_bins, bin_width, first_bin_center, current_stats.histogram_bins, mean, std_dev);
             // histogram cached in loader
             return true;
         }
@@ -808,7 +805,7 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
         // add stats to message
         BasicStats<float> stats;
         if (GetBasicStats(z, stokes, stats)) {
-            FillHistogramFromResults(histogram, stats, hist);
+            Message::FillHistogram(histogram, stats, hist);
         }
     }
     return have_histogram;

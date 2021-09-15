@@ -278,16 +278,20 @@ CARTA::EventType Message::EventType(std::vector<char>& message) {
     return static_cast<CARTA::EventType>(head.type);
 }
 
-void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
-    if (histogram == nullptr) {
-        return;
+void Message::FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
+    FillHistogram(histogram, hist.GetNbins(), hist.GetBinWidth(), hist.GetBinCenter(), hist.GetHistogramBins(), stats.mean, stats.stdDev);
+}
+
+void Message::FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center,
+    const std::vector<int>& bins, double mean, double std_dev) {
+    if (histogram) {
+        histogram->set_num_bins(num_bins);
+        histogram->set_bin_width(bin_width);
+        histogram->set_first_bin_center(first_bin_center);
+        *histogram->mutable_bins() = {bins.begin(), bins.end()};
+        histogram->set_mean(mean);
+        histogram->set_std_dev(std_dev);
     }
-    histogram->set_num_bins(hist.GetNbins());
-    histogram->set_bin_width(hist.GetBinWidth());
-    histogram->set_first_bin_center(hist.GetBinCenter());
-    *histogram->mutable_bins() = {hist.GetHistogramBins().begin(), hist.GetHistogramBins().end()};
-    histogram->set_mean(stats.mean);
-    histogram->set_std_dev(stats.stdDev);
 }
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, string& coordinate,
