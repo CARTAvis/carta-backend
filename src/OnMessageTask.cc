@@ -11,7 +11,6 @@
 
 #include "EventHeader.h"
 #include "Logger/Logger.h"
-#include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {

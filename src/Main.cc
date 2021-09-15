@@ -24,7 +24,6 @@
 #include "SessionManager/WebBrowser.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
-#include "Util.h"
 
 #define TBB_TASK_THREAD_COUNT 3
 

@@ -12,7 +12,7 @@
 #include <fitsio.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+
 #include "DataColumn.tcc"
 #include "Threading.h"
 

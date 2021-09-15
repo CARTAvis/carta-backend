@@ -25,38 +25,15 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
-
-
-
-
 // ************ Utilities *************
-
-
-
-
-
-
-
-
-
-
 
 // ************ Data Stream Helpers *************
 
-
-
-
-
 // ************ Region Helpers *************
-
-
 
 // ************ structs *************
 //
 // Usage of the AxisRange:
 //
-
-
-
 
 #endif // CARTA_BACKEND__UTIL_H_

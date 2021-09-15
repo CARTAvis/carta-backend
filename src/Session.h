@@ -54,7 +54,6 @@
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
-#include "Util.h"
 
 struct PerSocketData {
     uint32_t session_id;

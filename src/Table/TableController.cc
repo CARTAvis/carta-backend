@@ -10,7 +10,6 @@
 
 #include "Logger/Logger.h"
 #include "Timer/ListProgressReporter.h"
-#include "Util.h"
 
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec

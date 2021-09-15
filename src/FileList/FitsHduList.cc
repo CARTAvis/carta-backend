@@ -11,7 +11,6 @@
 #include <fitsio.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
 
 FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;

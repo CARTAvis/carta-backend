@@ -18,7 +18,7 @@
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+
 #include "Hdf5Attributes.h"
 
 using namespace carta;

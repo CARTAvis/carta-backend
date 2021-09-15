@@ -4,8 +4,6 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "Util.h"
-
 #include <fitsio.h>
 #include <climits>
 #include <cmath>
@@ -30,11 +28,3 @@ namespace fs = std::filesystem;
 #endif
 
 using namespace std;
-
-
-
-
-
-
-
-

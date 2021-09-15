@@ -46,7 +46,7 @@ private:
     std::string _auth_token;
     std::shared_ptr<FileListHandler> _file_list_handler;
     std::shared_ptr<CartaGrpcService> _grpc_service;
-    
+
     std::string IPAsText(std::string_view binary);
 };
 } // namespace carta

@@ -11,7 +11,6 @@
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
 
 using namespace carta;
 
@@ -197,8 +196,7 @@ void Image2DConvolver<T>::_logBeamInfo(const ImageInfo& imageInfo, const String&
         message += fmt::format(" resolution {} ", FormatBeam(beamSet.getBeam()));
     } else {
         message += fmt::format(" has multiple beams. Min area beam: {}. Max area beam: {}. Median area beam {}",
-            FormatBeam(beamSet.getMinAreaBeam()), FormatBeam(beamSet.getMaxAreaBeam()),
-            FormatBeam(beamSet.getMedianAreaBeam()));
+            FormatBeam(beamSet.getMinAreaBeam()), FormatBeam(beamSet.getMaxAreaBeam()), FormatBeam(beamSet.getMedianAreaBeam()));
     }
     spdlog::debug(message);
 }
