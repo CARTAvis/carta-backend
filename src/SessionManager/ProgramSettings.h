@@ -46,6 +46,7 @@ struct ProgramSettings {
 
     bool no_user_config = false;
     bool no_system_config = false;
+    bool no_runtime_config = false;
 
     nlohmann::json command_line_settings;
     bool system_settings_json_exists = false;
@@ -67,6 +68,7 @@ struct ProgramSettings {
         {"log_protocol_messages", &log_protocol_messages},
         {"no_http", &no_http},
         {"no_browser", &no_browser},
+        {"no_runtime_config", &no_runtime_config},
         {"read_only_mode", &read_only_mode}
     };
 
@@ -90,8 +92,8 @@ struct ProgramSettings {
 
     auto GetTuple() const {
         return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
-            no_http, no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, verbosity, wait_time, init_wait_time,
-            idle_session_wait_time);
+            no_http, no_runtime_config, no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, verbosity, wait_time,
+            init_wait_time, idle_session_wait_time);
     }
     bool operator!=(const ProgramSettings& rhs) const;
     bool operator==(const ProgramSettings& rhs) const;

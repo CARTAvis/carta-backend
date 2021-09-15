@@ -185,6 +185,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
+        ("no_runtime_config", "do not send a runtime config object to frontend clients", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("browser", "[experimental] custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
@@ -275,8 +276,9 @@ end.
     no_browser = result["no_browser"].as<bool>();
     read_only_mode = result["read_only_mode"].as<bool>();
 
-    no_user_config = result.count("no_user_config") ? true : false;
-    no_system_config = result.count("no_system_config") ? true : false;
+    no_user_config = result.count("no_user_config") != 0;
+    no_system_config = result.count("no_system_config") != 0;
+    no_runtime_config = result.count("no_runtime_config") != 0;
 
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument

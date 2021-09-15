@@ -22,8 +22,8 @@ namespace carta {
 
 const string success_string = json({{"success", true}}).dump();
 
-SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token, bool read_only_mode)
-    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode) {
+SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token, bool read_only_mode, bool no_runtime_config)
+    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode), _no_runtime_config(no_runtime_config) {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
@@ -52,7 +52,13 @@ void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
 void SimpleFrontendServer::HandleGetConfig(Res* res, Req* _req) {
     json runtime_config = {{"apiAddress", "/api"}};
     res->writeHeader("Content-Type", "application/json");
-    res->writeStatus(HTTP_200)->end(runtime_config.dump());
+
+    // Send empty response if no config is required
+    if (_no_runtime_config) {
+        res->writeStatus(HTTP_200)->end();
+    } else {
+        res->writeStatus(HTTP_200)->end(runtime_config.dump());
+    }
 }
 
 void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
