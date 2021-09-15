@@ -6,6 +6,11 @@
 
 #include "Casacore.h"
 
+#include <casacore/casa/OS/File.h>
+
+#include "ImageData/CartaMiriadImage.h"
+#include "Logger/Logger.h"
+
 bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     // TODO: is this code needed at all? Was it a weird workaround?
     {

@@ -7,12 +7,35 @@
 #ifndef CARTA_BACKEND__UTIL_IMAGE_H_
 #define CARTA_BACKEND__UTIL_IMAGE_H_
 
-inline std::string RegionName(CARTA::RegionType type) {
-    std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::RegionType::POINT, "point"},
-        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::RECTANGLE, "rectangle"},
-        {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "annulus"}, {CARTA::RegionType::POLYGON, "polygon"}};
-    return region_names[type];
-}
+#include <cmath>
+#include <string>
+
+#include <carta-protobuf/enums.pb.h>
+
+// region ids
+#define CUBE_REGION_ID -2
+#define IMAGE_REGION_ID -1
+#define CURSOR_REGION_ID 0
+#define ALL_REGIONS -10
+
+// x axis
+#define ALL_X -2
+
+// y axis
+#define ALL_Y -2
+
+// z axis
+#define DEFAULT_Z 0
+#define CURRENT_Z -1
+#define ALL_Z -2
+
+// stokes
+#define DEFAULT_STOKES 0
+#define CURRENT_STOKES -1
+
+// raster image data
+#define TILE_SIZE 256
+#define CHUNK_SIZE 512
 
 // AxisRange() defines the full axis ALL_Z
 // AxisRange(0) defines a single axis index, 0, in this example
@@ -70,5 +93,9 @@ struct PointXy {
         return (x_in_image && y_in_image);
     }
 };
+
+// stokes types and value conversion
+int GetStokesValue(const CARTA::StokesType& stokes_type);
+CARTA::StokesType GetStokesType(int stokes_value);
 
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_

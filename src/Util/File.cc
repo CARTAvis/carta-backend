@@ -6,10 +6,14 @@
 
 #include "File.h"
 
-uint32_t GetMagicNumber(const string& filename) {
+#include <fstream>
+
+#include "String.h"
+
+uint32_t GetMagicNumber(const std::string& filename) {
     uint32_t magic_number = 0;
 
-    ifstream input_file(filename);
+    std::ifstream input_file(filename);
     if (input_file) {
         input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
@@ -30,44 +34,31 @@ bool IsCompressedFits(const std::string& filename) {
     return is_fits;
 }
 
-int GetStokesValue(const CARTA::StokesType& stokes_type) {
-    int stokes_value(-1);
-    switch (stokes_type) {
-        case CARTA::StokesType::I:
-            stokes_value = 1;
-            break;
-        case CARTA::StokesType::Q:
-            stokes_value = 2;
-            break;
-        case CARTA::StokesType::U:
-            stokes_value = 3;
-            break;
-        case CARTA::StokesType::V:
-            stokes_value = 4;
-            break;
-        default:
-            break;
+int GetNumItems(const std::string& path) {
+    try {
+        int counter = 0;
+        auto it = fs::directory_iterator(path);
+        for (const auto f : it) {
+            counter++;
+        }
+        return counter;
+    } catch (std::exception) {
+        return -1;
     }
-    return stokes_value;
 }
 
-CARTA::StokesType GetStokesType(int stokes_value) {
-    CARTA::StokesType stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
-    switch (stokes_value) {
-        case 1:
-            stokes_type = CARTA::StokesType::I;
-            break;
-        case 2:
-            stokes_type = CARTA::StokesType::Q;
-            break;
-        case 3:
-            stokes_type = CARTA::StokesType::U;
-            break;
-        case 4:
-            stokes_type = CARTA::StokesType::V;
-            break;
-        default:
-            break;
+// quick alternative to bp::search_path that allows us to remove
+// boost:filesystem dependency
+fs::path SearchPath(std::string filename) {
+    std::string path(std::getenv("PATH"));
+    std::vector<std::string> path_strings;
+    SplitString(path, ':', path_strings);
+    for (auto& p : path_strings) {
+        fs::path base_path(p);
+        base_path /= filename;
+        if (fs::exists(base_path)) {
+            return base_path;
+        }
     }
-    return stokes_type;
+    return fs::path();
 }

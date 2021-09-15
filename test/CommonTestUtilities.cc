@@ -8,8 +8,7 @@
 #include <stdexcept>
 
 #include "CommonTestUtilities.h"
-
-using namespace carta;
+#include "Util/App.h"
 
 fs::path TestRoot() {
     std::string path_string;

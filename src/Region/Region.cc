@@ -24,6 +24,7 @@
 #include <casacore/measures/Measures/MCDirection.h>
 
 #include "../Logger/Logger.h"
+#include "Util/Image.h"
 
 using namespace carta;
 

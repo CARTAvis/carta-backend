@@ -4,13 +4,11 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_PATH_H_
-#define CARTA_BACKEND__UTIL_PATH_H_
+#ifndef CARTA_BACKEND__UTIL_APP_H_
+#define CARTA_BACKEND__UTIL_APP_H_
 
-#include "FileSystem.h"
+#include <string>
 
-bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
-int GetNumItems(const std::string& path);
-fs::path SearchPath(std::string filename);
+bool FindExecutablePath(std::string& path);
 
-#endif // CARTA_BACKEND__UTIL_PATH_H_
+#endif // CARTA_BACKEND__UTIL_APP_H_

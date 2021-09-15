@@ -24,6 +24,7 @@
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
@@ -39,6 +40,8 @@
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 #include "TileCache.h"
+#include "Util/Image.h"
+#include "Util/Message.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

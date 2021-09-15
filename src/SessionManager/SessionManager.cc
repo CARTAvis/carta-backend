@@ -6,9 +6,10 @@
 
 #include "SessionManager.h"
 
-#include "../EventHeader.h"
-#include "../Logger/Logger.h"
-#include "../OnMessageTask.h"
+#include "EventHeader.h"
+#include "Logger/Logger.h"
+#include "OnMessageTask.h"
+#include "Util/Token.h"
 
 namespace carta {
 

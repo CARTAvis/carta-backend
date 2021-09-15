@@ -18,6 +18,7 @@
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "../Logger/Logger.h"
+#include "Util/String.h"
 
 #include "Hdf5Attributes.h"
 

@@ -6,6 +6,7 @@
 
 #include "WebBrowser.h"
 #include "Logger/Logger.h"
+#include "Util/File.h"
 
 #include <signal.h>
 #include <stdio.h>

@@ -249,12 +249,11 @@ set(SOURCE_FILES
         src/SessionManager/WebBrowser.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
-        src/Util.cc
+        src/Util/App.cc
         src/Util/Casacore.cc
         src/Util/File.cc
         src/Util/Image.cc
         src/Util/Message.cc
-        src/Util/Path.cc
         src/Util/String.cc
         src/Util/Token.cc
         src/TileCache.cc

@@ -7,7 +7,11 @@
 #ifndef CARTA_BACKEND__UTIL_CASACORE_H_
 #define CARTA_BACKEND__UTIL_CASACORE_H_
 
-bool FindExecutablePath(std::string& path);
+#include <casacore/images/Images/ImageInterface.h>
+#include <casacore/images/Images/ImageOpener.h>
+#include <casacore/scimath/Mathematics/GaussianBeam.h>
+
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 bool IsSubdirectory(std::string folder, std::string top_folder);
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 

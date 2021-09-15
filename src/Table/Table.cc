@@ -15,6 +15,7 @@
 
 #include "DataColumn.tcc"
 #include "Threading.h"
+#include "Util/File.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

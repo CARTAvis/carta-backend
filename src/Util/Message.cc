@@ -18,8 +18,8 @@ void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicSta
     histogram->set_std_dev(stats.stdDev);
 }
 
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, string& coordinate,
-    vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, vector<double>>& spectral_data) {
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
+    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     for (auto stats_type : required_stats) {
         // one SpectralProfile per stats type
         auto new_profile = profile_message.add_profiles();
@@ -27,7 +27,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = nan("");
+            double nan_value = std::nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -35,8 +35,8 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
     }
 }
 
-void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, const vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
+void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {
         double value(0.0); // default
@@ -45,7 +45,7 @@ void FillStatisticsValuesFromMap(
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = nan("");
+                value = std::nan("");
             }
         }
 

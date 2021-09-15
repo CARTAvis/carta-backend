@@ -7,6 +7,12 @@
 #ifndef CARTA_BACKEND__UTIL_MESSAGE_H_
 #define CARTA_BACKEND__UTIL_MESSAGE_H_
 
+#include <carta-protobuf/region_stats.pb.h>
+#include <carta-protobuf/spectral_profile.pb.h>
+
+#include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/Histogram.h"
+
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,

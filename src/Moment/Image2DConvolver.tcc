@@ -11,7 +11,7 @@
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
 #include "../Logger/Logger.h"
-#include "../Util/Casacore.h"
+#include "Util/Casacore.h"
 
 using namespace carta;
 
