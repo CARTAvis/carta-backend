@@ -27,40 +27,61 @@ protected:
     tbb::task* execute() override = 0;
 
 public:
-    OnMessageTask(Session* session) {
-        _session = session;
+    OnMessageTask(Session* session) : _session(session) {
         _session->IncreaseRefCount();
     }
     ~OnMessageTask() {
-        if (!_session->DecreaseRefCount())
+        if (!_session->DecreaseRefCount()) {
             delete _session;
+        }
         _session = nullptr;
     }
 };
 
-class MultiMessageTask : public OnMessageTask {
-    carta::EventHeader _header;
-    int _event_length;
-    char* _event_buffer;
-    tbb::task* execute() override;
+template <typename T>
+class GeneralMessageTask : public OnMessageTask {
+    tbb::task* execute() {
+        if constexpr (std::is_same_v<T, CARTA::SetHistogramRequirements>) {
+            _session->OnSetHistogramRequirements(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::AddRequiredTiles>) {
+            _session->OnAddRequiredTiles(_message, _session->AnimationRunning());
+        } else if constexpr (std::is_same_v<T, CARTA::SetContourParameters>) {
+            _session->OnSetContourParameters(_message);
+        } else if constexpr (std::is_same_v<T, CARTA::SpectralLineRequest>) {
+            _session->OnSpectralLineRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
+            _session->OnSetSpatialRequirements(_message);
+        } else if constexpr (std::is_same_v<T, CARTA::SetStatsRequirements>) {
+            _session->OnSetStatsRequirements(_message);
+        } else if constexpr (std::is_same_v<T, CARTA::MomentRequest>) {
+            _session->OnMomentRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::FileListRequest>) {
+            _session->OnFileListRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::RegionListRequest>) {
+            _session->OnRegionListRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::CatalogListRequest>) {
+            _session->OnCatalogFileList(_message, _request_id);
+        } else {
+            spdlog::warn("Bad event type in GeneralMessageType!");
+        }
+        return nullptr;
+    };
+
+    T _message;
+    uint32_t _request_id;
 
 public:
-    MultiMessageTask(Session* session_, carta::EventHeader& head, int evt_len, char* event_buf) : OnMessageTask(session_) {
-        _header = head;
-        _event_length = evt_len;
-        _event_buffer = event_buf;
-    }
-    ~MultiMessageTask() {
-        delete[] _event_buffer;
-    };
+    GeneralMessageTask(Session* session, T message, uint32_t request_id)
+        : OnMessageTask(session), _message(message), _request_id(request_id) {}
+    ~GeneralMessageTask() = default;
 };
 
 class SetImageChannelsTask : public OnMessageTask {
-    int fileId;
+    int _file_id;
     tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session, int fileId) : OnMessageTask(session), fileId(fileId) {}
+    SetImageChannelsTask(Session* session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
     ~SetImageChannelsTask() = default;
 };
 
@@ -69,25 +90,8 @@ class SetCursorTask : public OnMessageTask {
     tbb::task* execute() override;
 
 public:
-    SetCursorTask(Session* session, int file_id) : OnMessageTask(session) {
-        _file_id = file_id;
-    }
+    SetCursorTask(Session* session, int file_id) : OnMessageTask(session), _file_id(file_id) {}
     ~SetCursorTask() = default;
-};
-
-class SetHistogramRequirementsTask : public OnMessageTask {
-    tbb::task* execute();
-    carta::EventHeader _header;
-    int _event_length;
-    const char* _event_buffer;
-
-public:
-    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, const char* buf) : OnMessageTask(session) {
-        _header = head;
-        _event_length = len;
-        _event_buffer = buf;
-    }
-    ~SetHistogramRequirementsTask() = default;
 };
 
 class AnimationTask : public OnMessageTask {
@@ -98,39 +102,13 @@ public:
     ~AnimationTask() = default;
 };
 
-class OnAddRequiredTilesTask : public OnMessageTask {
-    tbb::task* execute() override;
-    CARTA::AddRequiredTiles _message;
-    int _start, _stride, _end;
-
-public:
-    OnAddRequiredTilesTask(Session* session, CARTA::AddRequiredTiles message) : OnMessageTask(session) {
-        _message = message;
-    }
-    ~OnAddRequiredTilesTask() = default;
-};
-
-class OnSetContourParametersTask : public OnMessageTask {
-    tbb::task* execute() override;
-    CARTA::SetContourParameters _message;
-    int _start, _stride, _end;
-
-public:
-    OnSetContourParametersTask(Session* session, CARTA::SetContourParameters message) : OnMessageTask(session) {
-        _message = message;
-    }
-    ~OnSetContourParametersTask() = default;
-};
-
 class RegionDataStreamsTask : public OnMessageTask {
     tbb::task* execute() override;
     int _file_id, _region_id;
 
 public:
-    RegionDataStreamsTask(Session* session, int file_id, int region_id) : OnMessageTask(session) {
-        _file_id = file_id;
-        _region_id = region_id;
-    }
+    RegionDataStreamsTask(Session* session, int file_id, int region_id)
+        : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
     ~RegionDataStreamsTask() = default;
 };
 
@@ -139,10 +117,7 @@ class SpectralProfileTask : public OnMessageTask {
     int _file_id, _region_id;
 
 public:
-    SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session) {
-        _file_id = file_id;
-        _region_id = region_id;
-    }
+    SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session), _file_id(file_id), _region_id(region_id) {}
     ~SpectralProfileTask() = default;
 };
 
@@ -151,23 +126,8 @@ class OnSplataloguePingTask : public OnMessageTask {
     uint32_t _request_id;
 
 public:
-    OnSplataloguePingTask(Session* session, uint32_t request_id) : OnMessageTask(session) {
-        _request_id = request_id;
-    }
+    OnSplataloguePingTask(Session* session, uint32_t request_id) : OnMessageTask(session), _request_id(request_id) {}
     ~OnSplataloguePingTask() = default;
-};
-
-class OnSpectralLineRequestTask : public OnMessageTask {
-    tbb::task* execute() override;
-    CARTA::SpectralLineRequest _message;
-    uint32_t _request_id;
-
-public:
-    OnSpectralLineRequestTask(Session* session, CARTA::SpectralLineRequest message, uint32_t request_id) : OnMessageTask(session) {
-        _message = message;
-        _request_id = request_id;
-    }
-    ~OnSpectralLineRequestTask() = default;
 };
 
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
