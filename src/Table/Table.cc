@@ -16,14 +16,7 @@
 #include "DataColumn.tcc"
 #include "Threading.h"
 #include "Util/File.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "Util/FileSystem.h"
 
 namespace carta {
 using namespace std;

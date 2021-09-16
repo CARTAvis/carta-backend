@@ -17,16 +17,9 @@
 #include <carta-protobuf/open_catalog_file.pb.h>
 
 #include "Table.h"
+#include "Util/FileSystem.h"
 
 #define TABLE_PREVIEW_ROWS 50
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 namespace carta {
 

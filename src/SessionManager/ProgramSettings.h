@@ -7,8 +7,6 @@
 #ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 
-#include "Logger/Logger.h"
-
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -16,7 +14,10 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+
 #include "Constants.h"
+#include "Logger/Logger.h"
+#include "Util/FileSystem.h"
 
 #define OMP_THREAD_COUNT -1
 #define DEFAULT_SOCKET_PORT 3002

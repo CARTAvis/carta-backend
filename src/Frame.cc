@@ -26,14 +26,6 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
-
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 using namespace carta;

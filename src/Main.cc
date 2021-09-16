@@ -26,6 +26,7 @@
 #include "Threading.h"
 #include "Util/App.h"
 #include "Util/File.h"
+#include "Util/FileSystem.h"
 
 #define TBB_TASK_THREAD_COUNT 3
 

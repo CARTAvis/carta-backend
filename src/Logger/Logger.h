@@ -13,13 +13,7 @@
 
 #include <carta-protobuf/enums.pb.h>
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "Util/FileSystem.h"
 
 #define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
 #define ROTATED_LOG_FILES 5

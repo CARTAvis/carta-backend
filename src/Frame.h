@@ -40,16 +40,9 @@
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 #include "TileCache.h"
+#include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 struct ContourSettings {
     std::vector<double> levels;

@@ -14,15 +14,6 @@
 
 #include <casacore/images/Images/ImageOpener.h>
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-
-namespace fs = std::filesystem;
-#endif
-
 using namespace std;
 using json = nlohmann::json;
 
