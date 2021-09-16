@@ -778,7 +778,7 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
 
             // fill message
             double bin_width = (max_val - min_val) / image_num_bins;
-            double first_bin_center = min_val + (histogram->bin_width() / 2.0);
+            double first_bin_center = min_val + (bin_width / 2.0);
             Message::FillHistogram(histogram, image_num_bins, bin_width, first_bin_center, current_stats.histogram_bins, mean, std_dev);
             // histogram cached in loader
             return true;
