@@ -26,6 +26,7 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Util.h"
+#include "Util/Message.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -729,7 +730,7 @@ bool Frame::FillRegionHistogramData(
                 carta::Histogram hist;
                 histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
-                    FillHistogramFromResults(histogram, stats, hist);
+                    Message::FillHistogram(histogram, stats, hist);
                     region_histogram_callback(histogram_data); // send region histogram data message
                 }
             }
@@ -776,12 +777,9 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
             double std_dev(current_stats.basic_stats[CARTA::StatsType::Sigma]);
 
             // fill message
-            histogram->set_num_bins(image_num_bins);
-            histogram->set_bin_width((max_val - min_val) / image_num_bins);
-            histogram->set_first_bin_center(min_val + (histogram->bin_width() / 2.0));
-            *histogram->mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
-            histogram->set_mean(mean);
-            histogram->set_std_dev(std_dev);
+            double bin_width = (max_val - min_val) / image_num_bins;
+            double first_bin_center = min_val + (histogram->bin_width() / 2.0);
+            Message::FillHistogram(histogram, image_num_bins, bin_width, first_bin_center, current_stats.histogram_bins, mean, std_dev);
             // histogram cached in loader
             return true;
         }
@@ -807,7 +805,7 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
         // add stats to message
         BasicStats<float> stats;
         if (GetBasicStats(z, stokes, stats)) {
-            FillHistogramFromResults(histogram, stats, hist);
+            Message::FillHistogram(histogram, stats, hist);
         }
     }
     return have_histogram;
@@ -982,7 +980,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         // Use loader image stats
         auto& image_stats = _loader->GetImageStats(stokes, z);
         if (image_stats.full) {
-            FillStatisticsValuesFromMap(stats_data, required_stats, image_stats.basic_stats);
+            Message::FillStatisticsValue(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);
             continue;
         }
@@ -991,7 +989,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         int cache_key(CacheKey(z, stokes));
         if (_image_stats.count(cache_key)) {
             auto stats_map = _image_stats[cache_key];
-            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            Message::FillStatisticsValue(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
             continue;
         }
@@ -1010,7 +1008,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             }
 
             // complete message
-            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            Message::FillStatisticsValue(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
 
             // cache results
