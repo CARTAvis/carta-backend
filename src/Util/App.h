@@ -9,6 +9,9 @@
 
 #include <string>
 
+// version
+#define VERSION_ID "3.0.0-beta.1b"
+
 bool FindExecutablePath(std::string& path);
 
 #endif // CARTA_BACKEND__UTIL_APP_H_

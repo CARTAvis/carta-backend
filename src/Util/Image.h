@@ -37,6 +37,15 @@
 #define TILE_SIZE 256
 #define CHUNK_SIZE 512
 
+// histograms
+#define AUTO_BIN_SIZE -1
+
+// z profile calculation
+#define INIT_DELTA_Z 10
+#define TARGET_DELTA_TIME 50 // milliseconds
+#define TARGET_PARTIAL_CURSOR_TIME 500
+#define TARGET_PARTIAL_REGION_TIME 1000
+
 // AxisRange() defines the full axis ALL_Z
 // AxisRange(0) defines a single axis index, 0, in this example
 // AxisRange(0, 1) defines the axis range including [0, 1] in this example

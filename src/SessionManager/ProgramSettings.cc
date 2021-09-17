@@ -14,6 +14,8 @@
 
 #include <casacore/images/Images/ImageOpener.h>
 
+#include "Util/App.h"
+
 using namespace std;
 using json = nlohmann::json;
 

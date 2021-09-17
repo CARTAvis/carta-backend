@@ -25,7 +25,6 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
-#include "Constants.h"
 #include "DataStream/Compression.h"
 #include "EventHeader.h"
 #include "FileList/FileExtInfoLoader.h"
@@ -36,6 +35,7 @@
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
+#include "Util/File.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>

@@ -19,6 +19,9 @@
 #define FILE_LIST_FIRST_PROGRESS_AFTER_SECS 5
 #define FILE_LIST_PROGRESS_INTERVAL_SECS 2
 
+// file ids
+#define ALL_FILES -1
+
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
 

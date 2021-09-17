@@ -15,9 +15,9 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
-#include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
 #include "../Logger/Logger.h"
+#include "Util/File.h"
 #include "Util/Image.h"
 
 #include "CrtfImportExport.h"

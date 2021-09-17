@@ -15,7 +15,6 @@
 #include <casacore/casa/OS/File.h>
 
 #include "../Logger/Logger.h"
-#include "Constants.h"
 #include "FileInfoLoader.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"

@@ -15,6 +15,7 @@
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
+#include "Util/App.h"
 #include "Util/String.h"
 
 using namespace carta;

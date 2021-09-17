@@ -55,6 +55,11 @@
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 
+#define HISTOGRAM_CANCEL -1.0
+#define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
+
+#define MAX_BACKPRESSURE 256 * 1024 * 1024
+
 struct PerSocketData {
     uint32_t session_id;
     string address;
