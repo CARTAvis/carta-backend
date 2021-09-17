@@ -13,6 +13,15 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
+namespace carta {
+const uint16_t ICD_VERSION = 24;
+struct EventHeader {
+    uint16_t type;
+    uint16_t icd_version;
+    uint32_t request_id;
+};
+} // namespace carta
+
 void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,

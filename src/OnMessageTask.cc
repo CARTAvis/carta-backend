@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstring>
 
-#include "EventHeader.h"
 #include "Logger/Logger.h"
 
 tbb::task* MultiMessageTask::execute() {

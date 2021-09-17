@@ -18,8 +18,8 @@
 #include <tbb/task.h>
 
 #include "AnimationObject.h"
-#include "EventHeader.h"
 #include "Session.h"
+#include "Util/Message.h"
 
 class OnMessageTask : public tbb::task {
 protected:
