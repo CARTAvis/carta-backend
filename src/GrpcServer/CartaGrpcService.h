@@ -35,4 +35,7 @@ private:
     std::string _auth_token;
 };
 
+bool StartCartaGrpcServer(std::shared_ptr<CartaGrpcService>& carta_grpc_service, std::unique_ptr<grpc::Server>& carta_grpc_server, int port,
+    std::string auth_token);
+
 #endif // CARTA_BACKEND_GRPCSERVER_CARTAGRPCSERVICE_H_

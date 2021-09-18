@@ -39,68 +39,15 @@ static std::shared_ptr<FileListHandler> file_list_handler;
 static std::unique_ptr<SimpleFrontendServer> http_server;
 
 // grpc server for scripting client
-static std::shared_ptr<CartaGrpcService> carta_grpc_service;
-static std::unique_ptr<grpc::Server> carta_grpc_server;
+static std::shared_ptr<CartaGrpcService> scripting_grpc_service;
+static std::unique_ptr<grpc::Server> scripting_grpc_server;
 
 static std::shared_ptr<SessionManager> session_manager;
 
-void GrpcSilentLogger(gpr_log_func_args*) {}
-
-extern void gpr_default_log(gpr_log_func_args* args);
-
-int StartGrpcService() {
-    // Silence grpc error log
-    gpr_set_log_function(GrpcSilentLogger);
-
-    // Set up address buffer
-    std::string server_address = fmt::format("0.0.0.0:{}", settings.grpc_port);
-
-    // Build grpc service
-    grpc::ServerBuilder builder;
-    // BuildAndStart will populate this with the desired port if binding succeeds or 0 if it fails
-    int selected_port(-1);
-    // Listen on the given address without any authentication mechanism.
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selected_port);
-
-    std::string grpc_token = "";
-    bool fixed_grpc_token(false);
-
-    if (!settings.debug_no_auth) {
-        auto env_entry = getenv("CARTA_GRPC_TOKEN");
-
-        if (env_entry) {
-            grpc_token = env_entry;
-            fixed_grpc_token = true;
-        } else {
-            grpc_token = NewAuthToken();
-        }
-    }
-
-    // Register and start carta grpc server
-    carta_grpc_service = std::make_shared<CartaGrpcService>(grpc_token);
-    builder.RegisterService(carta_grpc_service.get());
-    // By default ports can be reused; we don't want this
-    builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
-    carta_grpc_server = builder.BuildAndStart();
-
-    if (selected_port > 0) { // available port found
-        spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", selected_port);
-        if (!fixed_grpc_token && !settings.debug_no_auth) {
-            spdlog::info("CARTA gRPC token: {}", grpc_token);
-        }
-        // Turn logging back on
-        gpr_set_log_function(gpr_default_log);
-        return 0;
-    } else {
-        spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", settings.grpc_port);
-        return 1;
-    }
-}
-
 void ExitBackend(int s) {
     spdlog::info("Exiting backend.");
-    if (carta_grpc_server) {
-        carta_grpc_server->Shutdown();
+    if (scripting_grpc_server) {
+        scripting_grpc_server->Shutdown();
     }
     FlushLogFile();
     exit(0);
@@ -167,11 +114,28 @@ int main(int argc, char* argv[]) {
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
 
         // Start gRPC server for scripting client.
-        std::shared_ptr<CartaGrpcService> carta_grpc_service;
-        std::unique_ptr<grpc::Server> carta_grpc_server;
         if (settings.grpc_port >= 0) {
-            int grpc_status = StartGrpcService();
-            if (grpc_status) {
+            std::string grpc_token = "";
+            bool fixed_grpc_token(false);
+
+            if (!settings.debug_no_auth) {
+                auto env_entry = getenv("CARTA_GRPC_TOKEN");
+
+                if (env_entry) {
+                    grpc_token = env_entry;
+                    fixed_grpc_token = true;
+                } else {
+                    grpc_token = NewAuthToken();
+                }
+            }
+
+            if (StartCartaGrpcServer(scripting_grpc_service, scripting_grpc_server, settings.grpc_port, grpc_token)) {
+                spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", settings.grpc_port);
+                if (!fixed_grpc_token && !settings.debug_no_auth) {
+                    spdlog::info("CARTA gRPC token: {}", grpc_token);
+                }
+            } else {
+                spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", settings.grpc_port);
                 FlushLogFile();
                 return 1;
             }
@@ -181,7 +145,7 @@ int main(int argc, char* argv[]) {
         curl_global_init(CURL_GLOBAL_ALL);
 
         // Session manager
-        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler, carta_grpc_service);
+        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler, scripting_grpc_service);
 
         // HTTP server
         if (!settings.no_http) {
