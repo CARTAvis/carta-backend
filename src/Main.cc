@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
-#include <uuid/uuid.h>
 
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -27,6 +26,7 @@
 #include "Util/App.h"
 #include "Util/File.h"
 #include "Util/FileSystem.h"
+#include "Util/Token.h"
 
 #define TBB_TASK_THREAD_COUNT 3
 
@@ -72,11 +72,7 @@ int StartGrpcService() {
             grpc_token = env_entry;
             fixed_grpc_token = true;
         } else {
-            uuid_t token;
-            char token_string[37];
-            uuid_generate_random(token);
-            uuid_unparse(token, token_string);
-            grpc_token += token_string;
+            grpc_token = NewAuthToken();
         }
     }
 
@@ -160,11 +156,7 @@ int main(int argc, char* argv[]) {
             if (env_entry) {
                 auth_token = env_entry;
             } else {
-                uuid_t token;
-                char token_string[37];
-                uuid_generate_random(token);
-                uuid_unparse(token, token_string);
-                auth_token += token_string;
+                auth_token = NewAuthToken();
             }
         }
 

@@ -10,6 +10,7 @@
 #include <uWebSockets/HttpContext.h>
 #include <string>
 
+std::string NewAuthToken();
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
 bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 

@@ -8,6 +8,16 @@
 
 #include <regex>
 
+#include <uuid/uuid.h>
+
+std::string NewAuthToken() {
+    uuid_t token;
+    char token_string[37];
+    uuid_generate_random(token);
+    uuid_unparse(token, token_string);
+    return std::string(token_string);
+}
+
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token) {
     // Always allow if the required token is empty
     if (required_token.empty()) {
