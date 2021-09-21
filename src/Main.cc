@@ -34,20 +34,15 @@ using namespace std;
 
 ProgramSettings settings;
 
-// file list handler for the file browser
 static std::shared_ptr<FileListHandler> file_list_handler;
 static std::unique_ptr<SimpleFrontendServer> http_server;
-
-// grpc server for scripting client
-static std::shared_ptr<CartaGrpcService> scripting_grpc_service;
-static std::unique_ptr<grpc::Server> scripting_grpc_server;
-
+static std::shared_ptr<GrpcManager> grpc_manager;
 static std::shared_ptr<SessionManager> session_manager;
 
 void ExitBackend(int s) {
     spdlog::info("Exiting backend.");
-    if (scripting_grpc_server) {
-        scripting_grpc_server->Shutdown();
+    if (grpc_manager) {
+        grpc_manager->Shutdown();
     }
     FlushLogFile();
     exit(0);
@@ -128,8 +123,10 @@ int main(int argc, char* argv[]) {
                     grpc_token = NewAuthToken();
                 }
             }
+            
+            grpc_manager = std::make_shared<GrpcManager>(settings.grpc_port, grpc_token);
 
-            if (StartCartaGrpcServer(scripting_grpc_service, scripting_grpc_server, settings.grpc_port, grpc_token)) {
+            if (grpc_manager->Listening()) {
                 spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", settings.grpc_port);
                 if (!fixed_grpc_token && !settings.debug_no_auth) {
                     spdlog::info("CARTA gRPC token: {}", grpc_token);
@@ -145,7 +142,7 @@ int main(int argc, char* argv[]) {
         curl_global_init(CURL_GLOBAL_ALL);
 
         // Session manager
-        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler, scripting_grpc_service);
+        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler, grpc_manager->Service());
 
         // HTTP server
         if (!settings.no_http) {
