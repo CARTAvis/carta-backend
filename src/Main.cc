@@ -32,28 +32,25 @@
 
 using namespace std;
 
-ProgramSettings settings;
-
-static std::shared_ptr<FileListHandler> file_list_handler;
-static std::unique_ptr<SimpleFrontendServer> http_server;
-static std::shared_ptr<GrpcManager> grpc_manager;
-static std::shared_ptr<SessionManager> session_manager;
-
-void ExitBackend(int s) {
-    spdlog::info("Exiting backend.");
-    if (grpc_manager) {
-        grpc_manager->Shutdown();
-    }
-    FlushLogFile();
-    exit(0);
-}
-
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
+    ProgramSettings settings;
+
+    std::shared_ptr<FileListHandler> file_list_handler;
+    std::unique_ptr<SimpleFrontendServer> http_server;
+    std::shared_ptr<GrpcManager> grpc_manager;
+    std::shared_ptr<SessionManager> session_manager;
+
     try {
         // set up interrupt signal handler
         struct sigaction sig_handler;
-        sig_handler.sa_handler = ExitBackend;
+
+        sig_handler.sa_handler = [](int s) {
+            spdlog::info("Exiting backend.");
+            FlushLogFile();
+            exit(0);
+        };
+
         sigemptyset(&sig_handler.sa_mask);
         sig_handler.sa_flags = 0;
         sigaction(SIGINT, &sig_handler, nullptr);
@@ -123,7 +120,7 @@ int main(int argc, char* argv[]) {
                     grpc_token = NewAuthToken();
                 }
             }
-            
+
             grpc_manager = std::make_shared<GrpcManager>(settings.grpc_port, grpc_token);
 
             if (grpc_manager->Listening()) {

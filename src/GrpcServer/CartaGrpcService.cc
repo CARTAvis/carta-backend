@@ -90,7 +90,6 @@ grpc::Status CartaGrpcService::CallAction(
     return status;
 }
 
-
 GrpcManager::GrpcManager(int port, std::string auth_token) : _selected_port(-1) {
     // Silence grpc error log
     gpr_set_log_function(GrpcSilentLogger);
@@ -102,7 +101,6 @@ GrpcManager::GrpcManager(int port, std::string auth_token) : _selected_port(-1) 
     grpc::ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &_selected_port);
-
     // Register and start carta grpc server
     _service = std::make_shared<CartaGrpcService>(auth_token);
     builder.RegisterService(_service.get());
@@ -114,14 +112,16 @@ GrpcManager::GrpcManager(int port, std::string auth_token) : _selected_port(-1) 
     gpr_set_log_function(gpr_default_log);
 }
 
+GrpcManager::~GrpcManager() {
+    if (Listening()) {
+        _server->Shutdown();
+    }
+}
+
 bool GrpcManager::Listening() {
     return (_selected_port > 0);
 }
 
 std::shared_ptr<CartaGrpcService> GrpcManager::Service() {
     return _service;
-}
-
-void GrpcManager::Shutdown() {
-    _server->Shutdown();
 }

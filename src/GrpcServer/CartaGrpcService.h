@@ -38,9 +38,10 @@ private:
 class GrpcManager {
 public:
     GrpcManager(int port, std::string auth_token);
+    ~GrpcManager();
     bool Listening();
     std::shared_ptr<CartaGrpcService> Service();
-    void Shutdown();
+
 private:
     std::shared_ptr<CartaGrpcService> _service;
     std::unique_ptr<grpc::Server> _server;
