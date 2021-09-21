@@ -1349,7 +1349,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         CARTA::RegionHistogramData progress_msg;
                         CreateCubeHistogramMessage(progress_msg, file_id, ALL_Z, stokes, progress);
                         auto* message_histogram = progress_msg.mutable_histograms();
-                        Message::FillHistogram(message_histogram, cube_stats, cube_histogram);
+                        FillHistogram(message_histogram, cube_stats, cube_histogram);
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
                     }
@@ -1365,7 +1365,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     // fill histogram fields from last z histogram
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
-                    Message::FillHistogram(message_histogram, cube_stats, cube_histogram);
+                    FillHistogram(message_histogram, cube_stats, cube_histogram);
 
                     // cache cube histogram
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);

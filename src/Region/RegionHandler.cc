@@ -847,7 +847,7 @@ bool RegionHandler::GetRegionHistogramData(
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
-            Message::FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
+            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
             continue;
         }
 
@@ -868,7 +868,7 @@ bool RegionHandler::GetRegionHistogramData(
                 carta::Histogram hist;
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
-                    Message::FillHistogram(histogram, stats, hist);
+                    FillHistogram(histogram, stats, hist);
 
                     // Fill in the cached message
                     histogram_messages.emplace_back(histogram_message);
@@ -899,7 +899,7 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Complete Histogram submessage
         auto* histogram = histogram_message.mutable_histograms();
-        Message::FillHistogram(histogram, stats, histo);
+        FillHistogram(histogram, stats, histo);
 
         // Fill in the final result
         histogram_messages.emplace_back(histogram_message);
@@ -1318,7 +1318,7 @@ bool RegionHandler::GetRegionStatsData(
     if (_stats_cache.count(cache_id)) {
         std::map<CARTA::StatsType, double> stats_results;
         if (_stats_cache[cache_id].GetStats(stats_results)) {
-            Message::FillStatisticsValue(stats_message, required_stats, stats_results);
+            FillStatistics(stats_message, required_stats, stats_results);
             return true;
         }
     }
@@ -1336,7 +1336,7 @@ bool RegionHandler::GetRegionStatsData(
                 stats_results[carta_stat] = nan("");
             }
         }
-        Message::FillStatisticsValue(stats_message, required_stats, stats_results);
+        FillStatistics(stats_message, required_stats, stats_results);
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
         return true;
@@ -1353,7 +1353,7 @@ bool RegionHandler::GetRegionStatsData(
         }
 
         // add values to message
-        Message::FillStatisticsValue(stats_message, required_stats, stats_results);
+        FillStatistics(stats_message, required_stats, stats_results);
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
