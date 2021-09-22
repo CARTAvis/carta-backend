@@ -278,22 +278,6 @@ CARTA::EventType Message::EventType(std::vector<char>& message) {
     return static_cast<CARTA::EventType>(head.type);
 }
 
-void Message::FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
-    FillHistogram(histogram, hist.GetNbins(), hist.GetBinWidth(), hist.GetBinCenter(), hist.GetHistogramBins(), stats.mean, stats.stdDev);
-}
-
-void Message::FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center,
-    const std::vector<int>& bins, double mean, double std_dev) {
-    if (histogram) {
-        histogram->set_num_bins(num_bins);
-        histogram->set_bin_width(bin_width);
-        histogram->set_first_bin_center(first_bin_center);
-        *histogram->mutable_bins() = {bins.begin(), bins.end()};
-        histogram->set_mean(mean);
-        histogram->set_std_dev(std_dev);
-    }
-}
-
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
     string& coordinate, vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
@@ -318,7 +302,23 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
     return profile_message;
 }
 
-void Message::FillStatisticsValue(
+void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
+    double mean, double std_dev) {
+    if (histogram) {
+        histogram->set_num_bins(num_bins);
+        histogram->set_bin_width(bin_width);
+        histogram->set_first_bin_center(first_bin_center);
+        *histogram->mutable_bins() = {bins.begin(), bins.end()};
+        histogram->set_mean(mean);
+        histogram->set_std_dev(std_dev);
+    }
+}
+
+void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
+    FillHistogram(histogram, hist.GetNbins(), hist.GetBinWidth(), hist.GetBinCenter(), hist.GetHistogramBins(), stats.mean, stats.stdDev);
+}
+
+void FillStatistics(
     CARTA::RegionStatsData& stats_data, const vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {

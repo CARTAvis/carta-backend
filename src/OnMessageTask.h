@@ -38,44 +38,6 @@ public:
     }
 };
 
-template <typename T>
-class GeneralMessageTask : public OnMessageTask {
-    tbb::task* execute() {
-        if constexpr (std::is_same_v<T, CARTA::SetHistogramRequirements>) {
-            _session->OnSetHistogramRequirements(_message, _request_id);
-        } else if constexpr (std::is_same_v<T, CARTA::AddRequiredTiles>) {
-            _session->OnAddRequiredTiles(_message, _session->AnimationRunning());
-        } else if constexpr (std::is_same_v<T, CARTA::SetContourParameters>) {
-            _session->OnSetContourParameters(_message);
-        } else if constexpr (std::is_same_v<T, CARTA::SpectralLineRequest>) {
-            _session->OnSpectralLineRequest(_message, _request_id);
-        } else if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
-            _session->OnSetSpatialRequirements(_message);
-        } else if constexpr (std::is_same_v<T, CARTA::SetStatsRequirements>) {
-            _session->OnSetStatsRequirements(_message);
-        } else if constexpr (std::is_same_v<T, CARTA::MomentRequest>) {
-            _session->OnMomentRequest(_message, _request_id);
-        } else if constexpr (std::is_same_v<T, CARTA::FileListRequest>) {
-            _session->OnFileListRequest(_message, _request_id);
-        } else if constexpr (std::is_same_v<T, CARTA::RegionListRequest>) {
-            _session->OnRegionListRequest(_message, _request_id);
-        } else if constexpr (std::is_same_v<T, CARTA::CatalogListRequest>) {
-            _session->OnCatalogFileList(_message, _request_id);
-        } else {
-            spdlog::warn("Bad event type in GeneralMessageType!");
-        }
-        return nullptr;
-    };
-
-    T _message;
-    uint32_t _request_id;
-
-public:
-    GeneralMessageTask(Session* session, T message, uint32_t request_id)
-        : OnMessageTask(session), _message(message), _request_id(request_id) {}
-    ~GeneralMessageTask() = default;
-};
-
 class SetImageChannelsTask : public OnMessageTask {
     int _file_id;
     tbb::task* execute() override;
@@ -129,5 +91,7 @@ public:
     OnSplataloguePingTask(Session* session, uint32_t request_id) : OnMessageTask(session), _request_id(request_id) {}
     ~OnSplataloguePingTask() = default;
 };
+
+#include "OnMessageTask.tcc"
 
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
