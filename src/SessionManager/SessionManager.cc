@@ -140,18 +140,20 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
-            OnMessageTask* tsk = nullptr;
 
             CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
             LogReceivedEventType(event_type);
 
-            switch (head.type) {
+            auto event_type_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+            bool message_parsed(false);
+            OnMessageTask* tsk = nullptr;
+
+            switch (event_type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
-                    } else {
-                        spdlog::warn("Bad REGISTER_VIEWER message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -159,8 +161,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::ResumeSession message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnResumeSession(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad RESUME_SESSION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -174,8 +175,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
                         session->ImageChannelUnlock(message.file_id());
-                    } else {
-                        spdlog::warn("Bad SET_IMAGE_CHANNELS message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -184,8 +184,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->AddCursorSetting(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
-                    } else {
-                        spdlog::warn("Bad SET_CURSOR message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -197,10 +196,9 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                         } else {
                             session->ResetHistContext();
                             tsk = new (tbb::task::allocate_root(session->HistContext()))
-                                SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                                GeneralMessageTask<CARTA::SetHistogramRequirements>(session, message, head.request_id);
                         }
-                    } else {
-                        spdlog::warn("Bad SET_HISTOGRAM_REQUIREMENTS message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -208,8 +206,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::CloseFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseFile(message);
-                    } else {
-                        spdlog::warn("Bad CLOSE_FILE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -219,8 +216,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
-                    } else {
-                        spdlog::warn("Bad START_ANIMATION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -228,8 +224,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::StopAnimation message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->StopAnimation(message.file_id(), message.end_frame());
-                    } else {
-                        spdlog::warn("Bad STOP_ANIMATION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -237,8 +232,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::AnimationFlowControl message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->HandleAnimationFlowControlEvt(message);
-                    } else {
-                        spdlog::warn("Bad ANIMATION_FLOW_CONTROL message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -246,36 +240,35 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::FileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileInfoRequest(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad FILE_INFO_REQUEST message!");
+                        message_parsed = true;
                     }
                     break;
                 }
                 case CARTA::EventType::OPEN_FILE: {
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        for (auto& session : _sessions) {
-                            session.second->CloseCachedImage(message.directory(), message.file());
+                        for (auto& session_map : _sessions) {
+                            session_map.second->CloseCachedImage(message.directory(), message.file());
                         }
-
                         session->OnOpenFile(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad OPEN_FILE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
-                    message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
                     break;
                 }
                 case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
                     CARTA::RegionFileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegionFileInfoRequest(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad REGION_FILE_INFO_REQUEST message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -283,8 +276,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::ImportRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnImportRegion(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad IMPORT_REGION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -292,23 +284,24 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::ExportRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnExportRegion(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad EXPORT_REGION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
-                    message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
                     break;
                 }
                 case CARTA::EventType::SCRIPTING_RESPONSE: {
                     CARTA::ScriptingResponse message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnScriptingResponse(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad SCRIPTING_RESPONSE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -316,8 +309,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::SetRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetRegion(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad SET_REGION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -325,8 +317,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::RemoveRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRemoveRegion(message);
-                    } else {
-                        spdlog::warn("Bad REMOVE_REGION message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -334,8 +325,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::SetSpectralRequirements message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetSpectralRequirements(message);
-                    } else {
-                        spdlog::warn("Bad SET_SPECTRAL_REQUIREMENTS message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -343,8 +333,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::CatalogFileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFileInfo(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad CATALOG_FILE_INFO_REQUEST message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -352,8 +341,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::OpenCatalogFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenCatalogFile(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad OPEN_CATALOG_FILE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -361,8 +349,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::CloseCatalogFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseCatalogFile(message);
-                    } else {
-                        spdlog::warn("Bad CLOSE_CATALOG_FILE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -370,8 +357,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::CatalogFilterRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFilter(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad CLOSE_CATALOG_FILE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -379,8 +365,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::StopMomentCalc message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnStopMomentCalc(message);
-                    } else {
-                        spdlog::warn("Bad STOP_MOMENT_CALC message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -388,8 +373,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::SaveFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSaveFile(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad SAVE_FILE message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -397,18 +381,16 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::SplataloguePing message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         tsk = new (tbb::task::allocate_root(session->Context())) OnSplataloguePingTask(session, head.request_id);
-                    } else {
-                        spdlog::warn("Bad SPLATALOGUE_PING message!\n");
+                        message_parsed = true;
                     }
                     break;
                 }
                 case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk =
-                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::SpectralLineRequest>(session, message, head.request_id);
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -416,8 +398,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::ConcatStokesFiles message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnConcatStokesFiles(message, head.request_id);
-                    } else {
-                        spdlog::warn("Bad CONCAT_STOKES_FILES message!");
+                        message_parsed = true;
                     }
                     break;
                 }
@@ -429,17 +410,72 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                         } else {
                             session->StopCatalogFileList();
                         }
-                    } else {
-                        spdlog::warn("Bad STOP_FILE_LIST message!");
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
+                    CARTA::SetSpatialRequirements message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::SET_STATS_REQUIREMENTS: {
+                    CARTA::SetStatsRequirements message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::MOMENT_REQUEST: {
+                    CARTA::MomentRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::FILE_LIST_REQUEST: {
+                    CARTA::FileListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::REGION_LIST_REQUEST: {
+                    CARTA::RegionListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::CATALOG_LIST_REQUEST: {
+                    CARTA::CatalogListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context()))
+                            GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
+                        message_parsed = true;
                     }
                     break;
                 }
                 default: {
-                    // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
-                    char* message_buffer = new char[event_length];
-                    memcpy(message_buffer, event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
+                    spdlog::warn("Bad event type {}!", event_type);
+                    break;
                 }
+            }
+
+            if (!message_parsed) {
+                spdlog::warn("Bad {} message!", event_type_name);
             }
 
             if (tsk) {
@@ -503,7 +539,7 @@ uWS::App& SessionManager::App() {
 void SessionManager::RunApp() {
     _app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior<PerSocketData>){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                      .maxPayloadLength = 256 * 1024 * 1024,
-                                     .maxBackpressure = MAX_BACKPRESSURE,
+                                     .maxBackpressure = 0,
                                      .upgrade = [=](uWS::HttpResponse<false>* res, uWS::HttpRequest* req,
                                                     struct us_socket_context_t* ctx) { OnUpgrade(res, req, ctx); },
                                      .open = [=](WSType* ws) { OnConnect(ws); },
