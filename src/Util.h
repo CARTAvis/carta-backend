@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_UTIL_UTIL_H_
-#define CARTA_BACKEND_UTIL_UTIL_H_
+#ifndef CARTA_BACKEND__UTIL_H_
+#define CARTA_BACKEND__UTIL_H_
 
 #include <cassert>
 #include <filesystem>
@@ -151,4 +151,4 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
-#endif // CARTA_BACKEND_UTIL_UTIL_H_
+#endif // CARTA_BACKEND__UTIL_H_
