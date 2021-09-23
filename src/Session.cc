@@ -213,10 +213,9 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                 hdu = file_info.hdu_list(0);
             }
 
-            if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
+            if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS) && !IsCompressedFits(fullname)) {
                 // File info adds empty string for FITS
                 std::vector<std::string> hdu_list;
-                std::string message;
                 FitsHduList fits_hdu_list(fullname);
                 fits_hdu_list.GetHduList(hdu_list, message);
 
