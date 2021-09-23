@@ -85,16 +85,6 @@ static std::unordered_map<string, CARTA::PolarizationType> StokesStringTypes{{"I
 void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
 
-// ************ Data Stream Helpers *************
-
-void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
-
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
-    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
-
-void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
-    std::map<CARTA::StatsType, double>& stats_value_map);
-
 std::string IPAsText(std::string_view binary);
 
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);

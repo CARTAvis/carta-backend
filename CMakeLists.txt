@@ -249,6 +249,7 @@ set(SOURCE_FILES
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
+        src/Util/Message.cc
         src/TileCache.cc
         src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)
