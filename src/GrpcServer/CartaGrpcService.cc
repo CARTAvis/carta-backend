@@ -90,6 +90,8 @@ grpc::Status CartaGrpcService::CallAction(
     return status;
 }
 
+GrpcManager::GrpcManager() : _selected_port(-1) {}
+
 GrpcManager::GrpcManager(int port, std::string auth_token) : _selected_port(-1) {
     // Silence grpc error log
     gpr_set_log_function(GrpcSilentLogger);
@@ -113,7 +115,7 @@ GrpcManager::GrpcManager(int port, std::string auth_token) : _selected_port(-1) 
 }
 
 GrpcManager::~GrpcManager() {
-    if (Listening()) {
+    if (_server) {
         _server->Shutdown();
     }
 }

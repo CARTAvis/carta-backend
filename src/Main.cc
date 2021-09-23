@@ -133,6 +133,8 @@ int main(int argc, char* argv[]) {
                 FlushLogFile();
                 return 1;
             }
+        } else {
+            grpc_manager = std::make_shared<GrpcManager>(); // dummy manager
         }
 
         // Init curl

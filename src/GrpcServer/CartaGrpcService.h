@@ -37,6 +37,7 @@ private:
 
 class GrpcManager {
 public:
+    GrpcManager();
     GrpcManager(int port, std::string auth_token);
     ~GrpcManager();
     bool Listening();
