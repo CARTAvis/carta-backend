@@ -11,8 +11,6 @@
 
 #include <functional>
 
-#define FIRST_PROGRESS_AFTER_MILLI_SECS 5000
-#define PROGRESS_REPORT_INTERVAL 0.1
 #define ID_MULTIPLIER 1000
 
 using GeneratorProgressCallback = std::function<void(float)>;

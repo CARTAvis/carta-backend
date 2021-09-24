@@ -136,7 +136,6 @@ public:
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
     bool FillRegionHistogramData(
         std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
-    bool FillHistogram(int z, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats);
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);

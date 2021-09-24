@@ -38,6 +38,7 @@
 #include "Threading.h"
 #include "Timer/Timer.h"
 #include "Util.h"
+#include "Util/Message.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -1420,13 +1421,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         CARTA::RegionHistogramData progress_msg;
                         CreateCubeHistogramMessage(progress_msg, file_id, ALL_Z, stokes, progress);
                         auto* message_histogram = progress_msg.mutable_histograms();
-                        message_histogram->set_num_bins(cube_histogram.GetNbins());
-                        message_histogram->set_bin_width(cube_histogram.GetBinWidth());
-                        message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
-                        message_histogram->set_mean(cube_stats.mean);
-                        message_histogram->set_std_dev(cube_stats.stdDev);
-                        auto& bins = cube_histogram.GetHistogramBins();
-                        *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
+                        FillHistogram(message_histogram, cube_stats, cube_histogram);
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
                     }
@@ -1442,13 +1437,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     // fill histogram fields from last z histogram
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
-                    message_histogram->set_num_bins(cube_histogram.GetNbins());
-                    message_histogram->set_bin_width(cube_histogram.GetBinWidth());
-                    message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
-                    message_histogram->set_mean(cube_stats.mean);
-                    message_histogram->set_std_dev(cube_stats.stdDev);
-                    auto& bins = cube_histogram.GetHistogramBins();
-                    *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
+                    FillHistogram(message_histogram, cube_stats, cube_histogram);
 
                     // cache cube histogram
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
@@ -1797,16 +1786,13 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
         std::pair<std::vector<char>, bool> msg;
         if (_connected) {
             while (_out_msgs.try_pop(msg)) {
-                auto expected_buffered_amount = msg.first.size() + _socket->getBufferedAmount();
-                if (expected_buffered_amount > MAX_BACKPRESSURE) {
-                    spdlog::warn("Exceeded maximum backpressure: client {} [{}]. Buffered amount: {} (bytes). May lose some messages.",
-                        GetId(), GetAddress(), expected_buffered_amount);
-                }
                 std::string_view sv(msg.first.data(), msg.first.size());
-                auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
-                if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
-                    spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
-                }
+                _socket->cork([&]() {
+                    auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                    if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
+                        spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                    }
+                });
             }
         }
     });

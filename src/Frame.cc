@@ -26,6 +26,7 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Util.h"
+#include "Util/Message.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -732,7 +733,7 @@ bool Frame::FillRegionHistogramData(
                 carta::Histogram hist;
                 histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
-                    FillHistogramFromResults(histogram, stats, hist);
+                    FillHistogram(histogram, stats, hist);
                     region_histogram_callback(histogram_data); // send region histogram data message
                 }
             }
@@ -779,12 +780,9 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
             double std_dev(current_stats.basic_stats[CARTA::StatsType::Sigma]);
 
             // fill message
-            histogram->set_num_bins(image_num_bins);
-            histogram->set_bin_width((max_val - min_val) / image_num_bins);
-            histogram->set_first_bin_center(min_val + (histogram->bin_width() / 2.0));
-            *histogram->mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
-            histogram->set_mean(mean);
-            histogram->set_std_dev(std_dev);
+            double bin_width = (max_val - min_val) / image_num_bins;
+            double first_bin_center = min_val + (bin_width / 2.0);
+            FillHistogram(histogram, image_num_bins, bin_width, first_bin_center, current_stats.histogram_bins, mean, std_dev);
             // histogram cached in loader
             return true;
         }
@@ -810,7 +808,7 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
         // add stats to message
         BasicStats<float> stats;
         if (GetBasicStats(z, stokes, stats)) {
-            FillHistogramFromResults(histogram, stats, hist);
+            FillHistogram(histogram, stats, hist);
         }
     }
     return have_histogram;
@@ -985,7 +983,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         // Use loader image stats
         auto& image_stats = _loader->GetImageStats(stokes, z);
         if (image_stats.full) {
-            FillStatisticsValuesFromMap(stats_data, required_stats, image_stats.basic_stats);
+            FillStatistics(stats_data, required_stats, image_stats.basic_stats);
             stats_data_callback(stats_data);
             continue;
         }
@@ -994,7 +992,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         int cache_key(CacheKey(z, stokes));
         if (_image_stats.count(cache_key)) {
             auto stats_map = _image_stats[cache_key];
-            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            FillStatistics(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
             continue;
         }
@@ -1013,7 +1011,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             }
 
             // complete message
-            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            FillStatistics(stats_data, required_stats, stats_map);
             stats_data_callback(stats_data);
 
             // cache results
@@ -2126,48 +2124,21 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
-    if (coordinate.size() == 2) {
+    if (coordinate.size() == 2 || coordinate.size() == 3) {
         bool stokes_ok(false);
-        char stokes_char(coordinate.front());
-        switch (stokes_char) {
-            case 'I':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::I, stokes_index)) {
+        std::string stokes_string = coordinate.substr(0, coordinate.size() - 1);
+        if (StokesStringTypes.count(stokes_string)) {
+            CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
+            if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
+                stokes_ok = true;
+            } else {
+                int assumed_stokes_index = (StokesValues[stokes_type] - 1) % 4;
+                if (NumStokes() > assumed_stokes_index) {
+                    stokes_index = assumed_stokes_index;
                     stokes_ok = true;
-                } else if (NumStokes() > 0) {
-                    stokes_index = 0;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
                 }
-                break;
-            case 'Q':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::Q, stokes_index)) {
-                    stokes_ok = true;
-                } else if (NumStokes() > 1) {
-                    stokes_index = 1;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
-                }
-                break;
-            case 'U':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::U, stokes_index)) {
-                    stokes_ok = true;
-                } else if (NumStokes() > 2) {
-                    stokes_index = 2;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
-                }
-                break;
-            case 'V':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::V, stokes_index)) {
-                    stokes_ok = true;
-                } else if (NumStokes() > 3) {
-                    stokes_index = 3;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
-                }
-                break;
-            default:
-                break;
+            }
         }
         if (!stokes_ok) {
             spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
