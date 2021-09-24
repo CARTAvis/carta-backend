@@ -53,7 +53,8 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
-      _moment_generator(nullptr) {
+      _moment_generator(nullptr),
+      _pv_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         spdlog::error("Session {}: {}", session_id, _open_image_error);
@@ -272,10 +273,12 @@ bool Frame::ZStokesChanged(int z, int stokes) {
 }
 
 void Frame::WaitForTaskCancellation() {
-    _connected = false;      // file closed
-    if (_moment_generator) { // stop moment calculation
-        _moment_generator->StopCalculation();
-    }
+    _connected = false; // file closed
+
+    // Stop image generators
+    StopMomentCalc();
+    StopPvCalc();
+
     std::unique_lock lock(GetActiveTaskMutex());
 }
 
@@ -1724,57 +1727,39 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::CalculatePvImage(int file_id, GeneratorProgressCallback progress_callback, const std::vector<casacore::LCRegion*>& pv_regions,
+bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
-    // Create spectral profile for each pv_region and add to PV image
-    bool pv_generated(false);
-    _stop_pv = false;
+    // Create PV image
     std::shared_lock lock(GetActiveTaskMutex());
 
-    auto image = _loader->GetImage();
-    PvGenerator pv_generator = PvGenerator(file_id, GetFileName(), image.get());
-    _loader->CloseImageIfUpdated();
+    if (!_pv_generator) {
+        _pv_generator = std::make_unique<PvGenerator>(file_id, GetFileName());
+    }
 
-    pv_response.set_cancel(false); // assume we are going to finish
-    size_t nchan(Depth());
-    size_t nregion(pv_regions.size());
-    float progress(0.0);
+    if (_pv_generator) {
+        casacore::IPosition region_shape = box_regions[0]->shape();
 
-    for (size_t ichan = 0; ichan < nchan; ++ichan) {
-        casacore::Vector<double> pv_per_channel(nregion, 0.0);
-
-        for (size_t iregion = 0; iregion < nregion; ++iregion) {
-            // Check for cancel
-            if (_stop_pv) {
-                pv_response.set_message("PV generator cancelled.");
-                pv_response.set_cancel(true);
-                break;
-            }
-
-            // ImageRegion for pv_region[i]: ichan, CurrentStokes()
-            // GetRegionStats mean for ImageRegion
-            // set spatial profile in pv generator: ichan, CurrentStokes()
-        }
-
-        // Progress update
-        progress = (ichan + 1) / nchan;
-        if (progress < CALCULATION_COMPLETE) {
-            progress_callback(progress);
+        if (UseLoaderSpectralData(region_shape)) {
+            std::cout << "PDEBUG: use loader spectral data" << std::endl;
+            _pv_generator->CalculatePvImage(_loader, box_regions, CurrentStokes(), _image_mutex, progress_callback, pv_response, pv_image);
+        } else {
+            std::cout << "PDEBUG: use region stats data" << std::endl;
+            std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing calculations
+            _pv_generator->CalculatePvImage(
+                _loader, box_regions, Depth(), CurrentStokes(), progress_callback, pv_response, pv_image);
+            ulock.unlock();
         }
     }
 
-    if (progress == CALCULATION_COMPLETE) {
-        pv_image = pv_generator.GetImage();
-    } else {
-        pv_response.set_message("PV generator did not complete.");
-    }
+    _pv_generator.reset();
 
-    pv_response.set_success(pv_image.image.get() != nullptr);
-    return pv_generated;
+    return pv_image.image.get();
 }
 
 void Frame::StopPvCalc() {
-    _stop_pv = true;
+    if (_pv_generator) {
+        _pv_generator->StopCalculation();
+    }
 }
 
 // Export modified image to file, for changed range of channels/stokes and chopped region

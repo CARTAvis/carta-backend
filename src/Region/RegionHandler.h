@@ -87,9 +87,9 @@ public:
     std::vector<int> GetPointRegionIds(int file_id);
     std::vector<int> GetProjectedFileIds(int region_id);
 
-    // Series of box regions along line
-    bool GetPvLineRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
-        std::vector<casacore::LCRegion*>& regions, std::string& message);
+    // Series of box regions along line for PV generator and spatial profiles
+    bool GetLineBoxRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
+        std::vector<casacore::LCRegion*>& box_regions, std::string& message);
 
 private:
     // Get unique region id (max id + 1)
@@ -123,6 +123,10 @@ private:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
+
+    // Approximate line as box regions with given width, for PV generator and spatial profiles
+    bool GetBoxRegions(const std::vector<float>& endpoints_x, const std::vector<float>& endpoints_y, int width,
+        const std::shared_ptr<Frame>& frame, std::vector<casacore::LCRegion*>& box_regions, std::string& message);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

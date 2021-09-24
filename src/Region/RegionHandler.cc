@@ -729,10 +729,9 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     return !collapse_results.empty();
 }
 
-bool RegionHandler::GetPvLineRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
-    std::vector<casacore::LCRegion*>& regions, std::string& message) {
-    // Return set of rotated boxes (polygons), with centers along line(s) and width perpendicular to line(s), for calculating PV Image
-    // TODO: for now, just using control points, need to add intermediate points
+bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
+    std::vector<casacore::LCRegion*>& box_regions, std::string& message) {
+    // Return set of rotated boxes (polygons), with centers along line(s) and width perpendicular to line(s)
     if (!RegionSet(region_id)) {
         message = "Invalid region id.";
         return false;
@@ -742,28 +741,32 @@ bool RegionHandler::GetPvLineRegions(int file_id, int region_id, const std::shar
 
     // Check if region is line type
     if (!region->IsAnnotation()) {
-        message = "Region type not supported for PV generation.";
+        message = "Region type not supported for line approximation.";
         return false;
     }
 
     if (region->GetRegionState().type == CARTA::RegionType::POLYLINE) {
-        message = "Region type POLYLINE not supported yet for PV generation.";
+        message = "Region type POLYLINE not supported yet for line approximation.";
         return false;
     }
 
-    // Control points converted to image (pixels)
-    std::vector<CARTA::Point> endpoints;
+    // Control points (pixels) converted to image
+    std::vector<float> endpoints_x, endpoints_y;
     if (region->GetReferenceFileId() == file_id) {
-        endpoints = region->GetRegionState().control_points;
+        std::vector<CARTA::Point> endpoints = region->GetRegionState().control_points;
+        endpoints_x.push_back(endpoints[0].x());
+        endpoints_y.push_back(endpoints[0].y());
+        endpoints_x.push_back(endpoints[1].x());
+        endpoints_y.push_back(endpoints[1].y());
     } else {
         casacore::CoordinateSystem* image_csys = frame->CoordinateSystem();
         auto record = region->GetImageRegionRecord(file_id, *image_csys, frame->ImageShape());
+        endpoints_x = record.asArrayFloat("x").tovector();
+        endpoints_y = record.asArrayFloat("y").tovector();
         delete image_csys;
-        std::cout << "PDEBUG: line region record=" << record << std::endl;
     }
 
-    message = "Pv line regions not implemented yet.";
-    return false; // TODO
+    return GetBoxRegions(endpoints_x, endpoints_y, width, frame, box_regions, message);
 }
 
 // ********************************************************************
@@ -1495,6 +1498,12 @@ std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
     ulock.unlock();
 
     return results;
+}
+
+bool RegionHandler::GetBoxRegions(const std::vector<float>& endpoints_x, const std::vector<float>& endpoints_y, int width,
+    const std::shared_ptr<Frame>& frame, std::vector<casacore::LCRegion*>& box_regions, std::string& message) {
+    // Generate box regions with width from line described by endpoints
+    return false;
 }
 
 } // namespace carta

@@ -685,6 +685,28 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
+        // TODO: test only for PV Generator
+        auto frame = _frames.at(file_id);
+        int width(3); // default, get from pv request message
+        std::vector<casacore::LCRegion*> box_regions;
+        std::string error;
+        if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, error)) {
+            auto progress_callback = [&](float progress) {
+                CARTA::PvProgress pv_progress;
+                pv_progress.set_file_id(file_id);
+                pv_progress.set_progress(progress);
+                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+            };
+
+            CARTA::PvResponse response;
+            carta::GeneratedImage pv_image;
+            if (frame->CalculatePvImage(file_id, box_regions, progress_callback, response, pv_image)) {
+                // open image
+            }
+        } else {
+            fmt::print("{}\n", error);
+        }
+
         // log error
         if (!success) {
             err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
@@ -1263,10 +1285,9 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_message("Invalid region id.");
         } else {
             auto& frame = _frames.at(file_id);
-
-            std::vector<casacore::LCRegion*> pv_line_regions;
+            std::vector<casacore::LCRegion*> box_regions;
             std::string error;
-            if (_region_handler->GetPvLineRegions(file_id, region_id, frame, width, pv_line_regions, error)) {
+            if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, error)) {
                 // Set pv progress callback function
                 auto progress_callback = [&](float progress) {
                     CARTA::PvProgress pv_progress;
@@ -1276,7 +1297,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 };
 
                 carta::GeneratedImage pv_image;
-                if (frame->CalculatePvImage(file_id, progress_callback, pv_line_regions, pv_response, pv_image)) {
+                if (frame->CalculatePvImage(file_id, box_regions, progress_callback, pv_response, pv_image)) {
                     auto* open_file_ack = pv_response.mutable_open_file_ack();
                     OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
                 }

@@ -9,25 +9,39 @@
 
 #include <casacore/images/Images/TempImage.h>
 
+#include <carta-protobuf/pv_request.pb.h>
+
+#include "../ImageData/FileLoader.h"
 #include "ImageGenerator.h"
 
 namespace carta {
 
 class PvGenerator {
 public:
-    PvGenerator(int file_id, const std::string& filename, const casacore::ImageInterface<float>* image);
-    ~PvGenerator(){};
+    PvGenerator(int file_id, const std::string& filename);
+    ~PvGenerator() {};
 
-    GeneratedImage GetImage();
+    void CalculatePvImage(std::shared_ptr<carta::FileLoader>& loader, const std::vector<casacore::LCRegion*>& box_regions,
+        size_t num_channels, int stokes, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
+        carta::GeneratedImage& pv_image);
+    void CalculatePvImage(std::shared_ptr<carta::FileLoader>& loader, const std::vector<casacore::LCRegion*>& box_regions, int stokes,
+        std::mutex& image_mutex, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
+        carta::GeneratedImage& pv_image);
+    inline void StopCalculation() { _stop_calc = true; };
 
 private:
     std::string GetOutputFilename(const std::string& filename);
-    void InitializePvImage(const casacore::ImageInterface<float>* image);
+
+    void SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& image_shape);
+    casacore::CoordinateSystem GetPvCoordinateSystem(std::shared_ptr<casacore::ImageInterface<float>> input_image);
+    GeneratedImage GetGeneratedImage();
 
     // GeneratedImage parameters
     int _file_id;
     std::string _name;
-    casacore::TempImage<casacore::Float>* _image;
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
+
+    bool _stop_calc;
 };
 
 } // namespace carta

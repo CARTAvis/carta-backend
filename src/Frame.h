@@ -187,7 +187,7 @@ public:
     void StopMomentCalc();
 
     // PV image calculation
-    bool CalculatePvImage(int file_id, GeneratorProgressCallback progress_callback, const std::vector<casacore::LCRegion*>& pv_regions,
+    bool CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
     void StopPvCalc();
 
@@ -310,7 +310,7 @@ protected:
 
     // Image generators
     std::unique_ptr<MomentGenerator> _moment_generator;
-    bool _stop_pv;
+    std::unique_ptr<PvGenerator> _pv_generator;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_
