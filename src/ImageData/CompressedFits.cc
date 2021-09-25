@@ -179,6 +179,50 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     return true;
 }
 
+bool CompressedFits::GetFirstImageHdu(string& hduname) {
+    // Read compressed file headers to get the first image HDU
+    auto* zip_file = OpenGzFile();
+    if (zip_file == Z_NULL) {
+        return false;
+    }
+
+    auto t_start_get_first_image_hdu = std::chrono::high_resolution_clock::now();
+
+    bool first_image_hdu_ok(false);
+    bool in_image_headers(false);
+    int hdu(-1);
+    CARTA::FileInfoExtended file_info_ext;
+    long long data_size(1);
+
+    while (!gzeof(zip_file)) {
+        // Read headers
+        size_t bufsize(FITS_BLOCK_SIZE);
+        std::string buffer(bufsize, 0);
+        size_t bytes_read = gzread(zip_file, buffer.data(), bufsize);
+
+        if ((buffer.substr(0, 6) == "SIMPLE") || (buffer.substr(0, 8) == "XTENSION")) {
+            // New hdu
+            hdu++;
+            data_size = 1;
+
+            // Read initial headers to determine if image
+            if (IsImageHdu(buffer, file_info_ext, data_size)) {
+                first_image_hdu_ok = true;
+                hduname = std::to_string(hdu);
+                break;
+            }
+        }
+    }
+
+    gzclose(zip_file);
+
+    auto t_end_get_first_image_hdu = std::chrono::high_resolution_clock::now();
+    auto dt_get_first_image_hdu =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_first_image_hdu - t_start_get_first_image_hdu).count();
+    spdlog::performance("Get the first image hdu in {:.3f} ms", dt_get_first_image_hdu * 1e-3);
+    return first_image_hdu_ok;
+}
+
 gzFile CompressedFits::OpenGzFile() {
     // Open input zip file and set buffer size
     gzFile zip_file = gzopen(_filename.c_str(), "rb");

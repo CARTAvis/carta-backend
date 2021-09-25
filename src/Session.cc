@@ -31,6 +31,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "ImageData/CompressedFits.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
@@ -220,12 +221,10 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
                 // File info adds empty string for FITS
                 if (IsCompressedFits(fullname)) {
-                    std::map<std::string, CARTA::FileInfoExtended> hdu_info_map;
-                    file_info_ok = ext_info_loader.FillFitsFileInfoMap(hdu_info_map, fullname, message);
-                    if (hdu_info_map.empty()) {
+                    CompressedFits cfits(fullname);
+                    if (!cfits.GetFirstImageHdu(hdu)) {
                         return file_info_ok;
                     }
-                    hdu = hdu_info_map.begin()->first; // get the key (hdu name) of the first element of a map
                 } else {
                     std::vector<std::string> hdu_list;
                     FitsHduList fits_hdu_list(fullname);
