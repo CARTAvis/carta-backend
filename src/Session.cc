@@ -229,6 +229,12 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
         }
 
         _loader.reset(carta::FileLoader::GetLoader(fullname));
+        if (!_loader) {
+            message = "Unsupported format.";
+            spdlog::error(message);
+            return file_info_ok;
+        }
+
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
     } catch (casacore::AipsError& err) {

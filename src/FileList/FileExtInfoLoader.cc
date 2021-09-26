@@ -107,10 +107,6 @@ bool FileExtInfoLoader::FillFileExtInfo(
     bool info_ok(false);
     if (_loader && _loader->CanOpenFile(message)) {
         info_ok = FillFileInfoFromImage(extended_info, hdu, message);
-    } else {
-        message = fmt::format("Can not open the image \"{}\".", filename_nopath);
-        spdlog::error(message);
-        return false;
     }
 
     bool has_mips = _loader->HasMip(2);
