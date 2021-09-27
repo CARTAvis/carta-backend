@@ -25,9 +25,7 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
-#include "Constants.h"
 #include "DataStream/Compression.h"
-#include "EventHeader.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
@@ -36,7 +34,7 @@
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
-#include "Util.h"
+#include "Util/File.h"
 #include "Util/Message.h"
 
 #ifdef _ARM_ARCH_
@@ -50,7 +48,8 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port,
+    bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -65,7 +64,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this) {
-    _histogram_progress = HISTOGRAM_COMPLETE;
+    _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
@@ -1274,7 +1273,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             }
 
             // To send periodic updates
-            _histogram_progress = HISTOGRAM_START;
+            _histogram_progress = 0.0;
             auto t_start = std::chrono::high_resolution_clock::now();
             int request_id(0);
             size_t depth(_frames.at(file_id)->Depth());
@@ -1361,7 +1360,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.set_region_id(CUBE_REGION_ID);
                     cube_histogram_message.set_channel(ALL_Z);
                     cube_histogram_message.set_stokes(stokes);
-                    cube_histogram_message.set_progress(HISTOGRAM_COMPLETE);
+                    cube_histogram_message.set_progress(1.0);
                     // fill histogram fields from last z histogram
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
@@ -1379,9 +1378,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     calculated = true;
                 }
             }
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = 1.0;
         } catch (std::out_of_range& range_error) {
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = 1.0;
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }

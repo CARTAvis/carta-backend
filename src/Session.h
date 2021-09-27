@@ -47,14 +47,15 @@
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
-#include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
-#include "Util.h"
+
+#define HISTOGRAM_CANCEL -1.0
+#define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 
 struct PerSocketData {
     uint32_t session_id;
@@ -64,7 +65,7 @@ struct PerSocketData {
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false);
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port = -1, bool read_only_mode = false);
     ~Session();
 
     // CARTA ICD
@@ -270,7 +271,7 @@ private:
     bool _read_only_mode;
 
     // File browser
-    FileListHandler* _file_list_handler;
+    std::shared_ptr<FileListHandler> _file_list_handler;
 
     // Loader for reading image from disk
     std::unique_ptr<carta::FileLoader> _loader;

@@ -14,14 +14,7 @@
 
 #include <casacore/images/Images/ImageOpener.h>
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-
-namespace fs = std::filesystem;
-#endif
+#include "Util/App.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -41,7 +34,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     }
     ApplyCommandLineSettings(argc, argv);
 
-    const fs::path user_settings_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "backend.json";
+    user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+    const fs::path user_settings_path = user_directory / "backend.json";
     const fs::path system_settings_path = "/etc/carta/backend.json";
 
     json settings;

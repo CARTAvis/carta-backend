@@ -14,7 +14,6 @@
 #include <chrono>
 #include <thread>
 
-#include "../Constants.h"
 #include "ImageMoments.h"
 
 using MomentProgressCallback = std::function<void(float)>;

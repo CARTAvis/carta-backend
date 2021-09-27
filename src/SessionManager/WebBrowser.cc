@@ -5,8 +5,6 @@
 */
 
 #include "WebBrowser.h"
-#include "Logger/Logger.h"
-#include "Util.h"
 
 #include <signal.h>
 #include <stdio.h>
@@ -15,13 +13,9 @@
 #include <sstream>
 #include <stdexcept>
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "Logger/Logger.h"
+#include "Util/File.h"
+#include "Util/FileSystem.h"
 
 namespace carta {
 

@@ -4,16 +4,13 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__EVENTHEADER_H_
-#define CARTA_BACKEND__EVENTHEADER_H_
+#ifndef CARTA_BACKEND__UTIL_STRING_H_
+#define CARTA_BACKEND__UTIL_STRING_H_
 
-namespace carta {
-const uint16_t ICD_VERSION = 24;
-struct EventHeader {
-    uint16_t type;
-    uint16_t icd_version;
-    uint32_t request_id;
-};
-} // namespace carta
+#include <string>
+#include <vector>
 
-#endif // CARTA_BACKEND__EVENTHEADER_H_
+// split input string into a vector of strings by delimiter
+void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
+
+#endif // CARTA_BACKEND__UTIL_STRING_H_

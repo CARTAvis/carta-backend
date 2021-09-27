@@ -12,13 +12,7 @@
 #include <uWebSockets/App.h>
 #include <nlohmann/json.hpp>
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "Util/FileSystem.h"
 
 namespace carta {
 #define HTTP_200 "200 OK"
@@ -38,7 +32,7 @@ typedef uWS::HttpResponse<false> Res;
 
 class SimpleFrontendServer {
 public:
-    SimpleFrontendServer(fs::path root_folder, std::string auth_token, bool read_only_mode);
+    SimpleFrontendServer(fs::path root_folder, fs::path user_directory, std::string auth_token, bool read_only_mode);
     bool CanServeFrontend() {
         return _frontend_found;
     }

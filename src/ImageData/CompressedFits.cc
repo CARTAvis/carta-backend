@@ -10,19 +10,12 @@
 #include <cmath>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/FileSystem.h"
+#include "Util/String.h"
 
 #define FITS_BLOCK_SIZE 2880
 #define FITS_CARD_SIZE 80
 #define INITIAL_HEADERS_SIZE 4
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 using namespace carta;
 

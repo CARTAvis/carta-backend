@@ -14,7 +14,7 @@
 #include <gtest/gtest.h>
 #include <spdlog/fmt/fmt.h>
 
-#include "Util.h"
+#include "App.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -24,9 +24,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-using namespace carta;
-
 fs::path TestRoot();
+fs::path UserDirectory();
 
 class ImageGenerator {
 public:
