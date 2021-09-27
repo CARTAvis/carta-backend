@@ -520,6 +520,8 @@ bool Session::OnOpenFile(
 
     if (success) {
         UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
