@@ -114,7 +114,7 @@ static std::unordered_map<int, CARTA::PolarizationType> StokesTypes{{1, CARTA::P
     {7, CARTA::PolarizationType::RL}, {8, CARTA::PolarizationType::LR}, {9, CARTA::PolarizationType::XX}, {10, CARTA::PolarizationType::YY},
     {11, CARTA::PolarizationType::XY}, {12, CARTA::PolarizationType::YX}};
 
-static std::unordered_map<string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I},
+static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I},
     {"Q", CARTA::PolarizationType::Q}, {"U", CARTA::PolarizationType::U}, {"V", CARTA::PolarizationType::V},
     {"RR", CARTA::PolarizationType::RR}, {"LL", CARTA::PolarizationType::LL}, {"RL", CARTA::PolarizationType::RL},
     {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
