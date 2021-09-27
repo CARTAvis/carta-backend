@@ -20,19 +20,13 @@
 #include <casacore/measures/Measures/MFrequency.h>
 
 #include "../ImageData/CartaFitsImage.h"
+#include "../ImageData/CartaHdf5Image.h"
 #include "../ImageData/CompressedFits.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
-
-#include "../ImageData/CartaHdf5Image.h"
+#include "Util/Casacore.h"
+#include "Util/File.h"
+#include "Util/FileSystem.h"
 
 using namespace carta;
 
@@ -295,7 +289,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 } else {
                     // Add FitsKeywordList to ImageFITSHeaderInfo
                     casacore::ImageFITSHeaderInfo fhi;
-                    casacore::CoordinateSystem coord_sys(image->coordinates());
 
                     if (is_casacore_fits) {
                         // Get original headers
@@ -812,8 +805,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
-    float min_float(std::numeric_limits<float>::min());
-    float crval1(min_float), crval2(min_float), crpix1(min_float), crpix2(min_float), cdelt1(min_float), cdelt2(min_float);
+    double min_double(std::numeric_limits<double>::min());
+    double crval1(min_double), crval2(min_double), crpix1(min_double), crpix2(min_double), cdelt1(min_double), cdelt2(min_double);
+    int velref(std::numeric_limits<int>::min());
 
     // Quit looking for key when have needed values
     bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
@@ -849,7 +843,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             } else if (entry_name.find("CRPIX" + suffix2) == 0) {
                 crpix2 = entry.numeric_value();
             }
-            if ((crpix1 != min_float) && (crpix2 != min_float)) {
+            if ((crpix1 != min_double) && (crpix2 != min_double)) {
                 need_crpix = false;
             }
         }
@@ -861,7 +855,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             } else if (entry_name.find("CRVAL" + suffix2) == 0) {
                 crval2 = entry.numeric_value();
             }
-            if ((crval1 != min_float) && (crval2 != min_float)) {
+            if ((crval1 != min_double) && (crval2 != min_double)) {
                 need_crval = false;
             }
         }
@@ -896,7 +890,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             } else if (entry_name.find("CDELT" + suffix2) == 0) {
                 cdelt2 = entry.numeric_value();
             }
-            if ((cdelt1 != min_float) && (cdelt2 != min_float)) {
+            if ((cdelt1 != min_double) && (cdelt2 != min_double)) {
                 need_cdelt = false;
             }
         }
@@ -922,6 +916,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         // Specsys
         if (entry_name.find("SPECSYS") == 0) {
             specsys = entry.value();
+        }
+
+        // Velocity definition
+        if (entry_name.find("VELREF") == 0) {
+            velref = entry.numeric_value();
         }
 
         // Bunit
@@ -1023,6 +1022,20 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Spectral frame");
         entry->set_value(specsys);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (velref > 0) {
+        auto entry = extended_info.add_computed_entries();
+        entry->set_name("Velocity definition");
+        // VELREF : 1 LSR, 2 HEL, 3 OBS, +256 Radio
+        if (velref < 4) {
+            entry->set_value("OPTICAL");
+        } else if (velref > 256) {
+            entry->set_value("RADIO");
+        } else {
+            entry->set_value("UNKNOWN");
+        }
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }

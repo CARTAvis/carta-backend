@@ -13,7 +13,14 @@
 
 #include <carta-protobuf/enums.pb.h>
 
-#include "Constants.h"
+#include "Util/FileSystem.h"
+
+#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
+#define ROTATED_LOG_FILES 5
+#define STDOUT_TAG "stdout"
+#define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+#define PERF_TAG "performance"
+#define PERF_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v"
 
 // customize the log function for performance
 namespace spdlog {
@@ -25,7 +32,7 @@ constexpr auto performance = [](auto&&... args) {
 };
 } // namespace spdlog
 
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_);
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_, fs::path user_directory);
 
 void LogReceivedEventType(const CARTA::EventType& event_type);
 

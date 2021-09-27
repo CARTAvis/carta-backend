@@ -7,6 +7,7 @@
 #include "Hdf5Loader.h"
 
 #include "../Logger/Logger.h"
+#include "Util/Image.h"
 
 namespace carta {
 
@@ -280,7 +281,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) &&
         _region_stats[region_stats_id].IsCompleted()) {
         results = _region_stats[region_stats_id].stats;
-        progress = PROFILE_COMPLETE;
+        progress = 1.0;
         return true;
     }
 
@@ -404,7 +405,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     results = _region_stats[region_stats_id].stats;
     if (max_x == width) {
-        progress = PROFILE_COMPLETE;
+        progress = 1.0;
     } else {
         progress = (float)max_x / width;
     }
@@ -412,7 +413,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     // Update starting x for next time
     _region_stats[region_stats_id].latest_x = max_x;
 
-    if (progress >= PROFILE_COMPLETE) {
+    if (progress >= 1.0) {
         // the stats calculation is completed
         _region_stats[region_stats_id].completed = true;
     }

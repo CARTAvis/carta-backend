@@ -13,7 +13,8 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 
-#include "../Util.h"
+#include "Util/Casacore.h"
+#include "Util/File.h"
 
 FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
     _type = GetCartaFileType(filename);
@@ -60,6 +61,32 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     }
 
     return success;
+}
+
+CARTA::FileType FileInfoLoader::GetCartaFileType(const string& filename) {
+    // get casacore image type then convert to carta file type
+    if (IsCompressedFits(filename)) {
+        return CARTA::FileType::FITS;
+    }
+
+    switch (CasacoreImageType(filename)) {
+        case casacore::ImageOpener::AIPSPP:
+        case casacore::ImageOpener::IMAGECONCAT:
+        case casacore::ImageOpener::IMAGEEXPR:
+        case casacore::ImageOpener::COMPLISTIMAGE:
+            return CARTA::FileType::CASA;
+        case casacore::ImageOpener::FITS:
+            return CARTA::FileType::FITS;
+        case casacore::ImageOpener::MIRIAD:
+            return CARTA::FileType::MIRIAD;
+        case casacore::ImageOpener::HDF5:
+            return CARTA::FileType::HDF5;
+        case casacore::ImageOpener::GIPSY:
+        case casacore::ImageOpener::CAIPS:
+        case casacore::ImageOpener::NEWSTAR:
+        default:
+            return CARTA::FileType::UNKNOWN;
+    }
 }
 
 bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& filename) {

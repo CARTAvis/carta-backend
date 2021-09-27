@@ -12,7 +12,9 @@
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/File.h"
+#include "Util/Image.h"
+
 #include "CasaLoader.h"
 #include "CompListLoader.h"
 #include "ConcatLoader.h"
@@ -853,25 +855,13 @@ double FileLoader::CalculateBeamArea() {
 }
 
 void FileLoader::SetFirstStokesType(int stokes_value) {
-    switch (stokes_value) {
-        case 1:
-            _stokes_indices[CARTA::StokesType::I] = 0;
-            break;
-        case 2:
-            _stokes_indices[CARTA::StokesType::Q] = 0;
-            break;
-        case 3:
-            _stokes_indices[CARTA::StokesType::U] = 0;
-            break;
-        case 4:
-            _stokes_indices[CARTA::StokesType::V] = 0;
-            break;
-        default:
-            break;
+    CARTA::PolarizationType stokes_type = GetStokesType(stokes_value);
+    if (stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE) {
+        _stokes_indices[stokes_type] = 0;
     }
 }
 
-bool FileLoader::GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index) {
+bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     if (_stokes_indices.count(stokes_type)) {
         stokes_index = _stokes_indices[stokes_type];
         return true;

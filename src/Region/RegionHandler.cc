@@ -15,12 +15,14 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
-#include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/File.h"
+#include "Util/Image.h"
+
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
+#include "Util/Message.h"
 
 namespace carta {
 
@@ -837,7 +839,7 @@ bool RegionHandler::GetRegionHistogramData(
         CARTA::RegionHistogramData histogram_message;
         histogram_message.set_file_id(file_id);
         histogram_message.set_region_id(region_id);
-        histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
+        histogram_message.set_progress(1.0); // only cube histograms have partial results
         histogram_message.set_channel(z);
         histogram_message.set_stokes(stokes);
 
@@ -845,13 +847,8 @@ bool RegionHandler::GetRegionHistogramData(
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
-            default_histogram->set_num_bins(1);
-            default_histogram->set_bin_width(0.0);
-            default_histogram->set_first_bin_center(0.0);
-            std::vector<float> histogram_bins(1, 0.0);
-            *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
-            default_histogram->set_mean(NAN);
-            default_histogram->set_std_dev(NAN);
+            std::vector<int> histogram_bins(1, 0);
+            FillHistogram(default_histogram, 1, 0.0, 0.0, histogram_bins, NAN, NAN);
             continue;
         }
 
@@ -872,7 +869,7 @@ bool RegionHandler::GetRegionHistogramData(
                 carta::Histogram hist;
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
-                    FillHistogramFromResults(histogram, stats, hist);
+                    FillHistogram(histogram, stats, hist);
 
                     // Fill in the cached message
                     histogram_messages.emplace_back(histogram_message);
@@ -903,7 +900,7 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Complete Histogram submessage
         auto* histogram = histogram_message.mutable_histograms();
-        FillHistogramFromResults(histogram, stats, histo);
+        FillHistogram(histogram, stats, histo);
 
         // Fill in the final result
         histogram_messages.emplace_back(histogram_message);
@@ -984,12 +981,8 @@ bool RegionHandler::FillSpectralProfileData(
                 // Return spectral profile for this requirement
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
                     [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                        CARTA::SpectralProfileData profile_message;
-                        profile_message.set_file_id(config_file_id);
-                        profile_message.set_region_id(config_region_id);
-                        profile_message.set_stokes(stokes_index);
-                        profile_message.set_progress(progress);
-                        FillSpectralProfileDataMessage(profile_message, coordinate, required_stats, results);
+                        CARTA::SpectralProfileData profile_message = Message::SpectralProfileData(
+                            config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
             }
@@ -1039,7 +1032,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 results[stats_type] = profile;
             }
         }
-        progress = PROFILE_COMPLETE;
+        progress = 1.0;
         partial_results_callback(results, progress);
         return true;
     }
@@ -1047,7 +1040,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     // Get region to check if inside image
     casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
     if (!lcregion) {
-        progress = PROFILE_COMPLETE;
+        progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
         return true;
     }
@@ -1069,7 +1062,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 // Set results; there is only one required stat for point
                 std::vector<double> data(profile.begin(), profile.end());
                 results[required_stats[0]] = data;
-                progress = PROFILE_COMPLETE;
+                progress = 1.0;
                 partial_results_callback(results, progress);
             }
             return ok;
@@ -1087,7 +1080,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             auto t_latest = t_start;
 
             // Get partial profiles until complete (do once if cached)
-            while (progress < PROFILE_COMPLETE) {
+            while (progress < 1.0) {
                 // Cancel if region or frame is closing
                 if (!RegionFileIdsValid(region_id, file_id)) {
                     return false;
@@ -1111,7 +1104,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                     auto t_end = std::chrono::high_resolution_clock::now();
                     auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
 
-                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= PROFILE_COMPLETE)) {
+                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
                         // Copy partial profile to results
                         for (const auto& profile : partial_profiles) {
                             auto stats_type = profile.first;
@@ -1152,7 +1145,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
     // get stats data
-    while (progress < PROFILE_COMPLETE) {
+    while (progress < 1.0) {
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -1216,10 +1209,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
 
         // send partial result by the callback function
-        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= PROFILE_COMPLETE) {
+        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0) {
             t_partial_profile_start = std::chrono::high_resolution_clock::now();
             partial_results_callback(results, progress);
-            if (progress >= PROFILE_COMPLETE) {
+            if (progress >= 1.0) {
                 // cache results for all stats types
                 // TODO: cache and load partial profiles
                 _spectral_cache[cache_id] = SpectralCache(cache_results);
@@ -1326,7 +1319,7 @@ bool RegionHandler::GetRegionStatsData(
     if (_stats_cache.count(cache_id)) {
         std::map<CARTA::StatsType, double> stats_results;
         if (_stats_cache[cache_id].GetStats(stats_results)) {
-            FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+            FillStatistics(stats_message, required_stats, stats_results);
             return true;
         }
     }
@@ -1344,7 +1337,7 @@ bool RegionHandler::GetRegionStatsData(
                 stats_results[carta_stat] = nan("");
             }
         }
-        FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+        FillStatistics(stats_message, required_stats, stats_results);
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
         return true;
@@ -1361,7 +1354,7 @@ bool RegionHandler::GetRegionStatsData(
         }
 
         // add values to message
-        FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+        FillStatistics(stats_message, required_stats, stats_results);
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
