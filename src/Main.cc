@@ -196,42 +196,10 @@ int main(int argc, char* argv[]) {
                 if (!auth_token.empty()) {
                     query_url += fmt::format("/?token={}", auth_token);
                 }
-                if (!settings.files.empty()) {
-                    query_url += query_url.empty() ? "/?" : "&";
-                    if (settings.files.size() == 1) {
-                        query_url += fmt::format("file={}", curl_easy_escape(nullptr, settings.files[0].c_str(), 0));
-                    } else {
-                        bool in_common_folder = true;
-                        fs::path common_folder;
-                        for (auto& file : settings.files) {
-                            fs::path p(file);
-                            auto folder = p.parent_path();
-                            if (common_folder.empty()) {
-                                common_folder = folder;
-                            } else if (folder != common_folder) {
-                                in_common_folder = false;
-                                break;
-                            }
-                        }
 
-                        if (in_common_folder) {
-                            query_url += fmt::format("folder={}&", curl_easy_escape(nullptr, common_folder.c_str(), 0));
-                            // Trim folder from path string
-                            for (auto& file : settings.files) {
-                                fs::path p(file);
-                                file = p.filename().string();
-                            }
-                        }
-
-                        int num_files = settings.files.size();
-                        query_url += "files=";
-                        for (int i = 0; i < num_files; i++) {
-                            query_url += curl_easy_escape(nullptr, settings.files[i].c_str(), 0);
-                            if (i != num_files - 1) {
-                                query_url += ",";
-                            }
-                        }
-                    }
+                auto file_query_url = SimpleFrontendServer::GetFileUrlString(settings.files);
+                if (!file_query_url.empty()) {
+                    query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
                 }
 
                 if (!query_url.empty()) {

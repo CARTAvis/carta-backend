@@ -38,6 +38,7 @@ public:
     }
 
     void RegisterRoutes(uWS::App& app);
+    static std::string GetFileUrlString(std::vector<std::string> files);
 
 protected:
     nlohmann::json GetExistingPreferences();
