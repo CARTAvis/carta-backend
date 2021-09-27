@@ -14,6 +14,8 @@
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
 
+#define TBB_TASK_THREAD_COUNT 3
+
 int main(int argc, char** argv) {
     // Set gtest environment
     testing::InitGoogleTest(&argc, argv);
@@ -60,7 +62,9 @@ int main(int argc, char** argv) {
     tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
     omp_set_num_threads(omp_threads);
 
-    InitLogger(no_log, verbosity, log_performance, log_protocol_messages);
+    fs::path user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+
+    InitLogger(no_log, verbosity, log_performance, log_protocol_messages, user_directory);
 
     return RUN_ALL_TESTS();
 }

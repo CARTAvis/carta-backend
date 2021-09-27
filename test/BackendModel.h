@@ -60,7 +60,7 @@ public:
     void WaitForJobFinished(); // wait for parallel calculations finished
 
 private:
-    FileListHandler* _file_list_handler;
+    std::shared_ptr<FileListHandler> _file_list_handler;
     Session* _session;
 };
 

@@ -27,7 +27,7 @@ std::unique_ptr<BackendModel> BackendModel::GetDummyBackend() {
 
 BackendModel::BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
     std::string top_level_folder, std::string starting_folder, int grpc_port, bool read_only_mode) {
-    _file_list_handler = new FileListHandler(top_level_folder, starting_folder);
+    _file_list_handler = std::make_shared<FileListHandler>(top_level_folder, starting_folder);
     _session = new Session(
         nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port, read_only_mode);
 
@@ -45,7 +45,6 @@ BackendModel::~BackendModel() {
             spdlog::warn("Session reference count is not 0 ({}) on deletion!", _session->GetRefCount());
         }
     }
-    delete _file_list_handler;
 }
 
 void BackendModel::Receive(CARTA::RegisterViewer message) {
