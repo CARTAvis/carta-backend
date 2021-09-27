@@ -7,8 +7,6 @@
 #ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 
-#include "Logger/Logger.h"
-
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -16,7 +14,20 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
-#include "Constants.h"
+
+#include "Logger/Logger.h"
+#include "Util/FileSystem.h"
+
+#define OMP_THREAD_COUNT -1
+#define DEFAULT_SOCKET_PORT 3002
+
+#ifndef CARTA_DEFAULT_FRONTEND_FOLDER
+#define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
+#endif
+
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
 
 namespace carta {
 struct ProgramSettings {
@@ -50,6 +61,8 @@ struct ProgramSettings {
     nlohmann::json command_line_settings;
     bool system_settings_json_exists = false;
     bool user_settings_json_exists = false;
+
+    fs::path user_directory;
 
     // clang-format off
     std::unordered_map<std::string, int*> int_keys_map{

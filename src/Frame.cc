@@ -25,16 +25,6 @@
 #include "DataStream/Smoothing.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
-#include "Util.h"
-#include "Util/Message.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 static const int HIGH_COMPRESSION_QUALITY(32);
 
@@ -1448,7 +1438,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 auto t_start_profile = std::chrono::high_resolution_clock::now();
 
-                while (progress < PROFILE_COMPLETE) {
+                while (progress < 1.0) {
                     // start timer for slice
                     auto t_start_slice = std::chrono::high_resolution_clock::now();
 
@@ -1494,7 +1484,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         break;
                     }
 
-                    if (progress >= PROFILE_COMPLETE) {
+                    if (progress >= 1.0) {
                         spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send final profile message
                         cb(profile_message);

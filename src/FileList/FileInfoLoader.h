@@ -22,6 +22,7 @@ public:
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, std::string& hdu, std::string& message);
 
 private:
+    CARTA::FileType GetCartaFileType(const std::string& filename);
     bool GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& abs_filename);
 
     std::string _filename;

@@ -6,6 +6,7 @@
 
 #include "StokesFilesConnector.h"
 #include "Logger/Logger.h"
+#include "Util/Casacore.h"
 
 #include <spdlog/fmt/fmt.h>
 

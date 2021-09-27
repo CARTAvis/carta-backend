@@ -10,8 +10,10 @@
 
 #include <fitsio.h>
 
+#include <casacore/casa/Exceptions/Error.h>
+
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/File.h"
 
 FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;

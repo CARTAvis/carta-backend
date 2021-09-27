@@ -16,10 +16,11 @@
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/scripting.pb.h>
 
-#include "../Constants.h"
-#include "../Util.h"
-
 uint32_t CartaGrpcService::_scripting_request_id = 0;
+
+void GrpcSilentLogger(gpr_log_func_args*) {}
+
+extern void gpr_default_log(gpr_log_func_args* args);
 
 CartaGrpcService::CartaGrpcService(std::string auth_token) : _auth_token(auth_token) {}
 
@@ -87,4 +88,42 @@ grpc::Status CartaGrpcService::CallAction(
     }
 
     return status;
+}
+
+GrpcManager::GrpcManager() : _selected_port(-1) {}
+
+GrpcManager::GrpcManager(int port, std::string auth_token) : _selected_port(-1) {
+    // Silence grpc error log
+    gpr_set_log_function(GrpcSilentLogger);
+
+    // Set up address buffer
+    std::string server_address = fmt::format("0.0.0.0:{}", port);
+
+    // Build grpc service
+    grpc::ServerBuilder builder;
+    // Listen on the given address without any authentication mechanism.
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &_selected_port);
+    // Register and start carta grpc server
+    _service = std::make_shared<CartaGrpcService>(auth_token);
+    builder.RegisterService(_service.get());
+    // By default ports can be reused; we don't want this
+    builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
+    _server = builder.BuildAndStart();
+
+    // Turn logging back on
+    gpr_set_log_function(gpr_default_log);
+}
+
+GrpcManager::~GrpcManager() {
+    if (_server) {
+        _server->Shutdown();
+    }
+}
+
+bool GrpcManager::Listening() {
+    return (_selected_port > 0);
+}
+
+std::shared_ptr<CartaGrpcService> GrpcManager::Service() {
+    return _service;
 }

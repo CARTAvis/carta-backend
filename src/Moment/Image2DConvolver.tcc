@@ -11,7 +11,7 @@
 #define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/Casacore.h"
 
 using namespace carta;
 
@@ -47,7 +47,7 @@ std::vector<casacore::Quantity> Image2DConvolver<T>::_getConvolvingBeamForTarget
     } catch (const casacore::AipsError& x) {
         string error = fmt::format(
             "Unable to reach target resolution of {}. Input image beam {} is (nearly) identical to or larger than the output beam size.",
-            GetGaussianInfo(targetBeam), GetGaussianInfo(inputBeam));
+            FormatBeam(targetBeam), FormatBeam(inputBeam));
         spdlog::error(error);
         ThrowCc(error);
     }
@@ -194,11 +194,10 @@ void Image2DConvolver<T>::_logBeamInfo(const ImageInfo& imageInfo, const String&
     if (!imageInfo.hasBeam()) {
         message += " has no beam";
     } else if (imageInfo.hasSingleBeam()) {
-        message += fmt::format(" resolution {} ", GetGaussianInfo(beamSet.getBeam()));
+        message += fmt::format(" resolution {} ", FormatBeam(beamSet.getBeam()));
     } else {
         message += fmt::format(" has multiple beams. Min area beam: {}. Max area beam: {}. Median area beam {}",
-            GetGaussianInfo(beamSet.getMinAreaBeam()), GetGaussianInfo(beamSet.getMaxAreaBeam()),
-            GetGaussianInfo(beamSet.getMedianAreaBeam()));
+            FormatBeam(beamSet.getMinAreaBeam()), FormatBeam(beamSet.getMaxAreaBeam()), FormatBeam(beamSet.getMedianAreaBeam()));
     }
     spdlog::debug(message);
 }
@@ -212,7 +211,7 @@ void Image2DConvolver<T>::_doSingleBeam(ImageInfo& iiOut, Double& kernelVolume, 
     if (_targetres) {
         kernelParms = _getConvolvingBeamForTargetResolution(originalParms, inputBeam);
         spdlog::debug("Convolving image that has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-            GetGaussianInfo(inputBeam), GetGaussianInfo(GaussianBeam(kernelParms)), GetGaussianInfo(GaussianBeam(originalParms)));
+            FormatBeam(inputBeam), FormatBeam(GaussianBeam(kernelParms)), FormatBeam(GaussianBeam(originalParms)));
 
         kernelVolume = _makeKernel(kernel, kernelType, kernelParms, imageIn);
     }
@@ -355,7 +354,7 @@ void Image2DConvolver<T>::_doMultipleBeams(ImageInfo& iiOut, Double& kernelVolum
                 kernelParms = _getConvolvingBeamForTargetResolution(originalParms, inputBeam);
                 kernelVolume = _makeKernel(kernel, kernelType, kernelParms, imageIn);
                 message += fmt::format(": Convolving image which has a beam of {} with a Gaussian of {} to reach a target resolution of {}",
-                    GetGaussianInfo(inputBeam), GetGaussianInfo(GaussianBeam(kernelParms)), GetGaussianInfo(GaussianBeam(originalParms)));
+                    FormatBeam(inputBeam), FormatBeam(GaussianBeam(kernelParms)), FormatBeam(GaussianBeam(originalParms)));
             }
 
             spdlog::debug(message);
@@ -499,14 +498,14 @@ Double Image2DConvolver<T>::_dealWithRestoringBeam(casacore::String& brightnessU
                 "Convolving kernel has minor axis {} which is less than the pixel diagonal length of {}. Thus, the kernel is "
                 "poorly sampled, and so the output of this application may not be what you expect. You should consider increasing the "
                 "kernel size or regridding the image to a smaller pixel size",
-                GetQuantityInfo(minAx), GetQuantityInfo(diag));
+                FormatQuantity(minAx), FormatQuantity(diag));
         } else if (beamIn.getMinor() < diag && beamIn != casacore::GaussianBeam::NULL_BEAM) {
             diag.convert(beamIn.getMinor().getFullUnit());
             spdlog::debug(
                 "Input beam has minor axis {} which is less than the pixel diagonal length of {}. Thus, the beam is poorly "
                 "sampled, and so the output of this application may not be what you expect. You should consider regridding the image "
                 "to a smaller pixel size.",
-                GetQuantityInfo(beamIn.getMinor()), GetQuantityInfo(diag));
+                FormatQuantity(beamIn.getMinor()), FormatQuantity(diag));
         }
     }
 

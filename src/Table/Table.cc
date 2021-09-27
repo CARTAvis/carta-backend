@@ -12,17 +12,11 @@
 #include <fitsio.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+
 #include "DataColumn.tcc"
 #include "Threading.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "Util/File.h"
+#include "Util/FileSystem.h"
 
 namespace carta {
 using namespace std;
