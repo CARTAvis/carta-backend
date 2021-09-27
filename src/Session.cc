@@ -169,6 +169,11 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 
         // FileInfoExtended
         _loader.reset(carta::FileLoader::GetLoader(fullname));
+        if (!_loader) {
+            message = "Unsupported format.";
+            spdlog::error(message);
+            return file_info_ok;
+        }
         FileExtInfoLoader ext_info_loader(_loader.get());
 
         std::string requested_hdu(hdu);
