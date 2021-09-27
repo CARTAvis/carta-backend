@@ -1725,8 +1725,8 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, GeneratorProgressCallback progress_callback,
-    CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
+bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, double offset_increment,
+    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Create PV image
     std::shared_lock lock(GetActiveTaskMutex());
 
@@ -1738,18 +1738,15 @@ bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>
         casacore::IPosition region_shape = box_regions[0]->shape();
 
         if (UseLoaderSpectralData(region_shape)) {
-            std::cout << "PDEBUG: use loader spectral data" << std::endl;
-            _pv_generator->CalculatePvImage(_loader, box_regions, CurrentStokes(), _image_mutex, progress_callback, pv_response, pv_image);
-        } else {
-            std::cout << "PDEBUG: use region stats data" << std::endl;
-            std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing calculations
             _pv_generator->CalculatePvImage(
-                _loader, box_regions, Depth(), CurrentStokes(), progress_callback, pv_response, pv_image);
+                _loader, box_regions, offset_increment, CurrentStokes(), _image_mutex, progress_callback, pv_response, pv_image);
+        } else {
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            _pv_generator->CalculatePvImage(
+                _loader, box_regions, offset_increment, Depth(), CurrentStokes(), progress_callback, pv_response, pv_image);
             ulock.unlock();
         }
     }
-
-    _pv_generator.reset();
 
     return pv_image.image.get();
 }

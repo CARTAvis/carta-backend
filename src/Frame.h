@@ -186,8 +186,8 @@ public:
     void StopMomentCalc();
 
     // PV image calculation
-    bool CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, GeneratorProgressCallback progress_callback,
-        CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
+    bool CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, double offset_increment,
+        GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
     void StopPvCalc();
 
     // Save as a new file or export sub-image to CASA/FITS format

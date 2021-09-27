@@ -731,8 +731,9 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 }
 
 bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
-    std::vector<casacore::LCRegion*>& box_regions, std::string& message) {
-    // Return set of rotated boxes (polygons), with centers along line(s) and width perpendicular to line(s)
+    std::vector<casacore::LCRegion*>& box_regions, double& offset_increment, std::string& message) {
+    // Return set of rotated box (polygon) regions, with centers along line(s) and width perpendicular to line(s)
+    // Increment between box centers returned in arcsec
     if (!RegionSet(region_id)) {
         message = "Invalid region id.";
         return false;
@@ -767,7 +768,7 @@ bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, const std::sha
         delete image_csys;
     }
 
-    return GetBoxRegions(endpoints_x, endpoints_y, width, frame, box_regions, message);
+    return GetBoxRegions(endpoints_x, endpoints_y, width, frame, box_regions, offset_increment, message);
 }
 
 // ********************************************************************
@@ -1493,7 +1494,7 @@ std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
 }
 
 bool RegionHandler::GetBoxRegions(const std::vector<float>& endpoints_x, const std::vector<float>& endpoints_y, int width,
-    const std::shared_ptr<Frame>& frame, std::vector<casacore::LCRegion*>& box_regions, std::string& message) {
+    const std::shared_ptr<Frame>& frame, std::vector<casacore::LCRegion*>& box_regions, double& offset_increment, std::string& message) {
     // Generate box regions with width from line described by endpoints
     return false;
 }
