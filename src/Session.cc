@@ -171,7 +171,6 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
         _loader.reset(carta::FileLoader::GetLoader(fullname));
         if (!_loader) {
             message = "Unsupported format.";
-            spdlog::error(message);
             return file_info_ok;
         }
         FileExtInfoLoader ext_info_loader(_loader.get());
@@ -236,7 +235,6 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
         _loader.reset(carta::FileLoader::GetLoader(fullname));
         if (!_loader) {
             message = "Unsupported format.";
-            spdlog::error(message);
             return file_info_ok;
         }
 
@@ -470,6 +468,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             std::string message = fmt::format("Image histogram for file id {} failed", file_id);
             SendLogEvent(message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
         }
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
