@@ -2076,48 +2076,21 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
-    if (coordinate.size() == 2) {
+    if (coordinate.size() == 2 || coordinate.size() == 3) {
         bool stokes_ok(false);
-        char stokes_char(coordinate.front());
-        switch (stokes_char) {
-            case 'I':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::I, stokes_index)) {
+        std::string stokes_string = coordinate.substr(0, coordinate.size() - 1);
+        if (StokesStringTypes.count(stokes_string)) {
+            CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
+            if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
+                stokes_ok = true;
+            } else {
+                int assumed_stokes_index = (StokesValues[stokes_type] - 1) % 4;
+                if (NumStokes() > assumed_stokes_index) {
+                    stokes_index = assumed_stokes_index;
                     stokes_ok = true;
-                } else if (NumStokes() > 0) {
-                    stokes_index = 0;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
+                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
                 }
-                break;
-            case 'Q':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::Q, stokes_index)) {
-                    stokes_ok = true;
-                } else if (NumStokes() > 1) {
-                    stokes_index = 1;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
-                }
-                break;
-            case 'U':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::U, stokes_index)) {
-                    stokes_ok = true;
-                } else if (NumStokes() > 2) {
-                    stokes_index = 2;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
-                }
-                break;
-            case 'V':
-                if (_loader->GetStokesTypeIndex(CARTA::StokesType::V, stokes_index)) {
-                    stokes_ok = true;
-                } else if (NumStokes() > 3) {
-                    stokes_index = 3;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_char, stokes_index);
-                }
-                break;
-            default:
-                break;
+            }
         }
         if (!stokes_ok) {
             spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
