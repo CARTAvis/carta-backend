@@ -223,6 +223,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                 if (IsCompressedFits(fullname)) {
                     CompressedFits cfits(fullname);
                     if (!cfits.GetFirstImageHdu(hdu)) {
+                        message = "No image HDU found for FITS.";
                         return file_info_ok;
                     }
                 } else {
@@ -231,6 +232,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                     fits_hdu_list.GetHduList(hdu_list, message);
 
                     if (hdu_list.empty()) {
+                        message = "No image HDU found for FITS.";
                         return file_info_ok;
                     }
 
