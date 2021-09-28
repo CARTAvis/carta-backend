@@ -25,9 +25,7 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
-#include "Constants.h"
 #include "DataStream/Compression.h"
-#include "EventHeader.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
@@ -36,7 +34,8 @@
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
-#include "Util.h"
+#include "Util/File.h"
+#include "Util/Message.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
@@ -49,7 +48,8 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, FileListHandler* file_list_handler, int grpc_port, bool read_only_mode)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port,
+    bool read_only_mode)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -64,7 +64,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this) {
-    _histogram_progress = HISTOGRAM_COMPLETE;
+    _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
@@ -1273,7 +1273,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             }
 
             // To send periodic updates
-            _histogram_progress = HISTOGRAM_START;
+            _histogram_progress = 0.0;
             auto t_start = std::chrono::high_resolution_clock::now();
             int request_id(0);
             size_t depth(_frames.at(file_id)->Depth());
@@ -1348,13 +1348,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         CARTA::RegionHistogramData progress_msg;
                         CreateCubeHistogramMessage(progress_msg, file_id, ALL_Z, stokes, progress);
                         auto* message_histogram = progress_msg.mutable_histograms();
-                        message_histogram->set_num_bins(cube_histogram.GetNbins());
-                        message_histogram->set_bin_width(cube_histogram.GetBinWidth());
-                        message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
-                        message_histogram->set_mean(cube_stats.mean);
-                        message_histogram->set_std_dev(cube_stats.stdDev);
-                        auto& bins = cube_histogram.GetHistogramBins();
-                        *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
+                        FillHistogram(message_histogram, cube_stats, cube_histogram);
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
                     }
@@ -1366,17 +1360,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.set_region_id(CUBE_REGION_ID);
                     cube_histogram_message.set_channel(ALL_Z);
                     cube_histogram_message.set_stokes(stokes);
-                    cube_histogram_message.set_progress(HISTOGRAM_COMPLETE);
+                    cube_histogram_message.set_progress(1.0);
                     // fill histogram fields from last z histogram
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
-                    message_histogram->set_num_bins(cube_histogram.GetNbins());
-                    message_histogram->set_bin_width(cube_histogram.GetBinWidth());
-                    message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
-                    message_histogram->set_mean(cube_stats.mean);
-                    message_histogram->set_std_dev(cube_stats.stdDev);
-                    auto& bins = cube_histogram.GetHistogramBins();
-                    *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
+                    FillHistogram(message_histogram, cube_stats, cube_histogram);
 
                     // cache cube histogram
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
@@ -1390,9 +1378,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     calculated = true;
                 }
             }
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = 1.0;
         } catch (std::out_of_range& range_error) {
-            _histogram_progress = HISTOGRAM_COMPLETE;
+            _histogram_progress = 1.0;
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }
@@ -1725,16 +1713,13 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
         std::pair<std::vector<char>, bool> msg;
         if (_connected) {
             while (_out_msgs.try_pop(msg)) {
-                auto expected_buffered_amount = msg.first.size() + _socket->getBufferedAmount();
-                if (expected_buffered_amount > MAX_BACKPRESSURE) {
-                    spdlog::warn("Exceeded maximum backpressure: client {} [{}]. Buffered amount: {} (bytes). May lose some messages.",
-                        GetId(), GetAddress(), expected_buffered_amount);
-                }
                 std::string_view sv(msg.first.data(), msg.first.size());
-                auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
-                if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
-                    spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
-                }
+                _socket->cork([&]() {
+                    auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                    if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
+                        spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                    }
+                });
             }
         }
     });

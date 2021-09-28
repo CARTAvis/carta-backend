@@ -15,6 +15,9 @@
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 
+#include "Util/App.h"
+#include "Util/String.h"
+
 using namespace carta;
 
 Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,

@@ -24,12 +24,12 @@
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include "Constants.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
@@ -39,14 +39,9 @@
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 #include "TileCache.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "Util/FileSystem.h"
+#include "Util/Image.h"
+#include "Util/Message.h"
 
 struct ContourSettings {
     std::vector<double> levels;
@@ -81,6 +76,11 @@ struct ContourSettings {
         return !(*this == rhs);
     }
 };
+
+// Map for enum CARTA:FileType to string
+static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileType::CASA, "CASA"}, {CARTA::FileType::CRTF, "CRTF"},
+    {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
+    {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
 class Frame {
 public:
@@ -133,7 +133,6 @@ public:
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
     bool FillRegionHistogramData(
         std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
-    bool FillHistogram(int z, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats);
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);

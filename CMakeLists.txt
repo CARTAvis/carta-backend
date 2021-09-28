@@ -246,10 +246,17 @@ set(SOURCE_FILES
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
+        src/SessionManager/SessionManager.cc
         src/SessionManager/WebBrowser.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
-        src/Util.cc
+        src/Util/App.cc
+        src/Util/Casacore.cc
+        src/Util/File.cc
+        src/Util/Image.cc
+        src/Util/Message.cc
+        src/Util/String.cc
+        src/Util/Token.cc
         src/TileCache.cc
         src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)
@@ -265,11 +272,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 if (CartaUserFolderPrefix)
-    add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
+    add_definitions(-DCARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
 endif (CartaUserFolderPrefix)
 
 if (CartaDefaultFrontendFolder)
-    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+    add_definitions(-DCARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
 endif (CartaDefaultFrontendFolder)
 
 install(TARGETS carta_backend

@@ -14,7 +14,8 @@
 #include <gtest/gtest.h>
 #include <spdlog/fmt/fmt.h>
 
-#include "Util.h"
+#include "App.h"
+#include "Util/Casacore.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -24,9 +25,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-using namespace carta;
-
 fs::path TestRoot();
+fs::path UserDirectory();
 
 bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0);
 

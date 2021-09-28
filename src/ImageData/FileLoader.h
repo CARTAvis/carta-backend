@@ -16,8 +16,6 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
-#include "../Util.h"
-
 class Frame;
 
 namespace carta {
@@ -199,7 +197,7 @@ public:
     // Handle stokes type index
     virtual void SetFirstStokesType(int stokes_value);
     virtual void SetDeltaStokesIndex(int delta_stokes_index);
-    virtual bool GetStokesTypeIndex(const CARTA::StokesType& stokes_type, int& stokes_index);
+    virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
 
 protected:
     // Full name and hdu of the image file
@@ -226,7 +224,7 @@ protected:
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
 
     // Storage for the stokes type vs. stokes index
-    std::unordered_map<CARTA::StokesType, int> _stokes_indices;
+    std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
     int _delta_stokes_index;
 
     // Return the shape of the specified stats dataset

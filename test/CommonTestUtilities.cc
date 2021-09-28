@@ -7,14 +7,9 @@
 #include <functional>
 #include <stdexcept>
 
-#include <casacore/casa/Exceptions.h>
-#include <casacore/images/Images/FITSImage.h>
-#include <casacore/images/Images/PagedImage.h>
-
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
-
-using namespace carta;
+#include "Util/App.h"
 
 fs::path TestRoot() {
     std::string path_string;
@@ -47,6 +42,10 @@ bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const st
         spdlog::error("Error on opening the file: {}", x.getMesg());
     }
     return image_ok;
+}
+
+fs::path UserDirectory() {
+    return fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
 }
 
 std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {

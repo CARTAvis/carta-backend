@@ -5,7 +5,10 @@
 */
 
 #include "TileCache.h"
+
 #include <functional>
+
+#include "Util/Image.h"
 
 // TILE POOL
 
