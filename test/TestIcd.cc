@@ -186,8 +186,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = Message::EventType(message);
-            LogSentEventType(event_type);
-
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = Message::DecodeMessage<CARTA::RasterTileData>(message);
                 EXPECT_EQ(raster_tile_data.file_id(), 0);
@@ -209,8 +207,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = Message::EventType(message);
-            LogSentEventType(event_type);
-
             if (event_type == CARTA::EventType::OPEN_FILE_ACK) {
                 CARTA::OpenFileAck open_file_ack = Message::DecodeMessage<CARTA::OpenFileAck>(message);
                 EXPECT_TRUE(open_file_ack.success());
@@ -241,8 +237,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = Message::EventType(message);
-            LogSentEventType(event_type);
-
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = Message::DecodeMessage<CARTA::RasterTileData>(message);
                 EXPECT_EQ(raster_tile_data.file_id(), 0);
@@ -265,8 +259,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             CARTA::EventType event_type = Message::EventType(message);
-            LogSentEventType(event_type);
-
             if (event_type == CARTA::EventType::RASTER_TILE_DATA) {
                 CARTA::RasterTileData raster_tile_data = Message::DecodeMessage<CARTA::RasterTileData>(message);
                 EXPECT_EQ(raster_tile_data.file_id(), 1);
@@ -478,7 +470,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = Message::EventType(message);
-            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = Message::DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -497,7 +488,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = Message::EventType(message);
-            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = Message::DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 2);
@@ -516,7 +506,6 @@ public:
         while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
             std::vector<char> message = message_pair.first;
             auto event_type = Message::EventType(message);
-            LogSentEventType(event_type);
             if (event_type == CARTA::EventType::SET_REGION_ACK) {
                 auto set_region_ack = Message::DecodeMessage<CARTA::SetRegionAck>(message);
                 EXPECT_EQ(set_region_ack.region_id(), 1);
@@ -525,6 +514,43 @@ public:
         }
 
         EXPECT_EQ(message_count, 1);
+    }
+
+    void ResumeImages() {
+        auto first_filename_path_string = ImageGenerator::GeneratedHdf5ImagePath("640 800 25 1");
+        std::filesystem::path first_filename_path(first_filename_path_string);
+
+        auto second_filename_path_string = ImageGenerator::GeneratedHdf5ImagePath("640 800 25 1");
+        std::filesystem::path second_filename_path(second_filename_path_string);
+
+        std::pair<std::vector<char>, bool> message_pair;
+        int message_count = 0;
+
+        auto first_image = Message::ImageProperties(
+            first_filename_path.parent_path(), first_filename_path.filename(), "", 0, CARTA::RenderMode::RASTER, 0, 0);
+        auto second_image = Message::ImageProperties(
+            second_filename_path.parent_path(), second_filename_path.filename(), "", 1, CARTA::RenderMode::RASTER, 0, 0);
+
+        std::vector<CARTA::ImageProperties> images;
+        images.emplace_back(first_image);
+        images.emplace_back(second_image);
+        auto resume_session = Message::ResumeSession(images);
+
+        _dummy_backend->Receive(resume_session);
+
+        message_count = 0;
+
+        while (_dummy_backend->TryPopMessagesQueue(message_pair)) {
+            std::vector<char> message = message_pair.first;
+            auto event_type = Message::EventType(message);
+            if (event_type == CARTA::EventType::RESUME_SESSION_ACK) {
+                auto resume_session_ack = Message::DecodeMessage<CARTA::ResumeSessionAck>(message);
+                EXPECT_TRUE(resume_session_ack.success());
+            }
+            ++message_count;
+        }
+
+        EXPECT_EQ(message_count, 3);
     }
 };
 
@@ -559,4 +585,8 @@ TEST_F(IcdTest, AnimatorPlayback) {
 
 TEST_F(IcdTest, RegionRegister) {
     RegionRegister();
+}
+
+TEST_F(IcdTest, ResumeImages) {
+    ResumeImages();
 }
