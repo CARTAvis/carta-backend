@@ -686,29 +686,6 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
-        // TODO: remove later, test only! for PV Generator
-        auto frame = _frames.at(file_id);
-        int width(3); // default, get from pv request message
-        std::vector<casacore::LCRegion*> box_regions;
-        double offset_increment; // in arcsec
-        std::string error;
-        if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, offset_increment, error)) {
-            auto progress_callback = [&](float progress) {
-                CARTA::PvProgress pv_progress;
-                pv_progress.set_file_id(file_id);
-                pv_progress.set_progress(progress);
-                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
-            };
-
-            CARTA::PvResponse response;
-            carta::GeneratedImage pv_image;
-            if (frame->CalculatePvImage(file_id, box_regions, offset_increment, progress_callback, response, pv_image)) {
-                // open image
-            }
-        } else {
-            fmt::print("{}\n", error);
-        }
-
         // log error
         if (!success) {
             err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
@@ -719,6 +696,13 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         if (_region_handler->IsPointRegion(region_id)) {
             SendSpatialProfileDataByRegionId(region_id);
         }
+
+        // TODO: remove later, TEST ONLY! for PV Generator
+        CARTA::PvRequest pv_request;
+        pv_request.set_file_id(file_id);
+        pv_request.set_region_id(region_id);
+        pv_request.set_width(3);
+        OnPvRequest(pv_request, request_id);
     } else {
         err_message = fmt::format("Cannot set region, file id {} not found", file_id);
     }
