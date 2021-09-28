@@ -271,11 +271,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 if (CartaUserFolderPrefix)
-    add_compile_definitions(CARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
+    add_definitions(-DCARTA_USER_FOLDER_PREFIX="${CartaUserFolderPrefix}")
 endif (CartaUserFolderPrefix)
 
 if (CartaDefaultFrontendFolder)
-    add_compile_definitions(CARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
+    add_definitions(-DCARTA_DEFAULT_FRONTEND_FOLDER="${CartaDefaultFrontendFolder}")
 endif (CartaDefaultFrontendFolder)
 
 install(TARGETS carta_backend
