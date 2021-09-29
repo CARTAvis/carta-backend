@@ -76,7 +76,7 @@ public:
     static void GeneratePolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
-        auto resulting_image = polarization_calculator.ComputePolarizationIntensity();
+        auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
 
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
@@ -110,7 +110,7 @@ public:
     static void GenerateFractionalPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
-        auto resulting_image = polarization_calculator.ComputeFractionalPolarizationIntensity();
+        auto resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
 
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
@@ -145,10 +145,10 @@ public:
         }
     }
 
-    static void GeneratePolarizationAngle(const std::shared_ptr<casacore::ImageInterface<float>>& image, bool radiant) {
+    static void GeneratePolarizedAngle(const std::shared_ptr<casacore::ImageInterface<float>>& image, bool radiant) {
         carta::PolarizationCalculator polarization_calculator(image);
         // Calculate polarized angle
-        auto resulting_image = polarization_calculator.ComputePolarizationAngle(radiant);
+        auto resulting_image = polarization_calculator.ComputePolarizedAngle(radiant);
 
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
@@ -210,8 +210,8 @@ TEST_F(PolarizationCalculatorTest, PolarizedAngle) {
     std::shared_ptr<casacore::ImageInterface<float>> image;
 
     if (OpenImage(image, file_path)) {
-        GeneratePolarizationAngle(image, true);
-        GeneratePolarizationAngle(image, false);
+        GeneratePolarizedAngle(image, true);
+        GeneratePolarizedAngle(image, false);
     } else {
         spdlog::warn("Fail to open the file {}! Ignore the CheckPolarizedAngle test.", file_path);
     }

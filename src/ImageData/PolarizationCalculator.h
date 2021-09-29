@@ -30,9 +30,9 @@ public:
     casacore::LatticeExprNode MakePolarizedIntensityNode();
     void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
 
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizationIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizationIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizationAngle(bool radians);
+    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedIntensity();
+    std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizedIntensity();
+    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle(bool radians);
 
 private:
     // Find the casacore::Stokes in the construction image and assign pointers

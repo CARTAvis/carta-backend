@@ -101,7 +101,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Prepare
     return out_image;
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizationIntensity() {
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedIntensity() {
     if ((!_image_valid)) {
         return nullptr;
     }
@@ -125,7 +125,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     return PrepareOutputImage(image_expr);
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeFractionalPolarizationIntensity() {
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeFractionalPolarizedIntensity() {
     if ((!_image_valid)) {
         return nullptr;
     }
@@ -151,7 +151,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     return PrepareOutputImage(image_expr);
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizationAngle(bool radians) {
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedAngle(bool radians) {
     if ((!_image_valid)) {
         return nullptr;
     }
