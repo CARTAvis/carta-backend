@@ -125,6 +125,32 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     return PrepareOutputImage(image_expr);
 }
 
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeFractionalPolarizationIntensity() {
+    if ((!_image_valid)) {
+        return nullptr;
+    }
+
+    auto i = GetStokesImage(I);
+    auto q = GetStokesImage(Q);
+    auto u = GetStokesImage(U);
+    if (!i || !q || !u) {
+        spdlog::error("This image does not have any one of Stokes I, Q, or U, so cannot compute linear polarization");
+        return nullptr;
+    }
+
+    auto node = MakePolarizedIntensityNode();
+    node = node / *_stokes_image[I];
+    casacore::LatticeExpr<float> lattice_expr(node);
+    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyFractionalPolarizedIntensity"));
+    image_expr.setUnits(_image->units());
+    SetImageStokesInfo(image_expr, I);
+
+    // Fiddle Stokes coordinate
+    FiddleStokesCoordinate(image_expr, casacore::Stokes::Plinear);
+
+    return PrepareOutputImage(image_expr);
+}
+
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizationAngle(bool radians) {
     if ((!_image_valid)) {
         return nullptr;

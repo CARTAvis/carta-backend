@@ -31,6 +31,7 @@ public:
     void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
 
     std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizationIntensity();
+    std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizationIntensity();
     std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizationAngle(bool radians);
 
 private:

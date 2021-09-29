@@ -13,6 +13,8 @@
 #include "ImageData/PolarizationCalculator.h"
 #include "Logger/Logger.h"
 
+static const string SAMPLE_IMAGE = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits"; // shape: [256, 256, 480, 4]
+
 using namespace carta;
 
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
@@ -105,6 +107,44 @@ public:
         }
     }
 
+    static void GenerateFractionalPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+        // Calculate polarized intensity
+        carta::PolarizationCalculator polarization_calculator(image);
+        auto resulting_image = polarization_calculator.ComputeFractionalPolarizationIntensity();
+
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        // Verify each pixel value from calculation results
+        int stokes_i(0);
+        int stokes_q(1);
+        int stokes_u(2);
+        std::vector<float> data_i;
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        std::vector<float> data_results;
+
+        for (int channel = 0; channel < spectral_axis_size; ++channel) {
+            GetImageData(image, channel, stokes_i, data_i);
+            GetImageData(image, channel, stokes_q, data_q);
+            GetImageData(image, channel, stokes_u, data_u);
+            GetImageData(resulting_image, channel, 0, data_results);
+
+            EXPECT_EQ(data_results.size(), data_i.size());
+            EXPECT_EQ(data_results.size(), data_q.size());
+            EXPECT_EQ(data_results.size(), data_u.size());
+
+            for (int i = 0; i < data_results.size(); ++i) {
+                if (!isnan(data_results[i])) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    EXPECT_FLOAT_EQ(data_results[i], polarized_intensity);
+                }
+            }
+        }
+    }
+
     static void GeneratePolarizationAngle(const std::shared_ptr<casacore::ImageInterface<float>>& image, bool radiant) {
         carta::PolarizationCalculator polarization_calculator(image);
         // Calculate polarized angle
@@ -143,8 +183,8 @@ public:
     }
 };
 
-TEST_F(PolarizationCalculatorTest, CheckPolarizedIntensity) {
-    std::string file_path = FitsImagePath("IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits"); // shape: [256, 256, 480, 4]
+TEST_F(PolarizationCalculatorTest, PolarizedIntensity) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
 
     if (OpenImage(image, file_path)) {
@@ -154,8 +194,19 @@ TEST_F(PolarizationCalculatorTest, CheckPolarizedIntensity) {
     }
 }
 
-TEST_F(PolarizationCalculatorTest, CheckPolarizedAngle) {
-    std::string file_path = FitsImagePath("IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits"); // shape: [256, 256, 480, 4]
+TEST_F(PolarizationCalculatorTest, FractionalPolarizedIntensity) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        GenerateFractionalPolarizedIntensity(image);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the CheckFractionalPolarizedIntensity test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, PolarizedAngle) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
 
     if (OpenImage(image, file_path)) {
