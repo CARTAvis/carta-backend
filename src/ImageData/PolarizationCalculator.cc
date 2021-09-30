@@ -10,12 +10,8 @@
 
 using namespace carta;
 
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, string out_name, bool overwrite)
-    : _image(image), _out_name(out_name), _overwrite(overwrite), _image_valid(true) {
-    FindStokes();
-}
-
-void PolarizationCalculator::FindStokes() {
+PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image) : _image(image), _image_valid(true) {
+    // Find casacore::Stokes in the construction image and assign pointers
     const auto& coord_sys = _image->coordinates();
     if (!coord_sys.hasPolarizationCoordinate()) {
         spdlog::error("There is no stokes coordinate in this image.");
@@ -91,13 +87,15 @@ void PolarizationCalculator::SetImageStokesInfo(casacore::ImageInterface<float>&
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::PrepareOutputImage(
     const casacore::ImageInterface<float>& image, bool drop_deg) {
-    static const casacore::Record empty;
-    static const casacore::String empty_string;
+    string empty_out_name;
+    bool overwrite(false);
+    casacore::Record empty_record;
+    casacore::String empty_mask;
     bool list(true);
     bool extend_mask(false);
     bool attach_mask(false);
     auto out_image = casa::SubImageFactory<float>::createImage(
-        image, _out_name, empty, empty_string, drop_deg, _overwrite, list, extend_mask, attach_mask);
+        image, empty_out_name, empty_record, empty_mask, drop_deg, overwrite, list, extend_mask, attach_mask);
     return out_image;
 }
 
@@ -118,8 +116,6 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyPolarizedIntensity"));
     image_expr.setUnits(_image->units());
     SetImageStokesInfo(image_expr, Q);
-
-    // Fiddle Stokes coordinate
     FiddleStokesCoordinate(image_expr, casacore::Stokes::Plinear);
 
     return PrepareOutputImage(image_expr);
@@ -138,14 +134,11 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    auto node = MakePolarizedIntensityNode();
-    node = node / *_stokes_image[I];
+    auto node = MakePolarizedIntensityNode() / (*_stokes_image[I]);
     casacore::LatticeExpr<float> lattice_expr(node);
     casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyFractionalPolarizedIntensity"));
     image_expr.setUnits(_image->units());
     SetImageStokesInfo(image_expr, I);
-
-    // Fiddle Stokes coordinate
     FiddleStokesCoordinate(image_expr, casacore::Stokes::Plinear);
 
     return PrepareOutputImage(image_expr);
@@ -163,7 +156,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    // Make expression. LEL function "pa" returns degrees
+    // Make expression
     float factor = radians ? C::pi / 180.0 : 1.0;
     casacore::LatticeExprNode node(factor * casacore::pa(*u, *q));
     casacore::LatticeExpr<float> lattice_expr(node);

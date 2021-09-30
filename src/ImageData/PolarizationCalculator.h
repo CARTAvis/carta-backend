@@ -20,10 +20,10 @@ class PolarizationCalculator {
     enum StokesTypes { I, Q, U, V };
 
 public:
-    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, string out_name = "", bool overwrite = false);
+    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image);
     ~PolarizationCalculator() = default;
 
-    // Change the casacore::Stokes casacore::Coordinate for the given complex image to be of the specified casacore::Stokes type
+    // Change the casacore::Stokes in casacore::Coordinate for the given complex image to be of the specified casacore::Stokes type
     void FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type);
 
     std::shared_ptr<casacore::ImageInterface<float>> GetStokesImage(const StokesTypes& type);
@@ -35,9 +35,6 @@ public:
     std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle(bool radians);
 
 private:
-    // Find the casacore::Stokes in the construction image and assign pointers
-    void FindStokes();
-
     // Make a casacore::SubImage from the construction image for the specified pixel along the specified pixel axis
     std::shared_ptr<casacore::ImageInterface<float>> MakeSubImage(casacore::IPosition& blc, casacore::IPosition& trc, int axis, int pix);
 
@@ -45,8 +42,6 @@ private:
         const casacore::ImageInterface<float>& image, bool drop_deg = false);
 
     const std::shared_ptr<const casacore::ImageInterface<float>> _image;
-    string _out_name;
-    bool _overwrite;
     bool _image_valid;
 
     // These blocks are always size 4, with IQUV in slots 0,1,2,3. If an image is IV only, it uses slots 0 and 3
