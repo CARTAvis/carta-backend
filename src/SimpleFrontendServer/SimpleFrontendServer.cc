@@ -494,6 +494,7 @@ std::string SimpleFrontendServer::GetFileUrlString(vector<std::string> files) {
                 url_string += ",";
             }
         }
+        return url_string;
     }
 }
 
