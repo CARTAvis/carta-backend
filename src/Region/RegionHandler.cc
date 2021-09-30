@@ -43,6 +43,7 @@ int RegionHandler::GetNextRegionId() {
 
 bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
     // Set region params for region id; if id < 0, create new id
+    // CoordinateSystem will be owned by Region
     bool valid_region(false);
     if (_regions.count(region_id)) {
         _regions.at(region_id)->UpdateRegion(region_state);
@@ -52,7 +53,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacor
             ClearRegionCache(region_id);
         }
     } else {
-        if (region_id < 0) {
+        if ((region_id < 0) && (region_id != TEMP_REGION_ID)) {
             region_id = GetNextRegionId();
         }
         auto region = std::shared_ptr<Region>(new Region(region_state, csys));
@@ -76,7 +77,6 @@ void RegionHandler::RemoveRegion(int region_id) {
     if (!RegionSet(region_id)) {
         return;
     }
-
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
             region.second->WaitForTaskCancellation();
@@ -730,8 +730,8 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     return !collapse_results.empty();
 }
 
-bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, const std::shared_ptr<Frame>& frame, int width,
-    std::vector<casacore::LCRegion*>& box_regions, double& offset_increment, std::string& message) {
+bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, std::shared_ptr<Frame>& frame, int width,
+    std::vector<casacore::ImageRegion>& box_regions, double& increment, std::string& message) {
     // Return set of rotated box (polygon) regions, with centers along line(s) and width perpendicular to line(s)
     // Increment between box centers returned in arcsec
     if (!RegionSet(region_id)) {
@@ -747,28 +747,33 @@ bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, const std::sha
         return false;
     }
 
-    if (region->GetRegionState().type == CARTA::RegionType::POLYLINE) {
+    auto region_state = region->GetRegionState();
+    if (region_state.type == CARTA::RegionType::POLYLINE) {
         message = "Region type POLYLINE not supported yet for line approximation.";
         return false;
     }
 
-    // Control points (pixels) converted to image
-    std::vector<float> endpoints_x, endpoints_y;
+    // Control points (pixel coords), converted to image if necessary
+    std::vector<CARTA::Point> endpoints;
     if (region->GetReferenceFileId() == file_id) {
-        std::vector<CARTA::Point> endpoints = region->GetRegionState().control_points;
-        endpoints_x.push_back(endpoints[0].x());
-        endpoints_y.push_back(endpoints[0].y());
-        endpoints_x.push_back(endpoints[1].x());
-        endpoints_y.push_back(endpoints[1].y());
+        endpoints = region_state.control_points;
     } else {
         casacore::CoordinateSystem* image_csys = frame->CoordinateSystem();
+
         auto record = region->GetImageRegionRecord(file_id, *image_csys, frame->ImageShape());
-        endpoints_x = record.asArrayFloat("x").tovector();
-        endpoints_y = record.asArrayFloat("y").tovector();
+        casacore::Vector<float> endpoints_x = record.asArrayFloat("x");
+        casacore::Vector<float> endpoints_y = record.asArrayFloat("y");
+
+        CARTA::Point point;
+        for (size_t i = 0; i < endpoints_x.size(); ++i) {
+            point.set_x(endpoints_x(i));
+            point.set_y(endpoints_y(i));
+        }
+
         delete image_csys;
     }
 
-    return GetBoxRegions(endpoints_x, endpoints_y, width, frame, box_regions, offset_increment, message);
+    return GetBoxRegions(file_id, endpoints, region_state.rotation, width, frame, box_regions, increment, message);
 }
 
 // ********************************************************************
@@ -1493,10 +1498,186 @@ std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
     return results;
 }
 
-bool RegionHandler::GetBoxRegions(const std::vector<float>& endpoints_x, const std::vector<float>& endpoints_y, int width,
-    const std::shared_ptr<Frame>& frame, std::vector<casacore::LCRegion*>& box_regions, double& offset_increment, std::string& message) {
-    // Generate box regions with width from line described by endpoints
-    return false;
+bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& endpoints, float rotation, int width,
+    std::shared_ptr<Frame>& frame, std::vector<casacore::ImageRegion>& box_regions, double& increment, std::string& message) {
+    // Generate box (polygon, for rotation) regions to approximate line described by endpoints and rotation.
+    // Width of approximated line is in pixel coordinates.
+    // Box centers are evenly spaced in world coords so have size (increment x width).
+    // Return box regions and increment (in arcsec).
+    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
+    if (!csys->hasDirectionCoordinate()) {
+        message = "Cannot approximate line with no direction coordinate.";
+        delete csys;
+        return false;
+    }
+
+    // Pixel length of line
+    auto dx_pixels = endpoints[1].x() - endpoints[0].x();
+    auto dy_pixels = endpoints[1].y() - endpoints[0].y();
+    size_t num_pixels = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
+
+    std::vector<CARTA::Point> box_centers(num_pixels);
+    if (GetUniformPixelCenters(num_pixels, endpoints, rotation, csys, box_centers, increment)) {
+        // Set box regions from centers, width x 1
+        int region_id(TEMP_REGION_ID);
+        int iregion(1);
+        size_t ncenter(box_centers.size());
+        for (auto& center : box_centers) {
+            // Rectangle control points
+            std::vector<CARTA::Point> control_points;
+            control_points.push_back(center);
+            CARTA::Point point;
+            point.set_x(width);
+            point.set_y(1);
+            control_points.push_back(point);
+
+            // Set temporary rectangle region
+            RegionState region_state(file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
+            casacore::CoordinateSystem* region_csys = static_cast<casacore::CoordinateSystem*>(csys->clone());
+            SetRegion(region_id, region_state, region_csys);
+
+            if (RegionSet(region_id)) {
+                // Get LCRegion
+                if (!FrameSet(file_id)) {
+                    _frames[file_id] = frame;
+                }
+
+                // Region for current channel and stokes
+                AxisRange channel(frame->CurrentZ());
+                int stokes(frame->CurrentStokes());
+                casacore::ImageRegion image_region;
+
+                if (ApplyRegionToFile(region_id, file_id, channel, stokes, image_region)) {
+                    // false if outside image
+                    box_regions.push_back(image_region);
+                }
+
+                // Remove temporary region
+                RemoveRegion(region_id);
+            }
+        }
+    } else if (GetUniformAngularCenters(num_pixels, endpoints, rotation, csys, box_centers, increment)) {
+        // TODO: box regions from centers, variable npix x width
+    } else {
+        message = "Error converting line to world coordinates.";
+        delete csys;
+        return false;
+    }
+
+    delete csys;
+    return !box_regions.empty();
+}
+
+bool RegionHandler::GetUniformPixelCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
+    casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment) {
+    // Return linearly-spaced box centers in pixel coordinates, and increment between them in arcsec.
+    // Returns false if linear pixel centers are tabular in world coordinates.
+    // Offset range [-offset, offset] from center, in pixels
+    size_t num_offsets = (num_pixels - 1) / 2;
+    auto center_idx = num_offsets;
+
+    // Center point of line
+    auto center_x = (endpoints[0].x() + endpoints[1].x()) / 2;
+    auto center_y = (endpoints[0].y() + endpoints[1].y()) / 2;
+
+    // Set center pixel at index num_offsets
+    CARTA::Point point;
+    point.set_x(center_x);
+    point.set_y(center_y);
+    box_centers[center_idx] = point;
+
+    // Apply rotation to get next pixel
+    float cos_x = cos((rotation + 90.0) * M_PI / 180.0f);
+    float sin_x = sin((rotation + 90.0) * M_PI / 180.0f);
+
+    // Set pixels in pos and neg direction from center out
+    for (int ipixel = 1; ipixel <= num_offsets; ++ipixel) {
+        // Positive offset
+        auto idx = center_idx + ipixel;
+        point.set_x(center_x - (ipixel * cos_x));
+        point.set_y(center_y - (ipixel * sin_x));
+        box_centers[idx] = point;
+
+        // Negative offset
+        idx = center_idx - ipixel;
+        point.set_x(center_x + (ipixel * cos_x));
+        point.set_y(center_y + (ipixel * sin_x));
+        box_centers[idx] = point;
+    }
+
+    return CheckLinearOffsets(box_centers, csys, increment);
+}
+
+bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment) {
+    // Check whether separation between box centers is linear.
+    auto direction_coord = csys->directionCoordinate();
+
+    // Convert all center points to world, check angular separation between centers
+    size_t num_centers(box_centers.size());
+    double min_separation, max_separation;
+    double total_separation(0.0);
+    double tolerance = GetSeparationTolerance(csys);
+    casacore::MVDirection mvdir1, mvdir2;
+    casacore::Vector<casacore::Double> center_point(2);
+
+    for (size_t i = 0; i < num_centers - 1; ++i) {
+        bool check_separation(true);
+
+        // Get this center and next center as MVDirections
+        // Center i
+        center_point[0] = box_centers[i].x();
+        center_point[1] = box_centers[i].y();
+        try {
+            mvdir1 = direction_coord.toWorld(center_point);
+        } catch (casacore::AipsError& err) { // wcslib conversion error
+            check_separation = false;
+        }
+
+        // Center i + 1
+        center_point[0] = box_centers[i + 1].x();
+        center_point[1] = box_centers[i + 1].y();
+        try {
+            mvdir2 = direction_coord.toWorld(center_point);
+        } catch (casacore::AipsError& err) { // wcslib conversion error
+            check_separation = false;
+        }
+
+        // Check separation
+        if (check_separation) {
+            double center_separation = mvdir1.separation(mvdir2, "arcsec").getValue();
+
+            if (i == 0) {
+                min_separation = max_separation = center_separation;
+            } else {
+                min_separation = (center_separation < min_separation) ? center_separation : min_separation;
+                max_separation = (center_separation > max_separation) ? center_separation : max_separation;
+            }
+
+            if ((max_separation - min_separation) > tolerance) { // nonlinear increment
+                return false;
+            }
+
+            total_separation += center_separation; // accumulate for mean
+        }
+    }
+
+    increment = total_separation / num_centers; // calculate mean separation
+    return true;
+}
+
+double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
+    // Return 1% of CDELT2 in arcsec
+    auto cdelt = csys->increment();
+    auto cunit = csys->worldAxisUnits();
+    casacore::Quantity cdelt2(cdelt[1], cunit[1]);
+    return cdelt2.get("arcsec").getValue() * 0.01;
+}
+
+bool RegionHandler::GetUniformAngularCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
+    casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment) {
+    // Return box centers which are linearly-spaced in world coordinates, and the increment between them (arcsec).
+    // Returns false if calculations fail.
+    return false; // not implemented
 }
 
 } // namespace carta

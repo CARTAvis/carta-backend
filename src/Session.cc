@@ -696,13 +696,6 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         if (_region_handler->IsPointRegion(region_id)) {
             SendSpatialProfileDataByRegionId(region_id);
         }
-
-        // TODO: remove later, TEST ONLY! for PV Generator
-        CARTA::PvRequest pv_request;
-        pv_request.set_file_id(file_id);
-        pv_request.set_region_id(region_id);
-        pv_request.set_width(3);
-        OnPvRequest(pv_request, request_id);
     } else {
         err_message = fmt::format("Cannot set region, file id {} not found", file_id);
     }
@@ -1271,7 +1264,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_message("Invalid region id.");
         } else {
             auto& frame = _frames.at(file_id);
-            std::vector<casacore::LCRegion*> box_regions;
+            std::vector<casacore::ImageRegion> box_regions;
             double offset_increment; // in arcsec
             std::string error;
             if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, offset_increment, error)) {
