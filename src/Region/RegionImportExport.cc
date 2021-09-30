@@ -12,7 +12,7 @@
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/String.h"
 
 using namespace carta;
 

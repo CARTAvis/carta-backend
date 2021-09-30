@@ -10,12 +10,15 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#include <casacore/casa/Exceptions/Error.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
 #include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
 #include "Timer/ListProgressReporter.h"
+#include "Util/Casacore.h"
+#include "Util/File.h"
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
@@ -25,7 +28,7 @@ void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, C
     // use tbb scoped lock so that it only processes the file list a time for one user
     // TODO: Do we still need a lock here if there are no API keys?
     std::scoped_lock lock(_file_list_mutex);
-    string folder = request.directory();
+    std::string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _filelist_folder) {
         return;
@@ -243,7 +246,7 @@ void FileListHandler::OnRegionListRequest(
     const CARTA::RegionListRequest& region_request, CARTA::RegionListResponse& region_response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
     std::scoped_lock lock(_region_list_mutex);
-    string folder = region_request.directory();
+    std::string folder = region_request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _regionlist_folder) {
         return;

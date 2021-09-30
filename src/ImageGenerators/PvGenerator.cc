@@ -12,6 +12,7 @@
 
 #include "../ImageStats/StatsCalculator.h"
 #include "PvGenerator.h"
+#include "Util/Image.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>

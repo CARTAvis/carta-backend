@@ -6,7 +6,9 @@
 
 #include <gtest/gtest.h>
 
-#include "Util.h"
+#include "Util/Casacore.h"
+#include "Util/File.h"
+#include "Util/Token.h"
 
 #include "CommonTestUtilities.h"
 

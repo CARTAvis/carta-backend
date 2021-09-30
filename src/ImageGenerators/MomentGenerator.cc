@@ -238,8 +238,8 @@ void MomentGenerator::setStepCount(int count) {
 
 void MomentGenerator::setStepsCompleted(int count) {
     _progress = (float)count / _total_steps;
-    if (_progress > CALCULATION_COMPLETE) {
-        _progress = CALCULATION_COMPLETE;
+    if (_progress > 1.0) {
+        _progress = 1.0;
     }
 
     if (!_first_report_made) {

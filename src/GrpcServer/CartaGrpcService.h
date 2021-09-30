@@ -17,6 +17,8 @@
 
 #include "../Session.h"
 
+#define SCRIPTING_TIMEOUT 10 // seconds
+
 class CartaGrpcService : public CARTA::script::CartaBackend::Service {
 public:
     CartaGrpcService(std::string auth_token);
@@ -31,6 +33,20 @@ private:
 
     static uint32_t _scripting_request_id;
     std::string _auth_token;
+};
+
+class GrpcManager {
+public:
+    GrpcManager();
+    GrpcManager(int port, std::string auth_token);
+    ~GrpcManager();
+    bool Listening();
+    std::shared_ptr<CartaGrpcService> Service();
+
+private:
+    std::shared_ptr<CartaGrpcService> _service;
+    std::unique_ptr<grpc::Server> _server;
+    int _selected_port;
 };
 
 #endif // CARTA_BACKEND_GRPCSERVER_CARTAGRPCSERVICE_H_

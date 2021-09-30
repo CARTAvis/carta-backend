@@ -14,7 +14,6 @@
 #include <chrono>
 #include <thread>
 
-#include "../Constants.h"
 #include "ImageGenerator.h"
 #include "ImageMoments.h"
 

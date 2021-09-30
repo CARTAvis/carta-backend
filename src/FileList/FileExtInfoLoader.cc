@@ -20,19 +20,13 @@
 #include <casacore/measures/Measures/MFrequency.h>
 
 #include "../ImageData/CartaFitsImage.h"
+#include "../ImageData/CartaHdf5Image.h"
 #include "../ImageData/CompressedFits.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
-
-#include "../ImageData/CartaHdf5Image.h"
+#include "Util/Casacore.h"
+#include "Util/File.h"
+#include "Util/FileSystem.h"
 
 using namespace carta;
 

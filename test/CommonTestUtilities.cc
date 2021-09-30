@@ -8,8 +8,7 @@
 #include <stdexcept>
 
 #include "CommonTestUtilities.h"
-
-using namespace carta;
+#include "Util/App.h"
 
 fs::path TestRoot() {
     std::string path_string;
@@ -20,6 +19,10 @@ fs::path TestRoot() {
         root = fs::current_path();
     }
     return root;
+}
+
+fs::path UserDirectory() {
+    return fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
 }
 
 std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {

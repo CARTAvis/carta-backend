@@ -12,7 +12,9 @@
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/File.h"
+#include "Util/Image.h"
+
 #include "CasaLoader.h"
 #include "CompListLoader.h"
 #include "ConcatLoader.h"

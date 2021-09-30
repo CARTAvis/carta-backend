@@ -9,6 +9,8 @@
 
 #include "Hdf5Loader.h"
 
+#include "Util/Image.h"
+
 namespace carta {
 
 // This is necessary on some systems where the compiler
