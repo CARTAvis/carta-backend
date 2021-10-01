@@ -89,7 +89,7 @@ public:
 
     // Series of box regions along line for PV generator and spatial profiles
     bool GetLineBoxRegions(int file_id, int region_id, std::shared_ptr<Frame>& frame, int width,
-        std::vector<casacore::ImageRegion>& box_regions, double& separation, std::string& message);
+        std::vector<casacore::LCRegion*>& box_regions, double& separation, std::string& message);
 
 private:
     // Get unique region id (max id + 1)
@@ -126,7 +126,7 @@ private:
 
     // Approximate line as box regions with given width, for PV generator and spatial profiles
     bool GetBoxRegions(int file_id, const std::vector<CARTA::Point>& endpoints, float rotation, int width, std::shared_ptr<Frame>& frame,
-        std::vector<casacore::ImageRegion>& box_regions, double& increment, std::string& message);
+        std::vector<casacore::LCRegion*>& box_regions, double& increment, std::string& message);
     bool GetUniformPixelCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
         casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);

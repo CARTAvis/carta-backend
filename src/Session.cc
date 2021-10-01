@@ -1263,7 +1263,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_message("Invalid region id.");
         } else {
             auto& frame = _frames.at(file_id);
-            std::vector<casacore::ImageRegion> box_regions;
+            std::vector<casacore::LCRegion*> box_regions;
             double offset_increment; // in arcsec
             std::string error;
             if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, offset_increment, error)) {

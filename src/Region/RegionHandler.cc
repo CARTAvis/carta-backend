@@ -732,7 +732,7 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 }
 
 bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, std::shared_ptr<Frame>& frame, int width,
-    std::vector<casacore::ImageRegion>& box_regions, double& increment, std::string& message) {
+    std::vector<casacore::LCRegion*>& box_regions, double& increment, std::string& message) {
     // Return set of rotated box (polygon) regions, with centers along line(s) and width perpendicular to line(s)
     // Increment between box centers returned in arcsec
     if (!RegionSet(region_id)) {
@@ -769,6 +769,7 @@ bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, std::shared_pt
         for (size_t i = 0; i < endpoints_x.size(); ++i) {
             point.set_x(endpoints_x(i));
             point.set_y(endpoints_y(i));
+            endpoints.push_back(point);
         }
 
         delete image_csys;
@@ -1500,7 +1501,7 @@ std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
 }
 
 bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& endpoints, float rotation, int width,
-    std::shared_ptr<Frame>& frame, std::vector<casacore::ImageRegion>& box_regions, double& increment, std::string& message) {
+    std::shared_ptr<Frame>& frame, std::vector<casacore::LCRegion*>& box_regions, double& increment, std::string& message) {
     // Generate box (polygon, for rotation) regions to approximate line described by endpoints and rotation.
     // Width of approximated line is in pixel coordinates.
     // Box centers are evenly spaced in world coords so have size (increment x width).
@@ -1517,14 +1518,16 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
     auto dy_pixels = endpoints[1].y() - endpoints[0].y();
     size_t num_pixels = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
 
-    std::vector<CARTA::Point> box_centers(num_pixels);
+    std::vector<CARTA::Point> box_centers;
+    bool regions_set(false);
     if (GetUniformPixelCenters(num_pixels, endpoints, rotation, csys, box_centers, increment)) {
         // Set box regions from centers, width x 1
         int region_id(TEMP_REGION_ID);
         int iregion(1);
         size_t ncenter(box_centers.size());
+
         for (auto& center : box_centers) {
-            // Rectangle control points
+            // Rectangle control points: center, width/height
             std::vector<CARTA::Point> control_points;
             control_points.push_back(center);
             CARTA::Point point;
@@ -1543,15 +1546,11 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
                     _frames[file_id] = frame;
                 }
 
-                // Region for current channel and stokes
-                AxisRange channel(frame->CurrentZ());
-                int stokes(frame->CurrentStokes());
-                casacore::ImageRegion image_region;
-
-                if (ApplyRegionToFile(region_id, file_id, channel, stokes, image_region)) {
-                    // false if outside image
-                    box_regions.push_back(image_region);
+                auto lcregion = ApplyRegionToFile(region_id, file_id);
+                if (lcregion) {
+                    regions_set = true;
                 }
+                box_regions.push_back(lcregion);
 
                 // Remove temporary region
                 RemoveRegion(region_id);
@@ -1566,7 +1565,11 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
     }
 
     delete csys;
-    return !box_regions.empty();
+
+    if (!regions_set && message.empty()) {
+        message = "Line entirely outside the image.";
+    }
+    return regions_set;
 }
 
 bool RegionHandler::GetUniformPixelCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
@@ -1576,6 +1579,7 @@ bool RegionHandler::GetUniformPixelCenters(size_t num_pixels, const std::vector<
     // Offset range [-offset, offset] from center, in pixels
     size_t num_offsets = (num_pixels - 1) / 2;
     auto center_idx = num_offsets;
+    box_centers.resize((num_offsets * 2) + 1);
 
     // Center point of line
     auto center_x = (endpoints[0].x() + endpoints[1].x()) / 2;

@@ -8,6 +8,8 @@
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
+#include <casacore/lattices/LRegions/LCIntersection.h>
+#include <casacore/lattices/LRegions/LCRegionFixed.h>
 #include <casacore/measures/Measures/Stokes.h>
 
 #include "../ImageStats/StatsCalculator.h"
@@ -29,14 +31,16 @@ PvGenerator::PvGenerator(int file_id, const std::string& filename) : _stop_calc(
     _name = GetPvFilename(filename);
 }
 
-void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::ImageRegion>& box_regions,
+void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
     double offset_increment, size_t num_channels, int stokes, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
     carta::GeneratedImage& pv_image) {
     // Generate PV image from line box regions: iterate through channels for region stats
     size_t num_regions(box_regions.size());
     float progress(0.0);
 
+    // Set PV values in new image
     casacore::Matrix<float> pv_values(num_regions, num_channels);
+    pv_values = NAN;
 
     // Assume we will finish
     pv_response.set_cancel(false);
@@ -53,9 +57,16 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
                 break;
             }
 
+            if (!box_regions[iregion]) {
+                continue;
+            }
+
+            // Apply extension/intersection for single channel and stokes
+            auto image_region = GetImageRegion(loader, box_regions[iregion], ichan, stokes);
+
             // Create casacore SubImage from ImageRegion for region stats
             casacore::SubImage<float> sub_image;
-            if (!loader->GetSubImage(box_regions[iregion], sub_image)) {
+            if (!loader->GetSubImage(image_region, sub_image)) {
                 pv_response.set_message("PV generator subimage from region failed.");
                 break;
             }
@@ -78,8 +89,10 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
         }
     }
 
-    if (progress == 1.0) {
+    if ((progress == 1.0) && !allEQ(pv_values, NAN)) {
+        // Determine whether stokes axis
         casacore::IPosition pv_shape = GetPvImageShape(loader, num_regions, num_channels);
+        // Create casacore::TempImage
         SetupPvImage(loader->GetImage(), pv_shape, stokes, offset_increment);
 
         // Set data in temp image
@@ -91,14 +104,21 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
     }
 }
 
-void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::ImageRegion>& box_regions,
+void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
     double offset_increment, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Generate PV image from line box regions: iterate through regions for spectral profiles
     size_t num_regions(box_regions.size()), num_channels(0);
     float progress(0.0);
 
+    // Set PV values in new image
     casacore::Matrix<float> pv_values;
+
+    // Assume we will finish
+    pv_response.set_cancel(false);
+
+    casacore::IPosition image_shape;
+    loader->GetShape(image_shape);
 
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
         // Check for cancel
@@ -108,9 +128,24 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
             break;
         }
 
-        auto fixed_region = dynamic_cast<const casacore::LCRegionFixed*>(&box_regions[iregion].asLCRegion());
-        auto mask = fixed_region->getMask();
-        auto origin = fixed_region->boundingBox().start();
+        if (!box_regions[iregion]) {
+            continue;
+        }
+
+        // Get region mask and origin
+        casacore::ArrayLattice<casacore::Bool> mask;
+        casacore::IPosition origin;
+        // Region is either extended or fixed
+        auto extended_region = dynamic_cast<casacore::LCExtension*>(box_regions[iregion]);
+        if (extended_region) {
+            auto& fixed_region = static_cast<const casacore::LCRegionFixed&>(extended_region->region());
+            mask = fixed_region.getMask();
+            origin = fixed_region.boundingBox().start();
+        } else {
+            auto fixed_region = dynamic_cast<casacore::LCRegionFixed*>(box_regions[iregion]);
+            mask = fixed_region->getMask();
+            origin = fixed_region->boundingBox().start();
+        }
 
         // Get region spectral profile (mean) from loader
         std::map<CARTA::StatsType, std::vector<double>> results;
@@ -128,9 +163,11 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
         if (pv_values.empty()) {
             num_channels = spectral_profile.size();
             pv_values.resize(casacore::IPosition(2, num_regions, num_channels));
+            pv_values = NAN;
         }
 
         pv_values.row(iregion) = spectral_profile;
+        casacore::Vector<float> profile(spectral_profile);
 
         // Progress update
         progress = (iregion + 1) / num_regions;
@@ -139,8 +176,10 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
         }
     }
 
-    if (progress == 1.0) {
+    if ((progress == 1.0) && !allEQ(pv_values, NAN)) {
+        // Determine whether stokes axis
         casacore::IPosition pv_shape = GetPvImageShape(loader, num_regions, num_channels);
+        // Create casacore::TempImage
         SetupPvImage(loader->GetImage(), pv_shape, stokes, offset_increment);
 
         // Set data in temp image
@@ -166,6 +205,51 @@ std::string PvGenerator::GetPvFilename(const std::string& filename) {
     pv_path += input_filepath.extension();
 
     return pv_path.string();
+}
+
+casacore::ImageRegion PvGenerator::GetImageRegion(
+    std::shared_ptr<carta::FileLoader> loader, casacore::LCRegion* lcregion, int chan, int stokes) {
+    // Create LCExtension or LCIntersection for given channel, stokes
+    casacore::IPosition image_shape;
+    int spectral_axis, z_axis, stokes_axis;
+    std::string message;
+    loader->FindCoordinateAxes(image_shape, spectral_axis, z_axis, stokes_axis, message);
+
+    auto region_shape = lcregion->shape();
+    auto ndim = image_shape.size();
+
+    // Make slicer with single channel and stokes.
+    casacore::IPosition start(ndim, 0), end(image_shape);
+    start(spectral_axis) = chan;
+    end(spectral_axis) = chan;
+    if (stokes_axis >= 0) {
+        start(stokes_axis) = stokes;
+        end(stokes_axis) = stokes;
+    }
+    casacore::Slicer slicer(start, end, casacore::Slicer::endIsLast);
+
+    // Create ImageRegion from LCRegion intersection or extension
+    casacore::ImageRegion image_region;
+
+    if (region_shape.size() == ndim) {
+        // Region includes all channels and stokes; limit with intersection box from slicer.
+        casacore::LCBox box(slicer, image_shape);
+        casacore::LCIntersection intersection_region(*lcregion, box);
+        image_region = casacore::ImageRegion(intersection_region);
+    } else {
+        // Region only in xy plane; extend with channel/stokes extension box.
+        // Create box with chan/stokes slicer and extend region in chan/stokes axes.
+        casacore::IPosition xy_axes(2, 0, 1), image_axes(casacore::IPosition::makeAxisPath(ndim));
+        casacore::Slicer chan_stokes_slicer =
+            casacore::Slicer(slicer.start().removeAxes(xy_axes), slicer.end().removeAxes(xy_axes), casacore::Slicer::endIsLast);
+        casacore::IPosition extend_axes = image_axes.removeAxes(xy_axes);
+
+        casacore::LCBox extend_box(chan_stokes_slicer, image_shape.removeAxes(xy_axes));
+        casacore::LCExtension extended_region(*lcregion, extend_axes, extend_box);
+        image_region = casacore::ImageRegion(extended_region);
+    }
+
+    return image_region;
 }
 
 casacore::IPosition PvGenerator::GetPvImageShape(std::shared_ptr<carta::FileLoader> loader, size_t num_regions, size_t num_channels) {

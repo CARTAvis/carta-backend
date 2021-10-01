@@ -1715,7 +1715,7 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::ImageRegion>& box_regions, double offset_increment,
+bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, double offset_increment,
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Create PV image
     std::shared_lock lock(GetActiveTaskMutex());
@@ -1725,7 +1725,7 @@ bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::ImageRegio
     }
 
     if (_pv_generator) {
-        casacore::IPosition region_shape = box_regions[0].asLCRegion().shape();
+        casacore::IPosition region_shape = box_regions[0]->shape();
 
         if (UseLoaderSpectralData(region_shape)) {
             _pv_generator->CalculatePvImage(

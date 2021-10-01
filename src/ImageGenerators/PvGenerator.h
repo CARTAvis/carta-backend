@@ -8,6 +8,7 @@
 #define CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
 
 #include <casacore/images/Images/TempImage.h>
+#include <casacore/lattices/LRegions/LCRegion.h>
 
 #include <carta-protobuf/pv_request.pb.h>
 
@@ -21,16 +22,17 @@ public:
     PvGenerator(int file_id, const std::string& filename);
     ~PvGenerator(){};
 
-    void CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::ImageRegion>& box_regions,
+    void CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
         double offset_increment, size_t num_channels, int stokes, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
-    void CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::ImageRegion>& box_regions,
+    void CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
         double offset_increment, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
     void StopCalculation();
 
 private:
     std::string GetPvFilename(const std::string& filename);
+    casacore::ImageRegion GetImageRegion(std::shared_ptr<carta::FileLoader> loader, casacore::LCRegion* lcregion, int chan, int stokes);
     casacore::IPosition GetPvImageShape(std::shared_ptr<carta::FileLoader> loader, size_t num_regions, size_t num_channels);
     void SetupPvImage(
         std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes, double offset_increment);
