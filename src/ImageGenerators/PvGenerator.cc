@@ -32,13 +32,43 @@ PvGenerator::PvGenerator(int file_id, const std::string& filename) : _stop_calc(
 }
 
 void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
+    double offset_increment, size_t num_channels, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
+    CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
+    // Calculate PV image with progress updates.  Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
+    // Find shape of first non-null region
+    casacore::IPosition region_shape;
+    for (auto region : box_regions) {
+        if (region) {
+            region_shape = region->shape();
+            break;
+        }
+    }
+
+    if (region_shape.empty()) {
+        pv_response.set_success(false);
+        pv_response.set_message("PV calculation failed for input region.");
+    }
+
+    if (loader->UseRegionSpectralData(region_shape, image_mutex)) {
+        // Calculate using spectral profiles
+        CalculatePvImageSpectral(
+            loader, box_regions, offset_increment, num_channels, stokes, image_mutex, progress_callback, pv_response, pv_image);
+    } else {
+        // Calculate using region stats
+        std::unique_lock<std::mutex> ulock(image_mutex);
+        CalculatePvImageStats(loader, box_regions, offset_increment, num_channels, stokes, progress_callback, pv_response, pv_image);
+        ulock.unlock();
+    }
+}
+
+void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
     double offset_increment, size_t num_channels, int stokes, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
     carta::GeneratedImage& pv_image) {
     // Generate PV image from line box regions: iterate through channels for region stats
     size_t num_regions(box_regions.size());
     float progress(0.0);
 
-    // Set PV values in new image
+    // PV values in new image
     casacore::Matrix<float> pv_values(num_regions, num_channels);
     pv_values = NAN;
 
@@ -80,6 +110,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
             region_mean_values(iregion) = results[CARTA::StatsType::Mean][0]; // one value for one channel
         }
 
+        // Set chan column
         pv_values.column(ichan) = region_mean_values;
 
         // Progress update
@@ -89,7 +120,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
         }
     }
 
-    if ((progress == 1.0) && !allEQ(pv_values, NAN)) {
+    if (progress == 1.0) {
         // Determine whether stokes axis
         casacore::IPosition pv_shape = GetPvImageShape(loader, num_regions, num_channels);
         // Create casacore::TempImage
@@ -101,18 +132,23 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
 
         // Set returned image
         pv_image = GetGeneratedImage();
+
+        pv_response.set_success(true);
+    } else {
+        pv_response.set_success(false);
     }
 }
 
-void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
-    double offset_increment, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
+void PvGenerator::CalculatePvImageSpectral(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
+    double offset_increment, size_t num_channels, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Generate PV image from line box regions: iterate through regions for spectral profiles
-    size_t num_regions(box_regions.size()), num_channels(0);
+    size_t num_regions(box_regions.size());
     float progress(0.0);
 
-    // Set PV values in new image
-    casacore::Matrix<float> pv_values;
+    // PV values in new image
+    casacore::Matrix<float> pv_values(num_regions, num_channels);
+    pv_values = NAN;
 
     // Assume we will finish
     pv_response.set_cancel(false);
@@ -158,16 +194,9 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
             }
         }
 
+        // Set region row
         auto spectral_profile = results[CARTA::StatsType::Mean];
-
-        if (pv_values.empty()) {
-            num_channels = spectral_profile.size();
-            pv_values.resize(casacore::IPosition(2, num_regions, num_channels));
-            pv_values = NAN;
-        }
-
         pv_values.row(iregion) = spectral_profile;
-        casacore::Vector<float> profile(spectral_profile);
 
         // Progress update
         progress = (iregion + 1) / num_regions;
@@ -176,7 +205,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
         }
     }
 
-    if ((progress == 1.0) && !allEQ(pv_values, NAN)) {
+    if (progress == 1.0) {
         // Determine whether stokes axis
         casacore::IPosition pv_shape = GetPvImageShape(loader, num_regions, num_channels);
         // Create casacore::TempImage
@@ -188,6 +217,10 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
 
         // Set returned image
         pv_image = GetGeneratedImage();
+
+        pv_response.set_success(true);
+    } else {
+        pv_response.set_success(false);
     }
 }
 

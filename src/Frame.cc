@@ -1725,17 +1725,8 @@ bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>
     }
 
     if (_pv_generator) {
-        casacore::IPosition region_shape = box_regions[0]->shape();
-
-        if (UseLoaderSpectralData(region_shape)) {
-            _pv_generator->CalculatePvImage(
-                _loader, box_regions, offset_increment, CurrentStokes(), _image_mutex, progress_callback, pv_response, pv_image);
-        } else {
-            std::unique_lock<std::mutex> ulock(_image_mutex);
-            _pv_generator->CalculatePvImage(
-                _loader, box_regions, offset_increment, Depth(), CurrentStokes(), progress_callback, pv_response, pv_image);
-            ulock.unlock();
-        }
+        _pv_generator->CalculatePvImage(
+            _loader, box_regions, offset_increment, Depth(), CurrentStokes(), _image_mutex, progress_callback, pv_response, pv_image);
     }
 
     return pv_image.image.get();
