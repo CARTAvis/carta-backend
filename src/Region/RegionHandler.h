@@ -124,15 +124,16 @@ private:
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
-    // Approximate line as box regions with given width, for PV generator and spatial profiles
+    // Line approximated as box regions with given width, for PV generator and spatial profiles
     bool GetBoxRegions(int file_id, const std::vector<CARTA::Point>& endpoints, float rotation, int width, std::shared_ptr<Frame>& frame,
         std::vector<casacore::LCRegion*>& box_regions, double& increment, std::string& message);
-    bool GetUniformPixelCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
-        casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment);
+    bool GetFixedPixelRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
+        casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
-    bool GetUniformAngularCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
-        casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment);
+    bool GetFixedAngularRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
+        casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment);
+    casacore::LCRegion* GetTemporaryBoxRegion(int file_id, RegionState& region_state, casacore::CoordinateSystem* csys);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

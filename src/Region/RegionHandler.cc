@@ -1513,73 +1513,40 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
         return false;
     }
 
+    bool add_frame = !FrameSet(file_id);
+    if (add_frame) {
+        _frames[file_id] = frame;
+    }
+
     // Pixel length of line
     auto dx_pixels = endpoints[1].x() - endpoints[0].x();
     auto dy_pixels = endpoints[1].y() - endpoints[0].y();
     size_t num_pixels = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
 
-    std::vector<CARTA::Point> box_centers;
-    bool regions_set(false);
-    if (GetUniformPixelCenters(num_pixels, endpoints, rotation, csys, box_centers, increment)) {
-        // Set box regions from centers, width x 1
-        int region_id(TEMP_REGION_ID);
-        int iregion(1);
-        size_t ncenter(box_centers.size());
+    bool regions_set = GetFixedPixelRegions(file_id, num_pixels, endpoints, width, rotation, csys, box_regions, increment) ||
+                       GetFixedAngularRegions(file_id, num_pixels, endpoints, width, rotation, csys, box_regions, increment);
 
-        for (auto& center : box_centers) {
-            // Rectangle control points: center, width/height
-            std::vector<CARTA::Point> control_points;
-            control_points.push_back(center);
-            CARTA::Point point;
-            point.set_x(width);
-            point.set_y(1);
-            control_points.push_back(point);
-
-            // Set temporary rectangle region
-            RegionState region_state(file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
-            casacore::CoordinateSystem* region_csys = static_cast<casacore::CoordinateSystem*>(csys->clone());
-            SetRegion(region_id, region_state, region_csys);
-
-            if (RegionSet(region_id)) {
-                // Get LCRegion
-                if (!FrameSet(file_id)) {
-                    _frames[file_id] = frame;
-                }
-
-                auto lcregion = ApplyRegionToFile(region_id, file_id);
-                if (lcregion) {
-                    regions_set = true;
-                }
-                box_regions.push_back(lcregion);
-
-                // Remove temporary region
-                RemoveRegion(region_id);
-            }
-        }
-    } else if (GetUniformAngularCenters(num_pixels, endpoints, rotation, csys, box_centers, increment)) {
-        // TODO: box regions from centers, variable npix x width
-    } else {
-        message = "Error converting line to world coordinates.";
-        delete csys;
-        return false;
+    if (!regions_set) {
+        message = "Line approximation failed.";
     }
 
     delete csys;
 
-    if (!regions_set && message.empty()) {
-        message = "Line entirely outside the image.";
+    if (add_frame) {
+        RemoveFrame(file_id);
     }
+
     return regions_set;
 }
 
-bool RegionHandler::GetUniformPixelCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
-    casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment) {
+bool RegionHandler::GetFixedPixelRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width,
+    float rotation, casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment) {
     // Return linearly-spaced box centers in pixel coordinates, and increment between them in arcsec.
     // Returns false if linear pixel centers are tabular in world coordinates.
     // Offset range [-offset, offset] from center, in pixels
     size_t num_offsets = (num_pixels - 1) / 2;
     auto center_idx = num_offsets;
-    box_centers.resize((num_offsets * 2) + 1);
+    std::vector<CARTA::Point> box_centers((num_offsets * 2) + 1);
 
     // Center point of line
     auto center_x = (endpoints[0].x() + endpoints[1].x()) / 2;
@@ -1610,7 +1577,29 @@ bool RegionHandler::GetUniformPixelCenters(size_t num_pixels, const std::vector<
         box_centers[idx] = point;
     }
 
-    return CheckLinearOffsets(box_centers, csys, increment);
+    bool region_set(false);
+    if (CheckLinearOffsets(box_centers, csys, increment)) {
+        // Set box regions from centers, width x 1
+        for (auto& center : box_centers) {
+            // Rectangle control points: center, width/height
+            std::vector<CARTA::Point> control_points;
+            control_points.push_back(center);
+            CARTA::Point point;
+            point.set_x(width);
+            point.set_y(1);
+            control_points.push_back(point);
+            RegionState region_state(file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
+
+            auto lcregion = GetTemporaryBoxRegion(file_id, region_state, csys);
+            if (lcregion) {
+                region_set = true;
+            }
+
+            box_regions.push_back(lcregion);
+        }
+    }
+
+    return region_set;
 }
 
 bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment) {
@@ -1678,11 +1667,30 @@ double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
     return cdelt2.get("arcsec").getValue() * 0.01;
 }
 
-bool RegionHandler::GetUniformAngularCenters(size_t num_pixels, const std::vector<CARTA::Point>& endpoints, float rotation,
-    casacore::CoordinateSystem* csys, std::vector<CARTA::Point>& box_centers, double& increment) {
-    // Return box centers which are linearly-spaced in world coordinates, and the increment between them (arcsec).
-    // Returns false if calculations fail.
+bool RegionHandler::GetFixedAngularRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width,
+    float rotation, casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment) {
+    // Return box regions which are linearly-spaced in world coordinates, and the increment between their centers (arcsec).
+    // Height of rotated boxes will vary with angular size of pixel.
+    // Returns false if no regions were set.
     return false; // not implemented
+}
+
+casacore::LCRegion* RegionHandler::GetTemporaryBoxRegion(int file_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
+    // Create temporary region to get LCRegion for given file_id
+    casacore::LCRegion* lcregion(nullptr);
+    int region_id(TEMP_REGION_ID);
+    casacore::CoordinateSystem* region_csys = static_cast<casacore::CoordinateSystem*>(csys->clone());
+    SetRegion(region_id, region_state, region_csys);
+
+    if (RegionSet(region_id)) {
+        // Get LCRegion
+        lcregion = ApplyRegionToFile(region_id, file_id);
+
+        // Remove temporary region
+        RemoveRegion(region_id);
+    }
+
+    return lcregion;
 }
 
 } // namespace carta
