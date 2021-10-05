@@ -14,13 +14,15 @@
 #include <casacore/lattices/LatticeMath.h>
 #include <casacore/lattices/LatticeMath/LatticeStatistics.h>
 
+#include "Util/Image.h"
+
 namespace carta {
 
 class PolarizationCalculator {
     enum StokesTypes { I, Q, U, V };
 
 public:
-    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image);
+    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange spectral_range = AxisRange());
     ~PolarizationCalculator() = default;
 
     // Change the casacore::Stokes in casacore::Coordinate for the given complex image to be of the specified casacore::Stokes type

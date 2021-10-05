@@ -14,6 +14,7 @@
 #include "Logger/Logger.h"
 
 static const string SAMPLE_IMAGE = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits"; // shape: [256, 256, 480, 4]
+static const int MAX_CHANNEL = 5;
 
 using namespace carta;
 
@@ -73,19 +74,20 @@ public:
         }
     }
 
-    static void GeneratePolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+    static void TestPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
         auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
 
         // Get spectral axis size
-        casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
+        casacore::CoordinateSystem coord_sys = image->coordinates();
         int spectral_axis = coord_sys.spectralAxisNumber();
         int spectral_axis_size = image->shape()[spectral_axis];
 
         // Verify each pixel value from calculation results
         int stokes_q(1);
         int stokes_u(2);
+        int stokes_pi(0);
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_results;
@@ -93,7 +95,7 @@ public:
         for (int channel = 0; channel < spectral_axis_size; ++channel) {
             GetImageData(image, channel, stokes_q, data_q);
             GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel, 0, data_results);
+            GetImageData(resulting_image, channel, stokes_pi, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -107,13 +109,50 @@ public:
         }
     }
 
-    static void GenerateFractionalPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+    static void TestPolarizedIntensityPerChannel(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        // Verify each pixel value from calculation results
+        int stokes_q(1);
+        int stokes_u(2);
+        int current_stokes(0);
+        int current_channel(0);
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        std::vector<float> data_results;
+        int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+        for (int channel = 0; channel < max_channel; ++channel) {
+            // Calculate polarized intensity
+            carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
+            auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
+
+            GetImageData(image, channel, stokes_q, data_q);
+            GetImageData(image, channel, stokes_u, data_u);
+            GetImageData(resulting_image, current_channel, current_stokes, data_results);
+
+            EXPECT_EQ(data_results.size(), data_q.size());
+            EXPECT_EQ(data_results.size(), data_u.size());
+
+            for (int i = 0; i < data_results.size(); ++i) {
+                if (!isnan(data_results[i])) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    EXPECT_FLOAT_EQ(data_results[i], polarized_intensity);
+                }
+            }
+        }
+    }
+
+    static void TestFractionalPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
         auto resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
 
         // Get spectral axis size
-        casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
+        casacore::CoordinateSystem coord_sys = image->coordinates();
         int spectral_axis = coord_sys.spectralAxisNumber();
         int spectral_axis_size = image->shape()[spectral_axis];
 
@@ -121,6 +160,7 @@ public:
         int stokes_i(0);
         int stokes_q(1);
         int stokes_u(2);
+        int stokes_fpi(0);
         std::vector<float> data_i;
         std::vector<float> data_q;
         std::vector<float> data_u;
@@ -130,7 +170,7 @@ public:
             GetImageData(image, channel, stokes_i, data_i);
             GetImageData(image, channel, stokes_q, data_q);
             GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel, 0, data_results);
+            GetImageData(resulting_image, channel, stokes_fpi, data_results);
 
             EXPECT_EQ(data_results.size(), data_i.size());
             EXPECT_EQ(data_results.size(), data_q.size());
@@ -145,19 +185,61 @@ public:
         }
     }
 
-    static void GeneratePolarizedAngle(const std::shared_ptr<casacore::ImageInterface<float>>& image, bool radiant) {
+    static void TestFractionalPolarizedIntensityPerChannel(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        // Verify each pixel value from calculation results
+        int stokes_i(0);
+        int stokes_q(1);
+        int stokes_u(2);
+        int current_stokes(0);
+        int current_channel(0);
+        std::vector<float> data_i;
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        std::vector<float> data_results;
+        int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+        for (int channel = 0; channel < max_channel; ++channel) {
+            // Calculate polarized intensity
+            carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
+            auto resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+
+            GetImageData(image, channel, stokes_i, data_i);
+            GetImageData(image, channel, stokes_q, data_q);
+            GetImageData(image, channel, stokes_u, data_u);
+            GetImageData(resulting_image, current_channel, current_stokes, data_results);
+
+            EXPECT_EQ(data_results.size(), data_i.size());
+            EXPECT_EQ(data_results.size(), data_q.size());
+            EXPECT_EQ(data_results.size(), data_u.size());
+
+            for (int i = 0; i < data_results.size(); ++i) {
+                if (!isnan(data_results[i])) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    EXPECT_FLOAT_EQ(data_results[i], polarized_intensity);
+                }
+            }
+        }
+    }
+
+    static void TestPolarizedAngle(const std::shared_ptr<casacore::ImageInterface<float>>& image, bool radiant) {
         carta::PolarizationCalculator polarization_calculator(image);
         // Calculate polarized angle
         auto resulting_image = polarization_calculator.ComputePolarizedAngle(radiant);
 
         // Get spectral axis size
-        casacore::CoordinateSystem coord_sys = resulting_image->coordinates();
+        casacore::CoordinateSystem coord_sys = image->coordinates();
         int spectral_axis = coord_sys.spectralAxisNumber();
         int spectral_axis_size = image->shape()[spectral_axis];
 
         // Verify each pixel value from calculation results
         int stokes_q(1);
         int stokes_u(2);
+        int stokes_pa(0);
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_results;
@@ -165,7 +247,7 @@ public:
         for (int channel = 0; channel < spectral_axis_size; ++channel) {
             GetImageData(image, channel, stokes_q, data_q);
             GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel, 0, data_results);
+            GetImageData(resulting_image, channel, stokes_pa, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -181,38 +263,237 @@ public:
             }
         }
     }
+
+    static void TestPolarizedAnglePerChannel(const std::shared_ptr<casacore::ImageInterface<float>>& image, bool radiant) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        // Verify each pixel value from calculation results
+        int stokes_q(1);
+        int stokes_u(2);
+        int current_stokes(0);
+        int current_channel(0);
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        std::vector<float> data_results;
+        int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+        for (int channel = 0; channel < max_channel; ++channel) {
+            // Calculate polarized angle
+            carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
+            auto resulting_image = polarization_calculator.ComputePolarizedAngle(radiant);
+
+            GetImageData(image, channel, stokes_q, data_q);
+            GetImageData(image, channel, stokes_u, data_u);
+            GetImageData(resulting_image, current_channel, current_stokes, data_results);
+
+            EXPECT_EQ(data_results.size(), data_q.size());
+            EXPECT_EQ(data_results.size(), data_u.size());
+
+            for (int i = 0; i < data_results.size(); ++i) {
+                if (!isnan(data_results[i])) {
+                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    if (!radiant) {
+                        polarized_angle = polarized_angle * 180 / C::pi; // as degree value
+                    }
+                    EXPECT_FLOAT_EQ(data_results[i], polarized_angle);
+                }
+            }
+        }
+    }
+
+    static void TestPerformances(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+        int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+        // Calculate polarized intensity per cube
+        auto t_start_per_cube = std::chrono::high_resolution_clock::now();
+
+        carta::PolarizationCalculator polarization_calculator(image, AxisRange(0, max_channel - 1));
+        auto image_pi_per_cube = polarization_calculator.ComputePolarizedIntensity();
+        auto image_fpi_per_cube = polarization_calculator.ComputeFractionalPolarizedIntensity();
+        auto image_pa_per_cube = polarization_calculator.ComputePolarizedAngle(true);
+
+        auto t_end_per_cube = std::chrono::high_resolution_clock::now();
+        auto dt_per_cube = std::chrono::duration_cast<std::chrono::microseconds>(t_end_per_cube - t_start_per_cube).count();
+
+        // Calculate polarized intensity per channel
+        auto t_start_per_channel = std::chrono::high_resolution_clock::now();
+
+        for (int channel = 0; channel < max_channel; ++channel) {
+            carta::PolarizationCalculator polarization_calculator_per_channel(image, AxisRange(channel));
+            auto image_pi_per_channel = polarization_calculator_per_channel.ComputePolarizedIntensity();
+            auto image_fpi_per_channel = polarization_calculator_per_channel.ComputeFractionalPolarizedIntensity();
+            auto image_pa_per_channel = polarization_calculator_per_channel.ComputePolarizedAngle(true);
+        }
+
+        auto t_end_per_channel = std::chrono::high_resolution_clock::now();
+        auto dt_per_channel = std::chrono::duration_cast<std::chrono::microseconds>(t_end_per_channel - t_start_per_channel).count();
+
+        EXPECT_LT(dt_per_cube, dt_per_channel);
+
+        spdlog::info("Calculate polarized intensity per cube/channel spends: {:.3f}/{:.3f} ms", dt_per_cube * 1e-3, dt_per_channel * 1e-3);
+    }
+
+    static void TestConsistency(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+        int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+        // Calculate polarized intensity per cube
+        carta::PolarizationCalculator polarization_calculator(image, AxisRange(0, max_channel - 1));
+        auto image_pi_per_cube = polarization_calculator.ComputePolarizedIntensity();
+        auto image_fpi_per_cube = polarization_calculator.ComputeFractionalPolarizedIntensity();
+        auto image_pa_per_cube = polarization_calculator.ComputePolarizedAngle(true);
+
+        int current_stokes(0);
+        int current_channel(0);
+        std::vector<float> data_pi_per_cube;
+        std::vector<float> data_fpi_per_cube;
+        std::vector<float> data_pa_per_cube;
+        std::vector<float> data_pi_per_channel;
+        std::vector<float> data_fpi_per_channel;
+        std::vector<float> data_pa_per_channel;
+
+        // Calculate polarized intensity per channel
+        for (int channel = 0; channel < max_channel; ++channel) {
+            carta::PolarizationCalculator polarization_calculator_per_channel(image, AxisRange(channel));
+            auto image_pi_per_channel = polarization_calculator_per_channel.ComputePolarizedIntensity();
+            auto image_fpi_per_channel = polarization_calculator_per_channel.ComputeFractionalPolarizedIntensity();
+            auto image_pa_per_channel = polarization_calculator_per_channel.ComputePolarizedAngle(true);
+
+            GetImageData(image_pi_per_cube, channel, current_stokes, data_pi_per_cube);
+            GetImageData(image_pi_per_channel, current_channel, current_stokes, data_pi_per_channel);
+
+            EXPECT_EQ(data_pi_per_cube.size(), data_pi_per_channel.size());
+            if (data_pi_per_cube.size() == data_pi_per_channel.size()) {
+                for (int i = 0; i < data_pi_per_cube.size(); ++i) {
+                    if (!isnan(data_pi_per_cube[i]) && !isnan(data_pi_per_channel[i])) {
+                        EXPECT_FLOAT_EQ(data_pi_per_cube[i], data_pi_per_channel[i]);
+                    }
+                }
+            }
+
+            GetImageData(image_fpi_per_cube, channel, current_stokes, data_fpi_per_cube);
+            GetImageData(image_fpi_per_channel, current_channel, current_stokes, data_fpi_per_channel);
+
+            EXPECT_EQ(data_fpi_per_cube.size(), data_fpi_per_channel.size());
+            if (data_fpi_per_cube.size() == data_fpi_per_channel.size()) {
+                for (int i = 0; i < data_fpi_per_cube.size(); ++i) {
+                    if (!isnan(data_fpi_per_cube[i]) && !isnan(data_fpi_per_channel[i])) {
+                        EXPECT_FLOAT_EQ(data_fpi_per_cube[i], data_fpi_per_channel[i]);
+                    }
+                }
+            }
+
+            GetImageData(image_pa_per_cube, channel, current_stokes, data_pa_per_cube);
+            GetImageData(image_pa_per_channel, current_channel, current_stokes, data_pa_per_channel);
+
+            EXPECT_EQ(data_pa_per_cube.size(), data_pa_per_channel.size());
+            if (data_pa_per_cube.size() == data_pa_per_channel.size()) {
+                for (int i = 0; i < data_pa_per_cube.size(); ++i) {
+                    if (!isnan(data_pa_per_cube[i]) && !isnan(data_pa_per_channel[i])) {
+                        EXPECT_FLOAT_EQ(data_pa_per_cube[i], data_pa_per_channel[i]);
+                    }
+                }
+            }
+        }
+    }
 };
 
-TEST_F(PolarizationCalculatorTest, PolarizedIntensity) {
+TEST_F(PolarizationCalculatorTest, TestPolarizedIntensity) {
     std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
 
     if (OpenImage(image, file_path)) {
-        GeneratePolarizedIntensity(image);
+        TestPolarizedIntensity(image);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the CheckPolarizedIntensity test.", file_path);
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
     }
 }
 
-TEST_F(PolarizationCalculatorTest, FractionalPolarizedIntensity) {
+TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChannel) {
     std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
 
     if (OpenImage(image, file_path)) {
-        GenerateFractionalPolarizedIntensity(image);
+        TestPolarizedIntensityPerChannel(image);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the CheckFractionalPolarizedIntensity test.", file_path);
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
     }
 }
 
-TEST_F(PolarizationCalculatorTest, PolarizedAngle) {
+TEST_F(PolarizationCalculatorTest, TestFractionalPolarizedIntensity) {
     std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
 
     if (OpenImage(image, file_path)) {
-        GeneratePolarizedAngle(image, true);
-        GeneratePolarizedAngle(image, false);
+        TestFractionalPolarizedIntensity(image);
     } else {
-        spdlog::warn("Fail to open the file {}! Ignore the CheckPolarizedAngle test.", file_path);
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestFractionalPolarizedIntensityPerChannel) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        TestFractionalPolarizedIntensityPerChannel(image);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestPolarizedAngle) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        TestPolarizedAngle(image, true);
+        TestPolarizedAngle(image, false);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestPolarizedAnglePerChannel) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        TestPolarizedAnglePerChannel(image, true);
+        TestPolarizedAnglePerChannel(image, false);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestPerformances) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        TestPerformances(image);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestConsistency) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        TestConsistency(image);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
     }
 }

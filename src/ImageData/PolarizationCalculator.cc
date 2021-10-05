@@ -10,35 +10,53 @@
 
 using namespace carta;
 
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image) : _image(image), _image_valid(true) {
-    // Find casacore::Stokes in the construction image and assign pointers
+PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange spectral_range)
+    : _image(image), _image_valid(true) {
     const auto& coord_sys = _image->coordinates();
-    if (!coord_sys.hasPolarizationCoordinate()) {
-        spdlog::error("There is no stokes coordinate in this image.");
+    if (!coord_sys.hasSpectralAxis() || !coord_sys.hasPolarizationCoordinate()) {
+        spdlog::error("There is no spectral or stokes coordinate in the image.");
         _image_valid = false;
+        return;
     }
 
     auto stokes_axis = coord_sys.polarizationAxisNumber();
+    auto spectral_axis = coord_sys.spectralAxisNumber();
 
-    // Make stokes regions
-    const auto& stokes = coord_sys.stokesCoordinate();
     const auto ndim = _image->ndim();
     const auto shape = _image->shape();
     casacore::IPosition blc(ndim, 0);
     auto trc = shape - 1;
-    int pix;
 
-    if (stokes.toPixel(pix, casacore::Stokes::I)) {
-        _stokes_image[I] = MakeSubImage(blc, trc, stokes_axis, pix);
+    if (spectral_range.to == ALL_Z) {
+        spectral_range.from = 0;
+        spectral_range.to = shape(spectral_axis) - 1;
     }
-    if (stokes.toPixel(pix, casacore::Stokes::Q)) {
-        _stokes_image[Q] = MakeSubImage(blc, trc, stokes_axis, pix);
+
+    if (spectral_range.from < 0 || spectral_range.to >= shape(spectral_axis)) {
+        spdlog::error("Invalid spectral range: [{}, {}]", spectral_range.from, spectral_range.to);
+        _image_valid = false;
+        return;
     }
-    if (stokes.toPixel(pix, casacore::Stokes::U)) {
-        _stokes_image[U] = MakeSubImage(blc, trc, stokes_axis, pix);
+
+    // Make a spectral region
+    blc(spectral_axis) = spectral_range.from;
+    trc(spectral_axis) = spectral_range.to;
+
+    // Get stokes indices and make stokes regions
+    const auto& stokes = coord_sys.stokesCoordinate();
+    int stokes_index;
+
+    if (stokes.toPixel(stokes_index, casacore::Stokes::I)) {
+        _stokes_image[I] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
     }
-    if (stokes.toPixel(pix, casacore::Stokes::V)) {
-        _stokes_image[V] = MakeSubImage(blc, trc, stokes_axis, pix);
+    if (stokes.toPixel(stokes_index, casacore::Stokes::Q)) {
+        _stokes_image[Q] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+    }
+    if (stokes.toPixel(stokes_index, casacore::Stokes::U)) {
+        _stokes_image[U] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+    }
+    if (stokes.toPixel(stokes_index, casacore::Stokes::V)) {
+        _stokes_image[V] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
     }
 
     if ((_stokes_image[Q] && !_stokes_image[U]) || (!_stokes_image[Q] && _stokes_image[U])) {
@@ -91,7 +109,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Prepare
     bool overwrite(false);
     casacore::Record empty_record;
     casacore::String empty_mask;
-    bool list(true);
+    bool list(false);
     bool extend_mask(false);
     bool attach_mask(false);
     auto out_image = casa::SubImageFactory<float>::createImage(
