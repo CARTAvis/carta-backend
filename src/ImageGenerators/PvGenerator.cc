@@ -311,7 +311,6 @@ void PvGenerator::SetupPvImage(
     _image->setMiscInfo(input_image->miscInfo());
     _image->setImageInfo(input_image->imageInfo());
     _image->appendLog(input_image->logger());
-    _image->makeMask("mask0", true, true);
 }
 
 casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
@@ -337,7 +336,7 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
 
     // Add stokes coordinate if input image has one
     if (input_csys.hasPolarizationCoordinate()) {
-        auto stokes_type = casacore::Stokes::type(stokes);
+        auto stokes_type = casacore::Stokes::type(stokes + 1);
         casacore::Vector<casacore::Int> types(1, stokes_type);
         casacore::StokesCoordinate stokes_coord(types);
         csys.addCoordinate(stokes_coord);
