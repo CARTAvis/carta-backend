@@ -1720,6 +1720,8 @@ bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>
     // Create PV image
     std::shared_lock lock(GetActiveTaskMutex());
 
+    auto t_start_pv_gen = std::chrono::high_resolution_clock::now();
+
     if (!_pv_generator) {
         _pv_generator = std::make_unique<PvGenerator>(file_id, GetFileName());
     }
@@ -1729,6 +1731,9 @@ bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>
             _loader, box_regions, offset_increment, Depth(), CurrentStokes(), _image_mutex, progress_callback, pv_response, pv_image);
     }
 
+    auto t_end_pv_gen = std::chrono::high_resolution_clock::now();
+    auto dt_pv_gen = std::chrono::duration_cast<std::chrono::microseconds>(t_end_pv_gen - t_start_pv_gen).count();
+    spdlog::performance("Generate pv image in {:.3f} ms", dt_pv_gen * 1e-3);
     return pv_image.image.get();
 }
 
