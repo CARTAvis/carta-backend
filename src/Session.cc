@@ -1262,6 +1262,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_success(false);
             pv_response.set_message("Invalid region id.");
         } else {
+            auto t_start_pv_image = std::chrono::high_resolution_clock::now();
             auto& frame = _frames.at(file_id);
             std::vector<casacore::LCRegion*> box_regions;
             double offset_increment; // in arcsec
@@ -1285,6 +1286,10 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 pv_response.set_message(error);
                 pv_response.set_cancel(false);
             }
+
+            auto t_end_pv_image = std::chrono::high_resolution_clock::now();
+            auto dt_pv_image = std::chrono::duration_cast<std::chrono::microseconds>(t_end_pv_image - t_start_pv_image).count();
+            spdlog::performance("Generate pv image in {:.3f} ms", dt_pv_image * 1e-3);
         }
 
         SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
