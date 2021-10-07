@@ -134,7 +134,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyPolarizedIntensity"));
     image_expr.setUnits(_image->units());
     SetImageStokesInfo(image_expr, Q);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::Plinear);
+    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::Plinear);
 
     return PrepareOutputImage(image_expr);
 }
@@ -157,7 +157,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyFractionalPolarizedIntensity"));
     image_expr.setUnits(_image->units());
     SetImageStokesInfo(image_expr, I);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::Plinear);
+    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::PFlinear);
 
     return PrepareOutputImage(image_expr);
 }
@@ -190,7 +190,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     }
 
     image_expr.setImageInfo(image_info);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::Pangle);
+    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::Pangle);
 
     return PrepareOutputImage(image_expr);
 }

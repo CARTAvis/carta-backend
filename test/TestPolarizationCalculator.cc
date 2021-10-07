@@ -27,7 +27,6 @@ public:
         casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
         int spectral_axis = coord_sys.spectralAxisNumber();
         int stokes_axis = coord_sys.polarizationAxisNumber();
-        spdlog::debug("spectral axis = {}, stokes axis = {}", spectral_axis, stokes_axis);
 
         // Get a slicer
         casacore::IPosition start(image->shape().size());
@@ -74,10 +73,26 @@ public:
         }
     }
 
+    static void CheckPolarizationType(
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, casacore::Stokes::StokesTypes expected_stokes_type) {
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        EXPECT_TRUE(coord_sys.hasPolarizationCoordinate());
+
+        if (coord_sys.hasPolarizationCoordinate()) {
+            auto stokes_coord = coord_sys.stokesCoordinate();
+            auto stokes_types = stokes_coord.stokes();
+            EXPECT_EQ(stokes_types.size(), 1);
+            for (auto stokes_type : stokes_types) {
+                EXPECT_EQ(stokes_type, expected_stokes_type);
+            }
+        }
+    }
+
     static void TestPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
         auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
+        CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Plinear);
 
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = image->coordinates();
@@ -129,6 +144,7 @@ public:
             // Calculate polarized intensity
             carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
             auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
+            CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Plinear);
 
             GetImageData(image, channel, stokes_q, data_q);
             GetImageData(image, channel, stokes_u, data_u);
@@ -150,6 +166,7 @@ public:
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
         auto resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+        CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::PFlinear);
 
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = image->coordinates();
@@ -207,6 +224,7 @@ public:
             // Calculate polarized intensity
             carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
             auto resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+            CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::PFlinear);
 
             GetImageData(image, channel, stokes_i, data_i);
             GetImageData(image, channel, stokes_q, data_q);
@@ -230,6 +248,7 @@ public:
         carta::PolarizationCalculator polarization_calculator(image);
         // Calculate polarized angle
         auto resulting_image = polarization_calculator.ComputePolarizedAngle(radiant);
+        CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Pangle);
 
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = image->coordinates();
@@ -284,6 +303,7 @@ public:
             // Calculate polarized angle
             carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
             auto resulting_image = polarization_calculator.ComputePolarizedAngle(radiant);
+            CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Pangle);
 
             GetImageData(image, channel, stokes_q, data_q);
             GetImageData(image, channel, stokes_u, data_u);
