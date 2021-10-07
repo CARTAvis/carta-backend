@@ -35,6 +35,13 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
     double offset_increment, size_t num_channels, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Calculate PV image with progress updates.  Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
+    casacore::CoordinateSystem csys;
+    loader->GetCoordinateSystem(csys);
+    if (!csys.hasSpectralAxis()) {
+        pv_response.set_success(false);
+        pv_response.set_message("Cannot generate PV image with no spectral axis.");
+    }
+
     // Find shape of first non-null region
     casacore::IPosition region_shape;
     for (auto region : box_regions) {
