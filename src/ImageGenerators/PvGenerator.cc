@@ -40,6 +40,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
     if (!csys.hasSpectralAxis()) {
         pv_response.set_success(false);
         pv_response.set_message("Cannot generate PV image with no spectral axis.");
+        return;
     }
 
     // Find shape of first non-null region
@@ -54,6 +55,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
     if (region_shape.empty()) {
         pv_response.set_success(false);
         pv_response.set_message("PV calculation failed for input region.");
+        return;
     }
 
     if (loader->UseRegionSpectralData(region_shape, image_mutex)) {
