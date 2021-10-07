@@ -127,12 +127,16 @@ private:
     // Line approximated as box regions with given width, for PV generator and spatial profiles
     bool GetBoxRegions(int file_id, const std::vector<CARTA::Point>& endpoints, float rotation, int width, std::shared_ptr<Frame>& frame,
         std::vector<casacore::LCRegion*>& box_regions, double& increment, std::string& message);
-    bool GetFixedPixelRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
+    bool GetFixedPixelRegions(int file_id, size_t num_regions, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
         casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
-    bool GetFixedAngularRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
+    bool GetFixedAngularRegions(int file_id, size_t num_regions, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
         casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment);
+    casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
+        const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
+    RegionState GetBoxRegionState(
+        int file_id, const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int width, float rotation);
     casacore::LCRegion* GetTemporaryBoxRegion(int file_id, RegionState& region_state, casacore::CoordinateSystem* csys);
 
     // Regions: key is region_id

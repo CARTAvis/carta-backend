@@ -1518,15 +1518,19 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
         _frames[file_id] = frame;
     }
 
-    // Pixel length of line
+    // Pixel length of line determines number of regions
     auto dx_pixels = endpoints[1].x() - endpoints[0].x();
     auto dy_pixels = endpoints[1].y() - endpoints[0].y();
-    size_t num_pixels = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
+    size_t num_regions = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
 
-    bool regions_set = GetFixedPixelRegions(file_id, num_pixels, endpoints, width, rotation, csys, box_regions, increment) ||
-                       GetFixedAngularRegions(file_id, num_pixels, endpoints, width, rotation, csys, box_regions, increment);
-
-    if (!regions_set) {
+    bool regions_set(false);
+    if (GetFixedPixelRegions(file_id, num_regions, endpoints, width, rotation, csys, box_regions, increment)) {
+        spdlog::debug("Using fixed pixel increment for line box regions.");
+        regions_set = true;
+    } else if (GetFixedAngularRegions(file_id, num_regions, endpoints, width, rotation, csys, box_regions, increment)) {
+        spdlog::debug("Using fixed angular increment for line box regions.");
+        regions_set = true;
+    } else {
         message = "Line approximation failed.";
     }
 
@@ -1539,12 +1543,12 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
     return regions_set;
 }
 
-bool RegionHandler::GetFixedPixelRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width,
+bool RegionHandler::GetFixedPixelRegions(int file_id, size_t num_regions, const std::vector<CARTA::Point>& endpoints, int width,
     float rotation, casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment) {
     // Return linearly-spaced box centers in pixel coordinates, and increment between them in arcsec.
     // Returns false if linear pixel centers are tabular in world coordinates.
     // Offset range [-offset, offset] from center, in pixels
-    size_t num_offsets = (num_pixels - 1) / 2;
+    size_t num_offsets = (num_regions - 1) / 2;
     auto center_idx = num_offsets;
     std::vector<CARTA::Point> box_centers((num_offsets * 2) + 1);
 
@@ -1667,12 +1671,172 @@ double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
     return cdelt2.get("arcsec").getValue() * 0.01;
 }
 
-bool RegionHandler::GetFixedAngularRegions(int file_id, size_t num_pixels, const std::vector<CARTA::Point>& endpoints, int width,
+bool RegionHandler::GetFixedAngularRegions(int file_id, size_t num_regions, const std::vector<CARTA::Point>& endpoints, int width,
     float rotation, casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment) {
     // Return box regions which are linearly-spaced in world coordinates, and the increment between their centers (arcsec).
     // Height of rotated boxes will vary with angular size of pixel.
     // Returns false if no regions were set.
-    return false; // not implemented
+
+    // Convert end points to world coordinate MVDirection and get angular separation
+    auto direction_coord = csys->directionCoordinate();
+    casacore::Vector<double> endpoint0(2), endpoint1(2);
+    endpoint0[0] = endpoints[0].x();
+    endpoint0[1] = endpoints[0].y();
+    endpoint1[0] = endpoints[1].x();
+    endpoint1[1] = endpoints[1].y();
+
+    // Convert pixel coordinates to MVDirection to get angular separation of entire line
+    casacore::MVDirection mvdir0, mvdir1;
+    try {
+        mvdir0 = direction_coord.toWorld(endpoint0);
+        mvdir1 = direction_coord.toWorld(endpoint1);
+    } catch (casacore::AipsError& err) { // wcslib - invalid pixel coordinates
+        return false;
+    }
+
+    // Find angular center of line for start of box regions
+    auto line_separation = mvdir0.separation(mvdir1, "arcsec").getValue();
+    auto center_separation = line_separation / 2.0;
+    double tolerance = GetSeparationTolerance(csys);
+    casacore::Vector<double> line_center = FindPointAtTargetSeparation(direction_coord, endpoint0, endpoint1, center_separation, tolerance);
+
+    if (line_center.empty()) { // Line may be outside image
+        return false;
+    }
+
+    // Parameters of box regions [-offset, offset]
+    increment = line_separation / num_regions;
+    size_t num_offsets = num_regions / 2;
+    auto center_idx = num_offsets;
+    box_regions.resize(num_regions);
+    bool region_set(false);
+
+    // Positive offsets toward endpoint0
+    casacore::Vector<double> box_start(line_center.copy());
+    for (size_t i = 0; i < num_offsets; ++i) {
+        // Find end of box, at increment from start of box
+        casacore::Vector<double> box_end = FindPointAtTargetSeparation(direction_coord, box_start, endpoint0, increment, tolerance);
+
+        // Set temporary region from RegionState and get LCRegion
+        if (box_end.empty()) {
+            box_regions[center_idx + i] = nullptr;
+        } else {
+            RegionState region_state = GetBoxRegionState(file_id, box_start, box_end, width, rotation);
+            auto lcregion = GetTemporaryBoxRegion(file_id, region_state, csys);
+
+            if (lcregion) {
+                region_set = true;
+            }
+
+            box_regions[center_idx + i] = lcregion;
+
+            // Next region starts at end of this one
+            box_start = box_end;
+        }
+    }
+
+    // Negative offsets toward endpoint1
+    box_start = line_center.copy();
+    for (size_t i = 1; i < num_offsets; ++i) {
+        // Find end of box, at increment from start of box
+        casacore::Vector<double> box_end = FindPointAtTargetSeparation(direction_coord, box_start, endpoint1, increment, tolerance);
+
+        if (box_end.empty()) {
+            box_regions[center_idx - i] = nullptr;
+        } else {
+            // Set temporary region from RegionState and get LCRegion
+            RegionState region_state = GetBoxRegionState(file_id, box_start, box_end, width, rotation);
+            auto lcregion = GetTemporaryBoxRegion(file_id, region_state, csys);
+
+            if (lcregion) {
+                region_set = true;
+            }
+
+            box_regions[center_idx - i] = lcregion;
+
+            // Next region starts at end of this one
+            box_start = box_end;
+        }
+    }
+
+    return region_set;
+}
+
+casacore::Vector<double> RegionHandler::FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
+    const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance) {
+    // Find point on line described by endpoints which is at target separation in arcsec (within tolerance) of endpoint0.
+    // Return point in pixel coordinates.  Vector is empty if DirectionCoordinate conversion fails.
+    casacore::Vector<double> target_point;
+
+    // Do binary search of line, finding midpoints until target separation is reached.
+    // Check endpoints
+    casacore::MVDirection start = direction_coord.toWorld(endpoint0);
+    casacore::MVDirection end = direction_coord.toWorld(endpoint1);
+    auto separation = start.separation(end, "arcsec").getValue();
+
+    if (separation < target_separation) {
+        // Line is shorter than target separation
+        return target_point;
+    }
+
+    // Set progressively smaller range end0-end1 which contains target point by testing midpoints
+    casacore::Vector<double> end0(endpoint0.copy()), end1(endpoint1.copy()), last_end1, midpoint(2);
+    int limit(0);
+    auto delta = separation - target_separation;
+
+    while (abs(delta) > tolerance) {
+        if (limit++ == 1000) { // should not hit this
+            break;
+        }
+
+        if (delta > 0) {
+            // Separation too large, get midpoint of end0/end1
+            midpoint[0] = (end0[0] + end1[0]) / 2;
+            midpoint[1] = (end0[1] + end1[1]) / 2;
+
+            last_end1 = end1.copy();
+            end1 = midpoint.copy();
+        } else {
+            // Separation too small: get midpoint of end1/last_end1
+            midpoint[0] = (end1[0] + last_end1[0]) / 2;
+            midpoint[1] = (end1[1] + last_end1[1]) / 2;
+
+            end0 = end1.copy();
+            end1 = midpoint.copy();
+        }
+
+        // Get separation between start point and new endpoint
+        casacore::MVDirection mvdir_end1 = direction_coord.toWorld(end1);
+        separation = start.separation(mvdir_end1, "arcsec").getValue();
+        delta = separation - target_separation;
+    }
+
+    if (abs(delta) <= tolerance) {
+        target_point = end1.copy();
+    }
+
+    return target_point;
+}
+
+RegionState RegionHandler::GetBoxRegionState(
+    int file_id, const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int width, float rotation) {
+    // Given the start and end of the box on a line, create RegionState by calculating center and height
+    std::vector<CARTA::Point> control_points;
+    CARTA::Point point;
+
+    point.set_x((box_start[0] + box_end[0]) / 2);
+    point.set_y((box_start[1] + box_end[1]) / 2);
+    control_points.push_back(point);
+
+    point.set_x(width);
+    auto dx_pixels = box_start[0] - box_end[0];
+    auto dy_pixels = box_start[1] - box_end[1];
+    auto height = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
+    point.set_y(height);
+    control_points.push_back(point);
+
+    RegionState region_state(file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
+    return region_state;
 }
 
 casacore::LCRegion* RegionHandler::GetTemporaryBoxRegion(int file_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
