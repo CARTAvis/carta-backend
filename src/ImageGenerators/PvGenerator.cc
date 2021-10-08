@@ -240,8 +240,7 @@ std::string PvGenerator::GetPvFilename(const std::string& filename) {
     return pv_path.string();
 }
 
-casacore::ImageRegion PvGenerator::GetImageRegion(
-    std::shared_ptr<carta::FileLoader> loader, casacore::LCRegion* lcregion, int stokes) {
+casacore::ImageRegion PvGenerator::GetImageRegion(std::shared_ptr<carta::FileLoader> loader, casacore::LCRegion* lcregion, int stokes) {
     // Create LCExtension or LCIntersection for stokes
     casacore::IPosition image_shape;
     int spectral_axis, z_axis, stokes_axis;
