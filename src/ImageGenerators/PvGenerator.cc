@@ -4,6 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include "PvGenerator.h"
+
 #include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
@@ -13,16 +15,8 @@
 #include <casacore/measures/Measures/Stokes.h>
 
 #include "../ImageStats/StatsCalculator.h"
-#include "PvGenerator.h"
+#include "Util/FileSystem.h"
 #include "Util/Image.h"
-
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 using namespace carta;
 
