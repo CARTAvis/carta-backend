@@ -39,7 +39,7 @@ private:
         double offset_increment, size_t num_channels, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
 
-    casacore::ImageRegion GetImageRegion(std::shared_ptr<carta::FileLoader> loader, casacore::LCRegion* lcregion, int chan, int stokes);
+    casacore::ImageRegion GetImageRegion(std::shared_ptr<carta::FileLoader> loader, casacore::LCRegion* lcregion, int stokes);
     casacore::IPosition GetPvImageShape(std::shared_ptr<carta::FileLoader> loader, size_t num_regions, size_t num_channels);
     void SetupPvImage(
         std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes, double offset_increment);
