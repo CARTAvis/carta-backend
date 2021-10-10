@@ -685,7 +685,7 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
         }
 
         // Create LCBox with z range and stokes using a slicer
-        casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes);
+        casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes).second;
 
         // Set returned region
         // Combine applied region with z/stokes box

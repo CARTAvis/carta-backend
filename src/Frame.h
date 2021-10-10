@@ -103,8 +103,9 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
-    casacore::Slicer GetImageSlicer(const AxisRange& z_range, int stokes);
-    casacore::Slicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
+    std::pair<StokesSource, casacore::Slicer> GetImageSlicer(const AxisRange& z_range, int stokes);
+    std::pair<StokesSource, casacore::Slicer> GetImageSlicer(
+        const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
     // Image view for z index
     inline void SetAnimationViewSettings(const CARTA::AddRequiredTiles& required_animation_tiles) {
@@ -164,7 +165,7 @@ public:
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
-    bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
+    bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, std::vector<float>& data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);

@@ -16,6 +16,8 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
+#include "Util/Image.h"
+
 class Frame;
 
 namespace carta {
@@ -162,7 +164,7 @@ public:
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
+    bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer);
 
     // SubImage
     bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);

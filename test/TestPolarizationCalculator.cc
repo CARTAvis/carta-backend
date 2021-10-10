@@ -46,8 +46,6 @@ public:
             return;
         }
 
-        spdlog::debug("spectral axis size = {}, stokes axis size = {}", spectral_axis_size, stokes_axis_size);
-
         if (spectral_axis >= 0) {
             start(spectral_axis) = channel;
             end(spectral_axis) = channel;

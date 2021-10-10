@@ -294,10 +294,18 @@ std::vector<int> FileLoader::GetRenderAxes() {
     return axes;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
-    try {
-        auto image = GetImage();
+bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer) {
+    StokesSource stokes_source = stokes_source_slicer.first;
+    casacore::Slicer slicer = stokes_source_slicer.second;
 
+    shared_ptr<ImageInterface<float>> image;
+    if (stokes_source.UseDefaultImage()) {
+        image = GetImage();
+    } else {
+        // compute new stokes image
+    }
+
+    try {
         if (!image) {
             return false;
         }

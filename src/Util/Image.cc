@@ -21,3 +21,12 @@ CARTA::PolarizationType GetStokesType(int stokes_value) {
     }
     return stokes_type;
 }
+
+bool ComputeStokes(int stokes) {
+    bool result(false);
+    if ((stokes == COMPUTE_STOKES_PTOTAL) || (stokes == COMPUTE_STOKES_PLINEAR) || (stokes == COMPUTE_STOKES_PFTOTAL) ||
+        (stokes == COMPUTE_STOKES_PFLINEAR) || (stokes == COMPUTE_STOKES_PANGLE)) {
+        result = true;
+    }
+    return result;
+}

@@ -32,6 +32,11 @@
 // stokes
 #define DEFAULT_STOKES 0
 #define CURRENT_STOKES -1
+#define COMPUTE_STOKES_PTOTAL 13
+#define COMPUTE_STOKES_PLINEAR 14
+#define COMPUTE_STOKES_PFTOTAL 15
+#define COMPUTE_STOKES_PFLINEAR 16
+#define COMPUTE_STOKES_PANGLE 17
 
 // raster image data
 #define TILE_SIZE 256
@@ -107,20 +112,39 @@ struct PointXy {
 static std::unordered_map<CARTA::PolarizationType, int> StokesValues{{CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2},
     {CARTA::PolarizationType::U, 3}, {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::RR, 5}, {CARTA::PolarizationType::LL, 6},
     {CARTA::PolarizationType::RL, 7}, {CARTA::PolarizationType::LR, 8}, {CARTA::PolarizationType::XX, 9}, {CARTA::PolarizationType::YY, 10},
-    {CARTA::PolarizationType::XY, 11}, {CARTA::PolarizationType::YX, 12}};
+    {CARTA::PolarizationType::XY, 11}, {CARTA::PolarizationType::YX, 12}, {CARTA::PolarizationType::Ptotal, 13},
+    {CARTA::PolarizationType::Plinear, 14}, {CARTA::PolarizationType::PFtotal, 15}, {CARTA::PolarizationType::PFlinear, 16},
+    {CARTA::PolarizationType::Pangle, 17}};
 
 static std::unordered_map<int, CARTA::PolarizationType> StokesTypes{{1, CARTA::PolarizationType::I}, {2, CARTA::PolarizationType::Q},
     {3, CARTA::PolarizationType::U}, {4, CARTA::PolarizationType::V}, {5, CARTA::PolarizationType::RR}, {6, CARTA::PolarizationType::LL},
     {7, CARTA::PolarizationType::RL}, {8, CARTA::PolarizationType::LR}, {9, CARTA::PolarizationType::XX}, {10, CARTA::PolarizationType::YY},
-    {11, CARTA::PolarizationType::XY}, {12, CARTA::PolarizationType::YX}};
+    {11, CARTA::PolarizationType::XY}, {12, CARTA::PolarizationType::YX}, {13, CARTA::PolarizationType::Ptotal},
+    {14, CARTA::PolarizationType::Plinear}, {15, CARTA::PolarizationType::PFtotal}, {16, CARTA::PolarizationType::PFlinear},
+    {17, CARTA::PolarizationType::Pangle}};
 
 static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringTypes{{"I", CARTA::PolarizationType::I},
     {"Q", CARTA::PolarizationType::Q}, {"U", CARTA::PolarizationType::U}, {"V", CARTA::PolarizationType::V},
     {"RR", CARTA::PolarizationType::RR}, {"LL", CARTA::PolarizationType::LL}, {"RL", CARTA::PolarizationType::RL},
     {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
-    {"XY", CARTA::PolarizationType::XY}, {"YX", CARTA::PolarizationType::YX}};
+    {"XY", CARTA::PolarizationType::XY}, {"YX", CARTA::PolarizationType::YX}, {"Ptotal", CARTA::PolarizationType::Ptotal},
+    {"Plinear", CARTA::PolarizationType::Plinear}, {"PFtotal", CARTA::PolarizationType::PFtotal},
+    {"PFlinear", CARTA::PolarizationType::PFlinear}, {"Pangle", CARTA::PolarizationType::Pangle}};
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
+bool ComputeStokes(int stokes);
+
+struct StokesSource {
+    int stokes;
+    AxisRange axis_range;
+
+    StokesSource() : stokes(-1), axis_range(AxisRange(-1)) {}
+    StokesSource(int stokes_, AxisRange axis_range_) : stokes(stokes_), axis_range(axis_range_) {}
+
+    bool UseDefaultImage() const {
+        return !ComputeStokes(stokes);
+    }
+};
 
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_
