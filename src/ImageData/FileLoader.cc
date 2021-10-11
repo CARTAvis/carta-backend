@@ -23,6 +23,7 @@
 #include "Hdf5Loader.h"
 #include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
+#include "PolarizationCalculator.h"
 
 using namespace carta;
 
@@ -302,7 +303,17 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
     if (stokes_source.UseDefaultImage()) {
         image = GetImage();
     } else {
-        // compute new stokes image
+        // compute new stokes image with respect to the channel range
+        carta::PolarizationCalculator polarization_calculator(GetImage(), AxisRange(stokes_source.axis_range));
+        if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
+            image = polarization_calculator.ComputePolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
+            image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
+            image = polarization_calculator.ComputePolarizedAngle(true);
+        } else {
+            spdlog::error("Unknown stokes index {}", stokes_source.stokes);
+        }
     }
 
     try {

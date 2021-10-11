@@ -10,6 +10,7 @@
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
 
 #include "CommonTestUtilities.h"
+#include "Frame.h"
 #include "ImageData/PolarizationCalculator.h"
 #include "Logger/Logger.h"
 
@@ -424,6 +425,53 @@ public:
             }
         }
     }
+
+    static void VerifyFrameImageCache(
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, std::vector<float> data) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        // Verify each pixel value from calculation results
+        int stokes_i(0);
+        int stokes_q(1);
+        int stokes_u(2);
+        std::vector<float> data_i;
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        GetImageData(image, channel, stokes_i, data_i);
+        GetImageData(image, channel, stokes_q, data_q);
+        GetImageData(image, channel, stokes_u, data_u);
+
+        EXPECT_EQ(data.size(), data_i.size());
+        EXPECT_EQ(data.size(), data_q.size());
+        EXPECT_EQ(data.size(), data_u.size());
+
+        for (int i = 0; i < data.size(); ++i) {
+            if (!isnan(data[i])) {
+                if (stokes == COMPUTE_STOKES_PLINEAR) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    EXPECT_FLOAT_EQ(data[i], polarized_intensity);
+                } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    EXPECT_FLOAT_EQ(data[i], polarized_intensity);
+                } else if (stokes == COMPUTE_STOKES_PANGLE) {
+                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    EXPECT_FLOAT_EQ(data[i], polarized_angle);
+                } else {
+                    spdlog::error("Unknown stokes index {}", stokes);
+                }
+            }
+        }
+    }
+};
+
+class TestFrame : public Frame {
+public:
+    TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z)
+        : Frame(session_id, loader, hdu, default_z) {}
+    FRIEND_TEST(PolarizationCalculatorTest, TestWithFrame);
 };
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedIntensity) {
@@ -513,5 +561,39 @@ TEST_F(PolarizationCalculatorTest, TestConsistency) {
         TestConsistency(image);
     } else {
         spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestWithFrame) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, file_path)) {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+        return;
+    }
+
+    // Get spectral axis size
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int spectral_axis_size = image->shape()[spectral_axis];
+
+    // Open the file through the Frame
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
+    EXPECT_TRUE(frame->IsValid());
+    EXPECT_TRUE(frame->_open_image_error.empty());
+
+    // Set stokes to be calculated
+    std::string message;
+    int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+    for (int channel = 0; channel < max_channel; ++channel) {
+        frame->SetImageChannels(channel, COMPUTE_STOKES_PLINEAR, message);
+        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PLINEAR, frame->_image_cache);
+
+        frame->SetImageChannels(channel, COMPUTE_STOKES_PFLINEAR, message);
+        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PFLINEAR, frame->_image_cache);
+
+        frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
+        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, frame->_image_cache);
     }
 }
