@@ -90,6 +90,12 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
         }
 
         if (!box_regions[iregion]) {
+            // Progress update
+            progress = float(iregion + 1) / float(num_regions);
+            if (progress < 1.0) {
+                progress_callback(progress);
+            }
+
             continue;
         }
 
@@ -114,7 +120,7 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
         pv_values.row(iregion) = spectral_profile;
 
         // Progress update
-        progress = (iregion + 1) / num_regions;
+        progress = float(iregion + 1) / float(num_regions);
         if (progress < 1.0) {
             progress_callback(progress);
         }
@@ -136,6 +142,7 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
         pv_response.set_success(true);
     } else {
         pv_response.set_success(false);
+        pv_response.set_message("PV generator failed to complete.");
     }
 }
 
