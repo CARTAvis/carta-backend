@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <climits>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 #ifdef __APPLE__
