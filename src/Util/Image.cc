@@ -23,10 +23,11 @@ CARTA::PolarizationType GetStokesType(int stokes_value) {
 }
 
 bool ComputeStokes(int stokes) {
-    bool result(false);
-    if ((stokes == COMPUTE_STOKES_PTOTAL) || (stokes == COMPUTE_STOKES_PLINEAR) || (stokes == COMPUTE_STOKES_PFTOTAL) ||
-        (stokes == COMPUTE_STOKES_PFLINEAR) || (stokes == COMPUTE_STOKES_PANGLE)) {
-        result = true;
-    }
-    return result;
+    return ((stokes == COMPUTE_STOKES_PTOTAL) || (stokes == COMPUTE_STOKES_PLINEAR) || (stokes == COMPUTE_STOKES_PFTOTAL) ||
+            (stokes == COMPUTE_STOKES_PFLINEAR) || (stokes == COMPUTE_STOKES_PANGLE));
+}
+
+bool ComputeStokes(const std::string& stokes_type) {
+    return ((stokes_type == "Ptotal") || (stokes_type == "Plinear") || (stokes_type == "PFtotal") || (stokes_type == "PFlinear") ||
+            (stokes_type == "Pangle"));
 }

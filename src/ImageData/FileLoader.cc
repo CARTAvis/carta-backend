@@ -312,7 +312,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
         } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
             image = polarization_calculator.ComputePolarizedAngle(true);
         } else {
-            spdlog::error("Unknown stokes index {}", stokes_source.stokes);
+            spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
         }
     }
 

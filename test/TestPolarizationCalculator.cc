@@ -454,16 +454,76 @@ public:
                     auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
                     EXPECT_FLOAT_EQ(data[i], polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
-                    EXPECT_FLOAT_EQ(data[i], polarized_intensity);
+                    auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    EXPECT_FLOAT_EQ(data[i], fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
                     auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
                     EXPECT_FLOAT_EQ(data[i], polarized_angle);
-                } else {
-                    spdlog::error("Unknown stokes index {}", stokes);
                 }
             }
         }
+    }
+
+    static std::pair<std::vector<float>, std::vector<float>> GetSpatialProfiles(
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, int cursor_x, int cursor_y) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+        int x_size = image->shape()[0];
+        int y_size = image->shape()[1];
+
+        // Verify each pixel value from calculation results
+        int stokes_i(0);
+        int stokes_q(1);
+        int stokes_u(2);
+        std::vector<float> data_i;
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        GetImageData(image, channel, stokes_i, data_i);
+        GetImageData(image, channel, stokes_q, data_q);
+        GetImageData(image, channel, stokes_u, data_u);
+
+        std::vector<float> profile_x;
+        for (int i = 0; i < data_i.size(); ++i) {
+            if (((i / x_size) == cursor_y) && ((i % x_size) < x_size)) {
+                if (stokes == COMPUTE_STOKES_PLINEAR) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    profile_x.push_back(polarized_intensity);
+                } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+                    auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    profile_x.push_back(fractional_polarized_intensity);
+                } else if (stokes == COMPUTE_STOKES_PANGLE) {
+                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    profile_x.push_back(polarized_angle);
+                }
+            }
+        }
+
+        std::vector<float> profile_y;
+        for (int i = 0; i < data_i.size(); ++i) {
+            if ((i % x_size) == cursor_x) {
+                if (stokes == COMPUTE_STOKES_PLINEAR) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    profile_y.push_back(polarized_intensity);
+                } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    profile_y.push_back(polarized_intensity);
+                } else if (stokes == COMPUTE_STOKES_PANGLE) {
+                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    profile_y.push_back(polarized_angle);
+                }
+            }
+        }
+
+        return std::make_pair(profile_x, profile_y);
+    }
+
+    static std::vector<float> ProfileValues(CARTA::SpatialProfile& profile) {
+        std::string buffer = profile.raw_values_fp32();
+        std::vector<float> values(buffer.size() / sizeof(float));
+        memcpy(values.data(), buffer.data(), buffer.size());
+        return values;
     }
 };
 
@@ -471,7 +531,7 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    FRIEND_TEST(PolarizationCalculatorTest, TestWithFrame);
+    FRIEND_TEST(PolarizationCalculatorTest, TestFrameImageCache);
 };
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedIntensity) {
@@ -564,7 +624,7 @@ TEST_F(PolarizationCalculatorTest, TestConsistency) {
     }
 }
 
-TEST_F(PolarizationCalculatorTest, TestWithFrame) {
+TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
     std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
@@ -595,5 +655,203 @@ TEST_F(PolarizationCalculatorTest, TestWithFrame) {
 
         frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
         VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, frame->_image_cache);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlineary) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, file_path)) {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+        return;
+    }
+
+    // Get spectral axis size
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int spectral_axis_size = image->shape()[spectral_axis];
+
+    // Open the file through the Frame
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
+    EXPECT_TRUE(frame->IsValid());
+
+    // Set spatial profiles requirements
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        Message::SpatialConfig("Plinearx"), Message::SpatialConfig("Plineary")};
+    frame->SetSpatialRequirements(profiles);
+
+    int cursor_x(128);
+    int cursor_y(128);
+    frame->SetCursor(cursor_x, cursor_y);
+
+    std::string message;
+    int channel(1);
+    int stokes(0);
+    frame->SetImageChannels(channel, stokes, message);
+
+    // Get spatial profiles from the Frame
+    std::vector<CARTA::SpatialProfileData> data_vec;
+    frame->FillSpatialProfileData(data_vec);
+
+    EXPECT_EQ(data_vec.size(), 1);
+
+    // Get spatial profiles from self calculations
+    auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PLINEAR, cursor_x, cursor_y);
+
+    for (auto& data : data_vec) {
+        auto profiles_x = data.profiles(0);
+        auto profiles_y = data.profiles(1);
+        auto data_x = ProfileValues(profiles_x);
+        auto data_y = ProfileValues(profiles_y);
+
+        EXPECT_EQ(data_profiles.first.size(), data_x.size());
+        if (data_profiles.first.size() == data_x.size()) {
+            for (int i = 0; i < data_x.size(); ++i) {
+                if (!isnan(data_profiles.first[i]) && !isnan(data_x[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
+                }
+            }
+        }
+
+        EXPECT_EQ(data_profiles.second.size(), data_y.size());
+        if (data_profiles.second.size() == data_y.size()) {
+            for (int i = 0; i < data_y.size(); ++i) {
+                if (!isnan(data_profiles.second[i]) && !isnan(data_y[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
+                }
+            }
+        }
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, file_path)) {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+        return;
+    }
+
+    // Get spectral axis size
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int spectral_axis_size = image->shape()[spectral_axis];
+
+    // Open the file through the Frame
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
+    EXPECT_TRUE(frame->IsValid());
+
+    // Set spatial profiles requirements
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        Message::SpatialConfig("PFlinearx"), Message::SpatialConfig("PFlineary")};
+    frame->SetSpatialRequirements(profiles);
+
+    int cursor_x(128);
+    int cursor_y(128);
+    frame->SetCursor(cursor_x, cursor_y);
+
+    std::string message;
+    int channel(1);
+    int stokes(0);
+    frame->SetImageChannels(channel, stokes, message);
+
+    // Get spatial profiles from the Frame
+    std::vector<CARTA::SpatialProfileData> data_vec;
+    frame->FillSpatialProfileData(data_vec);
+
+    EXPECT_EQ(data_vec.size(), 1);
+
+    // Get spatial profiles from self calculations
+    auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PFLINEAR, cursor_x, cursor_y);
+
+    for (auto& data : data_vec) {
+        auto profiles_x = data.profiles(0);
+        auto profiles_y = data.profiles(1);
+        auto data_x = ProfileValues(profiles_x);
+        auto data_y = ProfileValues(profiles_y);
+
+        EXPECT_EQ(data_profiles.first.size(), data_x.size());
+        if (data_profiles.first.size() == data_x.size()) {
+            for (int i = 0; i < data_x.size(); ++i) {
+                if (!isnan(data_profiles.first[i]) && !isnan(data_x[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
+                }
+            }
+        }
+
+        EXPECT_EQ(data_profiles.second.size(), data_y.size());
+        if (data_profiles.second.size() == data_y.size()) {
+            for (int i = 0; i < data_y.size(); ++i) {
+                if (!isnan(data_profiles.second[i]) && !isnan(data_y[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
+                }
+            }
+        }
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, file_path)) {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+        return;
+    }
+
+    // Get spectral axis size
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int spectral_axis_size = image->shape()[spectral_axis];
+
+    // Open the file through the Frame
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
+    EXPECT_TRUE(frame->IsValid());
+
+    // Set spatial profiles requirements
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        Message::SpatialConfig("Panglex"), Message::SpatialConfig("Pangley")};
+    frame->SetSpatialRequirements(profiles);
+
+    int cursor_x(128);
+    int cursor_y(128);
+    frame->SetCursor(cursor_x, cursor_y);
+
+    std::string message;
+    int channel(1);
+    int stokes(0);
+    frame->SetImageChannels(channel, stokes, message);
+
+    // Get spatial profiles from the Frame
+    std::vector<CARTA::SpatialProfileData> data_vec;
+    frame->FillSpatialProfileData(data_vec);
+
+    EXPECT_EQ(data_vec.size(), 1);
+
+    // Get spatial profiles from self calculations
+    auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PANGLE, cursor_x, cursor_y);
+
+    for (auto& data : data_vec) {
+        auto profiles_x = data.profiles(0);
+        auto profiles_y = data.profiles(1);
+        auto data_x = ProfileValues(profiles_x);
+        auto data_y = ProfileValues(profiles_y);
+
+        EXPECT_EQ(data_profiles.first.size(), data_x.size());
+        if (data_profiles.first.size() == data_x.size()) {
+            for (int i = 0; i < data_x.size(); ++i) {
+                if (!isnan(data_profiles.first[i]) && !isnan(data_x[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
+                }
+            }
+        }
+
+        EXPECT_EQ(data_profiles.second.size(), data_y.size());
+        if (data_profiles.second.size() == data_y.size()) {
+            for (int i = 0; i < data_y.size(); ++i) {
+                if (!isnan(data_profiles.second[i]) && !isnan(data_y[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
+                }
+            }
+        }
     }
 }

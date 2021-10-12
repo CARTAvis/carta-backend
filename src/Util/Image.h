@@ -32,11 +32,11 @@
 // stokes
 #define DEFAULT_STOKES 0
 #define CURRENT_STOKES -1
-#define COMPUTE_STOKES_PTOTAL 13
-#define COMPUTE_STOKES_PLINEAR 14
-#define COMPUTE_STOKES_PFTOTAL 15
-#define COMPUTE_STOKES_PFLINEAR 16
-#define COMPUTE_STOKES_PANGLE 17
+#define COMPUTE_STOKES_PTOTAL 13   // Polarized intensity ((Q^2+U^2+V^2)^(1/2))
+#define COMPUTE_STOKES_PLINEAR 14  // Linearly Polarized intensity ((Q^2+U^2)^(1/2))
+#define COMPUTE_STOKES_PFTOTAL 15  // Polarization Fraction (Ptotal/I)
+#define COMPUTE_STOKES_PFLINEAR 16 // Linear Polarization Fraction (Plinear/I)
+#define COMPUTE_STOKES_PANGLE 17   // Linear Polarization Angle (0.5 arctan(U/Q)) (in radians)
 
 // raster image data
 #define TILE_SIZE 256
@@ -134,6 +134,7 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 bool ComputeStokes(int stokes);
+bool ComputeStokes(const std::string& stokes_type);
 
 struct StokesSource {
     int stokes;
