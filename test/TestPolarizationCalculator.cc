@@ -467,9 +467,6 @@ public:
     static std::pair<std::vector<float>, std::vector<float>> GetSpatialProfiles(
         const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, int cursor_x, int cursor_y) {
         // Get spectral axis size
-        casacore::CoordinateSystem coord_sys = image->coordinates();
-        int spectral_axis = coord_sys.spectralAxisNumber();
-        int spectral_axis_size = image->shape()[spectral_axis];
         int x_size = image->shape()[0];
         int y_size = image->shape()[1];
 
@@ -666,10 +663,9 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlineary) {
         return;
     }
 
-    // Get spectral axis size
-    casacore::CoordinateSystem coord_sys = image->coordinates();
-    int spectral_axis = coord_sys.spectralAxisNumber();
-    int spectral_axis_size = image->shape()[spectral_axis];
+    // Get directional axis size
+    int x_size = image->shape()[0];
+    int y_size = image->shape()[1];
 
     // Open the file through the Frame
     std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
@@ -680,8 +676,8 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlineary) {
         Message::SpatialConfig("Plinearx"), Message::SpatialConfig("Plineary")};
     frame->SetSpatialRequirements(profiles);
 
-    int cursor_x(128);
-    int cursor_y(128);
+    int cursor_x(x_size / 2);
+    int cursor_y(y_size / 2);
     frame->SetCursor(cursor_x, cursor_y);
 
     std::string message;
@@ -732,10 +728,9 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
         return;
     }
 
-    // Get spectral axis size
-    casacore::CoordinateSystem coord_sys = image->coordinates();
-    int spectral_axis = coord_sys.spectralAxisNumber();
-    int spectral_axis_size = image->shape()[spectral_axis];
+    // Get directional axis size
+    int x_size = image->shape()[0];
+    int y_size = image->shape()[1];
 
     // Open the file through the Frame
     std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
@@ -746,8 +741,8 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
         Message::SpatialConfig("PFlinearx"), Message::SpatialConfig("PFlineary")};
     frame->SetSpatialRequirements(profiles);
 
-    int cursor_x(128);
-    int cursor_y(128);
+    int cursor_x(x_size / 2);
+    int cursor_y(y_size / 2);
     frame->SetCursor(cursor_x, cursor_y);
 
     std::string message;
@@ -798,10 +793,9 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
         return;
     }
 
-    // Get spectral axis size
-    casacore::CoordinateSystem coord_sys = image->coordinates();
-    int spectral_axis = coord_sys.spectralAxisNumber();
-    int spectral_axis_size = image->shape()[spectral_axis];
+    // Get directional axis size
+    int x_size = image->shape()[0];
+    int y_size = image->shape()[1];
 
     // Open the file through the Frame
     std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
@@ -812,8 +806,8 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
         Message::SpatialConfig("Panglex"), Message::SpatialConfig("Pangley")};
     frame->SetSpatialRequirements(profiles);
 
-    int cursor_x(128);
-    int cursor_y(128);
+    int cursor_x(x_size / 2);
+    int cursor_y(y_size / 2);
     frame->SetCursor(cursor_x, cursor_y);
 
     std::string message;
