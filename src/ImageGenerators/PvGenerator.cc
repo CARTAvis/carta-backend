@@ -36,7 +36,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
     loader->GetCoordinateSystem(csys);
     if (!csys.hasSpectralAxis()) {
         pv_response.set_success(false);
-        pv_response.set_message("Cannot generate PV image with no spectral axis.");
+        pv_response.set_message("Cannot generate PV image with no valid spectral axis.");
         return;
     }
 
@@ -92,10 +92,7 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
         if (!box_regions[iregion]) {
             // Progress update
             progress = float(iregion + 1) / float(num_regions);
-            if (progress < 1.0) {
-                progress_callback(progress);
-            }
-
+            progress_callback(progress);
             continue;
         }
 
@@ -121,14 +118,13 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
 
         // Progress update
         progress = float(iregion + 1) / float(num_regions);
-        if (progress < 1.0) {
-            progress_callback(progress);
-        }
+        progress_callback(progress);
     }
 
     if (progress == 1.0) {
         // Determine whether stokes axis
         casacore::IPosition pv_shape = GetPvImageShape(loader, num_regions, num_channels);
+
         // Create casacore::TempImage
         SetupPvImage(loader->GetImage(), pv_shape, stokes, offset_increment);
 
@@ -207,9 +203,7 @@ void PvGenerator::CalculatePvImageSpectral(std::shared_ptr<carta::FileLoader> lo
 
         // Progress update
         progress = (iregion + 1) / num_regions;
-        if (progress < 1.0) {
-            progress_callback(progress);
-        }
+        progress_callback(progress);
     }
 
     if (progress == 1.0) {
@@ -313,7 +307,16 @@ void PvGenerator::SetupPvImage(
 
     _image->setUnits(input_image->units());
     _image->setMiscInfo(input_image->miscInfo());
-    _image->setImageInfo(input_image->imageInfo());
+
+    auto image_info = input_image->imageInfo();
+    if (image_info.hasMultipleBeams()) {
+        // Use first beam, per imageanalysis ImageCollapser
+        auto beam = *(image_info.getBeamSet().getBeams().begin());
+        image_info.removeRestoringBeam();
+        image_info.setRestoringBeam(beam);
+    }
+    _image->setImageInfo(image_info);
+
     _image->appendLog(input_image->logger());
 }
 
