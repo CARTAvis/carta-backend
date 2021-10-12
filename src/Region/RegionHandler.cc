@@ -1611,7 +1611,7 @@ bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_cent
     auto direction_coord = csys->directionCoordinate();
 
     // Convert all center points to world, check angular separation between centers
-    size_t num_centers(box_centers.size());
+    size_t num_centers(box_centers.size()), num_separation(0);
     double min_separation, max_separation;
     double total_separation(0.0);
     double tolerance = GetSeparationTolerance(csys);
@@ -1656,10 +1656,11 @@ bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_cent
             }
 
             total_separation += center_separation; // accumulate for mean
+            ++num_separation;
         }
     }
 
-    increment = total_separation / num_centers; // calculate mean separation
+    increment = total_separation / double(num_separation); // calculate mean separation
     return true;
 }
 
