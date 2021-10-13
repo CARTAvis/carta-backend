@@ -4,14 +4,11 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <limits> // for numeric limits
 #include <thread>
-#include <tuple>
 #include <vector>
 
 #include <curl/curl.h>
 #include <signal.h>
-#include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 
 #include "FileList/FileListHandler.h"
@@ -24,7 +21,6 @@
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
 #include "Util/App.h"
-#include "Util/File.h"
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
 
@@ -196,10 +192,10 @@ int main(int argc, char* argv[]) {
                 if (!auth_token.empty()) {
                     query_url += fmt::format("/?token={}", auth_token);
                 }
-                if (!settings.files.empty()) {
-                    // TODO: Handle multiple files once the frontend supports this
-                    query_url += query_url.empty() ? "/?" : "&";
-                    query_url += fmt::format("file={}", curl_easy_escape(nullptr, settings.files[0].c_str(), 0));
+
+                auto file_query_url = SimpleFrontendServer::GetFileUrlString(settings.files);
+                if (!file_query_url.empty()) {
+                    query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
                 }
 
                 if (!query_url.empty()) {
