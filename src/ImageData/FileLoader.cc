@@ -299,28 +299,13 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
     StokesSource stokes_source = stokes_source_slicer.first;
     casacore::Slicer slicer = stokes_source_slicer.second;
 
-    shared_ptr<ImageInterface<float>> image;
-    if (stokes_source.UseDefaultImage()) {
-        image = GetImage();
-    } else {
-        // compute new stokes image with respect to the channel range
-        carta::PolarizationCalculator polarization_calculator(GetImage(), AxisRange(stokes_source.axis_range));
-        if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
-            image = polarization_calculator.ComputePolarizedIntensity();
-        } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
-            image = polarization_calculator.ComputeFractionalPolarizedIntensity();
-        } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
-            image = polarization_calculator.ComputePolarizedAngle(true);
-        } else {
-            spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
-        }
+    // Get the opened casacore image or computed stokes image
+    auto image = GetStokesImage(stokes_source);
+    if (!image) {
+        return false;
     }
 
     try {
-        if (!image) {
-            return false;
-        }
-
         if (data.shape() != slicer.length()) {
             data.resize(slicer.length());
         }
@@ -375,24 +360,33 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
     }
 }
 
-bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
-    // Get SubImage from Slicer
-    auto image = GetImage();
+bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_source_slicer.first;
+    casacore::Slicer slicer = stokes_source_slicer.second;
+
+    // Get the opened casacore image or computed stokes image
+    auto image = GetStokesImage(stokes_source);
     if (!image) {
         return false;
     }
 
+    // Get SubImage from Slicer
     sub_image = casacore::SubImage<float>(*(image.get()), slicer);
     return true;
 }
 
-bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
-    // Get SubImage from image region
-    auto image = GetImage();
+bool FileLoader::GetSubImage(
+    const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_source_region.first;
+    casacore::LattRegionHolder region = stokes_source_region.second;
+
+    // Get the opened casacore image or computed stokes image
+    auto image = GetStokesImage(stokes_source);
     if (!image) {
         return false;
     }
 
+    // Get SubImage from image region
     sub_image = casacore::SubImage<float>(*(image.get()), region);
     return true;
 }
@@ -890,4 +884,24 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
 
 void FileLoader::SetDeltaStokesIndex(int delta_stokes_index) {
     _delta_stokes_index = delta_stokes_index;
+}
+
+carta::CasaLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
+    carta::CasaLoader::ImageRef image;
+    if (stokes_source.UseDefaultImage()) {
+        image = GetImage();
+    } else {
+        // compute new stokes image with respect to the channel range
+        carta::PolarizationCalculator polarization_calculator(GetImage(), AxisRange(stokes_source.axis_range));
+        if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
+            image = polarization_calculator.ComputePolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
+            image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
+            image = polarization_calculator.ComputePolarizedAngle(true);
+        } else {
+            spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
+        }
+    }
+    return image;
 }

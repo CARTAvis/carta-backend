@@ -932,3 +932,36 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
         }
     }
 }
+
+TEST_F(PolarizationCalculatorTest, TestStokesSource) {
+    StokesSource stokes_source_1(0, AxisRange(0));
+    StokesSource stokes_source_2(1, AxisRange(0));
+    StokesSource stokes_source_3(0, AxisRange(1));
+    StokesSource stokes_source_4(0, AxisRange(0));
+
+    StokesSource stokes_source_5(0, AxisRange(0, 10));
+    StokesSource stokes_source_6(0, AxisRange(0, 10));
+    StokesSource stokes_source_7(1, AxisRange(0, 10));
+    StokesSource stokes_source_8(1, AxisRange(0, 5));
+
+    EXPECT_TRUE(stokes_source_1 != stokes_source_2);
+    EXPECT_TRUE(stokes_source_1 != stokes_source_3);
+    EXPECT_TRUE(stokes_source_1 == stokes_source_4);
+
+    EXPECT_TRUE(stokes_source_1 != stokes_source_5);
+    EXPECT_TRUE(stokes_source_5 == stokes_source_6);
+    EXPECT_TRUE(stokes_source_6 != stokes_source_7);
+    EXPECT_TRUE(stokes_source_7 != stokes_source_8);
+
+    StokesSource stokes_source_9 = stokes_source_8;
+
+    EXPECT_TRUE(stokes_source_9 == stokes_source_8);
+    EXPECT_TRUE(stokes_source_9 != stokes_source_7);
+
+    StokesSource stokes_source_10 = StokesSource();
+    StokesSource stokes_source_11 = stokes_source_10;
+
+    EXPECT_TRUE(stokes_source_10.UseDefaultImage());
+    EXPECT_TRUE(stokes_source_10 != stokes_source_1);
+    EXPECT_TRUE(stokes_source_10 == stokes_source_11);
+}

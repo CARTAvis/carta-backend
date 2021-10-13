@@ -161,16 +161,17 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
-    bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region);
+    bool GetImageRegion(
+        int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
-    bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
+    bool GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, std::vector<float>& data);
     bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, std::vector<float>& data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
-        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
-        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    bool GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region,
+        const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    bool GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer,
+        std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
@@ -178,9 +179,9 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
-    bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        std::vector<carta::CollapseResult>& collapse_results);
+    bool CalculateMoments(int file_id, MomentProgressCallback progress_callback,
+        const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, const CARTA::MomentRequest& moment_request,
+        CARTA::MomentResponse& moment_response, std::vector<carta::CollapseResult>& collapse_results);
     void StopMomentCalc();
 
     // Save as a new file or export sub-image to CASA/FITS format
@@ -302,6 +303,7 @@ protected:
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
+    StokesSource _stokes_source;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

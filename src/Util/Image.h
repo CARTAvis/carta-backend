@@ -69,6 +69,12 @@ struct AxisRange {
         from = from_;
         to = to_;
     }
+    bool operator!=(const AxisRange& rhs) const {
+        if ((from != rhs.from) || (to != rhs.to)) {
+            return true;
+        }
+        return false;
+    }
 };
 
 struct PointXy {
@@ -145,6 +151,18 @@ struct StokesSource {
 
     bool UseDefaultImage() const {
         return !ComputeStokes(stokes);
+    }
+    bool operator==(const StokesSource& rhs) const {
+        if ((stokes != rhs.stokes) || (axis_range != rhs.axis_range)) {
+            return false;
+        }
+        return true;
+    }
+    bool operator!=(const StokesSource& rhs) const {
+        if ((stokes != rhs.stokes) || (axis_range != rhs.axis_range)) {
+            return true;
+        }
+        return false;
     }
 };
 

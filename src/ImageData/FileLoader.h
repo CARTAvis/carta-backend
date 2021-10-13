@@ -154,6 +154,9 @@ public:
     // Return the opened casacore image or its class name
     ImageRef GetImage();
 
+    // Return the opened casacore image or computed stokes image
+    ImageRef GetStokesImage(const StokesSource& stokes_source);
+
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
@@ -167,8 +170,8 @@ public:
     bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer);
 
     // SubImage
-    bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
