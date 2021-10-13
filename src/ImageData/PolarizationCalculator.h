@@ -25,21 +25,23 @@ public:
     PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange spectral_range = AxisRange());
     ~PolarizationCalculator() = default;
 
-    // Change the casacore::Stokes in casacore::Coordinate for the given complex image to be of the specified casacore::Stokes type
-    void FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type);
-
-    std::shared_ptr<casacore::ImageInterface<float>> GetStokesImage(const StokesTypes& type);
-    casacore::LatticeExprNode MakePolarizedIntensityNode();
-    void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
-
+    std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalPolarizedIntensity();
+    std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalFractionalPolarizedIntensity();
     std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedIntensity();
     std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle(bool radians);
+    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle(bool radians = true);
 
 private:
     // Make a casacore::SubImage from the construction image for the specified pixel along the specified pixel axis
     std::shared_ptr<casacore::ImageInterface<float>> MakeSubImage(casacore::IPosition& blc, casacore::IPosition& trc, int axis, int pix);
 
+    // Change the casacore::Stokes in casacore::Coordinate for the given complex image to be of the specified casacore::Stokes type
+    void FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type);
+
+    std::shared_ptr<casacore::ImageInterface<float>> GetStokesImage(const StokesTypes& type);
+    casacore::LatticeExprNode MakeTotalPolarizedIntensityNode();
+    casacore::LatticeExprNode MakePolarizedIntensityNode();
+    void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
     std::shared_ptr<casacore::ImageInterface<float>> PrepareOutputImage(
         const casacore::ImageInterface<float>& image, bool drop_deg = false);
 
@@ -49,8 +51,6 @@ private:
     // These blocks are always size 4, with IQUV in slots 0,1,2,3. If an image is IV only, it uses slots 0 and 3
     std::vector<std::shared_ptr<casacore::ImageInterface<float>>> _stokes_image =
         std::vector<std::shared_ptr<casacore::ImageInterface<float>>>(4);
-    std::vector<std::shared_ptr<casacore::LatticeStatistics<float>>> _stokes_stats =
-        std::vector<std::shared_ptr<casacore::LatticeStatistics<float>>>(4);
 };
 
 } // namespace carta

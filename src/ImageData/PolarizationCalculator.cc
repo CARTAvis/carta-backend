@@ -80,6 +80,12 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::GetStok
     return _stokes_image[type];
 }
 
+casacore::LatticeExprNode PolarizationCalculator::MakeTotalPolarizedIntensityNode() {
+    casacore::LatticeExprNode lin_node = casacore::LatticeExprNode(
+        casacore::pow(*_stokes_image[V], 2) + casacore::pow(*_stokes_image[U], 2) + casacore::pow(*_stokes_image[Q], 2));
+    return casacore::sqrt(lin_node);
+}
+
 casacore::LatticeExprNode PolarizationCalculator::MakePolarizedIntensityNode() {
     casacore::LatticeExprNode lin_node =
         casacore::LatticeExprNode(casacore::pow(*_stokes_image[U], 2) + casacore::pow(*_stokes_image[Q], 2));
@@ -115,6 +121,53 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Prepare
     auto out_image = casa::SubImageFactory<float>::createImage(
         image, empty_out_name, empty_record, empty_mask, drop_deg, overwrite, list, extend_mask, attach_mask);
     return out_image;
+}
+
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeTotalPolarizedIntensity() {
+    if ((!_image_valid)) {
+        return nullptr;
+    }
+
+    auto q = GetStokesImage(Q);
+    auto u = GetStokesImage(U);
+    auto v = GetStokesImage(V);
+    if (!q || !u || !v) {
+        spdlog::error("This image does not have Stokes Q and/or U and/or V so cannot compute linear polarization");
+        return nullptr;
+    }
+
+    auto node = MakeTotalPolarizedIntensityNode();
+    casacore::LatticeExpr<float> lattice_expr(node);
+    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("TotalPolarizedIntensity"));
+    image_expr.setUnits(_image->units());
+    SetImageStokesInfo(image_expr, Q);
+    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::Ptotal);
+
+    return PrepareOutputImage(image_expr);
+}
+
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeTotalFractionalPolarizedIntensity() {
+    if ((!_image_valid)) {
+        return nullptr;
+    }
+
+    auto i = GetStokesImage(I);
+    auto q = GetStokesImage(Q);
+    auto u = GetStokesImage(U);
+    auto v = GetStokesImage(V);
+    if (!i || !q || !u || !v) {
+        spdlog::error("This image does not have Stokes I and/or Q and/or U and/or V so cannot compute linear polarization");
+        return nullptr;
+    }
+
+    auto node = MakeTotalPolarizedIntensityNode() / (*_stokes_image[I]);
+    casacore::LatticeExpr<float> lattice_expr(node);
+    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("TotalFractionalPolarizedIntensity"));
+    image_expr.setUnits(_image->units());
+    SetImageStokesInfo(image_expr, I);
+    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::PFtotal);
+
+    return PrepareOutputImage(image_expr);
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedIntensity() {

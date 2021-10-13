@@ -893,12 +893,16 @@ carta::CasaLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stoke
     } else {
         // compute new stokes image with respect to the channel range
         carta::PolarizationCalculator polarization_calculator(GetImage(), AxisRange(stokes_source.axis_range));
-        if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
+        if (stokes_source.stokes == COMPUTE_STOKES_PTOTAL) {
+            image = polarization_calculator.ComputeTotalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PFTOTAL) {
+            image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
             image = polarization_calculator.ComputePolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
             image = polarization_calculator.ComputeFractionalPolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
-            image = polarization_calculator.ComputePolarizedAngle(true);
+            image = polarization_calculator.ComputePolarizedAngle();
         } else {
             spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
         }
