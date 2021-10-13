@@ -10,7 +10,6 @@
 #include <climits>
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
@@ -62,20 +61,19 @@ std::string GetReleaseInformation() {
     pclose(file_handle);
     return info_buffer;
 #else
-    // Unix solution just attempts to read from common release text files
-    std::vector<fs::path> valid_paths = {{"/etc/lsb-release", "/etc/centos-release", "/etc/redhat-release"}};
+    // Unix solution just attempts to read from /etc/os-release. This works with Ubuntu, RedHat, CentOS, Arch, Debian and Fedora,
+    // and should work on any system that has systemd installed
+    fs::path path = "/etc/os-release";
 
-    for (const auto& path : valid_paths) {
-        if (fs::exists(path) && fs::is_regular_file(path)) {
-            try {
-                // read the entire release file to string
-                std::ifstream input_file(path);
-                std::stringstream buffer;
-                buffer << input_file.rdbuf();
-                return buffer.str();
-            } catch (std::ifstream::failure e) {
-                spdlog::warn("Problem reading platform information");
-            }
+    if (fs::exists(path) && fs::is_regular_file(path)) {
+        try {
+            // read the entire release file to string
+            std::ifstream input_file(path);
+            std::stringstream buffer;
+            buffer << input_file.rdbuf();
+            return buffer.str();
+        } catch (std::ifstream::failure e) {
+            spdlog::warn("Problem reading platform information");
         }
     }
 #endif
