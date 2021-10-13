@@ -21,8 +21,8 @@ using namespace carta;
 
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
 public:
-    static void GetImageData(
-        std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, int channel, int stokes, std::vector<float>& data) {
+    static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, AxisRange channel_axis_range,
+        int stokes, std::vector<float>& data) {
         // Get spectral and stokes indices
         casacore::CoordinateSystem coord_sys = image->coordinates();
         casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
@@ -36,21 +36,34 @@ public:
         end -= 1;
 
         auto spectral_axis_size = image->shape()[spectral_axis];
-        if ((spectral_axis >= 0) && (channel >= spectral_axis_size)) {
-            spdlog::error("channel number {} is greater or equal than the spectral axis size {}", channel, spectral_axis_size);
+
+        // Check spectral axis range
+        if (channel_axis_range.to == ALL_Z) {
+            channel_axis_range.to = spectral_axis_size - 1;
+        }
+        if ((channel_axis_range.from > channel_axis_range.to) || (channel_axis_range.from < 0)) {
+            spdlog::error("Invalid spectral axis range [{}, {}]", channel_axis_range.from, channel_axis_range.to);
+            return;
+        }
+        if ((spectral_axis >= 0) && (channel_axis_range.to >= spectral_axis_size)) {
+            spdlog::error(
+                "channel number {} is greater or equal than the spectral axis size {}", channel_axis_range.to, spectral_axis_size);
             return;
         }
 
+        if (spectral_axis >= 0) {
+            start(spectral_axis) = channel_axis_range.from;
+            end(spectral_axis) = channel_axis_range.to;
+        }
+
         auto stokes_axis_size = image->shape()[stokes_axis];
+
+        // Check stokes axis range
         if ((stokes_axis >= 0) && (stokes >= stokes_axis_size)) {
             spdlog::error("stokes number {} is greater or equal than the stokes axis size {}", stokes, stokes_axis_size);
             return;
         }
 
-        if (spectral_axis >= 0) {
-            start(spectral_axis) = channel;
-            end(spectral_axis) = channel;
-        }
         if (stokes_axis >= 0) {
             start(stokes_axis) = stokes;
             end(stokes_axis) = stokes;
@@ -107,9 +120,9 @@ public:
         std::vector<float> data_results;
 
         for (int channel = 0; channel < spectral_axis_size; ++channel) {
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel, stokes_pi, data_results);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(channel), stokes_pi, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -145,9 +158,9 @@ public:
             auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
             CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Plinear);
 
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, current_channel, current_stokes, data_results);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(current_channel), current_stokes, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -183,10 +196,11 @@ public:
         std::vector<float> data_u;
         std::vector<float> data_results;
 
+        // Check per channel data
         for (int channel = start_channel; channel <= end_channel; ++channel) {
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel - start_channel, stokes_pi, data_results);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(channel - start_channel), stokes_pi, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -196,6 +210,25 @@ public:
                     auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
                     EXPECT_FLOAT_EQ(data_results[i], polarized_intensity);
                 }
+            }
+        }
+
+        // Check chunk data
+        std::vector<float> chunk_data_results;
+        GetImageData(resulting_image, AxisRange(), stokes_pi, chunk_data_results);
+
+        for (int chunk_data_index = 0, channel = start_channel; channel <= end_channel; ++channel) {
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+
+            EXPECT_EQ(data_q.size(), data_u.size());
+
+            for (int i = 0; i < data_q.size(); ++i) {
+                if (!isnan(data_q[i]) && !isnan(data_u[i])) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    EXPECT_FLOAT_EQ(chunk_data_results[chunk_data_index], polarized_intensity);
+                }
+                ++chunk_data_index;
             }
         }
     }
@@ -222,10 +255,10 @@ public:
         std::vector<float> data_results;
 
         for (int channel = 0; channel < spectral_axis_size; ++channel) {
-            GetImageData(image, channel, stokes_i, data_i);
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel, stokes_fpi, data_results);
+            GetImageData(image, AxisRange(channel), stokes_i, data_i);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(channel), stokes_fpi, data_results);
 
             EXPECT_EQ(data_results.size(), data_i.size());
             EXPECT_EQ(data_results.size(), data_q.size());
@@ -264,10 +297,10 @@ public:
             auto resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
             CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::PFlinear);
 
-            GetImageData(image, channel, stokes_i, data_i);
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, current_channel, current_stokes, data_results);
+            GetImageData(image, AxisRange(channel), stokes_i, data_i);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(current_channel), current_stokes, data_results);
 
             EXPECT_EQ(data_results.size(), data_i.size());
             EXPECT_EQ(data_results.size(), data_q.size());
@@ -302,9 +335,9 @@ public:
         std::vector<float> data_results;
 
         for (int channel = 0; channel < spectral_axis_size; ++channel) {
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, channel, stokes_pa, data_results);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(channel), stokes_pa, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -343,9 +376,9 @@ public:
             auto resulting_image = polarization_calculator.ComputePolarizedAngle(radiant);
             CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Pangle);
 
-            GetImageData(image, channel, stokes_q, data_q);
-            GetImageData(image, channel, stokes_u, data_u);
-            GetImageData(resulting_image, current_channel, current_stokes, data_results);
+            GetImageData(image, AxisRange(channel), stokes_q, data_q);
+            GetImageData(image, AxisRange(channel), stokes_u, data_u);
+            GetImageData(resulting_image, AxisRange(current_channel), current_stokes, data_results);
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());
@@ -427,8 +460,8 @@ public:
             auto image_fpi_per_channel = polarization_calculator_per_channel.ComputeFractionalPolarizedIntensity();
             auto image_pa_per_channel = polarization_calculator_per_channel.ComputePolarizedAngle(true);
 
-            GetImageData(image_pi_per_cube, channel, current_stokes, data_pi_per_cube);
-            GetImageData(image_pi_per_channel, current_channel, current_stokes, data_pi_per_channel);
+            GetImageData(image_pi_per_cube, AxisRange(channel), current_stokes, data_pi_per_cube);
+            GetImageData(image_pi_per_channel, AxisRange(current_channel), current_stokes, data_pi_per_channel);
 
             EXPECT_EQ(data_pi_per_cube.size(), data_pi_per_channel.size());
             if (data_pi_per_cube.size() == data_pi_per_channel.size()) {
@@ -439,8 +472,8 @@ public:
                 }
             }
 
-            GetImageData(image_fpi_per_cube, channel, current_stokes, data_fpi_per_cube);
-            GetImageData(image_fpi_per_channel, current_channel, current_stokes, data_fpi_per_channel);
+            GetImageData(image_fpi_per_cube, AxisRange(channel), current_stokes, data_fpi_per_cube);
+            GetImageData(image_fpi_per_channel, AxisRange(current_channel), current_stokes, data_fpi_per_channel);
 
             EXPECT_EQ(data_fpi_per_cube.size(), data_fpi_per_channel.size());
             if (data_fpi_per_cube.size() == data_fpi_per_channel.size()) {
@@ -451,8 +484,8 @@ public:
                 }
             }
 
-            GetImageData(image_pa_per_cube, channel, current_stokes, data_pa_per_cube);
-            GetImageData(image_pa_per_channel, current_channel, current_stokes, data_pa_per_channel);
+            GetImageData(image_pa_per_cube, AxisRange(channel), current_stokes, data_pa_per_cube);
+            GetImageData(image_pa_per_channel, AxisRange(current_channel), current_stokes, data_pa_per_channel);
 
             EXPECT_EQ(data_pa_per_cube.size(), data_pa_per_channel.size());
             if (data_pa_per_cube.size() == data_pa_per_channel.size()) {
@@ -479,9 +512,9 @@ public:
         std::vector<float> data_i;
         std::vector<float> data_q;
         std::vector<float> data_u;
-        GetImageData(image, channel, stokes_i, data_i);
-        GetImageData(image, channel, stokes_q, data_q);
-        GetImageData(image, channel, stokes_u, data_u);
+        GetImageData(image, AxisRange(channel), stokes_i, data_i);
+        GetImageData(image, AxisRange(channel), stokes_q, data_q);
+        GetImageData(image, AxisRange(channel), stokes_u, data_u);
 
         EXPECT_EQ(data.size(), data_i.size());
         EXPECT_EQ(data.size(), data_q.size());
@@ -516,9 +549,9 @@ public:
         std::vector<float> data_i;
         std::vector<float> data_q;
         std::vector<float> data_u;
-        GetImageData(image, channel, stokes_i, data_i);
-        GetImageData(image, channel, stokes_q, data_q);
-        GetImageData(image, channel, stokes_u, data_u);
+        GetImageData(image, AxisRange(channel), stokes_i, data_i);
+        GetImageData(image, AxisRange(channel), stokes_q, data_q);
+        GetImageData(image, AxisRange(channel), stokes_u, data_u);
 
         std::vector<float> profile_x;
         for (int i = 0; i < data_i.size(); ++i) {
