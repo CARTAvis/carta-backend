@@ -51,7 +51,7 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
 
     if (region_shape.empty()) {
         pv_response.set_success(false);
-        pv_response.set_message("PV calculation failed for input region.");
+        pv_response.set_message("Calculation failed for PV cut. Check if line inside image.");
         return;
     }
 
@@ -112,9 +112,11 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
         bool per_z(true);
         CalcStatsValues(results, required_stats, sub_image, per_z);
 
-        // Set region row
+        // Set region row to profile; empty if all values NAN
         auto spectral_profile = results[CARTA::StatsType::Mean];
-        pv_values.row(iregion) = spectral_profile;
+        if (!spectral_profile.empty()) {
+            pv_values.row(iregion) = spectral_profile;
+        }
 
         // Progress update
         progress = float(iregion + 1) / float(num_regions);
