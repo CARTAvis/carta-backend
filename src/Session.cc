@@ -312,9 +312,9 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     auto& platform_string_map = *ack_message.mutable_platform_strings();
     platform_string_map["release_info"] = GetReleaseInformation();
 #if __APPLE__
-    platform_string_map["plaform"] = "MacOS";
+    platform_string_map["plaform"] = "macOS";
 #else
-    platform_string_map["plaform"] = "Linux";
+    platform_string_map["platform"] = "Linux";
 #endif
 
     uint32_t feature_flags;
