@@ -51,6 +51,7 @@ private:
         const std::vector<int>& display_axes, bool use_image_for_entries);
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes);
     void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set);
+    bool HaveBeamHeaders(CARTA::FileInfoExtended& extended_info); // casacore adds from HISTORY headers
 
     // Convert MVAngle to string; returns Quantity string if not direction
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);

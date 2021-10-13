@@ -222,8 +222,8 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
     casacore::String extname, stokes_ctype_num; // used to set stokes values in loader
 
     // CartaHdf5Image shortens keywords to FITS length 8
-    std::unordered_map<std::string, std::string> hdf5_keys = {{"H5SCHEMA", "SCHEMA_VERSION"}, {"H5CNVRTR", "HDF5_CONVERTER"}, {"H5CONVSN",
-        "HDF5_CONVERTER_VERSION"}, {"H5DATE", "HDF5_DATE"}};
+    std::unordered_map<std::string, std::string> hdf5_keys = {
+        {"H5SCHEMA", "SCHEMA_VERSION"}, {"H5CNVRTR", "HDF5_CONVERTER"}, {"H5CONVSN", "HDF5_CONVERTER_VERSION"}, {"H5DATE", "HDF5_DATE"}};
 
     for (auto& header : headers) {
         // Parse header into name, value, comment
@@ -352,7 +352,7 @@ void FileExtInfoLoader::ConvertHeaderValueToNumeric(const casacore::String& name
         // Float or double type?
         try {
             double dvalue = std::stod(value);
-            
+
             std::string string_value;
             if (name.contains("PIX") || (name == "EQUINOX") || (name == "EPOCH")) {
                 string_value = fmt::format("{}", dvalue);
@@ -786,7 +786,13 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     casacore::ImageInfo image_info = image->imageInfo();
     if (image_info.hasBeam()) {
         const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
-        AddBeamEntry(extended_info, beam_set);
+
+        if (beam_set.hasSingleBeam() && !HaveBeamHeaders(extended_info)) {
+            image_info.removeRestoringBeam();
+            image->setImageInfo(image_info);
+        } else {
+            AddBeamEntry(extended_info, beam_set);
+        }
     }
 }
 
@@ -1031,6 +1037,32 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         }
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
+}
+
+bool FileExtInfoLoader::HaveBeamHeaders(CARTA::FileInfoExtended& extended_info) {
+    // Check for BMAJ, BMIN, BPA headers
+    bool have_headers(false);
+    bool bmaj(false), bmin(false), bpa(false);
+
+    for (int i = 0; i < extended_info.header_entries_size(); ++i) {
+        auto entry = extended_info.header_entries(i);
+        auto entry_name = entry.name();
+
+        if (entry_name.find("BMAJ") == 0) {
+            bmaj = true;
+        } else if (entry_name.find("BMIN") == 0) {
+            bmin = true;
+        } else if (entry_name.find("BPA") == 0) {
+            bpa = true;
+        }
+
+        have_headers = bmaj && bmin && bpa;
+        if (have_headers) {
+            break;
+        }
+    }
+
+    return have_headers;
 }
 
 void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set) {
