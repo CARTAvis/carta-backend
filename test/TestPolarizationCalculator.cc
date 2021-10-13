@@ -161,6 +161,45 @@ public:
         }
     }
 
+    static void TestPolarizedIntensityPerChunk(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        int start_channel = spectral_axis_size / 2;
+        int end_channel = spectral_axis_size - 1;
+
+        // Calculate polarized intensity
+        carta::PolarizationCalculator polarization_calculator(image, AxisRange(start_channel, end_channel));
+        auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
+        CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Plinear);
+
+        // Verify each pixel value from calculation results
+        int stokes_q(1);
+        int stokes_u(2);
+        int stokes_pi(0);
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        std::vector<float> data_results;
+
+        for (int channel = start_channel; channel <= end_channel; ++channel) {
+            GetImageData(image, channel, stokes_q, data_q);
+            GetImageData(image, channel, stokes_u, data_u);
+            GetImageData(resulting_image, channel - start_channel, stokes_pi, data_results);
+
+            EXPECT_EQ(data_results.size(), data_q.size());
+            EXPECT_EQ(data_results.size(), data_u.size());
+
+            for (int i = 0; i < data_results.size(); ++i) {
+                if (!isnan(data_results[i])) {
+                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    EXPECT_FLOAT_EQ(data_results[i], polarized_intensity);
+                }
+            }
+        }
+    }
+
     static void TestFractionalPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
         // Calculate polarized intensity
         carta::PolarizationCalculator polarization_calculator(image);
@@ -548,6 +587,17 @@ TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChannel) {
 
     if (OpenImage(image, file_path)) {
         TestPolarizedIntensityPerChannel(image);
+    } else {
+        spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
+    }
+}
+
+TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChunk) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+
+    if (OpenImage(image, file_path)) {
+        TestPolarizedIntensityPerChunk(image);
     } else {
         spdlog::warn("Fail to open the file {}! Ignore the test.", file_path);
     }
