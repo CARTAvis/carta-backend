@@ -1548,7 +1548,7 @@ bool RegionHandler::GetFixedPixelRegions(int file_id, size_t num_regions, const 
     // Return linearly-spaced box centers in pixel coordinates, and increment between them in arcsec.
     // Returns false if linear pixel centers are tabular in world coordinates.
     // Offset range [-offset, offset] from center, in pixels
-    size_t num_offsets = (num_regions - 1) / 2;
+    int num_offsets = lround(float(num_regions - 1) / 2.0);
     auto center_idx = num_offsets;
     std::vector<CARTA::Point> box_centers((num_offsets * 2) + 1);
 
@@ -1707,14 +1707,14 @@ bool RegionHandler::GetFixedAngularRegions(int file_id, size_t num_regions, cons
 
     // Parameters of box regions [-offset, offset]
     increment = line_separation / num_regions;
-    size_t num_offsets = num_regions / 2;
+    int num_offsets = lround(float(num_regions) / 2.0);
     auto center_idx = num_offsets;
     box_regions.resize(num_regions);
     bool region_set(false);
 
     // Positive offsets toward endpoint0
     casacore::Vector<double> box_start(line_center.copy());
-    for (size_t i = 0; i < num_offsets; ++i) {
+    for (int i = 0; i < num_offsets; ++i) {
         // Find end of box, at increment from start of box
         casacore::Vector<double> box_end = FindPointAtTargetSeparation(direction_coord, box_start, endpoint0, increment, tolerance);
 
