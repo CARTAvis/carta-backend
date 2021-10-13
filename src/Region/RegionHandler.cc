@@ -1531,7 +1531,7 @@ bool RegionHandler::GetBoxRegions(int file_id, const std::vector<CARTA::Point>& 
         spdlog::debug("Using fixed angular increment for line box regions.");
         regions_set = true;
     } else {
-        message = "Line approximation failed.";
+        message = "Line approximation failed. Check if region is inside image.";
     }
 
     delete csys;
