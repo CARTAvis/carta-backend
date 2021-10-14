@@ -27,6 +27,8 @@ public:
 private:
     std::string _unzip_file;
     casacore::uInt _hdu_num;
+
+    void RemoveHistoryBeam(unsigned int hdu_num);
 };
 
 FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, is_gz) {}
@@ -85,6 +87,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
                 }
             } else {
                 _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+                RemoveHistoryBeam(hdu_num);
             }
         } catch (const casacore::AipsError& err) {
             if (use_casacore_fits) {
@@ -110,6 +113,40 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         _num_dims = _image_shape.size();
         _has_pixel_mask = _image->hasPixelMask();
         _coord_sys = _image->coordinates();
+    }
+}
+
+void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
+    // Remove beam not in header entries
+    auto image_info = _image->imageInfo();
+    if (image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam()) {
+        // Check if beam headers exist
+        fitsfile* fptr;
+        int status(0), hdu(hdu_num + 1); // 1-based for FITS
+        int* hdutype(nullptr);
+
+        // Open file and move to hdu
+        fits_open_file(&fptr, _filename.c_str(), 0, &status);
+        status = 0;
+        fits_movabs_hdu(fptr, hdu, hdutype, &status);
+
+        // Get headers if they exist
+        char value[80];
+        int bmaj_status(0), bmin_status(0), bpa_status(0);
+        fits_read_keyword(fptr, "BMAJ", value, nullptr, &bmaj_status);
+        fits_read_keyword(fptr, "BMIN", value, nullptr, &bmin_status);
+        fits_read_keyword(fptr, "BPA", value, nullptr, &bpa_status);
+
+        // Close file
+        status = 0;
+        fits_close_file(fptr, &status);
+
+        bool beam_headers_missing = bmaj_status || bmin_status || bpa_status;
+
+        if (beam_headers_missing) {
+            image_info.removeRestoringBeam();
+            _image->setImageInfo(image_info);
+        }
     }
 }
 
