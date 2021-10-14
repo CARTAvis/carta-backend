@@ -346,7 +346,6 @@ void CartaFitsImage::GetFitsHeaders(int& nheaders, std::string& hdrstr) {
     // Read header values into single string, and store some image parameters.
     // Returns string and number of keys contained in string.
     // Throws exception if any headers missing.
-
     fitsfile* fptr = OpenFile();
     int status(0);
 
@@ -441,11 +440,17 @@ casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings(int nheader
         pos += 80;
     }
 
+    _fits_header_strings = header_strings;
+
     return header_strings;
 }
 
 casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings() {
     // Return headers as string vector
+    if (!_fits_header_strings.empty()) {
+        return _fits_header_strings;
+    }
+
     int nheaders;
     std::string fits_headers;
     GetFitsHeaders(nheaders, fits_headers);

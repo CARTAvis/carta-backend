@@ -99,6 +99,7 @@ private:
     casacore::IPosition _shape;
     int _datatype; // bitpix value
     bool _has_blanks;
+    casacore::Vector<casacore::String> _fits_header_strings;
 
     casacore::Lattice<bool>* _pixel_mask;
     casacore::TiledShape _tiled_shape;

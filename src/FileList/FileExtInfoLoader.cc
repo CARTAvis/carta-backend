@@ -144,14 +144,10 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     return info_ok;
                 }
 
-                // Name of image class: special cases for FITS
-                casacore::String image_type(image->imageType());
-                bool is_carta_fits(image_type == "CartaFitsImage");
-                bool is_carta_hdf5(image_type == "CartaHdf5Image");
-
                 // For computed entries:
                 bool use_image_for_entries(false);
 
+                casacore::String image_type(image->imageType());
                 if (image_type == "FITSImage") {
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
                     casacore::String filename(image->name());
@@ -166,7 +162,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     casacore::Vector<casacore::String> headers = hdf5_image->FitsHeaderStrings();
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else {
-                    // Get image headers in FITS format
+                    // Get image headers in FITS format using casacore ImageHeaderToFITS
                     bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
                     GetSpectralCoordPreferences(image.get(), prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
                     casacore::ImageFITSHeaderInfo fhi;
@@ -786,13 +782,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     casacore::ImageInfo image_info = image->imageInfo();
     if (image_info.hasBeam()) {
         const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
-
-        if (beam_set.hasSingleBeam() && !HaveBeamHeaders(extended_info)) {
-            image_info.removeRestoringBeam();
-            image->setImageInfo(image_info);
-        } else {
-            AddBeamEntry(extended_info, beam_set);
-        }
+        AddBeamEntry(extended_info, beam_set);
     }
 }
 
@@ -1037,32 +1027,6 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         }
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
-}
-
-bool FileExtInfoLoader::HaveBeamHeaders(CARTA::FileInfoExtended& extended_info) {
-    // Check for BMAJ, BMIN, BPA headers
-    bool have_headers(false);
-    bool bmaj(false), bmin(false), bpa(false);
-
-    for (int i = 0; i < extended_info.header_entries_size(); ++i) {
-        auto entry = extended_info.header_entries(i);
-        auto entry_name = entry.name();
-
-        if (entry_name.find("BMAJ") == 0) {
-            bmaj = true;
-        } else if (entry_name.find("BMIN") == 0) {
-            bmin = true;
-        } else if (entry_name.find("BPA") == 0) {
-            bpa = true;
-        }
-
-        have_headers = bmaj && bmin && bpa;
-        if (have_headers) {
-            break;
-        }
-    }
-
-    return have_headers;
 }
 
 void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set) {
