@@ -22,7 +22,7 @@ using namespace carta;
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
 public:
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, AxisRange channel_axis_range,
-        int stokes, std::vector<float>& data) {
+        int stokes, std::vector<float>& data, AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y)) {
         // Get spectral and stokes indices
         casacore::CoordinateSystem coord_sys = image->coordinates();
         casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
@@ -35,11 +35,36 @@ public:
         casacore::IPosition end(image->shape());
         end -= 1;
 
+        auto x_axis_size = image->shape()[0];
+        auto y_axis_size = image->shape()[1];
         auto spectral_axis_size = image->shape()[spectral_axis];
+
+        // Set x range
+        if ((x_range.from == ALL_X) && (x_range.to == ALL_X)) {
+            start(0) = 0;
+            end(0) = x_axis_size - 1;
+        } else if ((x_range.from >= 0) && (x_range.from < x_axis_size) && (x_range.to >= 0) && (x_range.to < x_axis_size) &&
+                   (x_range.from <= x_range.to)) {
+            start(0) = x_range.from;
+            end(0) = x_range.to;
+        }
+
+        // Set y range
+        if ((y_range.from == ALL_Y) && (y_range.to == ALL_Y)) {
+            start(1) = 0;
+            end(1) = y_axis_size - 1;
+        } else if ((y_range.from >= 0) && (y_range.from < y_axis_size) && (y_range.to >= 0) && (y_range.to < y_axis_size) &&
+                   (y_range.from <= y_range.to)) {
+            start(1) = y_range.from;
+            end(1) = y_range.to;
+        }
 
         // Check spectral axis range
         if (channel_axis_range.to == ALL_Z) {
             channel_axis_range.to = spectral_axis_size - 1;
+        }
+        if (channel_axis_range.from == ALL_Z) {
+            channel_axis_range.from = 0;
         }
         if ((channel_axis_range.from > channel_axis_range.to) || (channel_axis_range.from < 0)) {
             spdlog::error("Invalid spectral axis range [{}, {}]", channel_axis_range.from, channel_axis_range.to);
@@ -98,6 +123,13 @@ public:
                 EXPECT_EQ(stokes_type, expected_stokes_type);
             }
         }
+    }
+
+    static CARTA::SetSpectralRequirements_SpectralConfig CursorSpectralConfig() {
+        CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
+        spectral_config.set_coordinate("z");
+        spectral_config.add_stats_types(CARTA::StatsType::Sum);
+        return spectral_config;
     }
 
     static void TestTotalPolarizedIntensity(const std::shared_ptr<casacore::ImageInterface<float>>& image) {
@@ -697,7 +729,57 @@ public:
         return std::make_pair(profile_x, profile_y);
     }
 
-    static std::vector<float> ProfileValues(CARTA::SpatialProfile& profile) {
+    static std::vector<float> GetCursorSpectralProfiles(
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, AxisRange z_range, int stokes, int cursor_x, int cursor_y) {
+        // Get spectral axis size
+        int x_size = image->shape()[0];
+        int y_size = image->shape()[1];
+
+        // Verify each pixel value from calculation results
+        int stokes_i(0);
+        int stokes_q(1);
+        int stokes_u(2);
+        int stokes_v(3);
+        std::vector<float> data_i;
+        std::vector<float> data_q;
+        std::vector<float> data_u;
+        std::vector<float> data_v;
+        GetImageData(image, z_range, stokes_i, data_i, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(image, z_range, stokes_q, data_q, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(image, z_range, stokes_u, data_u, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(image, z_range, stokes_v, data_v, AxisRange(cursor_x), AxisRange(cursor_y));
+
+        std::vector<float> profile;
+        for (int i = 0; i < data_i.size(); ++i) {
+            if (stokes == COMPUTE_STOKES_PTOTAL) {
+                auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
+                profile.push_back(total_polarized_intensity);
+            } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
+                auto total_fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                profile.push_back(total_fractional_polarized_intensity);
+            } else if (stokes == COMPUTE_STOKES_PLINEAR) {
+                auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                profile.push_back(polarized_intensity);
+            } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+                auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                profile.push_back(fractional_polarized_intensity);
+            } else if (stokes == COMPUTE_STOKES_PANGLE) {
+                auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                profile.push_back(polarized_angle);
+            }
+        }
+
+        return profile;
+    }
+
+    static std::vector<float> SpatialProfileValues(CARTA::SpatialProfile& profile) {
+        std::string buffer = profile.raw_values_fp32();
+        std::vector<float> values(buffer.size() / sizeof(float));
+        memcpy(values.data(), buffer.data(), buffer.size());
+        return values;
+    }
+
+    static std::vector<float> SpectralProfileValues(CARTA::SpectralProfile& profile) {
         std::string buffer = profile.raw_values_fp32();
         std::vector<float> values(buffer.size() / sizeof(float));
         memcpy(values.data(), buffer.data(), buffer.size());
@@ -709,8 +791,8 @@ public:
         for (auto& data : data_vec) {
             auto profiles_x = data.profiles(0);
             auto profiles_y = data.profiles(1);
-            auto data_x = ProfileValues(profiles_x);
-            auto data_y = ProfileValues(profiles_y);
+            auto data_x = SpatialProfileValues(profiles_x);
+            auto data_y = SpatialProfileValues(profiles_y);
 
             EXPECT_EQ(data_profiles.first.size(), data_x.size());
             if (data_profiles.first.size() == data_x.size()) {
@@ -728,6 +810,15 @@ public:
                         EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
                     }
                 }
+            }
+        }
+    }
+
+    static void CompareData(const std::vector<float>& data1, const std::vector<float>& data2) {
+        EXPECT_EQ(data1.size(), data2.size());
+        if (data1.size() == data2.size()) {
+            for (int i = 0; i < data1.size(); ++i) {
+                EXPECT_FLOAT_EQ(data1[i], data2[i]);
             }
         }
     }
@@ -904,11 +995,38 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPtotal) {
 
     EXPECT_EQ(data_vec.size(), 1);
 
-    // Get spatial profiles from self calculations
+    // Get spatial profiles in another way
     auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PTOTAL, cursor_x, cursor_y);
 
-    // Check the consistency of two ways results
+    // Check the consistency of two ways
     CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PTOTAL, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFtotal) {
@@ -946,14 +1064,41 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFtotal) {
 
     EXPECT_EQ(data_vec.size(), 1);
 
-    // Get spatial profiles from self calculations
+    // Get spatial profiles in another way
     auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PFTOTAL, cursor_x, cursor_y);
 
-    // Check the consistency of two ways results
+    // Check the consistency of two ways
     CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PFTOTAL, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PFTOTAL, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
-TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlineary) {
+TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlinear) {
     std::string file_path = FitsImagePath(SAMPLE_IMAGE);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
@@ -988,11 +1133,38 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlineary) {
 
     EXPECT_EQ(data_vec.size(), 1);
 
-    // Get spatial profiles from self calculations
+    // Get spatial profiles in another way
     auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PLINEAR, cursor_x, cursor_y);
 
-    // Check the consistency of two ways results
+    // Check the consistency of two ways
     CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PLINEAR, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PLINEAR, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
@@ -1030,11 +1202,38 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
 
     EXPECT_EQ(data_vec.size(), 1);
 
-    // Get spatial profiles from self calculations
+    // Get spatial profiles in another way
     auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PFLINEAR, cursor_x, cursor_y);
 
-    // Check the consistency of two ways results
+    // Check the consistency of two ways
     CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PFLINEAR, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PFLINEAR, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
@@ -1072,11 +1271,38 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
 
     EXPECT_EQ(data_vec.size(), 1);
 
-    // Get spatial profiles from self calculations
+    // Get spatial profiles in another way
     auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PANGLE, cursor_x, cursor_y);
 
-    // Check the consistency of two ways results
+    // Check the consistency of two ways
     CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PANGLE, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
 TEST_F(PolarizationCalculatorTest, TestStokesSource) {

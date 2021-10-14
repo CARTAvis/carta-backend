@@ -1426,8 +1426,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            if (_loader->GetCursorSpectralData(
-                    spectral_data, stokes, (start_cursor.x + 0.5), xy_count, (start_cursor.y + 0.5), xy_count, _image_mutex)) {
+            if (!ComputeStokes(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
+                                              (start_cursor.y + 0.5), xy_count, _image_mutex)) {
                 // Use loader data
                 spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                 cb(profile_message);
@@ -1436,15 +1436,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 // Set up slicer
                 int x_index, y_index;
                 start_cursor.ToIndex(x_index, y_index);
-                casacore::IPosition start(_image_shape.size());
-                start(0) = x_index;
-                start(1) = y_index;
-                start(_z_axis) = 0;
-                if (_stokes_axis >= 0) {
-                    start(_stokes_axis) = stokes;
-                }
-                casacore::IPosition count(_image_shape.size(), 1); // will adjust count for z axis
-
+                size_t start_channel(0), end_channel(0);
                 // Send incremental spectral profile when reach delta z or delta time
                 size_t delta_z = INIT_DELTA_Z;                         // the increment of channels for each slice (to be adjusted)
                 size_t dt_slice_target = TARGET_DELTA_TIME;            // target time elapse for each slice, in milliseconds
@@ -1460,21 +1452,21 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     auto t_start_slice = std::chrono::high_resolution_clock::now();
 
                     // Slice image to get next delta_z (not to exceed depth in image)
-                    size_t nz = (start(_z_axis) + delta_z < profile_size ? delta_z : profile_size - start(_z_axis));
-                    count(_z_axis) = nz;
-                    casacore::Slicer slicer(start, count);
-                    StokesSource stokes_source(stokes, AxisRange(nz));
+                    size_t nz = (start_channel + delta_z < profile_size ? delta_z : profile_size - start_channel);
+                    end_channel = start_channel + nz - 1;
+                    auto stokes_source_slicer =
+                        GetImageSlicer(AxisRange(x_index), AxisRange(y_index), AxisRange(start_channel, end_channel), stokes);
                     std::vector<float> buffer;
-                    if (!GetSlicerData(std::make_pair(stokes_source, slicer), buffer)) {
+                    if (!GetSlicerData(stokes_source_slicer, buffer)) {
                         return false;
                     }
 
                     // copy buffer to spectral_data
-                    memcpy(&spectral_data[start(_z_axis)], buffer.data(), nz * sizeof(float));
+                    memcpy(&spectral_data[start_channel], buffer.data(), nz * sizeof(float));
 
                     // update start z and determine progress
-                    start(_z_axis) += nz;
-                    progress = (float)start(_z_axis) / profile_size;
+                    start_channel += nz;
+                    progress = (float)start_channel / profile_size;
 
                     // get the time elapse for this slice
                     auto t_end_slice = std::chrono::high_resolution_clock::now();
