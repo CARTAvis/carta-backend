@@ -27,7 +27,6 @@ public:
 private:
     bool OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err);
     bool StokesFilesValid(std::string& err, int& stokes_axis);
-    static bool GetStokesType(const CARTA::PolarizationType& stokes_type, casacore::Stokes::StokesTypes& result);
 
     std::string _top_level_folder;
     std::string _concatenated_name;
