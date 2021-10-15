@@ -258,7 +258,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         }
     }
 
-    _concatenated_name = "";       // reset the name of concatenated image
+    _concatenated_name = "";                        // reset the name of concatenated image
     for (int i = 1; i <= StokesTypes.size(); ++i) { // get stokes type in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
         auto stokes_type = static_cast<CARTA::PolarizationType>(i);
         if (_loaders.count(stokes_type)) {
@@ -284,7 +284,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
                     }
                 }
                 stokes_fits_value = new_stokes_fits_value;
-            }                
+            }
         }
     }
 

@@ -500,7 +500,8 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                             if (header_string.contains("FREQ")) {
                                 // Fix header with "FREQUENCY"
                                 header_string = "FREQ";
-                            } else if (header_string.startsWith("STOKES") || header_string.startsWith("Stokes") || header_string.startsWith("stokes")) {
+                            } else if (header_string.startsWith("STOKES") || header_string.startsWith("Stokes") ||
+                                       header_string.startsWith("stokes")) {
                                 // Found CTYPEX = STOKES; set the stokes axis number X
                                 stokes_axis_num = name.back();
                             }

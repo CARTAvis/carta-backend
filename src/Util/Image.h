@@ -121,10 +121,12 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
     {"LR", CARTA::PolarizationType::LR}, {"XX", CARTA::PolarizationType::XX}, {"YY", CARTA::PolarizationType::YY},
     {"XY", CARTA::PolarizationType::XY}, {"YX", CARTA::PolarizationType::YX}};
 
-static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> CasaStokesTypes{{CARTA::PolarizationType::I, casacore::Stokes::I},
-    {CARTA::PolarizationType::Q, casacore::Stokes::Q}, {CARTA::PolarizationType::U, casacore::Stokes::U}, {CARTA::PolarizationType::V, casacore::Stokes::V},
-    {CARTA::PolarizationType::RR, casacore::Stokes::RR}, {CARTA::PolarizationType::LL, casacore::Stokes::LL}, {CARTA::PolarizationType::RL, casacore::Stokes::RL},
-    {CARTA::PolarizationType::LR, casacore::Stokes::LR}, {CARTA::PolarizationType::XX, casacore::Stokes::XX}, {CARTA::PolarizationType::YY, casacore::Stokes::YY},
+static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> CasaStokesTypes{
+    {CARTA::PolarizationType::I, casacore::Stokes::I}, {CARTA::PolarizationType::Q, casacore::Stokes::Q},
+    {CARTA::PolarizationType::U, casacore::Stokes::U}, {CARTA::PolarizationType::V, casacore::Stokes::V},
+    {CARTA::PolarizationType::RR, casacore::Stokes::RR}, {CARTA::PolarizationType::LL, casacore::Stokes::LL},
+    {CARTA::PolarizationType::RL, casacore::Stokes::RL}, {CARTA::PolarizationType::LR, casacore::Stokes::LR},
+    {CARTA::PolarizationType::XX, casacore::Stokes::XX}, {CARTA::PolarizationType::YY, casacore::Stokes::YY},
     {CARTA::PolarizationType::XY, casacore::Stokes::XY}, {CARTA::PolarizationType::YX, casacore::Stokes::YX}};
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
