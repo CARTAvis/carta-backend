@@ -225,7 +225,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                 hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
             }
         }
-        
+
         _loader[file_id] = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader(_loader[file_id]);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
