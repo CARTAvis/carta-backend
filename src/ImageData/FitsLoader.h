@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
+#include <chrono>
+
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/images/Images/FITSImage.h>
 
@@ -127,23 +129,26 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
 
         // Open file and move to hdu
         fits_open_file(&fptr, _filename.c_str(), 0, &status);
-        status = 0;
         fits_movabs_hdu(fptr, hdu, hdutype, &status);
 
-        // Get headers if they exist
-        char value[80];
-        int bmaj_status(0), bmin_status(0), bpa_status(0);
-        fits_read_keyword(fptr, "BMAJ", value, nullptr, &bmaj_status);
-        fits_read_keyword(fptr, "BMIN", value, nullptr, &bmin_status);
-        fits_read_keyword(fptr, "BPA", value, nullptr, &bpa_status);
+        // Read headers
+        char record[80];
+        int key_num(1);
+        bool bmaj_found(false), bmin_found(false), bpa_found(false);
+
+        while (status == 0 && !(bmaj_found && bmin_found && bpa_found)) {
+            fits_read_record(fptr, key_num++, record, &status);
+            bmaj_found |= strncmp(record, "BMAJ", 4) == 0;
+            bmin_found |= strncmp(record, "BMIN", 4) == 0;
+            bpa_found |= strncmp(record, "BPA", 3) == 0;
+        }
 
         // Close file
         status = 0;
         fits_close_file(fptr, &status);
 
-        bool beam_headers_missing = bmaj_status || bmin_status || bpa_status;
-
-        if (beam_headers_missing) {
+        if (!bmaj_found || !bmin_found || !bpa_found) {
+            // Beam headers missing, remove from image info
             image_info.removeRestoringBeam();
             _image->setImageInfo(image_info);
         }
