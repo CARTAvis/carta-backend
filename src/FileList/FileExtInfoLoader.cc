@@ -240,9 +240,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                                             entry->set_entry_type(CARTA::EntryType::FLOAT);
 
                                             if (name == ("CRVAL" + stokes_ctype_num)) {
-                                                _loader->SetFirstStokesType((int)dvalue);
+                                                _loader->SetStokesCrval((float)dvalue);
+                                            } else if (name == ("CRPIX" + stokes_ctype_num)) {
+                                                _loader->SetStokesCrpix((float)dvalue);
                                             } else if (name == ("CDELT" + stokes_ctype_num)) {
-                                                _loader->SetDeltaStokesIndex((int)dvalue);
+                                                _loader->SetStokesCdelt((int)dvalue);
                                             }
                                         } catch (std::invalid_argument) {
                                             // Not a number - set string value only
@@ -419,9 +421,11 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
         // Fill the first stokes type and the delta value for the stokes index. Set the first stokes type index as 0
         if (!stokes_axis_num.empty()) {
             if (name == ("CRVAL" + stokes_axis_num)) {
-                _loader->SetFirstStokesType((int)fkw->asDouble());
+                _loader->SetStokesCrval((float)fkw->asDouble());
+            } else if (name == ("CRPIX" + stokes_axis_num)) {
+                _loader->SetStokesCrpix((float)fkw->asDouble());
             } else if (name == ("CDELT" + stokes_axis_num)) {
-                _loader->SetDeltaStokesIndex((int)fkw->asDouble());
+                _loader->SetStokesCdelt((int)fkw->asDouble());
             }
         }
 
@@ -496,7 +500,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                             if (header_string.contains("FREQ")) {
                                 // Fix header with "FREQUENCY"
                                 header_string = "FREQ";
-                            } else if (header_string.startsWith("STOKES")) {
+                            } else if (header_string.startsWith("STOKES") || header_string.startsWith("Stokes") || header_string.startsWith("stokes")) {
                                 // Found CTYPEX = STOKES; set the stokes axis number X
                                 stokes_axis_num = name.back();
                             }

@@ -195,8 +195,9 @@ public:
     std::string GetFileName();
 
     // Handle stokes type index
-    virtual void SetFirstStokesType(int stokes_value);
-    virtual void SetDeltaStokesIndex(int delta_stokes_index);
+    virtual void SetStokesCrval(float stokes_crval);
+    virtual void SetStokesCrpix(float stokes_crpix);
+    virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
 
 protected:
@@ -225,7 +226,9 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
-    int _delta_stokes_index;
+    float _stokes_crval;
+    float _stokes_crpix;
+    int _stokes_cdelt;
 
     // Return the shape of the specified stats dataset
     virtual const IPos GetStatsDataShape(FileInfo::Data ds);

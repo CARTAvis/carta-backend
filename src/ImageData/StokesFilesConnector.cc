@@ -114,7 +114,11 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
             auto stokes_type = static_cast<CARTA::PolarizationType>(i);
             if (_loaders.count(stokes_type)) {
                 auto image = _loaders[stokes_type]->GetImage();
-                casacore::StokesCoordinate& stokes_coord = const_cast<casacore::StokesCoordinate&>(image->coordinates().stokesCoordinate());
+                const casacore::CoordinateSystem& coordinates = image->coordinates();
+                if (!coordinates.hasPolarizationCoordinate()) {
+                    return fail_exit("Failed to get the stokes coordinate system!");
+                }
+                casacore::StokesCoordinate& stokes_coord = const_cast<casacore::StokesCoordinate&>(coordinates.stokesCoordinate());
                 if (stokes_coord.stokes().size() != 1) {
                     return fail_exit("Stokes coordinate has no or multiple stokes types!");
                 }
