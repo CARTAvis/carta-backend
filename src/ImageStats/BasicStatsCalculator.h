@@ -30,24 +30,25 @@ struct BasicStats {
     void join(BasicStats<T>& other);
 };
 
+/*
 template <typename T>
 class BasicStatsCalculator {
-    T _min_val, _max_val;
-    double _sum, _sum_squares;
-    size_t _num_pixels;
-    const std::vector<T>& _data;
+  T _min_val, _max_val;
+  double _sum, _sum_squares;
+  size_t _num_pixels;
+  const std::vector<T>& _data;
 
 public:
-    BasicStatsCalculator(const std::vector<T>& data);
-    BasicStatsCalculator(BasicStatsCalculator& mm, tbb::split);
+  BasicStatsCalculator(const std::vector<T>& data);
+  BasicStatsCalculator(BasicStatsCalculator& mm, tbb::split);
 
-    void operator()(const tbb::blocked_range<size_t>& r);
-    void join(BasicStatsCalculator& other); // NOLINT
-    void reduce(const size_t start, const size_t end);
+  void operator()(const tbb::blocked_range<size_t>& r);
+  void join(BasicStatsCalculator& other); // NOLINT
+  void reduce(const size_t start, const size_t end);
 
-    BasicStats<T> GetStats() const;
+  BasicStats<T> GetStats() const;
 };
-
+*/
 } // namespace carta
 
 #include "BasicStatsCalculator.tcc"
