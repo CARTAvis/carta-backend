@@ -14,7 +14,8 @@
 #include "ImageData/PolarizationCalculator.h"
 #include "Logger/Logger.h"
 
-static const string SAMPLE_IMAGE = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits"; // shape: [256, 256, 480, 4]
+static const string SAMPLE_IMAGE_FITS = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits";
+static const string SAMPLE_IMAGE_HDF5 = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.hdf5";
 static const int MAX_CHANNEL = 5;
 
 using namespace carta;
@@ -832,7 +833,7 @@ public:
 };
 
 TEST_F(PolarizationCalculatorTest, TestTotalPolarizedIntensity) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestTotalPolarizedIntensity(image);
@@ -840,7 +841,7 @@ TEST_F(PolarizationCalculatorTest, TestTotalPolarizedIntensity) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestTotalFractionalPolarizedIntensity) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestTotalFractionalPolarizedIntensity(image);
@@ -848,7 +849,7 @@ TEST_F(PolarizationCalculatorTest, TestTotalFractionalPolarizedIntensity) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedIntensity) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestPolarizedIntensity(image);
@@ -856,7 +857,7 @@ TEST_F(PolarizationCalculatorTest, TestPolarizedIntensity) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChannel) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestPolarizedIntensityPerChannel(image);
@@ -864,7 +865,7 @@ TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChannel) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChunk) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestPolarizedIntensityPerChunk(image);
@@ -872,7 +873,7 @@ TEST_F(PolarizationCalculatorTest, TestPolarizedIntensityPerChunk) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFractionalPolarizedIntensity) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestFractionalPolarizedIntensity(image);
@@ -880,7 +881,7 @@ TEST_F(PolarizationCalculatorTest, TestFractionalPolarizedIntensity) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFractionalPolarizedIntensityPerChannel) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestFractionalPolarizedIntensityPerChannel(image);
@@ -888,7 +889,7 @@ TEST_F(PolarizationCalculatorTest, TestFractionalPolarizedIntensityPerChannel) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedAngle) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestPolarizedAngle(image, true);
@@ -897,7 +898,7 @@ TEST_F(PolarizationCalculatorTest, TestPolarizedAngle) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPolarizedAnglePerChannel) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestPolarizedAnglePerChannel(image, true);
@@ -906,7 +907,7 @@ TEST_F(PolarizationCalculatorTest, TestPolarizedAnglePerChannel) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPerformances) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestPerformances(image);
@@ -914,7 +915,7 @@ TEST_F(PolarizationCalculatorTest, TestPerformances) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestConsistency) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (OpenImage(image, file_path)) {
         TestConsistency(image);
@@ -922,7 +923,7 @@ TEST_F(PolarizationCalculatorTest, TestConsistency) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
         return;
@@ -961,7 +962,7 @@ TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPtotal) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
         return;
@@ -1029,8 +1030,83 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPtotal) {
     CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
+TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPtotalForHDF5) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, file_path)) {
+        return;
+    }
+
+    // Open the HDF5 file through the Frame
+    std::string hdf5_file_path = Hdf5ImagePath(SAMPLE_IMAGE_HDF5);
+    if (!fs::exists(hdf5_file_path)) {
+        return;
+    }
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(hdf5_file_path), "0"));
+    EXPECT_TRUE(frame->IsValid());
+
+    // Set spatial profiles requirements
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        Message::SpatialConfig("Ptotalx"), Message::SpatialConfig("Ptotaly")};
+    frame->SetSpatialRequirements(profiles);
+
+    // Get directional axis size
+    int x_size = image->shape()[0];
+    int y_size = image->shape()[1];
+
+    int cursor_x(x_size / 2);
+    int cursor_y(y_size / 2);
+    frame->SetCursor(cursor_x, cursor_y);
+
+    std::string message;
+    int channel(1);
+    int stokes(0);
+
+    // frame->SetImageChannels(channel, stokes, message);
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
+
+    // Get spatial profiles from the Frame
+    std::vector<CARTA::SpatialProfileData> data_vec;
+    frame->FillSpatialProfileData(data_vec);
+
+    EXPECT_EQ(data_vec.size(), 1);
+
+    // Get spatial profiles in another way
+    auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PTOTAL, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PTOTAL, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
+}
+
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFtotal) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
         return;
@@ -1098,8 +1174,83 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFtotal) {
     CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
+TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFtotalForHDF5) {
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, file_path)) {
+        return;
+    }
+
+    // Open the HDF5 file through the Frame
+    std::string hdf5_file_path = Hdf5ImagePath(SAMPLE_IMAGE_HDF5);
+    if (!fs::exists(hdf5_file_path)) {
+        return;
+    }
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(hdf5_file_path), "0"));
+    EXPECT_TRUE(frame->IsValid());
+
+    // Set spatial profiles requirements
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+        Message::SpatialConfig("PFtotalx"), Message::SpatialConfig("PFtotaly")};
+    frame->SetSpatialRequirements(profiles);
+
+    // Get directional axis size
+    int x_size = image->shape()[0];
+    int y_size = image->shape()[1];
+
+    int cursor_x(x_size / 2);
+    int cursor_y(y_size / 2);
+    frame->SetCursor(cursor_x, cursor_y);
+
+    std::string message;
+    int channel(1);
+    int stokes(0);
+
+    frame->SetImageChannels(channel, stokes, message);
+    // frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
+
+    // Get spatial profiles from the Frame
+    std::vector<CARTA::SpatialProfileData> data_vec;
+    frame->FillSpatialProfileData(data_vec);
+
+    EXPECT_EQ(data_vec.size(), 1);
+
+    // Get spatial profiles in another way
+    auto data_profiles = GetSpatialProfiles(image, channel, COMPUTE_STOKES_PFTOTAL, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(data_vec, data_profiles);
+
+    // Reset the stokes channel
+    frame->SetImageChannels(channel, COMPUTE_STOKES_PFTOTAL, message);
+
+    // Set spectral configs for the cursor
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig()};
+    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
+
+    // Get cursor spectral profile data from the Frame
+    CARTA::SpectralProfile spectral_profile;
+
+    frame->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        CURSOR_REGION_ID, true);
+
+    std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+
+    // Get spatial profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        GetCursorSpectralProfiles(image, AxisRange(ALL_Z), COMPUTE_STOKES_PFTOTAL, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    CompareData(spectral_profile_data_1, spectral_profile_data_2);
+}
+
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlinear) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
         return;
@@ -1168,7 +1319,7 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPlinear) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
         return;
@@ -1237,7 +1388,7 @@ TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPFlinear) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesPangle) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE);
+    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
         return;

@@ -481,10 +481,9 @@ bool Hdf5Loader::GetChunk(
     data.resize(data_width * data_height);
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
 
-    StokesSource stokes_source(stokes, z);
-
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
+        StokesSource stokes_source(stokes, z);
         GetSlice(tmp, std::make_pair(stokes_source, slicer));
         data_ok = true;
     } catch (casacore::AipsError& err) {
