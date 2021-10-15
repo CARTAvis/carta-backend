@@ -212,6 +212,10 @@ protected:
     unsigned int _modify_time;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
+    // Computed stokes image
+    std::shared_ptr<casacore::ImageInterface<float>> _computed_stokes_image;
+    StokesSource _computed_stokes_source;
+
     // Save image properties; only reopen for data or beams
     // Axes, dimension values
     casacore::IPosition _image_shape;

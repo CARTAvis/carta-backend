@@ -887,25 +887,30 @@ void FileLoader::SetDeltaStokesIndex(int delta_stokes_index) {
 }
 
 carta::CasaLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
-    carta::CasaLoader::ImageRef image;
     if (stokes_source.UseDefaultImage()) {
-        image = GetImage();
+        return GetImage();
+    }
+
+    if (_computed_stokes_source == stokes_source) {
+        return _computed_stokes_image;
     } else {
         // compute new stokes image with respect to the channel range
         carta::PolarizationCalculator polarization_calculator(GetImage(), AxisRange(stokes_source.axis_range));
         if (stokes_source.stokes == COMPUTE_STOKES_PTOTAL) {
-            image = polarization_calculator.ComputeTotalPolarizedIntensity();
+            _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PFTOTAL) {
-            image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
+            _computed_stokes_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
-            image = polarization_calculator.ComputePolarizedIntensity();
+            _computed_stokes_image = polarization_calculator.ComputePolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
-            image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+            _computed_stokes_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
-            image = polarization_calculator.ComputePolarizedAngle();
+            _computed_stokes_image = polarization_calculator.ComputePolarizedAngle();
         } else {
             spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
+            _computed_stokes_image = nullptr;
         }
+        _computed_stokes_source = stokes_source;
+        return _computed_stokes_image;
     }
-    return image;
 }

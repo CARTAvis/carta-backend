@@ -17,7 +17,7 @@ static const float PROGRESS_REPORT_INTERVAL = 0.1;
 static const float PROCESS_COMPLETED = 1;
 static const int ID_MULTIPLIER = 1000;
 
-MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image)
+MomentGenerator::MomentGenerator(const casacore::String& filename, std::shared_ptr<casacore::ImageInterface<float>> image)
     : _filename(filename), _image(image), _sub_image(nullptr), _image_moments(nullptr), _success(false), _cancel(false) {
     SetMomentTypeMaps();
 }

@@ -1703,14 +1703,12 @@ bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callba
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
-        auto image = _loader->GetStokesImage(stokes_source_region.first);
-        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), image.get());
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), _loader->GetStokesImage(stokes_source_region.first));
         _stokes_source = stokes_source_region.first;
     }
 
     if (_stokes_source != stokes_source_region.first) {
-        auto image = _loader->GetStokesImage(stokes_source_region.first);
-        _moment_generator.reset(new MomentGenerator(GetFileName(), image.get()));
+        _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_source_region.first)));
         _stokes_source = stokes_source_region.first;
     }
 
