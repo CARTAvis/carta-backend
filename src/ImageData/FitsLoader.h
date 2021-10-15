@@ -147,7 +147,7 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
         status = 0;
         fits_close_file(fptr, &status);
 
-        if (!bmaj_found || !bmin_found || !bpa_found) {
+        if (!(bmaj_found && bmin_found && bpa_found)) {
             // Beam headers missing, remove from image info
             image_info.removeRestoringBeam();
             _image->setImageInfo(image_info);
