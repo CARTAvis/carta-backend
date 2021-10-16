@@ -455,15 +455,14 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
             }
         }
 
-        auto header_entry = extended_info.add_header_entries();
-        header_entry->set_name(name);
-        header_entry->set_comment(comment);
-
         switch (fkw->type()) {
             case casacore::FITS::LOGICAL: {
                 bool value(fkw->asBool());
                 std::string bool_string(value ? "T" : "F");
 
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
                 *header_entry->mutable_value() = bool_string;
                 header_entry->set_entry_type(CARTA::EntryType::INT);
                 header_entry->set_numeric_value(value);
@@ -473,6 +472,9 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                 int value(fkw->asInt());
                 std::string string_value = fmt::format("{:d}", value);
 
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
                 *header_entry->mutable_value() = string_value;
                 header_entry->set_entry_type(CARTA::EntryType::INT);
                 header_entry->set_numeric_value(value);
@@ -492,6 +494,9 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                     string_value = fmt::format("{:.12E}", value);
                 }
 
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
                 *header_entry->mutable_value() = string_value;
                 header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                 header_entry->set_numeric_value(value);
@@ -512,6 +517,9 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                     }
                 }
 
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
                 *header_entry->mutable_value() = header_string;
                 header_entry->set_entry_type(CARTA::EntryType::STRING);
                 break;
