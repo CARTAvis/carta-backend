@@ -135,12 +135,20 @@ bool FileLoader::GetShape(IPos& shape) {
     return true;
 }
 
-bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_coord_sys.nCoordinates() == 0) {
-        return false;
+bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys, const StokesSource& stokes_source) {
+    if (stokes_source.UseDefaultImage()) {
+        if (_coord_sys.nCoordinates() == 0) {
+            return false;
+        }
+        coord_sys = _coord_sys;
+    } else {
+        auto image = GetStokesImage(stokes_source);
+        if (image) {
+            coord_sys = image->coordinates();
+        } else {
+            return false;
+        }
     }
-
-    coord_sys = _coord_sys;
     return true;
 }
 

@@ -661,14 +661,14 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
-casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id) {
+casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id, const StokesSource& stokes_source) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (_regions.at(region_id)->IsAnnotation()) { // true if line or polyline
         return nullptr;
     }
 
-    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id));
+    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), stokes_source);
 }
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
@@ -679,15 +679,16 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
     }
 
     try {
-        casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id);
-        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
+        // Create LCBox with z range and stokes using a slicer
+        StokesSource stokes_source = _frames.at(file_id)->GetImageSlicer(z_range, stokes).first;
+        stokes_source_region.first = stokes_source;
+        casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes).second;
+
+        casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id, stokes_source);
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape(stokes_source));
         if (applied_region == nullptr) {
             return false;
         }
-
-        // Create LCBox with z range and stokes using a slicer
-        stokes_source_region.first = _frames.at(file_id)->GetImageSlicer(z_range, stokes).first;
-        casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes).second;
 
         // Set returned region
         // Combine applied region with z/stokes box
@@ -857,7 +858,7 @@ bool RegionHandler::GetRegionHistogramData(
         // number of bins may be set or calculated
         int num_bins(hist_config.num_bins);
         if (num_bins == AUTO_BIN_SIZE) {
-            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(stokes_source_region.second);
+            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(stokes_source_region);
             num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
         }
 
@@ -1040,7 +1041,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get region to check if inside image
-    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id); // get lattice region for the loader swizzled data
     if (!lcregion) {
         progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
@@ -1051,7 +1052,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     RegionState initial_region_state = _regions.at(region_id)->GetRegionState();
 
     // Use loader swizzled data for efficiency
-    if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
+    if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape()) && !ComputeStokes(stokes_index)) {
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
             casacore::IPosition origin = lcregion->boundingBox().start();

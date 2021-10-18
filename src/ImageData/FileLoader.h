@@ -162,7 +162,7 @@ public:
 
     // Image shape and coordinate system axes
     bool GetShape(IPos& shape);
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
+    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys, const StokesSource& stokes_source = StokesSource());
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 

@@ -228,6 +228,9 @@ public:
         int spectral_axis = coord_sys.spectralAxisNumber();
         int spectral_axis_size = image->shape()[spectral_axis];
 
+        casacore::CoordinateSystem resulting_coord_sys = resulting_image->coordinates();
+        EXPECT_EQ(coord_sys.nPixelAxes(), resulting_coord_sys.nPixelAxes());
+
         // Verify each pixel value from calculation results
         int stokes_q(1);
         int stokes_u(2);
@@ -273,6 +276,10 @@ public:
             // Calculate polarized intensity
             carta::PolarizationCalculator polarization_calculator(image, AxisRange(channel));
             auto resulting_image = polarization_calculator.ComputePolarizedIntensity();
+
+            casacore::CoordinateSystem resulting_coord_sys = resulting_image->coordinates();
+            EXPECT_EQ(coord_sys.nPixelAxes(), resulting_coord_sys.nPixelAxes());
+
             CheckPolarizationType(resulting_image, casacore::Stokes::StokesTypes::Plinear);
 
             GetImageData(image, AxisRange(channel), stokes_q, data_q);
@@ -318,6 +325,9 @@ public:
             GetImageData(image, AxisRange(channel), stokes_q, data_q);
             GetImageData(image, AxisRange(channel), stokes_u, data_u);
             GetImageData(resulting_image, AxisRange(channel - start_channel), stokes_pi, data_results);
+
+            casacore::CoordinateSystem resulting_coord_sys = resulting_image->coordinates();
+            EXPECT_EQ(coord_sys.nPixelAxes(), resulting_coord_sys.nPixelAxes());
 
             EXPECT_EQ(data_results.size(), data_q.size());
             EXPECT_EQ(data_results.size(), data_u.size());

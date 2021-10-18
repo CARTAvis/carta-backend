@@ -121,22 +121,32 @@ std::string Frame::GetErrorMessage() {
     return _open_image_error;
 }
 
-casacore::CoordinateSystem* Frame::CoordinateSystem() {
+casacore::CoordinateSystem* Frame::CoordinateSystem(const StokesSource& stokes_source) {
     // Returns pointer to CoordinateSystem clone; caller must delete
     casacore::CoordinateSystem* csys(nullptr);
     if (IsValid()) {
         std::lock_guard<std::mutex> guard(_image_mutex);
         casacore::CoordinateSystem image_csys;
-        _loader->GetCoordinateSystem(image_csys);
-        csys = static_cast<casacore::CoordinateSystem*>(image_csys.clone());
+        if (_loader->GetCoordinateSystem(image_csys, stokes_source)) {
+            csys = static_cast<casacore::CoordinateSystem*>(image_csys.clone());
+        } else {
+            spdlog::error("Failed to get the image coordinate");
+        }
     }
     return csys;
 }
 
-casacore::IPosition Frame::ImageShape() {
+casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     casacore::IPosition ipos;
-    if (IsValid()) {
+    if (stokes_source.UseDefaultImage() && IsValid()) {
         ipos = _image_shape;
+    } else {
+        auto image = _loader->GetStokesImage(stokes_source);
+        if (image) {
+            ipos = image->shape();
+        } else {
+            spdlog::error("Failed to compute the stokes image!");
+        }
     }
     return ipos;
 }
@@ -1159,7 +1169,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             bool have_profile(false);
             bool downsample(mip >= 2);
 
-            if (downsample && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+            if (downsample && _loader->HasMip(2) && !ComputeStokes(stokes)) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
@@ -1194,7 +1204,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     end = config.coordinate().back() == 'x' ? std::min(end, _width) : std::min(end, _height);
                 }
 
-                if (is_current_stokes) {
+                if (is_current_stokes && !ComputeStokes(stokes)) {
                     if (_loader->UseTileCache()) { // Use tile cache to return full resolution data or prepare data for decimation
                         profile.resize(end - start);
 
@@ -1542,11 +1552,11 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // ****************************************************
 // Region/Slicer Support (Frame manages image mutex)
 
-casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region) {
+casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, const StokesSource& stokes_source) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
-    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape());
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem(stokes_source);
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(stokes_source));
     delete coord_sys;
     return image_region;
 }
@@ -1569,10 +1579,12 @@ bool Frame::GetImageRegion(
     }
 }
 
-casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
+casacore::IPosition Frame::GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region) {
     // Returns image shape with a region applied
-    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape());
+    StokesSource stokes_source = stokes_source_region.first;
+    casacore::LattRegionHolder region = stokes_source_region.second;
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem(stokes_source);
+    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape(stokes_source));
     delete coord_sys;
     return lattice_region.shape();
 }

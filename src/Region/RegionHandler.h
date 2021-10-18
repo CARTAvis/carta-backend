@@ -108,7 +108,7 @@ private:
 
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
-    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
+    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id, const StokesSource& stokes_source = StokesSource());
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
         std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region);
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,

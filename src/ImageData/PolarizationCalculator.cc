@@ -67,8 +67,7 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageIn
 
 void PolarizationCalculator::FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type) {
     casacore::CoordinateSystem coord_sys = image.coordinates();
-    int after_coord(-1);
-    int stokes_index = coord_sys.findCoordinate(casacore::Coordinate::STOKES, after_coord);
+    int stokes_index = coord_sys.findCoordinate(casacore::Coordinate::STOKES);
     casacore::Vector<int> which(1);
     which(0) = int(type);
     casacore::StokesCoordinate stokes(which);

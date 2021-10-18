@@ -91,10 +91,10 @@ public:
     std::string GetErrorMessage();
 
     // Returns pointer to CoordinateSystem clone; caller must delete
-    casacore::CoordinateSystem* CoordinateSystem();
+    casacore::CoordinateSystem* CoordinateSystem(const StokesSource& stokes_source = StokesSource());
 
     // Image/Frame info
-    casacore::IPosition ImageShape();
+    casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
     size_t Depth();     // length of z axis
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
@@ -160,10 +160,11 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    casacore::LCRegion* GetImageRegion(
+        int file_id, std::shared_ptr<carta::Region> region, const StokesSource& stokes_source = StokesSource());
     bool GetImageRegion(
         int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region);
-    casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
+    casacore::IPosition GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region);
     // Returns data vector
     bool GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, std::vector<float>& data);
     bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, std::vector<float>& data);
