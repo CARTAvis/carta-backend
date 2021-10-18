@@ -24,6 +24,8 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
+#include "Util/Image.h"
+
 #define DEFAULT_VERTEX_COUNT 1000
 
 inline std::string RegionName(CARTA::RegionType type) {
@@ -122,7 +124,8 @@ public:
     void WaitForTaskCancellation();
 
     // Converted region as approximate LCPolygon and its mask
-    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
+    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape,
+        const StokesSource& stokes_source = StokesSource());
     casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
     // Converted region in Record for export
@@ -166,8 +169,8 @@ private:
 
     // Region applied to any image; used for export
     casacore::LCRegion* GetCachedLCRegion(int file_id);
-    casacore::LCRegion* GetConvertedLCRegion(
-        int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+    casacore::LCRegion* GetConvertedLCRegion(int file_id, const casacore::CoordinateSystem& output_csys,
+        const casacore::IPosition& output_shape, const StokesSource& stokes_source = StokesSource());
 
     // Control points converted to pixel coords in output image, returned in LCRegion Record format for export
     casacore::TableRecord GetRegionPointsRecord(

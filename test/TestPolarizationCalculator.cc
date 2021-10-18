@@ -798,6 +798,13 @@ public:
         return values;
     }
 
+    static std::vector<double> SpectralProfileDoubleValues(CARTA::SpectralProfile& profile) {
+        std::string buffer = profile.raw_values_fp64();
+        std::vector<double> values(buffer.size() / sizeof(double));
+        memcpy(values.data(), buffer.data(), buffer.size());
+        return values;
+    }
+
     static void CompareData(
         std::vector<CARTA::SpatialProfileData> data_vec, std::pair<std::vector<float>, std::vector<float>> data_profiles) {
         for (auto& data : data_vec) {
@@ -843,7 +850,7 @@ public:
     FRIEND_TEST(PolarizationCalculatorTest, TestFrameImageCache);
 };
 
-static void TestFrameSpatialProfiles(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
+static void TestFrameProfiles(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
     std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
@@ -912,7 +919,7 @@ static void TestFrameSpatialProfiles(int stokes, std::string stokes_config_x, st
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
-static void TestFrameSpatialProfilesForHdf5(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
+static void TestFrameProfilesForHdf5(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
     std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
@@ -986,7 +993,7 @@ static void TestFrameSpatialProfilesForHdf5(int stokes, std::string stokes_confi
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
-static void TestRegionHandlerSpatialProfiles(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
+static void TestRegionHandlerProfiles(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
     std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, file_path)) {
@@ -1010,7 +1017,7 @@ static void TestRegionHandlerSpatialProfiles(int stokes, std::string stokes_conf
     auto region_handler = std::make_unique<carta::RegionHandler>();
 
     // Set a point region state
-    int region_id(0);
+    int region_id(1);
     float rotation(0);
     int x_size = image->shape()[0];
     int y_size = image->shape()[1];
@@ -1043,6 +1050,33 @@ static void TestRegionHandlerSpatialProfiles(int stokes, std::string stokes_conf
 
     // Compare data
     PolarizationCalculatorTest::CompareData(spatial_profile_data_vec, data_profiles);
+
+    // Set spectral configs for a point region
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{PolarizationCalculatorTest::CursorSpectralConfig()};
+    region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
+
+    // Get cursor spectral profile data from the RegionHandler
+    CARTA::SpectralProfile spectral_profile;
+    bool stokes_changed(true);
+
+    region_handler->FillSpectralProfileData(
+        [&](CARTA::SpectralProfileData profile_data) {
+            if (profile_data.progress() >= 1.0) {
+                spectral_profile = profile_data.profiles(0);
+            }
+        },
+        region_id, file_id, stokes_changed);
+
+    std::vector<double> tmp = PolarizationCalculatorTest::SpectralProfileDoubleValues(spectral_profile);
+    // convert the double type vector to the float type vector
+    std::vector<float> spectral_profile_data_1(tmp.begin(), tmp.end());
+
+    // Get spectral profiles by another way
+    std::vector<float> spectral_profile_data_2 =
+        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
+
+    // Check the consistency of two ways
+    PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
 TEST_F(PolarizationCalculatorTest, TestTotalPolarizedIntensity) {
@@ -1174,28 +1208,28 @@ TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
     }
 }
 
-TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfiles) {
-    TestFrameSpatialProfiles(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestFrameSpatialProfiles(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestFrameSpatialProfiles(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestFrameSpatialProfiles(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestFrameSpatialProfiles(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+TEST_F(PolarizationCalculatorTest, TestFrameProfiles) {
+    TestFrameProfiles(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
+    TestFrameProfiles(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
+    TestFrameProfiles(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
+    TestFrameProfiles(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
+    TestFrameProfiles(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
 }
 
-TEST_F(PolarizationCalculatorTest, TestFrameSpatialProfilesForHdf5) {
-    TestFrameSpatialProfilesForHdf5(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestFrameSpatialProfilesForHdf5(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestFrameSpatialProfilesForHdf5(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestFrameSpatialProfilesForHdf5(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestFrameSpatialProfilesForHdf5(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+TEST_F(PolarizationCalculatorTest, TestFrameProfilesForHdf5) {
+    TestFrameProfilesForHdf5(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
+    TestFrameProfilesForHdf5(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
+    TestFrameProfilesForHdf5(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
+    TestFrameProfilesForHdf5(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
+    TestFrameProfilesForHdf5(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
 }
 
-TEST_F(PolarizationCalculatorTest, TestRegionHandlerSpatialProfiles) {
-    TestRegionHandlerSpatialProfiles(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestRegionHandlerSpatialProfiles(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestRegionHandlerSpatialProfiles(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestRegionHandlerSpatialProfiles(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestRegionHandlerSpatialProfiles(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+TEST_F(PolarizationCalculatorTest, TestRegionHandlerProfiles) {
+    TestRegionHandlerProfiles(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
+    TestRegionHandlerProfiles(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
+    TestRegionHandlerProfiles(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
+    TestRegionHandlerProfiles(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
+    TestRegionHandlerProfiles(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
 }
 
 TEST_F(PolarizationCalculatorTest, TestStokesSource) {

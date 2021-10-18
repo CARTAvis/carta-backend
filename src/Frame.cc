@@ -1556,7 +1556,7 @@ casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Re
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
     casacore::CoordinateSystem* coord_sys = CoordinateSystem(stokes_source);
-    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(stokes_source));
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(stokes_source), stokes_source);
     delete coord_sys;
     return image_region;
 }
