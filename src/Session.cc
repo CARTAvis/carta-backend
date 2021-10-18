@@ -34,15 +34,14 @@
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
+#include "Util/App.h"
 #include "Util/File.h"
 #include "Util/Message.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
 #else
-#include <Util/App.h>
 #include <xmmintrin.h>
-
 #endif
 
 int Session::_num_sessions = 0;
