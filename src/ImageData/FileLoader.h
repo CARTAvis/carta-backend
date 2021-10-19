@@ -125,6 +125,19 @@ inline casacore::uInt GetFitsHdu(const std::string& hdu) {
     return hdu_num;
 }
 
+// convert between CARTA::PolarizationType values and FITS standard stokes values
+static bool ConvertFitsStokesValue(const int& in_stokes_value, int& out_stokes_value) {
+    if (in_stokes_value >= 1 && in_stokes_value <= 4) {
+        out_stokes_value = in_stokes_value;
+        return true;
+    } else if ((in_stokes_value >= 4 && in_stokes_value <= 12) || (in_stokes_value <= -1 && in_stokes_value >= -8)) {
+        // convert between [5, 6, ..., 12] and [-1, -2, ..., -8]
+        out_stokes_value = -in_stokes_value + 4;
+        return true;
+    }
+    return false;
+}
+
 } // namespace FileInfo
 
 class FileLoader {

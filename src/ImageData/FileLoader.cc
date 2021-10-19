@@ -13,7 +13,6 @@
 
 #include "../Logger/Logger.h"
 #include "Util/File.h"
-#include "Util/Image.h"
 
 #include "CasaLoader.h"
 #include "CompListLoader.h"
@@ -241,7 +240,7 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
         for (int i = 0; i < _num_stokes; ++i) {
             int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
             int stokes_value;
-            if (ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
+            if (FileInfo::ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
                 _stokes_indices[GetStokesType(stokes_value)] = i;
             }
         }

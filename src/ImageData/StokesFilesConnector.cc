@@ -13,6 +13,14 @@
 
 using namespace carta;
 
+static std::unordered_map<CARTA::PolarizationType, casacore::Stokes::StokesTypes> CasaStokesTypes{
+    {CARTA::PolarizationType::I, casacore::Stokes::I}, {CARTA::PolarizationType::Q, casacore::Stokes::Q},
+    {CARTA::PolarizationType::U, casacore::Stokes::U}, {CARTA::PolarizationType::V, casacore::Stokes::V},
+    {CARTA::PolarizationType::RR, casacore::Stokes::RR}, {CARTA::PolarizationType::LL, casacore::Stokes::LL},
+    {CARTA::PolarizationType::RL, casacore::Stokes::RL}, {CARTA::PolarizationType::LR, casacore::Stokes::LR},
+    {CARTA::PolarizationType::XX, casacore::Stokes::XX}, {CARTA::PolarizationType::YY, casacore::Stokes::YY},
+    {CARTA::PolarizationType::XY, casacore::Stokes::XY}, {CARTA::PolarizationType::YX, casacore::Stokes::YX}};
+
 StokesFilesConnector::StokesFilesConnector(const std::string& _top_level_folder) : _top_level_folder(_top_level_folder) {}
 
 StokesFilesConnector::~StokesFilesConnector() {
@@ -274,7 +282,7 @@ bool StokesFilesConnector::OpenStokesFiles(const CARTA::ConcatStokesFiles& messa
         for (int i = 0; i < message.stokes_files_size(); ++i) {
             int new_stokes_value = GetStokesValue(message.stokes_files(i).polarization_type());
             int new_stokes_fits_value;
-            if (ConvertFitsStokesValue(new_stokes_value, new_stokes_fits_value)) {
+            if (FileInfo::ConvertFitsStokesValue(new_stokes_value, new_stokes_fits_value)) {
                 if (stokes_fits_value != 0) {
                     if (delt == 0) {
                         delt = new_stokes_fits_value - stokes_fits_value;
@@ -325,6 +333,14 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
         ++ref_index;
     }
     return true;
+}
+
+bool StokesFilesConnector::GetCasaStokesType(const CARTA::PolarizationType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
+    if (CasaStokesTypes.count(in_stokes_type)) {
+        out_stokes_type = CasaStokesTypes[in_stokes_type];
+        return true;
+    }
+    return false;
 }
 
 void StokesFilesConnector::ClearCache() {
