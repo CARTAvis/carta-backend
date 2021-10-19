@@ -1086,16 +1086,21 @@ static void TestPointRegionProfiles(int stokes, std::string stokes_config_x, std
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
-static void TestRectangleRegionProfiles(int stokes) {
-    std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
+static void TestRectangleRegionProfiles(std::string sample_file_path, int stokes) {
+    // Open a reference image
+    std::string ref_file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
-    if (!OpenImage(image, file_path)) {
+    if (!OpenImage(image, ref_file_path)) {
         return;
     }
 
-    // Open the file through the Frame
+    // Open a sample image through the Frame
+    if (!fs::exists(sample_file_path)) {
+        return;
+    }
+
     int file_id(0);
-    auto frame = std::make_shared<TestFrame>(file_id, carta::FileLoader::GetLoader(file_path), "0");
+    auto frame = std::make_shared<TestFrame>(file_id, carta::FileLoader::GetLoader(sample_file_path), "0");
     EXPECT_TRUE(frame->IsValid());
 
     // Set image channels through the Frame
@@ -1116,7 +1121,7 @@ static void TestRectangleRegionProfiles(int stokes) {
     int y_size = image->shape()[1];
     int center_x(x_size / 2);
     int center_y(y_size / 2);
-    CARTA::Point center, width_height; // set a rectangle region covers the full x-y pixels range
+    CARTA::Point center, width_height; // set a rectangle region which covers the full x-y pixels range
     center.set_x(center_x);
     center.set_y(center_y);
     width_height.set_x(x_size);
@@ -1377,9 +1382,15 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
-    TestRectangleRegionProfiles(COMPUTE_STOKES_PTOTAL);
-    TestRectangleRegionProfiles(COMPUTE_STOKES_PFTOTAL);
-    TestRectangleRegionProfiles(COMPUTE_STOKES_PLINEAR);
-    TestRectangleRegionProfiles(COMPUTE_STOKES_PFLINEAR);
-    TestRectangleRegionProfiles(COMPUTE_STOKES_PANGLE);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PTOTAL);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PFTOTAL);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PLINEAR);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PFLINEAR);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PANGLE);
+
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PTOTAL);
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PFTOTAL);
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PLINEAR);
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PFLINEAR);
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PANGLE);
 }
