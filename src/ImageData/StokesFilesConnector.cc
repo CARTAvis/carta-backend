@@ -335,7 +335,8 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
     return true;
 }
 
-bool StokesFilesConnector::GetCasaStokesType(const CARTA::PolarizationType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
+bool StokesFilesConnector::GetCasaStokesType(
+    const CARTA::PolarizationType& in_stokes_type, casacore::Stokes::StokesTypes& out_stokes_type) {
     if (CasaStokesTypes.count(in_stokes_type)) {
         out_stokes_type = CasaStokesTypes[in_stokes_type];
         return true;
