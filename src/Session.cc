@@ -1804,7 +1804,7 @@ void Session::ExecuteAnimationFrameInner() {
             auto active_frame_z = curr_frame.channel();
             auto active_frame_stokes = curr_frame.stokes();
 
-            if ((_animation_object->_tbb_context).is_group_execution_cancelled()) {
+            if ((_animation_object->_context).is_group_execution_cancelled()) {
                 return;
             }
 
