@@ -167,7 +167,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     GetSpectralCoordPreferences(image.get(), prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
                     casacore::ImageFITSHeaderInfo fhi;
                     casacore::String error_string, origin_string;
-                    bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(false);
+                    bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(true);
                     bool prim_head(hdu == "0");
                     int bit_pix(-32);
                     float min_pix(1.0), max_pix(-1.0);
@@ -524,13 +524,43 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
                 header_entry->set_entry_type(CARTA::EntryType::STRING);
                 break;
             }
-            case casacore::FITS::BIT:
-            case casacore::FITS::CHAR:
-            case casacore::FITS::COMPLEX:
-            case casacore::FITS::ICOMPLEX:
-            case casacore::FITS::DCOMPLEX:
-            case casacore::FITS::VADESC:
-            case casacore::FITS::NOVALUE:
+            case casacore::FITS::COMPLEX: {
+                casacore::Complex value = fkw->asComplex();
+                std::string string_value = fmt::format("{} + {}i", value.real(), value.imag());
+
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
+                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                break;
+            }
+            case casacore::FITS::ICOMPLEX: {
+                casacore::IComplex value = fkw->asIComplex();
+                std::string string_value = fmt::format("{} + {}i", value.real(), value.imag());
+
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
+                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                break;
+            }
+            case casacore::FITS::DCOMPLEX: {
+                casacore::DComplex value = fkw->asDComplex();
+                std::string string_value = fmt::format("{} + {}i", value.real(), value.imag());
+
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
+                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                break;
+            }
+            case casacore::FITS::NOVALUE: {
+                auto header_entry = extended_info.add_header_entries();
+                header_entry->set_name(name);
+                header_entry->set_comment(comment);
+                header_entry->set_entry_type(CARTA::EntryType::STRING);
+                break;
+            }
             default:
                 break;
         }
