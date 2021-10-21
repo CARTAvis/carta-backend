@@ -761,15 +761,22 @@ bool RegionHandler::GetLineBoxRegions(int file_id, int region_id, std::shared_pt
     } else {
         casacore::CoordinateSystem* image_csys = frame->CoordinateSystem();
 
-        auto record = region->GetImageRegionRecord(file_id, *image_csys, frame->ImageShape());
-        casacore::Vector<float> endpoints_x = record.asArrayFloat("x");
-        casacore::Vector<float> endpoints_y = record.asArrayFloat("y");
+        try {
+            auto record = region->GetImageRegionRecord(file_id, *image_csys, frame->ImageShape());
 
-        CARTA::Point point;
-        for (size_t i = 0; i < endpoints_x.size(); ++i) {
-            point.set_x(endpoints_x(i));
-            point.set_y(endpoints_y(i));
-            endpoints.push_back(point);
+            casacore::Vector<double> endpoints_x = record.asArrayDouble("x");
+            casacore::Vector<double> endpoints_y = record.asArrayDouble("y");
+
+            CARTA::Point point;
+            for (size_t i = 0; i < endpoints_x.size(); ++i) {
+                point.set_x(endpoints_x(i));
+                point.set_y(endpoints_y(i));
+                endpoints.push_back(point);
+            }
+        } catch (const casacore::AipsError& err) {
+            delete image_csys;
+            message = "Error converting region to matched image.";
+            return false;
         }
 
         delete image_csys;
