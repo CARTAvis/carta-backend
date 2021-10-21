@@ -11,7 +11,8 @@
 #include <functional>
 #include <vector>
 
-typedef const std::function<void(double, double, const std::vector<float>&, const std::vector<int32_t>&)> ContourCallback;
+typedef const std::function<void(double, double, const std::vector<float>&, const std::vector<int32_t>&, bool is_long_task)>
+    ContourCallback;
 
 enum Edge { TopEdge, RightEdge, BottomEdge, LeftEdge, None };
 

@@ -1588,7 +1588,8 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
 
         int64_t total_vertices = 0;
 
-        auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
+        auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices,
+                            bool is_long_task) {
             CARTA::ContourImageData partial_response;
             partial_response.set_file_id(file_id);
             // Currently only supports identical reference file IDs
@@ -1596,6 +1597,7 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
             partial_response.set_channel(frame->CurrentZ());
             partial_response.set_stokes(frame->CurrentStokes());
             partial_response.set_progress(progress);
+            partial_response.set_is_long_task(is_long_task);
 
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));

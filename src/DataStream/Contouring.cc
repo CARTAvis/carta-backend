@@ -140,14 +140,26 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     vector<bool> visited(num_pixels);
     int64_t i, j;
 
+    auto t_start = std::chrono::high_resolution_clock::now();
+
     auto test_for_chunk_overflow = [&]() {
         if (vertex_cutoff && vertices.size() > vertex_cutoff) {
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
             double progress = std::min(0.99, checked_pixels / double(num_pixels));
-            partial_callback(level, progress, vertices, indices);
+            auto estimated_process_time = 1.0e-6 * dt / progress; // seconds
+            bool is_long_task(false);
+            if (progress > 0 && estimated_process_time > 1.0) {
+                is_long_task = true;
+            }
+            partial_callback(level, progress, vertices, indices, is_long_task);
             vertices.clear();
             indices.clear();
         }
     };
+
+    // Send the first partial contour data with the zero progress
+    partial_callback(level, 0.0, vertices, indices, false);
 
     // Search TopEdge
     for (j = 0, i = 0; i < width - 1; i++) {
@@ -215,7 +227,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             checked_pixels++;
         }
     }
-    partial_callback(level, 1.0, vertices, indices);
+    partial_callback(level, 1.0, vertices, indices, false);
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
