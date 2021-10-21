@@ -139,6 +139,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     int64_t checked_pixels = 0;
     vector<bool> visited(num_pixels);
     int64_t i, j;
+    bool first_report_done(false);
 
     auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -152,14 +153,15 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             if (progress > 0 && estimated_process_time > 1.0) {
                 is_long_task = true;
             }
+            if (!first_report_done) {
+                progress = 0; // reset the progress as 0 in order to let the frontend know it is the first partial data report
+                first_report_done = true;
+            }
             partial_callback(level, progress, vertices, indices, is_long_task);
             vertices.clear();
             indices.clear();
         }
     };
-
-    // Send the first partial contour data with the zero progress
-    partial_callback(level, 0.0, vertices, indices, false);
 
     // Search TopEdge
     for (j = 0, i = 0; i < width - 1; i++) {
