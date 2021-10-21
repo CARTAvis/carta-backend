@@ -25,7 +25,7 @@ public:
     void CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, const std::vector<casacore::LCRegion*>& box_regions,
         double offset_increment, size_t num_channels, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
-    void StopCalculation();
+    void StopCalculation(bool stop = true);
 
 private:
     std::string GetPvFilename(const std::string& filename);

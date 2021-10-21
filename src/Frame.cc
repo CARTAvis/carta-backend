@@ -1718,11 +1718,22 @@ void Frame::StopMomentCalc() {
 bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, double offset_increment,
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Create PV image
+    if (_stop_pv) {
+        // User cancelled during box region generation
+        pv_response.set_success(false);
+        pv_response.set_message("PV generator cancelled.");
+        pv_response.set_cancel(true);
+        return false;
+    }
+
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_pv_generator) {
         _pv_generator = std::make_unique<PvGenerator>(file_id, GetFileName());
     }
+
+    // Reset stop flag
+    _pv_generator->StopCalculation(_stop_pv);
 
     if (_pv_generator) {
         _pv_generator->CalculatePvImage(
@@ -1732,9 +1743,11 @@ bool Frame::CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>
     return pv_image.image.get();
 }
 
-void Frame::StopPvCalc() {
+void Frame::StopPvCalc(bool stop) {
+    _stop_pv = stop;
+
     if (_pv_generator) {
-        _pv_generator->StopCalculation();
+        _pv_generator->StopCalculation(stop);
     }
 }
 

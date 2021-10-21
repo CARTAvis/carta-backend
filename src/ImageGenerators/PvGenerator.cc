@@ -32,9 +32,11 @@ void PvGenerator::CalculatePvImage(std::shared_ptr<carta::FileLoader> loader, co
     double offset_increment, size_t num_channels, int stokes, std::mutex& image_mutex, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
     // Calculate PV image with progress updates.  Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
+    // Reset stop flag
+    _stop_calc = false;
+
     casacore::CoordinateSystem csys;
-    loader->GetCoordinateSystem(csys);
-    if (!csys.hasSpectralAxis()) {
+    if (!loader->GetCoordinateSystem(csys) || !csys.hasSpectralAxis()) {
         pv_response.set_success(false);
         pv_response.set_message("Cannot generate PV image with no valid spectral axis.");
         return;
@@ -138,7 +140,7 @@ void PvGenerator::CalculatePvImageStats(std::shared_ptr<carta::FileLoader> loade
         pv_image = GetGeneratedImage();
 
         pv_response.set_success(true);
-    } else {
+    } else if (!pv_response.cancel()) {
         pv_response.set_success(false);
         pv_response.set_message("PV generator failed to complete.");
     }
@@ -227,8 +229,8 @@ void PvGenerator::CalculatePvImageSpectral(std::shared_ptr<carta::FileLoader> lo
     }
 }
 
-void PvGenerator::StopCalculation() {
-    _stop_calc = true;
+void PvGenerator::StopCalculation(bool stop) {
+    _stop_calc = stop;
 }
 
 std::string PvGenerator::GetPvFilename(const std::string& filename) {

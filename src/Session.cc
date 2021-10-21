@@ -1263,10 +1263,14 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_message("Invalid region id.");
         } else {
             auto t_start_pv_image = std::chrono::high_resolution_clock::now();
+
             auto& frame = _frames.at(file_id);
+            _frames.at(file_id)->StopPvCalc(false); // reset stop flag
+
             std::vector<casacore::LCRegion*> box_regions;
             double offset_increment; // in arcsec
             std::string error;
+
             if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, offset_increment, error)) {
                 // Set pv progress callback function
                 auto progress_callback = [&](float progress) {

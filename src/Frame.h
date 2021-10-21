@@ -188,7 +188,7 @@ public:
     // PV image calculation
     bool CalculatePvImage(int file_id, const std::vector<casacore::LCRegion*>& box_regions, double offset_increment,
         GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
-    void StopPvCalc();
+    void StopPvCalc(bool stop = true);
 
     // Save as a new file or export sub-image to CASA/FITS format
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
@@ -310,6 +310,7 @@ protected:
     // Image generators
     std::unique_ptr<MomentGenerator> _moment_generator;
     std::unique_ptr<PvGenerator> _pv_generator;
+    bool _stop_pv;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_
