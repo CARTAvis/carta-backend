@@ -134,9 +134,9 @@ public:
         return spectral_config;
     }
 
-    static CARTA::SetSpectralRequirements_SpectralConfig RegionSpectralConfig() {
+    static CARTA::SetSpectralRequirements_SpectralConfig RegionSpectralConfig(const std::string& coordinate = "z") {
         CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
-        spectral_config.set_coordinate("z");
+        spectral_config.set_coordinate(coordinate);
         spectral_config.add_stats_types(CARTA::StatsType::Mean);
         return spectral_config;
     }
@@ -1121,7 +1121,8 @@ static void TestPointRegionProfiles(std::string sample_file_path, int current_ch
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
-static void TestRectangleRegionProfiles(std::string sample_file_path, int stokes) {
+static void TestRectangleRegionProfiles(
+    std::string sample_file_path, int current_channel, int current_stokes, int config_stokes, const std::string& stokes_config_z) {
     // Open a reference image
     std::string ref_file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
@@ -1139,9 +1140,8 @@ static void TestRectangleRegionProfiles(std::string sample_file_path, int stokes
     EXPECT_TRUE(frame->IsValid());
 
     // Set image channels through the Frame
-    int current_channel(0);
     std::string message;
-    frame->SetImageChannels(current_channel, stokes, message);
+    frame->SetImageChannels(current_channel, current_stokes, message);
 
     // Get the coordinate through the Frame
     casacore::CoordinateSystem* csys = frame->CoordinateSystem();
@@ -1169,12 +1169,13 @@ static void TestRectangleRegionProfiles(std::string sample_file_path, int stokes
     EXPECT_TRUE(success);
 
     // Set spectral configs for a point region
-    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{PolarizationCalculatorTest::RegionSpectralConfig()};
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{
+        PolarizationCalculatorTest::RegionSpectralConfig(stokes_config_z)};
     region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
 
     // Get cursor spectral profile data from the RegionHandler
     CARTA::SpectralProfile spectral_profile;
-    bool stokes_changed(true);
+    bool stokes_changed(false);
 
     region_handler->FillSpectralProfileData(
         [&](CARTA::SpectralProfileData profile_data) {
@@ -1193,19 +1194,19 @@ static void TestRectangleRegionProfiles(std::string sample_file_path, int stokes
     std::shared_ptr<casacore::ImageInterface<float>> resulting_image;
     int fiddled_stokes_index(0);
 
-    if (stokes == COMPUTE_STOKES_PTOTAL) {
+    if (config_stokes == COMPUTE_STOKES_PTOTAL) {
         resulting_image = polarization_calculator.ComputeTotalPolarizedIntensity();
-    } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
+    } else if (config_stokes == COMPUTE_STOKES_PFTOTAL) {
         resulting_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
-    } else if (stokes == COMPUTE_STOKES_PLINEAR) {
+    } else if (config_stokes == COMPUTE_STOKES_PLINEAR) {
         resulting_image = polarization_calculator.ComputePolarizedIntensity();
-    } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+    } else if (config_stokes == COMPUTE_STOKES_PFLINEAR) {
         resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
-    } else if (stokes == COMPUTE_STOKES_PANGLE) {
+    } else if (config_stokes == COMPUTE_STOKES_PANGLE) {
         resulting_image = polarization_calculator.ComputePolarizedAngle();
     } else {
         resulting_image = image;
-        fiddled_stokes_index = stokes;
+        fiddled_stokes_index = config_stokes;
     }
 
     int z_size = image->shape()[2];
@@ -1446,25 +1447,25 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PTOTAL);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PFTOTAL);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PLINEAR);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PFLINEAR);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), COMPUTE_STOKES_PANGLE);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PANGLE, "Panglez");
 
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 2);
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 3);
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 0, "Iz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 1, "Qz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 2, "Uz");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 3, "Vz");
 
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PTOTAL);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PFTOTAL);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PLINEAR);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PFLINEAR);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), COMPUTE_STOKES_PANGLE);
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PANGLE, "Panglez");
 
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 2);
-    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 3);
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 0, "Iz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 1, "Qz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 2, "Uz");
+    TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 3, "Vz");
 }
