@@ -888,7 +888,7 @@ public:
 };
 
 static void TestCursorProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
-    std::string stokes_config_x, std::string stokes_config_y) {
+    std::string stokes_config_x, std::string stokes_config_y, std::string stokes_config_z) {
     std::string reference_file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
     if (!OpenImage(image, reference_file_path)) {
@@ -927,16 +927,14 @@ static void TestCursorProfiles(std::string sample_file_path, int current_channel
     // Check the consistency of two ways
     PolarizationCalculatorTest::CompareData(data_vec, data_profiles);
 
-    // Reset channels
-    frame->SetImageChannels(current_channel, config_stokes, message);
-
     // Set spectral configs for the cursor
-    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{PolarizationCalculatorTest::CursorSpectralConfig()};
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{
+        PolarizationCalculatorTest::CursorSpectralConfig(stokes_config_z)};
     frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
 
     // Get cursor spectral profile data from the Frame
     CARTA::SpectralProfile spectral_profile;
-    bool stokes_changed(true);
+    bool stokes_changed = (stokes_config_z == "z");
 
     frame->FillSpectralProfileData(
         [&](CARTA::SpectralProfileData profile_data) {
@@ -949,8 +947,9 @@ static void TestCursorProfiles(std::string sample_file_path, int current_channel
     std::vector<float> spectral_profile_data_1 = PolarizationCalculatorTest::SpectralProfileValues(spectral_profile);
 
     // Get spatial profiles by another way
+    int stokes = stokes_config_z == "z" ? current_stokes : config_stokes;
     std::vector<float> spectral_profile_data_2 =
-        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), config_stokes, cursor_x, cursor_y);
+        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
     // Check the consistency of two ways
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
@@ -1323,27 +1322,49 @@ TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 0, "Ix", "Iy");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy");
-    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 0, "Ix", "Iy", "Iz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy", "Qz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy", "Uz");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy", "Vz");
 
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy", "Iz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy", "Qz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy", "Uz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy", "Vz");
+
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
+
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 0, "Ix", "Iy", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy", "z");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy", "z");
+
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
+
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy", "z");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy", "z");
 }
 
 TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
