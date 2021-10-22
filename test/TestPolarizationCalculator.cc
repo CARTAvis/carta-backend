@@ -887,10 +887,11 @@ public:
     FRIEND_TEST(PolarizationCalculatorTest, TestFrameImageCache);
 };
 
-static void TestCursorProfiles(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
-    std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
+static void TestCursorProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
+    std::string stokes_config_x, std::string stokes_config_y) {
+    std::string reference_file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
-    if (!OpenImage(image, file_path)) {
+    if (!OpenImage(image, reference_file_path)) {
         return;
     }
 
@@ -899,7 +900,7 @@ static void TestCursorProfiles(int stokes, std::string stokes_config_x, std::str
     int y_size = image->shape()[1];
 
     // Open the file through the Frame
-    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(sample_file_path), "0"));
     EXPECT_TRUE(frame->IsValid());
 
     // Set spatial profiles requirements
@@ -912,9 +913,7 @@ static void TestCursorProfiles(int stokes, std::string stokes_config_x, std::str
     frame->SetCursor(cursor_x, cursor_y);
 
     std::string message;
-    int channel(1);
-    int current_stokes(0);
-    frame->SetImageChannels(channel, current_stokes, message);
+    frame->SetImageChannels(current_channel, current_stokes, message);
 
     // Get spatial profiles from the Frame
     std::vector<CARTA::SpatialProfileData> data_vec;
@@ -923,13 +922,13 @@ static void TestCursorProfiles(int stokes, std::string stokes_config_x, std::str
     EXPECT_EQ(data_vec.size(), 1);
 
     // Get spatial profiles in another way
-    auto data_profiles = PolarizationCalculatorTest::GetSpatialProfiles(image, channel, stokes, cursor_x, cursor_y);
+    auto data_profiles = PolarizationCalculatorTest::GetSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
     // Check the consistency of two ways
     PolarizationCalculatorTest::CompareData(data_vec, data_profiles);
 
-    // Reset the stokes channel
-    frame->SetImageChannels(channel, stokes, message);
+    // Reset channels
+    frame->SetImageChannels(current_channel, config_stokes, message);
 
     // Set spectral configs for the cursor
     std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{PolarizationCalculatorTest::CursorSpectralConfig()};
@@ -937,6 +936,7 @@ static void TestCursorProfiles(int stokes, std::string stokes_config_x, std::str
 
     // Get cursor spectral profile data from the Frame
     CARTA::SpectralProfile spectral_profile;
+    bool stokes_changed(true);
 
     frame->FillSpectralProfileData(
         [&](CARTA::SpectralProfileData profile_data) {
@@ -944,87 +944,13 @@ static void TestCursorProfiles(int stokes, std::string stokes_config_x, std::str
                 spectral_profile = profile_data.profiles(0);
             }
         },
-        CURSOR_REGION_ID, true);
+        CURSOR_REGION_ID, stokes_changed);
 
     std::vector<float> spectral_profile_data_1 = PolarizationCalculatorTest::SpectralProfileValues(spectral_profile);
 
     // Get spatial profiles by another way
     std::vector<float> spectral_profile_data_2 =
-        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
-
-    // Check the consistency of two ways
-    PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
-}
-
-static void TestCursorProfilesForHdf5(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
-    std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
-    std::shared_ptr<casacore::ImageInterface<float>> image;
-    if (!OpenImage(image, file_path)) {
-        return;
-    }
-
-    // Open the HDF5 file through the Frame
-    std::string hdf5_file_path = FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5);
-    if (!fs::exists(hdf5_file_path)) {
-        return;
-    }
-    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(hdf5_file_path), "0"));
-    EXPECT_TRUE(frame->IsValid());
-
-    // Set spatial profiles requirements
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
-        Message::SpatialConfig(stokes_config_x), Message::SpatialConfig(stokes_config_y)};
-    frame->SetSpatialRequirements(profiles);
-
-    // Get directional axis size
-    int x_size = image->shape()[0];
-    int y_size = image->shape()[1];
-
-    int cursor_x(x_size / 2);
-    int cursor_y(y_size / 2);
-    frame->SetCursor(cursor_x, cursor_y);
-
-    std::string message;
-    int channel(1);
-    int current_stokes(0);
-
-    frame->SetImageChannels(channel, current_stokes, message);
-
-    // Get spatial profiles from the Frame
-    std::vector<CARTA::SpatialProfileData> data_vec;
-    frame->FillSpatialProfileData(data_vec);
-
-    EXPECT_EQ(data_vec.size(), 1);
-
-    // Get spatial profiles in another way
-    auto data_profiles = PolarizationCalculatorTest::GetSpatialProfiles(image, channel, stokes, cursor_x, cursor_y);
-
-    // Check the consistency of two ways
-    PolarizationCalculatorTest::CompareData(data_vec, data_profiles);
-
-    // Reset the stokes channel
-    frame->SetImageChannels(channel, stokes, message);
-
-    // Set spectral configs for the cursor
-    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{PolarizationCalculatorTest::CursorSpectralConfig()};
-    frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
-
-    // Get cursor spectral profile data from the Frame
-    CARTA::SpectralProfile spectral_profile;
-
-    frame->FillSpectralProfileData(
-        [&](CARTA::SpectralProfileData profile_data) {
-            if (profile_data.progress() >= 1.0) {
-                spectral_profile = profile_data.profiles(0);
-            }
-        },
-        CURSOR_REGION_ID, true);
-
-    std::vector<float> spectral_profile_data_1 = PolarizationCalculatorTest::SpectralProfileValues(spectral_profile);
-
-    // Get spectral profiles by another way
-    std::vector<float> spectral_profile_data_2 =
-        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
+        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), config_stokes, cursor_x, cursor_y);
 
     // Check the consistency of two ways
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
@@ -1397,27 +1323,27 @@ TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
-    TestCursorProfiles(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestCursorProfiles(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestCursorProfiles(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestCursorProfiles(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestCursorProfiles(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
 
-    TestCursorProfiles(0, "Ix", "Iy");
-    TestCursorProfiles(1, "Qx", "Qy");
-    TestCursorProfiles(2, "Ux", "Uy");
-    TestCursorProfiles(3, "Vx", "Vy");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 0, "Ix", "Iy");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy");
+    TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy");
 
-    TestCursorProfilesForHdf5(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestCursorProfilesForHdf5(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestCursorProfilesForHdf5(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestCursorProfilesForHdf5(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestCursorProfilesForHdf5(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
 
-    TestCursorProfilesForHdf5(0, "Ix", "Iy");
-    TestCursorProfilesForHdf5(1, "Qx", "Qy");
-    TestCursorProfilesForHdf5(2, "Ux", "Uy");
-    TestCursorProfilesForHdf5(3, "Vx", "Vy");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy");
 }
 
 TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
