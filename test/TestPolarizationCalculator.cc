@@ -127,9 +127,9 @@ public:
         }
     }
 
-    static CARTA::SetSpectralRequirements_SpectralConfig CursorSpectralConfig() {
+    static CARTA::SetSpectralRequirements_SpectralConfig CursorSpectralConfig(const std::string& coordinate = "z") {
         CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
-        spectral_config.set_coordinate("z");
+        spectral_config.set_coordinate(coordinate);
         spectral_config.add_stats_types(CARTA::StatsType::Sum);
         return spectral_config;
     }
@@ -1030,22 +1030,26 @@ static void TestCursorProfilesForHdf5(int stokes, std::string stokes_config_x, s
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
 }
 
-static void TestPointRegionProfiles(int stokes, std::string stokes_config_x, std::string stokes_config_y) {
-    std::string file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
+static void TestPointRegionProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
+    std::string stokes_config_x, std::string stokes_config_y, std::string stokes_config_z) {
+    std::string reference_file_path = FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS);
     std::shared_ptr<casacore::ImageInterface<float>> image;
-    if (!OpenImage(image, file_path)) {
+    if (!OpenImage(image, reference_file_path)) {
         return;
     }
 
-    // Open the file through the Frame
+    // Open a sample image through the Frame
+    if (!fs::exists(sample_file_path)) {
+        return;
+    }
+
     int file_id(0);
-    auto frame = std::make_shared<TestFrame>(file_id, carta::FileLoader::GetLoader(file_path), "0");
+    auto frame = std::make_shared<TestFrame>(file_id, carta::FileLoader::GetLoader(sample_file_path), "0");
     EXPECT_TRUE(frame->IsValid());
 
     // Set image channels through the Frame
-    int channel(0);
     std::string message;
-    frame->SetImageChannels(channel, stokes, message);
+    frame->SetImageChannels(current_channel, current_stokes, message);
 
     // Get the coordinate through the Frame
     casacore::CoordinateSystem* csys = frame->CoordinateSystem();
@@ -1083,18 +1087,19 @@ static void TestPointRegionProfiles(int stokes, std::string stokes_config_x, std
     }
 
     // Get a point region spatial profiles in another way
-    auto data_profiles = PolarizationCalculatorTest::GetSpatialProfiles(image, channel, stokes, cursor_x, cursor_y);
+    auto data_profiles = PolarizationCalculatorTest::GetSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
     // Compare data
     PolarizationCalculatorTest::CompareData(spatial_profile_data_vec, data_profiles);
 
     // Set spectral configs for a point region
-    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{PolarizationCalculatorTest::CursorSpectralConfig()};
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{
+        PolarizationCalculatorTest::CursorSpectralConfig(stokes_config_z)};
     region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
 
     // Get cursor spectral profile data from the RegionHandler
     CARTA::SpectralProfile spectral_profile;
-    bool stokes_changed(true);
+    bool stokes_changed(false);
 
     region_handler->FillSpectralProfileData(
         [&](CARTA::SpectralProfileData profile_data) {
@@ -1110,7 +1115,7 @@ static void TestPointRegionProfiles(int stokes, std::string stokes_config_x, std
 
     // Get spectral profiles by another way
     std::vector<float> spectral_profile_data_2 =
-        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
+        PolarizationCalculatorTest::GetCursorSpectralProfiles(image, AxisRange(ALL_Z), config_stokes, cursor_x, cursor_y);
 
     // Check the consistency of two ways
     PolarizationCalculatorTest::CompareData(spectral_profile_data_1, spectral_profile_data_2);
@@ -1415,16 +1420,29 @@ TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
-    TestPointRegionProfiles(COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly");
-    TestPointRegionProfiles(COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly");
-    TestPointRegionProfiles(COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary");
-    TestPointRegionProfiles(COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary");
-    TestPointRegionProfiles(COMPUTE_STOKES_PANGLE, "Panglex", "Pangley");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestPointRegionProfiles(
+        FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
-    TestPointRegionProfiles(0, "Ix", "Iy");
-    TestPointRegionProfiles(1, "Qx", "Qy");
-    TestPointRegionProfiles(2, "Ux", "Uy");
-    TestPointRegionProfiles(3, "Vx", "Vy");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestPointRegionProfiles(
+        FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 0, "Ix", "Iy", "Iz");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 1, "Qx", "Qy", "Qz");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 2, "Ux", "Uy", "Uz");
+    TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 3, "Vx", "Vy", "Vz");
+
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 0, "Ix", "Iy", "Iz");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 1, "Qx", "Qy", "Qz");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 2, "Ux", "Uy", "Uz");
+    TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 3, "Vx", "Vy", "Vz");
 }
 
 TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
