@@ -15,6 +15,7 @@
 #include "Logger/Logger.h"
 #include "Region/RegionHandler.h"
 
+static const string SAMPLE_IMAGE_CASA = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.image";
 static const string SAMPLE_IMAGE_FITS = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits";
 static const string SAMPLE_IMAGE_HDF5 = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.hdf5";
 static const int MAX_CHANNEL = 5;
@@ -884,7 +885,44 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    FRIEND_TEST(PolarizationCalculatorTest, TestFrameImageCache);
+
+    static void TestFrameImageCache(std::string sample_file_path) {
+        std::shared_ptr<casacore::ImageInterface<float>> image;
+        if (!OpenImage(image, sample_file_path)) {
+            return;
+        }
+
+        // Get spectral axis size
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        int spectral_axis = coord_sys.spectralAxisNumber();
+        int spectral_axis_size = image->shape()[spectral_axis];
+
+        // Open the file through the Frame
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(sample_file_path), "0"));
+        EXPECT_TRUE(frame->IsValid());
+        EXPECT_TRUE(frame->_open_image_error.empty());
+
+        // Set stokes to be calculated
+        std::string message;
+        int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
+
+        for (int channel = 0; channel < max_channel; ++channel) {
+            frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
+            PolarizationCalculatorTest::VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PTOTAL, frame->_image_cache);
+
+            frame->SetImageChannels(channel, COMPUTE_STOKES_PFTOTAL, message);
+            PolarizationCalculatorTest::VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PFTOTAL, frame->_image_cache);
+
+            frame->SetImageChannels(channel, COMPUTE_STOKES_PLINEAR, message);
+            PolarizationCalculatorTest::VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PLINEAR, frame->_image_cache);
+
+            frame->SetImageChannels(channel, COMPUTE_STOKES_PFLINEAR, message);
+            PolarizationCalculatorTest::VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PFLINEAR, frame->_image_cache);
+
+            frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
+            PolarizationCalculatorTest::VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, frame->_image_cache);
+        }
+    }
 };
 
 static void TestCursorProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
@@ -1180,6 +1218,103 @@ static void TestRectangleRegionProfiles(
     PolarizationCalculatorTest::CompareData(spectral_profile_data_float, spectral_profile_data_float_2);
 }
 
+static void Compare(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2) {
+    auto hist1 = cube_histogram1.GetHistogramBins();
+    auto hist2 = cube_histogram2.GetHistogramBins();
+    EXPECT_EQ(hist1.size(), hist2.size());
+    if (hist1.size() == hist2.size()) {
+        for (int i = 0; i < hist1.size(); ++i) {
+            EXPECT_EQ(hist1[i], hist2[i]);
+        }
+    }
+}
+
+static void CalculateCubeHistogram(
+    const std::shared_ptr<TestFrame>& frame, int current_channel, int current_stokes, carta::Histogram& cube_histogram) {
+    // Set image channels
+    std::string message;
+    frame->SetImageChannels(current_channel, current_stokes, message);
+
+    int stokes;
+    std::string coordinate;
+    frame->GetStokesTypeIndex(coordinate, stokes); // get current stokes
+    size_t depth(frame->Depth());
+
+    // stats for entire cube
+    carta::BasicStats<float> cube_stats;
+    for (size_t z = 0; z < depth; ++z) {
+        carta::BasicStats<float> z_stats;
+        if (!frame->GetBasicStats(z, stokes, z_stats)) {
+            spdlog::error("Failed to get statistics data form the cube histogram calculation.");
+            return;
+        }
+        cube_stats.join(z_stats);
+    }
+
+    // get histogram bins for each z and accumulate bin counts in cube_bins
+    carta::Histogram z_histogram;
+    for (size_t z = 0; z < depth; ++z) {
+        if (!frame->CalculateHistogram(CUBE_REGION_ID, z, stokes, -1, cube_stats, z_histogram)) {
+            spdlog::error("Failed to calculate the cube histogram.");
+            return;
+        }
+        if (z == 0) {
+            cube_histogram = std::move(z_histogram);
+        } else {
+            cube_histogram.Add(z_histogram);
+        }
+    }
+}
+
+static void TestCubeHistogram(std::string sample_file_path, int current_channel, int current_stokes) {
+    // Open a reference image
+    std::string reference_file_path = FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA);
+    std::shared_ptr<casacore::ImageInterface<float>> image;
+    if (!OpenImage(image, reference_file_path)) {
+        return;
+    }
+
+    // Open a sample image through the Frame
+    if (!fs::exists(sample_file_path)) {
+        return;
+    }
+
+    // Calculate the cube histogram
+    auto frame = std::make_shared<TestFrame>(0, carta::FileLoader::GetLoader(sample_file_path), "0");
+    carta::Histogram cube_histogram;
+    CalculateCubeHistogram(frame, current_channel, current_stokes, cube_histogram);
+
+    // Calculate the cube histogram in another way
+    carta::PolarizationCalculator polarization_calculator(image);
+    std::shared_ptr<casacore::ImageInterface<float>> resulting_image;
+    if (current_stokes == COMPUTE_STOKES_PTOTAL) {
+        resulting_image = polarization_calculator.ComputeTotalPolarizedIntensity();
+    } else if (current_stokes == COMPUTE_STOKES_PFTOTAL) {
+        resulting_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
+    } else if (current_stokes == COMPUTE_STOKES_PLINEAR) {
+        resulting_image = polarization_calculator.ComputePolarizedIntensity();
+    } else if (current_stokes == COMPUTE_STOKES_PFLINEAR) {
+        resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+    } else if (current_stokes == COMPUTE_STOKES_PANGLE) {
+        resulting_image = polarization_calculator.ComputePolarizedAngle();
+    } else {
+        spdlog::error("Unknown computed stokes type: {}", current_stokes);
+        return;
+    }
+
+    std::unique_ptr<carta::FileLoader> loader;
+    loader.reset(carta::FileLoader::GetLoader(resulting_image));
+
+    auto frame2 = std::make_shared<TestFrame>(1, loader.get(), "");
+    loader.release();
+    int fiddled_stokes(0);
+
+    carta::Histogram cube_histogram2;
+    CalculateCubeHistogram(frame2, current_channel, fiddled_stokes, cube_histogram2);
+
+    Compare(cube_histogram, cube_histogram2);
+}
+
 TEST_F(PolarizationCalculatorTest, TestStokesSource) {
     StokesSource stokes_source_1(0, AxisRange(0));
     StokesSource stokes_source_2(1, AxisRange(0));
@@ -1304,45 +1439,34 @@ TEST_F(PolarizationCalculatorTest, TestConsistency) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
-    std::string file_path = FitsImagePath(SAMPLE_IMAGE_FITS);
-    std::shared_ptr<casacore::ImageInterface<float>> image;
-    if (!OpenImage(image, file_path)) {
-        return;
-    }
-
-    // Get spectral axis size
-    casacore::CoordinateSystem coord_sys = image->coordinates();
-    int spectral_axis = coord_sys.spectralAxisNumber();
-    int spectral_axis_size = image->shape()[spectral_axis];
-
-    // Open the file through the Frame
-    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(file_path), "0"));
-    EXPECT_TRUE(frame->IsValid());
-    EXPECT_TRUE(frame->_open_image_error.empty());
-
-    // Set stokes to be calculated
-    std::string message;
-    int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
-
-    for (int channel = 0; channel < max_channel; ++channel) {
-        frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
-        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PTOTAL, frame->_image_cache);
-
-        frame->SetImageChannels(channel, COMPUTE_STOKES_PFTOTAL, message);
-        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PFTOTAL, frame->_image_cache);
-
-        frame->SetImageChannels(channel, COMPUTE_STOKES_PLINEAR, message);
-        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PLINEAR, frame->_image_cache);
-
-        frame->SetImageChannels(channel, COMPUTE_STOKES_PFLINEAR, message);
-        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PFLINEAR, frame->_image_cache);
-
-        frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
-        VerifyFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, frame->_image_cache);
-    }
+    TestFrame::TestFrameImageCache(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA));
+    TestFrame::TestFrameImageCache(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS));
+    TestFrame::TestFrameImageCache(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5));
 }
 
 TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 0, "Ix", "Iy", "Iz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 1, "Qx", "Qy", "Qz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 2, "Ux", "Uy", "Uz");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 3, "Vx", "Vy", "Vz");
+
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
+
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 0, "Ix", "Iy", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 1, "Qx", "Qy", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 2, "Ux", "Uy", "z");
+    TestCursorProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 1, 0, 3, "Vx", "Vy", "z");
+
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
@@ -1354,17 +1478,6 @@ TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy", "Uz");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy", "Vz");
 
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
-
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy", "Iz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy", "Qz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy", "Uz");
-    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy", "Vz");
-
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
@@ -1375,6 +1488,17 @@ TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy", "z");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy", "z");
     TestCursorProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy", "z");
+
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy", "Iz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy", "Qz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy", "Uz");
+    TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy", "Vz");
 
     TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
     TestCursorProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
@@ -1389,6 +1513,13 @@ TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestPointRegionProfiles(
+        FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
@@ -1403,6 +1534,11 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
         FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
     TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 0, "Ix", "Iy", "Iz");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 1, "Qx", "Qy", "Qz");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 2, "Ux", "Uy", "Uz");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 3, "Vx", "Vy", "Vz");
+
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 0, "Ix", "Iy", "Iz");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 1, "Qx", "Qy", "Qz");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 2, "Ux", "Uy", "Uz");
@@ -1412,6 +1548,12 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
     TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 1, "Qx", "Qy", "Qz");
     TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 2, "Ux", "Uy", "Uz");
     TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 3, "Vx", "Vy", "Vz");
+
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
 
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
@@ -1425,6 +1567,11 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
     TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
     TestPointRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
 
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 0, "Ix", "Iy", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 1, "Qx", "Qy", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 2, "Ux", "Uy", "z");
+    TestPointRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, 3, "Vx", "Vy", "z");
+
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 0, "Ix", "Iy", "z");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 1, "Qx", "Qy", "z");
     TestPointRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 2, "Ux", "Uy", "z");
@@ -1437,6 +1584,22 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Ptotalz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "PFtotalz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Plinearz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "PFlinearz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Panglez");
+
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Iz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Qz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Uz");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "Vz");
+
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 0, "z");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 1, "z");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 2, "z");
+    TestRectangleRegionProfiles(FileFinder::CasaImagePath(SAMPLE_IMAGE_CASA), 0, 3, "z");
+
     TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Ptotalz");
     TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "PFtotalz");
     TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Plinearz");
@@ -1447,6 +1610,11 @@ TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
     TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Qz");
     TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Uz");
     TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Vz");
+
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "z");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 1, "z");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 2, "z");
+    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 3, "z");
 
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Ptotalz");
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "PFtotalz");
@@ -1459,13 +1627,22 @@ TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Uz");
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Vz");
 
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "z");
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 1, "z");
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 2, "z");
-    TestRectangleRegionProfiles(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, 3, "z");
-
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "z");
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 1, "z");
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 2, "z");
     TestRectangleRegionProfiles(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 3, "z");
+}
+
+TEST_F(PolarizationCalculatorTest, TestCubeHistogram) {
+    TestCubeHistogram(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, COMPUTE_STOKES_PTOTAL);
+    TestCubeHistogram(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, COMPUTE_STOKES_PFTOTAL);
+    TestCubeHistogram(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, COMPUTE_STOKES_PLINEAR);
+    TestCubeHistogram(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, COMPUTE_STOKES_PFLINEAR);
+    TestCubeHistogram(FileFinder::FitsImagePath(SAMPLE_IMAGE_FITS), 0, COMPUTE_STOKES_PANGLE);
+
+    TestCubeHistogram(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, COMPUTE_STOKES_PTOTAL);
+    TestCubeHistogram(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, COMPUTE_STOKES_PFTOTAL);
+    TestCubeHistogram(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, COMPUTE_STOKES_PLINEAR);
+    TestCubeHistogram(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, COMPUTE_STOKES_PFLINEAR);
+    TestCubeHistogram(FileFinder::Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, COMPUTE_STOKES_PANGLE);
 }
