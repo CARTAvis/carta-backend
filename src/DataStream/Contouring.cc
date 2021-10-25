@@ -140,6 +140,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     vector<bool> visited(num_pixels);
     int64_t i, j;
     bool first_report_done(false);
+    bool is_long_task(false);
 
     auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -149,8 +150,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
             double progress = std::min(0.99, checked_pixels / double(num_pixels));
             auto estimated_process_time = 1.0e-6 * dt / progress; // seconds
-            bool is_long_task(false);
-            if (progress > 0 && estimated_process_time > 1.0) {
+            if (progress > 0 && estimated_process_time > 1.0 && !is_long_task) {
                 is_long_task = true;
             }
             if (!first_report_done) {
