@@ -360,7 +360,8 @@ casacore::LCRegion* Region::GetImageRegion(int file_id, const casacore::Coordina
     }
 
     std::lock_guard<std::mutex> guard(_region_approx_mutex);
-    if (stokes_source.UseDefaultImage()) { // try to get the lattice coordinate region from cache
+    // try to get the lattice coordinate region from cache for the default image with respect to file id
+    if (stokes_source.UseDefaultImage()) {
         lc_region = GetCachedLCRegion(file_id);
     }
 
@@ -384,7 +385,7 @@ casacore::LCRegion* Region::GetImageRegion(int file_id, const casacore::Coordina
                     "Region conversion failed or was distorted, using polygon approximation for {}", RegionName(_region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
-                // Cache converted polygon
+                // Cache converted polygon for the default image with respect to file id
                 if (lc_region && stokes_source.UseDefaultImage()) {
                     casacore::LCRegion* region_copy = lc_region->cloneRegion();
                     auto polygon_region = std::shared_ptr<casacore::LCRegion>(region_copy);
@@ -837,6 +838,7 @@ casacore::LCRegion* Region::GetConvertedLCRegion(int file_id, const casacore::Co
         spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
     }
 
+    // Cache the lattice coordinate region for the default image with respect to file id
     if (lc_region && stokes_source.UseDefaultImage()) {
         // Make a copy and cache LCRegion in map
         std::lock_guard<std::mutex> guard(_region_mutex);

@@ -1280,7 +1280,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
                         have_profile = true;
                     }
-                } else { // When required stokes is not the current stokes
+                } else { // When required stokes is not the current stokes or the stokes needs to be computed
                     profile.reserve(end - start);
 
                     std::pair<StokesSource, casacore::Slicer> stokes_source_slicer;
