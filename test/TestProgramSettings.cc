@@ -341,7 +341,8 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
     auto image_root = TestRoot() / "data" / "images";
-    std::vector<std::string> files = {{image_root / "fits" / "noise_3d.fits"}};
+    std::vector<std::string> files;
+    files.push_back(image_root / "fits" / "noise_3d.fits");
     std::string folder = curl_easy_escape(nullptr, fmt::format("{}/fits/", image_root.string()).c_str(), 0);
 
     auto url_string = carta::SimpleFrontendServer::GetFileUrlString(files);
@@ -350,7 +351,9 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
     auto image_root = TestRoot() / "data" / "images";
-    std::vector<std::string> files = {{image_root / "fits" / "noise_3d.fits", image_root / "fits" / "noise_4d.fits"}};
+    std::vector<std::string> files;
+    files.push_back(image_root / "fits" / "noise_3d.fits");
+    files.push_back(image_root / "fits" / "noise_4d.fits");
     std::string folder = curl_easy_escape(nullptr, fmt::format("{}/fits", image_root.string()).c_str(), 0);
 
     auto url_string = carta::SimpleFrontendServer::GetFileUrlString(files);
@@ -359,7 +362,9 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     auto image_root = TestRoot() / "data" / "images";
-    std::vector<std::string> files = {{image_root / "fits" / "noise_3d.fits", image_root / "hdf5" / "noise_10px_10px.hdf5"}};
+    std::vector<std::string> files;
+    files.push_back(image_root / "fits" / "noise_3d.fits");
+    files.push_back(image_root / "hdf5" / "noise_10px_10px.hdf5");
     std::string folder1 = curl_easy_escape(nullptr, fmt::format("{}/fits/", image_root.string()).c_str(), 0);
     std::string folder2 = curl_easy_escape(nullptr, fmt::format("{}/hdf5/", image_root.string()).c_str(), 0);
 
