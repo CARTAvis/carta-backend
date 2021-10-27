@@ -29,12 +29,14 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
+#include "Util/App.h"
 #include "Util/File.h"
 #include "Util/Message.h"
 
@@ -207,6 +209,10 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             return file_info_ok;
         }
 
+        // Reset file loader and file extended info loader
+        _loader.reset(carta::FileLoader::GetLoader(fullname));
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+
         // Discern hdu for extended file info
         if (hdu.empty()) {
             if (file_info.hdu_list_size() > 0) {
@@ -215,21 +221,27 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
             if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
                 // File info adds empty string for FITS
-                std::vector<std::string> hdu_list;
-                std::string message;
-                FitsHduList fits_hdu_list(fullname);
-                fits_hdu_list.GetHduList(hdu_list, message);
+                if (IsCompressedFits(fullname)) {
+                    CompressedFits cfits(fullname);
+                    if (!cfits.GetFirstImageHdu(hdu)) {
+                        message = "No image HDU found for FITS.";
+                        return file_info_ok;
+                    }
+                } else {
+                    std::vector<std::string> hdu_list;
+                    FitsHduList fits_hdu_list(fullname);
+                    fits_hdu_list.GetHduList(hdu_list, message);
 
-                if (hdu_list.empty()) {
-                    return file_info_ok;
+                    if (hdu_list.empty()) {
+                        message = "No image HDU found for FITS.";
+                        return file_info_ok;
+                    }
+
+                    hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
                 }
-
-                hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
             }
         }
 
-        _loader.reset(carta::FileLoader::GetLoader(fullname));
-        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
@@ -307,6 +319,14 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_success(success);
     ack_message.set_message(status);
     ack_message.set_session_type(type);
+
+    auto& platform_string_map = *ack_message.mutable_platform_strings();
+    platform_string_map["release_info"] = GetReleaseInformation();
+#if __APPLE__
+    platform_string_map["platform"] = "macOS";
+#else
+    platform_string_map["platform"] = "Linux";
+#endif
 
     uint32_t feature_flags;
     if (_read_only_mode) {

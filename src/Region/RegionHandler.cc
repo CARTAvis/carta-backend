@@ -1729,6 +1729,7 @@ bool RegionHandler::GetFixedAngularRegions(int file_id, size_t num_regions, cons
         if (box_end.empty()) {
             box_regions[center_idx + i] = nullptr;
         } else {
+            // Set temporary region from RegionState and get LCRegion, then delete region
             RegionState region_state = GetBoxRegionState(file_id, box_start, box_end, width, rotation);
             auto lcregion = GetTemporaryBoxRegion(file_id, region_state, csys);
 
@@ -1752,7 +1753,7 @@ bool RegionHandler::GetFixedAngularRegions(int file_id, size_t num_regions, cons
         if (box_end.empty()) {
             box_regions[center_idx - i] = nullptr;
         } else {
-            // Set temporary region from RegionState and get LCRegion
+            // Set temporary region from RegionState and get LCRegion, then delete region
             RegionState region_state = GetBoxRegionState(file_id, box_start, box_end, width, rotation);
             auto lcregion = GetTemporaryBoxRegion(file_id, region_state, csys);
 
