@@ -29,6 +29,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "ImageData/CompressedFits.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
@@ -207,6 +208,10 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             return file_info_ok;
         }
 
+        // Reset file loader and file extended info loader
+        _loader.reset(carta::FileLoader::GetLoader(fullname));
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+
         // Discern hdu for extended file info
         if (hdu.empty()) {
             if (file_info.hdu_list_size() > 0) {
@@ -215,21 +220,27 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
             if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
                 // File info adds empty string for FITS
-                std::vector<std::string> hdu_list;
-                std::string message;
-                FitsHduList fits_hdu_list(fullname);
-                fits_hdu_list.GetHduList(hdu_list, message);
+                if (IsCompressedFits(fullname)) {
+                    CompressedFits cfits(fullname);
+                    if (!cfits.GetFirstImageHdu(hdu)) {
+                        message = "No image HDU found for FITS.";
+                        return file_info_ok;
+                    }
+                } else {
+                    std::vector<std::string> hdu_list;
+                    FitsHduList fits_hdu_list(fullname);
+                    fits_hdu_list.GetHduList(hdu_list, message);
 
-                if (hdu_list.empty()) {
-                    return file_info_ok;
+                    if (hdu_list.empty()) {
+                        message = "No image HDU found for FITS.";
+                        return file_info_ok;
+                    }
+
+                    hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
                 }
-
-                hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
             }
         }
 
-        _loader.reset(carta::FileLoader::GetLoader(fullname));
-        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
