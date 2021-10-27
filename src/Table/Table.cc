@@ -25,7 +25,7 @@ Table::Table(const string& filename, bool header_only) : _valid(false), _filenam
     fs::path file_path(filename);
     std::error_code error_code;
     if (!fs::exists(file_path, error_code) || error_code) {
-        _parse_error_message = "File does not exist!";
+        _parse_error_message = "File does not exist or cannot be read!";
         return;
     }
 
