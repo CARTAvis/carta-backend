@@ -29,7 +29,7 @@ public:
     OnMessageTask(Session* session) : _session(session) {
         _session->IncreaseRefCount();
     }
-    ~OnMessageTask() {
+    virtual ~OnMessageTask() {
         if (!_session->DecreaseRefCount()) {
             delete _session;
         }
