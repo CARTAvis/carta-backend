@@ -57,13 +57,16 @@ public:
     std::string description;
     size_t data_type_size;
     size_t data_offset;
+
+protected:
+    bool _is_logical_field = false;
 };
 
 template <class T>
 class DataColumn : public Column {
 public:
     std::vector<T> entries;
-    DataColumn(const std::string& name_chr);
+    DataColumn(const std::string& name_chr, bool is_logical_field = false);
     virtual ~DataColumn() = default;
     void SetFromText(const pugi::xml_text& text, size_t index) override;
     void SetFromValue(T value, size_t index);
