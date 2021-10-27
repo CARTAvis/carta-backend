@@ -24,7 +24,9 @@ void FitsHduList::GetHduList(std::vector<std::string>& hdu_list, std::string& er
 
     // DO NOT USE for compressed FITS, fits_open_file decompresses entire file.
     if (IsCompressedFits(_filename)) {
-        throw(casacore::AipsError("Use CompressedFits for HDU header map."));
+        error = "Should use CompressedFits for HDU header map.";
+        spdlog::debug(error);
+        return;
     }
 
     // Open file read-only
