@@ -35,11 +35,6 @@ OnMessageTask* AnimationTask::execute() {
         if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
             _session->SetWaitingTask(true);
         } else {
-            // RWJS - Careful, these lines are in the TBB version so need to make sure
-            // we have the correct behaviour with the threads. NOTE: animation now
-            // as its on thread!!!. Should it have?
-            //            increment_ref_count();
-            //            recycle_as_safe_continuation();
             ThreadManager::QueueTask(this);
         }
     } else {
