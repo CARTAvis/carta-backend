@@ -229,11 +229,12 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             checked_pixels++;
         }
     }
-    if (!first_report_done) { // reset the progress as 0 in order to let the frontend know it is the first partial data report
-        partial_callback(level, 0.0, vertices, indices, false);
-    } else {
-        partial_callback(level, 1.0, vertices, indices, false);
+    if (!first_report_done) { // send the progress 0 in order to let the frontend know it is the first report
+        vector<float> empty_vertices;
+        vector<int32_t> empty_indices;
+        partial_callback(level, 0.0, empty_vertices, empty_indices, false);
     }
+    partial_callback(level, 1.0, vertices, indices, false);
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
