@@ -50,6 +50,7 @@ void ThreadManager::StartEventHandlingThreads(int num_threads) {
                 _task_queue.pop_front();
                 lock.unlock();
                 tsk->execute();
+                delete tsk;
             }
 
             if (_has_exited) {

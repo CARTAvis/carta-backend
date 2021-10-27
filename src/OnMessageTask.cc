@@ -35,7 +35,7 @@ OnMessageTask* AnimationTask::execute() {
         if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
             _session->SetWaitingTask(true);
         } else {
-            ThreadManager::QueueTask(this);
+            ThreadManager::QueueTask(new AnimationTask(_session));
         }
     } else {
         if (!_session->WaitingFlowEvent()) {
