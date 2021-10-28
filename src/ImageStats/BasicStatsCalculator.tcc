@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
 #define CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
 
+#include <cmath>
+
 namespace carta {
 
 template <typename T>

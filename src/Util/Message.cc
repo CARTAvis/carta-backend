@@ -6,7 +6,7 @@
 
 #include "Message.h"
 
-CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, string api_key, uint32_t client_feature_flags) {
+CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
     CARTA::RegisterViewer register_viewer;
     register_viewer.set_session_id(session_id);
     register_viewer.set_api_key(api_key);
@@ -20,7 +20,8 @@ CARTA::CloseFile Message::CloseFile(int32_t file_id) {
     return close_file;
 }
 
-CARTA::OpenFile Message::OpenFile(string directory, string file, string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
+CARTA::OpenFile Message::OpenFile(
+    std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
     CARTA::OpenFile open_file;
     open_file.set_directory(directory);
     open_file.set_file(file);
@@ -110,7 +111,7 @@ CARTA::Point Message::Point(int x, int y) {
 }
 
 CARTA::SetRegion Message::SetRegion(
-    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, vector<CARTA::Point> control_points, float rotation) {
+    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
     CARTA::SetRegion set_region;
     set_region.set_file_id(file_id);
     set_region.set_region_id(region_id);
@@ -125,7 +126,7 @@ CARTA::SetRegion Message::SetRegion(
     return set_region;
 }
 
-CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, string coordinate) {
+CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
     set_stats_requirements.set_region_id(region_id);
@@ -144,7 +145,7 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     return set_stats_requirements;
 }
 
-CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, string coordinate) {
+CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
     CARTA::SetSpectralRequirements set_spectral_requirements;
     set_spectral_requirements.set_file_id(file_id);
     set_spectral_requirements.set_region_id(region_id);
@@ -279,7 +280,8 @@ CARTA::EventType Message::EventType(std::vector<char>& message) {
 }
 
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
-    string& coordinate, vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, vector<double>>& spectral_data) {
+    std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -293,7 +295,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = nan("");
+            double nan_value = std::nan("");
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -318,8 +320,8 @@ void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& 
     FillHistogram(histogram, hist.GetNbins(), hist.GetBinWidth(), hist.GetBinCenter(), hist.GetHistogramBins(), stats.mean, stats.stdDev);
 }
 
-void FillStatistics(
-    CARTA::RegionStatsData& stats_data, const vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
+void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {
         double value(0.0); // default
@@ -328,7 +330,7 @@ void FillStatistics(
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = nan("");
+                value = std::nan("");
             }
         }
 

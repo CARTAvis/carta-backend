@@ -4,10 +4,36 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_UTIL_MESSAGE_H_
-#define CARTA_BACKEND_UTIL_MESSAGE_H_
+#ifndef CARTA_BACKEND__UTIL_MESSAGE_H_
+#define CARTA_BACKEND__UTIL_MESSAGE_H_
 
-#include "Session.h"
+#include <carta-protobuf/animation.pb.h>
+#include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/moment_request.pb.h>
+#include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/region.pb.h>
+#include <carta-protobuf/region_stats.pb.h>
+#include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/resume_session.pb.h>
+#include <carta-protobuf/set_cursor.pb.h>
+#include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/spectral_line_request.pb.h>
+#include <carta-protobuf/spectral_profile.pb.h>
+#include <carta-protobuf/stop_moment_calc.pb.h>
+#include <carta-protobuf/tiles.pb.h>
+
+#include "Image.h"
+#include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/Histogram.h"
+
+namespace carta {
+const uint16_t ICD_VERSION = 24;
+struct EventHeader {
+    uint16_t type;
+    uint16_t icd_version;
+    uint32_t request_id;
+};
+} // namespace carta
 
 class Message {
     Message() {}
@@ -15,9 +41,10 @@ class Message {
 
 public:
     // Request messages
-    static CARTA::RegisterViewer RegisterViewer(uint32_t session_id, string api_key, uint32_t client_feature_flags);
+    static CARTA::RegisterViewer RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags);
     static CARTA::CloseFile CloseFile(int32_t file_id);
-    static CARTA::OpenFile OpenFile(string directory, string file, string hdu, int32_t file_id, CARTA::RenderMode render_mode);
+    static CARTA::OpenFile OpenFile(
+        std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode);
     static CARTA::SetImageChannels SetImageChannels(
         int32_t file_id, int32_t channel, int32_t stokes, CARTA::CompressionType compression_type, float compression_quality);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
@@ -29,9 +56,9 @@ public:
         int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
     static CARTA::Point Point(int x, int y);
     static CARTA::SetRegion SetRegion(
-        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, vector<CARTA::Point> control_points, float rotation);
-    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, string coordinate);
-    static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, string coordinate);
+        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
+    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
+    static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
     static CARTA::StartAnimation StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
         std::pair<int32_t, int32_t> start_frame, std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame,
         CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate = 5);
@@ -67,4 +94,4 @@ void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& 
 void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
     std::map<CARTA::StatsType, double>& stats_value_map);
 
-#endif // CARTA_BACKEND_UTIL_MESSAGE_H_
+#endif // CARTA_BACKEND__UTIL_MESSAGE_H_

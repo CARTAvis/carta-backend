@@ -11,7 +11,7 @@
 #define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
 
 #include "../Logger/Logger.h"
-#include "../Util.h"
+#include "Util/Casacore.h"
 
 using namespace carta;
 
@@ -70,7 +70,7 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
         casacore::GaussianBeam max_beam = casa::CasaImageBeamSet(_image->imageInfo().getBeamSet()).getCommonBeam();
         spdlog::info(
             "The input image has multiple beams so each plane will be convolved to the largest beam size {} prior to calculating moments.",
-            GetGaussianInfo(max_beam));
+            FormatBeam(max_beam));
 
         // reset the image 2D convolver
         _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _progress_monitor.get()));

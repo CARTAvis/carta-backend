@@ -47,14 +47,16 @@
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
-#include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
+#include "SessionContext.h"
 #include "Table/TableController.h"
-#include "Util.h"
+
+#define HISTOGRAM_CANCEL -1.0
+#define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 
 struct PerSocketData {
     uint32_t session_id;
@@ -64,7 +66,7 @@ struct PerSocketData {
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1, bool read_only_mode = false);
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port = -1, bool read_only_mode = false);
     ~Session();
 
     // CARTA ICD
@@ -120,10 +122,10 @@ public:
     void ResetHistContext() {
         _histogram_context.reset();
     }
-    tbb::task_group_context& HistContext() {
+    SessionContext& HistContext() {
         return _histogram_context;
     }
-    tbb::task_group_context& AnimationContext() {
+    SessionContext& AnimationContext() {
         return _animation_context;
     }
     void CancelAnimation() {
@@ -173,7 +175,7 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
-    tbb::task_group_context& Context() {
+    SessionContext& Context() {
         return _base_context;
     }
     void SetWaitingTask(bool set_wait) {
@@ -257,6 +259,9 @@ private:
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
+    void StartAnimationThread() {
+        // Not sure if needed... XXX
+    }
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
@@ -270,7 +275,7 @@ private:
     bool _read_only_mode;
 
     // File browser
-    FileListHandler* _file_list_handler;
+    std::shared_ptr<FileListHandler> _file_list_handler;
 
     // Loader for reading image from disk
     std::unique_ptr<carta::FileLoader> _loader;
@@ -301,12 +306,12 @@ private:
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     // TBB context that enables all tasks associated with a session to be cancelled.
-    tbb::task_group_context _base_context;
+    SessionContext _base_context;
 
     // TBB context to cancel histogram calculations.
-    tbb::task_group_context _histogram_context;
+    SessionContext _histogram_context;
 
-    tbb::task_group_context _animation_context;
+    SessionContext _animation_context;
 
     int _ref_count;
     int _animation_id;
@@ -314,6 +319,7 @@ private:
     static int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
+    static std::thread* _animation_thread;
 
     // Scripting responses from the client
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;

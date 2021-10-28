@@ -10,9 +10,11 @@
 #include <regex>
 #include <vector>
 
+#include <curl/curl.h>
+
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
-#include "Util.h"
+#include "Util/Token.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -21,8 +23,8 @@ namespace carta {
 
 const string success_string = json({{"success", true}}).dump();
 
-SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_token, bool read_only_mode)
-    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode) {
+SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, fs::path user_directory, string auth_token, bool read_only_mode)
+    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode), _config_folder(user_directory / "config") {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
@@ -30,8 +32,6 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, string auth_tok
     } else {
         spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
     }
-
-    _config_folder = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config";
 }
 
 void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
@@ -454,6 +454,47 @@ std::string_view SimpleFrontendServer::ClearObjectFromString(const std::string& 
     } catch (exception e) {
         spdlog::warn(e.what());
         return HTTP_500;
+    }
+}
+
+std::string SimpleFrontendServer::GetFileUrlString(vector<std::string> files) {
+    if (files.empty()) {
+        return std::string();
+    } else if (files.size() == 1) {
+        return fmt::format("file={}", curl_easy_escape(nullptr, files[0].c_str(), 0));
+    } else {
+        bool in_common_folder = true;
+        fs::path common_folder;
+        std::string url_string;
+        for (auto& file : files) {
+            fs::path p(file);
+            auto folder = p.parent_path();
+            if (common_folder.empty()) {
+                common_folder = folder;
+            } else if (folder != common_folder) {
+                in_common_folder = false;
+                break;
+            }
+        }
+
+        if (in_common_folder) {
+            url_string += fmt::format("folder={}&", curl_easy_escape(nullptr, common_folder.c_str(), 0));
+            // Trim folder from path string
+            for (auto& file : files) {
+                fs::path p(file);
+                file = p.filename().string();
+            }
+        }
+
+        int num_files = files.size();
+        url_string += "files=";
+        for (int i = 0; i < num_files; i++) {
+            url_string += curl_easy_escape(nullptr, files[i].c_str(), 0);
+            if (i != num_files - 1) {
+                url_string += ",";
+            }
+        }
+        return url_string;
     }
 }
 
