@@ -77,12 +77,12 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     auto gzip_path = path;
     gzip_path += ".gz";
     std::error_code error_code;
-    if (accepts_gzip && fs::exists(gzip_path, error_code) && !error_code && fs::is_regular_file(gzip_path)) {
+    if (accepts_gzip && fs::exists(gzip_path, error_code) && fs::is_regular_file(gzip_path)) {
         gzip_compressed = true;
         path = gzip_path;
     }
 
-    if (fs::exists(path, error_code) && !error_code && fs::is_regular_file(path)) {
+    if (fs::exists(path, error_code) && fs::is_regular_file(path)) {
         // Check file size
         ifstream file(path.string(), ios::binary | ios::ate);
         if (!file.good()) {
@@ -121,12 +121,12 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
     std::error_code error_code;
 
     // Check that the folder exists
-    if (!fs::exists(folder, error_code) || error_code || !fs::is_directory(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_directory(folder)) {
         return false;
     }
     // Check that index.html exists
     folder /= "index.html";
-    if (!fs::exists(folder, error_code) || error_code || !fs::is_regular_file(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_regular_file(folder)) {
         return false;
     }
     // Check that index.html can be read
@@ -153,7 +153,8 @@ json SimpleFrontendServer::GetExistingPreferences() {
         ifstream file(preferences_path.string());
         string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return json::parse(json_string);
-    } catch (exception) {
+    } catch (exception e) {
+        spdlog::warn(e.what());
         return {};
     }
 }
@@ -367,7 +368,7 @@ nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& objec
     json objects = json::object();
     std::error_code error_code;
 
-    if (fs::exists(object_folder, error_code) && !error_code) {
+    if (fs::exists(object_folder, error_code)) {
         for (auto& p : fs::directory_iterator(object_folder)) {
             try {
                 string filename = p.path().filename().string();

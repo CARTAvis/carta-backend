@@ -66,7 +66,7 @@ std::string GetReleaseInformation() {
     fs::path path = "/etc/os-release";
     std::error_code error_code;
 
-    if (fs::exists(path, error_code) && !error_code && fs::is_regular_file(path)) {
+    if (fs::exists(path, error_code) && fs::is_regular_file(path)) {
         try {
             // read the entire release file to string
             std::ifstream input_file(path);

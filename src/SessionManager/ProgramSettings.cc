@@ -41,13 +41,13 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     json settings;
     std::error_code error_code;
 
-    if (!no_system_config && fs::exists(system_settings_path, error_code) && !error_code) {
+    if (!no_system_config && fs::exists(system_settings_path, error_code)) {
         settings = JSONSettingsFromFile(system_settings_path.string());
         system_settings_json_exists = true;
         debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
     }
 
-    if (!no_user_config && fs::exists(user_settings_path, error_code) && !error_code) {
+    if (!no_user_config && fs::exists(user_settings_path, error_code)) {
         auto user_settings = JSONSettingsFromFile(user_settings_path.string());
         user_settings_json_exists = true;
         debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
@@ -304,7 +304,7 @@ end.
     for (const auto& arg : positional_arguments) {
         fs::path p(arg);
         std::error_code error_code;
-        if (fs::exists(p, error_code) && !error_code) {
+        if (fs::exists(p, error_code)) {
             if (fs::is_directory(p)) {
                 auto image_type = casacore::ImageOpener::imageType(p.string());
                 if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||

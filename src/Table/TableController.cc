@@ -33,7 +33,7 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     auto file_path = GetPath(open_file_request.directory(), open_file_request.name());
     std::error_code error_code;
 
-    if (!fs::exists(file_path, error_code) || error_code || !fs::is_regular_file(file_path)) {
+    if (!fs::exists(file_path, error_code) || !fs::is_regular_file(file_path)) {
         open_file_response.set_message(fmt::format("Cannot find path {}", file_path.string()));
         open_file_response.set_success(false);
         return;
@@ -190,7 +190,7 @@ void TableController::OnFileListRequest(
     fs::path file_path = GetPath(file_list_request.directory());
     std::error_code error_code;
 
-    if (!fs::exists(file_path, error_code) || error_code || !fs::is_directory(file_path)) {
+    if (!fs::exists(file_path, error_code) || !fs::is_directory(file_path)) {
         file_list_response.set_success(false);
         file_list_response.set_message("Incorrect file path");
         return;
@@ -226,7 +226,7 @@ void TableController::OnFileListRequest(
 
             // Skip files that can't be read
             std::error_code error_code;
-            if (!fs::exists(entry, error_code) || error_code) {
+            if (!fs::exists(entry, error_code)) {
                 continue;
             }
 
@@ -293,7 +293,7 @@ void TableController::OnFileInfoRequest(
     fs::path file_path = GetPath(file_info_request.directory(), file_info_request.name());
     std::error_code error_code;
 
-    if (!fs::exists(file_path, error_code) || error_code || !fs::is_regular_file(file_path)) {
+    if (!fs::exists(file_path, error_code) || !fs::is_regular_file(file_path)) {
         file_info_response.set_success(false);
         file_info_response.set_message("Incorrect file path");
         return;

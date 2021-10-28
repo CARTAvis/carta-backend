@@ -702,7 +702,7 @@ bool CompressedFits::DecompressedFileExists() {
     fs::path unzip_path(_unzip_filename);
     std::error_code error_code;
 
-    if (fs::exists(unzip_path, error_code) && !error_code) {
+    if (fs::exists(unzip_path, error_code)) {
         // File already decompressed
         spdlog::info("Using decompressed FITS file {}", _unzip_filename);
         return true;

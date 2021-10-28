@@ -59,7 +59,7 @@ void WebBrowser::ParseCmd() {
     fs::path path(_args[0]);
     std::error_code error_code;
 
-    if (!fs::exists(path, error_code) || error_code) {
+    if (!fs::exists(path, error_code)) {
         path = SearchPath(_args[0]);
     }
 
