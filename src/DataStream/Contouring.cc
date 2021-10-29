@@ -139,24 +139,11 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     int64_t checked_pixels = 0;
     vector<bool> visited(num_pixels);
     int64_t i, j;
-    bool first_report_done(false);
-    bool is_long_task(false);
-
-    auto t_start = std::chrono::high_resolution_clock::now();
+    bool is_long_task(num_pixels > 1e+6);
 
     auto test_for_chunk_overflow = [&]() {
         if (vertex_cutoff && vertices.size() > vertex_cutoff) {
-            auto t_end = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
             double progress = std::min(0.99, checked_pixels / double(num_pixels));
-            auto estimated_process_time = 1.0e-6 * dt / progress; // seconds
-            if (progress > 0 && estimated_process_time > 1.0 && !is_long_task) {
-                is_long_task = true;
-            }
-            if (!first_report_done) {
-                progress = 0; // reset the progress as 0 in order to let the frontend know it is the first partial data report
-                first_report_done = true;
-            }
             partial_callback(level, progress, vertices, indices, is_long_task);
             vertices.clear();
             indices.clear();
@@ -229,12 +216,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             checked_pixels++;
         }
     }
-    if (!first_report_done) { // send the progress 0 in order to let the frontend know it is the first report
-        vector<float> empty_vertices;
-        vector<int32_t> empty_indices;
-        partial_callback(level, 0.0, empty_vertices, empty_indices, false);
-    }
-    partial_callback(level, 1.0, vertices, indices, false);
+    partial_callback(level, 1.0, vertices, indices, is_long_task);
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
@@ -243,6 +225,12 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
+
+    // send the first report with zero progress in order to let the frontend starts progress bar
+    bool is_long_task(width * height > 1e+6);
+    vector<float> empty_vertices;
+    vector<int32_t> empty_indices;
+    partial_callback(levels[0], 0.0, empty_vertices, empty_indices, is_long_task);
 
     carta::ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
