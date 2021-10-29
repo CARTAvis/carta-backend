@@ -9,7 +9,6 @@
 
 #include <curl/curl.h>
 #include <signal.h>
-#include <tbb/task_scheduler_init.h>
 
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -43,6 +42,7 @@ int main(int argc, char* argv[]) {
 
         sig_handler.sa_handler = [](int s) {
             spdlog::info("Exiting backend.");
+            ThreadManager::ExitEventHandlingThreads();
             FlushLogFile();
             exit(0);
         };
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
+        carta::ThreadManager::StartEventHandlingThreads(settings.event_thread_count);
         carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
 
         // One FileListHandler works for all sessions.
