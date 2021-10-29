@@ -8,10 +8,19 @@
 
 #include <unistd.h>
 #include <climits>
+#include <fstream>
+#include <sstream>
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
+#include <stdio.h>
 #endif
+
+#include "FileSystem.h"
+#include "Logger/Logger.h"
+
+#define MAX_PLATFORM_INFO_LENGTH 1024
+#define MAX_PLATFORM_LINE_LENGTH 256
 
 bool FindExecutablePath(std::string& path) {
     char path_buffer[PATH_MAX + 1];
@@ -32,4 +41,44 @@ bool FindExecutablePath(std::string& path) {
 #endif
     path = path_buffer;
     return true;
+}
+
+std::string GetReleaseInformation() {
+#ifdef __APPLE__
+    // MacOS solution adapted from https://stackoverflow.com/a/44684199/1727322
+    char info_buffer[MAX_PLATFORM_INFO_LENGTH];
+    unsigned buffer_length = 0;
+    char line[MAX_PLATFORM_LINE_LENGTH];
+    auto file_handle = popen("sw_vers", "r");
+    while (fgets(line, sizeof(line), file_handle) != nullptr) {
+        int l = snprintf(info_buffer + buffer_length, sizeof(info_buffer) - buffer_length, "%s", line);
+        buffer_length += l;
+        if (buffer_length > MAX_PLATFORM_INFO_LENGTH) {
+            spdlog::warn("Problem reading platform information");
+            return std::string("Platform information not available");
+        }
+    }
+    pclose(file_handle);
+    return info_buffer;
+#else
+    // Unix solution just attempts to read from /etc/os-release. This works with Ubuntu, RedHat, CentOS, Arch, Debian and Fedora,
+    // and should work on any system that has systemd installed
+    fs::path path = "/etc/os-release";
+    std::error_code error_code;
+
+    if (fs::exists(path, error_code) && fs::is_regular_file(path, error_code)) {
+        try {
+            // read the entire release file to string
+            std::ifstream input_file(path);
+            if (input_file.good()) {
+                std::stringstream buffer;
+                buffer << input_file.rdbuf();
+                return buffer.str();
+            }
+        } catch (std::ifstream::failure e) {
+            spdlog::warn("Problem reading platform information");
+        }
+    }
+#endif
+    return std::string("Platform information not available");
 }

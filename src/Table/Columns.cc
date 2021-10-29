@@ -32,7 +32,7 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
 
     unique_ptr<Column> column;
 
-    if (type_string == "char") {
+    if (type_string == "char" || type_string == "unicodeChar") {
         column = make_unique<DataColumn<string>>(name);
     } else if (!array_size_string.empty()) {
         // Can't support array-based column types other than char
@@ -50,7 +50,7 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     } else if (type_string == "double") {
         column = make_unique<DataColumn<double>>(name);
     } else if (type_string == "boolean") {
-        column = make_unique<DataColumn<bool>>(name);
+        column = make_unique<DataColumn<uint8_t>>(name, true);
     } else {
         column = make_unique<Column>(name);
     }
@@ -114,7 +114,7 @@ std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
         case TDOUBLE:
             return make_unique<DataColumn<double>>(col_name);
         case TLOGICAL:
-            return make_unique<DataColumn<bool>>(col_name);
+            return make_unique<DataColumn<u_int8_t>>(col_name, true);
             // TODO: Consider supporting complex numbers through std::complex
         case TCOMPLEX:
         case TDBLCOMPLEX:
@@ -222,24 +222,10 @@ void DataColumn<string>::SortIndices(IndexList& indices, bool ascending) const {
     }
 }
 
-// Bool is a special case, because std::vector<bool> is a bit field, and std::vector<bool>::data() returns void
+// Specialisation for logical type, because we need to convert from T/F characters to bool.
+// Logical type stored in uint8_t, to avoid std::vector<bool> complexities.
 template <>
-void DataColumn<bool>::FillColumnData(
-    CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
-    column_data.set_data_type(CARTA::Bool);
-    auto values = GetColumnData(fill_subset, indices, start, end);
-    auto N = values.size();
-    std::vector<uint8_t> temp_data(N);
-
-    for (int i = 0; i < N; i++) {
-        temp_data[i] = values[i];
-    }
-    column_data.set_binary_data(temp_data.data(), temp_data.size());
-}
-
-// Specialisation for boolean type, because we need to convert from T/F characters to bool
-template <>
-void DataColumn<bool>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
+void DataColumn<uint8_t>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
     // Shifts by the column's offset
     ptr += data_offset;
 
@@ -247,10 +233,17 @@ void DataColumn<bool>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t s
         return;
     }
 
-    for (auto i = 0; i < num_rows; i++) {
-        char val = *ptr;
-        entries[i] = (val == 'T');
-        ptr += stride;
+    if (_is_logical_field) {
+        for (auto i = 0; i < num_rows; i++) {
+            char val = *ptr;
+            entries[i] = (val == 'T');
+            ptr += stride;
+        }
+    } else {
+        for (auto i = 0; i < num_rows; i++) {
+            entries[i] = *ptr;
+            ptr += stride;
+        }
     }
 }
 

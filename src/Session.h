@@ -52,6 +52,7 @@
 #include "Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
+#include "SessionContext.h"
 #include "Table/TableController.h"
 
 #define HISTOGRAM_CANCEL -1.0
@@ -121,10 +122,10 @@ public:
     void ResetHistContext() {
         _histogram_context.reset();
     }
-    tbb::task_group_context& HistContext() {
+    SessionContext& HistContext() {
         return _histogram_context;
     }
-    tbb::task_group_context& AnimationContext() {
+    SessionContext& AnimationContext() {
         return _animation_context;
     }
     void CancelAnimation() {
@@ -174,7 +175,7 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
-    tbb::task_group_context& Context() {
+    SessionContext& Context() {
         return _base_context;
     }
     void SetWaitingTask(bool set_wait) {
@@ -261,6 +262,9 @@ private:
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
+    void StartAnimationThread() {
+        // Not sure if needed... XXX
+    }
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
@@ -305,12 +309,12 @@ private:
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     // TBB context that enables all tasks associated with a session to be cancelled.
-    tbb::task_group_context _base_context;
+    SessionContext _base_context;
 
     // TBB context to cancel histogram calculations.
-    tbb::task_group_context _histogram_context;
+    SessionContext _histogram_context;
 
-    tbb::task_group_context _animation_context;
+    SessionContext _animation_context;
 
     int _ref_count;
     int _animation_id;
@@ -318,6 +322,7 @@ private:
     static int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
+    static std::thread* _animation_thread;
 
     // Scripting responses from the client
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;

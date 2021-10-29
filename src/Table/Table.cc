@@ -23,9 +23,9 @@ using namespace std;
 
 Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
     fs::path file_path(filename);
-
-    if (!fs::exists(file_path)) {
-        _parse_error_message = "File does not exist!";
+    std::error_code error_code;
+    if (!fs::exists(file_path, error_code)) {
+        _parse_error_message = "File does not exist or cannot be read!";
         return;
     }
 
@@ -43,6 +43,11 @@ Table::Table(const string& filename, bool header_only) : _valid(false), _filenam
 string Table::GetHeader(const string& filename) {
     ifstream in(filename);
     string header_string;
+
+    if (!in.good()) {
+        return header_string;
+    }
+
     // Measure entire file size to ensure we don't read past EOF
     in.seekg(0, ios_base::end);
     size_t header_size = min(size_t(in.tellg()), size_t(MAX_HEADER_SIZE));

@@ -10,6 +10,8 @@
 #include <regex>
 #include <vector>
 
+#include <curl/curl.h>
+
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
 #include "Util/Token.h"
@@ -74,14 +76,19 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     bool gzip_compressed = false;
     auto gzip_path = path;
     gzip_path += ".gz";
-    if (accepts_gzip && fs::exists(gzip_path) && fs::is_regular_file(gzip_path)) {
+    std::error_code error_code;
+    if (accepts_gzip && fs::exists(gzip_path, error_code) && fs::is_regular_file(gzip_path, error_code)) {
         gzip_compressed = true;
         path = gzip_path;
     }
 
-    if (fs::exists(path) && fs::is_regular_file(path)) {
+    if (fs::exists(path, error_code) && fs::is_regular_file(path, error_code)) {
         // Check file size
         ifstream file(path.string(), ios::binary | ios::ate);
+        if (!file.good()) {
+            res->writeStatus(HTTP_404);
+            return;
+        }
         streamsize size = file.tellg();
         file.seekg(0, ios::beg);
 
@@ -111,13 +118,15 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
 }
 
 bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
+    std::error_code error_code;
+
     // Check that the folder exists
-    if (!fs::exists(folder) || !fs::is_directory(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_directory(folder, error_code)) {
         return false;
     }
     // Check that index.html exists
     folder /= "index.html";
-    if (!fs::exists(folder) || !fs::is_regular_file(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_regular_file(folder, error_code)) {
         return false;
     }
     // Check that index.html can be read
@@ -137,15 +146,15 @@ void SimpleFrontendServer::AddNoCacheHeaders(Res* res) {
 
 json SimpleFrontendServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
-    if (!fs::exists(preferences_path)) {
-        return {{"version", 1}};
-    }
-
     try {
+        if (!fs::exists(preferences_path)) {
+            return {{"version", 1}};
+        }
         ifstream file(preferences_path.string());
         string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return json::parse(json_string);
-    } catch (exception) {
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
         return {};
     }
 }
@@ -357,13 +366,15 @@ void SimpleFrontendServer::HandleClearObject(const std::string& object_type, Res
 nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& object_type) {
     auto object_folder = _config_folder / (object_type + "s");
     json objects = json::object();
-    if (fs::exists(object_folder)) {
+    std::error_code error_code;
+
+    if (fs::exists(object_folder, error_code)) {
         for (auto& p : fs::directory_iterator(object_folder)) {
             try {
                 string filename = p.path().filename().string();
                 regex object_regex(R"(^(.+)\.json$)");
                 smatch sm;
-                if (fs::is_regular_file(p) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
                     string object_name = sm[1];
                     ifstream file(p.path().string());
                     string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -452,6 +463,47 @@ std::string_view SimpleFrontendServer::ClearObjectFromString(const std::string& 
     } catch (exception e) {
         spdlog::warn(e.what());
         return HTTP_500;
+    }
+}
+
+std::string SimpleFrontendServer::GetFileUrlString(vector<std::string> files) {
+    if (files.empty()) {
+        return std::string();
+    } else if (files.size() == 1) {
+        return fmt::format("file={}", curl_easy_escape(nullptr, files[0].c_str(), 0));
+    } else {
+        bool in_common_folder = true;
+        fs::path common_folder;
+        std::string url_string;
+        for (auto& file : files) {
+            fs::path p(file);
+            auto folder = p.parent_path();
+            if (common_folder.empty()) {
+                common_folder = folder;
+            } else if (folder != common_folder) {
+                in_common_folder = false;
+                break;
+            }
+        }
+
+        if (in_common_folder) {
+            url_string += fmt::format("folder={}&", curl_easy_escape(nullptr, common_folder.c_str(), 0));
+            // Trim folder from path string
+            for (auto& file : files) {
+                fs::path p(file);
+                file = p.filename().string();
+            }
+        }
+
+        int num_files = files.size();
+        url_string += "files=";
+        for (int i = 0; i < num_files; i++) {
+            url_string += curl_easy_escape(nullptr, files[i].c_str(), 0);
+            if (i != num_files - 1) {
+                url_string += ",";
+            }
+        }
+        return url_string;
     }
 }
 
