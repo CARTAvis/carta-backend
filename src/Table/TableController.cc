@@ -31,7 +31,9 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
 
     open_file_response.set_file_id(file_id);
     auto file_path = GetPath(open_file_request.directory(), open_file_request.name());
-    if (!fs::exists(file_path) || !fs::is_regular_file(file_path)) {
+    std::error_code error_code;
+
+    if (!fs::exists(file_path, error_code) || !fs::is_regular_file(file_path, error_code)) {
         open_file_response.set_message(fmt::format("Cannot find path {}", file_path.string()));
         open_file_response.set_success(false);
         return;
@@ -186,8 +188,9 @@ void TableController::OnFileListRequest(
     const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response) {
     fs::path root_path(_top_level_folder);
     fs::path file_path = GetPath(file_list_request.directory());
+    std::error_code error_code;
 
-    if (!fs::exists(file_path) || !fs::is_directory(file_path)) {
+    if (!fs::exists(file_path, error_code) || !fs::is_directory(file_path, error_code)) {
         file_list_response.set_success(false);
         file_list_response.set_message("Incorrect file path");
         return;
@@ -221,7 +224,13 @@ void TableController::OnFileListRequest(
                 break;
             }
 
-            if (fs::is_directory(entry)) {
+            // Skip files that can't be read
+            std::error_code error_code;
+            if (!fs::exists(entry, error_code)) {
+                continue;
+            }
+
+            if (fs::is_directory(entry, error_code)) {
                 try {
                     // Try to construct a directory iterator. If it fails, the directory is inaccessible
                     auto test_directory_iterator = fs::directory_iterator(entry);
@@ -238,7 +247,7 @@ void TableController::OnFileListRequest(
                     // Skip inaccessible folders
                     continue;
                 }
-            } else if (fs::is_regular_file(entry) && fs::exists(entry)) {
+            } else if (fs::is_regular_file(entry, error_code)) {
                 uint32_t file_magic_number = GetMagicNumber(entry.path().string());
                 CARTA::CatalogFileType file_type;
                 if (file_magic_number == XML_MAGIC_NUMBER) {
@@ -282,8 +291,9 @@ void TableController::OnFileListRequest(
 void TableController::OnFileInfoRequest(
     const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response) {
     fs::path file_path = GetPath(file_info_request.directory(), file_info_request.name());
+    std::error_code error_code;
 
-    if (!fs::exists(file_path) || !fs::is_regular_file(file_path)) {
+    if (!fs::exists(file_path, error_code) || !fs::is_regular_file(file_path, error_code)) {
         file_info_response.set_success(false);
         file_info_response.set_message("Incorrect file path");
         return;

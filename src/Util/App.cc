@@ -64,14 +64,17 @@ std::string GetReleaseInformation() {
     // Unix solution just attempts to read from /etc/os-release. This works with Ubuntu, RedHat, CentOS, Arch, Debian and Fedora,
     // and should work on any system that has systemd installed
     fs::path path = "/etc/os-release";
+    std::error_code error_code;
 
-    if (fs::exists(path) && fs::is_regular_file(path)) {
+    if (fs::exists(path, error_code) && fs::is_regular_file(path, error_code)) {
         try {
             // read the entire release file to string
             std::ifstream input_file(path);
-            std::stringstream buffer;
-            buffer << input_file.rdbuf();
-            return buffer.str();
+            if (input_file.good()) {
+                std::stringstream buffer;
+                buffer << input_file.rdbuf();
+                return buffer.str();
+            }
         } catch (std::ifstream::failure e) {
             spdlog::warn("Problem reading platform information");
         }
