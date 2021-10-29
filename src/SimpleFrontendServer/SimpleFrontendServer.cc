@@ -77,12 +77,12 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     auto gzip_path = path;
     gzip_path += ".gz";
     std::error_code error_code;
-    if (accepts_gzip && fs::exists(gzip_path, error_code) && fs::is_regular_file(gzip_path)) {
+    if (accepts_gzip && fs::exists(gzip_path, error_code) && fs::is_regular_file(gzip_path, error_code)) {
         gzip_compressed = true;
         path = gzip_path;
     }
 
-    if (fs::exists(path, error_code) && fs::is_regular_file(path)) {
+    if (fs::exists(path, error_code) && fs::is_regular_file(path, error_code)) {
         // Check file size
         ifstream file(path.string(), ios::binary | ios::ate);
         if (!file.good()) {
@@ -121,12 +121,12 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
     std::error_code error_code;
 
     // Check that the folder exists
-    if (!fs::exists(folder, error_code) || !fs::is_directory(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_directory(folder, error_code)) {
         return false;
     }
     // Check that index.html exists
     folder /= "index.html";
-    if (!fs::exists(folder, error_code) || !fs::is_regular_file(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_regular_file(folder, error_code)) {
         return false;
     }
     // Check that index.html can be read
@@ -153,7 +153,7 @@ json SimpleFrontendServer::GetExistingPreferences() {
         ifstream file(preferences_path.string());
         string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return json::parse(json_string);
-    } catch (exception e) {
+    } catch (json::exception e) {
         spdlog::warn(e.what());
         return {};
     }
@@ -374,7 +374,7 @@ nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& objec
                 string filename = p.path().filename().string();
                 regex object_regex(R"(^(.+)\.json$)");
                 smatch sm;
-                if (fs::is_regular_file(p) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
                     string object_name = sm[1];
                     ifstream file(p.path().string());
                     string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());

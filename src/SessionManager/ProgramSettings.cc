@@ -305,7 +305,7 @@ end.
         fs::path p(arg);
         std::error_code error_code;
         if (fs::exists(p, error_code)) {
-            if (fs::is_directory(p)) {
+            if (fs::is_directory(p, error_code)) {
                 auto image_type = casacore::ImageOpener::imageType(p.string());
                 if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
                     image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
@@ -317,7 +317,7 @@ end.
                     file_paths.clear();
                     break;
                 }
-            } else if (!fs::is_regular_file(p)) {
+            } else if (!fs::is_regular_file(p, error_code)) {
                 // Ignore invalid files
                 file_paths.clear();
                 break;
