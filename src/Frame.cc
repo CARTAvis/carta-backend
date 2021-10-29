@@ -1840,7 +1840,8 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
     bool success(false);
 
     // Remove the old image file if it has a same file name
-    if (fs::exists(output_filename)) {
+    std::error_code error_code;
+    if (fs::exists(output_filename, error_code)) {
         fs::remove_all(output_filename);
     }
 

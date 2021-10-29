@@ -5,6 +5,7 @@
 */
 
 #include "SessionManager.h"
+#include "Threading.h"
 
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
@@ -170,7 +171,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock(message.file_id());
                         if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
-                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
+                            tsk = new SetImageChannelsTask(session, message.file_id());
                         }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -183,7 +184,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->AddCursorSetting(message, head.request_id);
-                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                        tsk = new SetCursorTask(session, message.file_id());
                         message_parsed = true;
                     }
                     break;
@@ -195,8 +196,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new (tbb::task::allocate_root(session->HistContext()))
-                                GeneralMessageTask<CARTA::SetHistogramRequirements>(session, message, head.request_id);
+                            tsk = new GeneralMessageTask<CARTA::SetHistogramRequirements>(session, message, head.request_id);
                         }
                         message_parsed = true;
                     }
@@ -215,7 +215,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
-                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                        tsk = new AnimationTask(session);
                         message_parsed = true;
                     }
                     break;
@@ -258,8 +258,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::AddRequiredTiles>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -291,8 +290,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::SetContourParameters>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -380,7 +378,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::SPLATALOGUE_PING: {
                     CARTA::SplataloguePing message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context())) OnSplataloguePingTask(session, head.request_id);
+                        tsk = new OnSplataloguePingTask(session, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -388,8 +386,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::SpectralLineRequest>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::SpectralLineRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -417,8 +414,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
                     CARTA::SetSpatialRequirements message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::SetSpatialRequirements>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -426,8 +422,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::SET_STATS_REQUIREMENTS: {
                     CARTA::SetStatsRequirements message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::SetStatsRequirements>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -435,8 +430,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::MOMENT_REQUEST: {
                     CARTA::MomentRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::MomentRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -444,8 +438,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::FILE_LIST_REQUEST: {
                     CARTA::FileListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::FileListRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -453,8 +446,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::REGION_LIST_REQUEST: {
                     CARTA::RegionListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::RegionListRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -462,8 +454,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::CATALOG_LIST_REQUEST: {
                     CARTA::CatalogListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
+                        tsk = new GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -479,7 +470,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             }
 
             if (tsk) {
-                tbb::task::enqueue(*tsk);
+                ThreadManager::QueueTask(tsk);
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
