@@ -13,8 +13,9 @@
 
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
+#include "Threading.h"
 
-#define TBB_TASK_THREAD_COUNT 3
+#define TASK_THREAD_COUNT 3
 
 int main(int argc, char** argv) {
     // Set gtest environment
@@ -59,8 +60,8 @@ int main(int argc, char** argv) {
         omp_threads = omp_get_num_procs();
     }
 
-    tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
-    omp_set_num_threads(omp_threads);
+    carta::ThreadManager::StartEventHandlingThreads(TASK_THREAD_COUNT);
+    carta::ThreadManager::SetThreadLimit(omp_threads);
 
     fs::path user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
 
