@@ -321,7 +321,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                         // Get image headers in FITS format
                         casacore::String error_string, origin_string;
-                        bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(false);
+                        bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(true);
                         bool prim_head(hdu == "0");
                         int bit_pix(-32);
                         float min_pix(1.0), max_pix(-1.0);
