@@ -38,7 +38,8 @@ FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(fil
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
     auto unzip_path = fs::path(_unzip_file);
-    if (fs::exists(unzip_path)) {
+    std::error_code error_code;
+    if (fs::exists(unzip_path, error_code)) {
         fs::remove(unzip_path);
     }
 }
