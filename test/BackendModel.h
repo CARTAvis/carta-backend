@@ -10,6 +10,16 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 
+class TestSession : public Session {
+public:
+    TestSession(uint32_t id, std::string address, std::string top_level_folder, std::string starting_folder,
+        std::shared_ptr<FileListHandler> file_list_handler, int grpc_port = -1, bool read_only_mode = false)
+        : Session(nullptr, nullptr, id, address, top_level_folder, starting_folder, file_list_handler, grpc_port, read_only_mode) {}
+
+    bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
+    void ClearMessagesQueue();
+};
+
 class BackendModel {
 public:
     BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
@@ -61,7 +71,7 @@ public:
 
 private:
     std::shared_ptr<FileListHandler> _file_list_handler;
-    Session* _session;
+    TestSession* _session;
 };
 
 #endif // CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_

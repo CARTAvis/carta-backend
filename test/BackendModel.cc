@@ -14,6 +14,14 @@
 static const uint16_t DUMMY_ICD_VERSION(ICD_VERSION);
 static const uint32_t DUMMY_REQUEST_ID(0);
 
+bool TestSession::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
+    return _out_msgs.try_pop(message);
+}
+
+void TestSession::ClearMessagesQueue() {
+    _out_msgs.clear();
+}
+
 std::unique_ptr<BackendModel> BackendModel::GetDummyBackend() {
     uint32_t session_id(0);
     std::string address;
@@ -29,8 +37,7 @@ std::unique_ptr<BackendModel> BackendModel::GetDummyBackend() {
 BackendModel::BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
     std::string top_level_folder, std::string starting_folder, int grpc_port, bool read_only_mode) {
     _file_list_handler = std::make_shared<FileListHandler>(top_level_folder, starting_folder);
-    _session = new Session(
-        nullptr, nullptr, session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port, read_only_mode);
+    _session = new TestSession(session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port, read_only_mode);
 
     _session->IncreaseRefCount(); // increase the reference count to avoid being deleted by the OnMessageTask
 }
