@@ -29,25 +29,26 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "ImageData/CompressedFits.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"
 #include "Timer/Timer.h"
+#include "Util/App.h"
 #include "Util/File.h"
 #include "Util/Message.h"
 
 #ifdef _ARM_ARCH_
 #include <sse2neon/sse2neon.h>
 #else
-#include <Util/App.h>
 #include <xmmintrin.h>
-
 #endif
 
 int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
+std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
     std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port,
@@ -208,6 +209,10 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             return file_info_ok;
         }
 
+        // Reset file loader and file extended info loader
+        _loader.reset(carta::FileLoader::GetLoader(fullname));
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+
         // Discern hdu for extended file info
         if (hdu.empty()) {
             if (file_info.hdu_list_size() > 0) {
@@ -216,21 +221,27 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
             if (hdu.empty() && (file_info.type() == CARTA::FileType::FITS)) {
                 // File info adds empty string for FITS
-                std::vector<std::string> hdu_list;
-                std::string message;
-                FitsHduList fits_hdu_list(fullname);
-                fits_hdu_list.GetHduList(hdu_list, message);
+                if (IsCompressedFits(fullname)) {
+                    CompressedFits cfits(fullname);
+                    if (!cfits.GetFirstImageHdu(hdu)) {
+                        message = "No image HDU found for FITS.";
+                        return file_info_ok;
+                    }
+                } else {
+                    std::vector<std::string> hdu_list;
+                    FitsHduList fits_hdu_list(fullname);
+                    fits_hdu_list.GetHduList(hdu_list, message);
 
-                if (hdu_list.empty()) {
-                    return file_info_ok;
+                    if (hdu_list.empty()) {
+                        message = "No image HDU found for FITS.";
+                        return file_info_ok;
+                    }
+
+                    hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
                 }
-
-                hdu = hdu_list[0].substr(0, hdu_list[0].find(":"));
             }
         }
 
-        _loader.reset(carta::FileLoader::GetLoader(fullname));
-        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
@@ -719,8 +730,8 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
     // update data streams if requirements set and region changed
     if (success && _region_handler->RegionChanged(region_id)) {
-        OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) RegionDataStreamsTask(this, ALL_FILES, region_id);
-        tbb::task::enqueue(*tsk);
+        OnMessageTask* tsk = new RegionDataStreamsTask(this, ALL_FILES, region_id);
+        ThreadManager::QueueTask(tsk);
     }
 
     return success;
@@ -927,8 +938,8 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
 
         if (requirements_set) {
             // RESPONSE
-            OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
-            tbb::task::enqueue(*tsk);
+            OnMessageTask* tsk = new SpectralProfileTask(this, file_id, region_id);
+            ThreadManager::QueueTask(tsk);
         } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
             string error = fmt::format("Spectral requirements not valid for region id {}", region_id);
             SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
@@ -1804,7 +1815,7 @@ void Session::ExecuteAnimationFrameInner() {
             auto active_frame_z = curr_frame.channel();
             auto active_frame_stokes = curr_frame.stokes();
 
-            if ((_animation_object->_tbb_context).is_group_execution_cancelled()) {
+            if ((_animation_object->_context).is_group_execution_cancelled()) {
                 return;
             }
 
@@ -2025,8 +2036,8 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
-            tbb::task::enqueue(*tsk);
+            OnMessageTask* tsk = new AnimationTask(this);
+            ThreadManager::QueueTask(tsk);
         }
     }
 }

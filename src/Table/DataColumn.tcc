@@ -27,12 +27,17 @@ T clamp(T val, const T& min_val, const T& max_val) {
 }
 
 template <class T>
-DataColumn<T>::DataColumn(const std::string& name_chr) : Column(name_chr) {
+DataColumn<T>::DataColumn(const std::string& name_chr, bool is_logical_field) : Column(name_chr) {
+    _is_logical_field = is_logical_field;
     // Assign type based on template type
     if constexpr (std::is_same_v<T, std::string>) {
         data_type = CARTA::String;
     } else if constexpr (std::is_same_v<T, uint8_t>) {
-        data_type = CARTA::Uint8;
+        if (_is_logical_field) {
+            data_type = CARTA::Bool;
+        } else {
+            data_type = CARTA::Uint8;
+        }
     } else if constexpr (std::is_same_v<T, int8_t>) {
         data_type = CARTA::Int8;
     } else if constexpr (std::is_same_v<T, uint16_t>) {
@@ -51,8 +56,6 @@ DataColumn<T>::DataColumn(const std::string& name_chr) : Column(name_chr) {
         data_type = CARTA::Float;
     } else if constexpr (std::is_same_v<T, double>) {
         data_type = CARTA::Double;
-    } else if constexpr (std::is_same_v<T, bool>) {
-        data_type = CARTA::Bool;
     } else {
         data_type = CARTA::UnsupportedType;
     }
@@ -71,8 +74,11 @@ T DataColumn<T>::FromText(const pugi::xml_text& text) {
     // Parse properly based on template type or traits
     if constexpr (std::is_same_v<T, std::string>) {
         return text.as_string();
-    } else if constexpr (std::is_same_v<T, bool>) {
-        return text.as_bool();
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
+        if (_is_logical_field) {
+            return text.as_bool() ? 1 : 0;
+        }
+        return text.as_int(0);
     } else if constexpr (std::is_same_v<T, double>) {
         return text.as_double(std::numeric_limits<T>::quiet_NaN());
     } else if constexpr (std::is_floating_point_v<T>) {
