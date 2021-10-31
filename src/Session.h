@@ -44,13 +44,14 @@
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
+#include "Concurrency.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
-#include "Concurrency.h"
+
 #include "Table/TableController.h"
 
 #define HISTOGRAM_CANCEL -1.0
@@ -303,10 +304,17 @@ private:
     // message queue <msg, compress>
     concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
+<<<<<<< HEAD
     // context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;
 
     // context to cancel histogram calculations.
+=======
+    // TBB context that enables all tasks associated with a session to be cancelled.
+    SessionContext _base_context;
+
+    // TBB context to cancel histogram calculations.
+>>>>>>> dev
     SessionContext _histogram_context;
 
     SessionContext _animation_context;

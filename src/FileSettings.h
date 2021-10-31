@@ -4,13 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-
 #ifndef CARTA_BACKEND__FILESETTINGS_H_
 #define CARTA_BACKEND__FILESETTINGS_H_
 
 #include <mutex>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 
 #include "Concurrency.h"
 
@@ -29,13 +28,13 @@ public:
 
 private:
     Session* _session;
-  queuing_rw_mutex _cursor_mutex;
-  
+    queuing_rw_mutex _cursor_mutex;
+
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
-  using cursor_iter = std::unordered_map<uint32_t, cursor_info_t>::iterator;
+    using cursor_iter = std::unordered_map<uint32_t, cursor_info_t>::iterator;
     // map is <fileId, cursor info>
-  std::unordered_map<uint32_t, cursor_info_t> _latest_cursor;
+    std::unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
 
 #endif // CARTA_BACKEND__FILESETTINGS_H_

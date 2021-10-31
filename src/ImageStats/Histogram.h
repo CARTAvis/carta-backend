@@ -9,7 +9,6 @@
 
 #include <vector>
 
-
 namespace carta {
 
 class Histogram {

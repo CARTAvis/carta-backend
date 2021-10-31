@@ -396,7 +396,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     // read lock imageCache
     bool write_lock(false);
     queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
-    
+
     auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
@@ -578,7 +578,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
     queuing_rw_mutex_local cache_lock(&_cache_mutex, false);
-    
+
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
             _contour_settings.chunk_size, partial_contour_callback);
@@ -890,7 +890,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
             return false;
         }
         bool write_lock(false);
-	queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
+        queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
         hist = CalcHistogram(num_bins, stats, _image_cache);
     } else {
         // calculate histogram for z/stokes data
@@ -1054,7 +1054,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     // Get the cursor value with current stokes
     if (_image_cache_valid) {
         bool write_lock(false);
-	queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
+        queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
         cursor_value_with_current_stokes = _image_cache[(y * _width) + x];
         cache_lock.release();
     } else if (_loader->UseTileCache()) {
@@ -1236,14 +1236,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
                         if (config.coordinate().back() == 'x') {
                             auto x_start = y * _width;
-			    queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
+                            queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = x_start + j;
                                 profile.push_back(_image_cache[idx]);
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
-			    queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
+                            queuing_rw_mutex_local cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = (j * _width) + x;
                                 profile.push_back(_image_cache[idx]);
@@ -1840,7 +1840,8 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
     bool success(false);
 
     // Remove the old image file if it has a same file name
-    if (fs::exists(output_filename)) {
+    std::error_code error_code;
+    if (fs::exists(output_filename, error_code)) {
         fs::remove_all(output_filename);
     }
 

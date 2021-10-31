@@ -49,7 +49,6 @@ BasicStatsCalculator<T>::BasicStatsCalculator(const std::vector<T>& data)
       _num_pixels(0),
       _data(data) {}
 
-
 template <typename T>
 void BasicStatsCalculator<T>::reduce(const size_t start, const size_t end) {
     size_t i;

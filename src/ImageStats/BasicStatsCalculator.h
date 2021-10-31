@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-
 namespace carta {
 
 template <typename T>
@@ -28,7 +27,6 @@ struct BasicStats {
     void join(BasicStats<T>& other);
 };
 
-  
 template <typename T>
 class BasicStatsCalculator {
     T _min_val, _max_val;
@@ -44,7 +42,6 @@ public:
 
     BasicStats<T> GetStats() const;
 };
- 
 
 } // namespace carta
 

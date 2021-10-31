@@ -32,7 +32,7 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
 
     unique_ptr<Column> column;
 
-    if (type_string == "char") {
+    if (type_string == "char" || type_string == "unicodeChar") {
         column = make_unique<DataColumn<string>>(name);
     } else if (!array_size_string.empty()) {
         // Can't support array-based column types other than char

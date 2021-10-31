@@ -15,7 +15,7 @@ void FileSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t re
     bool write_lock(true); // With TBB this was false. Need to determine if this change
                            // has a significant performance hit.
     queuing_rw_mutex_local lock(&_cursor_mutex, write_lock);
-   
+
     FileSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
     if (cursor_results != _latest_cursor.end()) { // replace with new settings
         cursor_results->second = settings;
@@ -27,7 +27,7 @@ void FileSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t re
 bool FileSettings::ExecuteOne(const std::string& event_name, const uint32_t file_id) {
     if (event_name.compare("SET_CURSOR") == 0) {
         bool write_lock(true);
-	queuing_rw_mutex_local lock(&_cursor_mutex, write_lock);
+        queuing_rw_mutex_local lock(&_cursor_mutex, write_lock);
         FileSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
         if (cursor_results != _latest_cursor.end()) {
             auto cursor_info = cursor_results->second;
