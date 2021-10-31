@@ -101,18 +101,6 @@ else ()
     message(FATAL_ERROR "Could not find zstd")
 endif ()
 
-FIND_PACKAGE(TBB QUIET)
-if (TBB_FOUND)
-    message(STATUS "Found TBB using find_package")
-else ()
-    PKG_SEARCH_MODULE(TBB REQUIRED tbb)
-    if (TBB_FOUND)
-        message(STATUS "Found TBB using pkg-config")
-    else()
-        message(FATAL_ERROR "TBB not found")
-    endif ()
-endif()
-
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
@@ -187,7 +175,6 @@ set(LINK_LIBS
         z
         zfp
         zstd
-        tbb
         cfitsio
         pugixml
         curl

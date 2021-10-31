@@ -25,7 +25,7 @@ FileListHandler::FileListHandler(const std::string& top_level_folder, const std:
     : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder("nofolder") {}
 
 void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
-    // use tbb scoped lock so that it only processes the file list a time for one user
+    // use scoped lock so that it only processes the file list a time for one user
     // TODO: Do we still need a lock here if there are no API keys?
     std::scoped_lock lock(_file_list_mutex);
     std::string folder = request.directory();
@@ -244,7 +244,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
 void FileListHandler::OnRegionListRequest(
     const CARTA::RegionListRequest& region_request, CARTA::RegionListResponse& region_response, ResultMsg& result_msg) {
-    // use tbb scoped lock so that it only processes the file list a time for one user
+    // use scoped lock so that it only processes the file list a time for one user
     std::scoped_lock lock(_region_list_mutex);
     std::string folder = region_request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)

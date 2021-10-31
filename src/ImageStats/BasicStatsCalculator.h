@@ -9,8 +9,6 @@
 
 #include <algorithm>
 
-#include <tbb/blocked_range2d.h>
-#include <tbb/blocked_range3d.h>
 
 namespace carta {
 
@@ -30,6 +28,7 @@ struct BasicStats {
     void join(BasicStats<T>& other);
 };
 
+  
 template <typename T>
 class BasicStatsCalculator {
     T _min_val, _max_val;
@@ -39,14 +38,13 @@ class BasicStatsCalculator {
 
 public:
     BasicStatsCalculator(const std::vector<T>& data);
-    BasicStatsCalculator(BasicStatsCalculator& mm, tbb::split);
 
-    void operator()(const tbb::blocked_range<size_t>& r);
     void join(BasicStatsCalculator& other); // NOLINT
     void reduce(const size_t start, const size_t end);
 
     BasicStats<T> GetStats() const;
 };
+ 
 
 } // namespace carta
 

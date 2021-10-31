@@ -9,8 +9,6 @@
 
 #include <vector>
 
-#include <tbb/blocked_range2d.h>
-#include <tbb/blocked_range3d.h>
 
 namespace carta {
 

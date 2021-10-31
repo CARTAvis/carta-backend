@@ -52,12 +52,13 @@ void SessionManager::OnUpgrade(
     } else {
         address = IPAsText(http_response->getRemoteAddress());
     }
-
+    /*
     if (!ValidateAuthToken(http_request, _auth_token)) {
         spdlog::error("Incorrect or missing auth token supplied! Closing WebSocket connection");
         http_response->close();
         return;
     }
+    */
 
     _session_number++;
     // protect against overflow
