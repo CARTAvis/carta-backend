@@ -304,17 +304,10 @@ private:
     // message queue <msg, compress>
     concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
-<<<<<<< HEAD
     // context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;
 
-    // context to cancel histogram calculations.
-=======
-    // TBB context that enables all tasks associated with a session to be cancelled.
-    SessionContext _base_context;
-
     // TBB context to cancel histogram calculations.
->>>>>>> dev
     SessionContext _histogram_context;
 
     SessionContext _animation_context;
