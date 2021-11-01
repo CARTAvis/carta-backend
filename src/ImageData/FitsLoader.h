@@ -133,15 +133,19 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
         fits_movabs_hdu(fptr, hdu, hdutype, &status);
 
         // Read headers
-        char record[80];
+        std::string record(80, 0);
         int key_num(1);
         bool bmaj_found(false), bmin_found(false), bpa_found(false);
 
         while (status == 0 && !(bmaj_found && bmin_found && bpa_found)) {
-            fits_read_record(fptr, key_num++, record, &status);
-            bmaj_found |= strncmp(record, "BMAJ", 4) == 0;
-            bmin_found |= strncmp(record, "BMIN", 4) == 0;
-            bpa_found |= strncmp(record, "BPA", 3) == 0;
+            fits_read_record(fptr, key_num++, record.data(), &status);
+
+            if (status == 0) {
+                std::string keyword = record.substr(0, 4);
+                bmaj_found |= keyword.compare("BMAJ") == 0;
+                bmin_found |= keyword.compare("BMIN") == 0;
+                bpa_found |= keyword.compare("BPA ") == 0;
+            }
         }
 
         // Close file
