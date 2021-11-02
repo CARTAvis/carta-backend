@@ -39,13 +39,15 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     const fs::path system_settings_path = "/etc/carta/backend.json";
 
     json settings;
-    if (fs::exists(system_settings_path) && !no_system_config) {
+    std::error_code error_code;
+
+    if (!no_system_config && fs::exists(system_settings_path, error_code)) {
         settings = JSONSettingsFromFile(system_settings_path.string());
         system_settings_json_exists = true;
         debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
     }
 
-    if (fs::exists(user_settings_path) && !no_user_config) {
+    if (!no_user_config && fs::exists(user_settings_path, error_code)) {
         auto user_settings = JSONSettingsFromFile(user_settings_path.string());
         user_settings_json_exists = true;
         debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
@@ -61,6 +63,12 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
 json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
     std::ifstream ifs(json_file_path, std::ifstream::in);
     json j;
+
+    if (!ifs.good()) {
+        warning_msgs.push_back(fmt::format("Error reading config file {}.", json_file_path));
+        return j;
+    }
+
     try {
         j = json::parse(ifs, nullptr, true, true);
     } catch (json::exception& err) {
@@ -269,8 +277,8 @@ end.
     no_browser = result["no_browser"].as<bool>();
     read_only_mode = result["read_only_mode"].as<bool>();
 
-    no_user_config = result.count("no_user_config") ? true : false;
-    no_system_config = result.count("no_system_config") ? true : false;
+    no_user_config = result.count("no_user_config") != 0;
+    no_system_config = result.count("no_system_config") != 0;
 
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument
@@ -295,8 +303,9 @@ end.
 
     for (const auto& arg : positional_arguments) {
         fs::path p(arg);
-        if (fs::exists(p)) {
-            if (fs::is_directory(p)) {
+        std::error_code error_code;
+        if (fs::exists(p, error_code)) {
+            if (fs::is_directory(p, error_code)) {
                 auto image_type = casacore::ImageOpener::imageType(p.string());
                 if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
                     image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
@@ -308,7 +317,7 @@ end.
                     file_paths.clear();
                     break;
                 }
-            } else if (!fs::is_regular_file(p)) {
+            } else if (!fs::is_regular_file(p, error_code)) {
                 // Ignore invalid files
                 file_paths.clear();
                 break;

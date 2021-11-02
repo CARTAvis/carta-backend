@@ -8,6 +8,11 @@
 
 namespace carta {
 int ThreadManager::_omp_thread_count = 0;
+std::list<OnMessageTask*> ThreadManager::_task_queue;
+std::mutex ThreadManager::_task_queue_mtx;
+std::condition_variable ThreadManager::_task_queue_cv;
+volatile bool ThreadManager::_has_exited = false;
+std::list<std::thread*> ThreadManager::_workers;
 
 void ThreadManager::ApplyThreadLimit() {
     // Skip application if we are already inside an OpenMP parallel block
@@ -26,4 +31,47 @@ void ThreadManager::SetThreadLimit(int count) {
     _omp_thread_count = count;
     ApplyThreadLimit();
 }
+
+void ThreadManager::QueueTask(OnMessageTask* tsk) {
+    std::unique_lock<std::mutex> lock(_task_queue_mtx);
+    _task_queue.push_back(tsk);
+    _task_queue_cv.notify_one();
+}
+
+void ThreadManager::StartEventHandlingThreads(int num_threads) {
+    auto thread_lambda = []() {
+        OnMessageTask* tsk;
+
+        do {
+            std::unique_lock<std::mutex> lock(_task_queue_mtx);
+            if (_task_queue.empty() || !(tsk = _task_queue.front())) {
+                _task_queue_cv.wait(lock);
+            } else {
+                _task_queue.pop_front();
+                lock.unlock();
+                tsk->execute();
+                delete tsk;
+            }
+
+            if (_has_exited) {
+                return;
+            }
+        } while (true);
+    };
+
+    // Start worker threads
+    for (int i = 0; i < num_threads; i++) {
+        _workers.push_back(new std::thread(thread_lambda));
+    }
+}
+
+void ThreadManager::ExitEventHandlingThreads() {
+    _has_exited = true;
+    _task_queue_cv.notify_all();
+
+    while (!_workers.empty()) {
+        _workers.pop_front();
+    }
+}
+
 } // namespace carta
