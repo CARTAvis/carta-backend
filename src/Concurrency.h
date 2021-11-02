@@ -121,7 +121,7 @@ public:
             if (_rw) {
                 _rwmtx->writer_leave();
             } else {
-                _rwmtx->writer_leave();
+                _rwmtx->reader_leave();
             }
             _active = false;
         }
@@ -131,7 +131,7 @@ public:
             if (_rw) {
                 _rwmtx->writer_leave();
             } else {
-                _rwmtx->writer_leave();
+                _rwmtx->reader_leave();
             }
             _active = false;
         }
