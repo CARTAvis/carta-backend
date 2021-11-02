@@ -36,24 +36,21 @@ private:
     void StripHduName(std::string& hdu); // remove extension name
 
     // Header entries
-    void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, bool using_image_header, int bitpix, const std::string& hdu,
-        CARTA::FileInfoExtended& extended_info);
+    casacore::Vector<casacore::String> FitsHeaderStrings(casacore::String& name, unsigned int hdu);
+    void AddEntriesFromHeaderStrings(
+        const casacore::Vector<casacore::String>& headers, const std::string& hdu, CARTA::FileInfoExtended& extended_info);
+    void ConvertHeaderValueToNumeric(const casacore::String& name, casacore::String& value, CARTA::HeaderEntry* entry);
+    void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info);
 
-    // Image shape, nchannels, nstokes entries
+    // Computed entries
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
         int stokes_axis, const std::vector<int>& render_axes);
-
-    // Computed entries for direction and spectral axes
     void AddInitialComputedEntries(
         const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::vector<int>& render_axes);
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-        const std::vector<int>& display_axes, casacore::String& radesys, bool use_image_for_entries);
+        const std::vector<int>& display_axes, bool use_image_for_entries);
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes);
     void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set);
-
-    // FITS keyword conversion
-    bool GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist);
-    int GetFitsBitpix(casacore::ImageInterface<float>* image);
 
     // Convert MVAngle to string; returns Quantity string if not direction
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);
