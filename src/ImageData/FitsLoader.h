@@ -142,9 +142,9 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
 
             if (status == 0) {
                 std::string keyword = record.substr(0, 4);
-                bmaj_found |= keyword.compare("BMAJ") == 0;
-                bmin_found |= keyword.compare("BMIN") == 0;
-                bpa_found |= keyword.compare("BPA ") == 0;
+                bmaj_found |= (keyword == "BMAJ");
+                bmin_found |= (keyword == "BMIN");
+                bpa_found |= (keyword == "BPA ");
             }
         }
 
