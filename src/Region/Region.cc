@@ -372,14 +372,15 @@ casacore::LCRegion* Region::GetImageRegion(
             if (!use_polygon) {
                 // No distortion, do direct region conversion if possible.
                 // Convert reference WCRegion to LCRegion in output image and cache it.
-                spdlog::debug("Using region conversion for {}", RegionName(_region_state.type));
                 lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+                if (lc_region) {
+                    spdlog::debug("Using direct region conversion for {}", RegionName(_region_state.type));
+                }
             }
 
             if (!lc_region) {
                 // Use polygon approximation of reference region to translate to another image
-                spdlog::debug(
-                    "Region conversion failed or was distorted, using polygon approximation for {}", RegionName(_region_state.type));
+                spdlog::debug("Using polygon approximation for rotbox or distorted region {}", RegionName(_region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
                 // Cache converted polygon
@@ -442,12 +443,12 @@ bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys
 
                 // Compare reference to converted length ratio
                 double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
-                spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
+                // spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
 
                 if (length_ratio_difference < 1e-4) {
                     // Passed ratio check; check dot product of converted region
                     double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
-                    spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
+                    // spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
 
                     if (fabs(converted_dot_product) < 1e-2) {
                         // passed distortion tests, do not use polygon approximation
