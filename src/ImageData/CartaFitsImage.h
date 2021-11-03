@@ -52,6 +52,9 @@ public:
 
     casacore::DataType internalDataType() const;
 
+    // Headers accessors
+    casacore::Vector<casacore::String> FitsHeaderStrings();
+
 private:
     // Uses _fptr (nullptr when file is closed)
     fitsfile* OpenFile();
@@ -59,7 +62,8 @@ private:
     void CloseFileIfError(const int& status, const std::string& error);
 
     void SetUpImage();
-    void GetFitsHeaders(int& nkeys, std::string& hdrstr);
+    void GetFitsHeaders(int& nheaders, std::string& hdrstr);
+    casacore::Vector<casacore::String> FitsHeaderStrings(int nheaders, const std::string& header);
 
     // casacore ImageFITSConverter workaround
     casacore::CoordinateSystem SetCoordinateSystem(
@@ -95,6 +99,7 @@ private:
     casacore::IPosition _shape;
     int _datatype; // bitpix value
     bool _has_blanks;
+    casacore::Vector<casacore::String> _fits_header_strings;
 
     casacore::Lattice<bool>* _pixel_mask;
     casacore::TiledShape _tiled_shape;

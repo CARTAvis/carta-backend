@@ -57,7 +57,9 @@ void WebBrowser::ParseCmd() {
     std::istringstream isstream(_cmd);
     std::copy(std::istream_iterator<std::string>(isstream), std::istream_iterator<std::string>(), std::back_inserter(_args));
     fs::path path(_args[0]);
-    if (!fs::exists(path)) {
+    std::error_code error_code;
+
+    if (!fs::exists(path, error_code)) {
         path = SearchPath(_args[0]);
     }
 

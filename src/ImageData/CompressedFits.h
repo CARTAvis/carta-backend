@@ -94,6 +94,7 @@ public:
 
     // Headers for file info
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
+    bool GetFirstImageHdu(string& hduname);
 
     // Beams for file info and opening image
     inline const casacore::ImageBeamSet& GetBeamSet() {

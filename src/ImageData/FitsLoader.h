@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
+#include <chrono>
+
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/images/Images/FITSImage.h>
 
@@ -27,6 +29,8 @@ public:
 private:
     std::string _unzip_file;
     casacore::uInt _hdu_num;
+
+    void RemoveHistoryBeam(unsigned int hdu_num);
 };
 
 FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, is_gz) {}
@@ -34,7 +38,8 @@ FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(fil
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file
     auto unzip_path = fs::path(_unzip_file);
-    if (fs::exists(unzip_path)) {
+    std::error_code error_code;
+    if (fs::exists(unzip_path, error_code)) {
         fs::remove(unzip_path);
     }
 }
@@ -85,6 +90,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
                 }
             } else {
                 _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+                RemoveHistoryBeam(hdu_num);
             }
         } catch (const casacore::AipsError& err) {
             if (use_casacore_fits) {
@@ -110,6 +116,47 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         _num_dims = _image_shape.size();
         _has_pixel_mask = _image->hasPixelMask();
         _coord_sys = _image->coordinates();
+    }
+}
+
+void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
+    // Remove beam not in header entries
+    auto image_info = _image->imageInfo();
+    if (image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam()) {
+        // Check if beam headers exist
+        fitsfile* fptr;
+        int status(0), hdu(hdu_num + 1); // 1-based for FITS
+        int* hdutype(nullptr);
+
+        // Open file and move to hdu
+        fits_open_file(&fptr, _filename.c_str(), 0, &status);
+        fits_movabs_hdu(fptr, hdu, hdutype, &status);
+
+        // Read headers
+        std::string record(80, 0);
+        int key_num(1);
+        bool bmaj_found(false), bmin_found(false), bpa_found(false);
+
+        while (status == 0 && !(bmaj_found && bmin_found && bpa_found)) {
+            fits_read_record(fptr, key_num++, record.data(), &status);
+
+            if (status == 0) {
+                std::string keyword = record.substr(0, 4);
+                bmaj_found |= (keyword == "BMAJ");
+                bmin_found |= (keyword == "BMIN");
+                bpa_found |= (keyword == "BPA ");
+            }
+        }
+
+        // Close file
+        status = 0;
+        fits_close_file(fptr, &status);
+
+        if (!(bmaj_found && bmin_found && bpa_found)) {
+            // Beam headers missing, remove from image info
+            image_info.removeRestoringBeam();
+            _image->setImageInfo(image_info);
+        }
     }
 }
 

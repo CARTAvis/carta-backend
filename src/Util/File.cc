@@ -14,7 +14,7 @@ uint32_t GetMagicNumber(const std::string& filename) {
     uint32_t magic_number = 0;
 
     std::ifstream input_file(filename);
-    if (input_file) {
+    if (input_file && input_file.good()) {
         input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
     }
@@ -42,7 +42,7 @@ int GetNumItems(const std::string& path) {
             counter++;
         }
         return counter;
-    } catch (std::exception) {
+    } catch (fs::filesystem_error) {
         return -1;
     }
 }
@@ -53,12 +53,17 @@ fs::path SearchPath(std::string filename) {
     std::string path(std::getenv("PATH"));
     std::vector<std::string> path_strings;
     SplitString(path, ':', path_strings);
-    for (auto& p : path_strings) {
-        fs::path base_path(p);
-        base_path /= filename;
-        if (fs::exists(base_path)) {
-            return base_path;
+
+    try {
+        for (auto& p : path_strings) {
+            fs::path base_path(p);
+            base_path /= filename;
+            if (fs::exists(base_path)) {
+                return base_path;
+            }
         }
+    } catch (fs::filesystem_error) {
+        return fs::path();
     }
     return fs::path();
 }
