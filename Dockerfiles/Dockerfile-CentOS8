@@ -1,4 +1,4 @@
-FROM centos:8
+FROM centos:8.4.2105
 
 # Install the required packages
 RUN \
@@ -8,56 +8,21 @@ RUN \
   dnf -y install centos-release-openstack-victoria && \
   dnf -y update && \
   dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
-         gcc-c++ grpc-devel grpc-plugins gtest-devel git git-lfs gsl-devel hdf5-devel lapack-devel \ 
+         gcc-c++ grpc-devel grpc-plugins git git-lfs gsl-devel hdf5-devel lapack-devel \ 
          libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
-         python36 python3-numpy python3-astropy pugixml-devel readline-devel subversion tbb-devel \
-         wcslib-devel wget zlib-devel libuuid-devel zfp-devel
+         python36 python3-pip pugixml-devel readline-devel subversion tbb-devel \
+         wcslib-devel wget zlib-devel libuuid-devel zfp-devel && \
+  pip3 install numpy astropy
 
 # CARTA will have a problem finding the .h files in /usr/include/cfitsio/
 RUN \
   source /etc/bashrc && \
   cp /usr/include/cfitsio/* /usr/include/
 
-# Get only the geodetic and ephemerides casa-data
+# Get carta dependencies from the cartavis rpm repository
 RUN \
-  source /etc/bashrc && \
-  mkdir -p /usr/local/share/casacore/data/ephemerides && \
-  mkdir -p /usr/local/share/casacore/data/geodetic && \
-  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/ephemerides/ /usr/local/share/casacore/data/ephemerides && \
-  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/geodetic/ /usr/local/share/casacore/data/geodetic && \
-  rm -r /usr/local/share/casacore/data/ephemerides/splatalogue.db && \
-  rm -r /usr/local/share/casacore/data/ephemerides/SplatDefault.tbl
-
-# Get libsofa.a for casacore
-RUN \
-  wget http://www.iausofa.org/2018_0130_F/sofa_f-20180130.tar.gz && \
-  tar xzf sofa_f-20180130.tar.gz && rm sofa_f-20180130.tar.gz && \
-  cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
-  cd /root && rm -rf sofa
-
-# Install carta-casacore from CARTAvis repo with fixed DATA-DIR. 
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/CARTAvis/carta-casacore.git && \
-  cd carta-casacore && \
-  git submodule init && git submodule update && \
-  cd casa6 && \
-  git submodule init && git submodule update && \
-  cd ../ && mkdir -p build && cd build && \
-  cmake .. -DUSE_FFTW3=ON \
-           -DUSE_HDF5=ON \
-           -DUSE_THREADS=ON \
-           -DUSE_OPENMP=ON \
-           -DCMAKE_BUILD_TYPE=Release \
-           -DBUILD_TESTING=OFF \
-           -DBUILD_PYTHON=OFF \
-           -DUseCcache=1 \
-           -DHAS_CXX11=1 \
-           -DDATA_DIR=/usr/local/share/casacore/data \
-           -DCMAKE_INSTALL_PREFIX=/opt/carta-casacore && \
-  make -j2 && make install && \
-  cd /root && rm -rf carta-casacore
+  curl https://packages.cartavis.org/cartavis-el8.repo --output /etc/yum.repos.d/cartavis.repo && \
+  yum -y install carta-casacore-devel gtest-devel gmock-devel fits2idia measures-data
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
