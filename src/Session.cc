@@ -45,13 +45,12 @@
 #include <xmmintrin.h>
 #endif
 
-LoaderCache::LoaderCache(capacity) : _capacity(capacity) {};
+LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
-std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image) {    
+std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
-        
+
     if (_map.find(filename) == _map.end()) {
-        
         // Create the loader -- don't block while doing this
         std::shared_ptr<carta::FileLoader> loader_ptr;
         guard.unlock();
@@ -61,7 +60,7 @@ std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename, std::s
             loader_ptr = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(filename));
         }
         guard.lock();
-        
+
         // Check if the loader was added in the meantime
         if (_map.find(filename) == _map.end()) {
             // Evict oldest loader if necessary
@@ -69,17 +68,17 @@ std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename, std::s
                 _map.erase(_queue.back());
                 _queue.pop_back();
             }
-            
+
             // Insert the new loader
             _map[filename] = loader_ptr;
             _queue.push_front(filename);
         }
-    } else
+    } else {
         // Touch the cache entry
         _queue.remove(filename);
         _queue.push_front(filename);
     }
-    
+
     return _map[filename];
 }
 
@@ -463,13 +462,13 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     if (info_loaded) {
         // Get or create loader for frame
         auto loader = _loaders.Get(fullname);
-        
+
         // create Frame for image
         auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
 
         // query loader for mipmap dataset
         bool has_mipmaps(loader->HasMip(2));
-        
+
         // remove loader from cache
         _loaders.Remove(fullname);
 

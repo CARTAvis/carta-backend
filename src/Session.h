@@ -67,15 +67,16 @@ struct PerSocketData {
 // Cache of loaders for reading images from disk.
 class LoaderCache {
 public:
-    LoaderCache(capacity);
-    std::shared_ptr<carta::FileLoader> Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image=nullptr);
+    LoaderCache(int capacity);
+    std::shared_ptr<carta::FileLoader> Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image = nullptr);
     void Remove(std::string filename);
+
 private:
     int _capacity;
     std::unordered_map<std::string, std::shared_ptr<carta::FileLoader>> _map;
     std::list<std::string> _queue;
     std::mutex _loader_cache_mutex;
-}
+};
 
 class Session {
 public:
@@ -290,7 +291,7 @@ private:
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
-    
+
     // Loader cache
     LoaderCache _loaders;
 
