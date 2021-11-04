@@ -45,6 +45,50 @@
 #include <xmmintrin.h>
 #endif
 
+LoaderCache::LoaderCache(capacity) : _capacity(capacity) {};
+
+std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image) {    
+    std::unique_lock<std::mutex> guard(_loader_cache_mutex);
+        
+    if (_map.find(filename) == _map.end()) {
+        
+        // Create the loader -- don't block while doing this
+        std::shared_ptr<carta::FileLoader> loader_ptr;
+        guard.unlock();
+        if (image) {
+            loader_ptr = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(image));
+        } else {
+            loader_ptr = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(filename));
+        }
+        guard.lock();
+        
+        // Check if the loader was added in the meantime
+        if (_map.find(filename) == _map.end()) {
+            // Evict oldest loader if necessary
+            if (_map.size() == _capacity) {
+                _map.erase(_queue.back());
+                _queue.pop_back();
+            }
+            
+            // Insert the new loader
+            _map[filename] = loader_ptr;
+            _queue.push_front(filename);
+        }
+    } else
+        // Touch the cache entry
+        _queue.remove(filename);
+        _queue.push_front(filename);
+    }
+    
+    return _map[filename];
+}
+
+void LoaderCache::Remove(std::string filename) {
+    std::unique_lock<std::mutex> guard(_loader_cache_mutex);
+    _map.erase(filename);
+    _queue.remove(filename);
+}
+
 int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
@@ -65,7 +109,8 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
-      _file_settings(this) {
+      _file_settings(this),
+      _loaders(LOADER_CACHE_SIZE) {
     _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -156,7 +201,7 @@ void Session::ConnectCalled() {
 // File browser info
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-    const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message, const int file_id) {
+    const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message) {
     // Fill CARTA::FileInfo and CARTA::FileInfoExtended
     // Map all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
@@ -169,8 +214,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
         }
 
         // FileInfoExtended
-        _loader[file_id] = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fullname));
-        FileExtInfoLoader ext_info_loader(_loader[file_id]);
+        FileExtInfoLoader ext_info_loader(_loaders.Get(fullname));
 
         std::string requested_hdu(hdu);
         if (requested_hdu.empty() && (file_info.hdu_list_size() > 0)) {
@@ -197,20 +241,18 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-    const std::string& filename, std::string& hdu, std::string& message, const int file_id) {
+    const std::string& filename, std::string& hdu, std::string& message, std::string& fullname) {
     // Fill FileInfoExtended for given file and hdu_name (may include extension name)
     bool file_info_ok(false);
 
     try {
         // FileInfo
-        std::string fullname;
         if (!FillFileInfo(file_info, folder, filename, fullname, message)) {
             return file_info_ok;
         }
 
-        // Reset file loader and file extended info loader
-        _loader[file_id] = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fullname));
-        FileExtInfoLoader ext_info_loader(_loader[file_id]);
+        // Get file extended info loader
+        FileExtInfoLoader ext_info_loader(_loaders.Get(fullname));
 
         // Discern hdu for extended file info
         if (hdu.empty()) {
@@ -250,13 +292,12 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-    const std::string& filename, std::string& message, const int file_id) {
+    const std::string& filename, std::string& message) {
     // Fill FileInfoExtended for given image; no hdu
     bool file_info_ok(false);
 
     try {
-        _loader[file_id] = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(image));
-        FileExtInfoLoader ext_info_loader(_loader[file_id]);
+        FileExtInfoLoader ext_info_loader(_loaders.Get(filename, image));
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
@@ -360,8 +401,7 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto& file_info = *response.mutable_file_info();
     std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
     string message;
-    // This file isn't open, so we don't have a file ID -- we use an index of -1 in the loader map.
-    bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message, -1);
+    bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
 
     if (success) {
         // add extended info map to message
@@ -412,20 +452,26 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     CARTA::OpenFileAck ack;
     ack.set_file_id(file_id);
     string err_message;
+    std::string fullname;
     bool success(false);
 
     // Set _loader and get file info
     CARTA::FileInfo file_info;
     CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, file_id);
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
 
     if (info_loaded) {
-        // create Frame for image; Frame owns loader
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader[file_id], hdu));
+        // Get or create loader for frame
+        auto loader = _loaders.Get(fullname);
+        
+        // create Frame for image
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
 
         // query loader for mipmap dataset
-        bool has_mipmaps(_loader[file_id]->HasMip(2));
-        _loader.erase(file_id);
+        bool has_mipmaps(loader->HasMip(2));
+        
+        // remove loader from cache
+        _loaders.Remove(fullname);
 
         if (frame->IsValid()) {
             // Check if the old _frames[file_id] object exists. If so, delete it.
@@ -490,13 +536,14 @@ bool Session::OnOpenFile(
     string err_message;
 
     CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, file_id);
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message);
     bool success(false);
 
     if (info_loaded) {
         // Create Frame for image
-        auto frame = std::make_unique<Frame>(_id, _loader[file_id], "");
-        _loader.erase(file_id);
+        auto frame = std::make_unique<Frame>(_id, _loaders.Get(name), "");
+        // Remove loader from cache
+        _loaders.Remove(name);
 
         if (frame->IsValid()) {
             if (_frames.count(file_id) > 0) {
