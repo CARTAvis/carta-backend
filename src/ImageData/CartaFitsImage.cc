@@ -271,18 +271,13 @@ void CartaFitsImage::CloseFileIfError(const int& status, const std::string& erro
 
 void CartaFitsImage::SetUpImage() {
     // Set up image parameters and coordinate system from headers
-    // Get headers as single string
+    // Read headers into string
     int nheaders(0);
-    std::string header_str;
-    GetFitsHeaders(nheaders, header_str);
+    std::string header;
+    GetFitsHeaders(nheaders, header);
 
-    // Convert headers to Vector of Strings to pass to casacore converter
-    casacore::Vector<casacore::String> header_strings(nheaders);
-    size_t pos(0);
-    for (int i = 0; i < nheaders; ++i) {
-        header_strings(i) = header_str.substr(pos, 80);
-        pos += 80;
-    }
+    // Headers as String vector to pass to converter
+    casacore::Vector<casacore::String> header_strings = FitsHeaderStrings(nheaders, header);
 
     casacore::Record unused_headers;
     casacore::LogSink sink;
@@ -300,7 +295,7 @@ void CartaFitsImage::SetUpImage() {
             // Spectral axis defined in velocity fails if no rest freq to convert to frequencies
             try {
                 // Set up with wcslib
-                coord_sys = SetCoordinateSystem(nheaders, header_str, unused_headers, stokes_fits_value);
+                coord_sys = SetCoordinateSystem(nheaders, header, unused_headers, stokes_fits_value);
             } catch (const casacore::AipsError& err) {
                 spdlog::debug("Coordinate system setup error: {}", err.getMesg());
                 throw(casacore::AipsError("Coordinate system setup from FITS headers failed."));
@@ -347,13 +342,11 @@ void CartaFitsImage::SetUpImage() {
     }
 }
 
-void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
+void CartaFitsImage::GetFitsHeaders(int& nheaders, std::string& hdrstr) {
     // Read header values into single string, and store some image parameters.
     // Returns string and number of keys contained in string.
     // Throws exception if any headers missing.
-
     fitsfile* fptr = OpenFile();
-
     int status(0);
 
     // Check hdutype
@@ -403,21 +396,21 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
     CloseFileIfError(status, "Error detecting image compression.");
 
     // Number of headers (keys).  nkeys is function parameter.
-    nkeys = 0;
+    nheaders = 0;
     int* more_keys(nullptr);
     status = 0;
-    fits_get_hdrspace(fptr, &nkeys, more_keys, &status);
+    fits_get_hdrspace(fptr, &nheaders, more_keys, &status);
     CloseFileIfError(status, "Unable to determine FITS headers.");
 
     // Get headers as single string with no exclusions (exclist=nullptr, nexc=0)
     int no_comments(0);
-    char* header[nkeys];
+    char* header[nheaders];
     status = 0;
     if (_is_compressed) {
         // Convert to uncompressed headers
-        fits_convert_hdr2str(fptr, no_comments, nullptr, 0, header, &nkeys, &status);
+        fits_convert_hdr2str(fptr, no_comments, nullptr, 0, header, &nheaders, &status);
     } else {
-        fits_hdr2str(fptr, no_comments, nullptr, 0, header, &nkeys, &status);
+        fits_hdr2str(fptr, no_comments, nullptr, 0, header, &nheaders, &status);
     }
 
     if (status) {
@@ -435,6 +428,33 @@ void CartaFitsImage::GetFitsHeaders(int& nkeys, std::string& hdrstr) {
 
     // Done with file
     CloseFile();
+}
+
+casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings(int nheaders, const std::string& header) {
+    // Return header string as vector of 80-char strings. Also returns number of headers and header string.
+    casacore::Vector<casacore::String> header_strings(nheaders);
+    size_t pos(0);
+
+    for (int i = 0; i < nheaders; ++i) {
+        header_strings(i) = header.substr(pos, 80);
+        pos += 80;
+    }
+
+    _fits_header_strings = header_strings;
+
+    return header_strings;
+}
+
+casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings() {
+    // Return headers as string vector
+    if (!_fits_header_strings.empty()) {
+        return _fits_header_strings;
+    }
+
+    int nheaders;
+    std::string fits_headers;
+    GetFitsHeaders(nheaders, fits_headers);
+    return FitsHeaderStrings(nheaders, fits_headers);
 }
 
 casacore::CoordinateSystem CartaFitsImage::SetCoordinateSystem(

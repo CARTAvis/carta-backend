@@ -241,7 +241,7 @@ void CartaHdf5Image::SetUpImage() {
     }
 }
 
-casacore::Vector<casacore::String> CartaHdf5Image::FITSHeaderStrings() {
+casacore::Vector<casacore::String> CartaHdf5Image::FitsHeaderStrings() {
     return _fits_header_strings;
 }
 
