@@ -22,3 +22,11 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
         }
     }
 }
+
+bool EndsWith(const std::string& haystack, const std::string& needle) {
+    if (needle.size() > haystack.size()) {
+        return false;
+    }
+
+    return std::equal(needle.rbegin(), needle.rend(), haystack.rbegin());
+}

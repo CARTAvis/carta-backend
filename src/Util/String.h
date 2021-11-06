@@ -13,4 +13,7 @@
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
 
+// determines whether a string ends with another given string
+bool EndsWith(const std::string& haystack, const std::string& needle);
+
 #endif // CARTA_BACKEND__UTIL_STRING_H_
