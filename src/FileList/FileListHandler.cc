@@ -71,7 +71,8 @@ void FileListHandler::GetRelativePath(std::string& folder) {
     }
 }
 
-void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, CARTA::FileListFilterMode filter_mode, bool region_list) {
+void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg,
+    CARTA::FileListFilterMode filter_mode, bool region_list) {
     // fill FileListResponse
     std::string requested_folder = ((folder.compare(".") == 0) ? _top_level_folder : folder);
     casacore::Path requested_path(_top_level_folder);

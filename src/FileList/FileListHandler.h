@@ -45,7 +45,8 @@ public:
 
 private:
     // ICD: File/Region list response
-    void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, CARTA::FileListFilterMode filter_mode, bool region_list = false);
+    void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, CARTA::FileListFilterMode filter_mode,
+        bool region_list = false);
 
     bool FillRegionFileInfo(CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type = CARTA::FileType::UNKNOWN);
     void GetRegionFileContents(std::string& full_name, std::vector<std::string>& file_contents);

@@ -15,7 +15,7 @@ uint32_t GetMagicNumber(const std::string& filename) {
 
     std::ifstream input_file(filename);
     if (input_file && input_file.good()) {
-        input_file.read((char*) &magic_number, sizeof(magic_number));
+        input_file.read((char*)&magic_number, sizeof(magic_number));
         input_file.close();
     }
 
@@ -38,7 +38,7 @@ int GetNumItems(const std::string& path) {
     try {
         int counter = 0;
         auto it = fs::directory_iterator(path);
-        for (const auto f: it) {
+        for (const auto f : it) {
             counter++;
         }
         return counter;
@@ -55,7 +55,7 @@ fs::path SearchPath(std::string filename) {
     SplitString(path, ':', path_strings);
 
     try {
-        for (auto& p: path_strings) {
+        for (auto& p : path_strings) {
             fs::path base_path(p);
             base_path /= filename;
             if (fs::exists(base_path)) {
@@ -128,6 +128,4 @@ CARTA::FileType GuessRegionType(const std::string& path_string, bool check_conte
     }
 
     return CARTA::UNKNOWN;
-
-
 }
