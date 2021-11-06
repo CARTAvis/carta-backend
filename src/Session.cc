@@ -50,6 +50,13 @@ LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
 
+    // We have a cached loader, but the file has changed
+    if (_map.find(filename) != _map.end() && _map[filename]->ImageUpdated()) {
+        _map.erase(filename);
+        _queue.remove(filename);
+    }
+
+    // We don't have a cached loader
     if (_map.find(filename) == _map.end()) {
         // Create the loader -- don't block while doing this
         std::shared_ptr<carta::FileLoader> loader_ptr;

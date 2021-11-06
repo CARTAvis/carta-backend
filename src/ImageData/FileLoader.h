@@ -199,6 +199,9 @@ public:
     virtual void SetDeltaStokesIndex(int delta_stokes_index);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
 
+    // Modify time changed
+    bool ImageUpdated();
+
 protected:
     // Full name and hdu of the image file
     std::string _filename;
@@ -243,9 +246,6 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
-
-    // Modify time changed
-    bool ImageUpdated();
 };
 
 } // namespace carta
