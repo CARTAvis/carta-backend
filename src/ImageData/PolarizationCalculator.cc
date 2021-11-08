@@ -58,11 +58,6 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageIn
     if (stokes.toPixel(stokes_index, casacore::Stokes::V)) {
         _stokes_image[V] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
     }
-
-    if ((_stokes_image[Q] && !_stokes_image[U]) || (!_stokes_image[Q] && _stokes_image[U])) {
-        spdlog::error("Stokes coordinate has only one Q or U type.");
-        _image_valid = false;
-    }
 }
 
 void PolarizationCalculator::FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type) {

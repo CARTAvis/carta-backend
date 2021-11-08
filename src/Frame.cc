@@ -1169,7 +1169,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             bool have_profile(false);
             bool downsample(mip >= 2);
 
-            if (downsample && _loader->HasMip(2) && !ComputeStokes(stokes)) { // Use a mipmap dataset to return downsampled data
+            if (downsample && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
@@ -1204,7 +1204,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     end = config.coordinate().back() == 'x' ? std::min(end, _width) : std::min(end, _height);
                 }
 
-                if (is_current_stokes && !ComputeStokes(stokes)) {
+                if (is_current_stokes) {
                     if (_loader->UseTileCache()) { // Use tile cache to return full resolution data or prepare data for decimation
                         profile.resize(end - start);
 
