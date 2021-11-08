@@ -120,7 +120,7 @@ CARTA::FileType GuessRegionType(const std::string& path_string, bool check_conte
         fs::path path(path_string);
         auto filename = path.filename().string();
 
-        if (EndsWith(filename, ".crft")) {
+        if (EndsWith(filename, ".crtf")) {
             return CARTA::CRTF;
         } else if (EndsWith(filename, ".reg")) {
             return CARTA::DS9_REG;
