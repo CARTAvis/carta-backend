@@ -68,7 +68,7 @@ struct PerSocketData {
 class LoaderCache {
 public:
     LoaderCache(int capacity);
-    std::shared_ptr<carta::FileLoader> Get(std::string filename, std::shared_ptr<casacore::ImageInterface<float>> image = nullptr);
+    std::shared_ptr<carta::FileLoader> Get(std::string filename);
     void Remove(std::string filename);
 
 private:
@@ -250,7 +250,7 @@ private:
 
     // File info for open moments image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-        const std::string& filename, std::string& message);
+        const std::string& filename, std::string& message, std::shared_ptr<carta::FileLoader>& image_loader);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);
