@@ -42,8 +42,7 @@ private:
     casacore::LatticeExprNode MakeTotalPolarizedIntensityNode();
     casacore::LatticeExprNode MakePolarizedIntensityNode();
     void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
-    std::shared_ptr<casacore::ImageInterface<float>> PrepareOutputImage(
-        const casacore::ImageInterface<float>& image, bool drop_deg = false);
+    std::shared_ptr<casacore::ImageInterface<float>> PrepareOutputImage(const casacore::ImageInterface<float>& image);
 
     const std::shared_ptr<const casacore::ImageInterface<float>> _image;
     bool _image_valid;

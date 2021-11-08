@@ -103,12 +103,12 @@ void PolarizationCalculator::SetImageStokesInfo(casacore::ImageInterface<float>&
     image.setImageInfo(info);
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::PrepareOutputImage(
-    const casacore::ImageInterface<float>& image, bool drop_deg) {
+std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::PrepareOutputImage(const casacore::ImageInterface<float>& image) {
     string empty_out_name;
-    bool overwrite(false);
     casacore::Record empty_record;
     casacore::String empty_mask;
+    bool drop_deg(false);
+    bool overwrite(false);
     bool list(false);
     bool extend_mask(false);
     bool attach_mask(false);
