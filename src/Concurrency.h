@@ -124,14 +124,7 @@ public:
         }
     }
     ~queuing_rw_mutex_local() {
-        if (_active) {
-            if (_rw) {
-                _rwmtx->writer_leave();
-            } else {
-                _rwmtx->reader_leave();
-            }
-            _active = false;
-        }
+        release();
     }
     void release() {
         if (_active) {
