@@ -307,6 +307,16 @@ bool CompressedFits::IsImageHdu(const std::string& fits_block, CARTA::FileInfoEx
 void CompressedFits::ParseFitsCard(
     casacore::String& fits_card, casacore::String& keyword, casacore::String& value, casacore::String& comment) {
     // Extract parts of FITS header.
+    if (fits_card.empty()) {
+        return;
+    }
+
+    if (fits_card.startsWith("HISTORY")) {
+        // Do not parse HISTORY
+        keyword = fits_card;
+        return;
+    }
+
     // Split keyword, remainder of line
     std::vector<std::string> keyword_remainder;
     SplitString(fits_card, '=', keyword_remainder);
