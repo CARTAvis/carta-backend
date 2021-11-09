@@ -64,9 +64,8 @@ public:
         std::unique_lock<std::mutex> lock(_mtx);
         if (_writer_count > 0) {
             _readers_cv.wait(lock);
-        } else {
-            ++_reader_count;
         }
+        ++_reader_count;
     }
     void writer_enter() {
         std::unique_lock<std::mutex> lock(_mtx);
