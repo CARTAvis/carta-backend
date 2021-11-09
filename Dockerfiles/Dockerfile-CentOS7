@@ -17,11 +17,6 @@ RUN \
   pip3 install numpy astropy && \
   ln -s /usr/bin/cmake3 /usr/bin/cmake
 
-# CARTA will have a problem finding the .h files in /usr/include/cfitsio/
-RUN \
-  source /etc/bashrc && \
-  cp /usr/include/cfitsio/* /usr/include/
-
 # Get carta dependencies from the cartavis rpm repository
 RUN \ 
   curl https://packages.cartavis.org/cartavis-el7.repo --output /etc/yum.repos.d/cartavis.repo && \
