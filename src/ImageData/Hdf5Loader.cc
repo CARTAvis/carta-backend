@@ -469,6 +469,12 @@ bool Hdf5Loader::GetChunk(
     data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
     data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
 
+    StokesSource stokes_source(stokes, z);
+    if (!stokes_source.UseDefaultImage()) { // reset the channel and stokes index as 0 for the computed stokes image
+        stokes = 0;
+        z = 0;
+    }
+
     casacore::Slicer slicer;
     if (_num_dims == 4) {
         slicer = casacore::Slicer(IPos(4, min_x, min_y, z, stokes), IPos(4, data_width, data_height, 1, 1));
@@ -483,7 +489,6 @@ bool Hdf5Loader::GetChunk(
 
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        StokesSource stokes_source(stokes, z);
         GetSlice(tmp, std::make_pair(stokes_source, slicer));
         data_ok = true;
     } catch (casacore::AipsError& err) {

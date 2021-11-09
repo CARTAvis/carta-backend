@@ -4,9 +4,10 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "PolarizationCalculator.h"
 #include <imageanalysis/ImageAnalysis/SubImageFactory.h>
+
 #include "Logger/Logger.h"
+#include "PolarizationCalculator.h"
 
 using namespace carta;
 

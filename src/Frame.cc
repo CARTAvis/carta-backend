@@ -556,7 +556,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     std::vector<float> tile_data;
     bool loaded_data(0);
 
-    if (mip > 1) {
+    if (mip > 1 && !ComputeStokes(_stokes_index)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (!_image_cache_valid && _loader->UseTileCache()) {
@@ -1169,7 +1169,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             bool have_profile(false);
             bool downsample(mip >= 2);
 
-            if (downsample && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+            if (downsample && _loader->HasMip(2) && !ComputeStokes(stokes)) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
