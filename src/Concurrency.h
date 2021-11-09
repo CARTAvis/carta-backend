@@ -72,16 +72,25 @@ public:
     }
     void writer_enter() {
         std::unique_lock<std::mutex> lock(_mtx);
-        if (_writer_count > 0) {
-            // Queue this write ready for when previous writers are complete.
+        if ((_reader_count > 0) || (_writer_count > 0)) {
+            // Queue this write ready for when previous threads are complete.
             std::mutex* wait_mtx = new std::mutex();
             _mtx_list.push_front(wait_mtx);
             wait_mtx->lock();
         }
+        ++_writer_count;
     }
     void reader_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
         --_reader_count;
+        if ((_reader_count == 0) && (_writer_count > 0)) {
+            if (!_mtx_list.empty()) {
+                std::mutex* wait_mtx = _mtx_list.back();
+                _mtx_list.pop_back();
+                wait_mtx->unlock();
+                delete wait_mtx;
+            }
+        }
     }
     void writer_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
@@ -91,7 +100,7 @@ public:
             _mtx_list.pop_back();
             wait_mtx->unlock();
             delete wait_mtx;
-        } else {
+        } else if(_reader_count > 0) {
             _readers_cv.notify_all();
         }
     }
