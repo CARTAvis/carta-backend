@@ -54,10 +54,7 @@ public:
         _writer_count = 0;
     }
     ~queuing_rw_mutex() {
-        while (!_mtx_list.empty()) {
-            delete _mtx_list.front();
-            _mtx_list.pop_front();
-        }
+        _writers_cv.notify_all();
         _readers_cv.notify_all();
     }
     void reader_enter() {
@@ -69,43 +66,32 @@ public:
     }
     void writer_enter() {
         std::unique_lock<std::mutex> lock(_mtx);
-        if ((_reader_count > 0) || (_writer_count > 0)) {
-            // Queue this write ready for when previous threads are complete.
-            std::mutex* wait_mtx = new std::mutex();
-            _mtx_list.push_front(wait_mtx);
-            wait_mtx->lock();
-        }
         ++_writer_count;
+        if ((_reader_count > 0) || (_writer_count > 1)) {
+            _writers_cv.wait(lock);
+        }
     }
     void reader_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
         --_reader_count;
-        if ((_reader_count == 0) && (_writer_count > 0)) {
-            if (!_mtx_list.empty()) {
-                std::mutex* wait_mtx = _mtx_list.back();
-                _mtx_list.pop_back();
-                wait_mtx->unlock();
-                delete wait_mtx;
-            }
+        if ((_reader_count == 0)) {
+            _writers_cv.notify_one();
         }
     }
     void writer_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
         --_writer_count;
-        if (!_mtx_list.empty()) {
-            std::mutex* wait_mtx = _mtx_list.back();
-            _mtx_list.pop_back();
-            wait_mtx->unlock();
-            delete wait_mtx;
-        } else if (_reader_count > 0) {
+        if (_writer_count > 0) {
+            _writers_cv.notify_one();
+        } else {
             _readers_cv.notify_all();
         }
     }
 
 private:
-    std::list<std::mutex*> _mtx_list;
     std::mutex _mtx;
     std::condition_variable _readers_cv;
+    std::condition_variable _writers_cv;
     short _reader_count;
     short _writer_count;
 };
