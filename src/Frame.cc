@@ -581,7 +581,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-            _contour_settings.chunk_size, partial_contour_callback);
+            _contour_settings.chunk_size, _loader->UseTileCache(), partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -601,7 +601,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor - 1;
             TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback);
+                _contour_settings.chunk_size, _loader->UseTileCache(), partial_contour_callback);
             return true;
         }
     } else {
@@ -622,7 +622,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
             size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback);
+                _contour_settings.chunk_size, _loader->UseTileCache(), partial_contour_callback);
             return true;
         }
         spdlog::warn("Smoothing mode not implemented yet!");

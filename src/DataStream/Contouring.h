@@ -16,10 +16,8 @@ typedef const std::function<void(double, double, const std::vector<float>&, cons
 
 enum Edge { TopEdge, RightEdge, BottomEdge, LeftEdge, None };
 
-void TraceContourLevel(float* image, int64_t width, int64_t height, double scale, double offset, double level,
-    std::vector<double>& vertex_data, std::vector<int32_t>& indices);
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
-    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
+    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size, bool use_tile_cache,
     ContourCallback& partial_callback);
 
 #endif // CARTA_BACKEND__CONTOURING_H_

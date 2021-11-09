@@ -135,13 +135,12 @@ void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width,
 }
 
 void TraceLevel(const float* image, int64_t width, int64_t height, double scale, double offset, double level, vector<float>& vertices,
-    vector<int32_t>& indices, int chunk_size, ContourCallback& partial_callback) {
+    vector<int32_t>& indices, int chunk_size, bool is_long_task, ContourCallback& partial_callback) {
     const int64_t num_pixels = width * height;
     const size_t vertex_cutoff = 2 * chunk_size;
     int64_t checked_pixels = 0;
     vector<bool> visited(num_pixels);
     int64_t i, j;
-    bool is_long_task(num_pixels > NUM_PIXELS_THRESHOLD);
 
     auto test_for_chunk_overflow = [&]() {
         if (vertex_cutoff && vertices.size() > vertex_cutoff) {
@@ -222,14 +221,14 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
-    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
+    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size, bool use_tile_cache,
     ContourCallback& partial_callback) {
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
     // send the first report with zero progress in order to let the frontend starts progress bar
-    bool is_long_task(width * height > NUM_PIXELS_THRESHOLD);
+    bool is_long_task((width * height > NUM_PIXELS_THRESHOLD) && use_tile_cache);
     vector<float> empty_vertices;
     vector<int32_t> empty_indices;
     partial_callback(levels[0], 0.0, empty_vertices, empty_indices, is_long_task);
@@ -239,7 +238,8 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     for (int64_t l = 0; l < levels.size(); l++) {
         vertex_data[l].clear();
         index_data[l].clear();
-        TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
+        TraceLevel(
+            image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, is_long_task, partial_callback);
     }
 
     if (spdlog::get(PERF_TAG)) {
