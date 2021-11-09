@@ -32,12 +32,7 @@ else ()
     message(FATAL_ERROR "Could not find HDF5.")
 endif ()
 
-ExternalProject_Add(fits2idia
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/fits2idia
-  INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  BUILD_ALWAYS 1
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
-)
+find_program(CONVERTER, fits2idia)
 
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
