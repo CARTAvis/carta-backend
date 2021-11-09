@@ -11,8 +11,6 @@
 #include <mutex>
 #include <shared_mutex>
 
-#define __USE_TBB__ 0
-
 template <class T>
 class concurrent_queue {
 public:
@@ -100,7 +98,7 @@ public:
             _mtx_list.pop_back();
             wait_mtx->unlock();
             delete wait_mtx;
-        } else if(_reader_count > 0) {
+        } else if (_reader_count > 0) {
             _readers_cv.notify_all();
         }
     }
