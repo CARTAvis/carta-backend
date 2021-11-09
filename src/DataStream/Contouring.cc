@@ -14,6 +14,8 @@
 #include "../Logger/Logger.h"
 #include "Threading.h"
 
+static const int64_t NUM_PIXELS_THRESHOLD = 8000 * 8000;
+
 using namespace std;
 
 // Contour tracing code adapted from SAOImage DS9: https://github.com/SAOImageDS9/SAOImageDS9
@@ -139,7 +141,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     int64_t checked_pixels = 0;
     vector<bool> visited(num_pixels);
     int64_t i, j;
-    bool is_long_task(num_pixels > 1e+6);
+    bool is_long_task(num_pixels > NUM_PIXELS_THRESHOLD);
 
     auto test_for_chunk_overflow = [&]() {
         if (vertex_cutoff && vertices.size() > vertex_cutoff) {
@@ -227,7 +229,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     index_data.resize(levels.size());
 
     // send the first report with zero progress in order to let the frontend starts progress bar
-    bool is_long_task(width * height > 1e+6);
+    bool is_long_task(width * height > NUM_PIXELS_THRESHOLD);
     vector<float> empty_vertices;
     vector<int32_t> empty_indices;
     partial_callback(levels[0], 0.0, empty_vertices, empty_indices, is_long_task);
