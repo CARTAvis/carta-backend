@@ -74,7 +74,7 @@ public:
     void reader_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
         --_reader_count;
-        if ((_reader_count == 0)) {
+        if ((_reader_count == 0) && (_writer_count > 0)) {
             _writers_cv.notify_one();
         }
     }
