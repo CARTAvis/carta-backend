@@ -11,6 +11,7 @@
 #include <chrono>
 #include <limits>
 #include <memory>
+#include <random>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -1269,6 +1270,24 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
     return success;
+}
+
+void Session::OnRandomDataRequest(const CARTA::RandomDataRequest& message, uint32_t request_id) {
+    CARTA::RandomDataResponse response;
+    response.set_success(true);
+
+    std::random_device random_device;
+    std::mt19937 random_generator(random_device());
+    std::uniform_int_distribution<> uniform_random(message.min_bytes(), message.max_bytes()); // define the range
+    int num_bytes = uniform_random(random_generator);
+
+    // Adapted from https://stackoverflow.com/a/28490097
+    std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> random_engine;
+    auto* data = response.mutable_data();
+    data->resize(num_bytes);
+    std::generate(begin(*data), end(*data), std::ref(random_engine));
+
+    SendEvent(CARTA::EventType::RANDOM_DATA_RESPONSE, request_id, response);
 }
 
 // ******** SEND DATA STREAMS *********

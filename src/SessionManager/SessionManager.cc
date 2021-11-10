@@ -459,6 +459,14 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
+                case CARTA::EventType::RANDOM_DATA_REQUEST: {
+                    CARTA::RandomDataRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRandomDataRequest(message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
                 default: {
                     spdlog::warn("Bad event type {}!", event_type);
                     break;
