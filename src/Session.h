@@ -15,6 +15,7 @@
 #include <map>
 #include <mutex>
 #include <tuple>
+#include <random>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -303,6 +304,8 @@ private:
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
+
+    std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> _random_engine;
 
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;

@@ -11,7 +11,6 @@
 #include <chrono>
 #include <limits>
 #include <memory>
-#include <random>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -1282,10 +1281,9 @@ void Session::OnRandomDataRequest(const CARTA::RandomDataRequest& message, uint3
     int num_bytes = uniform_random(random_generator);
 
     // Adapted from https://stackoverflow.com/a/28490097
-    std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> random_engine;
     auto* data = response.mutable_data();
     data->resize(num_bytes);
-    std::generate(begin(*data), end(*data), std::ref(random_engine));
+    std::generate(begin(*data), end(*data), std::ref(_random_engine));
 
     SendEvent(CARTA::EventType::RANDOM_DATA_RESPONSE, request_id, response);
 }
