@@ -12,6 +12,5 @@
 
 std::string NewAuthToken();
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
-bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 
 #endif // CARTA_BACKEND__UTIL_TOKEN_H_
