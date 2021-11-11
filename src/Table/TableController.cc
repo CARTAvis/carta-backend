@@ -247,8 +247,8 @@ void TableController::OnFileListRequest(
                     continue;
                 }
             } else if (fs::is_regular_file(entry, error_code)) {
-                CARTA::CatalogFileType file_type = GuessTableType(entry.path(), file_list_request.filter_mode() == CARTA::FileListFilterMode::Content);
-                if (file_type == CARTA::Unknown &&  file_list_request.filter_mode() != CARTA::FileListFilterMode::AllFiles) {
+                auto file_type = GuessTableType(entry.path(), file_list_request.filter_mode() == CARTA::FileListFilterMode::Content);
+                if (file_type == CARTA::Unknown && file_list_request.filter_mode() != CARTA::FileListFilterMode::AllFiles) {
                     continue;
                 }
                 // Fill the file info
