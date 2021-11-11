@@ -1289,7 +1289,7 @@ void Session::OnRandomDataRequest(const CARTA::RandomDataRequest& message, uint3
     int num_bytes = uniform_random(random_generator);
     data->resize(num_bytes);
 
-    SendEvent(CARTA::EventType::RANDOM_DATA_RESPONSE, request_id, response);
+    SendEvent(CARTA::EventType::RANDOM_DATA_RESPONSE, request_id, response, false);
 }
 
 // ******** SEND DATA STREAMS *********
