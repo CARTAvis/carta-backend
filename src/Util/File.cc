@@ -79,7 +79,8 @@ CARTA::FileType GuessImageType(const std::string& path_string, bool check_conten
                 return CARTA::HDF5;
             case GZ_MAGIC_NUMBER:
                 fs::path gz_path(path_string);
-                return (gz_path.stem().extension().string() == ".fits") ? CARTA::FITS : CARTA::UNKNOWN;
+                std::string extension = gz_path.stem().extension().string();
+                return HasSuffix(extension, ".fits") ? CARTA::FITS : CARTA::UNKNOWN;
         }
     } else {
         // Guess file type by extension
