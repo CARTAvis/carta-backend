@@ -225,7 +225,6 @@ void TableController::OnFileListRequest(
             }
 
             // Skip files that can't be read
-            std::error_code error_code;
             if (!fs::exists(entry, error_code)) {
                 continue;
             }
@@ -248,16 +247,10 @@ void TableController::OnFileListRequest(
                     continue;
                 }
             } else if (fs::is_regular_file(entry, error_code)) {
-                uint32_t file_magic_number = GetMagicNumber(entry.path().string());
-                CARTA::CatalogFileType file_type;
-                if (file_magic_number == XML_MAGIC_NUMBER) {
-                    file_type = CARTA::VOTable;
-                } else if (file_magic_number == FITS_MAGIC_NUMBER) {
-                    file_type = CARTA::FITSTable;
-                } else {
+                CARTA::CatalogFileType file_type = GuessTableType(entry.path(), file_list_request.filter_mode() == CARTA::FileListFilterMode::Content);
+                if (file_type == CARTA::Unknown &&  file_list_request.filter_mode() != CARTA::FileListFilterMode::AllFiles) {
                     continue;
                 }
-
                 // Fill the file info
                 auto file_info = file_list_response.add_files();
                 file_info->set_name(entry.path().filename().string());

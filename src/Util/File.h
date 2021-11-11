@@ -26,6 +26,7 @@
 
 CARTA::FileType GuessImageType(const std::string& path_string, bool check_content);
 CARTA::FileType GuessRegionType(const std::string& path_string, bool check_content);
+CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check_content);
 
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);

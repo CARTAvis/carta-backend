@@ -129,3 +129,26 @@ CARTA::FileType GuessRegionType(const std::string& path_string, bool check_conte
 
     return CARTA::UNKNOWN;
 }
+
+CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check_content) {
+    if (check_content) {
+        uint32_t file_magic_number = GetMagicNumber(path_string);
+        if (file_magic_number == XML_MAGIC_NUMBER) {
+            return CARTA::CatalogFileType::VOTable;
+        } else if (file_magic_number == FITS_MAGIC_NUMBER) {
+            return CARTA::CatalogFileType::FITSTable;
+        }
+    } else {
+        // Guess file type by extension
+        fs::path path(path_string);
+        auto filename = path.filename().string();
+
+        if (EndsWith(filename, ".fits") || EndsWith(filename, ".FITS") || EndsWith(filename, ".fz") || EndsWith(filename, ".fits.gz")) {
+            return CARTA::CatalogFileType::FITSTable;
+        } else if (EndsWith(filename, ".xml") || EndsWith(filename, ".vot") || EndsWith(filename, ".votable")) {
+            return CARTA::CatalogFileType::VOTable;
+        }
+    }
+
+    return CARTA::CatalogFileType::Unknown;
+}
