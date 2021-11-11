@@ -49,8 +49,7 @@ std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params) {
     fs::path hdf5path = fs::path(hdf5path_str);
 
     if (!fs::exists(hdf5path)) {
-        std::string converter_path = (root / "bin" / "fits2idia").string();
-        std::string hdf5cmd = fmt::format("{} -o {} {}", converter_path, hdf5path_str, fitspath_str);
+        std::string hdf5cmd = fmt::format("fits2idia -o {} {}", hdf5path_str, fitspath_str);
         auto result = system(hdf5cmd.c_str());
     }
 

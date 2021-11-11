@@ -13,7 +13,6 @@
 
 #include "../Logger/Logger.h"
 #include "Util/File.h"
-#include "Util/Image.h"
 
 #include "CasaLoader.h"
 #include "CompListLoader.h"
@@ -237,11 +236,13 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
     _num_stokes = (stokes_axis >= 0 ? shape(stokes_axis) : 1);
 
     // save stokes types with respect to the stokes index
-    if ((_stokes_indices.size() == 1) && (_delta_stokes_index > 0)) {
-        auto it = _stokes_indices.begin();
-        for (int i = 1; i < _num_stokes; ++i) {
-            int stokes_value = GetStokesValue(it->first) + i * _delta_stokes_index;
-            _stokes_indices[GetStokesType(stokes_value)] = i;
+    if (_stokes_cdelt != 0) {
+        for (int i = 0; i < _num_stokes; ++i) {
+            int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
+            int stokes_value;
+            if (FileInfo::ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
+                _stokes_indices[GetStokesType(stokes_value)] = i;
+            }
         }
     }
 
@@ -854,13 +855,6 @@ double FileLoader::CalculateBeamArea() {
     return info.getBeamAreaInPixels(-1, -1, _coord_sys.directionCoordinate());
 }
 
-void FileLoader::SetFirstStokesType(int stokes_value) {
-    CARTA::PolarizationType stokes_type = GetStokesType(stokes_value);
-    if (stokes_type != CARTA::PolarizationType::POLARIZATION_TYPE_NONE) {
-        _stokes_indices[stokes_type] = 0;
-    }
-}
-
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     if (_stokes_indices.count(stokes_type)) {
         stokes_index = _stokes_indices[stokes_type];
@@ -869,6 +863,14 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
     return false;
 }
 
-void FileLoader::SetDeltaStokesIndex(int delta_stokes_index) {
-    _delta_stokes_index = delta_stokes_index;
+void FileLoader::SetStokesCrval(float stokes_crval) {
+    _stokes_crval = stokes_crval;
+}
+
+void FileLoader::SetStokesCrpix(float stokes_crpix) {
+    _stokes_crpix = stokes_crpix;
+}
+
+void FileLoader::SetStokesCdelt(int stokes_cdelt) {
+    _stokes_cdelt = stokes_cdelt;
 }

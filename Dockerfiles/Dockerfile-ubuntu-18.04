@@ -6,10 +6,10 @@ RUN \
   apt-get -y upgrade && \
   apt-get install -y apt-utils autoconf bison build-essential byobu cmake curl default-jre dialog emacs \
     fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libcurl4-gnutls-dev \
-    libpugixml-dev libcfitsio-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
-    libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev libzstd-dev \
-    libgsl-dev man pkg-config python-pip python3-pip python3-numpy python3-astropy \
+    libpugixml-dev libcfitsio-dev libhdf5-dev liblapack-dev libncurses-dev libreadline-dev libssl-dev \ 
+    libstarlink-ast-dev libtbb-dev libtool libxml2-dev libzstd-dev libgsl-dev man pkg-config python3-pip \
     software-properties-common unzip vim wcslib-dev wget uuid-dev && \
+  pip3 install numpy astropy && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
 
 # Get carta dependencies from the cartavis-team PPA and casacore-data from KERN
@@ -18,7 +18,13 @@ RUN \
   apt-add-repository -y -s ppa:kernsuite/kern-5 && \
   add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get -y update && \
-  apt-get -y install carta-casacore-dev googletest libgrpc++-dev libprotobuf-dev libzfp-dev protobuf-compiler-grpc 
+  apt-get -y install carta-casacore-dev googletest fits2idia libgrpc++-dev libprotobuf-dev libzfp-dev protobuf-compiler-grpc 
+
+# Get googletest 1.10 from Xbmc PPA (Required for the unit tests)
+RUN \
+  add-apt-repository -y -s ppa:team-xbmc/ppa && \
+  apt-get -y update && \
+  apt-get -y install libgtest-dev libgmock-dev
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
