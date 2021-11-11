@@ -1277,13 +1277,17 @@ void Session::OnRandomDataRequest(const CARTA::RandomDataRequest& message, uint3
 
     std::random_device random_device;
     std::mt19937 random_generator(random_device());
-    std::uniform_int_distribution<> uniform_random(message.min_bytes(), message.max_bytes()); // define the range
-    int num_bytes = uniform_random(random_generator);
+    std::uniform_int_distribution<int> uniform_random(message.min_bytes(), message.max_bytes()); // define the range
 
     // Adapted from https://stackoverflow.com/a/28490097
     auto* data = response.mutable_data();
-    data->resize(num_bytes);
+    // Generate constant-size random data to remove variation in generation time
+    data->resize(message.max_bytes());
     std::generate(begin(*data), end(*data), std::ref(_random_engine));
+
+    // Resize buffer to a random size in range [min_bytes, max_bytes]
+    int num_bytes = uniform_random(random_generator);
+    data->resize(num_bytes);
 
     SendEvent(CARTA::EventType::RANDOM_DATA_RESPONSE, request_id, response);
 }
