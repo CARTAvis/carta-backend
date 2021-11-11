@@ -87,7 +87,7 @@ CARTA::FileType GuessImageType(const std::string& path_string, bool check_conten
         fs::path path(path_string);
         auto filename = path.filename().string();
 
-        if (HasSuffix(filename, ".fits") || HasSuffix(filename, ".FITS") || HasSuffix(filename, ".fz") || HasSuffix(filename, ".fits.gz")) {
+        if (HasSuffix(filename, ".fits") || HasSuffix(filename, ".fz") || HasSuffix(filename, ".fits.gz")) {
             return CARTA::FITS;
         } else if (HasSuffix(filename, ".hdf5")) {
             return CARTA::HDF5;
@@ -144,7 +144,7 @@ CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check
         fs::path path(path_string);
         auto filename = path.filename().string();
 
-        if (HasSuffix(filename, ".fits") || HasSuffix(filename, ".FITS") || HasSuffix(filename, ".fz") || HasSuffix(filename, ".fits.gz")) {
+        if (HasSuffix(filename, ".fits") || HasSuffix(filename, ".fz") || HasSuffix(filename, ".fits.gz")) {
             return CARTA::CatalogFileType::FITSTable;
         } else if (HasSuffix(filename, ".xml") || HasSuffix(filename, ".vot") || HasSuffix(filename, ".votable")) {
             return CARTA::CatalogFileType::VOTable;
