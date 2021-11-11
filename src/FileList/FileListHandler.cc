@@ -140,9 +140,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     if (region_list && cc_file.isRegular(true)) {
                         auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
 
-                        if (file_type != CARTA::FileType::UNKNOWN) {
+                        if (file_type != CARTA::FileType::UNKNOWN || filter_mode == CARTA::AllFiles) {
                             auto& file_info = *file_list.add_files();
-                            FillRegionFileInfo(file_info, full_path, file_type);
+                            FillRegionFileInfo(file_info, full_path, file_type, false);
                             is_region_file = true; // Done with file
                         }
                     }
@@ -269,7 +269,8 @@ void FileListHandler::OnRegionListRequest(
     _regionlist_folder = "nofolder"; // ready for next file list request
 }
 
-bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type) {
+bool FileListHandler::FillRegionFileInfo(
+    CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type, bool determine_file_type) {
     // For region list and info response: name, type, size
     casacore::File cc_file(filename);
     if (!cc_file.exists()) {
@@ -281,7 +282,7 @@ bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo& file_info, const std::
     file_info.set_name(filename_only);
 
     // FileType
-    if (type == CARTA::FileType::UNKNOWN) { // not passed in
+    if (type == CARTA::FileType::UNKNOWN && determine_file_type) { // not passed in
         type = GuessRegionType(filename, true);
     }
     file_info.set_type(type);

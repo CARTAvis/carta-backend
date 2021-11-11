@@ -48,7 +48,8 @@ private:
     void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, CARTA::FileListFilterMode filter_mode,
         bool region_list = false);
 
-    bool FillRegionFileInfo(CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type = CARTA::FileType::UNKNOWN);
+    bool FillRegionFileInfo(CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type = CARTA::FileType::UNKNOWN,
+        bool determine_file_type = true);
     void GetRegionFileContents(std::string& full_name, std::vector<std::string>& file_contents);
     void GetRelativePath(std::string& folder);
 
