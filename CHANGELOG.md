@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+*  Added support for circular/linear polarizations when generating hypercubes ([#942](https://github.com/CARTAvis/carta-backend/issues/942)).
 * Replaced shared image loader pointer in the session class with a cache for multiple loaders, to avoid concurrency bugs when loading multiple images simultaneously.
 
 ### Fixed
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed hard crash when attempting to read files within a read-protected directory ([#945](https://github.com/CARTAvis/carta-backend/issues/945)).
 * Fixed region histograms for moment images ([#906](https://github.com/CARTAvis/carta-backend/issues/906)).
 * Fixed bug of duplicate histogram calculation ([#905](https://github.com/CARTAvis/carta-backend/pull/905)).
+* Fixed issues when reading stokes information from the header ([#942](https://github.com/CARTAvis/carta-backend/issues/942)).
 * Fixed restoring beam set from HISTORY ([#935](https://github.com/CARTAvis/carta-backend/issues/935)).
 * Fixed FITS header bug for dropped keyword index ([#912](https://github.com/CARTAvis/carta-backend/issues/912)).
 

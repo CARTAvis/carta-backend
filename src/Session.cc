@@ -216,7 +216,12 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
         }
 
         // FileInfoExtended
-        FileExtInfoLoader ext_info_loader(_loaders.Get(fullname));
+        auto loader = _loaders.Get(fullname);
+        if (!loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
+        FileExtInfoLoader ext_info_loader(loader);
 
         std::string requested_hdu(hdu);
         if (requested_hdu.empty() && (file_info.hdu_list_size() > 0)) {
@@ -254,7 +259,12 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
         }
 
         // Get file extended info loader
-        FileExtInfoLoader ext_info_loader(_loaders.Get(fullname));
+        auto loader = _loaders.Get(fullname);
+        if (!loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(loader);
 
         // Discern hdu for extended file info
         if (hdu.empty()) {
@@ -525,6 +535,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             std::string message = fmt::format("Image histogram for file id {} failed", file_id);
             SendLogEvent(message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
         }
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
@@ -575,6 +587,8 @@ bool Session::OnOpenFile(
 
     if (success) {
         UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
