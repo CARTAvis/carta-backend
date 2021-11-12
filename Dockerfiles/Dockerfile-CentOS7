@@ -10,63 +10,17 @@ RUN \
 RUN \
   yum -y install centos-release-openstack-train && \
   yum -y install epel-release && \
-  yum install -y autoconf automake bison blas-devel bzip2 cmake3 curl-devel flex \
-    git git-lfs gsl-devel grpc-devel grpc-plugins gtest-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
+  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel cmake3 curl-devel flex \
+    git git-lfs gsl-devel grpc-devel grpc-plugins hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
     make openssl-devel protobuf-devel pugixml-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
     zlib-devel libuuid-devel zfp-devel && \
-  ln -s /usr/bin/cmake3 /usr/bin/cmake && \
-  pip3 install numpy astropy
+  pip3 install numpy astropy && \
+  ln -s /usr/bin/cmake3 /usr/bin/cmake
 
-# Install newer cfitsio as default cfitsio 3.37 does not have a function used by fits2idia 
+# Get carta dependencies from the cartavis rpm repository
 RUN \ 
-  source /etc/bashrc && \
-  cd /root && \ 
-  wget http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.47.tar.gz && \
-  tar -xvf cfitsio-3.47.tar.gz && cd cfitsio-3.47 && \
-  ./configure --prefix=/usr/local && make && make install && \
-  cd /root && rm -rf cfitsio-3.47 cfitsio-3.47.tar.gz
-
-# Get geodetic and ephemerides casa-data
-RUN \
-  source /etc/bashrc && \
-  mkdir -p /usr/local/share/casacore/data/ephemerides && \
-  mkdir -p /usr/local/share/casacore/data/geodetic && \
-  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/ephemerides/ /usr/local/share/casacore/data/ephemerides && \
-  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/geodetic/ /usr/local/share/casacore/data/geodetic && \
-  rm -r /usr/local/share/casacore/data/ephemerides/splatalogue.db && \
-  rm -r /usr/local/share/casacore/data/ephemerides/SplatDefault.tbl
-
-# Get libsofa.a for casacore
-RUN \
-  source /etc/bashrc && \
-  wget http://www.iausofa.org/2018_0130_F/sofa_f-20180130.tar.gz && \
-  tar xzf sofa_f-20180130.tar.gz && rm sofa_f-20180130.tar.gz && \
-  cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
-  cd /root && rm -rf sofa
-
-# Install carta-casacore from CARTAvis repo (with fixed CASAROOT)
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/CARTAvis/carta-casacore.git && \
-  cd carta-casacore && \
-  git submodule init && git submodule update && \
-  cd casa6 && \
-  git submodule init && git submodule update && \
-  cd ../ && mkdir -p build && cd build && \
-  cmake .. -DUSE_FFTW3=ON \
-           -DUSE_HDF5=ON \
-           -DUSE_THREADS=ON \
-           -DUSE_OPENMP=ON \
-           -DCMAKE_BUILD_TYPE=Release \
-           -DBUILD_TESTING=OFF \
-           -DBUILD_PYTHON=OFF \
-           -DUseCcache=1 \
-           -DHAS_CXX11=1 \
-           -DDATA_DIR=/usr/local/share/casacore/data \
-           -DCMAKE_INSTALL_PREFIX=/opt/carta-casacore && \
-  make -j2 && make install && \
-  cd /root && rm -rf carta-casacore
+  curl https://packages.cartavis.org/cartavis-el7.repo --output /etc/yum.repos.d/cartavis.repo && \
+  yum -y install carta-casacore-devel gtest-devel gmock-devel fits2idia measures-data
 
 # CARTA has a problem with CentOS7 tbb 4.1, so install a newer version:
 RUN \

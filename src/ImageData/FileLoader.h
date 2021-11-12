@@ -127,6 +127,19 @@ inline casacore::uInt GetFitsHdu(const std::string& hdu) {
     return hdu_num;
 }
 
+// convert between CARTA::PolarizationType values and FITS standard stokes values
+static bool ConvertFitsStokesValue(const int& in_stokes_value, int& out_stokes_value) {
+    if (in_stokes_value >= 1 && in_stokes_value <= 4) {
+        out_stokes_value = in_stokes_value;
+        return true;
+    } else if ((in_stokes_value >= 4 && in_stokes_value <= 12) || (in_stokes_value <= -1 && in_stokes_value >= -8)) {
+        // convert between [5, 6, ..., 12] and [-1, -2, ..., -8]
+        out_stokes_value = -in_stokes_value + 4;
+        return true;
+    }
+    return false;
+}
+
 } // namespace FileInfo
 
 class FileLoader {
@@ -200,8 +213,9 @@ public:
     std::string GetFileName();
 
     // Handle stokes type index
-    virtual void SetFirstStokesType(int stokes_value);
-    virtual void SetDeltaStokesIndex(int delta_stokes_index);
+    virtual void SetStokesCrval(float stokes_crval);
+    virtual void SetStokesCrpix(float stokes_crpix);
+    virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
 
 protected:
@@ -234,7 +248,9 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
-    int _delta_stokes_index;
+    float _stokes_crval;
+    float _stokes_crpix;
+    int _stokes_cdelt;
 
     // Return the shape of the specified stats dataset
     virtual const IPos GetStatsDataShape(FileInfo::Data ds);
