@@ -189,6 +189,9 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(const AxisRange&
 
 std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
     const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
+    // set stokes source for the image loader
+    StokesSource stokes_source(stokes, z_range, x_range, y_range);
+
     // Slicer to apply z range and stokes to image shape
     // Start with entire image
     casacore::IPosition start(_image_shape.size());
@@ -208,8 +211,13 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_x = _width - 1;
         }
 
-        start(_x_axis) = start_x;
-        end(_x_axis) = end_x;
+        if (stokes_source.UseDefaultImage()) {
+            start(_x_axis) = start_x;
+            end(_x_axis) = end_x;
+        } else { // Reset the slice cut for the computed stokes image
+            start(_x_axis) = 0;
+            end(_x_axis) = end_x - start_x;
+        }
     }
 
     // Slice y axis
@@ -224,35 +232,37 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_y = _height - 1;
         }
 
-        start(_y_axis) = start_y;
-        end(_y_axis) = end_y;
+        if (stokes_source.UseDefaultImage()) {
+            start(_y_axis) = start_y;
+            end(_y_axis) = end_y;
+        } else { // Reset the slice cut for the computed stokes image
+            start(_y_axis) = 0;
+            end(_y_axis) = end_y - start_y;
+        }
     }
-
-    StokesSource stokes_source(stokes, z_range);
 
     // Slice z axis
     if (_z_axis >= 0) {
+        int start_z(z_range.from), end_z(z_range.to);
+
+        // Normalize z constants
+        if (start_z == ALL_Z) {
+            start_z = 0;
+        } else if (start_z == CURRENT_Z) {
+            start_z = CurrentZ();
+        }
+        if (end_z == ALL_Z) {
+            end_z = Depth() - 1;
+        } else if (end_z == CURRENT_Z) {
+            end_z = CurrentZ();
+        }
+
         if (stokes_source.UseDefaultImage()) {
-            int start_z(z_range.from), end_z(z_range.to);
-
-            // Normalize z constants
-            if (start_z == ALL_Z) {
-                start_z = 0;
-            } else if (start_z == CURRENT_Z) {
-                start_z = CurrentZ();
-            }
-            if (end_z == ALL_Z) {
-                end_z = Depth() - 1;
-            } else if (end_z == CURRENT_Z) {
-                end_z = CurrentZ();
-            }
-
             start(_z_axis) = start_z;
             end(_z_axis) = end_z;
-        } else {
-            // Reset the slice cut for the computed stokes image
+        } else { // Reset the slice cut for the computed stokes image
             start(_z_axis) = 0;
-            end(_z_axis) = (stokes_source.axis_range.to - stokes_source.axis_range.from);
+            end(_z_axis) = end_z - start_z;
         }
     }
 

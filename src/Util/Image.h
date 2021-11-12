@@ -144,22 +144,28 @@ bool ComputeStokes(const std::string& stokes_type);
 
 struct StokesSource {
     int stokes;
-    AxisRange axis_range;
+    AxisRange z_range;
+    AxisRange x_range;
+    AxisRange y_range;
 
-    StokesSource() : stokes(-1), axis_range(AxisRange(-1)) {}
-    StokesSource(int stokes_, AxisRange axis_range_) : stokes(stokes_), axis_range(axis_range_) {}
+    StokesSource() : stokes(-1), z_range(AxisRange(ALL_Z)), x_range(AxisRange(ALL_X)), y_range(AxisRange(ALL_Y)) {}
+
+    StokesSource(int stokes_, AxisRange z_range_) : stokes(stokes_), z_range(z_range_), x_range(ALL_X), y_range(ALL_Y) {}
+
+    StokesSource(int stokes_, AxisRange z_range_, AxisRange x_range_, AxisRange y_range_)
+        : stokes(stokes_), z_range(z_range_), x_range(x_range_), y_range(y_range_) {}
 
     bool UseDefaultImage() const {
         return !ComputeStokes(stokes);
     }
     bool operator==(const StokesSource& rhs) const {
-        if ((stokes != rhs.stokes) || (axis_range != rhs.axis_range)) {
+        if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
             return false;
         }
         return true;
     }
     bool operator!=(const StokesSource& rhs) const {
-        if ((stokes != rhs.stokes) || (axis_range != rhs.axis_range)) {
+        if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
             return true;
         }
         return false;

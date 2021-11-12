@@ -11,11 +11,23 @@
 
 using namespace carta;
 
-PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange spectral_range)
+PolarizationCalculator::PolarizationCalculator(
+    std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange z_range, AxisRange x_range, AxisRange y_range)
     : _image(image), _image_valid(true) {
     const auto& coord_sys = _image->coordinates();
     if (!coord_sys.hasSpectralAxis() || !coord_sys.hasPolarizationCoordinate()) {
         spdlog::error("There is no spectral or stokes coordinate in the image.");
+        _image_valid = false;
+        return;
+    }
+
+    std::vector<int> dir_axes = {0, 1};
+    if (coord_sys.hasDirectionCoordinate()) {
+        casacore::Vector<casacore::Int> tmp_axes = coord_sys.directionAxesNumbers();
+        dir_axes[0] = tmp_axes[0];
+        dir_axes[1] = tmp_axes[1];
+    } else {
+        spdlog::error("There are no directional axes in the image.");
         _image_valid = false;
         return;
     }
@@ -28,20 +40,48 @@ PolarizationCalculator::PolarizationCalculator(std::shared_ptr<casacore::ImageIn
     casacore::IPosition blc(ndim, 0);
     auto trc = shape - 1;
 
-    if (spectral_range.to == ALL_Z) {
-        spectral_range.from = 0;
-        spectral_range.to = shape(spectral_axis) - 1;
+    if (x_range.to == ALL_X) {
+        x_range.from = 0;
+        x_range.to = shape(dir_axes[0]) - 1;
     }
 
-    if (spectral_range.from < 0 || spectral_range.to >= shape(spectral_axis)) {
-        spdlog::error("Invalid spectral range: [{}, {}]", spectral_range.from, spectral_range.to);
+    if (x_range.from < 0 || x_range.to >= shape(dir_axes[0])) {
+        spdlog::error("Invalid x range: [{}, {}]", x_range.from, x_range.to);
         _image_valid = false;
         return;
     }
 
-    // Make a spectral region
-    blc(spectral_axis) = spectral_range.from;
-    trc(spectral_axis) = spectral_range.to;
+    if (y_range.to == ALL_Y) {
+        y_range.from = 0;
+        y_range.to = shape(dir_axes[1]) - 1;
+    }
+
+    if (y_range.from < 0 || y_range.to >= shape(dir_axes[1])) {
+        spdlog::error("Invalid y range: [{}, {}]", y_range.from, y_range.to);
+        _image_valid = false;
+        return;
+    }
+
+    if (z_range.to == ALL_Z) {
+        z_range.from = 0;
+        z_range.to = shape(spectral_axis) - 1;
+    }
+
+    if (z_range.from < 0 || z_range.to >= shape(spectral_axis)) {
+        spdlog::error("Invalid z range: [{}, {}]", z_range.from, z_range.to);
+        _image_valid = false;
+        return;
+    }
+
+    // Make a region
+    blc(dir_axes[0]) = x_range.from;
+    trc(dir_axes[0]) = x_range.to;
+
+    blc(dir_axes[1]) = y_range.from;
+    trc(dir_axes[1]) = y_range.to;
+
+    blc(spectral_axis) = z_range.from;
+    trc(spectral_axis) = z_range.to;
 
     // Get stokes indices and make stokes regions
     const auto& stokes = coord_sys.stokesCoordinate();

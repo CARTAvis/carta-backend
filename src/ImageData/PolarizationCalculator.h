@@ -22,7 +22,8 @@ class PolarizationCalculator {
     enum StokesTypes { I, Q, U, V };
 
 public:
-    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange spectral_range = AxisRange());
+    PolarizationCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange z_range = AxisRange(ALL_Z),
+        AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y));
     ~PolarizationCalculator() = default;
 
     std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalPolarizedIntensity();

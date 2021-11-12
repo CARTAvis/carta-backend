@@ -899,7 +899,9 @@ public:
         EXPECT_EQ(data1.size(), data2.size());
         if (data1.size() == data2.size()) {
             for (int i = 0; i < data1.size(); ++i) {
-                EXPECT_FLOAT_EQ(data1[i], data2[i]);
+                if (!isnan(data1[i]) && !isnan(data2[i])) {
+                    EXPECT_FLOAT_EQ(data1[i], data2[i]);
+                }
             }
         }
     }
@@ -1370,6 +1372,16 @@ TEST_F(PolarizationCalculatorTest, TestStokesSource) {
     EXPECT_TRUE(stokes_source_10.UseDefaultImage());
     EXPECT_TRUE(stokes_source_10 != stokes_source_1);
     EXPECT_TRUE(stokes_source_10 == stokes_source_11);
+
+    StokesSource stokes_source_12(0, AxisRange(0), AxisRange(0), AxisRange(0));
+    StokesSource stokes_source_13(1, AxisRange(0), AxisRange(1), AxisRange(0));
+    StokesSource stokes_source_14(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
+    StokesSource stokes_source_15(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
+
+    EXPECT_TRUE(stokes_source_12 != stokes_source_13);
+    EXPECT_TRUE(stokes_source_12 != stokes_source_14);
+    EXPECT_TRUE(stokes_source_13 != stokes_source_14);
+    EXPECT_TRUE(stokes_source_14 == stokes_source_15);
 }
 
 TEST_F(PolarizationCalculatorTest, TestTotalPolarizedIntensity) {

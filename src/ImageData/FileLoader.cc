@@ -903,7 +903,8 @@ carta::CasaLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stoke
         return _computed_stokes_image;
     } else {
         // compute new stokes image with respect to the channel range
-        carta::PolarizationCalculator polarization_calculator(GetImage(), AxisRange(stokes_source.axis_range));
+        carta::PolarizationCalculator polarization_calculator(
+            GetImage(), AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
         if (stokes_source.stokes == COMPUTE_STOKES_PTOTAL) {
             _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();
         } else if (stokes_source.stokes == COMPUTE_STOKES_PFTOTAL) {
