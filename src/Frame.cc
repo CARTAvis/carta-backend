@@ -44,8 +44,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
-      _moment_generator(nullptr),
-      _pv_generator(nullptr) {
+      _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         spdlog::error("Session {}: {}", session_id, _open_image_error);
@@ -119,6 +118,16 @@ bool Frame::IsValid() {
 
 std::string Frame::GetErrorMessage() {
     return _open_image_error;
+}
+
+std::string Frame::GetFileName() {
+    std::string filename;
+
+    if (_loader) {
+        filename = _loader->GetFileName();
+    }
+
+    return filename;
 }
 
 casacore::CoordinateSystem* Frame::CoordinateSystem() {

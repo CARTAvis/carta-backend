@@ -21,7 +21,6 @@
 
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/defs.pb.h>
-#include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
@@ -91,6 +90,9 @@ public:
 
     bool IsValid();
     std::string GetErrorMessage();
+
+    // Get the full name of image file
+    std::string GetFileName();
 
     // Returns pointer to CoordinateSystem clone; caller must delete
     casacore::CoordinateSystem* CoordinateSystem();
@@ -238,14 +240,12 @@ protected:
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
     }
-    // Get the full name of image file
-    std::string GetFileName() {
-        return _loader->GetFileName();
-    }
+
     // Get image interface ptr
     std::shared_ptr<casacore::ImageInterface<float>> GetImage() {
         return _loader->GetImage();
     }
+
     // Setup
     uint32_t _session_id;
 
