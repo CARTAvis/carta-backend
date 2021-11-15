@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND__UTIL_FILE_H_
 #define CARTA_BACKEND__UTIL_FILE_H_
 
+#include <carta-protobuf/enums.pb.h>
+
 #include "FileSystem.h"
 
 // Valid for little-endian only
@@ -21,6 +23,10 @@
 
 // file ids
 #define ALL_FILES -1
+
+CARTA::FileType GuessImageType(const std::string& path_string, bool check_content);
+CARTA::FileType GuessRegionType(const std::string& path_string, bool check_content);
+CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check_content);
 
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
