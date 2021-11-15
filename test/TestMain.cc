@@ -4,12 +4,11 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <string>
+
 #include <gtest/gtest.h>
 #include <omp.h>
-#include <tbb/task.h>
-#include <tbb/task_scheduler_init.h>
 #include <cxxopts/cxxopts.hpp>
-#include <string>
 
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
