@@ -5,6 +5,7 @@
 */
 
 #include "Token.h"
+#include "String.h"
 
 #include <regex>
 
@@ -48,18 +49,4 @@ bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& requir
     }
     // Finally, fall back to the non-standard auth token header
     return ConstantTimeStringCompare(std::string(http_request->getHeader("carta-auth-token")), required_token);
-}
-
-bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
-    // Early exit when lengths are unequal. This is not a problem in our case
-    if (a.length() != b.length()) {
-        return false;
-    }
-
-    volatile int d = 0;
-    for (int i = 0; i < a.length(); i++) {
-        d |= a[i] ^ b[i];
-    }
-
-    return d == 0;
 }
