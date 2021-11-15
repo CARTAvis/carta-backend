@@ -24,14 +24,14 @@ uint32_t GetMagicNumber(const std::string& filename) {
 
 bool IsCompressedFits(const std::string& filename) {
     // Check if gzip file, then check .fits extension
-    bool is_fits(false);
     auto magic_number = GetMagicNumber(filename);
     if (magic_number == GZ_MAGIC_NUMBER) {
         fs::path gz_path(filename);
-        is_fits = (gz_path.stem().extension().string() == ".fits");
+        std::string extension = gz_path.stem().extension().string();
+        return HasSuffix(extension, ".fits");
     }
 
-    return is_fits;
+    return false;
 }
 
 int GetNumItems(const std::string& path) {
