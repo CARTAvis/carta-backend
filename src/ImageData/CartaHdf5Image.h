@@ -57,7 +57,7 @@ public:
     casacore::Lattice<bool>& pixelMask() override;
     casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) override;
 
-    casacore::Vector<casacore::String> FITSHeaderStrings();
+    casacore::Vector<casacore::String> FitsHeaderStrings();
 
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5

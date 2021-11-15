@@ -171,6 +171,10 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 
         // FileInfoExtended
         _loader.reset(carta::FileLoader::GetLoader(fullname));
+        if (!_loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
         FileExtInfoLoader ext_info_loader(_loader.get());
 
         std::string requested_hdu(hdu);
@@ -211,6 +215,11 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
         // Reset file loader and file extended info loader
         _loader.reset(carta::FileLoader::GetLoader(fullname));
+        if (!_loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
+
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
         // Discern hdu for extended file info
@@ -479,6 +488,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             std::string message = fmt::format("Image histogram for file id {} failed", file_id);
             SendLogEvent(message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
         }
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
@@ -529,6 +540,8 @@ bool Session::OnOpenFile(
 
     if (success) {
         UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }

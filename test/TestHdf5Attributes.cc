@@ -28,7 +28,7 @@ TEST_F(Hdf5AttributesTest, TestAttributes) {
     EXPECT_EQ(attributes.size(), 11);
     EXPECT_EQ((std::string)attributes[0], padded("SCHEMA_VERSION= '0.3'"));
     EXPECT_EQ((std::string)attributes[1], padded("HDF5_CONVERTER= 'fits2idia'"));
-    EXPECT_EQ((std::string)attributes[2], padded("HDF5_CONVERTER_VERSION= '0.1.14'"));
+    // We don't test the version because we don't build the converter ourselves
     EXPECT_EQ((std::string)attributes[3], padded("SIMPLE  = T"));
     EXPECT_EQ((std::string)attributes[4], padded("BITPIX  = -32"));
     EXPECT_EQ((std::string)attributes[5], padded("NAXIS   = 2"));
