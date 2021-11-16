@@ -22,3 +22,29 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
         }
     }
 }
+
+bool HasSuffix(const std::string& haystack, const std::string& needle, bool case_sensitive) {
+    if (needle.size() > haystack.size()) {
+        return false;
+    }
+
+    if (case_sensitive) {
+        return std::equal(needle.rbegin(), needle.rend(), haystack.rbegin());
+    } else {
+        return std::equal(needle.rbegin(), needle.rend(), haystack.rbegin(), [](char a, char b) { return tolower(a) == tolower(b); });
+    }
+}
+
+bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
+    // Early exit when lengths are unequal. This is not a problem in our case
+    if (a.length() != b.length()) {
+        return false;
+    }
+
+    volatile int d = 0;
+    for (int i = 0; i < a.length(); i++) {
+        d |= a[i] ^ b[i];
+    }
+
+    return d == 0;
+}

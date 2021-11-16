@@ -8,7 +8,7 @@
 
 #include "Util/Casacore.h"
 #include "Util/File.h"
-#include "Util/Token.h"
+#include "Util/String.h"
 
 #include "CommonTestUtilities.h"
 
@@ -91,4 +91,22 @@ TEST(UtilTest, StringCompare) {
     EXPECT_TRUE(ConstantTimeStringCompare("", ""));
     EXPECT_FALSE(ConstantTimeStringCompare("hello world", ""));
     EXPECT_FALSE(ConstantTimeStringCompare("", "hello world"));
+}
+
+TEST(UtilTest, HasSuffixCaseSensitive) {
+    EXPECT_TRUE(HasSuffix("test.fits", ".fits", true));
+    EXPECT_FALSE(HasSuffix("test.FITS", ".fits", true));
+    EXPECT_FALSE(HasSuffix("test.fits", ".FITS", true));
+    EXPECT_FALSE(HasSuffix("test.fits", ".xml", true));
+    EXPECT_TRUE(HasSuffix("test.fits.gz", ".fits.gz", true));
+    EXPECT_FALSE(HasSuffix("test.fits.gz", ".fits", true));
+}
+
+TEST(UtilTest, HasSuffixCaseInsensitive) {
+    EXPECT_TRUE(HasSuffix("test.fits", ".fits"));
+    EXPECT_TRUE(HasSuffix("test.FITS", ".fits"));
+    EXPECT_TRUE(HasSuffix("test.fits", ".FITS"));
+    EXPECT_FALSE(HasSuffix("test.fits", ".xml"));
+    EXPECT_TRUE(HasSuffix("test.fits.gz", ".fits.gz"));
+    EXPECT_FALSE(HasSuffix("test.fits.gz", ".fits"));
 }
