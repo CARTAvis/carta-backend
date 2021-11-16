@@ -180,11 +180,11 @@ public:
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer);
+    bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer);
 
     // SubImage
-    bool GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics

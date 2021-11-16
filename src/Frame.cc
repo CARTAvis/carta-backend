@@ -368,8 +368,8 @@ bool Frame::FillImageCache() {
     }
 
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
-    std::pair<StokesSource, casacore::Slicer> stokes_source_section = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    if (!GetSlicerData(stokes_source_section, _image_cache)) {
+    std::pair<StokesSource, casacore::Slicer> stokes_src_vs_section = GetImageSlicer(AxisRange(_z_index), _stokes_index);
+    if (!GetSlicerData(stokes_src_vs_section, _image_cache)) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
@@ -392,8 +392,8 @@ void Frame::InvalidateImageCache() {
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
     // fill matrix for given z and stokes
-    std::pair<StokesSource, casacore::Slicer> stokes_source_section = GetImageSlicer(AxisRange(z), stokes);
-    GetSlicerData(stokes_source_section, z_matrix);
+    std::pair<StokesSource, casacore::Slicer> stokes_src_vs_section = GetImageSlicer(AxisRange(z), stokes);
+    GetSlicerData(stokes_src_vs_section, z_matrix);
 }
 
 // ****************************************************
@@ -1023,10 +1023,10 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         auto t_start_image_stats = std::chrono::high_resolution_clock::now();
 
         // Calculate stats map using slicer
-        std::pair<StokesSource, casacore::Slicer> stokes_source_section = GetImageSlicer(AxisRange(z), stokes);
+        std::pair<StokesSource, casacore::Slicer> stokes_src_vs_section = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
         std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
-        if (GetSlicerStats(stokes_source_section, required_stats, per_z, stats_vector_map)) {
+        if (GetSlicerStats(stokes_src_vs_section, required_stats, per_z, stats_vector_map)) {
             // convert vector to single value in map
             std::map<CARTA::StatsType, double> stats_map;
             for (auto& value : stats_vector_map) {
@@ -1139,10 +1139,10 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         if (is_current_stokes) {
             cursor_value = cursor_value_with_current_stokes;
         } else {
-            std::pair<StokesSource, casacore::Slicer> stokes_source_slicer =
+            std::pair<StokesSource, casacore::Slicer> stokes_src_vs_slicer =
                 GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             std::vector<float> data;
-            if (GetSlicerData(stokes_source_slicer, data)) {
+            if (GetSlicerData(stokes_src_vs_slicer, data)) {
                 cursor_value = data[0];
             }
         }
@@ -1293,14 +1293,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 } else { // When required stokes is not the current stokes or the stokes needs to be computed
                     profile.reserve(end - start);
 
-                    std::pair<StokesSource, casacore::Slicer> stokes_source_slicer;
+                    std::pair<StokesSource, casacore::Slicer> stokes_src_vs_slicer;
                     if (config.coordinate().back() == 'x') {
-                        stokes_source_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
+                        stokes_src_vs_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
                     } else if (config.coordinate().back() == 'y') {
-                        stokes_source_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
+                        stokes_src_vs_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
                     }
 
-                    have_profile = GetSlicerData(stokes_source_slicer, profile);
+                    have_profile = GetSlicerData(stokes_src_vs_slicer, profile);
                 }
             }
 
@@ -1474,10 +1474,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     // Slice image to get next delta_z (not to exceed depth in image)
                     size_t nz = (start_channel + delta_z < profile_size ? delta_z : profile_size - start_channel);
                     end_channel = start_channel + nz - 1;
-                    auto stokes_source_slicer =
+                    auto stokes_src_vs_slicer =
                         GetImageSlicer(AxisRange(x_index), AxisRange(y_index), AxisRange(start_channel, end_channel), stokes);
                     std::vector<float> buffer;
-                    if (!GetSlicerData(stokes_source_slicer, buffer)) {
+                    if (!GetSlicerData(stokes_src_vs_slicer, buffer)) {
                         return false;
                     }
 
@@ -1572,16 +1572,16 @@ casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Re
 }
 
 bool Frame::GetImageRegion(
-    int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region) {
+    int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region) {
     if (!CheckZ(z_range.from) || !CheckZ(z_range.to) || !CheckStokes(stokes)) {
         return false;
     }
     try {
-        std::pair<StokesSource, casacore::Slicer> stokes_source_section = GetImageSlicer(z_range, stokes);
-        stokes_source_region.first = stokes_source_section.first;
-        casacore::LCSlicer lcslicer(stokes_source_section.second);
+        std::pair<StokesSource, casacore::Slicer> stokes_src_vs_section = GetImageSlicer(z_range, stokes);
+        stokes_src_vs_region.first = stokes_src_vs_section.first;
+        casacore::LCSlicer lcslicer(stokes_src_vs_section.second);
         casacore::ImageRegion this_region(lcslicer);
-        stokes_source_region.second = this_region;
+        stokes_src_vs_region.second = this_region;
         return true;
     } catch (casacore::AipsError error) {
         spdlog::error("Error converting full region to file {}: {}", file_id, error.getMesg());
@@ -1589,22 +1589,22 @@ bool Frame::GetImageRegion(
     }
 }
 
-casacore::IPosition Frame::GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region) {
+casacore::IPosition Frame::GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region) {
     // Returns image shape with a region applied
-    StokesSource stokes_source = stokes_source_region.first;
-    casacore::LattRegionHolder region = stokes_source_region.second;
+    StokesSource stokes_source = stokes_src_vs_region.first;
+    casacore::LattRegionHolder region = stokes_src_vs_region.second;
     casacore::CoordinateSystem* coord_sys = CoordinateSystem(stokes_source);
     casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape(stokes_source));
     delete coord_sys;
     return lattice_region.shape();
 }
 
-bool Frame::GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, std::vector<float>& data) {
+bool Frame::GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, std::vector<float>& data) {
     // Get image data with a region applied
     auto t_start_get_subimage_data = std::chrono::high_resolution_clock::now();
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_source_region, sub_image);
+    bool subimage_ok = _loader->GetSubImage(stokes_src_vs_region, sub_image);
     ulock.unlock();
 
     if (!subimage_ok) {
@@ -1659,24 +1659,24 @@ bool Frame::GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& 
     return false;
 }
 
-bool Frame::GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, std::vector<float>& data) {
+bool Frame::GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, std::vector<float>& data) {
     // Get image data with a slicer applied
-    casacore::Slicer slicer = stokes_source_slicer.second;
+    casacore::Slicer slicer = stokes_src_vs_slicer.second;
     data.resize(slicer.length().product()); // must have vector the right size before share it with Array
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool data_ok = _loader->GetSlice(tmp, stokes_source_slicer);
+    bool data_ok = _loader->GetSlice(tmp, stokes_src_vs_slicer);
     _loader->CloseImageIfUpdated();
     ulock.unlock();
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region,
+bool Frame::GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region,
     const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_source_region, sub_image);
+    bool subimage_ok = _loader->GetSubImage(stokes_src_vs_region, sub_image);
     _loader->CloseImageIfUpdated();
     ulock.unlock();
 
@@ -1688,12 +1688,12 @@ bool Frame::GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>&
     return subimage_ok;
 }
 
-bool Frame::GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer,
+bool Frame::GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer,
     std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_source_slicer, sub_image);
+    bool subimage_ok = _loader->GetSubImage(stokes_src_vs_slicer, sub_image);
     _loader->CloseImageIfUpdated();
     ulock.unlock();
 
@@ -1720,25 +1720,25 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 }
 
 bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback,
-    const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, const CARTA::MomentRequest& moment_request,
+    const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, const CARTA::MomentRequest& moment_request,
     CARTA::MomentResponse& moment_response, std::vector<carta::CollapseResult>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
-        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), _loader->GetStokesImage(stokes_source_region.first));
-        _stokes_source = stokes_source_region.first;
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), _loader->GetStokesImage(stokes_src_vs_region.first));
+        _stokes_source = stokes_src_vs_region.first;
     }
 
-    if (_stokes_source != stokes_source_region.first) {
-        _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_source_region.first)));
-        _stokes_source = stokes_source_region.first;
+    if (_stokes_source != stokes_src_vs_region.first) {
+        _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_src_vs_region.first)));
+        _stokes_source = stokes_src_vs_region.first;
     }
 
     _loader->CloseImageIfUpdated();
 
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
-        _moment_generator->CalculateMoments(file_id, stokes_source_region.second, _z_axis, _stokes_axis, progress_callback, moment_request,
+        _moment_generator->CalculateMoments(file_id, stokes_src_vs_region.second, _z_axis, _stokes_axis, progress_callback, moment_request,
             moment_response, collapse_results);
         ulock.unlock();
     }

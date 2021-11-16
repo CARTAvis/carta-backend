@@ -304,9 +304,9 @@ std::vector<int> FileLoader::GetRenderAxes() {
     return axes;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer) {
-    StokesSource stokes_source = stokes_source_slicer.first;
-    casacore::Slicer slicer = stokes_source_slicer.second;
+bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer) {
+    StokesSource stokes_source = stokes_src_vs_slicer.first;
+    casacore::Slicer slicer = stokes_src_vs_slicer.second;
 
     // Get the opened casacore image or computed stokes image
     auto image = GetStokesImage(stokes_source);
@@ -369,9 +369,9 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
     }
 }
 
-bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, casacore::SubImage<float>& sub_image) {
-    StokesSource stokes_source = stokes_source_slicer.first;
-    casacore::Slicer slicer = stokes_source_slicer.second;
+bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_src_vs_slicer.first;
+    casacore::Slicer slicer = stokes_src_vs_slicer.second;
 
     // Get the opened casacore image or computed stokes image
     auto image = GetStokesImage(stokes_source);
@@ -385,9 +385,9 @@ bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& st
 }
 
 bool FileLoader::GetSubImage(
-    const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region, casacore::SubImage<float>& sub_image) {
-    StokesSource stokes_source = stokes_source_region.first;
-    casacore::LattRegionHolder region = stokes_source_region.second;
+    const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_src_vs_region.first;
+    casacore::LattRegionHolder region = stokes_src_vs_region.second;
 
     // Get the opened casacore image or computed stokes image
     auto image = GetStokesImage(stokes_source);

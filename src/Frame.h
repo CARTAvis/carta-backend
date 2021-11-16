@@ -163,15 +163,15 @@ public:
     casacore::LCRegion* GetImageRegion(
         int file_id, std::shared_ptr<carta::Region> region, const StokesSource& stokes_source = StokesSource());
     bool GetImageRegion(
-        int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region);
-    casacore::IPosition GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_source_region);
+        int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region);
+    casacore::IPosition GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region);
     // Returns data vector
-    bool GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, std::vector<float>& data);
-    bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer, std::vector<float>& data);
+    bool GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, std::vector<float>& data);
+    bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, std::vector<float>& data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region,
+    bool GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region,
         const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    bool GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_source_slicer,
+    bool GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer,
         std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
@@ -181,7 +181,7 @@ public:
 
     // Moments calculation
     bool CalculateMoments(int file_id, MomentProgressCallback progress_callback,
-        const std::pair<StokesSource, casacore::ImageRegion>& stokes_source_region, const CARTA::MomentRequest& moment_request,
+        const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, const CARTA::MomentRequest& moment_request,
         CARTA::MomentResponse& moment_response, std::vector<carta::CollapseResult>& collapse_results);
     void StopMomentCalc();
 
