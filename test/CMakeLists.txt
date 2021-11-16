@@ -22,7 +22,7 @@ set(TEST_COMMON_LIBS gtest gtest_main)
 
 enable_testing()
 find_package(GTest)
-include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 if (HDF5_FOUND)
@@ -32,22 +32,19 @@ else ()
     message(FATAL_ERROR "Could not find HDF5.")
 endif ()
 
-ExternalProject_Add(fits2idia
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/fits2idia
-  INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  BUILD_ALWAYS 1
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
-)
+find_program(CONVERTER, fits2idia)
 
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
+        BackendModel.cc
         TestBlockSmooth.cc
         TestFitsTable.cc
         TestFitsImage.cc
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
+        TestIcd.cc
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
@@ -75,4 +72,3 @@ add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY}
         ${TEST_COMMON_LIBS}
         ${LINK_LIBS})
-

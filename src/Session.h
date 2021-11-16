@@ -227,7 +227,7 @@ public:
     // Close cached image if it has been updated
     void CloseCachedImage(const std::string& directory, const std::string& file);
 
-private:
+protected:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
         const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message);

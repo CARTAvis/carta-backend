@@ -274,6 +274,34 @@ CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id,
     return moment_request;
 }
 
+CARTA::ImageProperties Message::ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
+    CARTA::RenderMode render_mode, int32_t channel, int32_t stokes) {
+    CARTA::ImageProperties image_properties;
+    image_properties.set_directory(directory);
+    image_properties.set_file(file);
+    image_properties.set_hdu(hdu);
+    image_properties.set_file_id(file_id);
+    image_properties.set_render_mode(render_mode);
+    image_properties.set_channel(channel);
+    image_properties.set_stokes(stokes);
+    return image_properties;
+}
+
+CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> images) {
+    CARTA::ResumeSession resume_session;
+    for (auto image : images) {
+        auto* tmp_image = resume_session.add_images();
+        tmp_image->set_directory(image.directory());
+        tmp_image->set_file(image.file());
+        tmp_image->set_hdu(image.hdu());
+        tmp_image->set_file_id(image.file_id());
+        tmp_image->set_render_mode(image.render_mode());
+        tmp_image->set_channel(image.channel());
+        tmp_image->set_stokes(image.stokes());
+    }
+    return resume_session;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);
