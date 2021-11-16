@@ -62,9 +62,8 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     }
 
     // Get shape and axis values from the loader
-    int spectral_axis;
     std::string log_message;
-    if (!_loader->FindCoordinateAxes(_image_shape, spectral_axis, _z_axis, _stokes_axis, log_message)) {
+    if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _z_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
@@ -164,6 +163,10 @@ int Frame::CurrentZ() {
 
 int Frame::CurrentStokes() {
     return _stokes_index;
+}
+
+int Frame::SpectralAxis() {
+    return _spectral_axis;
 }
 
 int Frame::StokesAxis() {

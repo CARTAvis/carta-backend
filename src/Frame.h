@@ -103,6 +103,7 @@ public:
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
     int CurrentStokes();
+    int SpectralAxis();
     int StokesAxis();
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
@@ -194,6 +195,12 @@ public:
 
     std::shared_mutex& GetActiveTaskMutex();
 
+    // Get image interface ptr
+    inline std::shared_ptr<casacore::ImageInterface<float>> GetImage() {
+        return _loader->GetImage();
+    }
+
+    // Close image with cached data
     void CloseCachedImage(const std::string& file);
 
 protected:
@@ -241,11 +248,6 @@ protected:
         return (z * 10) + stokes;
     }
 
-    // Get image interface ptr
-    std::shared_ptr<casacore::ImageInterface<float>> GetImage() {
-        return _loader->GetImage();
-    }
-
     // Setup
     uint32_t _session_id;
 
@@ -261,7 +263,7 @@ protected:
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
-    int _x_axis, _y_axis, _z_axis, _stokes_axis;
+    int _x_axis, _y_axis, _z_axis, _spectral_axis, _stokes_axis;
     int _z_index, _stokes_index; // current index
     size_t _width, _height, _depth, _num_stokes;
 
