@@ -65,9 +65,9 @@ int main(int argc, char** argv) {
     fs::path user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
     InitLogger(no_log, verbosity, log_performance, log_protocol_messages, user_directory);
 
-    int run_all_test = RUN_ALL_TESTS();
+    int run_all_tests = RUN_ALL_TESTS();
 
     ThreadManager::ExitEventHandlingThreads();
     FlushLogFile();
-    return run_all_test;
+    return run_all_tests;
 }
