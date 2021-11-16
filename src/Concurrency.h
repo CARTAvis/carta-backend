@@ -54,11 +54,14 @@ public:
         _writer_count = 0;
     }
     ~queuing_rw_mutex() {
-        _writers_cv.notify_all();
+        while (_writer_count-- > 0) {
+            dequeue_one_writer();
+        }
         _readers_cv.notify_all();
     }
     void reader_enter() {
         std::unique_lock<std::mutex> lock(_mtx);
+
         if (_writer_count > 0) {
             _readers_cv.wait(lock);
         }
@@ -68,21 +71,25 @@ public:
         std::unique_lock<std::mutex> lock(_mtx);
         ++_writer_count;
         if ((_reader_count > 0) || (_writer_count > 1)) {
-            _writers_cv.wait(lock);
+            //	  _writers_cv.wait(lock);
+            queue_writer(lock);
         }
     }
     void reader_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
+
         --_reader_count;
+
         if ((_reader_count == 0) && (_writer_count > 0)) {
-            _writers_cv.notify_one();
+            dequeue_one_writer();
         }
     }
     void writer_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
+
         --_writer_count;
         if (_writer_count > 0) {
-            _writers_cv.notify_one();
+            dequeue_one_writer();
         } else {
             _readers_cv.notify_all();
         }
@@ -91,9 +98,21 @@ public:
 private:
     std::mutex _mtx;
     std::condition_variable _readers_cv;
-    std::condition_variable _writers_cv;
+    std::list<std::condition_variable*> _writers_cv_list;
     short _reader_count;
     short _writer_count;
+
+    void queue_writer(std::unique_lock<std::mutex>& mtx) {
+        std::condition_variable* cv = new std::condition_variable();
+        _writers_cv_list.push_front(cv);
+        cv->wait(mtx);
+    }
+    void dequeue_one_writer() {
+        std::condition_variable* cv = _writers_cv_list.back();
+        _writers_cv_list.pop_back();
+        cv->notify_one();
+        delete cv;
+    }
 };
 
 class queuing_rw_mutex_local {
