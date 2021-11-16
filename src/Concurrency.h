@@ -71,7 +71,6 @@ public:
         std::unique_lock<std::mutex> lock(_mtx);
         ++_writer_count;
         if ((_reader_count > 0) || (_writer_count > 1)) {
-            //	  _writers_cv.wait(lock);
             queue_writer(lock);
         }
     }
