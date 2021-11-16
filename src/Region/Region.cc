@@ -29,8 +29,8 @@
 using namespace carta;
 
 Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
-    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false) {
-    _valid = UpdateRegion(state);
+    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false), _region_state(state) {
+    _valid = CheckPoints(state.control_points, state.type);
 }
 
 Region::~Region() {
@@ -359,6 +359,18 @@ casacore::LCRegion* Region::GetImageRegion(
         return lc_region;
     }
 
+    // TODO: remove this, for pvgen debugging only
+    if (_region_state.type == CARTA::RegionType::RECTANGLE) {
+        // Polygon approximation could be 1000 points, get 4 corners with midpoints instead
+        std::vector<CARTA::Point> points = GetApproximatePolygonPoints(6); // in ref image coords
+        casacore::Vector<casacore::Double> x, y;
+        if (ConvertPointsToImagePixels(points, output_csys, x, y)) {
+            spdlog::debug(
+                "polygon[[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], ", x[0], y[0], x[1], y[1], x[2], y[2]);
+            spdlog::debug("[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", x[3], y[3], x[4], y[4], x[5], y[5]);
+        }
+    }
+
     std::lock_guard<std::mutex> guard(_region_approx_mutex);
     lc_region = GetCachedLCRegion(file_id);
 
@@ -370,15 +382,13 @@ casacore::LCRegion* Region::GetImageRegion(
             bool use_polygon = UseApproximatePolygon(output_csys); // check region distortion
 
             if (!use_polygon) {
-                // No distortion, do direct region conversion if possible.
-                // Convert reference WCRegion to LCRegion in output image and cache it.
+                // No distortion, do direct region conversion if possible (unless outside image or rotbox)
                 lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
-                if (lc_region) {
-                    spdlog::debug("Using direct region conversion for {}", RegionName(_region_state.type));
-                }
             }
 
-            if (!lc_region) {
+            if (lc_region) {
+                spdlog::debug("Using direct region conversion for {}", RegionName(_region_state.type));
+            } else {
                 // Use polygon approximation of reference region to translate to another image
                 spdlog::debug("Using polygon approximation for rotbox or distorted region {}", RegionName(_region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
@@ -458,8 +468,9 @@ bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys
             }
             return true;
         }
-        default:
+        default: {
             return true;
+        }
     }
 }
 

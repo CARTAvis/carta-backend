@@ -17,6 +17,7 @@
 
 #include "../Frame.h"
 #include "../RequirementsCache.h"
+#include "ImageGenerators/PvGenerator.h"
 #include "Region.h"
 
 struct RegionStyle {
@@ -87,9 +88,10 @@ public:
     std::vector<int> GetPointRegionIds(int file_id);
     std::vector<int> GetProjectedFileIds(int region_id);
 
-    // Series of box regions along line for PV generator and spatial profiles
-    bool GetLineBoxRegions(int file_id, int region_id, std::shared_ptr<Frame>& frame, int width,
-        std::vector<casacore::LCRegion*>& box_regions, double& separation, std::string& message);
+    // Generate PV image
+    bool CalculatePvImage(int file_id, int region_id, int width, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+        CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
+    void StopPvCalc(int file_id);
 
 private:
     // Get unique region id (max id + 1)
@@ -113,7 +115,8 @@ private:
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
-    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region);
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
+        casacore::LCRegion* region_2D = nullptr);
 
     // Fill data stream messages
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
@@ -124,20 +127,25 @@ private:
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
-    // Line approximated as box regions with given width, for PV generator and spatial profiles
-    bool GetBoxRegions(int file_id, const std::vector<CARTA::Point>& endpoints, float rotation, int width, std::shared_ptr<Frame>& frame,
-        std::vector<casacore::LCRegion*>& box_regions, double& increment, std::string& message);
-    bool GetFixedPixelRegions(int file_id, size_t num_regions, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
-        casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment);
+    // Generate box regions to approximate a line with a width, and get mean of each box (per z else current z).
+    // Used for pv generator and spatial profiles.
+    bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, std::shared_ptr<Frame>& frame, double& increment,
+        casacore::Matrix<float>& profiles, std::function<void(float)>& progress_callback, bool& cancelled, std::string& message);
+    void SetLineRotation(RegionState& region_state);
+    bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, size_t num_profiles, RegionState& region_state,
+        casacore::CoordinateSystem* csys, casacore::Matrix<float>& profiles, double& increment,
+        std::function<void(float)>& progress_callback, bool& cancelled);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
-    bool GetFixedAngularRegions(int file_id, size_t num_regions, const std::vector<CARTA::Point>& endpoints, int width, float rotation,
-        casacore::CoordinateSystem* csys, std::vector<casacore::LCRegion*>& box_regions, double& increment);
+    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, size_t num_profiles, RegionState& region_state,
+        casacore::CoordinateSystem* csys, casacore::Matrix<float>& profiles, double& increment,
+        std::function<void(float)>& progress_callback, bool& cancelled, std::string& message);
     casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
         const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
     RegionState GetBoxRegionState(
         int file_id, const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int width, float rotation);
-    casacore::LCRegion* GetTemporaryBoxRegion(int file_id, RegionState& region_state, casacore::CoordinateSystem* csys);
+    casacore::Vector<float> GetTemporaryBoxRegionProfile(
+        int file_id, RegionState& region_state, casacore::CoordinateSystem* csys, bool per_z, double& num_pixels);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
@@ -163,6 +171,10 @@ private:
     // Point regions configs, key is region id
     std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
     std::mutex _spatial_mutex;
+
+    // PvGenerator: key is file_id
+    std::unordered_map<int, PvGenerator*> _pv_generators;
+    std::unordered_map<int, bool> _stop_pv;
 };
 
 } // namespace carta
