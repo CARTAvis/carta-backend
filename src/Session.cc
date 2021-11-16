@@ -1201,9 +1201,11 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
     int region_id(save_file.region_id());
+
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
         auto active_frame = _frames.at(file_id);
+
         if (_read_only_mode) {
             string error = "Saving files is not allowed in read-only mode";
             spdlog::error(error);
@@ -1212,11 +1214,13 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
             save_file_ack.set_message(error);
         } else if (region_id) {
             std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
-            if (active_frame->GetImageRegion(file_id, _region)) {
-                active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
-            } else {
-                save_file_ack.set_success(false);
-                save_file_ack.set_message("The selected region is entirely outside the image.");
+            if (_region) {
+                if (active_frame->GetImageRegion(file_id, _region)) {
+                    active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
+                } else {
+                    save_file_ack.set_success(false);
+                    save_file_ack.set_message("The selected region is entirely outside the image.");
+                }
             }
         } else {
             // Save full image
@@ -1285,31 +1289,20 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
         } else {
             auto t_start_pv_image = std::chrono::high_resolution_clock::now();
 
+            // Set pv progress callback function
+            auto progress_callback = [&](float progress) {
+                CARTA::PvProgress pv_progress;
+                pv_progress.set_file_id(file_id);
+                pv_progress.set_progress(progress);
+                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+            };
+
             auto& frame = _frames.at(file_id);
-            _frames.at(file_id)->StopPvCalc(false); // reset stop flag
+            carta::GeneratedImage pv_image;
 
-            std::vector<casacore::LCRegion*> box_regions;
-            double offset_increment; // in arcsec
-            std::string error;
-
-            if (_region_handler->GetLineBoxRegions(file_id, region_id, frame, width, box_regions, offset_increment, error)) {
-                // Set pv progress callback function
-                auto progress_callback = [&](float progress) {
-                    CARTA::PvProgress pv_progress;
-                    pv_progress.set_file_id(file_id);
-                    pv_progress.set_progress(progress);
-                    SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
-                };
-
-                carta::GeneratedImage pv_image;
-                if (frame->CalculatePvImage(file_id, box_regions, offset_increment, progress_callback, pv_response, pv_image)) {
-                    auto* open_file_ack = pv_response.mutable_open_file_ack();
-                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
-                }
-            } else {
-                pv_response.set_success(false);
-                pv_response.set_message(error);
-                pv_response.set_cancel(false);
+            if (_region_handler->CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image)) {
+                auto* open_file_ack = pv_response.mutable_open_file_ack();
+                OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
             }
 
             auto t_end_pv_image = std::chrono::high_resolution_clock::now();
@@ -1326,8 +1319,8 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
 
 void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
     int file_id(stop_pv_calc.file_id());
-    if (_frames.count(file_id)) {
-        _frames.at(file_id)->StopPvCalc();
+    if (_frames.count(file_id) && _region_handler) {
+        _region_handler->StopPvCalc(file_id);
     }
 }
 
