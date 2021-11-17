@@ -13,6 +13,8 @@
 
 #include "../src/Timer/Timer.h"
 
+using namespace carta;
+
 class TimerTest : public ::testing::Test {
 public:
     // Test for 0.1 ms accuracy
