@@ -164,9 +164,11 @@ private:
     std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
     std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
 
+    // Spectral profiles to calculate with ImageStatistics.
+    // TODO: Remove NumPixels, for pvgen testing
     std::vector<CARTA::StatsType> _spectral_stats = {CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity, CARTA::StatsType::Mean,
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
-        CARTA::StatsType::Extrema};
+        CARTA::StatsType::Extrema, CARTA::StatsType::NumPixels};
 
     // Point regions configs, key is region id
     std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
