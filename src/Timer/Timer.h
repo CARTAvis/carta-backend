@@ -13,6 +13,9 @@
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> timer_entry;
 typedef std::chrono::duration<double, std::milli> timer_duration;
+
+namespace carta {
+
 class Timer {
 public:
     void Start(const std::string& timer_name);
@@ -26,5 +29,7 @@ protected:
     std::unordered_map<std::string, timer_entry> _entries;
     std::unordered_map<std::string, std::pair<timer_duration, int>> _measurements;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_TIMER_TIMER_H_

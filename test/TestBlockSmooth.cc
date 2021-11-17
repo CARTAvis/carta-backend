@@ -186,7 +186,7 @@ TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 TEST_F(BlockSmoothingTest, TestSSEPerformance) {
-    Timer t;
+    carta::Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
         auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
         for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
@@ -230,7 +230,7 @@ TEST_F(BlockSmoothingTest, TestAVXAccuracy) {
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 TEST_F(BlockSmoothingTest, TestAVXPerformance) {
-    Timer t;
+    carta::Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
         auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
         for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {

@@ -169,6 +169,10 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 
         // FileInfoExtended
         _loader.reset(carta::FileLoader::GetLoader(fullname));
+        if (!_loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
         FileExtInfoLoader ext_info_loader(_loader.get());
 
         std::string requested_hdu(hdu);
@@ -209,6 +213,11 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 
         // Reset file loader and file extended info loader
         _loader.reset(carta::FileLoader::GetLoader(fullname));
+        if (!_loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
+
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
         // Discern hdu for extended file info
@@ -477,6 +486,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             std::string message = fmt::format("Image histogram for file id {} failed", file_id);
             SendLogEvent(message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
         }
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
@@ -527,6 +538,8 @@ bool Session::OnOpenFile(
 
     if (success) {
         UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+    } else if (!err_message.empty()) {
+        spdlog::error(err_message);
     }
     return success;
 }
@@ -1728,20 +1741,22 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
 
     // uWS::Loop::defer(function) is the only thread-safe function, use it to defer the calling of a function to the thread that runs the
     // Loop.
-    _loop->defer([&]() {
-        std::pair<std::vector<char>, bool> msg;
-        if (_connected) {
-            while (_out_msgs.try_pop(msg)) {
-                std::string_view sv(msg.first.data(), msg.first.size());
-                _socket->cork([&]() {
-                    auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
-                    if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
-                        spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
-                    }
-                });
+    if (_loop && _socket) {
+        _loop->defer([&]() {
+            std::pair<std::vector<char>, bool> msg;
+            if (_connected) {
+                while (_out_msgs.try_pop(msg)) {
+                    std::string_view sv(msg.first.data(), msg.first.size());
+                    _socket->cork([&]() {
+                        auto status = _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+                        if (status == uWS::WebSocket<false, true, PerSocketData>::DROPPED) {
+                            spdlog::error("Failed to send message of size {} kB", sv.size() / 1024.0);
+                        }
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 void Session::SendFileEvent(
