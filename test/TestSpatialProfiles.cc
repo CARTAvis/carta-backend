@@ -85,7 +85,8 @@ public:
 
 TEST_F(SpatialProfileTest, SmallFitsProfile) {
     auto path_string = GeneratedFitsImagePath("10 10");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
@@ -125,7 +126,8 @@ TEST_F(SpatialProfileTest, SmallFitsProfile) {
 
 TEST_F(SpatialProfileTest, SmallHdf5Profile) {
     auto path_string = GeneratedHdf5ImagePath("10 10");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
@@ -165,7 +167,8 @@ TEST_F(SpatialProfileTest, SmallHdf5Profile) {
 
 TEST_F(SpatialProfileTest, LowResFitsProfile) {
     auto path_string = GeneratedFitsImagePath("130 100");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -199,7 +202,8 @@ TEST_F(SpatialProfileTest, LowResFitsProfile) {
 
 TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
     auto path_string = GeneratedHdf5ImagePath("130 100");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -233,7 +237,8 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
 
 TEST_F(SpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
     auto path_string = GeneratedHdf5ImagePath("130 100");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     // mip 4 is requested, but the file only has a dataset for mip 2
@@ -269,7 +274,8 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
 
 TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
     auto path_string = GeneratedHdf5ImagePath("120 100");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     // mip 2 is requested, but this file is too small to have mipmaps
@@ -305,7 +311,8 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
 
 TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
     auto path_string = GeneratedFitsImagePath("400 300");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -339,7 +346,8 @@ TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
 
 TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
     auto path_string = GeneratedHdf5ImagePath("400 300");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -373,7 +381,8 @@ TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
 
 TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
     auto path_string = GeneratedFitsImagePath("400 300");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -409,7 +418,8 @@ TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
 
 TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
     auto path_string = GeneratedHdf5ImagePath("400 300");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -449,7 +459,8 @@ TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
 
 TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullRes) {
     auto path_string = GeneratedHdf5ImagePath("3000 2000");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
@@ -482,7 +493,8 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullRes) {
 
 TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
     auto path_string = GeneratedHdf5ImagePath("3000 2000");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
@@ -516,7 +528,8 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
 
 TEST_F(SpatialProfileTest, FitsChannelChange) {
     auto path_string = GeneratedFitsImagePath("10 10 2");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
@@ -558,7 +571,8 @@ TEST_F(SpatialProfileTest, FitsChannelChange) {
 
 TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
     auto path_string = GeneratedFitsImagePath("10 10 2 2");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
 
     int x(5);
@@ -606,7 +620,8 @@ TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
 
 TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
     auto path_string = GeneratedHdf5ImagePath("10 10 2");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
@@ -648,7 +663,8 @@ TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
 
 TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
     auto path_string = GeneratedHdf5ImagePath("1000 1000 2");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
@@ -690,7 +706,8 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
 
 TEST_F(SpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
     auto path_string = GeneratedHdf5ImagePath("1000 1000 2 2");
-    std::unique_ptr<Frame> frame(new Frame(0, carta::FileLoader::GetLoader(path_string), "0"));
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
 
     int x(5);
