@@ -14,6 +14,7 @@
 #include "ImageData/PolarizationCalculator.h"
 #include "Logger/Logger.h"
 #include "Region/RegionHandler.h"
+#include "Session.h"
 
 static const string SAMPLE_IMAGE_CASA = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.image";
 static const string SAMPLE_IMAGE_FITS = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits";
@@ -417,7 +418,7 @@ public:
 
 class TestFrame : public Frame {
 public:
-    TestFrame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z)
+    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
 
     static void TestFrameImageCache(std::string sample_file_path) {
@@ -432,7 +433,8 @@ public:
         int spectral_axis_size = image->shape()[spectral_axis];
 
         // Open the file through the Frame
-        std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(sample_file_path), "0"));
+        LoaderCache loaders(LOADER_CACHE_SIZE);
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
         EXPECT_TRUE(frame->IsValid());
         EXPECT_TRUE(frame->_open_image_error.empty());
 
@@ -472,7 +474,8 @@ static void TestCursorProfiles(std::string sample_file_path, int current_channel
     int y_size = image->shape()[1];
 
     // Open the file through the Frame
-    std::unique_ptr<TestFrame> frame(new TestFrame(0, carta::FileLoader::GetLoader(sample_file_path), "0"));
+    LoaderCache loaders(LOADER_CACHE_SIZE);
+    std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
     EXPECT_TRUE(frame->IsValid());
 
     // Set spatial profiles requirements
@@ -541,7 +544,8 @@ static void TestPointRegionProfiles(std::string sample_file_path, int current_ch
     }
 
     int file_id(0);
-    auto frame = std::make_shared<TestFrame>(file_id, carta::FileLoader::GetLoader(sample_file_path), "0");
+    LoaderCache loaders(LOADER_CACHE_SIZE);
+    auto frame = std::make_shared<TestFrame>(file_id, loaders.Get(sample_file_path), "0");
     EXPECT_TRUE(frame->IsValid());
 
     // Set image channels through the Frame
@@ -634,7 +638,8 @@ static void TestRectangleRegionProfiles(
     }
 
     int file_id(0);
-    auto frame = std::make_shared<TestFrame>(file_id, carta::FileLoader::GetLoader(sample_file_path), "0");
+    LoaderCache loaders(LOADER_CACHE_SIZE);
+    auto frame = std::make_shared<TestFrame>(file_id, loaders.Get(sample_file_path), "0");
     EXPECT_TRUE(frame->IsValid());
 
     // Set image channels through the Frame
@@ -814,7 +819,8 @@ static void TestCubeHistogram(std::string sample_file_path, int current_channel,
     }
 
     // Calculate the cube histogram
-    auto frame = std::make_shared<TestFrame>(0, carta::FileLoader::GetLoader(sample_file_path), "0");
+    LoaderCache loaders(LOADER_CACHE_SIZE);
+    auto frame = std::make_shared<TestFrame>(0, loaders.Get(sample_file_path), "0");
     carta::Histogram cube_histogram;
     CalculateCubeHistogram(frame, current_channel, current_stokes, cube_histogram);
 
@@ -836,11 +842,8 @@ static void TestCubeHistogram(std::string sample_file_path, int current_channel,
         return;
     }
 
-    std::unique_ptr<carta::FileLoader> loader;
-    loader.reset(carta::FileLoader::GetLoader(resulting_image));
-
-    auto frame2 = std::make_shared<TestFrame>(1, loader.get(), "");
-    loader.release();
+    auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(resulting_image));
+    auto frame2 = std::make_shared<TestFrame>(1, loader, "");
     int fiddled_stokes(0);
 
     carta::Histogram cube_histogram2;
