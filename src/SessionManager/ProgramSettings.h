@@ -70,7 +70,7 @@ struct ProgramSettings {
         {"verbosity", &verbosity},
         {"grpc_port", &grpc_port},
         {"omp_threads", &omp_thread_count},
-	{"event_thread_count", &event_thread_count},
+        {"event_thread_count", &event_thread_count},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
         {"idle_timeout", &idle_session_wait_time}

@@ -10,6 +10,8 @@
 
 #include "Logger/Logger.h"
 
+using namespace carta;
+
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {
         auto t_start = std::chrono::high_resolution_clock::now();
