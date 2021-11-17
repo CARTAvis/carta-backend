@@ -22,7 +22,7 @@
 
 class FileExtInfoLoader {
 public:
-    FileExtInfoLoader(carta::FileLoader* loader);
+    FileExtInfoLoader(std::shared_ptr<carta::FileLoader> loader);
 
     // Fill extended file info for all FITS image hdus
     bool FillFitsFileInfoMap(
@@ -62,7 +62,7 @@ private:
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
         std::string& projection);
 
-    carta::FileLoader* _loader;
+    std::shared_ptr<carta::FileLoader> _loader;
     CARTA::FileType _type;
 };
 
