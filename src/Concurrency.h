@@ -13,7 +13,7 @@
 
 namespace carta {
 /*
-  Thread safe queue class.
+  Thread-safe queue class.
  */
 template <class T>
 class concurrent_queue {
