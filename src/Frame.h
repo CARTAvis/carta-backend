@@ -83,7 +83,7 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_z = DEFAULT_Z);
+    Frame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
     ~Frame(){};
 
     bool IsValid();

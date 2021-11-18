@@ -56,10 +56,25 @@
 
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
+#define LOADER_CACHE_SIZE 25
 
 struct PerSocketData {
     uint32_t session_id;
     string address;
+};
+
+// Cache of loaders for reading images from disk.
+class LoaderCache {
+public:
+    LoaderCache(int capacity);
+    std::shared_ptr<carta::FileLoader> Get(std::string filename);
+    void Remove(std::string filename);
+
+private:
+    int _capacity;
+    std::unordered_map<std::string, std::shared_ptr<carta::FileLoader>> _map;
+    std::list<std::string> _queue;
+    std::mutex _loader_cache_mutex;
 };
 
 class Session {
@@ -228,13 +243,13 @@ protected:
         const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message);
     // File info for open file
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-        const std::string& filename, std::string& hdu_name, std::string& message);
+        const std::string& filename, std::string& hdu_name, std::string& message, std::string& fullname);
     bool FillFileInfo(
         CARTA::FileInfo& file_info, const std::string& folder, const std::string& filename, std::string& fullname, std::string& message);
 
     // File info for open moments image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-        const std::string& filename, std::string& message);
+        const std::string& filename, std::string& message, std::shared_ptr<carta::FileLoader>& image_loader);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);
@@ -276,8 +291,8 @@ protected:
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
 
-    // Loader for reading image from disk
-    std::unique_ptr<carta::FileLoader> _loader;
+    // Loader cache
+    LoaderCache _loaders;
 
     // Frame; key is file_id; shared with RegionHandler for data streams
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
