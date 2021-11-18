@@ -6,11 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Removed the dependency on Intel TBB library by replacing the TBB mutexes with ones based on standard c++ ones.
+* Replaced shared image loader pointer in the session class with a cache for multiple loaders, to avoid concurrency bugs when loading multiple images simultaneously.
+	
 ### Added
 * Added ability to guess file type by extension, rather than content ([#1](https://github.com/CARTAvis/carta/issues/1)).
 * Added support for circular/linear polarizations when generating hypercubes ([#942](https://github.com/CARTAvis/carta-backend/issues/942)).
-* Removed the dependency on Intel TBB library by replacing the TBB mutexes with ones based on standard c++ ones.
-* Replaced shared image loader pointer in the session class with a cache for multiple loaders, to avoid concurrency bugs when loading multiple images simultaneously.
 
 ### Fixed
 
