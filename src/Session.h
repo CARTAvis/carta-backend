@@ -221,7 +221,7 @@ public:
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
 
     FileSettings _file_settings;
-    std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
+    std::unordered_map<int, carta::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(
         uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path);
@@ -317,7 +317,7 @@ protected:
     float _histogram_progress;
 
     // message queue <msg, compress>
-    concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
+    carta::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     // context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;
