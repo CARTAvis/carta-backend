@@ -11,6 +11,7 @@
 #include <mutex>
 #include <shared_mutex>
 
+namespace carta {
 template <class T>
 class concurrent_queue {
 public:
@@ -114,9 +115,9 @@ private:
     }
 };
 
-class queuing_rw_mutex_local {
+class queuing_rw_mutex_scoped {
 public:
-    queuing_rw_mutex_local(queuing_rw_mutex* rwmtx, bool rw) {
+    queuing_rw_mutex_scoped(queuing_rw_mutex* rwmtx, bool rw) {
         _rwmtx = rwmtx;
         _rw = rw;
         _active = true;
@@ -126,7 +127,7 @@ public:
             rwmtx->reader_enter();
         }
     }
-    ~queuing_rw_mutex_local() {
+    ~queuing_rw_mutex_scoped() {
         release();
     }
     void release() {
@@ -145,3 +146,5 @@ private:
     bool _rw;
     bool _active;
 };
+
+} // namespace carta
