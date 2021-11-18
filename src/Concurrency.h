@@ -12,6 +12,9 @@
 #include <shared_mutex>
 
 namespace carta {
+/*
+  Thread safe queue class.
+ */
 template <class T>
 class concurrent_queue {
 public:
@@ -48,6 +51,11 @@ private:
     std::mutex _mtx;
 };
 
+/*
+  Mutex that allows many readers to enter a critical section, but only
+  one writer at a time. Writers are queued so that write happen in the
+  order that they first attenpt to enter a critical section.
+ */
 class queuing_rw_mutex {
 public:
     queuing_rw_mutex() {
@@ -115,6 +123,14 @@ private:
     }
 };
 
+/*
+  Class to create object that allowed scoped access to critical
+  sections that are protected by queuing_rw_metex objects, with
+  the critical section starting when one of these objects is
+  created and ending either when object goes out of scope,
+  causing its destructor to be called, or when the release
+  method is called on the object.
+ */
 class queuing_rw_mutex_scoped {
 public:
     queuing_rw_mutex_scoped(queuing_rw_mutex* rwmtx, bool rw) {
