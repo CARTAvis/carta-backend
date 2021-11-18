@@ -27,7 +27,7 @@ void FileSettings::AddCursorSetting(const CARTA::SetCursor& message, uint32_t re
 bool FileSettings::ExecuteOne(const std::string& event_name, const uint32_t file_id) {
     if (event_name.compare("SET_CURSOR") == 0) {
         bool write_lock(true);
-	carta::queuing_rw_mutex_scoped lock(&_cursor_mutex, write_lock);
+        carta::queuing_rw_mutex_scoped lock(&_cursor_mutex, write_lock);
         FileSettings::cursor_iter cursor_results = _latest_cursor.find(file_id);
         if (cursor_results != _latest_cursor.end()) {
             auto cursor_info = cursor_results->second;
