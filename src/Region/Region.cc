@@ -359,18 +359,6 @@ casacore::LCRegion* Region::GetImageRegion(
         return lc_region;
     }
 
-    // TODO: remove this, for pvgen debugging only
-    if (_region_state.type == CARTA::RegionType::RECTANGLE) {
-        // Polygon approximation could be 1000 points, get 4 corners with midpoints instead
-        std::vector<CARTA::Point> points = GetApproximatePolygonPoints(6); // in ref image coords
-        casacore::Vector<casacore::Double> x, y;
-        if (ConvertPointsToImagePixels(points, output_csys, x, y)) {
-            spdlog::debug(
-                "polygon[[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], ", x[0], y[0], x[1], y[1], x[2], y[2]);
-            spdlog::debug("[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", x[3], y[3], x[4], y[4], x[5], y[5]);
-        }
-    }
-
     std::lock_guard<std::mutex> guard(_region_approx_mutex);
     lc_region = GetCachedLCRegion(file_id);
 
