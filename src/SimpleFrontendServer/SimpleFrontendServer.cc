@@ -172,7 +172,7 @@ bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
         ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
         obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
-        obj["version"] = 1;
+        obj["version"] = 2;
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
