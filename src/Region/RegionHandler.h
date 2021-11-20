@@ -132,19 +132,19 @@ private:
     bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, std::shared_ptr<Frame>& frame, double& increment,
         casacore::Matrix<float>& profiles, std::function<void(float)>& progress_callback, bool& cancelled, std::string& message);
     void SetLineRotation(RegionState& region_state);
-    bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, size_t num_profiles, RegionState& region_state,
-        casacore::CoordinateSystem* csys, casacore::Matrix<float>& profiles, double& increment,
-        std::function<void(float)>& progress_callback, bool& cancelled);
+    bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state, casacore::CoordinateSystem* csys,
+        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
-    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, size_t num_profiles, RegionState& region_state,
-        casacore::CoordinateSystem* csys, casacore::Matrix<float>& profiles, double& increment,
-        std::function<void(float)>& progress_callback, bool& cancelled, std::string& message);
+    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state, casacore::CoordinateSystem* csys,
+        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
+        std::string& message);
     casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
         const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
-    RegionState GetBoxRegionState(
-        int file_id, const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int width, float rotation);
-    casacore::Vector<float> GetTemporaryBoxRegionProfile(
+    RegionState GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,
+        const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, double angular_width, float height_angle,
+        double tolerance);
+    casacore::Vector<float> GetTemporaryRegionProfile(
         int file_id, RegionState& region_state, casacore::CoordinateSystem* csys, bool per_z, double& num_pixels);
 
     // Regions: key is region_id
