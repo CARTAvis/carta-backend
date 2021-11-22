@@ -1834,7 +1834,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, const casacore::I
     casacore::Quantity cdelt2(inc2, cunit2);
     increment = cdelt2.get("arcsec").getValue();
     double angular_width = width * increment;
-	spdlog::debug("Increment={} arcsec, width={} arcsec", increment, angular_width);
+    spdlog::debug("Increment={} arcsec, width={} arcsec", increment, angular_width);
 
     // Number of profiles
     int num_offsets = lround(line_separation / increment) / 2;
