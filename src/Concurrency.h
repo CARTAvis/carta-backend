@@ -106,20 +106,19 @@ public:
 private:
     std::mutex _mtx;
     std::condition_variable _readers_cv;
-    std::list<std::condition_variable*> _writers_cv_list;
+    std::list<std::shared_ptr<std::condition_variable>> _writers_cv_list;
     short _reader_count;
     short _writer_count;
 
     void queue_writer(std::unique_lock<std::mutex>& mtx) {
-        std::condition_variable* cv = new std::condition_variable();
+        std::shared_ptr<std::condition_variable> cv;
         _writers_cv_list.push_front(cv);
         cv->wait(mtx);
     }
     void dequeue_one_writer() {
-        std::condition_variable* cv = _writers_cv_list.back();
+        std::shared_ptr<std::condition_variable> cv = _writers_cv_list.back();
         _writers_cv_list.pop_back();
         cv->notify_one();
-        delete cv;
     }
 };
 
