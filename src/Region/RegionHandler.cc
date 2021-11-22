@@ -1653,6 +1653,11 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
         box_centers[idx] = point;
     }
 
+    if (per_z && _stop_pv[file_id]) {
+        cancelled = true;
+        return false;
+    }
+
     float progress(0.0);
     if (CheckLinearOffsets(box_centers, csys, increment)) {
         size_t num_regions(box_centers.size());
@@ -1804,7 +1809,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     auto cunit2 = csys->worldAxisUnits()(1);
     casacore::Quantity cdelt2(inc2, cunit2);
     increment = cdelt2.get("arcsec").getValue();
-    double target_width = width * increment;
+    double angular_width = width * increment;
 
     // Number of profiles
     int num_profiles = lround(line_separation / increment);
@@ -1813,17 +1818,23 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
 
     casacore::Vector<double> pos_box_start(line_center.copy()), neg_box_start(line_center.copy());
     float progress(0.0);
+    int reference_file_id(region_state.reference_file_id);
 
     // Get points along line from center out with increment spacing to set regions
     for (int i = 0; i < num_offsets; ++i) {
+        if (per_z && _stop_pv[file_id]) {
+            cancelled = true;
+            return false;
+        }
+
         // Find ends of box regions, at increment from start of box
         casacore::Vector<double> pos_box_end = FindPointAtTargetSeparation(direction_coord, pos_box_start, endpoint0, increment, tolerance);
-        casacore::Vector<double> neg_box_end = FindPointAtTargetSeparation(direction_coord, neg_box_start, endpoint1, increment, tolerance);
 
         if (!pos_box_end.empty()) {
             // Set temporary region for reference image and get profile for requested file_id
             RegionState temp_region_state = GetTemporaryRegionState(
-                direction_coord, region_state.reference_file_id, pos_box_start, pos_box_end, target_width, rotation, tolerance);
+                direction_coord, reference_file_id, pos_box_start, pos_box_end, width, angular_width, rotation, tolerance);
+
             double num_pixels(0.0);
             casacore::Vector<float> region_profile = GetTemporaryRegionProfile(file_id, temp_region_state, csys, per_z, num_pixels);
             spdlog::debug("Line box region {} max num pixels={}\n", num_offsets + i, num_pixels);
@@ -1840,10 +1851,17 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             pos_box_start = pos_box_end;
         }
 
+        if (per_z && _stop_pv[file_id]) {
+            cancelled = true;
+            return false;
+        }
+
+        casacore::Vector<double> neg_box_end = FindPointAtTargetSeparation(direction_coord, neg_box_start, endpoint1, increment, tolerance);
+
         if (!neg_box_end.empty()) {
             // Set temporary region for reference image and get profile for requested file_id
             RegionState temp_region_state = GetTemporaryRegionState(
-                direction_coord, region_state.reference_file_id, neg_box_start, neg_box_end, target_width, rotation, tolerance);
+                direction_coord, reference_file_id, neg_box_start, neg_box_end, width, angular_width, rotation, tolerance);
             double num_pixels(0.0);
             casacore::Vector<float> region_profile = GetTemporaryRegionProfile(file_id, temp_region_state, csys, per_z, num_pixels);
             spdlog::debug("Line box region {} max num pixels={}\n", num_offsets - (i + 1), num_pixels);
@@ -1925,8 +1943,8 @@ casacore::Vector<double> RegionHandler::FindPointAtTargetSeparation(const casaco
 }
 
 RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,
-    const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, double angular_width, float line_rotation,
-    double tolerance) {
+    const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int pixel_width, double angular_width,
+    float line_rotation, double tolerance) {
     // Return RegionState for polygon region describing a box with given start and end (pixel coords) on line with rotation.
     // Get box corners with angular width to get box corners.
     // Polygon control points are corners of this box.
@@ -1949,15 +1967,15 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
 
     // Find box corners from box start
     // Endpoint in positive direction 3 pixels out from box start
-    endpoint(0) = box_start(0) - (3 * cos_x);
-    endpoint(1) = box_start(1) - (3 * sin_x);
+    endpoint(0) = box_start(0) - (pixel_width * cos_x);
+    endpoint(1) = box_start(1) - (pixel_width * sin_x);
     corner = FindPointAtTargetSeparation(direction_coord, box_start, endpoint, half_width, tolerance);
     point.set_x(corner(0));
     point.set_y(corner(1));
     control_points[0] = point;
     // Endpoint in negative direction 3 pixels out from box start
-    endpoint(0) = box_start(0) + (3 * cos_x);
-    endpoint(1) = box_start(1) + (3 * sin_x);
+    endpoint(0) = box_start(0) + (pixel_width * cos_x);
+    endpoint(1) = box_start(1) + (pixel_width * sin_x);
     corner = FindPointAtTargetSeparation(direction_coord, box_start, endpoint, half_width, tolerance);
     point.set_x(corner(0));
     point.set_y(corner(1));
@@ -1965,15 +1983,15 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
 
     // Find box corners from box end
     // Endpoint in positive direction 3 pixels out from box end
-    endpoint(0) = box_end(0) - (3 * cos_x);
-    endpoint(1) = box_end(1) - (3 * sin_x);
+    endpoint(0) = box_end(0) - (pixel_width * cos_x);
+    endpoint(1) = box_end(1) - (pixel_width * sin_x);
     corner = FindPointAtTargetSeparation(direction_coord, box_end, endpoint, half_width, tolerance);
     point.set_x(corner(0));
     point.set_y(corner(1));
     control_points[1] = point;
     // Endpoint in negative direction 3 pixels out from box end
-    endpoint(0) = box_end(0) + (3 * cos_x);
-    endpoint(1) = box_end(1) + (3 * sin_x);
+    endpoint(0) = box_end(0) + (pixel_width * cos_x);
+    endpoint(1) = box_end(1) + (pixel_width * sin_x);
     corner = FindPointAtTargetSeparation(direction_coord, box_end, endpoint, half_width, tolerance);
     point.set_x(corner(0));
     point.set_y(corner(1));

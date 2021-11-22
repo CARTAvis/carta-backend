@@ -142,8 +142,8 @@ private:
     casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
         const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
     RegionState GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,
-        const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, double angular_width, float height_angle,
-        double tolerance);
+        const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int pixel_width, double angular_width,
+        float height_angle, double tolerance);
     casacore::Vector<float> GetTemporaryRegionProfile(
         int file_id, RegionState& region_state, casacore::CoordinateSystem* csys, bool per_z, double& num_pixels);
 
