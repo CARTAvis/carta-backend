@@ -136,9 +136,10 @@ private:
         std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
-    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state, casacore::CoordinateSystem* csys,
-        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
-        std::string& message);
+    bool GetFixedAngularRegionProfiles(int file_id, const casacore::IPosition& image_shape, int width, bool per_z,
+        RegionState& region_state, casacore::CoordinateSystem* csys, std::function<void(float)>& progress_callback,
+        casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message);
+    bool SetPointInRange(float max_point, float& point);
     casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
         const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
     RegionState GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,

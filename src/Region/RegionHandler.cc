@@ -1569,8 +1569,8 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
     if (GetFixedPixelRegionProfiles(file_id, width, per_z, region_state, csys, progress_callback, profiles, increment, cancelled)) {
         spdlog::debug("Using fixed pixel increment for line box regions.");
         profiles_complete = true;
-    } else if (!cancelled && GetFixedAngularRegionProfiles(
-                                 file_id, width, per_z, region_state, csys, progress_callback, profiles, increment, cancelled, message)) {
+    } else if (!cancelled && GetFixedAngularRegionProfiles(file_id, frame->ImageShape(), width, per_z, region_state, csys,
+                                 progress_callback, profiles, increment, cancelled, message)) {
         spdlog::debug("Using fixed angular increment for line box regions.");
         profiles_complete = true;
     }
@@ -1767,24 +1767,48 @@ double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
     return cdelt2.get("arcsec").getValue() * 0.01;
 }
 
-bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-    casacore::CoordinateSystem* csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment,
-    bool& cancelled, std::string& message) {
+bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, const casacore::IPosition& image_shape, int width, bool per_z,
+    RegionState& region_state, casacore::CoordinateSystem* csys, std::function<void(float)>& progress_callback,
+    casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message) {
     // Calculate mean spectral profiles for polygon regions along line with fixed angular spacing, with progress updates after each profile.
     // Returns false if profiles cancelled or failed, with an error message.
     // Return parameters include the profiles, the increment between the regions in arcsec, and whether profiles were cancelled.
     auto endpoints = region_state.control_points;
     auto rotation = region_state.rotation;
 
-    casacore::Vector<double> endpoint0(2), endpoint1(2);
-    endpoint0[0] = endpoints[0].x();
-    endpoint0[1] = endpoints[0].y();
-    endpoint1[0] = endpoints[1].x();
-    endpoint1[1] = endpoints[1].y();
+    auto end0x = endpoints[0].x();
+    auto end0y = endpoints[0].y();
+    auto end1x = endpoints[1].x();
+    auto end1y = endpoints[1].y();
+    float max_x = image_shape(0) - 1;
+    float max_y = image_shape(1) - 1;
+
+    // Check if line is entirely outside image
+    bool line_x_outside = ((end0x < 0) && (end1x < 0)) || ((end0x > max_x) && (end1x > max_x));
+    bool line_y_outside = ((end0y < 0) && (end1y < 0)) || ((end0y > max_y) && (end1y > max_y));
+    if (line_x_outside && line_y_outside) {
+        message = "Line approximation failed: line is completely outside image.";
+        return false;
+    }
+
+    // Cannot convert pixels outside line to world coordinates, so shorten line inside image
+    bool set_x0 = SetPointInRange(max_x, end0x);
+    bool set_y0 = SetPointInRange(max_y, end0y);
+    bool set_x1 = SetPointInRange(max_x, end1x);
+    bool set_y1 = SetPointInRange(max_y, end1y);
+    if (set_x0 || set_y0 || set_x1 || set_y1) {
+        spdlog::warn("Using line segment inside image only.");
+    }
 
     // Convert pixel coordinates to MVDirection to get angular separation of entire line
+    casacore::Vector<double> endpoint0(2), endpoint1(2);
+    endpoint0[0] = end0x;
+    endpoint0[1] = end0y;
+    endpoint1[0] = end1x;
+    endpoint1[1] = end1y;
     auto direction_coord = csys->directionCoordinate();
     casacore::MVDirection mvdir0, mvdir1;
+
     try {
         mvdir0 = direction_coord.toWorld(endpoint0);
         mvdir1 = direction_coord.toWorld(endpoint1);
@@ -1810,15 +1834,17 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     casacore::Quantity cdelt2(inc2, cunit2);
     increment = cdelt2.get("arcsec").getValue();
     double angular_width = width * increment;
+	spdlog::debug("Increment={} arcsec, width={} arcsec", increment, angular_width);
 
     // Number of profiles
-    int num_profiles = lround(line_separation / increment);
-    int num_offsets = num_profiles / 2;
+    int num_offsets = lround(line_separation / increment) / 2;
+    int num_profiles = num_offsets * 2;
+
     spdlog::debug("Angular profiles num_profiles={}, num offsets={}", num_profiles, num_offsets);
 
-    casacore::Vector<double> pos_box_start(line_center.copy()), neg_box_start(line_center.copy());
-    float progress(0.0);
     int reference_file_id(region_state.reference_file_id);
+    float progress(0.0);
+    casacore::Vector<double> pos_box_start(line_center.copy());
 
     // Get points along line from center out with increment spacing to set regions
     for (int i = 0; i < num_offsets; ++i) {
@@ -1851,6 +1877,13 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             pos_box_start = pos_box_end;
         }
 
+        // Update progress
+        progress = float(i + 1) / float(num_profiles);
+        progress_callback(progress);
+    }
+
+    casacore::Vector<double> neg_box_start(line_center.copy());
+    for (int i = 0; i < num_offsets; ++i) {
         if (per_z && _stop_pv[file_id]) {
             cancelled = true;
             return false;
@@ -1879,11 +1912,26 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
         }
 
         // Update progress
-        progress = float(i + 1) / float(num_offsets);
+        progress = float(num_offsets + i + 1) / float(num_profiles);
         progress_callback(progress);
     }
 
     return (progress == 1.0) && !allEQ(profiles, NAN);
+}
+
+bool RegionHandler::SetPointInRange(float max_point, float& point) {
+    // Sets point in range 0 to max_size; returns whether point was changed
+    bool point_set(false);
+
+    if (point < 0.0) {
+        point = 0.0;
+        point_set = true;
+    } else if (point > max_point) {
+        point = max_point;
+        point_set = true;
+    }
+
+    return point_set;
 }
 
 casacore::Vector<double> RegionHandler::FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
