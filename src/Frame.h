@@ -303,7 +303,7 @@ protected:
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
 
-    // Image generators
+    // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
 };
 
