@@ -302,6 +302,20 @@ CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> 
     return resume_session;
 }
 
+CARTA::FileListRequest Message::FileListRequest(std::string directory) {
+    CARTA::FileListRequest file_list_request;
+    file_list_request.set_directory(directory);
+    return file_list_request;
+}
+
+CARTA::FileInfoRequest Message::FileInfoRequest(std::string directory, std::string file, std::string hdu) {
+    CARTA::FileInfoRequest file_info_request;
+    file_info_request.set_directory(directory);
+    file_info_request.set_file(file);
+    file_info_request.set_hdu(hdu);
+    return file_info_request;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

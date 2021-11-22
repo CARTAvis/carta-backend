@@ -9,6 +9,8 @@
 
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/file_info.pb.h>
+#include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
@@ -72,6 +74,8 @@ public:
     static CARTA::ImageProperties ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
         CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
+    static CARTA::FileListRequest FileListRequest(std::string directory);
+    static CARTA::FileInfoRequest FileInfoRequest(std::string directory, std::string file, std::string hdu);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
