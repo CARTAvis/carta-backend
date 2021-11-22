@@ -71,8 +71,8 @@ public:
         snippets_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/snippets";
 
         example_options = R"({
-            "$schema": "https://cartavis.github.io/schemas/preference_schema_1.json",
-            "version": 1,
+            "$schema": "https://cartavis.github.io/schemas/preferences_schema_2.json",
+            "version": 2,
             "astGridVisible": false,
             "beamColor": "#8A9BA8",
             "beamType": "open",
