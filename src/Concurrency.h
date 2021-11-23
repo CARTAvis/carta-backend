@@ -89,6 +89,7 @@ public:
         --_reader_count;
 
         if ((_reader_count == 0) && (_writer_count > 0)) {
+            --_writer_count;
             dequeue_one_writer();
         }
     }
@@ -106,19 +107,22 @@ public:
 private:
     std::mutex _mtx;
     std::condition_variable _readers_cv;
-    std::list<std::shared_ptr<std::condition_variable>> _writers_cv_list;
+    std::list<std::condition_variable*> _writers_cv_list;
     short _reader_count;
     short _writer_count;
 
     void queue_writer(std::unique_lock<std::mutex>& mtx) {
-        std::shared_ptr<std::condition_variable> cv;
+        std::condition_variable* cv = new std::condition_variable;
         _writers_cv_list.push_front(cv);
         cv->wait(mtx);
     }
     void dequeue_one_writer() {
-        std::shared_ptr<std::condition_variable> cv = _writers_cv_list.back();
-        _writers_cv_list.pop_back();
-        cv->notify_one();
+        if (!_writers_cv_list.empty()) {
+            std::condition_variable* cv = _writers_cv_list.back();
+            _writers_cv_list.pop_back();
+            cv->notify_one();
+            delete cv;
+        }
     }
 };
 
