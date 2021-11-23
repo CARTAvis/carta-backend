@@ -548,7 +548,7 @@ public:
                         auto search = subdirectories.find(subdirectory.name());
                         EXPECT_NE(search, subdirectories.end());
                         if (search != subdirectories.end()) {
-                            EXPECT_EQ(subdirectory.item_count(), 0);
+                            EXPECT_EQ(subdirectory.item_count(), 1);
                         }
                     }
                 }
