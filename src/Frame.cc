@@ -1543,11 +1543,11 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // ****************************************************
 // Region/Slicer Support (Frame manages image mutex)
 
-casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region) {
+casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
     casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape());
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(), report_error);
     delete coord_sys;
     return image_region;
 }

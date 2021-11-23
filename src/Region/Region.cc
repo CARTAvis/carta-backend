@@ -351,7 +351,7 @@ bool Region::EllipsePointsToWorld(
 // Apply region to any image
 
 casacore::LCRegion* Region::GetImageRegion(
-    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape, bool report_error) {
     // Apply region to non-reference image as converted polygon vertices
     // Will return nullptr if outside image or is not a closed LCRegion (line or polyline)
     casacore::LCRegion* lc_region(nullptr);
@@ -365,13 +365,13 @@ casacore::LCRegion* Region::GetImageRegion(
     if (!lc_region) {
         if (file_id == _region_state.reference_file_id) {
             // Convert reference WCRegion to LCRegion and cache it
-            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, report_error);
         } else {
             bool use_polygon = UseApproximatePolygon(output_csys); // check region distortion
 
             if (!use_polygon) {
                 // No distortion, do direct region conversion if possible (unless outside image or rotbox)
-                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, report_error);
             }
 
             if (lc_region) {
@@ -800,7 +800,7 @@ casacore::LCRegion* Region::GetCachedLCRegion(int file_id) {
 }
 
 casacore::LCRegion* Region::GetConvertedLCRegion(
-    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape, bool report_error) {
     // Convert 2D reference WCRegion to LCRegion in output coord_sys and shape
     casacore::LCRegion* lc_region(nullptr);
     bool is_reference_image(file_id == _region_state.reference_file_id);
@@ -828,7 +828,9 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
             lc_region = casacore::LCRegion::fromRecord(region_record, "");
         }
     } catch (const casacore::AipsError& err) {
-        spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
+        if (report_error) {
+            spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
+        }
     }
 
     if (lc_region) {

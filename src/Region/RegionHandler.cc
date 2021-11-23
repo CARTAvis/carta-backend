@@ -666,7 +666,7 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
-casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id) {
+casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -677,7 +677,7 @@ casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id)
         return nullptr;
     }
 
-    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id));
+    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), report_error);
 }
 
 bool RegionHandler::ApplyRegionToFile(
@@ -1065,7 +1065,8 @@ bool RegionHandler::FillSpectralProfileData(
                 }
 
                 // Return spectral profile for this requirement
-                profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
+                bool report_error(true);
+                profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats, report_error,
                     [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         CARTA::SpectralProfileData profile_message = Message::SpectralProfileData(
                             config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
@@ -1079,7 +1080,7 @@ bool RegionHandler::FillSpectralProfileData(
 }
 
 bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
-    std::vector<CARTA::StatsType>& required_stats,
+    std::vector<CARTA::StatsType>& required_stats, bool report_error,
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // Fill spectral profile message for given region, file, and requirement
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -1124,7 +1125,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get 2D region to check if inside image
-    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id, report_error);
     if (!lcregion) {
         progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
@@ -1776,36 +1777,12 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, const casacore::I
     auto endpoints = region_state.control_points;
     auto rotation = region_state.rotation;
 
-    auto end0x = endpoints[0].x();
-    auto end0y = endpoints[0].y();
-    auto end1x = endpoints[1].x();
-    auto end1y = endpoints[1].y();
-    float max_x = image_shape(0) - 1;
-    float max_y = image_shape(1) - 1;
-
-    // Check if line is entirely outside image
-    bool line_x_outside = ((end0x < 0) && (end1x < 0)) || ((end0x > max_x) && (end1x > max_x));
-    bool line_y_outside = ((end0y < 0) && (end1y < 0)) || ((end0y > max_y) && (end1y > max_y));
-    if (line_x_outside && line_y_outside) {
-        message = "Line approximation failed: line is completely outside image.";
-        return false;
-    }
-
-    // Cannot convert pixels outside line to world coordinates, so shorten line inside image
-    bool set_x0 = SetPointInRange(max_x, end0x);
-    bool set_y0 = SetPointInRange(max_y, end0y);
-    bool set_x1 = SetPointInRange(max_x, end1x);
-    bool set_y1 = SetPointInRange(max_y, end1y);
-    if (set_x0 || set_y0 || set_x1 || set_y1) {
-        spdlog::warn("Using line segment inside image only.");
-    }
-
     // Convert pixel coordinates to MVDirection to get angular separation of entire line
     casacore::Vector<double> endpoint0(2), endpoint1(2);
-    endpoint0[0] = end0x;
-    endpoint0[1] = end0y;
-    endpoint1[0] = end1x;
-    endpoint1[1] = end1y;
+    endpoint0[0] = endpoints[0].x();
+    endpoint0[1] = endpoints[0].y();
+    endpoint1[0] = endpoints[1].x();
+    endpoint1[1] = endpoints[1].y();
     auto direction_coord = csys->directionCoordinate();
     casacore::MVDirection mvdir0, mvdir1;
 
@@ -2097,8 +2074,11 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
         _spectral_req[config_id] = region_config;
         ulock.unlock();
 
+        // Do not report errors for line regions outside image
+        bool report_error(false);
+
         // Get region spectral profiles
-        bool profile_ok = GetRegionSpectralData(region_id, file_id, coordinate, stokes_index, required_stats,
+        bool profile_ok = GetRegionSpectralData(region_id, file_id, coordinate, stokes_index, required_stats, report_error,
             [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                 if (progress == 1.0) {
                     // Get mean spectral profile and max NumPixels for small region.  Callback does nothing, not needed.

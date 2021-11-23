@@ -114,7 +114,7 @@ private:
 
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
-    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
+    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id, bool report_error = true);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
         casacore::LCRegion* region_2D = nullptr);
 
@@ -122,7 +122,7 @@ private:
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
         std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
-        std::vector<CARTA::StatsType>& required_stats,
+        std::vector<CARTA::StatsType>& required_stats, bool report_error,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);

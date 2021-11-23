@@ -164,7 +164,7 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
