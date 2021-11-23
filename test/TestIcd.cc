@@ -541,7 +541,7 @@ public:
                     }
                 }
 
-                std::set<std::string> subdirectories = {"empty.fits", "empty.hdf5", "empty.image", "empty.miriad"};
+                std::set<std::string> subdirectories = {"empty.fits", "empty.hdf5", "empty.image", "empty.miriad", "empty_folder"};
                 EXPECT_EQ(response.subdirectories_size(), subdirectories.size());
                 if (response.subdirectories_size() == subdirectories.size()) {
                     for (auto subdirectory : response.subdirectories()) {
