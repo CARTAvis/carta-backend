@@ -12,6 +12,8 @@
 #include "Timer/Timer.h"
 #include "Util/Message.h"
 
+static const std::string MIX_DIR = (TestRoot() / "data" / "images" / "mix").string();
+
 void CheckHeaderEntry(const CARTA::HeaderEntry& header_entry, const std::string& value, const CARTA::EntryType& entry_type,
     double numeric_value = std::numeric_limits<double>::quiet_NaN(), const std::string& comment = "") {
     EXPECT_EQ(header_entry.value(), value);
@@ -518,8 +520,7 @@ public:
     }
 
     void FileList() {
-        std::string test_folder = (TestRoot() / "data" / "images" / "mix").string();
-        auto request = Message::FileListRequest(test_folder);
+        auto request = Message::FileListRequest(MIX_DIR);
         _message_count = 0;
         _dummy_backend->Receive(request);
         _dummy_backend->WaitForJobFinished();
@@ -529,22 +530,20 @@ public:
             auto event_type = Message::EventType(message);
             if (event_type == CARTA::EventType::FILE_LIST_RESPONSE) {
                 auto response = Message::DecodeMessage<CARTA::FileListResponse>(message);
-                int files_size = 4;
-                int subdirectories_size = 5;
                 EXPECT_TRUE(response.success());
 
-                EXPECT_EQ(response.files_size(), files_size);
                 std::set<std::string> files = {"M17_SWex_unit.fits", "M17_SWex_unit.hdf5", "M17_SWex_unit.image", "M17_SWex_unit.miriad"};
-                if (response.files_size() == files_size) {
+                EXPECT_EQ(response.files_size(), files.size());
+                if (response.files_size() == files.size()) {
                     for (auto file : response.files()) {
                         auto search = files.find(file.name());
                         EXPECT_NE(search, files.end());
                     }
                 }
 
-                EXPECT_EQ(response.subdirectories_size(), subdirectories_size);
-                std::set<std::string> subdirectories = {"empty.fits", "empty.hdf5", "empty.image", "empty.miriad", "empty_folder"};
-                if (response.subdirectories_size() == subdirectories_size) {
+                std::set<std::string> subdirectories = {"empty.fits", "empty.hdf5", "empty.image", "empty.miriad"};
+                EXPECT_EQ(response.subdirectories_size(), subdirectories.size());
+                if (response.subdirectories_size() == subdirectories.size()) {
                     for (auto subdirectory : response.subdirectories()) {
                         auto search = subdirectories.find(subdirectory.name());
                         EXPECT_NE(search, subdirectories.end());
@@ -560,8 +559,7 @@ public:
     }
 
     void FileInfo(const std::string& filename, const std::string& hdu = "") {
-        std::string directory = (TestRoot() / "data" / "images" / "mix").string();
-        auto request = Message::FileInfoRequest(directory, filename, "");
+        auto request = Message::FileInfoRequest(MIX_DIR, filename, "");
         _message_count = 0;
         _dummy_backend->Receive(request);
 
@@ -589,6 +587,7 @@ public:
                         EXPECT_EQ(file_info_extended[hdu].height(), height);
                         EXPECT_EQ(file_info_extended[hdu].depth(), depth);
                         EXPECT_EQ(file_info_extended[hdu].stokes(), stokes);
+
                         for (auto header_entry : file_info_extended[hdu].header_entries()) {
                             if (header_entry.name() == "SIMPLE") {
                                 CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0, "Standard FITS");
