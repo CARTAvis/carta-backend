@@ -52,14 +52,15 @@ TEST_F(FileListTest, SetTopLevelFolder) {
 
     auto request1 = Message::FileListRequest(abs_path);
     TestFileList("/", "", request1);
+    TestFileList("", "", request1, false);
 
-    auto request2 = Message::FileListRequest(abs_path);
-    TestFileList("", "", request2, false);
+    auto request2 = Message::FileListRequest("data/images/mix");
+    TestFileList(TestRoot().string(), "", request2);
 
-    auto request3 = Message::FileListRequest("data/images/mix");
-    TestFileList(TestRoot().string(), "", request3);
+    auto request3 = Message::FileListRequest("");
+    TestFileList(abs_path, "", request3);
 
-    auto request4 = Message::FileListRequest("");
+    auto request4 = Message::FileListRequest(".");
     TestFileList(abs_path, "", request4);
 }
 
@@ -71,10 +72,8 @@ TEST_F(FileListTest, SetStartingFolder) {
 
     auto request2 = Message::FileListRequest("$BASE");
     TestFileList(TestRoot().string(), "data/images/mix", request2);
-
-    auto request3 = Message::FileListRequest("$BASE");
-    TestFileList("/", abs_path, request3);
-    TestFileList("", abs_path, request3, false);
+    TestFileList("/", abs_path, request2);
+    TestFileList("", abs_path, request2, false);
 }
 
 TEST_F(FileListTest, AccessFalseFolder) {
@@ -83,9 +82,9 @@ TEST_F(FileListTest, AccessFalseFolder) {
 }
 
 TEST_F(FileListTest, AccessForbiddenFolder) {
-    auto request1 = Message::FileListRequest("usr");
+    auto request1 = Message::FileListRequest("..");
     TestFileList(TestRoot().string(), "", request1, false);
 
-    auto request2 = Message::FileListRequest("../../../");
+    auto request2 = Message::FileListRequest("../../..");
     TestFileList(TestRoot().string(), "", request2, false);
 }
