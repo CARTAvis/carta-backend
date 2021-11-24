@@ -12,8 +12,6 @@
 #include "Timer/Timer.h"
 #include "Util/Message.h"
 
-static const std::string MIX_DIR = (TestRoot() / "data" / "images" / "mix").string();
-
 void CheckHeaderEntry(const CARTA::HeaderEntry& header_entry, const std::string& value, const CARTA::EntryType& entry_type,
     double numeric_value = std::numeric_limits<double>::quiet_NaN(), const std::string& comment = "") {
     EXPECT_EQ(header_entry.value(), value);
@@ -519,47 +517,9 @@ public:
         EXPECT_EQ(_message_count, 1);
     }
 
-    void FileList() {
-        auto request = Message::FileListRequest(MIX_DIR);
-        _message_count = 0;
-        _dummy_backend->Receive(request);
-        _dummy_backend->WaitForJobFinished();
-
-        while (_dummy_backend->TryPopMessagesQueue(_message_pair)) {
-            std::vector<char> message = _message_pair.first;
-            auto event_type = Message::EventType(message);
-            if (event_type == CARTA::EventType::FILE_LIST_RESPONSE) {
-                auto response = Message::DecodeMessage<CARTA::FileListResponse>(message);
-                EXPECT_TRUE(response.success());
-
-                std::set<std::string> files = {"M17_SWex_unit.fits", "M17_SWex_unit.hdf5", "M17_SWex_unit.image", "M17_SWex_unit.miriad"};
-                EXPECT_EQ(response.files_size(), files.size());
-                if (response.files_size() == files.size()) {
-                    for (auto file : response.files()) {
-                        auto search = files.find(file.name());
-                        EXPECT_NE(search, files.end());
-                    }
-                }
-
-                std::set<std::string> subdirectories = {"empty.fits", "empty.hdf5", "empty.image", "empty.miriad", "empty_folder"};
-                EXPECT_EQ(response.subdirectories_size(), subdirectories.size());
-                if (response.subdirectories_size() == subdirectories.size()) {
-                    for (auto subdirectory : response.subdirectories()) {
-                        auto search = subdirectories.find(subdirectory.name());
-                        EXPECT_NE(search, subdirectories.end());
-                        if (search != subdirectories.end()) {
-                            EXPECT_EQ(subdirectory.item_count(), 1);
-                        }
-                    }
-                }
-            }
-            ++_message_count;
-        }
-        EXPECT_EQ(_message_count, 1);
-    }
-
     void FileInfo(const std::string& filename, const std::string& hdu = "") {
-        auto request = Message::FileInfoRequest(MIX_DIR, filename, "");
+        std::string directory = (TestRoot() / "data" / "images" / "mix").string();
+        auto request = Message::FileInfoRequest(directory, filename, "");
         _message_count = 0;
         _dummy_backend->Receive(request);
 
@@ -662,10 +622,6 @@ TEST_F(IcdTest, AnimatorPlayback) {
 
 TEST_F(IcdTest, RegionRegister) {
     RegionRegister();
-}
-
-TEST_F(IcdTest, FileList) {
-    FileList();
 }
 
 TEST_F(IcdTest, FileInfo) {
