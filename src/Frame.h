@@ -17,8 +17,6 @@
 #include <shared_mutex>
 #include <unordered_map>
 
-#include <tbb/queuing_rw_mutex.h>
-
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
@@ -30,6 +28,7 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
+#include "Concurrency.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
@@ -276,12 +275,12 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    std::vector<float> _image_cache;    // image data for current z, stokes
-    bool _image_cache_valid;            // cached image data is valid for current z and stokes
-    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
-    std::mutex _image_mutex;            // only one disk access at a time
-    bool _cache_loaded;                 // channel cache is set
-    TileCache _tile_cache;              // cache for full-resolution image tiles
+    std::vector<float> _image_cache; // image data for current z, stokes
+    bool _image_cache_valid;         // cached image data is valid for current z and stokes
+    queuing_rw_mutex _cache_mutex;   // allow concurrent reads but lock for write
+    std::mutex _image_mutex;         // only one disk access at a time
+    bool _cache_loaded;              // channel cache is set
+    TileCache _tile_cache;           // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 
