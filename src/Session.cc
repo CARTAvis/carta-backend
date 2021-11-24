@@ -16,8 +16,6 @@
 #include <vector>
 
 #include <casacore/casa/OS/File.h>
-#include <tbb/parallel_for.h>
-#include <tbb/task_group.h>
 #include <zstd.h>
 
 #include <carta-protobuf/contour_image.pb.h>
