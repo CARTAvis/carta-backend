@@ -1850,42 +1850,37 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, const casacore::I
         }
     }
 
+    // initialize matrix size to fill in rows
+    profiles.resize(casacore::IPosition(2, num_profiles, _frames.at(file_id)->Depth()));
+    profiles = NAN;
+
     // Create polygons for box regions along line starting and ending at calculated points.
     // Starts at previous point (if any), ends at two points ahead (if any).
-    casacore::Vector<double> box_start, box_end;
+    int start_point, end_point;
 
     for (int i = 0; i < num_profiles; ++i) {
+        // Check if user cancelled
         if (per_z && _stop_pv[file_id]) {
             cancelled = true;
             return false;
         }
 
-        if (i == 0) { // first region
-            box_start = line_points(i);
-        } else {
-            box_start = line_points(i - 1);
-        }
+        // Set index for start of box and end of box
+        start_point = (i == 0 ? i : i - 1);
+        end_point = (i == (num_profiles - 1) ? i + 1 : i + 2);
+        casacore::Vector<double> box_start(line_points(start_point)), box_end(line_points(end_point));
 
-        if (i == (num_profiles - 1)) { // last region
-            box_end = line_points(i + 1);
+        if (box_start.empty() || box_end.empty()) {
+            // Likely part of line off image
+            spdlog::debug("Line box region {} max num pixels={}\n", i, "nan");
         } else {
-            box_end = line_points(i + 2);
-        }
-
-        // Set temporary region for reference image and get profile for requested file_id
-        if (!box_start.empty() && !box_end.empty()) {
+            // Set temporary region for reference image and get profile for requested file_id
             RegionState temp_region_state =
                 GetTemporaryRegionState(direction_coord, reference_file_id, box_start, box_end, width, angular_width, rotation, tolerance);
 
             double num_pixels(0.0);
             casacore::Vector<float> region_profile = GetTemporaryRegionProfile(file_id, temp_region_state, csys, per_z, num_pixels);
             spdlog::debug("Line box region {} max num pixels={}\n", i, num_pixels);
-
-            if (profiles.empty()) {
-                // initialize matrix size to fill in rows
-                profiles.resize(casacore::IPosition(2, num_profiles, region_profile.size()));
-                profiles = NAN;
-            }
 
             profiles.row(i) = region_profile;
         }
