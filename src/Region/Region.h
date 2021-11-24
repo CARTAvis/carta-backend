@@ -40,7 +40,7 @@ struct RegionState {
     std::vector<CARTA::Point> control_points;
     float rotation;
 
-    RegionState() {}
+    RegionState() : reference_file_id(-1), type(CARTA::RegionType::POINT), rotation(0) {}
     RegionState(int ref_file_id_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_)
         : reference_file_id(ref_file_id_), type(type_), control_points(control_points_), rotation(rotation_) {}
 

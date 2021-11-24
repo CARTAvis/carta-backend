@@ -4,17 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# FileSettings.h: uses tbb::concurrent_unordered_map to keep latest per-file settings
-//# Used for cursor and view settings
-
 #ifndef CARTA_BACKEND__FILESETTINGS_H_
 #define CARTA_BACKEND__FILESETTINGS_H_
 
 #include <mutex>
+#include <unordered_map>
 #include <utility>
 
-#include <tbb/concurrent_unordered_map.h>
-#include <tbb/queuing_rw_mutex.h>
+#include "Concurrency.h"
 
 #include <carta-protobuf/set_cursor.pb.h>
 
@@ -31,13 +28,13 @@ public:
 
 private:
     Session* _session;
-    tbb::queuing_rw_mutex _cursor_mutex;
+    carta::queuing_rw_mutex _cursor_mutex;
 
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
-    using cursor_iter = tbb::concurrent_unordered_map<uint32_t, cursor_info_t>::iterator;
+    using cursor_iter = std::unordered_map<uint32_t, cursor_info_t>::iterator;
     // map is <fileId, cursor info>
-    tbb::concurrent_unordered_map<uint32_t, cursor_info_t> _latest_cursor;
+    std::unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
 
 #endif // CARTA_BACKEND__FILESETTINGS_H_

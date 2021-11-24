@@ -16,8 +16,6 @@
 #include <vector>
 
 #include <casacore/casa/OS/File.h>
-#include <tbb/parallel_for.h>
-#include <tbb/task_group.h>
 #include <zstd.h>
 
 #include <carta-protobuf/contour_image.pb.h>
@@ -482,6 +480,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
         // query loader for mipmap dataset
         bool has_mipmaps(loader->HasMip(2));
+
+        // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
+        _loaders.Remove(fullname);
 
         if (frame->IsValid()) {
             // Check if the old _frames[file_id] object exists. If so, delete it.

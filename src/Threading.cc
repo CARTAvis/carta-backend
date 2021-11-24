@@ -44,6 +44,7 @@ void ThreadManager::StartEventHandlingThreads(int num_threads) {
 
         do {
             std::unique_lock<std::mutex> lock(_task_queue_mtx);
+
             if (_task_queue.empty() || !(tsk = _task_queue.front())) {
                 _task_queue_cv.wait(lock);
             } else {
