@@ -1813,34 +1813,73 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, const casacore::I
     double angular_width = width * increment;
     spdlog::debug("Increment={} arcsec, width={} arcsec", increment, angular_width);
 
-    // Number of profiles
+    // Number of profiles determined by line length and increment in arcsec
     int num_offsets = lround(line_separation / increment) / 2;
     int num_profiles = num_offsets * 2;
-
-    spdlog::debug("Angular profiles num_profiles={}, num offsets={}", num_profiles, num_offsets);
+    casacore::Vector<casacore::Vector<double>> line_points(num_profiles + 1);
+    line_points(num_offsets) = line_center;
+    spdlog::debug("Num offsets={} profiles={}", num_offsets, num_profiles);
 
     int reference_file_id(region_state.reference_file_id);
     float progress(0.0);
-    casacore::Vector<double> pos_box_start(line_center.copy());
+    casacore::Vector<double> pos_box_start(line_center.copy()), neg_box_start(line_center.copy());
 
     // Get points along line from center out with increment spacing to set regions
-    for (int i = 0; i < num_offsets; ++i) {
+    for (int i = 1; i <= num_offsets; ++i) {
         if (per_z && _stop_pv[file_id]) {
             cancelled = true;
             return false;
         }
 
-        // Find ends of box regions, at increment from start of box
-        casacore::Vector<double> pos_box_end = FindPointAtTargetSeparation(direction_coord, pos_box_start, endpoint0, increment, tolerance);
+        // Find ends of box regions, at increment from start of box in positive offset direction
+        if (!pos_box_start.empty()) {
+            casacore::Vector<double> pos_box_end =
+                FindPointAtTargetSeparation(direction_coord, pos_box_start, endpoint0, increment, tolerance);
+            line_points(num_offsets + i) = pos_box_end;
+            pos_box_start.resize();
+            pos_box_start = pos_box_end;
+        }
 
-        if (!pos_box_end.empty()) {
-            // Set temporary region for reference image and get profile for requested file_id
-            RegionState temp_region_state = GetTemporaryRegionState(
-                direction_coord, reference_file_id, pos_box_start, pos_box_end, width, angular_width, rotation, tolerance);
+        // Find ends of box regions, at increment from start of box in negative offset direction
+        if (!neg_box_start.empty()) {
+            casacore::Vector<double> neg_box_end =
+                FindPointAtTargetSeparation(direction_coord, neg_box_start, endpoint1, increment, tolerance);
+            line_points(num_offsets - i) = neg_box_end;
+            neg_box_start.resize();
+            neg_box_start = neg_box_end;
+        }
+    }
+
+    // Create polygons for box regions along line starting and ending at calculated points.
+    // Starts at previous point (if any), ends at two points ahead (if any).
+    casacore::Vector<double> box_start, box_end;
+
+    for (int i = 0; i < num_profiles; ++i) {
+        if (per_z && _stop_pv[file_id]) {
+            cancelled = true;
+            return false;
+        }
+
+        if (i == 0) { // first region
+            box_start = line_points(i);
+        } else {
+            box_start = line_points(i - 1);
+        }
+
+        if (i == (num_profiles - 1)) { // last region
+            box_end = line_points(i + 1);
+        } else {
+            box_end = line_points(i + 2);
+        }
+
+        // Set temporary region for reference image and get profile for requested file_id
+        if (!box_start.empty() && !box_end.empty()) {
+            RegionState temp_region_state =
+                GetTemporaryRegionState(direction_coord, reference_file_id, box_start, box_end, width, angular_width, rotation, tolerance);
 
             double num_pixels(0.0);
             casacore::Vector<float> region_profile = GetTemporaryRegionProfile(file_id, temp_region_state, csys, per_z, num_pixels);
-            spdlog::debug("Line box region {} max num pixels={}\n", num_offsets + i, num_pixels);
+            spdlog::debug("Line box region {} max num pixels={}\n", i, num_pixels);
 
             if (profiles.empty()) {
                 // initialize matrix size to fill in rows
@@ -1848,48 +1887,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, const casacore::I
                 profiles = NAN;
             }
 
-            profiles.row(num_offsets + i) = region_profile;
-
-            // Next region starts at end of this one
-            pos_box_start = pos_box_end;
+            profiles.row(i) = region_profile;
         }
 
         // Update progress
         progress = float(i + 1) / float(num_profiles);
-        progress_callback(progress);
-    }
-
-    casacore::Vector<double> neg_box_start(line_center.copy());
-    for (int i = 0; i < num_offsets; ++i) {
-        if (per_z && _stop_pv[file_id]) {
-            cancelled = true;
-            return false;
-        }
-
-        casacore::Vector<double> neg_box_end = FindPointAtTargetSeparation(direction_coord, neg_box_start, endpoint1, increment, tolerance);
-
-        if (!neg_box_end.empty()) {
-            // Set temporary region for reference image and get profile for requested file_id
-            RegionState temp_region_state = GetTemporaryRegionState(
-                direction_coord, reference_file_id, neg_box_start, neg_box_end, width, angular_width, rotation, tolerance);
-            double num_pixels(0.0);
-            casacore::Vector<float> region_profile = GetTemporaryRegionProfile(file_id, temp_region_state, csys, per_z, num_pixels);
-            spdlog::debug("Line box region {} max num pixels={}\n", num_offsets - (i + 1), num_pixels);
-
-            if (profiles.empty()) {
-                // initialize matrix size to fill in rows
-                profiles.resize(casacore::IPosition(2, num_profiles, region_profile.size()));
-                profiles = NAN;
-            }
-
-            profiles.row(num_offsets - (i + 1)) = region_profile;
-
-            // Next region starts at end of this one
-            neg_box_start = neg_box_end;
-        }
-
-        // Update progress
-        progress = float(num_offsets + i + 1) / float(num_profiles);
         progress_callback(progress);
     }
 
@@ -1974,11 +1976,6 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
     // Get box corners with angular width to get box corners.
     // Polygon control points are corners of this box.
     // Used for widefield images with nonlinear spacing, where pixel center is not angular center so cannot use rectangle definition.
-
-    // TODO: remove this, for pvgen debug
-    spdlog::debug("Angular box start: symbol[[{}pix, {}pix], .]", box_start(0), box_start(1));
-    spdlog::debug("Angular box end: symbol[[{}pix, {}pix], .]", box_end(0), box_end(1));
-
     double half_width = angular_width / 2.0;
     float cos_x = cos(line_rotation * M_PI / 180.0f);
     float sin_x = sin(line_rotation * M_PI / 180.0f);
