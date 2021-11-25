@@ -992,9 +992,9 @@ std::string Ds9ImportExport::AddExportRegionWorld(
                     region += fmt::format(", {:.4f}", control_points[i].getValue());
                 }
             } else {
-                region += fmt::format("{:.4f}", control_points[0].get("deg").getValue());
+                region += fmt::format("{:.6f}", control_points[0].get("deg").getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {
-                    region += fmt::format(", {:.4f}", control_points[i].get("deg").getValue());
+                    region += fmt::format(", {:.6f}", control_points[i].get("deg").getValue());
                 }
             }
             region += ")";
