@@ -10,31 +10,10 @@
 #include "Session.h"
 #include "Util/Message.h"
 
-static const std::string SAMPLE_FILE_PATH = (TestRoot() / "data" / "images" / "mix").string();
+static const std::string SAMPLE_FILES_PATH = (TestRoot() / "data" / "images" / "mix").string();
 
 class FileInfoTest : public ::testing::Test {
 public:
-    class TestSession : public Session {
-    public:
-        TestSession() : Session(nullptr, nullptr, 0, "", "/", "", nullptr, -1, false) {}
-
-        void TestFileInfo(const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu = "") {
-            auto request = Message::FileInfoRequest(SAMPLE_FILE_PATH, filename, "");
-            CARTA::FileInfoResponse response;
-            auto& file_info = *response.mutable_file_info();
-            std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
-            string message;
-            bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
-
-            if (success) {
-                *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
-            }
-            response.set_success(success);
-
-            CheckFileInfoResponse(filename, file_type, hdu, response);
-        }
-    };
-
     static void CheckFileInfoResponse(
         const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu, const CARTA::FileInfoResponse& response) {
         EXPECT_TRUE(response.success());
@@ -70,6 +49,16 @@ public:
                     CheckHeaderEntry(header_entry, "1", CARTA::EntryType::INT, 1);
                 } else if (header_entry.name() == "EXTEND") {
                     CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0);
+                } else if (header_entry.name() == "BSCALE") {
+                    CheckHeaderEntry(header_entry, "1.000000000000E+00", CARTA::EntryType::FLOAT, 1, "PHYSICAL = PIXEL*BSCALE + BZERO");
+                } else if (header_entry.name() == "PC1_1") {
+                    CheckHeaderEntry(header_entry, "1.000000000000E+00", CARTA::EntryType::FLOAT, 1);
+                } else if (header_entry.name() == "PC2_2") {
+                    CheckHeaderEntry(header_entry, "1.000000000000E+00", CARTA::EntryType::FLOAT, 1);
+                } else if (header_entry.name() == "PC3_3") {
+                    CheckHeaderEntry(header_entry, "1.000000000000E+00", CARTA::EntryType::FLOAT, 1);
+                } else if (header_entry.name() == "PC4_4") {
+                    CheckHeaderEntry(header_entry, "1.000000000000E+00", CARTA::EntryType::FLOAT, 1);
                 }
             }
 
@@ -84,6 +73,14 @@ public:
                     CheckHeaderEntry(computed_entries, "5", CARTA::EntryType::INT, 5);
                 } else if (computed_entries.name() == "Number of polarizations") {
                     CheckHeaderEntry(computed_entries, "1", CARTA::EntryType::INT, 1);
+                } else if (computed_entries.name() == "Coordinate type") {
+                    CheckHeaderEntry(computed_entries, "Right Ascension, Declination", CARTA::EntryType::STRING);
+                } else if (computed_entries.name() == "Velocity definition") {
+                    CheckHeaderEntry(computed_entries, "RADIO", CARTA::EntryType::STRING);
+                } else if (computed_entries.name() == "Pixel unit") {
+                    CheckHeaderEntry(computed_entries, "Jy/beam", CARTA::EntryType::STRING);
+                } else if (computed_entries.name() == "Pixel increment") {
+                    CheckHeaderEntry(computed_entries, "-0.4\", 0.4\"", CARTA::EntryType::STRING);
                 }
             }
         }
@@ -102,22 +99,43 @@ public:
     }
 };
 
+class TestSession : public Session {
+public:
+    TestSession() : Session(nullptr, nullptr, 0, "", "/", "", nullptr, -1, false) {}
+
+    void TestFileInfo(const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu = "") {
+        auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, filename, "");
+        CARTA::FileInfoResponse response;
+        auto& file_info = *response.mutable_file_info();
+        std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+        string message;
+        bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
+
+        if (success) {
+            *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+        }
+        response.set_success(success);
+
+        FileInfoTest::CheckFileInfoResponse(filename, file_type, hdu, response);
+    }
+};
+
 TEST_F(FileInfoTest, CASAFileInfo) {
-    TestSession session;
-    session.TestFileInfo("M17_SWex_unit.image", CARTA::FileType::CASA);
+    TestSession t_session;
+    t_session.TestFileInfo("M17_SWex_unit.image", CARTA::FileType::CASA);
 }
 
 TEST_F(FileInfoTest, FitsFileInfo) {
-    TestSession session;
-    session.TestFileInfo("M17_SWex_unit.fits", CARTA::FileType::FITS, "0");
+    TestSession t_session;
+    t_session.TestFileInfo("M17_SWex_unit.fits", CARTA::FileType::FITS, "0");
 }
 
 TEST_F(FileInfoTest, Hdf5FileInfo) {
-    TestSession session;
-    session.TestFileInfo("M17_SWex_unit.hdf5", CARTA::FileType::HDF5, "0");
+    TestSession t_session;
+    t_session.TestFileInfo("M17_SWex_unit.hdf5", CARTA::FileType::HDF5, "0");
 }
 
 TEST_F(FileInfoTest, MiriadFileInfo) {
-    TestSession session;
-    session.TestFileInfo("M17_SWex_unit.miriad", CARTA::FileType::MIRIAD);
+    TestSession t_session;
+    t_session.TestFileInfo("M17_SWex_unit.miriad", CARTA::FileType::MIRIAD);
 }
