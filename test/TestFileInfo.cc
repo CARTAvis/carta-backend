@@ -6,83 +6,90 @@
 
 #include <gtest/gtest.h>
 
-#include "BackendModel.h"
 #include "CommonTestUtilities.h"
+#include "Session.h"
 #include "Util/Message.h"
+
+static const std::string SAMPLE_FILE_PATH = (TestRoot() / "data" / "images" / "mix").string();
 
 class FileInfoTest : public ::testing::Test {
 public:
-    void GetFileInfo(const std::string& filename, const std::string& hdu = "") {
-        std::string directory = (TestRoot() / "data" / "images" / "mix").string();
-        auto request = Message::FileInfoRequest(directory, filename, "");
-        _dummy_backend->Receive(request);
+    class TestSession : public Session {
+    public:
+        TestSession() : Session(nullptr, nullptr, 0, "", "/", "", nullptr, -1, false) {}
 
-        if (_dummy_backend->TryPopMessagesQueue(_message_pair)) {
-            std::vector<char> message = _message_pair.first;
-            auto event_type = Message::EventType(message);
+        void TestFileInfo(const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu = "") {
+            auto request = Message::FileInfoRequest(SAMPLE_FILE_PATH, filename, "");
+            CARTA::FileInfoResponse response;
+            auto& file_info = *response.mutable_file_info();
+            std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+            string message;
+            bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
 
-            if (event_type == CARTA::EventType::FILE_INFO_RESPONSE) {
-                auto response = Message::DecodeMessage<CARTA::FileInfoResponse>(message);
-                EXPECT_TRUE(response.success());
-                EXPECT_EQ(response.file_info_extended_size(), 1);
+            if (success) {
+                *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+            }
+            response.set_success(success);
 
-                if (response.file_info_extended_size()) {
-                    auto file_info_extended = response.file_info_extended();
-                    EXPECT_NE(file_info_extended.find(hdu), file_info_extended.end());
+            CheckFileInfoResponse(filename, file_type, hdu, response);
+        }
+    };
 
-                    if (file_info_extended.find(hdu) != file_info_extended.end()) {
-                        int dimensions = 4;
-                        int width = 6;
-                        int height = 6;
-                        int depth = 5;
-                        int stokes = 1;
-                        EXPECT_EQ(file_info_extended[hdu].dimensions(), dimensions);
-                        EXPECT_EQ(file_info_extended[hdu].width(), width);
-                        EXPECT_EQ(file_info_extended[hdu].height(), height);
-                        EXPECT_EQ(file_info_extended[hdu].depth(), depth);
-                        EXPECT_EQ(file_info_extended[hdu].stokes(), stokes);
+    static void CheckFileInfoResponse(
+        const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu, const CARTA::FileInfoResponse& response) {
+        EXPECT_TRUE(response.success());
 
-                        for (auto header_entry : file_info_extended[hdu].header_entries()) {
-                            if (header_entry.name() == "SIMPLE") {
-                                CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0, "Standard FITS");
-                            } else if (header_entry.name() == "BITPIX") {
-                                CheckHeaderEntry(header_entry, "-32", CARTA::EntryType::INT, -32);
-                            } else if (header_entry.name() == "NAXIS") {
-                                CheckHeaderEntry(header_entry, "4", CARTA::EntryType::INT, 4);
-                            } else if (header_entry.name() == "NAXIS1") {
-                                CheckHeaderEntry(header_entry, "6", CARTA::EntryType::INT, 6);
-                            } else if (header_entry.name() == "NAXIS2") {
-                                CheckHeaderEntry(header_entry, "6", CARTA::EntryType::INT, 6);
-                            } else if (header_entry.name() == "NAXIS3") {
-                                CheckHeaderEntry(header_entry, "5", CARTA::EntryType::INT, 5);
-                            } else if (header_entry.name() == "NAXIS4") {
-                                CheckHeaderEntry(header_entry, "1", CARTA::EntryType::INT, 1);
-                            } else if (header_entry.name() == "EXTEND") {
-                                CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0);
-                            }
-                        }
+        auto file_info = response.file_info();
+        EXPECT_EQ(file_info.type(), file_type);
+        EXPECT_EQ(file_info.hdu_list_size(), 1);
 
-                        for (auto computed_entries : file_info_extended[hdu].computed_entries()) {
-                            if (computed_entries.name() == "Name") {
-                                CheckHeaderEntry(computed_entries, filename, CARTA::EntryType::STRING);
-                            } else if (computed_entries.name() == "HDU") {
-                                CheckHeaderEntry(computed_entries, "0", CARTA::EntryType::STRING);
-                            } else if (computed_entries.name() == "Shape") {
-                                CheckHeaderEntry(computed_entries, "[6, 6, 5, 1]", CARTA::EntryType::STRING);
-                            } else if (computed_entries.name() == "Number of channels") {
-                                CheckHeaderEntry(computed_entries, "5", CARTA::EntryType::INT, 5);
-                            } else if (computed_entries.name() == "Number of polarizations") {
-                                CheckHeaderEntry(computed_entries, "1", CARTA::EntryType::INT, 1);
-                            }
-                        }
-                    }
+        auto file_info_extended = response.file_info_extended();
+        EXPECT_NE(file_info_extended.find(hdu), file_info_extended.end());
+
+        if (file_info_extended.find(hdu) != file_info_extended.end()) {
+            EXPECT_EQ(file_info_extended[hdu].dimensions(), 4);
+            EXPECT_EQ(file_info_extended[hdu].width(), 6);
+            EXPECT_EQ(file_info_extended[hdu].height(), 6);
+            EXPECT_EQ(file_info_extended[hdu].depth(), 5);
+            EXPECT_EQ(file_info_extended[hdu].stokes(), 1);
+
+            for (auto header_entry : file_info_extended[hdu].header_entries()) {
+                if (header_entry.name() == "SIMPLE") {
+                    CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0, "Standard FITS");
+                } else if (header_entry.name() == "BITPIX") {
+                    CheckHeaderEntry(header_entry, "-32", CARTA::EntryType::INT, -32);
+                } else if (header_entry.name() == "NAXIS") {
+                    CheckHeaderEntry(header_entry, "4", CARTA::EntryType::INT, 4);
+                } else if (header_entry.name() == "NAXIS1") {
+                    CheckHeaderEntry(header_entry, "6", CARTA::EntryType::INT, 6);
+                } else if (header_entry.name() == "NAXIS2") {
+                    CheckHeaderEntry(header_entry, "6", CARTA::EntryType::INT, 6);
+                } else if (header_entry.name() == "NAXIS3") {
+                    CheckHeaderEntry(header_entry, "5", CARTA::EntryType::INT, 5);
+                } else if (header_entry.name() == "NAXIS4") {
+                    CheckHeaderEntry(header_entry, "1", CARTA::EntryType::INT, 1);
+                } else if (header_entry.name() == "EXTEND") {
+                    CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0);
+                }
+            }
+
+            for (auto computed_entries : file_info_extended[hdu].computed_entries()) {
+                if (computed_entries.name() == "Name") {
+                    CheckHeaderEntry(computed_entries, filename, CARTA::EntryType::STRING);
+                } else if (computed_entries.name() == "HDU") {
+                    CheckHeaderEntry(computed_entries, "0", CARTA::EntryType::STRING);
+                } else if (computed_entries.name() == "Shape") {
+                    CheckHeaderEntry(computed_entries, "[6, 6, 5, 1]", CARTA::EntryType::STRING);
+                } else if (computed_entries.name() == "Number of channels") {
+                    CheckHeaderEntry(computed_entries, "5", CARTA::EntryType::INT, 5);
+                } else if (computed_entries.name() == "Number of polarizations") {
+                    CheckHeaderEntry(computed_entries, "1", CARTA::EntryType::INT, 1);
                 }
             }
         }
     }
 
-private:
-    void CheckHeaderEntry(const CARTA::HeaderEntry& header_entry, const std::string& value, const CARTA::EntryType& entry_type,
+    static void CheckHeaderEntry(const CARTA::HeaderEntry& header_entry, const std::string& value, const CARTA::EntryType& entry_type,
         double numeric_value = std::numeric_limits<double>::quiet_NaN(), const std::string& comment = "") {
         EXPECT_EQ(header_entry.value(), value);
         EXPECT_EQ(header_entry.entry_type(), entry_type);
@@ -93,14 +100,24 @@ private:
             EXPECT_EQ(header_entry.value(), value);
         }
     }
-
-    std::unique_ptr<BackendModel> _dummy_backend = BackendModel::GetDummyBackend();
-    std::pair<std::vector<char>, bool> _message_pair;
 };
 
-TEST_F(FileInfoTest, GetFileInfo) {
-    GetFileInfo("M17_SWex_unit.image");
-    GetFileInfo("M17_SWex_unit.miriad");
-    GetFileInfo("M17_SWex_unit.hdf5", "0");
-    GetFileInfo("M17_SWex_unit.fits", "0");
+TEST_F(FileInfoTest, CASAFileInfo) {
+    TestSession session;
+    session.TestFileInfo("M17_SWex_unit.image", CARTA::FileType::CASA);
+}
+
+TEST_F(FileInfoTest, FitsFileInfo) {
+    TestSession session;
+    session.TestFileInfo("M17_SWex_unit.fits", CARTA::FileType::FITS, "0");
+}
+
+TEST_F(FileInfoTest, Hdf5FileInfo) {
+    TestSession session;
+    session.TestFileInfo("M17_SWex_unit.hdf5", CARTA::FileType::HDF5, "0");
+}
+
+TEST_F(FileInfoTest, MiriadFileInfo) {
+    TestSession session;
+    session.TestFileInfo("M17_SWex_unit.miriad", CARTA::FileType::MIRIAD);
 }
