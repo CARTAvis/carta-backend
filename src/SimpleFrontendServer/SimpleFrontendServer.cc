@@ -74,14 +74,19 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     bool gzip_compressed = false;
     auto gzip_path = path;
     gzip_path += ".gz";
-    if (accepts_gzip && fs::exists(gzip_path) && fs::is_regular_file(gzip_path)) {
+    std::error_code error_code;
+    if (accepts_gzip && fs::exists(gzip_path, error_code) && fs::is_regular_file(gzip_path, error_code)) {
         gzip_compressed = true;
         path = gzip_path;
     }
 
-    if (fs::exists(path) && fs::is_regular_file(path)) {
+    if (fs::exists(path, error_code) && fs::is_regular_file(path, error_code)) {
         // Check file size
         ifstream file(path.string(), ios::binary | ios::ate);
+        if (!file.good()) {
+            res->writeStatus(HTTP_404);
+            return;
+        }
         streamsize size = file.tellg();
         file.seekg(0, ios::beg);
 
@@ -111,13 +116,15 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
 }
 
 bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
+    std::error_code error_code;
+
     // Check that the folder exists
-    if (!fs::exists(folder) || !fs::is_directory(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_directory(folder, error_code)) {
         return false;
     }
     // Check that index.html exists
     folder /= "index.html";
-    if (!fs::exists(folder) || !fs::is_regular_file(folder)) {
+    if (!fs::exists(folder, error_code) || !fs::is_regular_file(folder, error_code)) {
         return false;
     }
     // Check that index.html can be read
@@ -137,15 +144,16 @@ void SimpleFrontendServer::AddNoCacheHeaders(Res* res) {
 
 json SimpleFrontendServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
-    if (!fs::exists(preferences_path)) {
-        return {{"version", 1}};
-    }
-
     try {
+        std::error_code error_code;
+        if (!fs::exists(preferences_path, error_code)) {
+            return {{"version", 1}};
+        }
         ifstream file(preferences_path.string());
         string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return json::parse(json_string);
-    } catch (exception) {
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
         return {};
     }
 }
@@ -357,13 +365,14 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
 nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
     auto layout_folder = _config_folder / "layouts";
     json layouts = json::object();
-    if (fs::exists(layout_folder)) {
+    std::error_code error_code;
+    if (fs::exists(layout_folder, error_code)) {
         for (auto& p : fs::directory_iterator(layout_folder)) {
             try {
                 string filename = p.path().filename().string();
                 regex layout_regex(R"(^(.+)\.json$)");
                 smatch sm;
-                if (fs::is_regular_file(p) && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
+                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, layout_regex) && sm.size() == 2) {
                     string layout_name = sm[1];
                     ifstream file(p.path().string());
                     string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
