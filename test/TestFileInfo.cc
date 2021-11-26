@@ -7,20 +7,47 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
+#include "FileList/FileInfoLoader.h"
 #include "Session.h"
 #include "Util/Message.h"
 
 static const std::string SAMPLE_FILES_PATH = (TestRoot() / "data" / "images" / "mix").string();
 
-class FileInfoTest : public ::testing::Test {
+class FileInfoLoaderTest : public ::testing::Test {
+public:
+    void CheckFileInfoLoader(const std::string& filename, const CARTA::FileType& file_type, const std::string hdu = "") {
+        std::string fullname = SAMPLE_FILES_PATH + "/" + filename;
+        CARTA::FileInfo file_info;
+        file_info.set_name(filename);
+        FileInfoLoader info_loader = FileInfoLoader(fullname);
+        bool file_info_ok = info_loader.FillFileInfo(file_info);
+        EXPECT_TRUE(file_info_ok);
+        CheckFileInfo(file_info, filename, file_type, hdu);
+    }
+
+    static void CheckFileInfo(
+        const CARTA::FileInfo& file_info, const std::string& filename, const CARTA::FileType& file_type, const std::string hdu) {
+        EXPECT_EQ(file_info.name(), filename);
+        EXPECT_EQ(file_info.type(), file_type);
+        EXPECT_EQ(file_info.hdu_list_size(), 1);
+        if (file_info.hdu_list_size() && !hdu.empty()) {
+            EXPECT_EQ(file_info.hdu_list(0), hdu);
+        }
+    }
+};
+
+class SessionFileInfoTest : public ::testing::Test {
 public:
     static void CheckFileInfoResponse(
         const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu, const CARTA::FileInfoResponse& response) {
         EXPECT_TRUE(response.success());
 
         auto file_info = response.file_info();
-        EXPECT_EQ(file_info.type(), file_type);
-        EXPECT_EQ(file_info.hdu_list_size(), 1);
+        if (file_type == CARTA::FITS) {
+            FileInfoLoaderTest::CheckFileInfo(file_info, filename, file_type, "");
+        } else {
+            FileInfoLoaderTest::CheckFileInfo(file_info, filename, file_type, hdu);
+        }
 
         auto file_info_extended = response.file_info_extended();
         EXPECT_NE(file_info_extended.find(hdu), file_info_extended.end());
@@ -116,26 +143,42 @@ public:
         }
         response.set_success(success);
 
-        FileInfoTest::CheckFileInfoResponse(filename, file_type, hdu, response);
+        SessionFileInfoTest::CheckFileInfoResponse(filename, file_type, hdu, response);
     }
 };
 
-TEST_F(FileInfoTest, CASAFileInfo) {
+TEST_F(FileInfoLoaderTest, CasaFile) {
+    CheckFileInfoLoader("M17_SWex_unit.image", CARTA::FileType::CASA);
+}
+
+TEST_F(FileInfoLoaderTest, FitsFile) {
+    CheckFileInfoLoader("M17_SWex_unit.fits", CARTA::FileType::FITS);
+}
+
+TEST_F(FileInfoLoaderTest, Hdf5File) {
+    CheckFileInfoLoader("M17_SWex_unit.hdf5", CARTA::FileType::HDF5, "0");
+}
+
+TEST_F(FileInfoLoaderTest, MiriadFile) {
+    CheckFileInfoLoader("M17_SWex_unit.miriad", CARTA::FileType::MIRIAD);
+}
+
+TEST_F(SessionFileInfoTest, CasaFile) {
     TestSession t_session;
     t_session.TestFileInfo("M17_SWex_unit.image", CARTA::FileType::CASA);
 }
 
-TEST_F(FileInfoTest, FitsFileInfo) {
+TEST_F(SessionFileInfoTest, FitsFile) {
     TestSession t_session;
     t_session.TestFileInfo("M17_SWex_unit.fits", CARTA::FileType::FITS, "0");
 }
 
-TEST_F(FileInfoTest, Hdf5FileInfo) {
+TEST_F(SessionFileInfoTest, Hdf5File) {
     TestSession t_session;
     t_session.TestFileInfo("M17_SWex_unit.hdf5", CARTA::FileType::HDF5, "0");
 }
 
-TEST_F(FileInfoTest, MiriadFileInfo) {
+TEST_F(SessionFileInfoTest, MiriadFile) {
     TestSession t_session;
     t_session.TestFileInfo("M17_SWex_unit.miriad", CARTA::FileType::MIRIAD);
 }
