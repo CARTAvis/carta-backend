@@ -16,59 +16,68 @@ static const std::string SAMPLE_FILES_PATH = (TestRoot() / "data" / "images" / "
 
 class FileInfoLoaderTest : public ::testing::Test {
 public:
-    static void CheckFileInfoLoader(const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu = "") {
-        std::string fullname = SAMPLE_FILES_PATH + "/" + filename;
+    static void CheckFileInfoLoader(
+        const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
+        std::string fullname = SAMPLE_FILES_PATH + "/" + request_filename;
         CARTA::FileInfo file_info;
-        file_info.set_name(filename);
+        file_info.set_name(request_filename);
+
         FileInfoLoader info_loader = FileInfoLoader(fullname);
         bool file_info_ok = info_loader.FillFileInfo(file_info);
         EXPECT_TRUE(file_info_ok);
-        CheckFileInfo(file_info, filename, file_type, hdu);
+
+        CheckFileInfo(file_info, request_filename, request_file_type, request_hdu);
     }
 
-    static void CheckFileInfo(
-        const CARTA::FileInfo& file_info, const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu) {
-        EXPECT_EQ(file_info.name(), filename);
-        EXPECT_EQ(file_info.type(), file_type);
+    static void CheckFileInfo(const CARTA::FileInfo& file_info, const std::string& expect_filename, const CARTA::FileType& expect_file_type,
+        const std::string& expect_hdu) {
+        EXPECT_EQ(file_info.name(), expect_filename);
+        EXPECT_EQ(file_info.type(), expect_file_type);
         EXPECT_EQ(file_info.hdu_list_size(), 1); // since sample files only has a HDU
-        if (file_info.hdu_list_size() && !hdu.empty()) {
-            EXPECT_EQ(file_info.hdu_list(0), hdu);
+        if (file_info.hdu_list_size() && !expect_hdu.empty()) {
+            EXPECT_EQ(file_info.hdu_list(0), expect_hdu);
         }
     }
 };
 
 class FileExtInfoLoaderTest : public ::testing::Test {
 public:
-    static void CheckFileExtInfoLoader(const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu = "") {
-        std::string fullname = SAMPLE_FILES_PATH + "/" + filename;
+    static void CheckFileExtInfoLoader(
+        const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
+        std::string fullname = SAMPLE_FILES_PATH + "/" + request_filename;
         auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader(loader);
         bool file_info_ok;
         std::string message;
         std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map;
 
-        if (file_type == CARTA::FileType::FITS) {
+        if (request_file_type == CARTA::FileType::FITS) {
             file_info_ok = ext_info_loader.FillFitsFileInfoMap(file_info_extended_map, fullname, message);
         } else {
             CARTA::FileInfoExtended file_info_ext;
-            file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, fullname, hdu, message);
+            file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, fullname, request_hdu, message);
             if (file_info_ok) {
-                file_info_extended_map[hdu] = file_info_ext;
+                file_info_extended_map[request_hdu] = file_info_ext;
             }
         }
 
-        CheckFileInfoExtended(file_info_extended_map, filename, hdu);
+        CheckFileInfoExtended(file_info_extended_map, request_filename, request_hdu);
     }
 
-    static void CheckFileInfoExtended(
-        std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map, const std::string& filename, const std::string& hdu) {
-        EXPECT_EQ(file_info_extended_map[hdu].dimensions(), 4);
-        EXPECT_EQ(file_info_extended_map[hdu].width(), 6);
-        EXPECT_EQ(file_info_extended_map[hdu].height(), 6);
-        EXPECT_EQ(file_info_extended_map[hdu].depth(), 5);
-        EXPECT_EQ(file_info_extended_map[hdu].stokes(), 1);
+    static void CheckFileInfoExtended(std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map,
+        const std::string& expect_filename, const std::string& expect_hdu) {
+        EXPECT_NE(file_info_extended_map.find(expect_hdu), file_info_extended_map.end());
+        if (file_info_extended_map.find(expect_hdu) == file_info_extended_map.end()) {
+            return;
+        }
 
-        for (auto header_entry : file_info_extended_map[hdu].header_entries()) {
+        EXPECT_EQ(file_info_extended_map[expect_hdu].dimensions(), 4);
+        EXPECT_EQ(file_info_extended_map[expect_hdu].width(), 6);
+        EXPECT_EQ(file_info_extended_map[expect_hdu].height(), 6);
+        EXPECT_EQ(file_info_extended_map[expect_hdu].depth(), 5);
+        EXPECT_EQ(file_info_extended_map[expect_hdu].stokes(), 1);
+
+        for (auto header_entry : file_info_extended_map[expect_hdu].header_entries()) {
             if (header_entry.name() == "SIMPLE") {
                 CheckHeaderEntry(header_entry, "T", CARTA::EntryType::STRING, 0, "Standard FITS");
             } else if (header_entry.name() == "BITPIX") {
@@ -98,9 +107,9 @@ public:
             }
         }
 
-        for (auto computed_entries : file_info_extended_map[hdu].computed_entries()) {
+        for (auto computed_entries : file_info_extended_map[expect_hdu].computed_entries()) {
             if (computed_entries.name() == "Name") {
-                CheckHeaderEntry(computed_entries, filename, CARTA::EntryType::STRING);
+                CheckHeaderEntry(computed_entries, expect_filename, CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "HDU") {
                 CheckHeaderEntry(computed_entries, "0", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "Shape") {
@@ -121,40 +130,38 @@ public:
         }
     }
 
-    static void CheckHeaderEntry(const CARTA::HeaderEntry& header_entry, const std::string& value, const CARTA::EntryType& entry_type,
-        double numeric_value = std::numeric_limits<double>::quiet_NaN(), const std::string& comment = "") {
-        EXPECT_EQ(header_entry.value(), value);
-        EXPECT_EQ(header_entry.entry_type(), entry_type);
-        if (!isnan(numeric_value)) {
-            EXPECT_DOUBLE_EQ(header_entry.numeric_value(), numeric_value);
+    static void CheckHeaderEntry(const CARTA::HeaderEntry& header_entry, const std::string& expect_value,
+        const CARTA::EntryType& expect_entry_type, double expect_numeric_value = std::numeric_limits<double>::quiet_NaN(),
+        const std::string& expect_comment = "") {
+        EXPECT_EQ(header_entry.value(), expect_value);
+        EXPECT_EQ(header_entry.entry_type(), expect_entry_type);
+        if (!isnan(expect_numeric_value)) {
+            EXPECT_DOUBLE_EQ(header_entry.numeric_value(), expect_numeric_value);
         }
-        if (!comment.empty()) {
-            EXPECT_EQ(header_entry.value(), value);
+        if (!expect_comment.empty()) {
+            EXPECT_EQ(header_entry.value(), expect_value);
         }
     }
 };
 
 class SessionFileInfoTest : public ::testing::Test {
 public:
-    static void CheckFileInfoResponse(
-        const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu, const CARTA::FileInfoResponse& response) {
+    static void CheckFileInfoResponse(const CARTA::FileInfoResponse& response, const std::string& expect_filename,
+        const CARTA::FileType& expect_file_type, const std::string& expect_hdu) {
         EXPECT_TRUE(response.success());
 
         auto file_info = response.file_info();
-        if (file_type == CARTA::HDF5) {
-            FileInfoLoaderTest::CheckFileInfo(file_info, filename, file_type, hdu);
+        if (expect_file_type == CARTA::HDF5) {
+            FileInfoLoaderTest::CheckFileInfo(file_info, expect_filename, expect_file_type, expect_hdu);
         } else {
-            FileInfoLoaderTest::CheckFileInfo(file_info, filename, file_type, "");
+            FileInfoLoaderTest::CheckFileInfo(file_info, expect_filename, expect_file_type, "");
         }
 
         auto file_info_extended = response.file_info_extended();
-        EXPECT_NE(file_info_extended.find(hdu), file_info_extended.end());
+        // convert protobuf map to std map
+        std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map = {file_info_extended.begin(), file_info_extended.end()};
 
-        if (file_info_extended.find(hdu) != file_info_extended.end()) {
-            // convert protobuf map to std map
-            std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map = {file_info_extended.begin(), file_info_extended.end()};
-            FileExtInfoLoaderTest::CheckFileInfoExtended(file_info_extended_map, filename, hdu);
-        }
+        FileExtInfoLoaderTest::CheckFileInfoExtended(file_info_extended_map, expect_filename, expect_hdu);
     }
 };
 
@@ -162,20 +169,19 @@ class TestSession : public Session {
 public:
     TestSession() : Session(nullptr, nullptr, 0, "", "/", "", nullptr, -1, false) {}
 
-    void TestFileInfo(const std::string& filename, const CARTA::FileType& file_type, const std::string& hdu = "") {
-        auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, filename, "");
+    void TestFileInfo(const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
+        auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, request_filename, request_hdu);
         CARTA::FileInfoResponse response;
         auto& file_info = *response.mutable_file_info();
         std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
         string message;
         bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
-
         if (success) {
             *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
         }
         response.set_success(success);
 
-        SessionFileInfoTest::CheckFileInfoResponse(filename, file_type, hdu, response);
+        SessionFileInfoTest::CheckFileInfoResponse(response, request_filename, request_file_type, request_hdu);
     }
 };
 

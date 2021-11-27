@@ -302,13 +302,13 @@ CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> 
     return resume_session;
 }
 
-CARTA::FileListRequest Message::FileListRequest(std::string directory) {
+CARTA::FileListRequest Message::FileListRequest(const std::string& directory) {
     CARTA::FileListRequest file_list_request;
     file_list_request.set_directory(directory);
     return file_list_request;
 }
 
-CARTA::FileInfoRequest Message::FileInfoRequest(std::string directory, std::string file, std::string hdu) {
+CARTA::FileInfoRequest Message::FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu) {
     CARTA::FileInfoRequest file_info_request;
     file_info_request.set_directory(directory);
     file_info_request.set_file(file);
