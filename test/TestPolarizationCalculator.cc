@@ -202,23 +202,22 @@ public:
                 casacore::Array<float> masked_data(cursor_data); // reference the same storage
                 const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
 
-                // Apply cursor mask to cursor data: set masked values to NaN.
-                // booleans are used to delete copy of data if necessary
+                // Apply cursor mask to cursor data: set masked values to NaN. booleans are used to delete copy of data if necessary
                 bool del_mask_ptr;
-                const bool* pCursorMask = cursor_mask.getStorage(del_mask_ptr);
+                const bool* cursor_mask_ptr = cursor_mask.getStorage(del_mask_ptr);
 
                 bool del_data_ptr;
-                float* pMaskedData = masked_data.getStorage(del_data_ptr);
+                float* masked_data_ptr = masked_data.getStorage(del_data_ptr);
 
                 for (size_t i = 0; i < cursor_data.nelements(); ++i) {
-                    if (!pCursorMask[i]) {
-                        pMaskedData[i] = NAN;
+                    if (!cursor_mask_ptr[i]) {
+                        masked_data_ptr[i] = NAN;
                     }
                 }
 
                 // free storage for cursor arrays
-                cursor_mask.freeStorage(pCursorMask, del_mask_ptr);
-                masked_data.putStorage(pMaskedData, del_data_ptr);
+                cursor_mask.freeStorage(cursor_mask_ptr, del_mask_ptr);
+                masked_data.putStorage(masked_data_ptr, del_data_ptr);
             }
 
             casacore::IPosition cursor_shape(lattice_iter.cursorShape());
@@ -228,14 +227,14 @@ public:
         }
     }
 
-    static CARTA::SetSpectralRequirements_SpectralConfig CursorSpectralConfig(const std::string& coordinate = "z") {
+    static CARTA::SetSpectralRequirements_SpectralConfig CursorSpectralConfig(const std::string& coordinate) {
         CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
         spectral_config.set_coordinate(coordinate);
         spectral_config.add_stats_types(CARTA::StatsType::Sum);
         return spectral_config;
     }
 
-    static CARTA::SetSpectralRequirements_SpectralConfig RegionSpectralConfig(const std::string& coordinate = "z") {
+    static CARTA::SetSpectralRequirements_SpectralConfig RegionSpectralConfig(const std::string& coordinate) {
         CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
         spectral_config.set_coordinate(coordinate);
         spectral_config.add_stats_types(CARTA::StatsType::Mean);
@@ -456,7 +455,7 @@ public:
 
         // Open the file through the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
         EXPECT_TRUE(frame->IsValid());
 
         // Set spatial profiles requirements
@@ -524,7 +523,7 @@ public:
 
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<TestFrame>(file_id, loaders.Get(sample_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(sample_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
@@ -616,7 +615,7 @@ public:
 
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<TestFrame>(file_id, loaders.Get(sample_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(sample_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
@@ -745,7 +744,7 @@ public:
     }
 
     static void CalculateCubeHistogram(
-        const std::shared_ptr<TestFrame>& frame, int current_channel, int current_stokes, carta::Histogram& cube_histogram) {
+        const std::shared_ptr<Frame>& frame, int current_channel, int current_stokes, carta::Histogram& cube_histogram) {
         // Set image channels
         std::string message;
         frame->SetImageChannels(current_channel, current_stokes, message);
@@ -796,7 +795,7 @@ public:
 
         // Calculate the cube histogram
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<TestFrame>(0, loaders.Get(sample_file_path), "0");
+        auto frame = std::make_shared<Frame>(0, loaders.Get(sample_file_path), "0");
         carta::Histogram cube_histogram;
         CalculateCubeHistogram(frame, current_channel, current_stokes, cube_histogram);
 
@@ -819,7 +818,7 @@ public:
         }
 
         auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(resulting_image));
-        auto frame2 = std::make_shared<TestFrame>(1, loader, "");
+        auto frame2 = std::make_shared<Frame>(1, loader, "");
         int fiddled_stokes(0);
 
         carta::Histogram cube_histogram2;
