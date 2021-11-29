@@ -8,6 +8,7 @@
 
 #include <chrono>
 
+#include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
@@ -134,7 +135,7 @@ casacore::Quantity PvGenerator::AdjustIncrementUnit(double offset_increment, siz
     auto offset_length = offset_increment * num_offsets;
 
     if ((offset_length * 1.0e3) < 2.0) { // milliarcsec
-        increment = increment.get("milliarcsec");
+        increment = increment.get("marcsec");
     } else if ((offset_length / 60.0) >= 2.0) { // arcmin
         if ((offset_length / 3600.0) < 2.0) {   // deg
             increment = increment.get("arcmin");
