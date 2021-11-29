@@ -89,13 +89,14 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
     const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape, int stokes, double offset_increment) {
     // Set PV coordinate system with LinearCoordinate and input coordinates for spectral and stokes
     casacore::CoordinateSystem csys;
+    casacore::Quantity increment = AdjustIncrementUnit(offset_increment, pv_shape(0));
 
     // Add linear coordinate (offset); needs to have 2 axes or pc matrix will fail in wcslib.
     // Will remove degenerate linear axis below
     casacore::Vector<casacore::String> name(2, "Offset");
-    casacore::Vector<casacore::String> unit(2, "arcsec");
+    casacore::Vector<casacore::String> unit(2, increment.getUnit());
     casacore::Vector<casacore::Double> crval(2, 0.0); // center offset is 0
-    casacore::Vector<casacore::Double> inc(2, offset_increment);
+    casacore::Vector<casacore::Double> inc(2, increment.getValue());
     casacore::Matrix<casacore::Double> pc(2, 2, 1);
     pc(0, 1) = 0.0;
     pc(1, 0) = 0.0;
@@ -119,6 +120,30 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
     csys.removeWorldAxis(1, 0.0);
 
     return csys;
+}
+
+casacore::Quantity PvGenerator::AdjustIncrementUnit(double offset_increment, size_t num_offsets) {
+    // Given offset increment in arcsec, adjust to:
+    // - milliarcsec if length < 2 milliarcsec
+    // - arcsec if 2 milliarcsec <= length < 2 arcmin
+    // - arcminute if 2 arcmin <= length < 2 deg
+    // - deg if 2 deg <= length
+    // Returns increment as a Quantity with value and unit
+    casacore::Quantity increment(offset_increment, "arcsec");
+
+    auto offset_length = offset_increment * num_offsets;
+
+    if ((offset_length * 1.0e3) < 2.0) { // milliarcsec
+        increment = increment.get("milliarcsec");
+    } else if ((offset_length / 60.0) >= 2.0) { // arcmin
+        if ((offset_length / 3600.0) < 2.0) {   // deg
+            increment = increment.get("arcmin");
+        } else {
+            increment = increment.get("deg");
+        }
+    }
+
+    return increment;
 }
 
 GeneratedImage PvGenerator::GetGeneratedImage() {

@@ -32,6 +32,7 @@ private:
         double offset_increment, std::string& message);
     casacore::CoordinateSystem GetPvCoordinateSystem(
         const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape, int stokes, double offset_increment);
+    casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
     GeneratedImage GetGeneratedImage();
 
     // GeneratedImage parameters
