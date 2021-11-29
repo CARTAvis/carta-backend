@@ -1380,7 +1380,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
 
 void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
     int file_id(stop_pv_calc.file_id());
-    if (_frames.count(file_id) && _region_handler) {
+    if (_region_handler) {
         _region_handler->StopPvCalc(file_id);
     }
 }
