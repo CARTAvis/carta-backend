@@ -117,6 +117,10 @@ public:
         return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
     }
 
+    inline casacore::CoordinateSystem* CoordinateSystem() {
+        return _coord_sys;
+    }
+
     // Communication
     bool IsConnected();
     void WaitForTaskCancellation();
