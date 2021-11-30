@@ -436,6 +436,8 @@ public:
         }
 
         EXPECT_EQ(_message_count, 0); // make sure there is no data stream when animation stopped
+
+        _dummy_backend->WaitForJobFinished();
     }
 
     void RegionRegister() {
