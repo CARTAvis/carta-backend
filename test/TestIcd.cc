@@ -306,22 +306,23 @@ public:
 
         int first_channel(0);
         int start_channel(1);
+        int end_channel(10);
         int last_channel(24);
         int delta_channel(1);
+        int frame_rate(5);
         int stokes(0);
+
         std::pair<int32_t, int32_t> first_frame = std::make_pair(first_channel, stokes);
         std::pair<int32_t, int32_t> start_frame = std::make_pair(start_channel, stokes);
+        std::pair<int32_t, int32_t> end_frame = std::make_pair(end_channel, stokes);
         std::pair<int32_t, int32_t> last_frame = std::make_pair(last_channel, stokes);
         std::pair<int32_t, int32_t> delta_frame = std::make_pair(delta_channel, stokes);
+
         tiles = {33554432.0, 33558528.0, 33562624.0, 33566720.0, 33554433.0, 33558529.0, 33562625.0, 33566721.0, 33554434.0, 33558530.0,
             33562626.0, 33566722.0};
-        int frame_rate(2);
 
         auto start_animation = Message::StartAnimation(
             0, first_frame, start_frame, last_frame, delta_frame, CARTA::CompressionType::ZFP, 9, tiles, frame_rate);
-
-        int end_channel(10);
-        std::pair<int32_t, int32_t> end_frame = std::make_pair(end_channel, stokes);
 
         auto stop_animation = Message::StopAnimation(0, end_frame);
 
@@ -329,16 +330,36 @@ public:
 
         _message_count = 0;
 
-        bool stop(false);
         int expected_channel = start_channel;
 
         // (end_channel - start_channel + 1) * (RASTER_TILE_DATA x tiles number + REGION_HISTOGRAM_DATA x1 + RASTER_TILE_SYNC x2) +
         // START_ANIMATION_ACK x1
         int expected_response_messages = (end_channel - start_channel + 1) * (tiles.size() + 1 + 2) + 1;
 
-        while (!stop) {
-            while (!_dummy_backend->TryPopMessagesQueue(_message_pair)) { // wait for the data stream
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+        auto is_timeout = [&]() {
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_end - t_start).count();
+            if (dt > 10) {
+                spdlog::error("Animation timeout: can not receive all data messages within 10 seconds.");
+                return true;
             }
+            return false;
+        };
+
+        while (true) {
+            while (!_dummy_backend->TryPopMessagesQueue(_message_pair)) { // wait for the data stream
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (is_timeout()) {
+                    break;
+                }
+            }
+            if (is_timeout()) {
+                break;
+            }
+
+            ++_message_count;
             std::vector<char> message = _message_pair.first;
             auto event_type = Message::EventType(message);
 
@@ -352,33 +373,26 @@ public:
                     int sync_stokes = raster_tile_sync.stokes();
                     auto animation_flow_control = Message::AnimationFlowControl(0, std::make_pair(sync_channel, sync_stokes));
                     _dummy_backend->Receive(animation_flow_control);
-                    if (sync_channel == end_channel) {
+                    if (sync_channel >= end_channel) {
                         _dummy_backend->Receive(stop_animation); // stop the animation
-                        stop = true;
+                        break;
                     }
                 }
             }
-            ++_message_count;
         }
+
+        _dummy_backend->WaitForJobFinished();
 
         EXPECT_EQ(_message_count, expected_response_messages);
-
-        _message_count = 0;
-
-        while (_dummy_backend->TryPopMessagesQueue(_message_pair)) {
-            std::vector<char> message = _message_pair.first;
-            auto event_type = Message::EventType(message);
-            ++_message_count;
-        }
-
-        EXPECT_EQ(_message_count, 0); // make sure there is no data stream when animation stopped
 
         // Play animation backward
 
         first_channel = 9;
         start_channel = 19;
+        end_channel = 10;
         last_channel = 19;
         delta_channel = -1;
+
         first_frame = std::make_pair(first_channel, stokes);
         start_frame = std::make_pair(start_channel, stokes);
         last_frame = std::make_pair(last_channel, stokes);
@@ -387,7 +401,6 @@ public:
         start_animation = Message::StartAnimation(
             0, first_frame, start_frame, last_frame, delta_frame, CARTA::CompressionType::ZFP, 9, tiles, frame_rate);
 
-        end_channel = 18;
         end_frame = std::make_pair(end_channel, stokes);
 
         stop_animation = Message::StopAnimation(0, end_frame);
@@ -396,13 +409,23 @@ public:
 
         _message_count = 0;
 
-        stop = false;
         expected_channel = start_channel;
         expected_response_messages = (start_channel - end_channel + 1) * (tiles.size() + 1 + 2) + 1;
 
-        while (!stop) {
+        t_start = std::chrono::high_resolution_clock::now();
+
+        while (true) {
             while (!_dummy_backend->TryPopMessagesQueue(_message_pair)) { // wait for the data stream
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (is_timeout()) {
+                    break;
+                }
             }
+            if (is_timeout()) {
+                break;
+            }
+
+            ++_message_count;
             std::vector<char> message = _message_pair.first;
             auto event_type = Message::EventType(message);
 
@@ -416,28 +439,17 @@ public:
                     int sync_stokes = raster_tile_sync.stokes();
                     auto animation_flow_control = Message::AnimationFlowControl(0, std::make_pair(sync_channel, sync_stokes));
                     _dummy_backend->Receive(animation_flow_control);
-                    if (sync_channel == end_channel) {
+                    if (sync_channel <= end_channel) {
                         _dummy_backend->Receive(stop_animation); // stop the animation
-                        stop = true;
+                        break;
                     }
                 }
             }
-            ++_message_count;
         }
-
-        EXPECT_EQ(_message_count, expected_response_messages);
-
-        _message_count = 0;
-
-        while (_dummy_backend->TryPopMessagesQueue(_message_pair)) {
-            std::vector<char> message = _message_pair.first;
-            auto event_type = Message::EventType(message);
-            ++_message_count;
-        }
-
-        EXPECT_EQ(_message_count, 0); // make sure there is no data stream when animation stopped
 
         _dummy_backend->WaitForJobFinished();
+
+        EXPECT_EQ(_message_count, expected_response_messages);
     }
 
     void RegionRegister() {
