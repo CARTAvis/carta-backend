@@ -791,13 +791,12 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
         _frames[file_id] = frame;
     }
 
-    bool pv_success(false);
-    casacore::Matrix<float> pv_data; // Spectral profiles for each box region: shape [num_regions, num_channels]
+    bool pv_success(false), per_z(true), cancelled(false);
     double increment(0.0);           // Increment between box centers returned in arcsec
-    bool per_z(true), cancelled(false);
+    casacore::Matrix<float> pv_data; // Spectral profiles for each box region: shape=[num_regions, num_channels]
     std::string message;
 
-    if (GetLineProfiles(file_id, region_id, width, per_z, increment, pv_data, progress_callback, cancelled, message)) {
+    if (GetLineProfiles(file_id, region_id, width, per_z, progress_callback, increment, pv_data, cancelled, message)) {
         if (!_stop_pv[file_id]) {
             // Use PV generator to create PV image
             auto input_filename = frame->GetFileName();
@@ -1565,27 +1564,26 @@ std::vector<int> RegionHandler::GetProjectedFileIds(int region_id) {
     return results;
 }
 
-bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool per_z, double& increment, casacore::Matrix<float>& profiles,
-    std::function<void(float)>& progress_callback, bool& cancelled, std::string& message) {
+bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool per_z, std::function<void(float)>& progress_callback,
+    double& increment, casacore::Matrix<float>& profiles, bool& cancelled, std::string& message) {
     // Generate box regions to approximate a line with a width (pixels), and get mean of each box (per z else current z).
-    // Input parameters: file_id, region_id, width, per_z (all channels or current channel), frame.
-    // Return parameters: increment (angular spacing of boxes), profiles, progress_callback, cancelled, error.
+    // Input parameters: file_id, region_id, width, per_z (all channels or current channel).
+    // Calls progress_callback after each profile.
+    // Return parameters: increment (angular spacing of boxes, in arcsec), per-region profiles, cancelled, message.
     // Returns whether profiles completed.
+    bool profiles_complete(false);
 
     // Line box regions are set with reference image coordinate system then converted to file_id image if necessary
     auto reference_csys = _regions.at(region_id)->CoordinateSystem();
-
     if (!reference_csys->hasDirectionCoordinate()) {
         message = "Cannot approximate line with no direction coordinate.";
-        return false;
+        return profiles_complete;
     }
 
     auto region_state = _regions.at(region_id)->GetRegionState();
     if (region_state.rotation == 0.0) {
         SetLineRotation(region_state);
     }
-
-    bool profiles_complete(false);
 
     if (GetFixedPixelRegionProfiles(
             file_id, width, per_z, region_state, reference_csys, progress_callback, profiles, increment, cancelled)) {
@@ -1618,8 +1616,8 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
     double& increment, bool& cancelled) {
     // Calculate mean spectral profiles for box regions along line with fixed pixel spacing, with progress updates after each profile.
-    // Returns false if profiles cancelled or linear pixel centers are tabular in world coordinates.
     // Return parameters include the profiles, the increment between the box centers in arcsec, and whether profiles were cancelled.
+    // Returns false if profiles cancelled or linear pixel centers are tabular in world coordinates.
     auto endpoints = region_state.control_points;
     auto dx_pixels = endpoints[1].x() - endpoints[0].x();
     auto dy_pixels = endpoints[1].y() - endpoints[0].y();
@@ -1790,8 +1788,8 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
     double& increment, bool& cancelled, std::string& message) {
     // Calculate mean spectral profiles for polygon regions along line with fixed angular spacing, with progress updates after each profile.
-    // Returns false if profiles cancelled or failed, with an error message.
     // Return parameters include the profiles, the increment between the regions in arcsec, and whether profiles were cancelled.
+    // Returns false if profiles cancelled or failed, with an error message.
     auto endpoints = region_state.control_points;
     auto rotation = region_state.rotation;
 
@@ -2018,6 +2016,7 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
     point.set_x(corner(0));
     point.set_y(corner(1));
     control_points[0] = point;
+
     // Endpoint in negative direction 3 pixels out from box start
     endpoint(0) = box_start(0) + (pixel_width * cos_x);
     endpoint(1) = box_start(1) + (pixel_width * sin_x);
@@ -2034,6 +2033,7 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
     point.set_x(corner(0));
     point.set_y(corner(1));
     control_points[1] = point;
+
     // Endpoint in negative direction 3 pixels out from box end
     endpoint(0) = box_end(0) + (pixel_width * cos_x);
     endpoint(1) = box_end(1) + (pixel_width * sin_x);
@@ -2042,19 +2042,21 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
     point.set_y(corner(1));
     control_points[2] = point;
 
-    // TODO: remove this, for pvgen debug
+    // Set polygon RegionState
+    float polygon_rotation(0.0);
+    RegionState region_state = RegionState(file_id, CARTA::RegionType::POLYGON, control_points, polygon_rotation);
+
     spdlog::debug("Angular box region corners: polygon[[{}pix, {}pix], [{}pix, {}pix], [{}pix, {}pix], [{}pix, {}pix]]",
         control_points[0].x(), control_points[0].y(), control_points[1].x(), control_points[1].y(), control_points[2].x(),
         control_points[2].y(), control_points[3].x(), control_points[3].y());
 
-    float polygon_rotation(0.0);
-    RegionState region_state = RegionState(file_id, CARTA::RegionType::POLYGON, control_points, polygon_rotation);
     return region_state;
 }
 
 casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
     int file_id, RegionState& region_state, casacore::CoordinateSystem* reference_csys, bool per_z, double& num_pixels) {
-    // Create temporary region then get spectral profile for given file_id
+    // Create temporary region with RegionState and CoordinateSystem
+    // Return stats/spectral profile (depending on per_z) for given file_id image, and number of pixels in the region.
     auto depth = _frames.at(file_id)->Depth();
     auto stokes_index = _frames.at(file_id)->CurrentStokes();
 
