@@ -24,6 +24,8 @@
 #include "Ds9ImportExport.h"
 #include "Util/Message.h"
 
+#define LINE_PROFILE_PROGRESS_INTERVAL 500
+
 namespace carta {
 
 // ********************************************************************
@@ -1668,6 +1670,9 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     if (CheckLinearOffsets(box_centers, reference_csys, increment)) {
         size_t num_regions(box_centers.size());
 
+        // Send progress updates at time interval
+        auto t_start = std::chrono::high_resolution_clock::now();
+
         // Set box regions from centers, width x 1
         for (size_t i = 0; i < num_regions; ++i) {
             if (per_z && _stop_pv[file_id]) {
@@ -1705,9 +1710,15 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
 
             profiles.row(i) = region_profile;
 
-            // Update progress
+            // Update progress if time interval elapsed
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
             progress = float(i + 1) / float(num_regions);
-            progress_callback(progress);
+
+            if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress >= 1.0)) {
+                t_start = t_end;
+                progress_callback(progress);
+            }
         }
     }
 
@@ -1873,6 +1884,9 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     // Starts at previous point (if any), ends at two points ahead (if any).
     int start_point, end_point;
 
+    // Send progress updates at time interval
+    auto t_start = std::chrono::high_resolution_clock::now();
+
     for (int i = 0; i < num_profiles; ++i) {
         // Check if user cancelled
         if (per_z && _stop_pv[file_id]) {
@@ -1907,9 +1921,15 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             profiles.row(i) = region_profile;
         }
 
-        // Update progress
+        // Update progress if time interval elapsed
+        auto t_end = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
         progress = float(i + 1) / float(num_profiles);
-        progress_callback(progress);
+
+        if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress == 1.0)) {
+            t_start = t_end;
+            progress_callback(progress);
+        }
     }
 
     if (per_z) {
