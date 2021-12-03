@@ -22,14 +22,6 @@ RUN \
   curl https://packages.cartavis.org/cartavis-el7.repo --output /etc/yum.repos.d/cartavis.repo && \
   yum -y install carta-casacore-devel gtest-devel gmock-devel fits2idia measures-data
 
-# CARTA has a problem with CentOS7 tbb 4.1, so install a newer version:
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/wjakob/tbb.git && \
-  cd tbb/build && cmake .. && make && make install && \
-  cd /root && rm -rf tbb
-
 # Forward port so that the webapp can properly access it
 # from outside of the container
 EXPOSE 3002

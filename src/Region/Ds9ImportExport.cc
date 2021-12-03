@@ -941,7 +941,7 @@ std::string Ds9ImportExport::AddExportRegionWorld(
                 region = fmt::format("point({:.6f}, {:.6f})", control_points[0].getValue(), control_points[1].getValue());
             } else {
                 region =
-                    fmt::format("point({:.6f}, {:.6f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
+                    fmt::format("point({:.9f}, {:.9f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
             }
             break;
         }
@@ -953,7 +953,7 @@ std::string Ds9ImportExport::AddExportRegionWorld(
                 region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.getValue(), cy.getValue(), width.getValue(),
                     height.getValue(), angle);
             } else {
-                region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
+                region = fmt::format("box({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
                     width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
             }
             break;
@@ -966,7 +966,7 @@ std::string Ds9ImportExport::AddExportRegionWorld(
                     region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].getValue(), control_points[1].getValue(),
                         control_points[2].getValue());
                 } else {
-                    region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].get("deg").getValue(),
+                    region = fmt::format("circle({:.9f}, {:.9f}, {:.4f}\")", control_points[0].get("deg").getValue(),
                         control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
                 }
             } else {
@@ -974,7 +974,7 @@ std::string Ds9ImportExport::AddExportRegionWorld(
                     region = fmt::format("ellipse({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", control_points[0].getValue(),
                         control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
                 } else {
-                    region = fmt::format("ellipse({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", control_points[0].get("deg").getValue(),
+                    region = fmt::format("ellipse({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", control_points[0].get("deg").getValue(),
                         control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue(),
                         control_points[3].get("arcsec").getValue(), angle);
                 }
@@ -992,9 +992,9 @@ std::string Ds9ImportExport::AddExportRegionWorld(
                     region += fmt::format(", {:.4f}", control_points[i].getValue());
                 }
             } else {
-                region += fmt::format("{:.4f}", control_points[0].get("deg").getValue());
+                region += fmt::format("{:.9f}", control_points[0].get("deg").getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {
-                    region += fmt::format(", {:.4f}", control_points[i].get("deg").getValue());
+                    region += fmt::format(", {:.9f}", control_points[i].get("deg").getValue());
                 }
             }
             region += ")";
