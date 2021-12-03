@@ -176,8 +176,7 @@ private:
     std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
     std::mutex _spatial_mutex;
 
-    // PvGenerator: key is file_id
-    std::unordered_map<int, PvGenerator*> _pv_generators;
+    // PV cancellation: key is file_id
     std::unordered_map<int, bool> _stop_pv;
 };
 

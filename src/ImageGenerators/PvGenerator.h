@@ -20,7 +20,6 @@ namespace carta {
 class PvGenerator {
 public:
     PvGenerator(int file_id, const std::string& filename);
-    ~PvGenerator(){};
 
     bool GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
         double offset_increment, int stokes, carta::GeneratedImage& pv_image, std::string& message);

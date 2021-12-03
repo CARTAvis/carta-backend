@@ -754,12 +754,6 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
     pv_response.set_success(false);
     pv_response.set_cancel(false);
 
-    if (_pv_generators.count(file_id)) {
-        // already in progress
-        pv_response.set_message("PV image generator already in progress for this image.");
-        return false;
-    }
-
     // Checks for valid request:
     // 1. Region is set
     if (!RegionSet(region_id)) {
@@ -802,16 +796,16 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
         if (!_stop_pv[file_id]) {
             // Use PV generator to create PV image
             auto input_filename = frame->GetFileName();
-            _pv_generators[file_id] = new PvGenerator(file_id, input_filename);
+            PvGenerator pv_generator(file_id, input_filename);
 
             auto input_image = frame->GetImage();
-            pv_success = _pv_generators[file_id]->GetPvImage(input_image, pv_data, increment, frame->CurrentStokes(), pv_image, message);
+            pv_success = pv_generator.GetPvImage(input_image, pv_data, increment, frame->CurrentStokes(), pv_image, message);
+
             frame->CloseCachedImage(input_filename);
         }
     }
 
     // Clean up
-    _pv_generators.erase(file_id);
     cancelled = _stop_pv[file_id]; // Final check
     if (add_frame) {
         RemoveFrame(file_id); // Sets stop flag in case image closed during pv generation
