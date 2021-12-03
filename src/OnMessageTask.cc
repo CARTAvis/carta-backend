@@ -37,11 +37,8 @@ OnMessageTask* AnimationTask::execute() {
         } else {
             ThreadManager::QueueTask(new AnimationTask(_session));
         }
-    } else {
-        if (!_session->WaitingFlowEvent()) {
-            _session->CancelAnimation();
-        }
     }
+    
     return nullptr;
 }
 
