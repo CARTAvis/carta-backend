@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
 #define CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
 
+#include <cstddef>
 #include <vector>
 
 namespace carta {
