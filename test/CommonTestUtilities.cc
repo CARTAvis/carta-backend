@@ -382,7 +382,7 @@ void CompareSpatialProfiles(
         EXPECT_EQ(data_profiles.first.size(), data_x.size());
         if (data_profiles.first.size() == data_x.size()) {
             for (int i = 0; i < data_x.size(); ++i) {
-                if (!isnan(data_profiles.first[i]) || !isnan(data_x[i])) {
+                if (!std::isnan(data_profiles.first[i]) || !std::isnan(data_x[i])) {
                     EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
                 }
             }
@@ -391,7 +391,7 @@ void CompareSpatialProfiles(
         EXPECT_EQ(data_profiles.second.size(), data_y.size());
         if (data_profiles.second.size() == data_y.size()) {
             for (int i = 0; i < data_y.size(); ++i) {
-                if (!isnan(data_profiles.second[i]) || !isnan(data_y[i])) {
+                if (!std::isnan(data_profiles.second[i]) || !std::isnan(data_y[i])) {
                     EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
                 }
             }
@@ -403,7 +403,7 @@ void CompareVectors(const std::vector<float>& data1, const std::vector<float>& d
     EXPECT_EQ(data1.size(), data2.size());
     if (data1.size() == data2.size()) {
         for (int i = 0; i < data1.size(); ++i) {
-            if (!isnan(data1[i]) || !isnan(data2[i])) {
+            if (!std::isnan(data1[i]) || !std::isnan(data2[i])) {
                 EXPECT_FLOAT_EQ(data1[i], data2[i]);
             }
         }
