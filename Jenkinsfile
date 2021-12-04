@@ -679,6 +679,21 @@ def prepare_macos11_ICD() {
     }
 }
 
+def prepare_macos12_ICD() {
+    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        sh "rm -rf carta-backend-ICD-test"
+        sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git"
+        dir ('carta-backend-ICD-test') {
+            sh "git submodule init && git submodule update && npm install"
+            dir ('protobuf') {
+                sh "./build_proto.sh"
+            }
+            sh "cp ../../config.json src/test/config.json"
+        }
+        stash includes: "carta-backend-ICD-test/**/*", name: "macos12-ICD"
+    }
+}
+
 def session() {
     script {
         dir ('carta-backend-ICD-test') {
