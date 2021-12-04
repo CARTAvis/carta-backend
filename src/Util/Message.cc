@@ -302,6 +302,13 @@ CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> 
     return resume_session;
 }
 
+CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std::string& coordinate) {
+    CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
+    spectral_config.set_coordinate(coordinate);
+    spectral_config.add_stats_types(CARTA::StatsType::Mean);
+    return spectral_config;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

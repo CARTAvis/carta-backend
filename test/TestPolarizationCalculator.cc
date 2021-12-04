@@ -68,7 +68,7 @@ public:
     };
 
     static void CheckFrameImageCache(
-        const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, std::vector<float> data) {
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, const std::vector<float>& data) {
         // Get spectral axis size
         casacore::CoordinateSystem coord_sys = image->coordinates();
         int spectral_axis = coord_sys.spectralAxisNumber();
@@ -83,10 +83,10 @@ public:
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_v;
-        GetImageData(image, AxisRange(channel), stokes_i, data_i);
-        GetImageData(image, AxisRange(channel), stokes_q, data_q);
-        GetImageData(image, AxisRange(channel), stokes_u, data_u);
-        GetImageData(image, AxisRange(channel), stokes_v, data_v);
+        GetImageData(data_i, image, stokes_i, AxisRange(channel));
+        GetImageData(data_q, image, stokes_q, AxisRange(channel));
+        GetImageData(data_u, image, stokes_u, AxisRange(channel));
+        GetImageData(data_v, image, stokes_v, AxisRange(channel));
 
         EXPECT_EQ(data.size(), data_i.size());
         EXPECT_EQ(data.size(), data_q.size());
@@ -115,133 +115,7 @@ public:
         }
     }
 
-    static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, AxisRange channel_axis_range,
-        int stokes, std::vector<float>& data, AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y)) {
-        // Get spectral and stokes indices
-        casacore::CoordinateSystem coord_sys = image->coordinates();
-        casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
-        int spectral_axis = coord_sys.spectralAxisNumber();
-        int stokes_axis = coord_sys.polarizationAxisNumber();
-
-        // Get a slicer
-        casacore::IPosition start(image->shape().size());
-        start = 0;
-        casacore::IPosition end(image->shape());
-        end -= 1;
-
-        auto x_axis_size = image->shape()[0];
-        auto y_axis_size = image->shape()[1];
-        auto spectral_axis_size = image->shape()[spectral_axis];
-
-        // Set x range
-        if ((x_range.from == ALL_X) && (x_range.to == ALL_X)) {
-            start(0) = 0;
-            end(0) = x_axis_size - 1;
-        } else if ((x_range.from >= 0) && (x_range.from < x_axis_size) && (x_range.to >= 0) && (x_range.to < x_axis_size) &&
-                   (x_range.from <= x_range.to)) {
-            start(0) = x_range.from;
-            end(0) = x_range.to;
-        }
-
-        // Set y range
-        if ((y_range.from == ALL_Y) && (y_range.to == ALL_Y)) {
-            start(1) = 0;
-            end(1) = y_axis_size - 1;
-        } else if ((y_range.from >= 0) && (y_range.from < y_axis_size) && (y_range.to >= 0) && (y_range.to < y_axis_size) &&
-                   (y_range.from <= y_range.to)) {
-            start(1) = y_range.from;
-            end(1) = y_range.to;
-        }
-
-        // Check spectral axis range
-        if (channel_axis_range.to == ALL_Z) {
-            channel_axis_range.to = spectral_axis_size - 1;
-        }
-        if (channel_axis_range.from == ALL_Z) {
-            channel_axis_range.from = 0;
-        }
-        if ((channel_axis_range.from > channel_axis_range.to) || (channel_axis_range.from < 0)) {
-            spdlog::error("Invalid spectral axis range [{}, {}]", channel_axis_range.from, channel_axis_range.to);
-            return;
-        }
-        if ((spectral_axis >= 0) && (channel_axis_range.to >= spectral_axis_size)) {
-            spdlog::error(
-                "channel number {} is greater or equal than the spectral axis size {}", channel_axis_range.to, spectral_axis_size);
-            return;
-        }
-
-        if (spectral_axis >= 0) {
-            start(spectral_axis) = channel_axis_range.from;
-            end(spectral_axis) = channel_axis_range.to;
-        }
-
-        auto stokes_axis_size = image->shape()[stokes_axis];
-
-        // Check stokes axis range
-        if ((stokes_axis >= 0) && (stokes >= stokes_axis_size)) {
-            spdlog::error("stokes number {} is greater or equal than the stokes axis size {}", stokes, stokes_axis_size);
-            return;
-        }
-
-        if (stokes_axis >= 0) {
-            start(stokes_axis) = stokes;
-            end(stokes_axis) = stokes;
-        }
-
-        // Get image data
-        casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
-        data.resize(section.length().product());
-        casacore::Array<float> tmp(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
-        casacore::SubImage<float> subimage(*image, section);
-        casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
-
-        for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
-            casacore::Array<float> cursor_data = lattice_iter.cursor();
-
-            if (image->isMasked()) {
-                casacore::Array<float> masked_data(cursor_data); // reference the same storage
-                const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
-
-                // Apply cursor mask to cursor data: set masked values to NaN. booleans are used to delete copy of data if necessary
-                bool del_mask_ptr;
-                const bool* cursor_mask_ptr = cursor_mask.getStorage(del_mask_ptr);
-
-                bool del_data_ptr;
-                float* masked_data_ptr = masked_data.getStorage(del_data_ptr);
-
-                for (size_t i = 0; i < cursor_data.nelements(); ++i) {
-                    if (!cursor_mask_ptr[i]) {
-                        masked_data_ptr[i] = NAN;
-                    }
-                }
-
-                // free storage for cursor arrays
-                cursor_mask.freeStorage(cursor_mask_ptr, del_mask_ptr);
-                masked_data.putStorage(masked_data_ptr, del_data_ptr);
-            }
-
-            casacore::IPosition cursor_shape(lattice_iter.cursorShape());
-            casacore::IPosition cursor_position(lattice_iter.position());
-            casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
-            tmp(cursor_slicer) = cursor_data;
-        }
-    }
-
-    static CARTA::SetSpectralRequirements_SpectralConfig CursorSpectralConfig(const std::string& coordinate) {
-        CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
-        spectral_config.set_coordinate(coordinate);
-        spectral_config.add_stats_types(CARTA::StatsType::Sum);
-        return spectral_config;
-    }
-
-    static CARTA::SetSpectralRequirements_SpectralConfig RegionSpectralConfig(const std::string& coordinate) {
-        CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
-        spectral_config.set_coordinate(coordinate);
-        spectral_config.add_stats_types(CARTA::StatsType::Mean);
-        return spectral_config;
-    }
-
-    static std::pair<std::vector<float>, std::vector<float>> GetSpatialProfiles(
+    static std::pair<std::vector<float>, std::vector<float>> GetCursorSpatialProfiles(
         const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, int cursor_x, int cursor_y) {
         // Get spectral axis size
         int x_size = image->shape()[0];
@@ -256,10 +130,10 @@ public:
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_v;
-        GetImageData(image, AxisRange(channel), stokes_i, data_i);
-        GetImageData(image, AxisRange(channel), stokes_q, data_q);
-        GetImageData(image, AxisRange(channel), stokes_u, data_u);
-        GetImageData(image, AxisRange(channel), stokes_v, data_v);
+        GetImageData(data_i, image, stokes_i, AxisRange(channel));
+        GetImageData(data_q, image, stokes_q, AxisRange(channel));
+        GetImageData(data_u, image, stokes_u, AxisRange(channel));
+        GetImageData(data_v, image, stokes_v, AxisRange(channel));
 
         std::vector<float> profile_x;
         for (int i = 0; i < data_i.size(); ++i) {
@@ -343,10 +217,10 @@ public:
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_v;
-        GetImageData(image, z_range, stokes_i, data_i, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(image, z_range, stokes_q, data_q, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(image, z_range, stokes_u, data_u, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(image, z_range, stokes_v, data_v, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_i, image, stokes_i, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_q, image, stokes_q, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_u, image, stokes_u, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_v, image, stokes_v, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
 
         std::vector<float> profile;
         for (int i = 0; i < data_i.size(); ++i) {
@@ -379,66 +253,6 @@ public:
         }
 
         return profile;
-    }
-
-    static std::vector<float> SpatialProfileValues(CARTA::SpatialProfile& profile) {
-        std::string buffer = profile.raw_values_fp32();
-        std::vector<float> values(buffer.size() / sizeof(float));
-        memcpy(values.data(), buffer.data(), buffer.size());
-        return values;
-    }
-
-    static std::vector<float> SpectralProfileValues(CARTA::SpectralProfile& profile) {
-        std::string buffer = profile.raw_values_fp32();
-        std::vector<float> values(buffer.size() / sizeof(float));
-        memcpy(values.data(), buffer.data(), buffer.size());
-        return values;
-    }
-
-    static std::vector<double> SpectralProfileDoubleValues(CARTA::SpectralProfile& profile) {
-        std::string buffer = profile.raw_values_fp64();
-        std::vector<double> values(buffer.size() / sizeof(double));
-        memcpy(values.data(), buffer.data(), buffer.size());
-        return values;
-    }
-
-    static void CompareData(
-        std::vector<CARTA::SpatialProfileData> data_vec, std::pair<std::vector<float>, std::vector<float>> data_profiles) {
-        for (auto& data : data_vec) {
-            auto profiles_x = data.profiles(0);
-            auto profiles_y = data.profiles(1);
-            auto data_x = SpatialProfileValues(profiles_x);
-            auto data_y = SpatialProfileValues(profiles_y);
-
-            EXPECT_EQ(data_profiles.first.size(), data_x.size());
-            if (data_profiles.first.size() == data_x.size()) {
-                for (int i = 0; i < data_x.size(); ++i) {
-                    if (!isnan(data_profiles.first[i]) && !isnan(data_x[i])) {
-                        EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
-                    }
-                }
-            }
-
-            EXPECT_EQ(data_profiles.second.size(), data_y.size());
-            if (data_profiles.second.size() == data_y.size()) {
-                for (int i = 0; i < data_y.size(); ++i) {
-                    if (!isnan(data_profiles.second[i]) && !isnan(data_y[i])) {
-                        EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
-                    }
-                }
-            }
-        }
-    }
-
-    static void CompareData(const std::vector<float>& data1, const std::vector<float>& data2) {
-        EXPECT_EQ(data1.size(), data2.size());
-        if (data1.size() == data2.size()) {
-            for (int i = 0; i < data1.size(); ++i) {
-                if (!isnan(data1[i]) && !isnan(data2[i])) {
-                    EXPECT_FLOAT_EQ(data1[i], data2[i]);
-                }
-            }
-        }
     }
 
     static void TestCursorProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
@@ -474,16 +288,14 @@ public:
         std::vector<CARTA::SpatialProfileData> data_vec;
         frame->FillSpatialProfileData(data_vec);
 
-        EXPECT_EQ(data_vec.size(), 1);
-
         // Get spatial profiles in another way
-        auto data_profiles = GetSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
+        auto data_profiles = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CompareData(data_vec, data_profiles);
+        CompareSpatialProfiles(data_vec, data_profiles);
 
         // Set spectral configs for the cursor
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig(stokes_config_z)};
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
         frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
 
         // Get cursor spectral profile data from the Frame
@@ -498,14 +310,14 @@ public:
             },
             CURSOR_REGION_ID, stokes_changed);
 
-        std::vector<float> spectral_profile_data_1 = SpectralProfileValues(spectral_profile);
+        auto spectral_profile_data_1 = GetSpectralProfileValues<float>(spectral_profile);
 
         // Get spatial profiles by another way
         int stokes = stokes_config_z == "z" ? current_stokes : config_stokes;
         std::vector<float> spectral_profile_data_2 = GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CompareData(spectral_profile_data_1, spectral_profile_data_2);
+        CompareVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
     static void TestPointRegionProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
@@ -566,13 +378,13 @@ public:
         }
 
         // Get a point region spatial profiles in another way
-        auto data_profiles = GetSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
+        auto data_profiles = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
         // Compare data
-        CompareData(spatial_profile_data_vec, data_profiles);
+        CompareSpatialProfiles(spatial_profile_data_vec, data_profiles);
 
         // Set spectral configs for a point region
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{CursorSpectralConfig(stokes_config_z)};
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
         region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
 
         // Get cursor spectral profile data from the RegionHandler
@@ -587,7 +399,7 @@ public:
             },
             region_id, file_id, stokes_changed);
 
-        std::vector<double> tmp = SpectralProfileDoubleValues(spectral_profile);
+        auto tmp = GetSpectralProfileValues<double>(spectral_profile);
         // convert the double type vector to the float type vector
         std::vector<float> spectral_profile_data_1(tmp.begin(), tmp.end());
 
@@ -596,7 +408,7 @@ public:
         std::vector<float> spectral_profile_data_2 = GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CompareData(spectral_profile_data_1, spectral_profile_data_2);
+        CompareVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
     static void TestRectangleRegionProfiles(
@@ -648,7 +460,7 @@ public:
         EXPECT_TRUE(success);
 
         // Set spectral configs for a point region
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{RegionSpectralConfig(stokes_config_z)};
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
         region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
 
         // Get cursor spectral profile data from the RegionHandler
@@ -663,9 +475,9 @@ public:
             },
             region_id, file_id, stokes_changed);
 
-        std::vector<double> spectral_profile_data_double = SpectralProfileDoubleValues(spectral_profile);
+        auto spectral_profile_data_double = GetSpectralProfileValues<double>(spectral_profile);
         // convert the double type vector to the float type vector
-        std::vector<float> spectral_profile_data_float(spectral_profile_data_double.begin(), spectral_profile_data_double.end());
+        std::vector<float> spectral_profile_data_float_1(spectral_profile_data_double.begin(), spectral_profile_data_double.end());
 
         // get spectral profile in another way
         carta::PolarizationCalculator polarization_calculator(image);
@@ -712,7 +524,7 @@ public:
 
         for (int channel = 0; channel < z_size; ++channel) {
             std::vector<float> tmp_data;
-            GetImageData(resulting_image, AxisRange(channel), stokes, tmp_data);
+            GetImageData(tmp_data, resulting_image, stokes, AxisRange(channel));
             double tmp_sum(0);
             double tmp_count(0);
             for (int i = 0; i < tmp_data.size(); ++i) {
@@ -729,18 +541,7 @@ public:
         std::vector<float> spectral_profile_data_float_2(spectral_profile_data_double_2.begin(), spectral_profile_data_double_2.end());
 
         // check the consistency of two ways
-        CompareData(spectral_profile_data_float, spectral_profile_data_float_2);
-    }
-
-    static void Compare(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2) {
-        auto hist1 = cube_histogram1.GetHistogramBins();
-        auto hist2 = cube_histogram2.GetHistogramBins();
-        EXPECT_EQ(hist1.size(), hist2.size());
-        if (hist1.size() == hist2.size()) {
-            for (int i = 0; i < hist1.size(); ++i) {
-                EXPECT_EQ(hist1[i], hist2[i]);
-            }
-        }
+        CompareVectors(spectral_profile_data_float_1, spectral_profile_data_float_2);
     }
 
     static void CalculateCubeHistogram(
@@ -795,9 +596,9 @@ public:
 
         // Calculate the cube histogram
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<Frame>(0, loaders.Get(sample_file_path), "0");
-        carta::Histogram cube_histogram;
-        CalculateCubeHistogram(frame, current_channel, current_stokes, cube_histogram);
+        auto frame_1 = std::make_shared<Frame>(0, loaders.Get(sample_file_path), "0");
+        carta::Histogram cube_histogram_1;
+        CalculateCubeHistogram(frame_1, current_channel, current_stokes, cube_histogram_1);
 
         // Calculate the cube histogram in another way
         carta::PolarizationCalculator polarization_calculator(image);
@@ -818,13 +619,13 @@ public:
         }
 
         auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(resulting_image));
-        auto frame2 = std::make_shared<Frame>(1, loader, "");
+        auto frame_2 = std::make_shared<Frame>(1, loader, "");
         int fiddled_stokes(0);
 
-        carta::Histogram cube_histogram2;
-        CalculateCubeHistogram(frame2, current_channel, fiddled_stokes, cube_histogram2);
+        carta::Histogram cube_histogram_2;
+        CalculateCubeHistogram(frame_2, current_channel, fiddled_stokes, cube_histogram_2);
 
-        Compare(cube_histogram, cube_histogram2);
+        CompareHistograms(cube_histogram_1, cube_histogram_2);
     }
 };
 

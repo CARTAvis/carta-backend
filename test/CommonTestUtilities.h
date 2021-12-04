@@ -16,6 +16,7 @@
 
 #include "App.h"
 #include "Util/Casacore.h"
+#include "Util/Message.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -27,8 +28,6 @@ namespace fs = std::filesystem;
 
 fs::path TestRoot();
 fs::path UserDirectory();
-
-bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0);
 
 class ImageGenerator {
 public:
@@ -88,5 +87,18 @@ public:
     void SetUp() override;
     void TearDown() override;
 };
+
+bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0);
+void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes,
+    AxisRange z_range = AxisRange(ALL_Z), AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y));
+template <typename T>
+std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile);
+std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile);
+void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2);
+void CompareSpatialProfiles(
+    const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles);
+void CompareHistograms(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2);
+
+#include "CommonTestUtilities.tcc"
 
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_

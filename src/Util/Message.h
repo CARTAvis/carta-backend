@@ -17,6 +17,7 @@
 #include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
@@ -72,6 +73,7 @@ public:
     static CARTA::ImageProperties ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
         CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
+    static CARTA::SetSpectralRequirements_SpectralConfig SpectralConfig(const std::string& coordinate);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,

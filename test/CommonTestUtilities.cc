@@ -7,6 +7,9 @@
 #include <functional>
 #include <stdexcept>
 
+#include <casacore/images/Images/SubImage.h>
+#include <lattices/Lattices/MaskedLatticeIterator.h>
+
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
 #include "Util/App.h"
@@ -20,28 +23,6 @@ fs::path TestRoot() {
         root = fs::current_path();
     }
     return root;
-}
-
-bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num) {
-    bool image_ok(false);
-    try {
-        casacore::ImageOpener::ImageTypes image_types = casacore::ImageOpener::imageType(filename);
-        switch (image_types) {
-            case casacore::ImageOpener::AIPSPP:
-                image = std::make_shared<casacore::PagedImage<float>>(filename);
-                image_ok = true;
-                break;
-            case casacore::ImageOpener::FITS:
-                image = std::make_shared<casacore::FITSImage>(filename, 0, hdu_num);
-                image_ok = true;
-                break;
-            default:
-                break;
-        }
-    } catch (const casacore::AipsError& x) {
-        spdlog::error("Error on opening the file: {}", x.getMesg());
-    }
-    return image_ok;
 }
 
 fs::path UserDirectory() {
@@ -257,4 +238,185 @@ void CartaEnvironment::SetUp() {
 void CartaEnvironment::TearDown() {
     // delete directory of generated images
     fs::remove_all(TestRoot() / "data" / "generated");
+}
+
+bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num) {
+    bool image_ok(false);
+    try {
+        casacore::ImageOpener::ImageTypes image_types = casacore::ImageOpener::imageType(filename);
+        switch (image_types) {
+            case casacore::ImageOpener::AIPSPP:
+                image = std::make_shared<casacore::PagedImage<float>>(filename);
+                image_ok = true;
+                break;
+            case casacore::ImageOpener::FITS:
+                image = std::make_shared<casacore::FITSImage>(filename, 0, hdu_num);
+                image_ok = true;
+                break;
+            default:
+                break;
+        }
+    } catch (const casacore::AipsError& x) {
+        spdlog::error("Error on opening the file: {}", x.getMesg());
+    }
+    return image_ok;
+}
+
+void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes, AxisRange z_range,
+    AxisRange x_range, AxisRange y_range) {
+    // Get spectral and stokes indices
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int stokes_axis = coord_sys.polarizationAxisNumber();
+
+    // Get a slicer
+    casacore::IPosition start(image->shape().size());
+    start = 0;
+    casacore::IPosition end(image->shape());
+    end -= 1;
+
+    auto x_axis_size = image->shape()[0];
+    auto y_axis_size = image->shape()[1];
+    auto z_axis_size = image->shape()[spectral_axis];
+
+    // Set x range
+    if ((x_range.from >= 0) && (x_range.from < x_axis_size) && (x_range.to >= 0) && (x_range.to < x_axis_size) &&
+        (x_range.from <= x_range.to)) {
+        start(0) = x_range.from;
+        end(0) = x_range.to;
+    } else {
+        start(0) = 0;
+        end(0) = x_axis_size - 1;
+    }
+
+    // Set y range
+    if ((y_range.from >= 0) && (y_range.from < y_axis_size) && (y_range.to >= 0) && (y_range.to < y_axis_size) &&
+        (y_range.from <= y_range.to)) {
+        start(1) = y_range.from;
+        end(1) = y_range.to;
+    } else {
+        start(1) = 0;
+        end(1) = y_axis_size - 1;
+    }
+
+    // Set z range
+    if (spectral_axis >= 0) {
+        if ((z_range.from >= 0) && (z_range.from < z_axis_size) && (z_range.to >= 0) && (z_range.to < z_axis_size) &&
+            (z_range.from <= z_range.to)) {
+            start(spectral_axis) = z_range.from;
+            end(spectral_axis) = z_range.to;
+        } else {
+            start(spectral_axis) = 0;
+            end(spectral_axis) = z_axis_size - 1;
+        }
+    }
+
+    // Set stokes range
+    auto stokes_axis_size = image->shape()[stokes_axis];
+    if (stokes_axis >= 0) {
+        if ((stokes >= 0) && (stokes < stokes_axis_size)) {
+            start(stokes_axis) = stokes;
+            end(stokes_axis) = stokes;
+        } else {
+            spdlog::error("Invalid stokes: {}", stokes);
+            return;
+        }
+    }
+
+    // Get image data
+    casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
+    data.resize(section.length().product());
+    casacore::Array<float> tmp(section.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+    casacore::SubImage<float> sub_image(*image, section);
+    casacore::RO_MaskedLatticeIterator<float> lattice_iter(sub_image);
+
+    for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
+        casacore::Array<float> cursor_data = lattice_iter.cursor();
+
+        if (image->isMasked()) {
+            casacore::Array<float> masked_data(cursor_data); // reference the same storage
+            const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
+
+            // Apply cursor mask to cursor data: set masked values to NaN. booleans are used to delete copy of data if necessary
+            bool del_mask_ptr;
+            const bool* cursor_mask_ptr = cursor_mask.getStorage(del_mask_ptr);
+
+            bool del_data_ptr;
+            float* masked_data_ptr = masked_data.getStorage(del_data_ptr);
+
+            for (size_t i = 0; i < cursor_data.nelements(); ++i) {
+                if (!cursor_mask_ptr[i]) {
+                    masked_data_ptr[i] = NAN;
+                }
+            }
+
+            // free storage for cursor arrays
+            cursor_mask.freeStorage(cursor_mask_ptr, del_mask_ptr);
+            masked_data.putStorage(masked_data_ptr, del_data_ptr);
+        }
+
+        casacore::IPosition cursor_shape(lattice_iter.cursorShape());
+        casacore::IPosition cursor_position(lattice_iter.position());
+        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
+        tmp(cursor_slicer) = cursor_data;
+    }
+}
+
+std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile) {
+    std::string buffer = profile.raw_values_fp32();
+    std::vector<float> values(buffer.size() / sizeof(float));
+    memcpy(values.data(), buffer.data(), buffer.size());
+    return values;
+}
+
+void CompareSpatialProfiles(
+    const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
+    EXPECT_EQ(data_vec.size(), 1);
+    for (auto& data : data_vec) {
+        auto profiles_x = data.profiles(0);
+        auto profiles_y = data.profiles(1);
+        auto data_x = GetSpatialProfileValues(profiles_x);
+        auto data_y = GetSpatialProfileValues(profiles_y);
+
+        EXPECT_EQ(data_profiles.first.size(), data_x.size());
+        if (data_profiles.first.size() == data_x.size()) {
+            for (int i = 0; i < data_x.size(); ++i) {
+                if (!isnan(data_profiles.first[i]) || !isnan(data_x[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
+                }
+            }
+        }
+
+        EXPECT_EQ(data_profiles.second.size(), data_y.size());
+        if (data_profiles.second.size() == data_y.size()) {
+            for (int i = 0; i < data_y.size(); ++i) {
+                if (!isnan(data_profiles.second[i]) || !isnan(data_y[i])) {
+                    EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
+                }
+            }
+        }
+    }
+}
+
+void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2) {
+    EXPECT_EQ(data1.size(), data2.size());
+    if (data1.size() == data2.size()) {
+        for (int i = 0; i < data1.size(); ++i) {
+            if (!isnan(data1[i]) || !isnan(data2[i])) {
+                EXPECT_FLOAT_EQ(data1[i], data2[i]);
+            }
+        }
+    }
+}
+
+void CompareHistograms(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2) {
+    auto hist1 = cube_histogram1.GetHistogramBins();
+    auto hist2 = cube_histogram2.GetHistogramBins();
+    EXPECT_EQ(hist1.size(), hist2.size());
+    if (hist1.size() == hist2.size()) {
+        for (int i = 0; i < hist1.size(); ++i) {
+            EXPECT_EQ(hist1[i], hist2[i]);
+        }
+    }
 }
