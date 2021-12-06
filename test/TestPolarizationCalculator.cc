@@ -12,12 +12,6 @@
 #include "Region/RegionHandler.h"
 #include "Session.h"
 
-static const string SAMPLE_IMAGE_CASA = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.image";
-static const string SAMPLE_IMAGE_FITS = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.fits";
-static const string SAMPLE_IMAGE_HDF5 = "IRCp10216_sci.spw0.cube.IQUV.manual.pbcor.hdf5";
-
-static const int MAX_CHANNEL = 5;
-
 using namespace carta;
 
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
@@ -53,9 +47,7 @@ public:
 
             // Set stokes to be calculated
             std::string message;
-            int max_channel = (spectral_axis_size > MAX_CHANNEL) ? MAX_CHANNEL : spectral_axis_size;
-
-            for (int channel = 0; channel < max_channel; ++channel) {
+            for (int channel = 0; channel < spectral_axis_size; ++channel) {
                 frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
                 CheckFrameImageCache(image, channel, COMPUTE_STOKES_PTOTAL, frame->_image_cache);
 
@@ -265,21 +257,25 @@ public:
         return profile;
     }
 
-    static void TestCursorProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
-        std::string stokes_config_x, std::string stokes_config_y, std::string stokes_config_z) {
-        std::string reference_file_path = CasaImagePath(SAMPLE_IMAGE_CASA);
+    static void TestCursorProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
+        std::string stokes_config_y, std::string stokes_config_z) {
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        if (!OpenImage(image, reference_file_path)) {
+        if (!OpenImage(image, fits_file_path)) {
+            spdlog::error("File {} does not exist.", fits_file_path);
             return;
         }
 
-        // Get directional axis size
-        int x_size = image->shape()[0];
-        int y_size = image->shape()[1];
-
         // Open the file through the Frame
+        if (!fs::exists(hdf5_file_path)) {
+            spdlog::error("File {} does not exist.", hdf5_file_path);
+            return;
+        }
+
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(hdf5_file_path), "0"));
         EXPECT_TRUE(frame->IsValid());
 
         // Set spatial profiles requirements
@@ -287,6 +283,9 @@ public:
             Message::SpatialConfig(stokes_config_x), Message::SpatialConfig(stokes_config_y)};
         frame->SetSpatialRequirements(profiles);
 
+        // Get directional axis size
+        int x_size = image->shape()[0];
+        int y_size = image->shape()[1];
         int cursor_x(x_size / 2);
         int cursor_y(y_size / 2);
         frame->SetCursor(cursor_x, cursor_y);
@@ -330,22 +329,26 @@ public:
         CompareVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
-    static void TestPointRegionProfiles(std::string sample_file_path, int current_channel, int current_stokes, int config_stokes,
-        std::string stokes_config_x, std::string stokes_config_y, std::string stokes_config_z) {
-        std::string reference_file_path = CasaImagePath(SAMPLE_IMAGE_CASA);
+    static void TestPointRegionProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
+        std::string stokes_config_y, std::string stokes_config_z) {
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        if (!OpenImage(image, reference_file_path)) {
+        if (!OpenImage(image, fits_file_path)) {
+            spdlog::error("File {} does not exist.", fits_file_path);
             return;
         }
 
         // Open a sample image through the Frame
-        if (!fs::exists(sample_file_path)) {
+        if (!fs::exists(hdf5_file_path)) {
+            spdlog::error("File {} does not exist.", hdf5_file_path);
             return;
         }
 
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<Frame>(file_id, loaders.Get(sample_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(hdf5_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
@@ -421,23 +424,26 @@ public:
         CompareVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
-    static void TestRectangleRegionProfiles(
-        std::string sample_file_path, int current_channel, int current_stokes, const std::string& stokes_config_z) {
+    static void TestRectangleRegionProfiles(int current_channel, int current_stokes, const std::string& stokes_config_z) {
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+
         // Open a reference image
-        std::string reference_file_path = CasaImagePath(SAMPLE_IMAGE_CASA);
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        if (!OpenImage(image, reference_file_path)) {
+        if (!OpenImage(image, fits_file_path)) {
+            spdlog::error("File {} does not exist.", fits_file_path);
             return;
         }
 
         // Open a sample image through the Frame
-        if (!fs::exists(sample_file_path)) {
+        if (!fs::exists(hdf5_file_path)) {
+            spdlog::error("File {} does not exist.", hdf5_file_path);
             return;
         }
 
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<Frame>(file_id, loaders.Get(sample_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(hdf5_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
@@ -556,7 +562,7 @@ public:
 
     static void CalculateCubeHistogram(
         const std::shared_ptr<Frame>& frame, int current_channel, int current_stokes, carta::Histogram& cube_histogram) {
-        // Set image channels
+        // Set image channels (cube histogram should be independent of z channel settings)
         std::string message;
         frame->SetImageChannels(current_channel, current_stokes, message);
 
@@ -591,24 +597,29 @@ public:
         }
     }
 
-    static void TestCubeHistogram(std::string sample_file_path, int current_channel, int current_stokes) {
+    static void TestCubeHistogram(int current_stokes) {
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+
         // Open a reference image
-        std::string reference_file_path = CasaImagePath(SAMPLE_IMAGE_CASA);
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        if (!OpenImage(image, reference_file_path)) {
+        if (!OpenImage(image, fits_file_path)) {
+            spdlog::error("File {} does not exist.", fits_file_path);
             return;
         }
 
         // Open a sample image through the Frame
-        if (!fs::exists(sample_file_path)) {
+        if (!fs::exists(hdf5_file_path)) {
+            spdlog::error("File {} does not exist.", hdf5_file_path);
             return;
         }
 
         // Calculate the cube histogram
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame_1 = std::make_shared<Frame>(0, loaders.Get(sample_file_path), "0");
+        auto frame_1 = std::make_shared<Frame>(0, loaders.Get(hdf5_file_path), "0");
         carta::Histogram cube_histogram_1;
-        CalculateCubeHistogram(frame_1, current_channel, current_stokes, cube_histogram_1);
+        int current_channel_1(0);
+        CalculateCubeHistogram(frame_1, current_channel_1, current_stokes, cube_histogram_1);
 
         // Calculate the cube histogram in another way
         carta::PolarizationCalculator polarization_calculator(image);
@@ -633,7 +644,8 @@ public:
         int fiddled_stokes(0);
 
         carta::Histogram cube_histogram_2;
-        CalculateCubeHistogram(frame_2, current_channel, fiddled_stokes, cube_histogram_2);
+        int current_channel_2(1);
+        CalculateCubeHistogram(frame_2, current_channel_2, fiddled_stokes, cube_histogram_2);
 
         CompareHistograms(cube_histogram_1, cube_histogram_2);
     }
@@ -685,139 +697,78 @@ TEST_F(PolarizationCalculatorTest, TestStokesSource) {
 TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
     TestFrame::TestFrameImageCache(ImageGenerator::GeneratedFitsImagePath("100 100 25 4"));
     TestFrame::TestFrameImageCache(ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4"));
-
-    TestFrame::TestFrameImageCache(CasaImagePath(SAMPLE_IMAGE_CASA));
-    TestFrame::TestFrameImageCache(FitsImagePath(SAMPLE_IMAGE_FITS));
-    TestFrame::TestFrameImageCache(Hdf5ImagePath(SAMPLE_IMAGE_HDF5));
 }
 
 TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 0, "Ix", "Iy", "Iz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy", "Qz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy", "Uz");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy", "Vz");
+    TestCursorProfiles(1, 0, 0, "Ix", "Iy", "Iz");
+    TestCursorProfiles(1, 0, 1, "Qx", "Qy", "Qz");
+    TestCursorProfiles(1, 0, 2, "Ux", "Uy", "Uz");
+    TestCursorProfiles(1, 0, 3, "Vx", "Vy", "Vz");
 
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestCursorProfiles(1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
 
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 0, "Ix", "Iy", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 1, "Qx", "Qy", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 2, "Ux", "Uy", "z");
-    TestCursorProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 1, 0, 3, "Vx", "Vy", "z");
-
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
-
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy", "Iz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy", "Qz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy", "Uz");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy", "Vz");
-
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
-
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 0, "Ix", "Iy", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 1, "Qx", "Qy", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 2, "Ux", "Uy", "z");
-    TestCursorProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 1, 0, 3, "Vx", "Vy", "z");
+    TestCursorProfiles(1, 0, 0, "Ix", "Iy", "z");
+    TestCursorProfiles(1, 0, 1, "Qx", "Qy", "z");
+    TestCursorProfiles(1, 0, 2, "Ux", "Uy", "z");
+    TestCursorProfiles(1, 0, 3, "Vx", "Vy", "z");
 }
 
 TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+    TestPointRegionProfiles(0, 0, 0, "Ix", "Iy", "Iz");
+    TestPointRegionProfiles(0, 0, 1, "Qx", "Qy", "Qz");
+    TestPointRegionProfiles(0, 0, 2, "Ux", "Uy", "Uz");
+    TestPointRegionProfiles(0, 0, 3, "Vx", "Vy", "Vz");
 
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 0, "Ix", "Iy", "Iz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 1, "Qx", "Qy", "Qz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 2, "Ux", "Uy", "Uz");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 3, "Vx", "Vy", "Vz");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestPointRegionProfiles(0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
 
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 0, "Ix", "Iy", "Iz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 1, "Qx", "Qy", "Qz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 2, "Ux", "Uy", "Uz");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 3, "Vx", "Vy", "Vz");
-
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
-
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
-
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 0, "Ix", "Iy", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 1, "Qx", "Qy", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 2, "Ux", "Uy", "z");
-    TestPointRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, 3, "Vx", "Vy", "z");
-
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 0, "Ix", "Iy", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 1, "Qx", "Qy", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 2, "Ux", "Uy", "z");
-    TestPointRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, 3, "Vx", "Vy", "z");
+    TestPointRegionProfiles(0, 0, 0, "Ix", "Iy", "z");
+    TestPointRegionProfiles(0, 0, 1, "Qx", "Qy", "z");
+    TestPointRegionProfiles(0, 0, 2, "Ux", "Uy", "z");
+    TestPointRegionProfiles(0, 0, 3, "Vx", "Vy", "z");
 }
 
 TEST_F(PolarizationCalculatorTest, TestRectangleRegionProfiles) {
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Ptotalz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "PFtotalz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Plinearz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "PFlinearz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Panglez");
+    TestRectangleRegionProfiles(0, 0, "Ptotalz");
+    TestRectangleRegionProfiles(0, 0, "PFtotalz");
+    TestRectangleRegionProfiles(0, 0, "Plinearz");
+    TestRectangleRegionProfiles(0, 0, "PFlinearz");
+    TestRectangleRegionProfiles(0, 0, "Panglez");
 
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Iz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Qz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Uz");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "Vz");
+    TestRectangleRegionProfiles(0, 0, "Iz");
+    TestRectangleRegionProfiles(0, 0, "Qz");
+    TestRectangleRegionProfiles(0, 0, "Uz");
+    TestRectangleRegionProfiles(0, 0, "Vz");
 
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 0, "z");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 1, "z");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 2, "z");
-    TestRectangleRegionProfiles(FitsImagePath(SAMPLE_IMAGE_FITS), 0, 3, "z");
-
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Ptotalz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "PFtotalz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Plinearz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "PFlinearz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Panglez");
-
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Iz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Qz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Uz");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "Vz");
-
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 0, "z");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 1, "z");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 2, "z");
-    TestRectangleRegionProfiles(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, 3, "z");
+    TestRectangleRegionProfiles(0, 0, "z");
+    TestRectangleRegionProfiles(0, 1, "z");
+    TestRectangleRegionProfiles(0, 2, "z");
+    TestRectangleRegionProfiles(0, 3, "z");
 }
 
 TEST_F(PolarizationCalculatorTest, TestCubeHistogram) {
-    TestCubeHistogram(FitsImagePath(SAMPLE_IMAGE_FITS), 0, COMPUTE_STOKES_PTOTAL);
-    TestCubeHistogram(Hdf5ImagePath(SAMPLE_IMAGE_HDF5), 0, COMPUTE_STOKES_PTOTAL);
+    TestCubeHistogram(COMPUTE_STOKES_PTOTAL);
+    TestCubeHistogram(COMPUTE_STOKES_PFTOTAL);
+    TestCubeHistogram(COMPUTE_STOKES_PLINEAR);
+    TestCubeHistogram(COMPUTE_STOKES_PFLINEAR);
+    TestCubeHistogram(COMPUTE_STOKES_PANGLE);
 }
