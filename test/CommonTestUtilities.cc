@@ -266,9 +266,14 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
     AxisRange x_range, AxisRange y_range) {
     // Get spectral and stokes indices
     casacore::CoordinateSystem coord_sys = image->coordinates();
-    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
     int spectral_axis = coord_sys.spectralAxisNumber();
+    if (spectral_axis < 0 && image->ndim() > 2) {
+        spectral_axis = 2; // assume spectral axis
+    }
     int stokes_axis = coord_sys.polarizationAxisNumber();
+    if (stokes_axis < 0 && image->ndim() > 3) {
+        stokes_axis = 3; // assume stokes axis
+    }
 
     // Get a slicer
     casacore::IPosition start(image->shape().size());
@@ -278,7 +283,6 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
 
     auto x_axis_size = image->shape()[0];
     auto y_axis_size = image->shape()[1];
-    auto z_axis_size = image->shape()[spectral_axis];
 
     // Set x range
     if ((x_range.from >= 0) && (x_range.from < x_axis_size) && (x_range.to >= 0) && (x_range.to < x_axis_size) &&
@@ -302,6 +306,7 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
 
     // Set z range
     if (spectral_axis >= 0) {
+        auto z_axis_size = image->shape()[spectral_axis];
         if ((z_range.from >= 0) && (z_range.from < z_axis_size) && (z_range.to >= 0) && (z_range.to < z_axis_size) &&
             (z_range.from <= z_range.to)) {
             start(spectral_axis) = z_range.from;
@@ -313,8 +318,8 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
     }
 
     // Set stokes range
-    auto stokes_axis_size = image->shape()[stokes_axis];
     if (stokes_axis >= 0) {
+        auto stokes_axis_size = image->shape()[stokes_axis];
         if ((stokes >= 0) && (stokes < stokes_axis_size)) {
             start(stokes_axis) = stokes;
             end(stokes_axis) = stokes;

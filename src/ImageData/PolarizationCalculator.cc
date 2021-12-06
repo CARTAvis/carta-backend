@@ -14,11 +14,21 @@ using namespace carta;
 PolarizationCalculator::PolarizationCalculator(
     std::shared_ptr<casacore::ImageInterface<float>> image, AxisRange z_range, AxisRange x_range, AxisRange y_range)
     : _image(image), _image_valid(true) {
-    const auto& coord_sys = _image->coordinates();
-    if (!coord_sys.hasSpectralAxis() || !coord_sys.hasPolarizationCoordinate()) {
-        spdlog::error("There is no spectral or stokes coordinate in the image.");
+    const auto ndim = _image->ndim();
+    if (ndim < 4) {
+        spdlog::error("Invalid image dimension: {}", ndim);
         _image_valid = false;
         return;
+    }
+
+    const auto& coord_sys = _image->coordinates();
+    auto spectral_axis = coord_sys.spectralAxisNumber();
+    if (spectral_axis < 0) {
+        spectral_axis = 2; // assume spectral axis
+    }
+    auto stokes_axis = coord_sys.polarizationAxisNumber();
+    if (stokes_axis < 0) {
+        stokes_axis = 3; // assume stokes axis
     }
 
     std::vector<int> dir_axes = {0, 1};
@@ -26,16 +36,8 @@ PolarizationCalculator::PolarizationCalculator(
         casacore::Vector<casacore::Int> tmp_axes = coord_sys.directionAxesNumbers();
         dir_axes[0] = tmp_axes[0];
         dir_axes[1] = tmp_axes[1];
-    } else {
-        spdlog::error("There are no directional axes in the image.");
-        _image_valid = false;
-        return;
     }
 
-    auto stokes_axis = coord_sys.polarizationAxisNumber();
-    auto spectral_axis = coord_sys.spectralAxisNumber();
-
-    const auto ndim = _image->ndim();
     const auto shape = _image->shape();
     casacore::IPosition blc(ndim, 0);
     auto trc = shape - 1;
@@ -84,31 +86,48 @@ PolarizationCalculator::PolarizationCalculator(
     trc(spectral_axis) = z_range.to;
 
     // Get stokes indices and make stokes regions
-    const auto& stokes = coord_sys.stokesCoordinate();
-    int stokes_index;
-
-    if (stokes.toPixel(stokes_index, casacore::Stokes::I)) {
-        _stokes_image[I] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
-    }
-    if (stokes.toPixel(stokes_index, casacore::Stokes::Q)) {
-        _stokes_image[Q] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
-    }
-    if (stokes.toPixel(stokes_index, casacore::Stokes::U)) {
-        _stokes_image[U] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
-    }
-    if (stokes.toPixel(stokes_index, casacore::Stokes::V)) {
-        _stokes_image[V] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+    if (coord_sys.hasPolarizationCoordinate()) {
+        const auto& stokes = coord_sys.stokesCoordinate();
+        int stokes_index;
+        if (stokes.toPixel(stokes_index, casacore::Stokes::I)) {
+            _stokes_image[I] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+        }
+        if (stokes.toPixel(stokes_index, casacore::Stokes::Q)) {
+            _stokes_image[Q] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+        }
+        if (stokes.toPixel(stokes_index, casacore::Stokes::U)) {
+            _stokes_image[U] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+        }
+        if (stokes.toPixel(stokes_index, casacore::Stokes::V)) {
+            _stokes_image[V] = MakeSubImage(blc, trc, stokes_axis, stokes_index);
+        }
+    } else { // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
+        auto stokes_axis_size = _image->shape()[stokes_axis];
+        if (stokes_axis_size > 0) {
+            _stokes_image[I] = MakeSubImage(blc, trc, stokes_axis, 0);
+        }
+        if (stokes_axis_size > 1) {
+            _stokes_image[Q] = MakeSubImage(blc, trc, stokes_axis, 1);
+        }
+        if (stokes_axis_size > 2) {
+            _stokes_image[U] = MakeSubImage(blc, trc, stokes_axis, 2);
+        }
+        if (stokes_axis_size > 3) {
+            _stokes_image[V] = MakeSubImage(blc, trc, stokes_axis, 3);
+        }
     }
 }
 
 void PolarizationCalculator::FiddleStokesCoordinate(casacore::ImageInterface<float>& image, casacore::Stokes::StokesTypes type) {
     casacore::CoordinateSystem coord_sys = image.coordinates();
     int stokes_index = coord_sys.findCoordinate(casacore::Coordinate::STOKES);
-    casacore::Vector<int> which(1);
-    which(0) = int(type);
-    casacore::StokesCoordinate stokes(which);
-    coord_sys.replaceCoordinate(stokes, stokes_index);
-    image.setCoordinateInfo(coord_sys);
+    if (stokes_index > -1) {
+        casacore::Vector<int> which(1);
+        which(0) = int(type);
+        casacore::StokesCoordinate stokes(which);
+        coord_sys.replaceCoordinate(stokes, stokes_index);
+        image.setCoordinateInfo(coord_sys);
+    }
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::GetStokesImage(const StokesTypes& type) {

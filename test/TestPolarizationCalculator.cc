@@ -32,10 +32,17 @@ public:
             if (!OpenImage(image, sample_file_path)) {
                 return;
             }
+            if (image->ndim() < 4) {
+                spdlog::error("Invalid image dimension.");
+                return;
+            }
 
             // Get spectral axis size
             casacore::CoordinateSystem coord_sys = image->coordinates();
             int spectral_axis = coord_sys.spectralAxisNumber();
+            if (spectral_axis < 0) {
+                spectral_axis = 2; // assume spectral axis
+            }
             int spectral_axis_size = image->shape()[spectral_axis];
 
             // Open the file through the Frame
@@ -69,24 +76,21 @@ public:
 
     static void CheckFrameImageCache(
         const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, const std::vector<float>& data) {
-        // Get spectral axis size
-        casacore::CoordinateSystem coord_sys = image->coordinates();
-        int spectral_axis = coord_sys.spectralAxisNumber();
-        int spectral_axis_size = image->shape()[spectral_axis];
-
         // Verify each pixel value from calculation results
-        int stokes_i(0);
-        int stokes_q(1);
-        int stokes_u(2);
-        int stokes_v(3);
+        if (image->ndim() < 4) {
+            spdlog::error("Invalid image dimension.");
+            return;
+        }
         std::vector<float> data_i;
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_v;
-        GetImageData(data_i, image, stokes_i, AxisRange(channel));
-        GetImageData(data_q, image, stokes_q, AxisRange(channel));
-        GetImageData(data_u, image, stokes_u, AxisRange(channel));
-        GetImageData(data_v, image, stokes_v, AxisRange(channel));
+
+        // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
+        GetImageData(data_i, image, 0, AxisRange(channel));
+        GetImageData(data_q, image, 1, AxisRange(channel));
+        GetImageData(data_u, image, 2, AxisRange(channel));
+        GetImageData(data_v, image, 3, AxisRange(channel));
 
         EXPECT_EQ(data.size(), data_i.size());
         EXPECT_EQ(data.size(), data_q.size());
@@ -117,23 +121,26 @@ public:
 
     static std::pair<std::vector<float>, std::vector<float>> GetCursorSpatialProfiles(
         const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, int cursor_x, int cursor_y) {
+        if (image->ndim() < 4) {
+            spdlog::error("Invalid image dimension.");
+            return std::make_pair(std::vector<float>(), std::vector<float>());
+        }
+
         // Get spectral axis size
         int x_size = image->shape()[0];
         int y_size = image->shape()[1];
 
         // Verify each pixel value from calculation results
-        int stokes_i(0);
-        int stokes_q(1);
-        int stokes_u(2);
-        int stokes_v(3);
         std::vector<float> data_i;
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_v;
-        GetImageData(data_i, image, stokes_i, AxisRange(channel));
-        GetImageData(data_q, image, stokes_q, AxisRange(channel));
-        GetImageData(data_u, image, stokes_u, AxisRange(channel));
-        GetImageData(data_v, image, stokes_v, AxisRange(channel));
+
+        // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
+        GetImageData(data_i, image, 0, AxisRange(channel));
+        GetImageData(data_q, image, 1, AxisRange(channel));
+        GetImageData(data_u, image, 2, AxisRange(channel));
+        GetImageData(data_v, image, 3, AxisRange(channel));
 
         std::vector<float> profile_x;
         for (int i = 0; i < data_i.size(); ++i) {
@@ -204,23 +211,26 @@ public:
 
     static std::vector<float> GetCursorSpectralProfiles(
         const std::shared_ptr<casacore::ImageInterface<float>>& image, AxisRange z_range, int stokes, int cursor_x, int cursor_y) {
+        if (image->ndim() < 4) {
+            spdlog::error("Invalid image dimension.");
+            return std::vector<float>();
+        }
+
         // Get spectral axis size
         int x_size = image->shape()[0];
         int y_size = image->shape()[1];
 
         // Verify each pixel value from calculation results
-        int stokes_i(0);
-        int stokes_q(1);
-        int stokes_u(2);
-        int stokes_v(3);
         std::vector<float> data_i;
         std::vector<float> data_q;
         std::vector<float> data_u;
         std::vector<float> data_v;
-        GetImageData(data_i, image, stokes_i, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(data_q, image, stokes_q, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(data_u, image, stokes_u, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(data_v, image, stokes_v, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+
+        // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
+        GetImageData(data_i, image, 0, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_q, image, 1, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_u, image, 2, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        GetImageData(data_v, image, 3, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
 
         std::vector<float> profile;
         for (int i = 0; i < data_i.size(); ++i) {
@@ -673,6 +683,9 @@ TEST_F(PolarizationCalculatorTest, TestStokesSource) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
+    TestFrame::TestFrameImageCache(ImageGenerator::GeneratedFitsImagePath("100 100 25 4"));
+    TestFrame::TestFrameImageCache(ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4"));
+
     TestFrame::TestFrameImageCache(CasaImagePath(SAMPLE_IMAGE_CASA));
     TestFrame::TestFrameImageCache(FitsImagePath(SAMPLE_IMAGE_FITS));
     TestFrame::TestFrameImageCache(Hdf5ImagePath(SAMPLE_IMAGE_HDF5));
