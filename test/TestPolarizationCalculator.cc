@@ -14,6 +14,9 @@
 
 using namespace carta;
 
+static const std::string IMAGE_SHAPE = "100 100 25 4";
+static const std::string IMAGE_OPTS = "-s 0 -n row";
+
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
 public:
     class TestFrame : public Frame {
@@ -24,6 +27,7 @@ public:
         static void TestFrameImageCache(std::string sample_file_path) {
             std::shared_ptr<casacore::ImageInterface<float>> image;
             if (!OpenImage(image, sample_file_path)) {
+                spdlog::error("Can not open file: {}", sample_file_path);
                 return;
             }
             if (image->ndim() < 4) {
@@ -259,12 +263,12 @@ public:
 
     static void TestCursorProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
         std::string stokes_config_y, std::string stokes_config_z) {
-        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
-        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         std::shared_ptr<casacore::ImageInterface<float>> image;
         if (!OpenImage(image, fits_file_path)) {
-            spdlog::error("File {} does not exist.", fits_file_path);
+            spdlog::error("Can not open file: {}", fits_file_path);
             return;
         }
 
@@ -331,12 +335,12 @@ public:
 
     static void TestPointRegionProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
         std::string stokes_config_y, std::string stokes_config_z) {
-        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
-        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         std::shared_ptr<casacore::ImageInterface<float>> image;
         if (!OpenImage(image, fits_file_path)) {
-            spdlog::error("File {} does not exist.", fits_file_path);
+            spdlog::error("Can not open file: {}", fits_file_path);
             return;
         }
 
@@ -425,13 +429,13 @@ public:
     }
 
     static void TestRectangleRegionProfiles(int current_channel, int current_stokes, const std::string& stokes_config_z) {
-        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
-        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         // Open a reference image
         std::shared_ptr<casacore::ImageInterface<float>> image;
         if (!OpenImage(image, fits_file_path)) {
-            spdlog::error("File {} does not exist.", fits_file_path);
+            spdlog::error("Can not open file: {}", fits_file_path);
             return;
         }
 
@@ -598,13 +602,13 @@ public:
     }
 
     static void TestCubeHistogram(int current_stokes) {
-        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath("100 100 25 4");
-        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4");
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         // Open a reference image
         std::shared_ptr<casacore::ImageInterface<float>> image;
         if (!OpenImage(image, fits_file_path)) {
-            spdlog::error("File {} does not exist.", fits_file_path);
+            spdlog::error("Can not open file: {}", fits_file_path);
             return;
         }
 
@@ -695,32 +699,32 @@ TEST_F(PolarizationCalculatorTest, TestStokesSource) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
-    TestFrame::TestFrameImageCache(ImageGenerator::GeneratedFitsImagePath("100 100 25 4"));
-    TestFrame::TestFrameImageCache(ImageGenerator::GeneratedHdf5ImagePath("100 100 25 4"));
+    TestFrame::TestFrameImageCache(ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE));
+    TestFrame::TestFrameImageCache(ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS));
 }
 
 TEST_F(PolarizationCalculatorTest, TestCursorProfiles) {
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "Ptotalz");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "PFtotalz");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "Plinearz");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "PFlinearz");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "Panglez");
 
-    TestCursorProfiles(1, 0, 0, "Ix", "Iy", "Iz");
-    TestCursorProfiles(1, 0, 1, "Qx", "Qy", "Qz");
-    TestCursorProfiles(1, 0, 2, "Ux", "Uy", "Uz");
-    TestCursorProfiles(1, 0, 3, "Vx", "Vy", "Vz");
+    TestCursorProfiles(0, 0, 0, "Ix", "Iy", "Iz");
+    TestCursorProfiles(0, 0, 1, "Qx", "Qy", "Qz");
+    TestCursorProfiles(0, 0, 2, "Ux", "Uy", "Uz");
+    TestCursorProfiles(0, 0, 3, "Vx", "Vy", "Vz");
 
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
-    TestCursorProfiles(1, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PTOTAL, "Ptotalx", "Ptotaly", "z");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PFTOTAL, "PFtotalx", "PFtotaly", "z");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PLINEAR, "Plinearx", "Plineary", "z");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PFLINEAR, "PFlinearx", "PFlineary", "z");
+    TestCursorProfiles(0, 0, COMPUTE_STOKES_PANGLE, "Panglex", "Pangley", "z");
 
-    TestCursorProfiles(1, 0, 0, "Ix", "Iy", "z");
-    TestCursorProfiles(1, 0, 1, "Qx", "Qy", "z");
-    TestCursorProfiles(1, 0, 2, "Ux", "Uy", "z");
-    TestCursorProfiles(1, 0, 3, "Vx", "Vy", "z");
+    TestCursorProfiles(0, 0, 0, "Ix", "Iy", "z");
+    TestCursorProfiles(0, 0, 1, "Qx", "Qy", "z");
+    TestCursorProfiles(0, 0, 2, "Ux", "Uy", "z");
+    TestCursorProfiles(0, 0, 3, "Vx", "Vy", "z");
 }
 
 TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
