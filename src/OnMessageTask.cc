@@ -12,16 +12,17 @@
 OnMessageTask* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
-
+    fprintf(stderr, " SIC-in ");
     _session->ImageChannelLock(_file_id);
     tester = _session->_set_channel_queues[_file_id].try_pop(request_pair);
     _session->ImageChannelTaskSetIdle(_file_id);
     _session->ImageChannelUnlock(_file_id);
-
+    fprintf(stderr, " SIC-mid ");
     if (tester) {
         _session->ExecuteSetChannelEvt(request_pair);
     }
 
+    fprintf(stderr, " SIC-out ");
     return nullptr;
 }
 
@@ -31,17 +32,32 @@ OnMessageTask* SetCursorTask::execute() {
 }
 
 OnMessageTask* AnimationTask::execute() {
+    fprintf(stderr, " STE ");
     if (_session->ExecuteAnimationFrame()) {
         if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
             _session->SetWaitingTask(true);
         } else {
             ThreadManager::QueueTask(new AnimationTask(_session));
         }
-    } else {
-        if (!_session->WaitingFlowEvent()) {
-            _session->CancelAnimation();
-        }
     }
+
+    _session->SetAnimationActive(false);
+    return nullptr;
+}
+
+OnMessageTask* StartAnimationTask::execute() {
+    OnMessageTask* tsk;
+    if (_session->AnimationActive()) {
+        fprintf(stderr, " Animation ACTIVE **\n");
+        tsk = new StartAnimationTask(_session, _msg, _msg_id);
+    } else {
+        fprintf(stderr, "Setting Animation ACTIVE **\n");
+        _session->SetAnimationActive(true);
+        _session->BuildAnimationObject(_msg, _msg_id);
+        tsk = new AnimationTask(_session);
+    }
+    ThreadManager::QueueTask(tsk);
+
     return nullptr;
 }
 

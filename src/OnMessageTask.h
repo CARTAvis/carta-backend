@@ -62,6 +62,20 @@ public:
     ~AnimationTask() = default;
 };
 
+class StartAnimationTask : public OnMessageTask {
+    OnMessageTask* execute() override;
+    CARTA::StartAnimation _msg;
+    int _msg_id;
+
+public:
+    StartAnimationTask(Session* session, CARTA::StartAnimation& msg, int id) : OnMessageTask(session) {
+        _msg = msg;
+        _msg_id = id;
+        fprintf(stderr, " StartAnimationTask construct\n");
+    }
+    ~StartAnimationTask() = default;
+};
+
 class RegionDataStreamsTask : public OnMessageTask {
     OnMessageTask* execute() override;
     int _file_id, _region_id;
