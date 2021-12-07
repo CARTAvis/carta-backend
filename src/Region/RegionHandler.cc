@@ -1668,7 +1668,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     float progress(0.0);
     if (CheckLinearOffsets(box_centers, reference_csys, increment)) {
         size_t num_regions(box_centers.size());
-        int height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
+        int height = (fmod(rotation, 90.0) == 0.0 ? 1 : 3);
 
         // Send progress updates at time interval
         auto t_start = std::chrono::high_resolution_clock::now();
