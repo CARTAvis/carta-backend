@@ -1639,19 +1639,24 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     float cos_x = cos((rotation + 90.0) * M_PI / 180.0f);
     float sin_x = sin((rotation + 90.0) * M_PI / 180.0f);
 
+    // Set pixel direction for horizontal line
+    int pixel_dir(1.0);
+    if (dy_pixels == 0.0) {
+        pixel_dir = (dx_pixels < 0 ? -1.0 : 1.0);
+    }
+
     // Set pixels in pos and neg direction from center out
-    spdlog::debug("Starting box centers");
     for (int ipixel = 1; ipixel <= num_offsets; ++ipixel) {
         // Positive offset
         auto idx = center_idx + ipixel;
-        point.set_x(center_x - (ipixel * cos_x));
-        point.set_y(center_y - (ipixel * sin_x));
+        point.set_x(center_x - (pixel_dir * ipixel * cos_x));
+        point.set_y(center_y - (pixel_dir * ipixel * sin_x));
         box_centers[idx] = point;
 
         // Negative offset
         idx = center_idx - ipixel;
-        point.set_x(center_x + (ipixel * cos_x));
-        point.set_y(center_y + (ipixel * sin_x));
+        point.set_x(center_x + (pixel_dir * ipixel * cos_x));
+        point.set_y(center_y + (pixel_dir * ipixel * sin_x));
         box_centers[idx] = point;
     }
 
