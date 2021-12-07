@@ -1668,6 +1668,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     float progress(0.0);
     if (CheckLinearOffsets(box_centers, reference_csys, increment)) {
         size_t num_regions(box_centers.size());
+        int height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
 
         // Send progress updates at time interval
         auto t_start = std::chrono::high_resolution_clock::now();
@@ -1685,7 +1686,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
             control_points.push_back(box_centers[i]);
             CARTA::Point point;
             point.set_x(width);
-            point.set_y(1);
+            point.set_y(height);
             control_points.push_back(point);
             RegionState temp_region_state(region_state.reference_file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
 
