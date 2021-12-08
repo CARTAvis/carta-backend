@@ -378,38 +378,22 @@ std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile)
 void CompareSpatialProfiles(
     const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
     EXPECT_EQ(data_vec.size(), 1);
-    for (auto& data : data_vec) {
-        auto profiles_x = data.profiles(0);
-        auto profiles_y = data.profiles(1);
-        auto data_x = GetSpatialProfileValues(profiles_x);
-        auto data_y = GetSpatialProfileValues(profiles_y);
-
-        EXPECT_EQ(data_profiles.first.size(), data_x.size());
-        if (data_profiles.first.size() == data_x.size()) {
-            for (int i = 0; i < data_x.size(); ++i) {
-                if (!std::isnan(data_profiles.first[i]) || !std::isnan(data_x[i])) {
-                    EXPECT_FLOAT_EQ(data_profiles.first[i], data_x[i]);
-                }
-            }
-        }
-
-        EXPECT_EQ(data_profiles.second.size(), data_y.size());
-        if (data_profiles.second.size() == data_y.size()) {
-            for (int i = 0; i < data_y.size(); ++i) {
-                if (!std::isnan(data_profiles.second[i]) || !std::isnan(data_y[i])) {
-                    EXPECT_FLOAT_EQ(data_profiles.second[i], data_y[i]);
-                }
-            }
-        }
+    for (const auto& data : data_vec) {
+        CompareVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
+        CompareVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
     }
 }
 
-void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2) {
+void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
     EXPECT_EQ(data1.size(), data2.size());
     if (data1.size() == data2.size()) {
         for (int i = 0; i < data1.size(); ++i) {
             if (!std::isnan(data1[i]) || !std::isnan(data2[i])) {
-                EXPECT_FLOAT_EQ(data1[i], data2[i]);
+                if (abs_err > 0) {
+                    EXPECT_NEAR(data1[i], data2[i], abs_err);
+                } else {
+                    EXPECT_FLOAT_EQ(data1[i], data2[i]);
+                }
             }
         }
     }

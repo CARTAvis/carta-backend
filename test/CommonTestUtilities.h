@@ -94,7 +94,7 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
 template <typename T>
 std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile);
 std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile);
-void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2);
+void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);
 void CompareSpatialProfiles(
     const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles);
 void CompareHistograms(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2);

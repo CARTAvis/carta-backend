@@ -15,7 +15,7 @@
 using namespace carta;
 
 static const std::string IMAGE_SHAPE = "100 100 25 4";
-static const std::string IMAGE_OPTS = "-s 0 -n row";
+static const std::string IMAGE_OPTS = "-s 0 -n row column channel -d 5";
 
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
 public:
