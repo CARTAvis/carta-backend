@@ -375,31 +375,35 @@ std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile)
     return values;
 }
 
-void CompareSpatialProfiles(
+void CmpSpatialProfiles(
     const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
     EXPECT_EQ(data_vec.size(), 1);
     for (const auto& data : data_vec) {
-        CompareVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
-        CompareVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
+        CmpVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
+        CmpVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
     }
 }
 
-void CompareVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
+void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
     EXPECT_EQ(data1.size(), data2.size());
     if (data1.size() == data2.size()) {
         for (int i = 0; i < data1.size(); ++i) {
-            if (!std::isnan(data1[i]) || !std::isnan(data2[i])) {
-                if (abs_err > 0) {
-                    EXPECT_NEAR(data1[i], data2[i], abs_err);
-                } else {
-                    EXPECT_FLOAT_EQ(data1[i], data2[i]);
-                }
-            }
+            CmpValues(data1[i], data2[i], abs_err);
         }
     }
 }
 
-void CompareHistograms(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2) {
+void CmpValues(float data1, float data2, float abs_err) {
+    if (!std::isnan(data1) || !std::isnan(data2)) {
+        if (abs_err > 0) {
+            EXPECT_NEAR(data1, data2, abs_err);
+        } else {
+            EXPECT_FLOAT_EQ(data1, data2);
+        }
+    }
+}
+
+void CmpHistograms(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2) {
     auto hist1 = cube_histogram1.GetHistogramBins();
     auto hist2 = cube_histogram2.GetHistogramBins();
     EXPECT_EQ(hist1.size(), hist2.size());

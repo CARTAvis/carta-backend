@@ -305,7 +305,7 @@ public:
         auto data_profiles = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CompareSpatialProfiles(data_vec, data_profiles);
+        CmpSpatialProfiles(data_vec, data_profiles);
 
         // Set spectral configs for the cursor
         std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
@@ -330,7 +330,7 @@ public:
         std::vector<float> spectral_profile_data_2 = GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CompareVectors(spectral_profile_data_1, spectral_profile_data_2);
+        CmpVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
     static void TestPointRegionProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
@@ -398,7 +398,7 @@ public:
         auto data_profiles = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
         // Compare data
-        CompareSpatialProfiles(spatial_profile_data_vec, data_profiles);
+        CmpSpatialProfiles(spatial_profile_data_vec, data_profiles);
 
         // Set spectral configs for a point region
         std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
@@ -425,7 +425,7 @@ public:
         std::vector<float> spectral_profile_data_2 = GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CompareVectors(spectral_profile_data_1, spectral_profile_data_2);
+        CmpVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
     static void TestRectangleRegionProfiles(int current_channel, int current_stokes, const std::string& stokes_config_z) {
@@ -561,7 +561,7 @@ public:
         std::vector<float> spectral_profile_data_float_2(spectral_profile_data_double_2.begin(), spectral_profile_data_double_2.end());
 
         // check the consistency of two ways
-        CompareVectors(spectral_profile_data_float_1, spectral_profile_data_float_2);
+        CmpVectors(spectral_profile_data_float_1, spectral_profile_data_float_2);
     }
 
     static void CalculateCubeHistogram(
@@ -651,7 +651,7 @@ public:
         int current_channel_2(1);
         CalculateCubeHistogram(frame_2, current_channel_2, fiddled_stokes, cube_histogram_2);
 
-        CompareHistograms(cube_histogram_1, cube_histogram_2);
+        CmpHistograms(cube_histogram_1, cube_histogram_2);
     }
 };
 
