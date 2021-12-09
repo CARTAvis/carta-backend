@@ -95,8 +95,6 @@ public:
     void writer_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
         --_writer_count;
-        short rc = _reader_count;
-        short wc = _writer_count;
 
         if (_writer_count > 0) {
             dequeue_one_writer();
