@@ -62,9 +62,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, con
     }
 
     // Get shape and axis values from the loader
-    int spectral_axis;
     std::string log_message;
-    if (!_loader->FindCoordinateAxes(_image_shape, spectral_axis, _z_axis, _stokes_axis, log_message)) {
+    if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _z_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
@@ -120,6 +119,16 @@ std::string Frame::GetErrorMessage() {
     return _open_image_error;
 }
 
+std::string Frame::GetFileName() {
+    std::string filename;
+
+    if (_loader) {
+        filename = _loader->GetFileName();
+    }
+
+    return filename;
+}
+
 casacore::CoordinateSystem* Frame::CoordinateSystem() {
     // Returns pointer to CoordinateSystem clone; caller must delete
     casacore::CoordinateSystem* csys(nullptr);
@@ -154,6 +163,10 @@ int Frame::CurrentZ() {
 
 int Frame::CurrentStokes() {
     return _stokes_index;
+}
+
+int Frame::SpectralAxis() {
+    return _spectral_axis;
 }
 
 int Frame::StokesAxis() {
@@ -263,10 +276,8 @@ bool Frame::ZStokesChanged(int z, int stokes) {
 }
 
 void Frame::WaitForTaskCancellation() {
-    _connected = false;      // file closed
-    if (_moment_generator) { // stop moment calculation
-        _moment_generator->StopCalculation();
-    }
+    _connected = false; // file closed
+    StopMomentCalc();
     std::unique_lock lock(GetActiveTaskMutex());
 }
 
@@ -1532,11 +1543,11 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // ****************************************************
 // Region/Slicer Support (Frame manages image mutex)
 
-casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region) {
+casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
     casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape());
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(), report_error);
     delete coord_sys;
     return image_region;
 }
@@ -1684,9 +1695,9 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
     return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
 }
 
-bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<carta::CollapseResult>& collapse_results) {
+    std::vector<carta::GeneratedImage>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {

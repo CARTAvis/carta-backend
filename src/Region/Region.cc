@@ -29,8 +29,8 @@
 using namespace carta;
 
 Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
-    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false) {
-    _valid = UpdateRegion(state);
+    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false), _region_state(state) {
+    _valid = CheckPoints(state.control_points, state.type);
 }
 
 Region::~Region() {
@@ -351,7 +351,7 @@ bool Region::EllipsePointsToWorld(
 // Apply region to any image
 
 casacore::LCRegion* Region::GetImageRegion(
-    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape, bool report_error) {
     // Apply region to non-reference image as converted polygon vertices
     // Will return nullptr if outside image or is not a closed LCRegion (line or polyline)
     casacore::LCRegion* lc_region(nullptr);
@@ -365,21 +365,20 @@ casacore::LCRegion* Region::GetImageRegion(
     if (!lc_region) {
         if (file_id == _region_state.reference_file_id) {
             // Convert reference WCRegion to LCRegion and cache it
-            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, report_error);
         } else {
             bool use_polygon = UseApproximatePolygon(output_csys); // check region distortion
 
             if (!use_polygon) {
-                // No distortion, do direct region conversion if possible.
-                // Convert reference WCRegion to LCRegion in output image and cache it.
-                spdlog::debug("Using region conversion for {}", RegionName(_region_state.type));
-                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+                // No distortion, do direct region conversion if possible (unless outside image or rotbox)
+                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, report_error);
             }
 
-            if (!lc_region) {
+            if (lc_region) {
+                spdlog::debug("Using direct region conversion for {}", RegionName(_region_state.type));
+            } else {
                 // Use polygon approximation of reference region to translate to another image
-                spdlog::debug(
-                    "Region conversion failed or was distorted, using polygon approximation for {}", RegionName(_region_state.type));
+                spdlog::debug("Using polygon approximation for rotbox or distorted region {}", RegionName(_region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
                 // Cache converted polygon
@@ -397,69 +396,66 @@ casacore::LCRegion* Region::GetImageRegion(
 
 bool Region::UseApproximatePolygon(const casacore::CoordinateSystem& output_csys) {
     // Determine whether to convert region directly, or approximate it as a polygon in the output image.
+    bool use_polygon(true);
     CARTA::RegionType region_type = _region_state.type;
 
-    // Check ellipse and rectangle distortion; always true for other regions.
-    switch (region_type) {
-        case CARTA::RegionType::ELLIPSE:
-        case CARTA::RegionType::RECTANGLE: {
-            CARTA::Point center_point = _region_state.control_points[0];
-            double x_length(_region_state.control_points[1].x()), y_length(_region_state.control_points[1].y());
+    // Check ellipse and rectangle distortion; always true for other regions (polygon and point)
+    if ((region_type == CARTA::RegionType::ELLIPSE) || (region_type == CARTA::RegionType::RECTANGLE)) {
+        CARTA::Point center_point = _region_state.control_points[0];
+        double x_length(_region_state.control_points[1].x()), y_length(_region_state.control_points[1].y());
 
-            // Ratio of vector lengths in reference image region
-            double ref_length_ratio;
-            if (region_type == CARTA::RegionType::ELLIPSE) {
-                ref_length_ratio = x_length / y_length;
-            } else {
-                ref_length_ratio = y_length / x_length;
-            }
+        // Ratio of vector lengths in reference image region
+        double ref_length_ratio;
+        if (region_type == CARTA::RegionType::ELLIPSE) {
+            ref_length_ratio = x_length / y_length;
+        } else {
+            ref_length_ratio = y_length / x_length;
+        }
 
-            std::vector<CARTA::Point> points;
-            if (region_type == CARTA::RegionType::ELLIPSE) {
-                // Make polygon with 4 points
-                points = GetApproximateEllipsePoints(4);
-            } else {
-                // Get midpoints of 4 sides of rectangle
-                points = GetRectangleMidpoints();
-            }
+        std::vector<CARTA::Point> points;
+        if (region_type == CARTA::RegionType::ELLIPSE) {
+            // Make polygon with 4 points
+            points = GetApproximateEllipsePoints(4);
+        } else {
+            // Get midpoints of 4 sides of rectangle
+            points = GetRectangleMidpoints();
+        }
 
-            // add center point; points = [p0, p1, p2, p3, center]
-            points.push_back(center_point);
+        // add center point; points = [p0, p1, p2, p3, center]
+        points.push_back(center_point);
 
-            // convert points to output image pixels
-            casacore::Vector<casacore::Double> x, y;
-            if (ConvertPointsToImagePixels(points, output_csys, x, y)) {
-                // vector0 is (center, p0), vector1 is (center, p1)
-                auto v0_delta_x = x[0] - x[4];
-                auto v0_delta_y = y[0] - y[4];
-                auto v1_delta_x = x[1] - x[4];
-                auto v1_delta_y = y[1] - y[4];
+        // convert points to output image pixels
+        casacore::Vector<casacore::Double> x, y;
+        if (ConvertPointsToImagePixels(points, output_csys, x, y)) {
+            // vector0 is (center, p0), vector1 is (center, p1)
+            auto v0_delta_x = x[0] - x[4];
+            auto v0_delta_y = y[0] - y[4];
+            auto v1_delta_x = x[1] - x[4];
+            auto v1_delta_y = y[1] - y[4];
 
-                // Ratio of vector lengths in converted region
-                auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
-                auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
-                double converted_length_ratio = v1_length / v0_length;
+            // Ratio of vector lengths in converted region
+            auto v0_length = sqrt((v0_delta_x * v0_delta_x) + (v0_delta_y * v0_delta_y));
+            auto v1_length = sqrt((v1_delta_x * v1_delta_x) + (v1_delta_y * v1_delta_y));
+            double converted_length_ratio = v1_length / v0_length;
 
-                // Compare reference to converted length ratio
-                double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
-                spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
+            // Compare reference to converted length ratio
+            double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
+            spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
 
-                if (length_ratio_difference < 1e-4) {
-                    // Passed ratio check; check dot product of converted region
-                    double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
-                    spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
+            if (length_ratio_difference < 1e-4) {
+                // Passed ratio check; check dot product of converted region
+                double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
+                spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
 
-                    if (fabs(converted_dot_product) < 1e-2) {
-                        // passed distortion tests, do not use polygon approximation
-                        return false;
-                    }
+                if (fabs(converted_dot_product) < 1e-2) {
+                    // passed distortion tests, do not use polygon approximation
+                    use_polygon = false;
                 }
             }
-            return true;
         }
-        default:
-            return true;
     }
+
+    return use_polygon;
 }
 
 std::vector<CARTA::Point> Region::GetRectangleMidpoints() {
@@ -804,7 +800,7 @@ casacore::LCRegion* Region::GetCachedLCRegion(int file_id) {
 }
 
 casacore::LCRegion* Region::GetConvertedLCRegion(
-    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape, bool report_error) {
     // Convert 2D reference WCRegion to LCRegion in output coord_sys and shape
     casacore::LCRegion* lc_region(nullptr);
     bool is_reference_image(file_id == _region_state.reference_file_id);
@@ -832,7 +828,9 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
             lc_region = casacore::LCRegion::fromRecord(region_record, "");
         }
     } catch (const casacore::AipsError& err) {
-        spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
+        if (report_error) {
+            spdlog::error("Error converting {} to file {}: {}", RegionName(_region_state.type), file_id, err.getMesg());
+        }
     }
 
     if (lc_region) {

@@ -7,15 +7,11 @@
 #include "MomentGenerator.h"
 
 #include "../Logger/Logger.h"
+#include "ImageGenerator.h"
 
 using namespace carta;
 
 using IM = ImageMoments<casacore::Float>;
-
-static const int FIRST_PROGRESS_AFTER_MILLI_SECS = 5000;
-static const float PROGRESS_REPORT_INTERVAL = 0.1;
-static const float PROCESS_COMPLETED = 1;
-static const int ID_MULTIPLIER = 1000;
 
 MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image)
     : _filename(filename), _image(image), _sub_image(nullptr), _image_moments(nullptr), _success(false), _cancel(false) {
@@ -23,8 +19,8 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
 }
 
 bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
-    const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<CollapseResult>& collapse_results) {
+    const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<GeneratedImage>& collapse_results) {
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
     _progress_callback = progress_callback;
@@ -80,7 +76,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        collapse_results.push_back(CollapseResult(moment_file_id, out_file_name, moment_image));
+                        collapse_results.push_back(GeneratedImage(moment_file_id, out_file_name, moment_image));
                     }
                     _success = true;
                 } catch (const AipsError& x) {
@@ -242,8 +238,8 @@ void MomentGenerator::setStepCount(int count) {
 
 void MomentGenerator::setStepsCompleted(int count) {
     _progress = (float)count / _total_steps;
-    if (_progress > PROCESS_COMPLETED) {
-        _progress = PROCESS_COMPLETED;
+    if (_progress > 1.0) {
+        _progress = 1.0;
     }
 
     if (!_first_report_made) {

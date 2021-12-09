@@ -32,9 +32,10 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
+#include "ImageGenerators/ImageGenerator.h"
+#include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 #include "TileCache.h"
@@ -89,6 +90,9 @@ public:
     bool IsValid();
     std::string GetErrorMessage();
 
+    // Get the full name of image file
+    std::string GetFileName();
+
     // Returns pointer to CoordinateSystem clone; caller must delete
     casacore::CoordinateSystem* CoordinateSystem();
 
@@ -98,6 +102,7 @@ public:
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
     int CurrentStokes();
+    int SpectralAxis();
     int StokesAxis();
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
@@ -158,7 +163,7 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
@@ -176,9 +181,9 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
-    bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        std::vector<carta::CollapseResult>& collapse_results);
+        std::vector<carta::GeneratedImage>& collapse_results);
     void StopMomentCalc();
 
     // Save as a new file or export sub-image to CASA/FITS format
@@ -189,6 +194,12 @@ public:
 
     std::shared_mutex& GetActiveTaskMutex();
 
+    // Get image interface ptr
+    inline std::shared_ptr<casacore::ImageInterface<float>> GetImage() {
+        return _loader->GetImage();
+    }
+
+    // Close image with cached data
     void CloseCachedImage(const std::string& file);
 
 protected:
@@ -235,14 +246,7 @@ protected:
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
     }
-    // Get the full name of image file
-    std::string GetFileName() {
-        return _loader->GetFileName();
-    }
-    // Get image interface ptr
-    std::shared_ptr<casacore::ImageInterface<float>> GetImage() {
-        return _loader->GetImage();
-    }
+
     // Setup
     uint32_t _session_id;
 
@@ -258,7 +262,7 @@ protected:
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
-    int _x_axis, _y_axis, _z_axis, _stokes_axis;
+    int _x_axis, _y_axis, _z_axis, _spectral_axis, _stokes_axis;
     int _z_index, _stokes_index; // current index
     size_t _width, _height, _depth, _num_stokes;
 
