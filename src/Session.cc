@@ -626,6 +626,7 @@ void Session::DeleteFrame(int file_id) {
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
+
     if (!_frames.count(file_id)) {
         return;
     }
