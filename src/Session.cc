@@ -2110,7 +2110,7 @@ bool Session::ExecuteAnimationFrame() {
 }
 
 void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
-    if (_animation_object == nullptr) {
+    if (!_animation_object) {
         return;
     }
 
