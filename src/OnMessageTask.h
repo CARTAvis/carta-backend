@@ -71,7 +71,6 @@ public:
     StartAnimationTask(Session* session, CARTA::StartAnimation& msg, int id) : OnMessageTask(session) {
         _msg = msg;
         _msg_id = id;
-        fprintf(stderr, " StartAnimationTask construct\n");
     }
     ~StartAnimationTask() = default;
 };
