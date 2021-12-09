@@ -1272,12 +1272,11 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 for (size_t i = 0; i < profile.size(); i += mip * 2) {
                     float min_pix = std::numeric_limits<float>::max();
                     float max_pix = std::numeric_limits<float>::lowest();
-                    size_t idx = 0;
-                    int min_pos = -1;
-                    int max_pos = -1;
+                    int min_pos(-1);
+                    int max_pos(-1);
+                    size_t idx(0);
 
-                    auto minmax = [&](const float& value) {
-                        ++idx;
+                    auto get_minmax = [&](const float& value) {
                         if (!std::isnan(value)) {
                             if (value < min_pix) {
                                 min_pix = value;
@@ -1288,9 +1287,10 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                                 max_pos = idx;
                             }
                         }
+                        ++idx;
                     };
 
-                    std::for_each(profile.begin() + i, std::min(profile.begin() + i + mip * 2, profile.end()), minmax);
+                    std::for_each(profile.begin() + i, std::min(profile.begin() + i + mip * 2, profile.end()), get_minmax);
 
                     if (min_pos > -1 && max_pos > -1) {
                         if (min_pos < max_pos) {
