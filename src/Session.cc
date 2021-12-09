@@ -110,6 +110,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
+      _animation_active(false),
       _file_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
     _histogram_progress = 1.0;
@@ -626,6 +627,7 @@ void Session::DeleteFrame(int file_id) {
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
+
     if (!_frames.count(file_id)) {
         return;
     }
@@ -2168,7 +2170,6 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
 void Session::CancelExistingAnimation() {
     if (_animation_object) {
         _animation_object->CancelExecution();
-        _animation_object = nullptr;
     }
 }
 
