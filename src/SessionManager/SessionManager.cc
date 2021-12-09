@@ -458,6 +458,22 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
+                case CARTA::EventType::PV_REQUEST: {
+                    CARTA::PvRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new GeneralMessageTask<CARTA::PvRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_PV_CALC: {
+                    CARTA::StopPvCalc message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopPvCalc(message);
+                        message_parsed = true;
+                    }
+                    break;
+                }
                 default: {
                     spdlog::warn("Bad event type {}!", event_type);
                     break;
