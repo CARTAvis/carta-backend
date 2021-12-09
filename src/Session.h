@@ -240,8 +240,6 @@ public:
         return _animation_active;
     }
     void SetAnimationActive(bool val) {
-        fprintf(stderr, " SetAniActive %d\n", val);
-        fflush(stderr);
         _animation_active = val;
     }
 
