@@ -82,15 +82,11 @@ public:
         if ((_reader_count > 0) || (_writer_count > 1)) {
             queue_writer(lock);
         }
-        short rc2 = _reader_count;
-        short wc2 = _writer_count;
     }
     void reader_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
 
         --_reader_count;
-        short rc = _reader_count;
-        short wc = _writer_count;
 
         if ((_reader_count == 0) && (_writer_count > 0)) {
             dequeue_one_writer();
