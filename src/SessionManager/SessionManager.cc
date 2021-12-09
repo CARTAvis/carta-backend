@@ -229,7 +229,6 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 }
                 case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
                     CARTA::AnimationFlowControl message;
-                    fprintf(stderr, " F ");
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->HandleAnimationFlowControlEvt(message);
                         message_parsed = true;
