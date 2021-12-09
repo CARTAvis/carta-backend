@@ -229,7 +229,8 @@ set(SOURCE_FILES
         src/Table/Table.cc
         src/Table/TableView.cc
         src/Table/TableController.cc
-        src/Moment/MomentGenerator.cc
+        src/ImageGenerators/MomentGenerator.cc
+        src/ImageGenerators/PvGenerator.cc
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
         src/SessionManager/ProgramSettings.cc
