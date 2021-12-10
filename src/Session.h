@@ -240,6 +240,12 @@ public:
 
     // Close cached image if it has been updated
     void CloseCachedImage(const std::string& directory, const std::string& file);
+    bool AnimationActive() {
+        return _animation_active;
+    }
+    void SetAnimationActive(bool val) {
+        _animation_active = val;
+    }
 
 protected:
     // File info for file list (extended info for each hdu_name)
@@ -309,6 +315,7 @@ protected:
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
+    mutable bool _animation_active;
 
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;

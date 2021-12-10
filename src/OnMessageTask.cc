@@ -37,11 +37,23 @@ OnMessageTask* AnimationTask::execute() {
         } else {
             ThreadManager::QueueTask(new AnimationTask(_session));
         }
-    } else {
-        if (!_session->WaitingFlowEvent()) {
-            _session->CancelAnimation();
-        }
     }
+
+    _session->SetAnimationActive(false);
+    return nullptr;
+}
+
+OnMessageTask* StartAnimationTask::execute() {
+    OnMessageTask* tsk;
+    if (_session->AnimationActive()) {
+        tsk = new StartAnimationTask(_session, _msg, _msg_id);
+    } else {
+        _session->SetAnimationActive(true);
+        _session->BuildAnimationObject(_msg, _msg_id);
+        tsk = new AnimationTask(_session);
+    }
+    ThreadManager::QueueTask(tsk);
+
     return nullptr;
 }
 

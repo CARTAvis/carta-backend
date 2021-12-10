@@ -20,14 +20,17 @@ template <class T>
 class concurrent_queue {
 public:
     concurrent_queue<T>() {}
+
     ~concurrent_queue<T>() {
         clear();
     }
+
     void push(T elt) {
         _mtx.lock();
         _q.push_back(elt);
         _mtx.unlock();
     }
+
     bool try_pop(T& elt) {
         bool ret = false;
         _mtx.lock();
@@ -39,6 +42,7 @@ public:
         _mtx.unlock();
         return ret;
     }
+
     void clear() {
         _mtx.lock();
         while (!_q.empty()) {
@@ -63,20 +67,22 @@ public:
         _reader_count = 0;
         _writer_count = 0;
     }
+
     ~queuing_rw_mutex() {
         while (_writer_count-- > 0) {
             dequeue_one_writer();
         }
         _readers_cv.notify_all();
     }
+
     void reader_enter() {
         std::unique_lock<std::mutex> lock(_mtx);
-
         if (_writer_count > 0) {
             _readers_cv.wait(lock);
         }
         ++_reader_count;
     }
+
     void writer_enter() {
         std::unique_lock<std::mutex> lock(_mtx);
         ++_writer_count;
@@ -84,20 +90,21 @@ public:
             queue_writer(lock);
         }
     }
+
     void reader_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
 
         --_reader_count;
 
         if ((_reader_count == 0) && (_writer_count > 0)) {
-            --_writer_count;
             dequeue_one_writer();
         }
     }
+
     void writer_leave() {
         std::unique_lock<std::mutex> lock(_mtx);
-
         --_writer_count;
+
         if (_writer_count > 0) {
             dequeue_one_writer();
         } else {
@@ -116,13 +123,14 @@ private:
         std::condition_variable* cv = new std::condition_variable;
         _writers_cv_list.push_front(cv);
         cv->wait(mtx);
+        delete cv;
     }
+
     void dequeue_one_writer() {
         if (!_writers_cv_list.empty()) {
             std::condition_variable* cv = _writers_cv_list.back();
-            _writers_cv_list.pop_back();
             cv->notify_one();
-            delete cv;
+            _writers_cv_list.pop_back();
         }
     }
 };
@@ -147,9 +155,11 @@ public:
             rwmtx->reader_enter();
         }
     }
+
     ~queuing_rw_mutex_scoped() {
         release();
     }
+
     void release() {
         if (_active) {
             if (_rw) {
