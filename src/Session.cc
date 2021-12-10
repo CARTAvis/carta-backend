@@ -28,6 +28,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
 #include "ImageData/CompressedFits.h"
+#include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
@@ -109,6 +110,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
+      _animation_active(false),
       _file_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
     _histogram_progress = 1.0;
@@ -625,6 +627,7 @@ void Session::DeleteFrame(int file_id) {
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
+
     if (!_frames.count(file_id)) {
         return;
     }
@@ -1221,7 +1224,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         };
 
         // Do calculations
-        std::vector<carta::CollapseResult> collapse_results;
+        std::vector<carta::GeneratedImage> collapse_results;
         CARTA::MomentResponse moment_response;
         if (region_id > 0) {
             _region_handler->CalculateMoments(
@@ -1262,9 +1265,11 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
     int region_id(save_file.region_id());
+
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
         auto active_frame = _frames.at(file_id);
+
         if (_read_only_mode) {
             string error = "Saving files is not allowed in read-only mode";
             spdlog::error(error);
@@ -1273,11 +1278,13 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
             save_file_ack.set_message(error);
         } else if (region_id) {
             std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
-            if (active_frame->GetImageRegion(file_id, _region)) {
-                active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
-            } else {
-                save_file_ack.set_success(false);
-                save_file_ack.set_message("The selected region is entirely outside the image.");
+            if (_region) {
+                if (active_frame->GetImageRegion(file_id, _region)) {
+                    active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
+                } else {
+                    save_file_ack.set_success(false);
+                    save_file_ack.set_message("The selected region is entirely outside the image.");
+                }
             }
         } else {
             // Save full image
@@ -1331,6 +1338,54 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 
     SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
     return success;
+}
+
+void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {
+    int file_id(pv_request.file_id());
+    int region_id(pv_request.region_id());
+    int width(pv_request.width());
+    CARTA::PvResponse pv_response;
+
+    if (_frames.count(file_id)) {
+        if (!_region_handler || (region_id <= CURSOR_REGION_ID)) {
+            pv_response.set_success(false);
+            pv_response.set_message("Invalid region id.");
+        } else {
+            auto t_start_pv_image = std::chrono::high_resolution_clock::now();
+
+            // Set pv progress callback function
+            auto progress_callback = [&](float progress) {
+                CARTA::PvProgress pv_progress;
+                pv_progress.set_file_id(file_id);
+                pv_progress.set_progress(progress);
+                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+            };
+
+            auto& frame = _frames.at(file_id);
+            carta::GeneratedImage pv_image;
+
+            if (_region_handler->CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image)) {
+                auto* open_file_ack = pv_response.mutable_open_file_ack();
+                OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+            }
+
+            auto t_end_pv_image = std::chrono::high_resolution_clock::now();
+            auto dt_pv_image = std::chrono::duration_cast<std::chrono::microseconds>(t_end_pv_image - t_start_pv_image).count();
+            spdlog::performance("Generate pv image in {:.3f} ms", dt_pv_image * 1e-3);
+        }
+
+        SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"PV"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
+    int file_id(stop_pv_calc.file_id());
+    if (_region_handler) {
+        _region_handler->StopPvCalc(file_id);
+    }
 }
 
 // ******** SEND DATA STREAMS *********
@@ -2116,7 +2171,6 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
 void Session::CancelExistingAnimation() {
     if (_animation_object) {
         _animation_object->CancelExecution();
-        _animation_object = nullptr;
     }
 }
 

@@ -31,6 +31,7 @@
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
@@ -39,6 +40,7 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
+#include <carta-protobuf/stop_pv_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
@@ -117,6 +119,8 @@ public:
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
     bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
+    void OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id);
+    void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -236,6 +240,12 @@ public:
 
     // Close cached image if it has been updated
     void CloseCachedImage(const std::string& directory, const std::string& file);
+    bool AnimationActive() {
+        return _animation_active;
+    }
+    void SetAnimationActive(bool val) {
+        _animation_active = val;
+    }
 
 protected:
     // File info for file list (extended info for each hdu_name)
@@ -305,6 +315,7 @@ protected:
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
+    mutable bool _animation_active;
 
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;

@@ -214,8 +214,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::StartAnimation message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
-                        session->BuildAnimationObject(message, head.request_id);
-                        tsk = new AnimationTask(session);
+                        tsk = new StartAnimationTask(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
@@ -455,6 +454,22 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::CatalogListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         tsk = new GeneralMessageTask<CARTA::CatalogListRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::PV_REQUEST: {
+                    CARTA::PvRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new GeneralMessageTask<CARTA::PvRequest>(session, message, head.request_id);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_PV_CALC: {
+                    CARTA::StopPvCalc message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopPvCalc(message);
                         message_parsed = true;
                     }
                     break;
