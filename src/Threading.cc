@@ -74,6 +74,7 @@ void ThreadManager::ExitEventHandlingThreads() {
         std::thread* thr = _workers.front();
         thr->join();
         _workers.pop_front();
+	delete thr;
     }
 }
 
