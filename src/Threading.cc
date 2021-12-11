@@ -71,6 +71,8 @@ void ThreadManager::ExitEventHandlingThreads() {
     _task_queue_cv.notify_all();
 
     while (!_workers.empty()) {
+        std::thread* thr = _workers.front();
+        thr->join();
         _workers.pop_front();
     }
 }
