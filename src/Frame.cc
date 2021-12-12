@@ -1283,9 +1283,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 for (size_t i = 0; i < profile.size(); i += mip * 2) {
                     float min_pix = std::numeric_limits<float>::max();
                     float max_pix = std::numeric_limits<float>::lowest();
-                    int min_pos(-1);
-                    int max_pos(-1);
-                    size_t idx(0);
+                    int min_pos(-1), max_pos(-1), idx(0);
 
                     auto get_minmax = [&](const float& value) {
                         if (!std::isnan(value)) {
@@ -1312,14 +1310,11 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             profile[i / mip + 1] = min_pix;
                         }
                     } else if (min_pos > -1) {
-                        profile[i / mip] = min_pix;
-                        profile[i / mip + 1] = min_pix;
+                        profile[i / mip] = profile[i / mip + 1] = min_pix;
                     } else if (max_pos > -1) {
-                        profile[i / mip] = max_pix;
-                        profile[i / mip + 1] = max_pix;
+                        profile[i / mip] = profile[i / mip + 1] = max_pix;
                     } else {
-                        profile[i / mip] = std::numeric_limits<float>::quiet_NaN();
-                        profile[i / mip + 1] = std::numeric_limits<float>::quiet_NaN();
+                        profile[i / mip] = profile[i / mip + 1] = std::numeric_limits<float>::quiet_NaN();
                     }
                 }
                 profile.resize(decimated_end - decimated_start); // shrink the profile to the downsampled size

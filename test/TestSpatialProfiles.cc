@@ -43,7 +43,7 @@ public:
         for (size_t i = 0; i < num_decimated_pairs; i++) {
             std::vector<float> segment(
                 full_resolution.begin() + i * mip * 2, std::min(full_resolution.begin() + (i + 1) * mip * 2, full_resolution.end()));
-            // Remove NAN elements
+            // Remove NaN elements
             segment.erase(
                 std::remove_if(segment.begin(), segment.end(), [](const auto& value) { return std::isnan(value); }), segment.end());
 
@@ -55,8 +55,7 @@ public:
                 result[i * 2] = (minpos < maxpos) ? *minpos : *maxpos;
                 result[i * 2 + 1] = (minpos < maxpos) ? *maxpos : *minpos;
             } else {
-                result[i * 2] = std::numeric_limits<float>::quiet_NaN();
-                result[i * 2 + 1] = std::numeric_limits<float>::quiet_NaN();
+                result[i * 2] = result[i * 2 + 1] = std::numeric_limits<float>::quiet_NaN();
             }
         }
         return result;
