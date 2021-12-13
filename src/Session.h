@@ -316,6 +316,7 @@ protected:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
     mutable bool _animation_active;
+    std::mutex _animation_object_mutex;
 
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;

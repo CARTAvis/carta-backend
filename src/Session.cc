@@ -1906,8 +1906,10 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
 
     if (_frames.count(file_id)) {
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
+        std::unique_lock<std::mutex> ulock(_animation_object_mutex);
         _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
             msg.matched_frames(), frame_rate, looping, reverse_at_end, always_wait));
+        ulock.unlock();
         ack_message.set_success(true);
         ack_message.set_animation_id(_animation_id);
         ack_message.set_message("Starting animation");
@@ -2035,6 +2037,7 @@ void Session::ExecuteAnimationFrameInner() {
 }
 
 bool Session::ExecuteAnimationFrame() {
+    std::unique_lock<std::mutex> ulock(_animation_object_mutex);
     CARTA::AnimationFrame curr_frame;
     bool recycle_task = true;
 
