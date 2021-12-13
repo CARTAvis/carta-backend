@@ -381,7 +381,7 @@ public:
             }
         }
 
-        _dummy_backend->WaitForJobFinished();
+        // _dummy_backend->WaitForJobFinished();
 
         EXPECT_EQ(_message_count, expected_response_messages);
 
@@ -447,7 +447,7 @@ public:
             }
         }
 
-        _dummy_backend->WaitForJobFinished();
+        // _dummy_backend->WaitForJobFinished();
 
         EXPECT_EQ(_message_count, expected_response_messages);
     }

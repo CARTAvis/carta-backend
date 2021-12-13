@@ -106,8 +106,7 @@ void BackendModel::Receive(CARTA::CloseFile message) {
 void BackendModel::Receive(CARTA::StartAnimation message) {
     LogReceivedEventType(CARTA::EventType::START_ANIMATION);
     _session->CancelExistingAnimation();
-    _session->BuildAnimationObject(message, DUMMY_REQUEST_ID);
-    OnMessageTask* tsk = new AnimationTask(_session);
+    OnMessageTask* tsk = new StartAnimationTask(_session, message, DUMMY_REQUEST_ID);
     ThreadManager::QueueTask(tsk);
 }
 
