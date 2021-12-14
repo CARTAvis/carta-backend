@@ -1946,7 +1946,6 @@ void Session::ExecuteAnimationFrameInner() {
 
             auto t_start_change_frame = std::chrono::high_resolution_clock::now();
 
-            std::unique_lock<std::mutex> ulock(_animation_object_mutex);
             if (z_changed && offset >= 0 && !_animation_object->_matched_frames.empty()) {
                 std::vector<int32_t> file_ids_to_update;
                 // Update z sequentially
@@ -2020,7 +2019,6 @@ void Session::ExecuteAnimationFrameInner() {
                     }
                 }
             }
-            ulock.unlock();
 
             // Measure duration for frame changing as animating
             auto t_end_change_frame = std::chrono::high_resolution_clock::now();
@@ -2046,6 +2044,7 @@ bool Session::ExecuteAnimationFrame() {
         return false;
     }
 
+    std::unique_lock<std::mutex> ulock(_animation_object_mutex);
     if (_animation_object->_waiting_flow_event) {
         return false;
     }
@@ -2110,6 +2109,8 @@ bool Session::ExecuteAnimationFrame() {
         }
         _animation_object->_t_last = std::chrono::high_resolution_clock::now();
     }
+    ulock.unlock();
+
     return recycle_task;
 }
 
@@ -2148,6 +2149,10 @@ int Session::CalculateAnimationFlowWindow() {
 }
 
 void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
+    if (!_animation_object) {
+        return;
+    }
+
     int gap;
 
     _animation_object->_last_flow_frame = message.received_frame();
