@@ -1946,6 +1946,7 @@ void Session::ExecuteAnimationFrameInner() {
 
             auto t_start_change_frame = std::chrono::high_resolution_clock::now();
 
+            std::unique_lock<std::mutex> ulock(_animation_object_mutex);
             if (z_changed && offset >= 0 && !_animation_object->_matched_frames.empty()) {
                 std::vector<int32_t> file_ids_to_update;
                 // Update z sequentially
@@ -2019,6 +2020,7 @@ void Session::ExecuteAnimationFrameInner() {
                     }
                 }
             }
+            ulock.unlock();
 
             // Measure duration for frame changing as animating
             auto t_end_change_frame = std::chrono::high_resolution_clock::now();
@@ -2037,7 +2039,6 @@ void Session::ExecuteAnimationFrameInner() {
 }
 
 bool Session::ExecuteAnimationFrame() {
-    std::unique_lock<std::mutex> ulock(_animation_object_mutex);
     CARTA::AnimationFrame curr_frame;
     bool recycle_task = true;
 
