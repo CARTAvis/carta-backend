@@ -183,6 +183,8 @@ public:
 
         SessionFileInfoTest::CheckFileInfoResponse(response, request_filename, request_file_type, request_hdu);
     }
+
+    FRIEND_TEST(FileExtInfoLoaderTest, FitsHistoryEntries);
 };
 
 TEST_F(FileInfoLoaderTest, CasaFile) {
@@ -220,6 +222,26 @@ TEST_F(FileExtInfoLoaderTest, MiriadFile) {
 TEST_F(SessionFileInfoTest, CasaFile) {
     TestSession t_session;
     t_session.TestFileInfo("M17_SWex_unit.image", CARTA::FileType::CASA);
+}
+
+TEST_F(FileExtInfoLoaderTest, FitsHistoryEntries) {
+    TestSession t_session;
+    string message;
+    std::string full_name;
+    std::string hdu;
+    CARTA::FileInfoExtended extended_info;
+    CARTA::FileInfo file_info;
+    bool success = t_session.FillExtendedFileInfo(
+        extended_info, file_info, TestRoot() / "data" / "images" / "fits", "noise_10px_10px.fits", hdu, message, full_name);
+    EXPECT_EQ(success, true);
+
+    int num_history_entries = 0;
+    for (auto entry : extended_info.header_entries()) {
+        if (entry.name().find("HISTORY") != std::string::npos) {
+            num_history_entries++;
+        }
+    }
+    EXPECT_EQ(num_history_entries, 15);
 }
 
 TEST_F(SessionFileInfoTest, FitsFile) {
