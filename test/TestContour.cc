@@ -101,63 +101,19 @@ public:
         double pt1_pix = (double)(reader->ReadPointXY(pt_x, pt_y));
         pt1_pix = std::isnan(pt1_pix) ? -std::numeric_limits<float>::max() : pt1_pix;
 
-        if (InImage(pt_x - 1, pt_y - 1, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x - 1, pt_y - 1));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
+        auto is_vertex = [&](int x, int y) {
+            if (InImage(x, y, width, height)) {
+                double pt2_pix = (double)(reader->ReadPointXY(x, y));
+                pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
+                if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
+                    return true;
+                }
             }
-        }
-        if (InImage(pt_x, pt_y - 1, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x, pt_y - 1));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        if (InImage(pt_x - 1, pt_y, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x - 1, pt_y));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        if (InImage(pt_x + 1, pt_y + 1, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x + 1, pt_y + 1));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        if (InImage(pt_x, pt_y + 1, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x, pt_y + 1));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        if (InImage(pt_x + 1, pt_y, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x + 1, pt_y));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        if (InImage(pt_x - 1, pt_y + 1, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x - 1, pt_y + 1));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        if (InImage(pt_x + 1, pt_y - 1, width, height)) {
-            double pt2_pix = (double)(reader->ReadPointXY(pt_x + 1, pt_y - 1));
-            pt2_pix = std::isnan(pt2_pix) ? -std::numeric_limits<float>::max() : pt2_pix;
-            if ((pt1_pix <= level && level <= pt2_pix) || (pt2_pix <= level && level <= pt1_pix)) {
-                return true;
-            }
-        }
-        return false;
+            return false;
+        };
+
+        return (is_vertex(pt_x - 1, pt_y - 1) || is_vertex(pt_x, pt_y - 1) || is_vertex(pt_x - 1, pt_y) || is_vertex(pt_x + 1, pt_y + 1) ||
+                is_vertex(pt_x, pt_y + 1) || is_vertex(pt_x + 1, pt_y) || is_vertex(pt_x - 1, pt_y + 1) || is_vertex(pt_x + 1, pt_y - 1));
     }
 
     bool InImage(int x, int y, int width, int height) {
