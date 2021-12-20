@@ -29,8 +29,8 @@ fs::path UserDirectory();
 
 class ImageGenerator {
 public:
-    static std::string GeneratedFitsImagePath(const std::string& params);
-    static std::string GeneratedHdf5ImagePath(const std::string& params);
+    static std::string GeneratedFitsImagePath(const std::string& params, const std::string& opts = "-s 0");
+    static std::string GeneratedHdf5ImagePath(const std::string& params, const std::string& opts = "-s 0");
 };
 
 class FileFinder {

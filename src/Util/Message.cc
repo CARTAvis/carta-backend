@@ -316,6 +316,28 @@ CARTA::FileInfoRequest Message::FileInfoRequest(const std::string& directory, co
     return file_info_request;
 }
 
+CARTA::SetContourParameters Message::SetContourParameters(int file_id, int ref_file_id, int x_min, int x_max, int y_min, int y_max,
+    const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int smoothing_factor, int decimation_factor,
+    int compression_level, int contour_chunk_size) {
+    CARTA::SetContourParameters message;
+    message.set_file_id(file_id);
+    message.set_reference_file_id(ref_file_id);
+    auto* image_bounds = message.mutable_image_bounds();
+    image_bounds->set_x_min(x_min);
+    image_bounds->set_x_max(x_max);
+    image_bounds->set_y_min(y_min);
+    image_bounds->set_y_max(y_max);
+    for (auto level : levels) {
+        message.add_levels(level);
+    }
+    message.set_smoothing_mode(smoothing_mode);
+    message.set_smoothing_factor(smoothing_factor);
+    message.set_decimation_factor(decimation_factor);
+    message.set_compression_level(compression_level);
+    message.set_contour_chunk_size(contour_chunk_size);
+    return message;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

@@ -25,26 +25,26 @@ fs::path UserDirectory() {
     return fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
 }
 
-std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params) {
+std::string ImageGenerator::GeneratedFitsImagePath(const std::string& params, const std::string& opts) {
     fs::path root = TestRoot();
 
-    std::string filename = fmt::format("{:x}.fits", std::hash<std::string>{}(params));
+    std::string filename = fmt::format("{:x}.fits", std::hash<std::string>{}(params + "/" + opts));
     fs::path fitspath = (root / "data" / "generated" / filename);
     std::string fitspath_str = fitspath.string();
 
     if (!fs::exists(fitspath)) {
         std::string generator_path = (root / "bin" / "make_image.py").string();
-        std::string fitscmd = fmt::format("{} -s 0 -o {} {}", generator_path, fitspath_str, params);
+        std::string fitscmd = fmt::format("{} {} -o {} {}", generator_path, opts, fitspath_str, params);
         auto result = system(fitscmd.c_str());
     }
 
     return fitspath_str;
 }
 
-std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params) {
+std::string ImageGenerator::GeneratedHdf5ImagePath(const std::string& params, const std::string& opts) {
     fs::path root = TestRoot();
 
-    std::string fitspath_str = GeneratedFitsImagePath(params);
+    std::string fitspath_str = GeneratedFitsImagePath(params, opts);
     std::string hdf5path_str = fmt::format("{}.hdf5", fitspath_str);
     fs::path hdf5path = fs::path(hdf5path_str);
 
