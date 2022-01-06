@@ -1294,11 +1294,16 @@ bool Region::ConvertWorldToPixel(std::vector<casacore::Quantity>& world_point, c
         output_csys.directionCoordinate().toPixel(pixel_point, world_direction);
         success = true;
     } else if (_coord_sys->hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
+        // Get linear axes indices
+        auto indices = output_csys.linearAxesNumbers();
+        if (indices.size() != 2) {
+            return false;
+        }
         // Input and output linear frames
         casacore::Vector<casacore::String> output_units = output_csys.worldAxisUnits();
-        casacore::Vector<casacore::Double> world_point_value(2);
-        world_point_value(0) = world_point[0].get(output_units(0)).getValue();
-        world_point_value(1) = world_point[1].get(output_units(1)).getValue();
+        casacore::Vector<casacore::Double> world_point_value(output_csys.nWorldAxes(), 0);
+        world_point_value(indices[0]) = world_point[0].get(output_units(indices[0])).getValue();
+        world_point_value(indices[1]) = world_point[1].get(output_units(indices[1])).getValue();
 
         // Convert world point to output pixel point
         output_csys.toPixel(pixel_point, world_point_value);
