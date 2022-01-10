@@ -23,10 +23,6 @@
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
 
-#define TBB_TASK_THREAD_COUNT 3
-
-using namespace std;
-
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
     ProgramSettings settings;

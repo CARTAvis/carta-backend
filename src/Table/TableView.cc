@@ -14,8 +14,6 @@
 
 namespace carta {
 
-using namespace std;
-
 TableView::TableView(const Table& table) : _table(table) {
     _is_subset = false;
     _ordered = true;
