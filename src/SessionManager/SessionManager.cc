@@ -214,8 +214,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::StartAnimation message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
-                        session->BuildAnimationObject(message, head.request_id);
-                        tsk = new AnimationTask(session);
+                        tsk = new StartAnimationTask(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;
