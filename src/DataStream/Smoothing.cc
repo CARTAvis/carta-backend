@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "../Logger/Logger.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 double NormPdf(double x, double sigma) {
     return exp(-0.5 * x * x / (sigma * sigma)) / sigma;

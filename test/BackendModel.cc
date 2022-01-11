@@ -5,7 +5,7 @@
 */
 
 #include "BackendModel.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/Message.h"
 
 #include <chrono>

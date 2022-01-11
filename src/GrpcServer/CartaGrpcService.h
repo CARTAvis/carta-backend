@@ -15,7 +15,7 @@
 
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
-#include "../Session.h"
+#include "SessionManager/Session.h"
 
 #define SCRIPTING_TIMEOUT 10 // seconds
 

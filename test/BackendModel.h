@@ -7,8 +7,8 @@
 #ifndef CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_
 #define CARTA_BACKEND_ICD_TEST_DUMMYBACKEND_H_
 
-#include "OnMessageTask.h"
-#include "Session.h"
+#include "SessionManager/OnMessageTask.h"
+#include "SessionManager/Session.h"
 
 class TestSession : public Session {
 public:

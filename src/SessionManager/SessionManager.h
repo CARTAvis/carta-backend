@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "../GrpcServer/CartaGrpcService.h"
-#include "../Session.h"
-#include "ProgramSettings.h"
+#include "Session.h"
+#include "Settings/ProgramSettings.h"
 
 #define MAX_SOCKET_PORT_TRIALS 100
 

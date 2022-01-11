@@ -32,7 +32,7 @@
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"
 #include "Util/App.h"
 #include "Util/File.h"

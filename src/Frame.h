@@ -28,7 +28,8 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include "Concurrency.h"
+#include "Cache/RequirementsCache.h"
+#include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
@@ -37,8 +38,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
-#include "RequirementsCache.h"
-#include "TileCache.h"
+#include "Util/Concurrency.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"

@@ -15,8 +15,8 @@
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
 
-#include "../Frame.h"
-#include "../RequirementsCache.h"
+#include "Cache/RequirementsCache.h"
+#include "Frame.h"
 #include "ImageGenerators/PvGenerator.h"
 #include "Region.h"
 

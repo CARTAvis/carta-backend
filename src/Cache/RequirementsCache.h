@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND__REQUIREMENTSCACHE_H_
 #define CARTA_BACKEND__REQUIREMENTSCACHE_H_
 
+#include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
 struct ConfigId {

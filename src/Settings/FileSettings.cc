@@ -5,7 +5,7 @@
 */
 
 #include "FileSettings.h"
-#include "Session.h"
+#include "SessionManager/Session.h"
 
 FileSettings::FileSettings(Session* session) : _session(session) {}
 

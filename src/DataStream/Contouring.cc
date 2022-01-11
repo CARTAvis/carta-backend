@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "../Logger/Logger.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 // Contour tracing code adapted from SAOImage DS9: https://github.com/SAOImageDS9/SAOImageDS9
 void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width, int64_t height, double scale, double offset, double level,

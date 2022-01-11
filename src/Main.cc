@@ -11,17 +11,17 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
-#include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
-#include "SessionManager/ProgramSettings.h"
 #include "SessionManager/SessionManager.h"
-#include "SessionManager/WebBrowser.h"
+#include "Settings/FileSettings.h"
+#include "Settings/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
+#include "Util/WebBrowser.h"
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {

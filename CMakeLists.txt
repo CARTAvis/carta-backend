@@ -110,7 +110,7 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(/opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+INCLUDE_DIRECTORIES(SYSTEM /opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
 LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -196,10 +196,7 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        src/Main.cc
-        src/Session.cc
-        src/Frame.cc
-        src/Logger/Logger.cc
+        src/Cache/TileCache.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc
@@ -208,36 +205,41 @@ set(SOURCE_FILES
         src/FileList/FileInfoLoader.cc
         src/FileList/FileListHandler.cc
         src/FileList/FitsHduList.cc
+        src/Frame.cc
         src/GrpcServer/CartaGrpcService.cc
-        src/ImageData/Hdf5Attributes.cc
-        src/ImageData/FileLoader.cc
-        src/ImageData/Hdf5Loader.cc
+        src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
-        src/ImageData/CartaFitsImage.cc
-        src/ImageData/StokesFilesConnector.cc
         src/ImageData/CompressedFits.cc
-        src/Region/RegionHandler.cc
-        src/Region/RegionImportExport.cc
+        src/ImageData/FileLoader.cc
+        src/ImageData/Hdf5Attributes.cc
+        src/ImageData/Hdf5Loader.cc
+        src/ImageData/StokesFilesConnector.cc
+        src/ImageGenerators/MomentGenerator.cc
+        src/ImageGenerators/PvGenerator.cc
+        src/ImageStats/Histogram.cc
+        src/ImageStats/StatsCalculator.cc
+        src/Logger/Logger.cc
+        src/Main.cc
         src/Region/CrtfImportExport.cc
         src/Region/Ds9ImportExport.cc
         src/Region/Region.cc
-        src/ImageStats/StatsCalculator.cc
-        src/ImageStats/Histogram.cc
+        src/Region/RegionHandler.cc
+        src/Region/RegionImportExport.cc
+        src/SessionManager/OnMessageTask.cc
+        src/SessionManager/Session.cc
+        src/SessionManager/SessionManager.cc
+        src/Settings/FileSettings.cc
+        src/Settings/ProgramSettings.cc
+        src/SimpleFrontendServer/SimpleFrontendServer.cc
         src/SpectralLine/SpectralLineCrawler.cc
         src/Table/Columns.cc
         src/Table/Table.cc
-        src/Table/TableView.cc
         src/Table/TableController.cc
-        src/ImageGenerators/MomentGenerator.cc
-        src/ImageGenerators/PvGenerator.cc
+        src/Table/TableView.cc
+        src/ThreadingManager/ThreadingManager.cc
         src/Timer/ListProgressReporter.cc
         src/Timer/Timer.cc
-        src/SessionManager/ProgramSettings.cc
-        src/SessionManager/SessionManager.cc
-        src/SessionManager/WebBrowser.cc
-        src/OnMessageTask.cc
-        src/FileSettings.cc
         src/Util/App.cc
         src/Util/Casacore.cc
         src/Util/File.cc
@@ -245,9 +247,7 @@ set(SOURCE_FILES
         src/Util/Message.cc
         src/Util/String.cc
         src/Util/Token.cc
-        src/TileCache.cc
-        src/Threading.cc
-        src/SimpleFrontendServer/SimpleFrontendServer.cc)
+        src/Util/WebBrowser.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

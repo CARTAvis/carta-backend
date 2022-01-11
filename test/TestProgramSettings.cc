@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include <cxxopts/cxxopts.hpp>
 
-#include "SessionManager/ProgramSettings.h"
+#include "Settings/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 
 #include "CommonTestUtilities.h"

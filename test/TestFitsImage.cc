@@ -6,8 +6,8 @@
 
 #include <gtest/gtest.h>
 
-#include "Frame.h"
 #include "ImageData/FileLoader.h"
+#include "src/Frame.h"
 
 #include "CommonTestUtilities.h"
 
