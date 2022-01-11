@@ -23,6 +23,7 @@
 #include "DataStream/Compression.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Smoothing.h"
+#include "ImageGenerators/ImageFitter.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
@@ -1720,6 +1721,26 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
 void Frame::StopMomentCalc() {
     if (_moment_generator) {
         _moment_generator->StopCalculation();
+    }
+}
+
+bool Frame::FitImage(int file_id, std::string estimates, CARTA::FittingResponse& fitting_response) {
+    auto image = GetImage();
+    auto sImage(image);
+    ImageFitter<casacore::Float> imFitter(sImage, "", 0, "", casacore::String(std::to_string(_z_index)), "", "", estimates);
+    imFitter.fit();
+
+    //imFitter.getOutputRecord().print(std::cout);
+
+    casacore::Bool converged = imFitter.converged(0);
+    if (!converged) {
+        fitting_response.set_success(false);
+        fitting_response.set_message("No fits converged.");
+        return false;
+    } else {
+        fitting_response.set_success(true);
+        fitting_response.set_result(imFitter.getResultsString());
+        return true;
     }
 }
 

@@ -1385,6 +1385,23 @@ void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
     }
 }
 
+void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id) {
+    int file_id(fitting_request.file_id());
+    int region_id(fitting_request.region_id());
+    std::string estimates(fitting_request.estimates());
+    CARTA::FittingResponse fitting_response;
+
+    if (_frames.count(file_id)) {
+        auto& frame = _frames.at(file_id);
+        frame->FitImage(file_id, estimates, fitting_response);
+
+        SendEvent(CARTA::EventType::FITTING_RESPONSE, request_id, fitting_response);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Fitting"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
 // ******** SEND DATA STREAMS *********
 
 bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message) {
