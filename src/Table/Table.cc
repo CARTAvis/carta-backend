@@ -19,7 +19,6 @@
 #include "Util/FileSystem.h"
 
 namespace carta {
-using namespace std;
 
 Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
     fs::path file_path(filename);

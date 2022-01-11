@@ -16,7 +16,6 @@
 
 #include "Util/App.h"
 
-using namespace std;
 using json = nlohmann::json;
 
 namespace carta {
@@ -173,7 +172,7 @@ void ProgramSettings::SetSettingsFromJSON(const json& j) {
 }
 
 void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
-    vector<string> positional_arguments;
+    std::vector<string> positional_arguments;
 
     cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");
     // clang-format off
@@ -182,7 +181,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("h,help", "print usage")
         ("v,version", "print version")
         ("verbosity", "display verbose logging from this level",
-         cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
+         cxxopts::value<int>()->default_value(std::to_string(verbosity)), "<level>")
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
         ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
@@ -199,7 +198,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
-        ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
+        ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
@@ -258,11 +257,11 @@ end.
         CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
     if (result.count("version")) {
-        cout << VERSION_ID << endl;
+        std::cout << VERSION_ID << std::endl;
         version = true;
         return;
     } else if (result.count("help")) {
-        cout << options.help() << extra;
+        std::cout << options.help() << extra;
         help = true;
         return;
     }
@@ -299,7 +298,7 @@ end.
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
-    vector<fs::path> file_paths;
+    std::vector<fs::path> file_paths;
 
     for (const auto& arg : positional_arguments) {
         fs::path p(arg);
