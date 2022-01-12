@@ -71,9 +71,9 @@ public:
             // Fill in vertices coordinates
             std::vector<std::pair<double, double>> coords;
             for (int i = 0; i < vertices_level.second.size() / 2; ++i) {
-                double first = vertices_level.second[i * 2];
-                double second = vertices_level.second[i * 2 + 1];
-                coords.emplace_back(std::make_pair(first, second));
+                double x = vertices_level.second[i * 2];
+                double y = vertices_level.second[i * 2 + 1];
+                coords.emplace_back(std::make_pair(x, y));
             }
 
             // Check are they real vertices
