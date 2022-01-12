@@ -12,6 +12,8 @@
 
 // TILE POOL
 
+using namespace carta;
+
 void TilePool::Grow(int size) {
     _capacity += size;
 }

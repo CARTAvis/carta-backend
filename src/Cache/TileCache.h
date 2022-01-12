@@ -21,6 +21,8 @@
 
 using TilePtr = std::shared_ptr<std::vector<float>>;
 
+namespace carta {
+
 struct TilePool : std::enable_shared_from_this<TilePool> {
     TilePool() : _capacity(4) {}
     void Grow(int size);
@@ -57,14 +59,18 @@ struct TileCacheKey {
     int32_t y;
 };
 
+} // namespace carta
+
 namespace std {
 template <>
-struct hash<TileCacheKey> {
-    std::size_t operator()(const TileCacheKey& k) const {
+struct hash<carta::TileCacheKey> {
+    std::size_t operator()(const carta::TileCacheKey& k) const {
         return std::hash<int32_t>()(k.x) ^ (std::hash<int32_t>()(k.x) << 1);
     }
 };
 } // namespace std
+
+namespace carta {
 
 class TileCache {
 public:
@@ -100,5 +106,7 @@ private:
     std::vector<float> _chunk;
     std::shared_ptr<TilePool> _pool;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__TILE_CACHE_H_
