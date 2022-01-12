@@ -19,6 +19,8 @@
 
 #define SCRIPTING_TIMEOUT 10 // seconds
 
+namespace carta {
+
 class CartaGrpcService : public CARTA::script::CartaBackend::Service {
 public:
     CartaGrpcService(std::string auth_token);
@@ -48,5 +50,7 @@ private:
     std::unique_ptr<grpc::Server> _server;
     int _selected_port;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_GRPCSERVER_CARTAGRPCSERVICE_H_

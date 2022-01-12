@@ -28,6 +28,7 @@ ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> 
 }
 
 void ImagePtrLoader::OpenFile(const std::string& /*hdu*/) {}
+
 } // namespace carta
 
 #endif // CARTA_BACKEND_IMAGEDATA_IMAGEPTRLOADER_H_

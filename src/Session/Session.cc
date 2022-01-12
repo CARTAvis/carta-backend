@@ -44,6 +44,8 @@
 #include <xmmintrin.h>
 #endif
 
+using namespace carta;
+
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
 std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename) {

@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 
-#include "../src/Timer/Timer.h"
+#include "Timer/Timer.h"
 
 using namespace carta;
 

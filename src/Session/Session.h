@@ -60,6 +60,8 @@
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 #define LOADER_CACHE_SIZE 25
 
+namespace carta {
+
 struct PerSocketData {
     uint32_t session_id;
     string address;
@@ -353,5 +355,7 @@ protected:
     // Timestamp for the last protobuf message
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__SESSION_H_

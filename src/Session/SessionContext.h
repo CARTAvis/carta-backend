@@ -7,6 +7,8 @@
 #ifndef __SESSION_CONTEXT_H__
 #define __SESSION_CONTEXT_H__
 
+namespace carta {
+
 class SessionContext {
 public:
     SessionContext() {
@@ -25,5 +27,7 @@ public:
 private:
     mutable bool _cancelled;
 };
+
+} // namespace carta
 
 #endif // __SESSION_CONTEXT_H__

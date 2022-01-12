@@ -10,6 +10,8 @@
 #include "FileList/FileListHandler.h"
 #include "Util/Message.h"
 
+using namespace carta;
+
 class FileListTest : public ::testing::Test {
 public:
     void TestFileList(const std::string& top_level_folder, const std::string& starting_folder, const CARTA::FileListRequest& request,

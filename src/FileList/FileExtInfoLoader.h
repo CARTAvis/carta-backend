@@ -20,6 +20,8 @@
 #include <carta-protobuf/file_info.pb.h>
 #include "../ImageData/FileLoader.h"
 
+namespace carta {
+
 class FileExtInfoLoader {
 public:
     FileExtInfoLoader(std::shared_ptr<carta::FileLoader> loader);
@@ -65,5 +67,7 @@ private:
     std::shared_ptr<carta::FileLoader> _loader;
     CARTA::FileType _type;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_

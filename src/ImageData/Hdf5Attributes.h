@@ -13,6 +13,8 @@
 #include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/HDF5/HDF5HidMeta.h>
 
+namespace carta {
+
 class Hdf5Attributes {
 public:
     // Iterate over the attributes and convert them to FITS header entries
@@ -22,5 +24,7 @@ private:
     // Read a scalar value (int, float, string) and add it to the record.
     static std::string ReadScalar(hid_t attr_id, hid_t data_type_id, const std::string& name);
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_

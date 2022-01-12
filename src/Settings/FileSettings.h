@@ -15,6 +15,8 @@
 
 #include <carta-protobuf/set_cursor.pb.h>
 
+namespace carta {
+
 class Session;
 
 class FileSettings {
@@ -36,5 +38,7 @@ private:
     // map is <fileId, cursor info>
     std::unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FILESETTINGS_H_
