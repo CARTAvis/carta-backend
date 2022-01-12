@@ -38,7 +38,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
-#include "Util/Concurrency.h"
+#include "ThreadingManager/Concurrency.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"

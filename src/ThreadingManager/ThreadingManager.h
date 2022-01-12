@@ -8,7 +8,7 @@
 #define __THREADING_H__
 
 #include <omp.h>
-#include "SessionManager/OnMessageTask.h"
+#include "Session/OnMessageTask.h"
 
 #define MAX_TILING_TASKS 8
 

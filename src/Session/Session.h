@@ -52,7 +52,7 @@
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
 #include "Settings/FileSettings.h"
-#include "Util/Concurrency.h"
+#include "ThreadingManager/Concurrency.h"
 
 #include "Table/TableController.h"
 

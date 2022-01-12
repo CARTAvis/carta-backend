@@ -13,7 +13,7 @@
 #include "FileList/FileListHandler.h"
 #include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
-#include "SessionManager/SessionManager.h"
+#include "Session/SessionManager.h"
 #include "Settings/FileSettings.h"
 #include "Settings/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"

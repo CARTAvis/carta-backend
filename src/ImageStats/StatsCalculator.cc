@@ -14,6 +14,8 @@
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/images/Images/ImageStatistics.h>
 
+namespace carta {
+
 void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats) {
     // Calculate stats in BasicStats struct
     BasicStatsCalculator<float> mm(data);
@@ -21,12 +23,12 @@ void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats) {
     stats = mm.GetStats();
 }
 
-carta::Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data) {
+Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data) {
     if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
-        return carta::Histogram(1, 0, 0, {});
+        return Histogram(1, 0, 0, {});
     } else {
-        return carta::Histogram(num_bins, stats.min_val, stats.max_val, data);
+        return Histogram(num_bins, stats.min_val, stats.max_val, data);
     }
 }
 
@@ -171,3 +173,4 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
 
     return true;
 }
+} // namespace carta

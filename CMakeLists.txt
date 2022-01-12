@@ -226,9 +226,9 @@ set(SOURCE_FILES
         src/Region/Region.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
-        src/SessionManager/OnMessageTask.cc
-        src/SessionManager/Session.cc
-        src/SessionManager/SessionManager.cc
+        src/Session/OnMessageTask.cc
+        src/Session/Session.cc
+        src/Session/SessionManager.cc
         src/Settings/FileSettings.cc
         src/Settings/ProgramSettings.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc

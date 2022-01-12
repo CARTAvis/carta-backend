@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include "Util/Concurrency.h"
+#include "ThreadingManager/Concurrency.h"
 
 #include <carta-protobuf/set_cursor.pb.h>
 
