@@ -86,4 +86,7 @@ public:
     void TearDown() override;
 };
 
+void CmpValues(float data1, float data2, float abs_err = 0);
+void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);
+
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_
