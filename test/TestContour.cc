@@ -43,10 +43,12 @@ public:
         }
 
         auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
+            std::unique_lock<std::mutex> ulock(_callback_mutex);
             if (vertices_map.count(level)) {
                 vertices_map[level].insert(vertices_map[level].end(), vertices.begin(), vertices.end());
             }
             progresses[level] = progress;
+            ulock.unlock();
         };
         EXPECT_TRUE(frame->ContourImage(callback));
 
@@ -119,6 +121,9 @@ public:
     bool InImage(int x, int y, int width, int height) {
         return (0 <= x && x < width && 0 <= y && y < height);
     }
+
+private:
+    std::mutex _callback_mutex;
 };
 
 TEST_F(ContourTest, NoSmoothingFitsFile) {
