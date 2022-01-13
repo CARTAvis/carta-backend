@@ -191,7 +191,6 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
-        ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>") // TODO: remove
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
@@ -205,7 +204,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
     options.add_options("Deprecated and debug")
-        ("debug_no_auth", "accept all incoming WebSocket and gRPC connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
+        ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
         ("threads", "[deprecated] no longer supported", cxxopts::value<int>(), "<threads>")
         ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<string>(), "<dir>")
         ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>");
@@ -236,8 +235,10 @@ first available port starting from {}.  On startup the backend prints out a URL
 which can be used to launch the frontend, and tries to open this URL in the 
 default browser.
 
-The gRPC service is disabled unless a gRPC port is set. By default the number of 
-OpenMP threads is automatically set to the detected number of logical cores.
+The scripting interface must be enabled explicitly.
+
+By default the number of OpenMP threads is automatically set to the detected 
+number of logical cores.
 
 Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
 in the user's home directory. Possible log levels are:{}
@@ -289,7 +290,6 @@ end.
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
     applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
-    applyOptionalArgument(grpc_port, "grpc_port", result); // TODO: remove
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);

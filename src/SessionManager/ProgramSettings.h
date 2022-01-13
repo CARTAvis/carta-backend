@@ -34,7 +34,6 @@ struct ProgramSettings {
     bool version = false;
     bool help = false;
     std::vector<int> port;
-    int grpc_port = -1; // TODO remove
     int omp_thread_count = OMP_THREAD_COUNT;
     int event_thread_count = 2;
     std::string top_level_folder = "/";
@@ -69,7 +68,6 @@ struct ProgramSettings {
     // clang-format off
     std::unordered_map<std::string, int*> int_keys_map{
         {"verbosity", &verbosity},
-        {"grpc_port", &grpc_port},
         {"omp_threads", &omp_thread_count},
         {"event_thread_count", &event_thread_count},
         {"exit_timeout", &wait_time},
@@ -106,9 +104,9 @@ struct ProgramSettings {
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
 
-    // TODO: this is outdated. It's used by the equality operator. Where is that used, and what fields does it need to check?
+    // TODO: this is outdated. It's used by the equality operator, which is used by a test.
     auto GetTuple() const {
-        return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
+        return std::tie(help, version, port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
             no_http, no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, verbosity, wait_time, init_wait_time,
             idle_session_wait_time);
     }

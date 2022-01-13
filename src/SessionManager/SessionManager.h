@@ -10,7 +10,6 @@
 #include <uWebSockets/App.h>
 #include <vector>
 
-#include "../GrpcServer/CartaGrpcService.h"
 #include "../Session.h"
 #include "ProgramSettings.h"
 
@@ -20,8 +19,7 @@ namespace carta {
 class SessionManager {
 public:
     using WSType = uWS::WebSocket<false, true, PerSocketData>;
-    SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler>,
-        std::shared_ptr<CartaGrpcService> grpc_service);
+    SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler>);
     void DeleteSession(int session_id);
     void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context);
     // Called on connection. Creates session objects and assigns UUID to it
@@ -49,7 +47,6 @@ private:
     ProgramSettings& _settings;
     std::string _auth_token;
     std::shared_ptr<FileListHandler> _file_list_handler;
-    std::shared_ptr<CartaGrpcService> _grpc_service;
 
     std::string IPAsText(std::string_view binary);
 };

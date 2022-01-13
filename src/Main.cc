@@ -12,7 +12,6 @@
 
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
-#include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
 #include "SessionManager/ProgramSettings.h"
 #include "SessionManager/SessionManager.h"
@@ -33,7 +32,6 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<FileListHandler> file_list_handler;
     std::unique_ptr<SimpleFrontendServer> http_server;
-    std::shared_ptr<GrpcManager> grpc_manager;
     std::shared_ptr<SessionManager> session_manager;
 
     try {
@@ -101,43 +99,11 @@ int main(int argc, char* argv[]) {
         // One FileListHandler works for all sessions.
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
 
-        // Start gRPC server for scripting client.
-        if (settings.grpc_port >= 0) {
-            std::string grpc_token = "";
-            bool fixed_grpc_token(false);
-
-            if (!settings.debug_no_auth) {
-                auto env_entry = getenv("CARTA_GRPC_TOKEN");
-
-                if (env_entry) {
-                    grpc_token = env_entry;
-                    fixed_grpc_token = true;
-                } else {
-                    grpc_token = NewAuthToken();
-                }
-            }
-
-            grpc_manager = std::make_shared<GrpcManager>(settings.grpc_port, grpc_token);
-
-            if (grpc_manager->Listening()) {
-                spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", settings.grpc_port);
-                if (!fixed_grpc_token && !settings.debug_no_auth) {
-                    spdlog::info("CARTA gRPC token: {}", grpc_token);
-                }
-            } else {
-                spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", settings.grpc_port);
-                FlushLogFile();
-                return 1;
-            }
-        } else {
-            grpc_manager = std::make_shared<GrpcManager>(); // dummy manager
-        }
-
         // Init curl
         curl_global_init(CURL_GLOBAL_ALL);
 
         // Session manager
-        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler, grpc_manager->Service());
+        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler);
 
         // HTTP server
         if (!settings.no_http) {

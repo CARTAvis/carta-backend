@@ -14,14 +14,12 @@
 
 namespace carta {
 
-SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler,
-    std::shared_ptr<CartaGrpcService> grpc_service)
+SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0),
       _app(uWS::App()),
       _settings(settings),
       _auth_token(auth_token),
-      _file_list_handler(file_list_handler),
-      _grpc_service(grpc_service) {}
+      _file_list_handler(file_list_handler)
 
 void SessionManager::DeleteSession(int session_id) {
     Session* session = _sessions[session_id];
@@ -29,9 +27,6 @@ void SessionManager::DeleteSession(int session_id) {
         spdlog::info(
             "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
         session->WaitForTaskCancellation();
-        if (_grpc_service) {
-            _grpc_service->RemoveSession(session);
-        }
         if (!session->DecreaseRefCount()) {
             delete session;
             _sessions.erase(session_id);
@@ -85,11 +80,7 @@ void SessionManager::OnConnect(WSType* ws) {
 
     // create a Session
     _sessions[session_id] = new Session(ws, loop, session_id, address, _settings.top_level_folder, _settings.starting_folder,
-        _file_list_handler, _settings.grpc_port, _settings.read_only_mode);
-
-    if (_grpc_service) {
-        _grpc_service->AddSession(_sessions[session_id]);
-    }
+        _file_list_handler, _settings.read_only_mode);
 
     _sessions[session_id]->IncreaseRefCount();
 

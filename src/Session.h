@@ -41,8 +41,6 @@
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include <carta-scripting-grpc/carta_service.grpc.pb.h>
-
 #include "AnimationObject.h"
 #include "Concurrency.h"
 #include "FileList/FileListHandler.h"
@@ -80,7 +78,7 @@ private:
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port = -1, bool read_only_mode = false);
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false, bool enable_scripting = false);
     ~Session();
 
     // CARTA ICD
@@ -285,8 +283,8 @@ protected:
     std::string _address;
     std::string _top_level_folder;
     std::string _starting_folder;
-    int _grpc_port;
     bool _read_only_mode;
+    bool _enable_scripting;
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;

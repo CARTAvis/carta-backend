@@ -576,7 +576,7 @@ std::string_view SimpleFrontendServer::ProcessScriptingRequest(std::string& buff
         json response_obj;
 
         response_obj["success"] = success;
-        response_obj["message"] = json::parse(message);
+        response_obj["message"] = message;
         response_obj["response"] = json::parse(response);
 
         response_buffer = response_obj.dump();

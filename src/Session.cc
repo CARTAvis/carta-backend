@@ -95,8 +95,8 @@ bool Session::_exit_when_all_sessions_closed = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port,
-    bool read_only_mode)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler,
+    bool read_only_mode, bool enable_scripting)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -104,8 +104,8 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _top_level_folder(top_level_folder),
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
-      _grpc_port(grpc_port),
       _read_only_mode(read_only_mode),
+      _enable_scripting(scripting_enabled),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
@@ -385,9 +385,8 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     } else {
         feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
     }
-    if (_grpc_port >= 0) {
-        feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
-        ack_message.set_grpc_port(_grpc_port);
+    if (_enable_scripting) {
+        feature_flags |= CARTA::ServerFeatureFlags::SCRIPTING;
     }
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);

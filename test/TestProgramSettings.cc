@@ -68,12 +68,12 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_FALSE(settings.no_browser);
     EXPECT_FALSE(settings.debug_no_auth);
     EXPECT_FALSE(settings.read_only_mode);
+    EXPECT_FALSE(settings.enable_scripting);
 
     EXPECT_TRUE(settings.frontend_folder.empty());
     EXPECT_TRUE(settings.files.empty());
 
     EXPECT_EQ(settings.port.size(), 0);
-    EXPECT_EQ(settings.grpc_port, -1);
     EXPECT_EQ(settings.omp_thread_count, -1);
     EXPECT_EQ(settings.top_level_folder, "/");
     EXPECT_EQ(settings.starting_folder, ".");
@@ -94,15 +94,14 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
 
 TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
-        "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
-        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode");
+        "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --omp_threads 10"
+        " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode --enable_scripting");
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
     EXPECT_EQ(settings.no_browser, true);
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
-    EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
@@ -110,12 +109,12 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.debug_no_auth, true);
     EXPECT_EQ(settings.read_only_mode, true);
+    EXPECT_EQ(settings.enable_scripting, true);
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesShort) {
-    auto settings = SettingsFromString("carta_backend -p 1234 -g 5678 -t 10");
+    auto settings = SettingsFromString("carta_backend -p 1234 -t 10");
     EXPECT_EQ(settings.port[0], 1234);
-    EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
 }
 
@@ -236,13 +235,13 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "no_browser": true,
         "host": "helloworld",
         "port": [1234],
-        "grpc_port": 5678,
         "omp_threads": 10,
         "top_level_folder": "/tmp",
         "frontend_folder": "/var",
         "exit_timeout": 10,
         "initial_timeout": 11,
-        "read_only_mode": true
+        "read_only_mode": true,
+        "enable_scripting": true
     })";
     nlohmann::json j = nlohmann::json::parse(json_string);
 
@@ -255,13 +254,13 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.no_browser, true);
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
-    EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.read_only_mode, true);
+    EXPECT_EQ(settings.enable_scripting, true);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
@@ -271,7 +270,6 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     EXPECT_EQ(j.size(), 13);
     EXPECT_EQ(j["verbosity"], 5);
     EXPECT_EQ(j["port"][0], 1234);
-    EXPECT_EQ(j["grpc_port"], 5678);
     EXPECT_EQ(j["omp_threads"], 10);
     EXPECT_EQ(j["exit_timeout"], 10);
     EXPECT_EQ(j["initial_timeout"], 11);
@@ -282,6 +280,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     EXPECT_EQ(j["top_level_folder"], "/tmp");
     EXPECT_EQ(j["frontend_folder"], "/var");
     EXPECT_EQ(j["read_only_mode"], true);
+    EXPECT_EQ(j["enable_scripting"], true);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
@@ -304,13 +303,13 @@ TEST_F(ProgramSettingsTest, TestValuesFromGoodSettings) {
     EXPECT_EQ(settings.no_browser, true);
     EXPECT_EQ(settings.host, "helloworld");
     EXPECT_EQ(settings.port[0], 1234);
-    EXPECT_EQ(settings.grpc_port, 5678);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.top_level_folder, "/tmp");
     EXPECT_EQ(settings.frontend_folder, "/var");
     EXPECT_EQ(settings.wait_time, 10);
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.read_only_mode, true);
+    EXPECT_EQ(settings.enable_scripting, true);
 }
 
 TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
@@ -324,13 +323,13 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     EXPECT_EQ(settings.no_browser, false);
     EXPECT_EQ(settings.host, "0.0.0.0");
     EXPECT_EQ(settings.port.size(), 0);
-    EXPECT_EQ(settings.grpc_port, -1);
     EXPECT_EQ(settings.omp_thread_count, -1);
     EXPECT_EQ(settings.top_level_folder, "/");
     EXPECT_EQ(settings.frontend_folder, "");
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
     EXPECT_EQ(settings.read_only_mode, false);
+    EXPECT_EQ(settings.enable_scripting, false);
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {
