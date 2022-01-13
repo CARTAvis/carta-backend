@@ -9,6 +9,8 @@
 
 #include <algorithm>
 
+using namespace carta;
+
 OnMessageTask* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;

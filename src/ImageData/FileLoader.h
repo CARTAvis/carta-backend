@@ -16,9 +16,9 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
-class Frame;
-
 namespace carta {
+
+class Frame;
 
 namespace FileInfo {
 

@@ -135,7 +135,7 @@ struct SpectralConfig {
 
     bool HasStat(CARTA::StatsType type) {
         // Cancel when stat no longer in requirements
-        for (auto stat : all_stats) {
+        for (const auto& stat : all_stats) {
             if (stat == type) {
                 return true;
             }

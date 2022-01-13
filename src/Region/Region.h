@@ -26,6 +26,8 @@
 
 #define DEFAULT_VERTEX_COUNT 1000
 
+namespace carta {
+
 inline std::string RegionName(CARTA::RegionType type) {
     std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::RegionType::POINT, "point"},
         {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::RECTANGLE, "rectangle"},
@@ -80,8 +82,6 @@ struct RegionState {
         return false;
     }
 };
-
-namespace carta {
 
 class Region {
 public:

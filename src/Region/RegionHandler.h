@@ -20,6 +20,8 @@
 #include "ImageGenerators/PvGenerator.h"
 #include "Region.h"
 
+namespace carta {
+
 struct RegionStyle {
     std::string name;
     std::string color;
@@ -38,8 +40,6 @@ struct RegionProperties {
     RegionState state;
     RegionStyle style;
 };
-
-namespace carta {
 
 class RegionHandler {
 public:

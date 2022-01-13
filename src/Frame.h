@@ -43,6 +43,8 @@
 #include "Util/Image.h"
 #include "Util/Message.h"
 
+namespace carta {
+
 struct ContourSettings {
     std::vector<double> levels;
     CARTA::SmoothingMode smoothing_mode;
@@ -305,5 +307,7 @@ protected:
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FRAME_H_

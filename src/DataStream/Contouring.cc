@@ -14,6 +14,8 @@
 #include "../Logger/Logger.h"
 #include "ThreadingManager/ThreadingManager.h"
 
+namespace carta {
+
 // Contour tracing code adapted from SAOImage DS9: https://github.com/SAOImageDS9/SAOImageDS9
 void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width, int64_t height, double scale, double offset, double level,
     int x_cell, int y_cell, int side, vector<float>& vertices) {
@@ -248,3 +250,5 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
             height, dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
     }
 }
+
+} // namespace carta

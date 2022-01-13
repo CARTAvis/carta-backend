@@ -14,6 +14,8 @@
 #include "../Logger/Logger.h"
 #include "ThreadingManager/ThreadingManager.h"
 
+namespace carta {
+
 double NormPdf(double x, double sigma) {
     return exp(-0.5 * x * x / (sigma * sigma)) / sigma;
 }
@@ -349,3 +351,5 @@ void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width,
         }
     }
 }
+
+} // namespace carta
