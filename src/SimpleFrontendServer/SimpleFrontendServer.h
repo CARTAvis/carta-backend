@@ -13,6 +13,7 @@
 #include <uWebSockets/App.h>
 #include <nlohmann/json.hpp>
 
+#include "SessionManager/SessionManager.h"
 #include "Util/FileSystem.h"
 
 namespace carta {
@@ -52,6 +53,7 @@ protected:
     nlohmann::json GetExistingObjects(const std::string& object_type);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
+    std::string_view ProcessScriptingRequest(const std::string& buffer, std::string& response_buffer);
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);
@@ -70,9 +72,7 @@ private:
     void HandleGetObjects(const std::string& object_type, Res* res, Req* req);
     void HandleSetObject(const std::string& object_type, Res* res, Req* req);
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);
-
     void HandleScriptingAction(Res* res, Req* req);
-    std::string_view ProcessScriptingRequest(std::string& buffer, std::string& response_buffer);
     void Forbidden(Res* res, Req* req);
 
     fs::path _http_root_folder;

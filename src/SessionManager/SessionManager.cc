@@ -19,7 +19,7 @@ SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token
       _app(uWS::App()),
       _settings(settings),
       _auth_token(auth_token),
-      _file_list_handler(file_list_handler)
+      _file_list_handler(file_list_handler) {}
 
 void SessionManager::DeleteSession(int session_id) {
     Session* session = _sessions[session_id];

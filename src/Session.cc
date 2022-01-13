@@ -105,7 +105,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _read_only_mode(read_only_mode),
-      _enable_scripting(scripting_enabled),
+      _enable_scripting(enable_scripting),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),

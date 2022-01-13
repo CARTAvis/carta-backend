@@ -42,7 +42,7 @@ SimpleFrontendServer::SimpleFrontendServer(
 }
 
 void SimpleFrontendServer::RegisterRoutes() {
-    auto app = _session_manager->App();
+    uWS::App& app = _session_manager->App();
 
     // Dynamic routes for preferences, layouts and snippets
     app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
@@ -542,7 +542,7 @@ void SimpleFrontendServer::HandleScriptingAction(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleFrontendServer::ProcessScriptingRequest(std::string& buffer, std::string& response_buffer) {
+std::string_view SimpleFrontendServer::ProcessScriptingRequest(const std::string& buffer, std::string& response_buffer) {
     try {
         json req = json::parse(buffer);
 

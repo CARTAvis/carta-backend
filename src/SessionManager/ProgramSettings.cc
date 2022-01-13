@@ -198,7 +198,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
-        ("enable_scripting", "enable the scripting interface", cxxopts::value<bool>());
+        ("enable_scripting", "enable the scripting interface", cxxopts::value<bool>())
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
