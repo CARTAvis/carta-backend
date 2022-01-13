@@ -47,7 +47,7 @@
 
 #include "AnimationObject.h"
 #include "FileList/FileListHandler.h"
-#include "Frame.h"
+#include "Frame/Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"

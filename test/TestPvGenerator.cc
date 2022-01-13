@@ -11,7 +11,7 @@
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
-#include "src/Frame.h"
+#include "src/Frame/Frame.h"
 
 using namespace carta;
 
