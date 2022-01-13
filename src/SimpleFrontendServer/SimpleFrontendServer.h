@@ -42,7 +42,7 @@ public:
         return _frontend_found;
     }
 
-    void RegisterRoutes(bool enable_scripting);
+    void RegisterRoutes();
     static std::string GetFileUrlString(std::vector<std::string> files);
 
 protected:
@@ -73,6 +73,7 @@ private:
 
     void HandleScriptingAction(Res* res, Req* req);
     std::string_view ProcessScriptingRequest(std::string& buffer, std::string& response_buffer);
+    void Forbidden(Res* res, Req* req);
 
     fs::path _http_root_folder;
     fs::path _config_folder;

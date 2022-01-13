@@ -41,7 +41,7 @@ SimpleFrontendServer::SimpleFrontendServer(
     }
 }
 
-void SimpleFrontendServer::RegisterRoutes(bool enable_scripting) {
+void SimpleFrontendServer::RegisterRoutes() {
     auto app = _session_manager->App();
 
     // Dynamic routes for preferences, layouts and snippets
@@ -56,8 +56,10 @@ void SimpleFrontendServer::RegisterRoutes(bool enable_scripting) {
     app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
     app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
 
-    if (enable_scripting) {
+    if (_session_manager->EnableScripting()) {
         app.put("/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
+    } else {
+        app.put("/api/scripting/action", [&](auto res, auto req) { Forbidden(res, req); });
     }
 
     // Static routes for all other files
@@ -588,6 +590,11 @@ std::string_view SimpleFrontendServer::ProcessScriptingRequest(std::string& buff
         spdlog::warn(e.what());
         return HTTP_500;
     }
+}
+
+void SimpleFrontendServer::Forbidden(Res* res, Req* req) {
+    res->writeStatus(HTTP_403)->end();
+    return;
 }
 
 } // namespace carta
