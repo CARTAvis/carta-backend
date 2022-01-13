@@ -34,7 +34,7 @@ struct ProgramSettings {
     bool version = false;
     bool help = false;
     std::vector<int> port;
-    int grpc_port = -1;
+    int grpc_port = -1; // TODO remove
     int omp_thread_count = OMP_THREAD_COUNT;
     int event_thread_count = 2;
     std::string top_level_folder = "/";
@@ -53,6 +53,7 @@ struct ProgramSettings {
     int init_wait_time = -1;
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
+    bool enable_scripting = false;
 
     std::string browser;
 
@@ -82,7 +83,8 @@ struct ProgramSettings {
         {"log_protocol_messages", &log_protocol_messages},
         {"no_http", &no_http},
         {"no_browser", &no_browser},
-        {"read_only_mode", &read_only_mode}
+        {"read_only_mode", &read_only_mode},
+        {"enable_scripting", &enable_scripting}
     };
 
     std::unordered_map<std::string, std::string*> strings_keys_map{
@@ -104,6 +106,7 @@ struct ProgramSettings {
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
 
+    // TODO: this is outdated. It's used by the equality operator. Where is that used, and what fields does it need to check?
     auto GetTuple() const {
         return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
             no_http, no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, verbosity, wait_time, init_wait_time,

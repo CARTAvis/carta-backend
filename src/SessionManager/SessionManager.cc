@@ -540,6 +540,36 @@ void SessionManager::RunApp() {
         .run();
 }
 
+bool SessionManager::SendScriptingRequest(int session_id, uint32_t scripting_request_id, std::string target, std::string action,
+    std::string parameters, bool async, std::string return_path) {
+    Session* session = _sessions[session_id];
+    if (!session) {
+        return false;
+    }
+
+    CARTA::ScriptingRequest message;
+    message.set_scripting_request_id(scripting_request_id);
+    message.set_target(target);
+    message.set_action(action);
+    message.set_parameters(parameters);
+    message.set_async(async);
+    message.set_return_path(return_path);
+
+    session->SendScriptingRequest(message);
+    return true;
+}
+
+bool SessionManager::GetScriptingResponse(
+    int session_id, uint32_t scripting_request_id, bool& success, std::string& message, std::string& response, bool& session_not_found) {
+    Session* session = _sessions[session_id];
+    if (!session) {
+        session_not_found = true;
+        return false;
+    }
+
+    return session->GetScriptingResponse(scripting_request_id, success, message, response);
+}
+
 std::string SessionManager::IPAsText(std::string_view binary) {
     std::string result;
     if (!binary.length()) {

@@ -23,8 +23,15 @@ namespace carta {
 
 const string success_string = json({{"success", true}}).dump();
 
-SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, fs::path user_directory, string auth_token, bool read_only_mode)
-    : _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode), _config_folder(user_directory / "config") {
+uint32_t SimpleFrontendServer::_scripting_request_id = 0;
+
+SimpleFrontendServer::SimpleFrontendServer(
+    std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, string auth_token, bool read_only_mode)
+    : _session_manager(session_manager),
+      _http_root_folder(root_folder),
+      _auth_token(auth_token),
+      _read_only_mode(read_only_mode),
+      _config_folder(user_directory / "config") {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
@@ -34,7 +41,9 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder, fs::path user_d
     }
 }
 
-void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
+void SimpleFrontendServer::RegisterRoutes(bool enable_scripting) {
+    auto app = _session_manager->App();
+
     // Dynamic routes for preferences, layouts and snippets
     app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
     app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
@@ -46,6 +55,10 @@ void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
     app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
     app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
     app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+
+    if (enable_scripting) {
+        app.put("/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
+    }
 
     // Static routes for all other files
     app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
@@ -504,6 +517,76 @@ std::string SimpleFrontendServer::GetFileUrlString(vector<std::string> files) {
             }
         }
         return url_string;
+    }
+}
+
+void SimpleFrontendServer::HandleScriptingAction(Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    AddNoCacheHeaders(res);
+
+    WaitForData(res, req, [this, res](const string& buffer) {
+        std::string response_buffer;
+        auto status = ProcessScriptingRequest(buffer, response_buffer);
+
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(response_buffer);
+        } else {
+            res->end();
+        }
+    });
+}
+
+std::string_view SimpleFrontendServer::ProcessScriptingRequest(std::string& buffer, std::string& response_buffer) {
+    try {
+        json req = json::parse(buffer);
+
+        _scripting_request_id++;
+        _scripting_request_id = std::max(_scripting_request_id, 1u);
+
+        int session_id = req["session_id"].get<int>();
+
+        if (!_session_manager->SendScriptingRequest(session_id, _scripting_request_id, req["target"].get<std::string>(),
+                req["action"].get<std::string>(), req["parameters"].get<std::string>(), req["async"].get<bool>(),
+                req["return_path"].get<std::string>())) {
+            return HTTP_404;
+        }
+
+        bool success;
+        std::string message;
+        std::string response;
+
+        bool session_not_found(0);
+        auto t_start = std::chrono::system_clock::now();
+
+        while (!_session_manager->GetScriptingResponse(session_id, _scripting_request_id, success, message, response, session_not_found)) {
+            if (session_not_found) {
+                return HTTP_404;
+            }
+            auto t_end = std::chrono::system_clock::now();
+            std::chrono::duration<double> elapsed_sec = t_end - t_start;
+            if (elapsed_sec.count() > SCRIPTING_TIMEOUT) {
+                return HTTP_504;
+            }
+        }
+
+        json response_obj;
+
+        response_obj["success"] = success;
+        response_obj["message"] = json::parse(message);
+        response_obj["response"] = json::parse(response);
+
+        response_buffer = response_obj.dump();
+
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    } catch (exception e) {
+        spdlog::warn(e.what());
+        return HTTP_500;
     }
 }
 

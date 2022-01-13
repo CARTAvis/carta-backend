@@ -2119,15 +2119,7 @@ void Session::CancelExistingAnimation() {
     }
 }
 
-void Session::SendScriptingRequest(
-    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path) {
-    CARTA::ScriptingRequest message;
-    message.set_scripting_request_id(scripting_request_id);
-    message.set_target(target);
-    message.set_action(action);
-    message.set_parameters(parameters);
-    message.set_async(async);
-    message.set_return_path(return_path);
+void Session::SendScriptingRequest(CARTA::ScriptingRequest message) {
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
 }
 
@@ -2138,17 +2130,17 @@ void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint3
     _scripting_response[scripting_request_id] = message;
 }
 
-// TODO: return pointer to original response type and copy in grpc service
-bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply) {
+bool Session::GetScriptingResponse(uint32_t scripting_request_id, bool& success, std::string& message, std::string& response) {
     std::unique_lock<std::mutex> lock(_scripting_mutex);
     auto scripting_response = _scripting_response.find(scripting_request_id);
     if (scripting_response == _scripting_response.end()) {
         return false;
     } else {
         auto msg = scripting_response->second;
-        reply->set_success(msg.success());
-        reply->set_message(msg.message());
-        reply->set_response(msg.response());
+
+        success = msg.success();
+        message = msg.message();
+        response = msg.response();
 
         _scripting_response.erase(scripting_request_id);
 

@@ -155,10 +155,10 @@ int main(int argc, char* argv[]) {
             }
 
             if (!frontend_path.empty()) {
-                http_server =
-                    std::make_unique<SimpleFrontendServer>(frontend_path, settings.user_directory, auth_token, settings.read_only_mode);
+                http_server = std::make_unique<SimpleFrontendServer>(
+                    session_manager, frontend_path, settings.user_directory, auth_token, settings.read_only_mode);
                 if (http_server->CanServeFrontend()) {
-                    http_server->RegisterRoutes(session_manager->App());
+                    http_server->RegisterRoutes(settings.enable_scripting);
                 } else {
                     spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
                 }

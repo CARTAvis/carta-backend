@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
 #define CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
 
+#include <chrono>
 #include <string>
 
 #include <uWebSockets/App.h>
@@ -21,6 +22,9 @@ namespace carta {
 #define HTTP_403 "403 Forbidden"
 #define HTTP_500 "500 Internal Server Error"
 #define HTTP_501 "501 Not Implemented"
+#define HTTP_504 "504 Gateway Timeout"
+
+#define SCRIPTING_TIMEOUT 10 // seconds
 
 // Schema URLs
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preferences_schema_2.json"
@@ -32,12 +36,13 @@ typedef uWS::HttpResponse<false> Res;
 
 class SimpleFrontendServer {
 public:
-    SimpleFrontendServer(fs::path root_folder, fs::path user_directory, std::string auth_token, bool read_only_mode);
+    SimpleFrontendServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
+        std::string auth_token, bool read_only_mode);
     bool CanServeFrontend() {
         return _frontend_found;
     }
 
-    void RegisterRoutes(uWS::App& app);
+    void RegisterRoutes(bool enable_scripting);
     static std::string GetFileUrlString(std::vector<std::string> files);
 
 protected:
@@ -66,11 +71,16 @@ private:
     void HandleSetObject(const std::string& object_type, Res* res, Req* req);
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);
 
+    void HandleScriptingAction(Res* res, Req* req);
+    std::string_view ProcessScriptingRequest(std::string& buffer, std::string& response_buffer);
+
     fs::path _http_root_folder;
     fs::path _config_folder;
     bool _frontend_found;
     std::string _auth_token;
     bool _read_only_mode;
+    std::shared_ptr<SessionManager> _session_manager;
+    static uint32_t _scripting_request_id;
 };
 
 } // namespace carta

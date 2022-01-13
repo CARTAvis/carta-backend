@@ -191,7 +191,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
-        ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
+        ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>") // TODO: remove
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
@@ -199,6 +199,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
+        ("enable_scripting", "enable the scripting interface", cxxopts::value<bool>());
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
@@ -276,6 +277,7 @@ end.
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
     read_only_mode = result["read_only_mode"].as<bool>();
+    enable_scripting = result["enable_scripting"].as<bool>();
 
     no_user_config = result.count("no_user_config") != 0;
     no_system_config = result.count("no_system_config") != 0;
@@ -287,7 +289,7 @@ end.
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
     applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
-    applyOptionalArgument(grpc_port, "grpc_port", result);
+    applyOptionalArgument(grpc_port, "grpc_port", result); // TODO: remove
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
