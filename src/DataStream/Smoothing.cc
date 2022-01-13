@@ -14,8 +14,6 @@
 #include "../Logger/Logger.h"
 #include "Threading.h"
 
-using namespace std;
-
 double NormPdf(double x, double sigma) {
     return exp(-0.5 * x * x / (sigma * sigma)) / sigma;
 }

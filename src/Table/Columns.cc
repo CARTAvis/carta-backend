@@ -15,7 +15,6 @@
 #include "Threading.h"
 
 namespace carta {
-using namespace std;
 
 Column::Column(const string& name_chr) {
     name = name_chr;

@@ -135,6 +135,7 @@ void ExitNoSessions(int s) {
         --__exit_backend_timer;
         if (!__exit_backend_timer) {
             spdlog::info("No sessions timeout.");
+            ThreadManager::ExitEventHandlingThreads();
             FlushLogFile();
             exit(0);
         }
@@ -150,6 +151,7 @@ Session::~Session() {
         if (_exit_when_all_sessions_closed) {
             if (_exit_after_num_seconds == 0) {
                 spdlog::info("Exiting due to no sessions remaining");
+                ThreadManager::ExitEventHandlingThreads();
                 FlushLogFile();
                 exit(0);
             }

@@ -1318,14 +1318,40 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             // decimate the profile in-place, attempting to preserve order
             if (have_profile && downsample && !_loader->HasMip(2)) {
                 for (size_t i = 0; i < profile.size(); i += mip * 2) {
-                    auto [it_min, it_max] =
-                        std::minmax_element(profile.begin() + i, std::min(profile.begin() + i + mip * 2, profile.end()));
-                    if (std::distance(it_min, it_max) > 0) {
-                        profile[i / mip] = *it_min;
-                        profile[i / mip + 1] = *it_max;
+                    float min_pix = std::numeric_limits<float>::max();
+                    float max_pix = std::numeric_limits<float>::lowest();
+                    int min_pos(-1), max_pos(-1), idx(0);
+
+                    auto get_minmax = [&](const float& value) {
+                        if (!std::isnan(value)) {
+                            if (value < min_pix) {
+                                min_pix = value;
+                                min_pos = idx;
+                            }
+                            if (value > max_pix) {
+                                max_pix = value;
+                                max_pos = idx;
+                            }
+                        }
+                        ++idx;
+                    };
+
+                    std::for_each(profile.begin() + i, std::min(profile.begin() + i + mip * 2, profile.end()), get_minmax);
+
+                    if (min_pos > -1 && max_pos > -1) {
+                        if (min_pos < max_pos) {
+                            profile[i / mip] = min_pix;
+                            profile[i / mip + 1] = max_pix;
+                        } else {
+                            profile[i / mip] = max_pix;
+                            profile[i / mip + 1] = min_pix;
+                        }
+                    } else if (min_pos > -1) {
+                        profile[i / mip] = profile[i / mip + 1] = min_pix;
+                    } else if (max_pos > -1) {
+                        profile[i / mip] = profile[i / mip + 1] = max_pix;
                     } else {
-                        profile[i / mip] = *it_max;
-                        profile[i / mip + 1] = *it_min;
+                        profile[i / mip] = profile[i / mip + 1] = std::numeric_limits<float>::quiet_NaN();
                     }
                 }
                 profile.resize(decimated_end - decimated_start); // shrink the profile to the downsampled size
