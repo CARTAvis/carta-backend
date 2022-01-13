@@ -80,7 +80,7 @@ void SessionManager::OnConnect(WSType* ws) {
 
     // create a Session
     _sessions[session_id] = new Session(ws, loop, session_id, address, _settings.top_level_folder, _settings.starting_folder,
-        _file_list_handler, _settings.read_only_mode);
+        _file_list_handler, _settings.read_only_mode, _settings.enable_scripting);
 
     _sessions[session_id]->IncreaseRefCount();
 
