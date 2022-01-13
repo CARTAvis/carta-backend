@@ -363,11 +363,39 @@ end.
 }
 
 bool ProgramSettings::operator!=(const ProgramSettings& rhs) const {
-    return GetTuple() != rhs.GetTuple();
+    return !(*this == rhs);
 }
 
 bool ProgramSettings::operator==(const ProgramSettings& rhs) const {
-    return GetTuple() == rhs.GetTuple();
+    if (version != rhs.version || help != rhs.help) {
+        return false;
+    }
+
+    for (const auto& [key, value] : int_keys_map) {
+        if (*value != *rhs.int_keys_map.at(key)) {
+            return false;
+        }
+    }
+
+    for (const auto& [key, value] : bool_keys_map) {
+        if (*value != *rhs.bool_keys_map.at(key)) {
+            return false;
+        }
+    }
+
+    for (const auto& [key, value] : strings_keys_map) {
+        if (*value != *rhs.strings_keys_map.at(key)) {
+            return false;
+        }
+    }
+
+    for (const auto& [key, value] : vector_int_keys_map) {
+        if (*value != *rhs.vector_int_keys_map.at(key)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace carta

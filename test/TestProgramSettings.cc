@@ -84,7 +84,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_EQ(settings.idle_session_wait_time, -1);
 }
 
-TEST_F(ProgramSettingsTest, EmptyArugments) {
+TEST_F(ProgramSettingsTest, EmptyArguments) {
     auto settings = SettingsFromVector({"carta_backend"});
     EXPECT_TRUE(settings == default_settings);
     settings = SettingsFromVector({"carta_backend", ""});
