@@ -197,6 +197,7 @@ set(LINK_LIBS
 set(SOURCE_FILES
         ${SOURCE_FILES}
         src/Cache/TileCache.cc
+        src/Cache/TilePool.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc
@@ -211,6 +212,7 @@ set(SOURCE_FILES
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
         src/ImageData/CompressedFits.cc
+        src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
         src/ImageData/Hdf5Attributes.cc
         src/ImageData/Hdf5Loader.cc

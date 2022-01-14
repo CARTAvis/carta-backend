@@ -10,67 +10,18 @@
 #include <cstdint>
 #include <functional>
 #include <list>
-#include <memory>
-#include <stack>
 #include <unordered_map>
 #include <vector>
 
+#include "Cache/TileCacheKey.h"
+#include "Cache/TilePool.h"
 #include "ImageData/FileLoader.h"
 
 #define MAX_TILE_CACHE_CAPACITY 4096
 
+namespace carta {
+
 using TilePtr = std::shared_ptr<std::vector<float>>;
-
-namespace carta {
-
-struct TilePool : std::enable_shared_from_this<TilePool> {
-    TilePool() : _capacity(4) {}
-    void Grow(int size);
-    TilePtr Pull();
-    void Push(std::unique_ptr<std::vector<float>>& unique_tile) noexcept;
-    bool Full();
-
-private:
-    TilePtr Create();
-
-    std::mutex _tile_pool_mutex;
-    std::stack<TilePtr> _stack;
-    // The capacity of the pool should be 4 more than the capacity of the cache, so that we can always load a chunk before evicting
-    // anything.
-    int _capacity;
-
-    struct TilePtrDeleter {
-        std::weak_ptr<TilePool> _pool;
-        TilePtrDeleter() noexcept = default;
-        explicit TilePtrDeleter(std::weak_ptr<TilePool>&& pool) noexcept : _pool(std::move(pool)) {}
-        void operator()(std::vector<float>* raw_tile) const noexcept;
-    };
-};
-
-struct TileCacheKey {
-    TileCacheKey() {}
-    TileCacheKey(int32_t x, int32_t y) : x(x), y(y) {}
-
-    bool operator==(const TileCacheKey& other) const {
-        return (x == other.x && y == other.y);
-    }
-
-    int32_t x;
-    int32_t y;
-};
-
-} // namespace carta
-
-namespace std {
-template <>
-struct hash<carta::TileCacheKey> {
-    std::size_t operator()(const carta::TileCacheKey& k) const {
-        return std::hash<int32_t>()(k.x) ^ (std::hash<int32_t>()(k.x) << 1);
-    }
-};
-} // namespace std
-
-namespace carta {
 
 class TileCache {
 public:
