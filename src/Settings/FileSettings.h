@@ -30,7 +30,7 @@ public:
 
 private:
     Session* _session;
-    carta::queuing_rw_mutex _cursor_mutex;
+    queuing_rw_mutex _cursor_mutex;
 
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;

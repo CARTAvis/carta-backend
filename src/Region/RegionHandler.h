@@ -77,8 +77,7 @@ public:
 
     // Calculate moments
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        std::vector<carta::GeneratedImage>& collapse_results);
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
 
     // Point regions
     bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
@@ -90,7 +89,7 @@ public:
 
     // Generate PV image
     bool CalculatePvImage(int file_id, int region_id, int width, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-        CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image);
+        CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
     void StopPvCalc(int file_id);
 
 private:

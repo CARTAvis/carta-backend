@@ -71,12 +71,12 @@ struct PerSocketData {
 class LoaderCache {
 public:
     LoaderCache(int capacity);
-    std::shared_ptr<carta::FileLoader> Get(std::string filename);
+    std::shared_ptr<FileLoader> Get(std::string filename);
     void Remove(std::string filename);
 
 private:
     int _capacity;
-    std::unordered_map<std::string, std::shared_ptr<carta::FileLoader>> _map;
+    std::unordered_map<std::string, std::shared_ptr<FileLoader>> _map;
     std::list<std::string> _queue;
     std::mutex _loader_cache_mutex;
 };
@@ -227,7 +227,7 @@ public:
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
 
     FileSettings _file_settings;
-    std::unordered_map<int, carta::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
+    std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(
         uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path);
@@ -261,7 +261,7 @@ protected:
 
     // File info for open moments image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-        const std::string& filename, std::string& message, std::shared_ptr<carta::FileLoader>& image_loader);
+        const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);
@@ -310,10 +310,10 @@ protected:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
     std::mutex _frame_mutex;
 
-    const std::unique_ptr<carta::TableController> _table_controller;
+    const std::unique_ptr<TableController> _table_controller;
 
     // Handler for region creation, import/export, requirements, and data
-    std::unique_ptr<carta::RegionHandler> _region_handler;
+    std::unique_ptr<RegionHandler> _region_handler;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
@@ -330,7 +330,7 @@ protected:
     float _histogram_progress;
 
     // message queue <msg, compress>
-    carta::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
+    concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     // context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;

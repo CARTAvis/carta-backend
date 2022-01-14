@@ -14,7 +14,6 @@
 #include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
 #include "Session/SessionManager.h"
-#include "Settings/FileSettings.h"
 #include "Settings/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "ThreadingManager/ThreadingManager.h"
@@ -25,8 +24,6 @@
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
-    ProgramSettings settings;
-
     std::shared_ptr<FileListHandler> file_list_handler;
     std::unique_ptr<SimpleFrontendServer> http_server;
     std::shared_ptr<GrpcManager> grpc_manager;

@@ -182,7 +182,7 @@ bool Table::PopulateParams(const pugi::xml_node& table) {
         if (description_node) {
             description = description_node.child_value();
         }
-        _params.emplace_back(carta::TableParam({name, description, value}));
+        _params.emplace_back(TableParam({name, description, value}));
     }
 
     return true;

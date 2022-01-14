@@ -225,7 +225,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
-    carta::ThreadManager::ApplyThreadLimit();
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
     for (int64_t l = 0; l < levels.size(); l++) {
         vertex_data[l].clear();
