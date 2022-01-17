@@ -105,7 +105,6 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 void LogReceivedEventType(const CARTA::EventType& event_type);
 void LogSentEventType(const CARTA::EventType& event_type);
 void FlushLogFile();
-
 } // namespace logger
 } // namespace carta
 
