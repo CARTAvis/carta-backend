@@ -8,7 +8,7 @@
 #include <cxxopts/cxxopts.hpp>
 
 #include "SessionManager/ProgramSettings.h"
-#include "SimpleFrontendServer/SimpleFrontendServer.h"
+#include "SimpleHttpServer/SimpleHttpServer.h"
 
 #include "CommonTestUtilities.h"
 
@@ -335,7 +335,7 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {
     std::vector<std::string> files;
-    auto url_string = carta::SimpleFrontendServer::GetFileUrlString(files);
+    auto url_string = carta::SimpleHttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, "");
 }
 
@@ -345,7 +345,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringSingleFile) {
     files.push_back(image_root / "fits" / "noise_3d.fits");
     std::string folder = curl_easy_escape(nullptr, fmt::format("{}/fits/", image_root.string()).c_str(), 0);
 
-    auto url_string = carta::SimpleFrontendServer::GetFileUrlString(files);
+    auto url_string = carta::SimpleHttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("file={}{}", folder, "noise_3d.fits"));
 }
 
@@ -356,7 +356,7 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesSameFolder) {
     files.push_back(image_root / "fits" / "noise_4d.fits");
     std::string folder = curl_easy_escape(nullptr, fmt::format("{}/fits", image_root.string()).c_str(), 0);
 
-    auto url_string = carta::SimpleFrontendServer::GetFileUrlString(files);
+    auto url_string = carta::SimpleHttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("folder={}&files={}", folder, "noise_3d.fits,noise_4d.fits"));
 }
 
@@ -368,6 +368,6 @@ TEST_F(ProgramSettingsTest, TestFileQueryStringTwoFilesDifferentFolder) {
     std::string folder1 = curl_easy_escape(nullptr, fmt::format("{}/fits/", image_root.string()).c_str(), 0);
     std::string folder2 = curl_easy_escape(nullptr, fmt::format("{}/hdf5/", image_root.string()).c_str(), 0);
 
-    auto url_string = carta::SimpleFrontendServer::GetFileUrlString(files);
+    auto url_string = carta::SimpleHttpServer::GetFileUrlString(files);
     EXPECT_EQ(url_string, fmt::format("files={}{},{}{}", folder1, "noise_3d.fits", folder2, "noise_10px_10px.hdf5"));
 }

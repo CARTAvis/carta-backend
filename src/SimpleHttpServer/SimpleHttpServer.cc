@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "SimpleFrontendServer.h"
+#include "SimpleHttpServer.h"
 
 #include <fstream>
 #include <regex>
@@ -23,56 +23,71 @@ namespace carta {
 
 const string success_string = json({{"success", true}}).dump();
 
-uint32_t SimpleFrontendServer::_scripting_request_id = 0;
+uint32_t SimpleHttpServer::_scripting_request_id = 0;
 
-SimpleFrontendServer::SimpleFrontendServer(
-    std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, string auth_token, bool read_only_mode)
+SimpleHttpServer::SimpleHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
+    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
       _read_only_mode(read_only_mode),
-      _config_folder(user_directory / "config") {
-    _frontend_found = IsValidFrontendFolder(root_folder);
+      _config_folder(user_directory / "config"),
+      _enable_frontend(enable_frontend),
+      _enable_database(enable_database),
+      _enable_scripting(enable_scripting) {
+    if (_enable_frontend && !root_folder.empty()) {
+        _frontend_found = IsValidFrontendFolder(root_folder);
 
-    if (_frontend_found) {
-        spdlog::info("Serving CARTA frontend from {}", fs::canonical(_http_root_folder).string());
-    } else {
-        spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
+        if (_frontend_found) {
+            spdlog::info("Serving CARTA frontend from {}", fs::canonical(_http_root_folder).string());
+        } else {
+            spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
+        }
     }
 }
 
-void SimpleFrontendServer::RegisterRoutes() {
+void SimpleHttpServer::RegisterRoutes() {
     uWS::App& app = _session_manager->App();
 
-    // Dynamic routes for preferences, layouts and snippets
-    app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
-    app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
-    app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
-    app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
-    app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
-    app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
-    app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
-    app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
-    app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
-    app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
-
-    if (_session_manager->EnableScripting()) {
-        app.put("/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
+    if (_enable_scripting) {
+        app.post("/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
     } else {
-        app.put("/api/scripting/action", [&](auto res, auto req) { Forbidden(res, req); });
+        app.post("/api/scripting/action", [&](auto res, auto req) { Forbidden(res, req); });
     }
 
-    // Static routes for all other files
-    app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
+    if (_enable_database) {
+        // Dynamic routes for preferences, layouts and snippets
+        app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
+        app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
+        app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
+        app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
+        app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
+        app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+        app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
+        app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
+        app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
+    } else {
+        app.get("/api/database/*", [&](auto res, auto req) { Forbidden(res, req); });
+        app.put("/api/database/*", [&](auto res, auto req) { Forbidden(res, req); });
+        app.del("/api/database/*", [&](auto res, auto req) { Forbidden(res, req); });
+    }
+
+    if (_enable_frontend) {
+        app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        // Static routes for all other files
+        app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
+    } else {
+        app.get("/*", [&](auto res, auto req) { Forbidden(res, req); });
+    }
 }
 
-void SimpleFrontendServer::HandleGetConfig(Res* res, Req* _req) {
+void SimpleHttpServer::HandleGetConfig(Res* res, Req* _req) {
     json runtime_config = {{"apiAddress", "/api"}};
     res->writeHeader("Content-Type", "application/json");
     res->writeStatus(HTTP_200)->end(runtime_config.dump());
 }
 
-void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
+void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
     string_view url = req->getUrl();
     fs::path path = _http_root_folder;
     if (url.empty() || url == "/") {
@@ -132,7 +147,7 @@ void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     res->end();
 }
 
-bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
+bool SimpleHttpServer::IsValidFrontendFolder(fs::path folder) {
     std::error_code error_code;
 
     // Check that the folder exists
@@ -149,17 +164,17 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
     return index_file.good();
 }
 
-bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* req) {
+bool SimpleHttpServer::IsAuthenticated(uWS::HttpRequest* req) {
     return ValidateAuthToken(req, _auth_token);
 }
 
-void SimpleFrontendServer::AddNoCacheHeaders(Res* res) {
+void SimpleHttpServer::AddNoCacheHeaders(Res* res) {
     res->writeHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
     res->writeHeader("Expires", "-1");
     res->writeHeader("Pragma", "no-cache");
 }
 
-json SimpleFrontendServer::GetExistingPreferences() {
+json SimpleHttpServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
     try {
         if (!fs::exists(preferences_path)) {
@@ -174,7 +189,7 @@ json SimpleFrontendServer::GetExistingPreferences() {
     }
 }
 
-bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
+bool SimpleHttpServer::WritePreferencesFile(nlohmann::json& obj) {
     if (_read_only_mode) {
         spdlog::warn("Writing preferences file is not allowed in read-only mode");
         return false;
@@ -197,7 +212,7 @@ bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
     }
 }
 
-void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<void(const string&)>& callback) {
+void SimpleHttpServer::WaitForData(Res* res, Req* req, const std::function<void(const string&)>& callback) {
     res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
 
     string buffer;
@@ -210,7 +225,7 @@ void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<v
     });
 }
 
-void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
+void SimpleHttpServer::HandleGetPreferences(Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -228,7 +243,7 @@ void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
     }
 }
 
-std::string_view SimpleFrontendServer::UpdatePreferencesFromString(const string& buffer) {
+std::string_view SimpleHttpServer::UpdatePreferencesFromString(const string& buffer) {
     try {
         json update_data = json::parse(buffer);
         json existing_data = GetExistingPreferences();
@@ -256,7 +271,7 @@ std::string_view SimpleFrontendServer::UpdatePreferencesFromString(const string&
     }
 }
 
-void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
+void SimpleHttpServer::HandleSetPreferences(Res* res, Req* req) {
     // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
@@ -275,7 +290,7 @@ void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleFrontendServer::ClearPreferencesFromString(const string& buffer) {
+std::string_view SimpleHttpServer::ClearPreferencesFromString(const string& buffer) {
     try {
         json post_data = json::parse(buffer);
         auto keys_array = post_data["keys"];
@@ -311,7 +326,7 @@ std::string_view SimpleFrontendServer::ClearPreferencesFromString(const string& 
     }
 }
 
-void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
+void SimpleHttpServer::HandleClearPreferences(Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -329,7 +344,7 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
     });
 }
 
-void SimpleFrontendServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
+void SimpleHttpServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -342,7 +357,7 @@ void SimpleFrontendServer::HandleGetObjects(const std::string& object_type, Res*
     res->writeStatus(HTTP_200)->end(body.dump());
 }
 
-void SimpleFrontendServer::HandleSetObject(const std::string& object_type, Res* res, Req* req) {
+void SimpleHttpServer::HandleSetObject(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -360,7 +375,7 @@ void SimpleFrontendServer::HandleSetObject(const std::string& object_type, Res* 
     });
 }
 
-void SimpleFrontendServer::HandleClearObject(const std::string& object_type, Res* res, Req* req) {
+void SimpleHttpServer::HandleClearObject(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -378,7 +393,7 @@ void SimpleFrontendServer::HandleClearObject(const std::string& object_type, Res
     });
 }
 
-nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& object_type) {
+nlohmann::json SimpleHttpServer::GetExistingObjects(const std::string& object_type) {
     auto object_folder = _config_folder / (object_type + "s");
     json objects = json::object();
     std::error_code error_code;
@@ -404,7 +419,7 @@ nlohmann::json SimpleFrontendServer::GetExistingObjects(const std::string& objec
     return objects;
 }
 
-bool SimpleFrontendServer::WriteObjectFile(const std::string& object_type, const string& object_name, nlohmann::json& obj) {
+bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const string& object_name, nlohmann::json& obj) {
     if (_read_only_mode) {
         spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return false;
@@ -431,7 +446,7 @@ bool SimpleFrontendServer::WriteObjectFile(const std::string& object_type, const
     }
 }
 
-std::string_view SimpleFrontendServer::SetObjectFromString(const std::string& object_type, const string& buffer) {
+std::string_view SimpleHttpServer::SetObjectFromString(const std::string& object_type, const string& buffer) {
     try {
         string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
@@ -452,7 +467,7 @@ std::string_view SimpleFrontendServer::SetObjectFromString(const std::string& ob
     }
 }
 
-std::string_view SimpleFrontendServer::ClearObjectFromString(const std::string& object_type, const string& buffer) {
+std::string_view SimpleHttpServer::ClearObjectFromString(const std::string& object_type, const string& buffer) {
     if (_read_only_mode) {
         spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return HTTP_400;
@@ -481,7 +496,7 @@ std::string_view SimpleFrontendServer::ClearObjectFromString(const std::string& 
     }
 }
 
-std::string SimpleFrontendServer::GetFileUrlString(vector<std::string> files) {
+std::string SimpleHttpServer::GetFileUrlString(vector<std::string> files) {
     if (files.empty()) {
         return std::string();
     } else if (files.size() == 1) {
@@ -522,7 +537,7 @@ std::string SimpleFrontendServer::GetFileUrlString(vector<std::string> files) {
     }
 }
 
-void SimpleFrontendServer::HandleScriptingAction(Res* res, Req* req) {
+void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -542,7 +557,7 @@ void SimpleFrontendServer::HandleScriptingAction(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleFrontendServer::ProcessScriptingRequest(const std::string& buffer, std::string& response_buffer) {
+std::string_view SimpleHttpServer::ProcessScriptingRequest(const std::string& buffer, std::string& response_buffer) {
     try {
         json req = json::parse(buffer);
 
@@ -582,7 +597,7 @@ std::string_view SimpleFrontendServer::ProcessScriptingRequest(const std::string
         response_obj["response"] = json::parse(response);
 
         response_buffer = response_obj.dump();
-
+        return HTTP_200;
     } catch (json::exception e) {
         spdlog::warn(e.what());
         return HTTP_400;
@@ -592,7 +607,7 @@ std::string_view SimpleFrontendServer::ProcessScriptingRequest(const std::string
     }
 }
 
-void SimpleFrontendServer::Forbidden(Res* res, Req* req) {
+void SimpleHttpServer::Forbidden(Res* res, Req* req) {
     res->writeStatus(HTTP_403)->end();
     return;
 }

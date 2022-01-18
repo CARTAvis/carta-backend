@@ -12,18 +12,17 @@
 #include <nlohmann/json.hpp>
 
 #include "Logger/Logger.h"
-#include "SimpleFrontendServer/SimpleFrontendServer.h"
+#include "SimpleHttpServer/SimpleHttpServer.h"
 
 #include "CommonTestUtilities.h"
 
 using json = nlohmann::json;
 
-// Allows testing of protected methods in SimpleFrontendServer without polluting the original class
-class TestSimpleFrontendServer : public carta::SimpleFrontendServer {
+// Allows testing of protected methods in SimpleHttpServer without polluting the original class
+class TestSimpleHttpServer : public carta::SimpleHttpServer {
 public:
-    TestSimpleFrontendServer(
-        std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode)
-        : carta::SimpleFrontendServer(session_manager, root_folder, UserDirectory(), auth_token, read_only_mode) {}
+    TestSimpleHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, std::string auth_token, bool read_only_mode)
+        : carta::SimpleHttpServer(session_manager, root_folder, UserDirectory(), auth_token, read_only_mode) {}
     FRIEND_TEST(RestApiTest, EmptyStartingPrefs);
     FRIEND_TEST(RestApiTest, GetExistingPrefs);
     FRIEND_TEST(RestApiTest, DeletePrefsEmpty);
@@ -57,8 +56,8 @@ public:
 
 class RestApiTest : public ::testing::Test {
 public:
-    std::unique_ptr<TestSimpleFrontendServer> _frontend_server;
-    std::unique_ptr<TestSimpleFrontendServer> _frontend_server_read_only_mode;
+    std::unique_ptr<TestSimpleHttpServer> _frontend_server;
+    std::unique_ptr<TestSimpleHttpServer> _frontend_server_read_only_mode;
     fs::path preferences_path;
     fs::path layouts_path;
     fs::path snippets_path;
@@ -108,8 +107,8 @@ public:
         })"_json;
     }
     void SetUp() {
-        _frontend_server.reset(new TestSimpleFrontendServer(nullptr, "/", "my_test_key", false));
-        _frontend_server_read_only_mode.reset(new TestSimpleFrontendServer(nullptr, "/", "my_test_key", true));
+        _frontend_server.reset(new TestSimpleHttpServer(nullptr, "/", "my_test_key", false));
+        _frontend_server_read_only_mode.reset(new TestSimpleHttpServer(nullptr, "/", "my_test_key", true));
         fs::remove(preferences_path);
         fs::remove_all(layouts_path);
         fs::remove_all(snippets_path);

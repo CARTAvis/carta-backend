@@ -220,7 +220,7 @@ set(SOURCE_FILES
         src/Util/Token.cc
         src/TileCache.cc
         src/Threading.cc
-        src/SimpleFrontendServer/SimpleFrontendServer.cc)
+        src/SimpleHttpServer/SimpleHttpServer.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

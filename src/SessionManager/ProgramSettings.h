@@ -41,7 +41,9 @@ struct ProgramSettings {
     std::string host = "0.0.0.0";
     std::vector<std::string> files;
     std::string frontend_folder;
-    bool no_http = false;
+    bool no_http = false; // Deprecated
+    bool no_frontend = false;
+    bool no_database = false;
     bool debug_no_auth = false;
     bool no_browser = false;
     bool no_log = false;
@@ -79,10 +81,12 @@ struct ProgramSettings {
         {"no_log", &no_log},
         {"log_performance", &log_performance},
         {"log_protocol_messages", &log_protocol_messages},
-        {"no_http", &no_http},
+        {"no_http", &no_http}, // Deprecated
         {"no_browser", &no_browser},
         {"read_only_mode", &read_only_mode},
-        {"enable_scripting", &enable_scripting}
+        {"enable_scripting", &enable_scripting},
+        {"no_frontend", &no_frontend},
+        {"no_database", &no_database}
     };
 
     std::unordered_map<std::string, std::string*> strings_keys_map{
@@ -96,11 +100,19 @@ struct ProgramSettings {
     std::unordered_map<std::string, std::vector<int>*> vector_int_keys_map {
         {"port", &port}
     };
+    
+    std::unordered_map<std::string, std::string> deprecated_options {
+        {"base", "Use positional parameters instead to set the starting directory or open files on startup."},
+        {"root", "Use top_level_folder instead."},
+        {"threads", "This feature is no longer supported."},
+        {"no_http", "Use no_frontend and no_database instead."}
+    };
     // clang-format on
 
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
     void ApplyCommandLineSettings(int argc, char** argv);
+    void AddDeprecationWarning(const std::string& option, std::string where);
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
 
