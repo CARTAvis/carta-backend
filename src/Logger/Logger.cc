@@ -17,12 +17,12 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     log_protocol_messages = log_protocol_messages_;
 
     // Set the stdout/stderr console
-    auto stdout_console_sink = std::make_shared<spdlog::sinks::carta_sink>();
-    stdout_console_sink->set_pattern(CARTA_LOGGER_PATTERN);
+    auto console_sink = std::make_shared<spdlog::sinks::carta_sink>();
+    console_sink->set_pattern(CARTA_LOGGER_PATTERN);
 
     // Set stdout sinks
-    std::vector<spdlog::sink_ptr> stdout_sinks;
-    stdout_sinks.push_back(stdout_console_sink);
+    std::vector<spdlog::sink_ptr> console_sinks;
+    console_sinks.push_back(console_sink);
 
     // Set a log file with its full name, maximum size and the number of rotated files
     std::string log_fullname;
@@ -30,11 +30,11 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
         log_fullname = (user_directory / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_pattern(CARTA_LOGGER_PATTERN);
-        stdout_sinks.push_back(stdout_log_file_sink);
+        console_sinks.push_back(stdout_log_file_sink);
     }
 
     // Create the stdout logger
-    auto default_logger = std::make_shared<spdlog::logger>(CARTA_LOGGER_TAG, std::begin(stdout_sinks), std::end(stdout_sinks));
+    auto default_logger = std::make_shared<spdlog::logger>(CARTA_LOGGER_TAG, std::begin(console_sinks), std::end(console_sinks));
 
     // Set flush policy on severity
     default_logger->flush_on(spdlog::level::err);
