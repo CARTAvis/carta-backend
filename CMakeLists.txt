@@ -120,7 +120,7 @@ if (DevSuppressExternalWarnings)
     message(STATUS "disabling warnings from carta-casacore")
     INCLUDE_DIRECTORIES(SYSTEM ${CARTA_CASACORE_INCLUDE_DIRS})
 else()
-    INCLUDE_DIRECTORIES($CARTA_CASACORE_INCLUDE_DIRS)
+    INCLUDE_DIRECTORIES(${CARTA_CASACORE_INCLUDE_DIRS})
 endif()
 LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
