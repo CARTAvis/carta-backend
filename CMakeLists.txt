@@ -110,12 +110,17 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+set(CARTA_CASACORE_INCLUDE_DIRS
+    /opt/carta-casacore/include
+    /opt/carta-casacore/include/casacore
+    /opt/carta-casacore/include/casacode)
 option(DevSuppressExternalWarnings "Suppress external warnings (developer use only)" OFF)
 if (DevSuppressExternalWarnings)
     message(STATUS "disabling warnings from carta-casacore")
-    INCLUDE_DIRECTORIES(SYSTEM /opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+    INCLUDE_DIRECTORIES(SYSTEM ${CARTA_CASACORE_INCLUDE_DIRS})
 else()
-    INCLUDE_DIRECTORIES(/opt/carta-casacore/include /opt/carta-casacore/include/casacore /opt/carta-casacore/include/casacode)
+    INCLUDE_DIRECTORIES($CARTA_CASACORE_INCLUDE_DIRS)
 endif()
 LINK_DIRECTORIES(/opt/carta-casacore/lib)
 
