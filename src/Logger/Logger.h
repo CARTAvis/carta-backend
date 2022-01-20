@@ -36,6 +36,13 @@ constexpr auto performance = [](auto&&... args) {
 };
 
 namespace sinks {
+/*
+   Adapted from spdlog:
+   - https://github.com/gabime/spdlog/issues/345
+   - https://github.com/gabime/spdlog/blob/v1.x/include/spdlog/sinks/ansicolor_sink.h
+   - https://github.com/gabime/spdlog/blob/v1.x/include/spdlog/sinks/ansicolor_sink-inl.h
+   - spdlog is MIT license: https://github.com/gabime/spdlog/blob/v1.x/LICENSE
+*/
 class carta_sink : public ansicolor_sink<details::console_mutex> {
 public:
     carta_sink()
