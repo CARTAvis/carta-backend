@@ -5,6 +5,7 @@
 */
 
 #include "Message.h"
+#include <chrono>
 
 CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
     CARTA::RegisterViewer register_viewer;

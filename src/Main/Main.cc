@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
         sig_handler.sa_handler = [](int s) {
             spdlog::info("Exiting backend.");
             ThreadManager::ExitEventHandlingThreads();
-            FlushLogFile();
+            carta::logger::FlushLogFile();
             exit(0);
         };
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         }
 
         InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
-        settings.FlushMessages(); // flush log messages produced during Program Main setup
+        settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
-            FlushLogFile();
+            carta::logger::FlushLogFile();
             return 1;
         }
 
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
                 }
             } else {
                 spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", settings.grpc_port);
-                FlushLogFile();
+                carta::logger::FlushLogFile();
                 return 1;
             }
         } else {
@@ -208,14 +208,14 @@ int main(int argc, char* argv[]) {
         }
     } catch (exception& e) {
         spdlog::critical("{}", e.what());
-        FlushLogFile();
+        carta::logger::FlushLogFile();
         return 1;
     } catch (...) {
         spdlog::critical("Unknown error");
-        FlushLogFile();
+        carta::logger::FlushLogFile();
         return 1;
     }
 
-    FlushLogFile();
+    carta::logger::FlushLogFile();
     return 0;
 }
