@@ -46,12 +46,12 @@
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
+#include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
-#include "Settings/FileSettings.h"
 #include "ThreadingManager/Concurrency.h"
 
 #include "Table/TableController.h"
@@ -226,7 +226,7 @@ public:
     void RegionDataStreams(int file_id, int region_id);
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
 
-    FileSettings _file_settings;
+    CursorSettings _file_settings;
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(

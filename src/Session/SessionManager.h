@@ -10,9 +10,9 @@
 #include <uWebSockets/App.h>
 #include <vector>
 
-#include "../GrpcServer/CartaGrpcService.h"
+#include "GrpcServer/CartaGrpcService.h"
+#include "Main/ProgramSettings.h"
 #include "Session.h"
-#include "Settings/ProgramSettings.h"
 
 #define MAX_SOCKET_PORT_TRIALS 100
 

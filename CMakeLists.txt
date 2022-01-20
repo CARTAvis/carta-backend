@@ -222,17 +222,18 @@ set(SOURCE_FILES
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
         src/Logger/Logger.cc
-        src/Main.cc
+        src/Main/Main.cc
+        src/Main/ProgramSettings.cc
+        src/Main/WebBrowser.cc
         src/Region/CrtfImportExport.cc
         src/Region/Ds9ImportExport.cc
         src/Region/Region.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
+        src/Session/CursorSettings.cc
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/Settings/FileSettings.cc
-        src/Settings/ProgramSettings.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc
         src/SpectralLine/SpectralLineCrawler.cc
         src/Table/Columns.cc
@@ -248,8 +249,7 @@ set(SOURCE_FILES
         src/Util/Image.cc
         src/Util/Message.cc
         src/Util/String.cc
-        src/Util/Token.cc
-        src/Util/WebBrowser.cc)
+        src/Util/Token.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

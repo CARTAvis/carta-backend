@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__FILESETTINGS_H_
-#define CARTA_BACKEND__FILESETTINGS_H_
+#ifndef CARTA_BACKEND__CURSORSETTINGS_H_
+#define CARTA_BACKEND__CURSORSETTINGS_H_
 
 #include <mutex>
 #include <unordered_map>
@@ -19,9 +19,9 @@ namespace carta {
 
 class Session;
 
-class FileSettings {
+class CursorSettings {
 public:
-    FileSettings(Session* session);
+    CursorSettings(Session* session);
 
     void AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id);
     // TODO: change to event type
@@ -41,4 +41,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FILESETTINGS_H_
+#endif // CARTA_BACKEND__CURSORSETTINGS_H_

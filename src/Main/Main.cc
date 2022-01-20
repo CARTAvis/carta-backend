@@ -13,14 +13,14 @@
 #include "FileList/FileListHandler.h"
 #include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
+#include "ProgramSettings.h"
 #include "Session/SessionManager.h"
-#include "Settings/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
-#include "Util/WebBrowser.h"
+#include "WebBrowser.h"
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         sig_handler.sa_flags = 0;
         sigaction(SIGINT, &sig_handler, nullptr);
 
-        // Settings
+        // Main
         carta::ProgramSettings settings(argc, argv);
 
         if (settings.help || settings.version) {
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         }
 
         InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
-        settings.FlushMessages(); // flush log messages produced during Program Settings setup
+        settings.FlushMessages(); // flush log messages produced during Program Main setup
 
         if (settings.wait_time >= 0) {
             Session::SetExitTimeout(settings.wait_time);
