@@ -12,7 +12,7 @@
 #include <spdlog/fmt/fmt.h>
 
 #include "DataColumn.tcc"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 namespace carta {
 

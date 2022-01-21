@@ -28,9 +28,9 @@
 
 static const int HIGH_COMPRESSION_QUALITY(32);
 
-using namespace carta;
+namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -371,7 +371,7 @@ bool Frame::FillImageCache() {
     // get image data for z, stokes
 
     bool write_lock(true);
-    carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
     // Exit early *after* acquiring lock if the cache has already been loaded by another thread
     if (_image_cache_valid) {
@@ -397,7 +397,7 @@ bool Frame::FillImageCache() {
 
 void Frame::InvalidateImageCache() {
     bool write_lock(true);
-    carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     _image_cache_valid = false;
 }
 
@@ -442,7 +442,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     // read lock imageCache
     bool write_lock(false);
-    carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
     auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
@@ -624,7 +624,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     bool smooth_successful = false;
     std::vector<std::vector<float>> vertex_data;
     std::vector<std::vector<int>> index_data;
-    carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
@@ -764,7 +764,7 @@ bool Frame::FillRegionHistogramData(
             // calculate image histogram
             BasicStats<float> stats;
             if (GetBasicStats(z, stokes, stats)) {
-                carta::Histogram hist;
+                Histogram hist;
                 histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
                     FillHistogram(histogram, stats, hist);
@@ -831,7 +831,7 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
     }
 
     bool have_histogram(false);
-    carta::Histogram hist;
+    Histogram hist;
     if (z == ALL_Z) {
         have_histogram = GetCachedCubeHistogram(stokes, num_bins, hist);
     } else {
@@ -848,7 +848,7 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
     return have_histogram;
 }
 
-bool Frame::GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats) {
+bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
     // Return basic stats from cache, or calculate (no loader option); also used for cube histogram
     if (z == ALL_Z) { // cube
         if (_cube_basic_stats.count(stokes)) {
@@ -886,7 +886,7 @@ bool Frame::GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats) {
     return false;
 }
 
-bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, carta::Histogram& hist) {
+bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, Histogram& hist) {
     // Get image histogram results from cache
     int cache_key(CacheKey(z, stokes));
     if (_image_histograms.count(cache_key)) {
@@ -937,7 +937,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
             return false;
         }
         bool write_lock(false);
-        carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         hist = CalcHistogram(num_bins, stats, _image_cache);
     } else {
         // calculate histogram for z/stokes data
@@ -963,11 +963,11 @@ bool Frame::GetCubeHistogramConfig(HistogramConfig& config) {
     return have_config;
 }
 
-void Frame::CacheCubeStats(int stokes, carta::BasicStats<float>& stats) {
+void Frame::CacheCubeStats(int stokes, BasicStats<float>& stats) {
     _cube_basic_stats[stokes] = stats;
 }
 
-void Frame::CacheCubeHistogram(int stokes, carta::Histogram& hist) {
+void Frame::CacheCubeHistogram(int stokes, Histogram& hist) {
     _cube_histograms[stokes].push_back(hist);
 }
 
@@ -1101,7 +1101,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     // Get the cursor value with current stokes
     if (_image_cache_valid) {
         bool write_lock(false);
-        carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         cursor_value_with_current_stokes = _image_cache[(y * _width) + x];
         cache_lock.release();
     } else if (_loader->UseTileCache()) {
@@ -1284,14 +1284,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
                         if (config.coordinate().back() == 'x') {
                             auto x_start = y * _width;
-                            carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+                            queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = x_start + j;
                                 profile.push_back(_image_cache[idx]);
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
-                            carta::queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+                            queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = (j * _width) + x;
                                 profile.push_back(_image_cache[idx]);
@@ -1600,7 +1600,7 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // Region/Slicer Support (Frame manages image mutex)
 
 casacore::LCRegion* Frame::GetImageRegion(
-    int file_id, std::shared_ptr<carta::Region> region, const StokesSource& stokes_source, bool report_error) {
+    int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
     casacore::CoordinateSystem* coord_sys = CoordinateSystem(stokes_source);
@@ -1759,7 +1759,7 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback,
     const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, const CARTA::MomentRequest& moment_request,
-    CARTA::MomentResponse& moment_response, std::vector<carta::GeneratedImage>& collapse_results) {
+    CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
@@ -1910,7 +1910,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     save_file_ack.set_message(message);
 }
 
-// Export carta::FileLoader::ImageRef image to CASA file
+// Export FileLoader::ImageRef image to CASA file
 // Input casacore::ImageInterface<casacore::Float> image as source data
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
@@ -1957,7 +1957,7 @@ bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs
     return success;
 }
 
-// Export carta::FileLoader::ImageRef image to FITS file
+// Export FileLoader::ImageRef image to FITS file
 // Input casacore::ImageInterface<casacore::Float> image as source data
 // Input output_filename as file path
 // Input message as a return message, which may contain error message
@@ -2205,3 +2205,5 @@ void Frame::CloseCachedImage(const std::string& file) {
         _loader->CloseImageIfUpdated();
     }
 }
+
+} // namespace carta

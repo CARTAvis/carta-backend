@@ -8,9 +8,9 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
-#include "Frame.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Message.h"
+#include "src/Frame/Frame.h"
 
 using namespace carta;
 

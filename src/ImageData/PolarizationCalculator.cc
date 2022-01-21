@@ -290,9 +290,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     image_expr.setUnits(casacore::Unit(radians ? "rad" : "deg"));
     casacore::ImageInfo image_info = _image->imageInfo();
     if (image_info.hasMultipleBeams()) {
-        spdlog::warn(
-            "The input image has multiple beams. Because these beams can vary with stokes/polarization, they will not be copied to the "
-            "output image");
+        // Since these beams can vary with stokes/polarization, they will not be copied to the output image
         image_info.removeRestoringBeam();
     }
 

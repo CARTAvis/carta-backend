@@ -20,6 +20,8 @@ const int InitialAnimationWaitsPerSecond = 3;
 const int InitialWindowScale = 1;
 } // namespace CARTA
 
+namespace carta {
+
 class AnimationObject {
     friend class Session;
 
@@ -101,5 +103,7 @@ public:
         _context.reset();
     }
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_

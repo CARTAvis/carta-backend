@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "ImageStats/Histogram.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 #ifdef COMPILE_PERFORMANCE_TESTS
 #include <spdlog/fmt/fmt.h>

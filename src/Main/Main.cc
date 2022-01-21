@@ -11,22 +11,19 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
-#include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
-#include "SessionManager/ProgramSettings.h"
-#include "SessionManager/SessionManager.h"
-#include "SessionManager/WebBrowser.h"
+#include "ProgramSettings.h"
+#include "Session/SessionManager.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
+#include "WebBrowser.h"
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
-    ProgramSettings settings;
-
     std::shared_ptr<FileListHandler> file_list_handler;
     std::unique_ptr<SimpleFrontendServer> http_server;
     std::shared_ptr<GrpcManager> grpc_manager;
@@ -47,7 +44,7 @@ int main(int argc, char* argv[]) {
         sig_handler.sa_flags = 0;
         sigaction(SIGINT, &sig_handler, nullptr);
 
-        // Settings
+        // Main
         carta::ProgramSettings settings(argc, argv);
 
         if (settings.help || settings.version) {

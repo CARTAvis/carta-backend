@@ -64,7 +64,7 @@ set(TEST_SOURCES
 foreach(src_file ${SOURCE_FILES})
     list(APPEND SOURCES ../${src_file})
 endforeach()
-list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main.cc)
+list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
 
 # Copy test data to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

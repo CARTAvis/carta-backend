@@ -4,22 +4,24 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__FILESETTINGS_H_
-#define CARTA_BACKEND__FILESETTINGS_H_
+#ifndef CARTA_BACKEND__CURSORSETTINGS_H_
+#define CARTA_BACKEND__CURSORSETTINGS_H_
 
 #include <mutex>
 #include <unordered_map>
 #include <utility>
 
-#include "Concurrency.h"
+#include "ThreadingManager/Concurrency.h"
 
 #include <carta-protobuf/set_cursor.pb.h>
 
+namespace carta {
+
 class Session;
 
-class FileSettings {
+class CursorSettings {
 public:
-    FileSettings(Session* session);
+    CursorSettings(Session* session);
 
     void AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id);
     // TODO: change to event type
@@ -28,7 +30,7 @@ public:
 
 private:
     Session* _session;
-    carta::queuing_rw_mutex _cursor_mutex;
+    queuing_rw_mutex _cursor_mutex;
 
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
@@ -37,4 +39,6 @@ private:
     std::unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
 
-#endif // CARTA_BACKEND__FILESETTINGS_H_
+} // namespace carta
+
+#endif // CARTA_BACKEND__CURSORSETTINGS_H_

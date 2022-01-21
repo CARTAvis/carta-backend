@@ -14,6 +14,8 @@
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
 
+using namespace carta;
+
 void Hdf5Attributes::ReadAttributes(hid_t group_hid, casacore::Vector<casacore::String>& headers) {
     // Reads attributes into FITS-format "name = value" strings
     int num_attrs = H5Aget_num_attrs(group_hid);

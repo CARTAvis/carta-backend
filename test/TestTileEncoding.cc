@@ -11,6 +11,8 @@
 
 #include "DataStream/Tile.h"
 
+using namespace carta;
+
 TEST(TileEncodingTest, InvalidInput) {
     // Layer can be from 0 to 12
     ASSERT_EQ(Tile::Encode(0, 0, -1), -1);

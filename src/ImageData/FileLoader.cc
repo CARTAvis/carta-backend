@@ -11,7 +11,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
-#include "../Logger/Logger.h"
+#include "Logger/Logger.h"
 #include "Util/File.h"
 
 #include "CasaLoader.h"

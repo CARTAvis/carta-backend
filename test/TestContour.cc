@@ -7,9 +7,9 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
-#include "Frame.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Message.h"
+#include "src/Frame/Frame.h"
 
 static const std::string IMAGE_OPTS = "-s 0";
 static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";

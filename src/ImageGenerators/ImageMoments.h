@@ -69,7 +69,7 @@ public:
 private:
     SPCIIT _image = SPCIIT(nullptr);
     std::unique_ptr<casa::ImageMomentsProgress> _progress_monitor;
-    std::unique_ptr<carta::Image2DConvolver<casacore::Float>> _image_2d_convolver;
+    std::unique_ptr<Image2DConvolver<casacore::Float>> _image_2d_convolver;
 
     casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
 

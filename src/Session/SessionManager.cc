@@ -5,7 +5,7 @@
 */
 
 #include "SessionManager.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
@@ -135,12 +135,12 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
     }
 
     if (op_code == uWS::OpCode::BINARY) {
-        if (sv_message.length() >= sizeof(carta::EventHeader)) {
+        if (sv_message.length() >= sizeof(EventHeader)) {
             session->UpdateLastMessageTimestamp();
 
-            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
-            const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
-            int event_length = sv_message.length() - sizeof(carta::EventHeader);
+            EventHeader head = *reinterpret_cast<const EventHeader*>(sv_message.data());
+            const char* event_buf = sv_message.data() + sizeof(EventHeader);
+            int event_length = sv_message.length() - sizeof(EventHeader);
 
             CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
             logger::LogReceivedEventType(event_type);

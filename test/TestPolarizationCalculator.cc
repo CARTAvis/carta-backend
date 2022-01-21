@@ -7,10 +7,10 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
-#include "Frame.h"
+#include "Frame/Frame.h"
 #include "ImageData/PolarizationCalculator.h"
 #include "Region/RegionHandler.h"
-#include "Session.h"
+#include "Session/Session.h"
 
 using namespace carta;
 
