@@ -32,7 +32,7 @@
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"
 #include "Util/App.h"
 #include "Util/File.h"
@@ -44,9 +44,11 @@
 #include <xmmintrin.h>
 #endif
 
+using namespace carta;
+
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
-std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename) {
+std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
 
     // We have a cached loader, but the file has changed
@@ -58,9 +60,9 @@ std::shared_ptr<carta::FileLoader> LoaderCache::Get(std::string filename) {
     // We don't have a cached loader
     if (_map.find(filename) == _map.end()) {
         // Create the loader -- don't block while doing this
-        std::shared_ptr<carta::FileLoader> loader_ptr;
+        std::shared_ptr<FileLoader> loader_ptr;
         guard.unlock();
-        loader_ptr = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(filename));
+        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename));
         guard.lock();
 
         // Check if the loader was added in the meantime
@@ -104,7 +106,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _address(address),
       _top_level_folder(top_level_folder),
       _starting_folder(starting_folder),
-      _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
+      _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
       _read_only_mode(read_only_mode),
       _region_handler(nullptr),
@@ -306,12 +308,12 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-    const std::string& filename, std::string& message, std::shared_ptr<carta::FileLoader>& image_loader) {
+    const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader) {
     // Fill FileInfoExtended for given image; no hdu
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(image));
+        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
@@ -352,8 +354,8 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     std::string status;
     CARTA::SessionType type(CARTA::SessionType::NEW);
 
-    if (icd_version != carta::ICD_VERSION) {
-        status = fmt::format("Invalid ICD version number. Expected {}, got {}", carta::ICD_VERSION, icd_version);
+    if (icd_version != ICD_VERSION) {
+        status = fmt::format("Invalid ICD version number. Expected {}, got {}", ICD_VERSION, icd_version);
         success = false;
     } else if (!session_id) {
         session_id = _id;
@@ -551,7 +553,7 @@ bool Session::OnOpenFile(
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;
-    std::shared_ptr<carta::FileLoader> image_loader;
+    std::shared_ptr<FileLoader> image_loader;
 
     CARTA::FileInfoExtended file_info_extended;
     bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, image_loader);
@@ -763,7 +765,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler());
+            _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
@@ -847,7 +849,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         auto t_start_import_region = std::chrono::high_resolution_clock::now();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler());
+            _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
@@ -1226,7 +1228,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         };
 
         // Do calculations
-        std::vector<carta::GeneratedImage> collapse_results;
+        std::vector<GeneratedImage> collapse_results;
         CARTA::MomentResponse moment_response;
         if (region_id > 0) {
             _region_handler->CalculateMoments(
@@ -1302,13 +1304,13 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
 
 void Session::OnSplataloguePing(uint32_t request_id) {
     CARTA::SplataloguePong splatalogue_pong;
-    carta::SpectralLineCrawler::Ping(splatalogue_pong);
+    SpectralLineCrawler::Ping(splatalogue_pong);
     SendEvent(CARTA::EventType::SPLATALOGUE_PONG, request_id, splatalogue_pong);
 }
 
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
     CARTA::SpectralLineResponse spectral_line_response;
-    carta::SpectralLineCrawler::SendRequest(
+    SpectralLineCrawler::SendRequest(
         spectral_line_request.frequency_range(), spectral_line_request.line_intensity_lower_limit(), spectral_line_response);
     SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
 }
@@ -1363,7 +1365,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             };
 
             auto& frame = _frames.at(file_id);
-            carta::GeneratedImage pv_image;
+            GeneratedImage pv_image;
 
             if (_region_handler->CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image)) {
                 auto* open_file_ack = pv_response.mutable_open_file_ack();
@@ -1419,10 +1421,10 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             size_t total_z(depth * 2); // for progress; go through z twice, for stats then histogram
 
             // stats for entire cube
-            carta::BasicStats<float> cube_stats;
+            BasicStats<float> cube_stats;
             for (size_t z = 0; z < depth; ++z) {
                 // stats for this z
-                carta::BasicStats<float> z_stats;
+                BasicStats<float> z_stats;
                 if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
                     return calculated;
                 }
@@ -1460,8 +1462,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
 
                 // get histogram bins for each z and accumulate bin counts in cube_bins
-                carta::Histogram z_histogram; // histogram for each z using cube stats
-                carta::Histogram cube_histogram;
+                Histogram z_histogram; // histogram for each z using cube stats
+                Histogram cube_histogram;
                 for (size_t z = 0; z < depth; ++z) {
                     if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, cube_stats, z_histogram)) {
                         return calculated; // z histogram failed
@@ -1832,16 +1834,16 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     logger::LogSentEventType(event_type);
 
     size_t message_length = message.ByteSizeLong();
-    size_t required_size = message_length + sizeof(carta::EventHeader);
+    size_t required_size = message_length + sizeof(EventHeader);
     std::pair<std::vector<char>, bool> msg_vs_compress;
     std::vector<char>& msg = msg_vs_compress.first;
     msg.resize(required_size, 0);
-    carta::EventHeader* head = (carta::EventHeader*)msg.data();
+    EventHeader* head = (EventHeader*)msg.data();
 
     head->type = event_type;
-    head->icd_version = carta::ICD_VERSION;
+    head->icd_version = ICD_VERSION;
     head->request_id = event_id;
-    message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
+    message.SerializeToArray(msg.data() + sizeof(EventHeader), message_length);
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);

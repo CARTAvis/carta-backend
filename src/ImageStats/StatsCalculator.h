@@ -17,13 +17,15 @@
 #include "BasicStatsCalculator.h"
 #include "Histogram.h"
 
-using namespace carta;
+namespace carta {
 
 void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats);
 
-carta::Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data);
+Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data);
 
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_

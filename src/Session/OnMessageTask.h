@@ -19,6 +19,8 @@
 #include "Session.h"
 #include "Util/Message.h"
 
+namespace carta {
+
 class OnMessageTask {
 protected:
     Session* _session;
@@ -102,6 +104,8 @@ public:
     OnSplataloguePingTask(Session* session, uint32_t request_id) : OnMessageTask(session), _request_id(request_id) {}
     ~OnSplataloguePingTask() = default;
 };
+
+} // namespace carta
 
 #include "OnMessageTask.tcc"
 

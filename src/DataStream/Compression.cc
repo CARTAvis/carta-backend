@@ -17,6 +17,8 @@
 #include <x86intrin.h>
 #endif
 
+namespace carta {
+
 int Compress(std::vector<float>& array, size_t offset, std::vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx,
     uint32_t ny, uint32_t precision) {
     int status = 0;     /* return value: 0 = success */
@@ -204,3 +206,5 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
         _mm_store_si128((__m128i*)&array[i], vals);
     }
 }
+
+} // namespace carta

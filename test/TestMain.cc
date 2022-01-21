@@ -12,7 +12,7 @@
 
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 #define TASK_THREAD_COUNT 3
 

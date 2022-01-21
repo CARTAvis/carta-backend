@@ -73,7 +73,7 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
             FormatBeam(max_beam));
 
         // reset the image 2D convolver
-        _image_2d_convolver.reset(new carta::Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _progress_monitor.get()));
+        _image_2d_convolver.reset(new Image2DConvolver<casacore::Float>(_image, nullptr, "", "", false, _progress_monitor.get()));
 
         // set parameters for the image 2D convolver
         auto dir_axes = _image->coordinates().directionAxesNumbers();
