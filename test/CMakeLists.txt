@@ -39,6 +39,7 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         BackendModel.cc
         TestBlockSmooth.cc
+        TestContour.cc
         TestFileInfo.cc
         TestFileList.cc
         TestFitsTable.cc
