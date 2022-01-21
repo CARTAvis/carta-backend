@@ -34,6 +34,8 @@ struct ImageStats {
     bool valid;
     // Remove this check when we drop support for the old schema.
     bool full;
+
+    ImageStats() : valid(false), full(false) {}
 };
 
 struct RegionStatsId {
@@ -248,6 +250,7 @@ protected:
     // Storage for z-plane and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _z_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
+    carta::FileInfo::ImageStats _empty_stats = carta::FileInfo::ImageStats();
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;

@@ -815,7 +815,10 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 }
 
 FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
-    return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
+    if (current_stokes < _num_stokes) {
+        return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
+    }
+    return _empty_stats;
 }
 
 bool FileLoader::GetCursorSpectralData(
