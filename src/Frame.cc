@@ -23,7 +23,6 @@
 #include "DataStream/Compression.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Smoothing.h"
-#include "ImageGenerators/ImageFitter.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
@@ -1724,24 +1723,18 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(int file_id, std::string estimates, CARTA::FittingResponse& fitting_response) {
-    auto image = GetImage();
-    auto sImage(image);
-    ImageFitter<casacore::Float> imFitter(sImage, "", 0, "", casacore::String(std::to_string(_z_index)), "", "", estimates);
-    imFitter.fit();
-
-    //imFitter.getOutputRecord().print(std::cout);
-
-    casacore::Bool converged = imFitter.converged(0);
-    if (!converged) {
-        fitting_response.set_success(false);
-        fitting_response.set_message("No fits converged.");
-        return false;
-    } else {
-        fitting_response.set_success(true);
-        fitting_response.set_result(imFitter.getResultsString());
-        return true;
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+    spdlog::info("Fitting {} gaussian component", fitting_request.initial_values_size());
+    for (int i = 0; i < fitting_request.initial_values_size(); i++) {
+        CARTA::GaussianComponent component(fitting_request.initial_values(i));
+        spdlog::info("component #{}: ({}, {}, {}, {}, {}, {})", i,
+            component.center_x(), component.center_y(), component.amp(),
+            component.fwhm_x(), component.fwhm_y(), component.pa());
     }
+    fitting_response.set_success(true);
+    fitting_response.set_results("fitting results");
+    fitting_response.set_log("fitting log");
+    return true;
 }
 
 // Export modified image to file, for changed range of channels/stokes and chopped region
