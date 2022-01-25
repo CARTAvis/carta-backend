@@ -565,10 +565,13 @@ std::string_view SimpleHttpServer::ProcessScriptingRequest(const std::string& bu
         _scripting_request_id = std::max(_scripting_request_id, 1u);
 
         int session_id = req["session_id"].get<int>();
+        std::string target = req["path"].get<std::string>();
+        std::string action = req["action"].get<std::string>();
+        std::string params = req["parameters"].dump();
+        bool async = req["async"].get<bool>();
+        std::string return_path = req["return_path"].get<std::string>();
 
-        if (!_session_manager->SendScriptingRequest(session_id, _scripting_request_id, req["target"].get<std::string>(),
-                req["action"].get<std::string>(), req["parameters"].get<std::string>(), req["async"].get<bool>(),
-                req["return_path"].get<std::string>())) {
+        if (!_session_manager->SendScriptingRequest(session_id, _scripting_request_id, target, action, params, async, return_path)) {
             return HTTP_404;
         }
 
