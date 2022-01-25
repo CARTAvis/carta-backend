@@ -542,13 +542,14 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
         res->writeStatus(HTTP_403)->end();
         return;
     }
-    AddNoCacheHeaders(res);
 
     WaitForData(res, req, [this, res](const string& buffer) {
         std::string response_buffer;
         auto status = ProcessScriptingRequest(buffer, response_buffer);
 
         res->writeStatus(status);
+        AddNoCacheHeaders(res);
+
         if (status == HTTP_200) {
             res->end(response_buffer);
         } else {
