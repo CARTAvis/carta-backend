@@ -25,7 +25,7 @@ public:
     }
 
 private:
-    mutable bool _cancelled;
+    volatile bool _cancelled;
 };
 
 } // namespace carta
