@@ -63,7 +63,7 @@ public:
             return true;
         }
 
-        static bool TestCalculation(std::string sample_file_path, int mip, float q_err = 0, float u_err = 0) {
+        static bool TestCalculation(std::string sample_file_path, int mip, double q_err = 0, double u_err = 0, double threshold = 0) {
             // Open the file
             LoaderCache loaders(LOADER_CACHE_SIZE);
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
@@ -106,10 +106,11 @@ public:
             const int num_image_rows = frame->_height;
             size_t num_region_rows = std::ceil((float)req_height / mip);
             size_t num_region_columns = std::ceil((float)req_width / mip);
+            size_t res_size = num_region_rows * num_region_columns;
 
-            std::vector<float> down_sampled_i(num_region_rows * num_region_columns);
-            std::vector<float> down_sampled_q(num_region_rows * num_region_columns);
-            std::vector<float> down_sampled_u(num_region_rows * num_region_columns);
+            std::vector<float> down_sampled_i(res_size);
+            std::vector<float> down_sampled_q(res_size);
+            std::vector<float> down_sampled_u(res_size);
 
             BlockSmooth(stokes_i_data.data(), down_sampled_i.data(), num_image_columns, num_image_rows, num_region_columns, num_region_rows,
                 x, y, mip);
@@ -118,30 +119,52 @@ public:
             BlockSmooth(stokes_u_data.data(), down_sampled_u.data(), num_image_columns, num_image_rows, num_region_columns, num_region_rows,
                 x, y, mip);
 
-            size_t res_size = num_region_rows * num_region_columns;
+            // Calculate PI, FPI, and PA
             std::vector<float> pi(res_size);
             std::vector<float> fpi(res_size);
             std::vector<float> pa(res_size);
 
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(),
-                [&](float q, float u) { return sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0); });
+            auto calc_pi = [&](float q, float u) {
+                if (!std::isnan(q) && !isnan(u)) {
+                    return sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
+                }
+                return std::numeric_limits<double>::quiet_NaN();
+            };
 
-            std::transform(
-                down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), fpi.begin(), [&](float i, float pi) { return (pi / i); });
+            auto calc_fpi = [&](float i, float pi) {
+                if (!std::isnan(i) && !isnan(pi)) {
+                    return (pi / i);
+                }
+                return std::numeric_limits<float>::quiet_NaN();
+            };
 
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(),
-                [&](float q, float u) { return atan2(u, q) / 2; });
+            auto calc_pa = [&](float q, float u) {
+                if (!std::isnan(q) && !isnan(u)) {
+                    return atan2(u, q) / 2;
+                }
+                return std::numeric_limits<float>::quiet_NaN();
+            };
 
-            // Check results
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), fpi.begin(), calc_fpi);
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+
+            // Check calculation results
             for (int i = 0; i < res_size; ++i) {
                 float expected_pi = sqrt(pow(down_sampled_q[i], 2) + pow(down_sampled_u[i], 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
                 float expected_fpi = expected_pi / down_sampled_i[i];
                 float expected_pa = atan2(down_sampled_u[i], down_sampled_q[i]) / 2; // i.e., 0.5 * tan^-1 (U∕Q)
-                EXPECT_FLOAT_EQ(pi[i], expected_pi);
-                EXPECT_FLOAT_EQ(fpi[i], expected_fpi);
-                EXPECT_FLOAT_EQ(pa[i], expected_pa);
-            }
 
+                if (!std::isnan(pi[i]) || !std::isnan(expected_pi)) {
+                    EXPECT_FLOAT_EQ(pi[i], expected_pi);
+                }
+                if (!std::isnan(fpi[i]) || !std::isnan(expected_fpi)) {
+                    EXPECT_FLOAT_EQ(fpi[i], expected_fpi);
+                }
+                if (!std::isnan(pa[i]) || !std::isnan(expected_pa)) {
+                    EXPECT_FLOAT_EQ(pa[i], expected_pa);
+                }
+            }
             return true;
         }
     };
@@ -164,7 +187,7 @@ public:
                 int count = 0;
                 for (int i = x * mip; i < i_max; ++i) {
                     for (int j = y * mip; j < j_max; ++j) {
-                        if (!isnan(src_data[j * src_width + i])) {
+                        if (!std::isnan(src_data[j * src_width + i])) {
                             avg += src_data[j * src_width + i];
                             ++count;
                         }
