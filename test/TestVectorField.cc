@@ -9,7 +9,6 @@
 #include "CommonTestUtilities.h"
 #include "DataStream/Smoothing.h"
 #include "Frame/Frame.h"
-#include "ImageData/PolarizationCalculator.h"
 #include "Session/Session.h"
 
 static const std::string IMAGE_SHAPE = "110 110 25 4";
@@ -23,13 +22,18 @@ public:
         TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
             : Frame(session_id, loader, hdu, default_z) {}
 
-        static bool TestBlockSmooth(std::string sample_file_path, PolarizationCalculator::StokesTypes stokes_type, int mip) {
+        static bool TestBlockSmooth(std::string sample_file_path, string stokes_type, int mip) {
             // Open the file
             LoaderCache loaders(LOADER_CACHE_SIZE);
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
 
             // Get stokes image data
-            casacore::Slicer section = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_type);
+            int stokes;
+            if (!frame->GetStokesTypeIndex(stokes_type, stokes)) {
+                return false;
+            }
+
+            casacore::Slicer section = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes);
             std::vector<float> stokes_image_data;
             if (!frame->GetSlicerData(section, stokes_image_data)) {
                 return false;
@@ -63,9 +67,15 @@ public:
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
 
             // Get Stokes I, Q, and U images data
-            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(frame->_z_index), PolarizationCalculator::StokesTypes::I);
-            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(frame->_z_index), PolarizationCalculator::StokesTypes::Q);
-            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(frame->_z_index), PolarizationCalculator::StokesTypes::U);
+            int stokes_i, stokes_q, stokes_u;
+            if (!frame->GetStokesTypeIndex("Ix", stokes_i) || !frame->GetStokesTypeIndex("Qx", stokes_q) ||
+                !frame->GetStokesTypeIndex("Ux", stokes_u)) {
+                return false;
+            }
+
+            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_i);
+            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_q);
+            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_u);
 
             std::vector<float> stokes_i_data;
             std::vector<float> stokes_q_data;
@@ -214,7 +224,7 @@ public:
         EXPECT_EQ(mip, Tile::LayerToMip(layer, image_width, image_height, TILE_SIZE, TILE_SIZE));
     }
 
-    static void TesRasterTilesGeneration(int image_width, int image_height, int mip) {
+    static void TestRasterTilesGeneration(int image_width, int image_height, int mip) {
         std::vector<Tile> tiles;
         std::vector<CARTA::ImageBounds> image_bounds;
         int num_tile_rows, num_tile_columns;
@@ -276,32 +286,32 @@ public:
 
 TEST_F(VectorFieldTest, TestBlockSmooth) {
     auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::I, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::Q, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::U, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::V, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::I, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::Q, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::U, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::V, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::I, 8));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::Q, 8));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::U, 8));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, PolarizationCalculator::StokesTypes::V, 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Vx", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Vx", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Vx", 8));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::I, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::Q, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::U, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::V, 2));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::I, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::Q, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::U, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::V, 4));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::I, 8));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::Q, 8));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::U, 8));
-    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, PolarizationCalculator::StokesTypes::V, 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ix", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Vx", 2));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ix", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Vx", 4));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ix", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Vx", 8));
 }
 
 TEST_F(VectorFieldTest, TestCalculation) {
@@ -346,10 +356,10 @@ TEST_F(VectorFieldTest, TestMipLayerConversion) {
     TestMipLayerConversion(16, 5241, 5224);
 }
 
-TEST_F(VectorFieldTest, TesRasterTilesGeneration) {
-    TesRasterTilesGeneration(513, 513, 1);
-    TesRasterTilesGeneration(513, 513, 2);
-    TesRasterTilesGeneration(513, 513, 4);
-    TesRasterTilesGeneration(513, 513, 8);
-    TesRasterTilesGeneration(513, 513, 16);
+TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
+    TestRasterTilesGeneration(513, 513, 1);
+    TestRasterTilesGeneration(513, 513, 2);
+    TestRasterTilesGeneration(513, 513, 4);
+    TestRasterTilesGeneration(513, 513, 8);
+    TestRasterTilesGeneration(513, 513, 16);
 }
