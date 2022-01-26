@@ -106,11 +106,17 @@ public:
                 x, y, mip);
 
             // Calculate PI, FPI, and PA
-            std::vector<float> pi(res_size);
-            std::vector<float> fpi(res_size);
-            std::vector<float> pa(res_size);
-
             auto calc_pi = [&](float q, float u) {
+                if (!std::isnan(q) && !isnan(u)) {
+                    float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
+                    if (result > threshold) {
+                        return result;
+                    }
+                }
+                return std::numeric_limits<float>::quiet_NaN();
+            };
+
+            auto calc_tmp_pi = [&](float q, float u) {
                 if (!std::isnan(q) && !isnan(u)) {
                     return sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
                 }
@@ -119,7 +125,10 @@ public:
 
             auto calc_fpi = [&](float i, float pi) {
                 if (!std::isnan(i) && !isnan(pi)) {
-                    return (pi / i);
+                    float result = (pi / i);
+                    if (result > threshold) {
+                        return result;
+                    }
                 }
                 return std::numeric_limits<float>::quiet_NaN();
             };
@@ -131,8 +140,18 @@ public:
                 return std::numeric_limits<float>::quiet_NaN();
             };
 
+            // Calculate PI
+            std::vector<float> pi(res_size);
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), fpi.begin(), calc_fpi);
+
+            // Calculate FPI
+            std::vector<float> tmp_pi(res_size);
+            std::vector<float> fpi(res_size);
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), tmp_pi.begin(), calc_tmp_pi);
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), tmp_pi.begin(), fpi.begin(), calc_fpi);
+
+            // Calculate PA
+            std::vector<float> pa(res_size);
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
 
             // Check calculation results
@@ -140,6 +159,9 @@ public:
                 float expected_pi = sqrt(pow(down_sampled_q[i], 2) + pow(down_sampled_u[i], 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
                 float expected_fpi = expected_pi / down_sampled_i[i];
                 float expected_pa = atan2(down_sampled_u[i], down_sampled_q[i]) / 2; // i.e., 0.5 * tan^-1 (U∕Q)
+
+                expected_pi = (expected_pi > threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
+                expected_fpi = (expected_fpi > threshold) ? expected_fpi : std::numeric_limits<float>::quiet_NaN();
 
                 if (!std::isnan(pi[i]) || !std::isnan(expected_pi)) {
                     EXPECT_FLOAT_EQ(pi[i], expected_pi);
@@ -290,6 +312,9 @@ TEST_F(VectorFieldTest, TestCalculation) {
     EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 2, 1e-3, 1e-3));
     EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 4, 1e-3, 1e-3));
     EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 8, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 2, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 4, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 8, 1e-3, 1e-3, 0.1));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2));
@@ -298,6 +323,9 @@ TEST_F(VectorFieldTest, TestCalculation) {
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2, 1e-3, 1e-3));
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 4, 1e-3, 1e-3));
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 8, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 4, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 8, 1e-3, 1e-3, 0.1));
 }
 
 TEST_F(VectorFieldTest, TestMipLayerConversion) {
