@@ -22,7 +22,7 @@ public:
         TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
             : Frame(session_id, loader, hdu, default_z) {}
 
-        static bool TestBlockSmooth(std::string sample_file_path, string stokes_type, int mip) {
+        static bool TestBlockSmooth(std::string sample_file_path, std::string stokes_type, int mip) {
             // Open the file
             LoaderCache loaders(LOADER_CACHE_SIZE);
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
@@ -181,6 +181,75 @@ public:
                 }
                 if (!std::isnan(pa[i]) || !std::isnan(expected_pa)) {
                     EXPECT_FLOAT_EQ(pa[i], expected_pa);
+                }
+            }
+            return true;
+        }
+
+        static bool TestTilesData(std::string sample_file_path, std::string stokes_type, int mip) {
+            // Open the file
+            LoaderCache loaders(LOADER_CACHE_SIZE);
+            std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
+
+            // Get Stokes index
+            int stokes;
+            if (!frame->GetStokesTypeIndex(stokes_type, stokes)) {
+                return false;
+            }
+
+            // Get tiles with respect to the image bounds
+            std::vector<Tile> tiles;
+            std::vector<CARTA::ImageBounds> image_bounds;
+            int num_tile_rows, num_tile_columns;
+            int image_width = frame->_width;
+            int image_height = frame->_height;
+            int channel = frame->_z_index;
+            GenTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
+
+            // Get full 2D stokes data
+            casacore::Slicer section = frame->GetImageSlicer(AxisRange(channel), stokes);
+            std::vector<float> image_data;
+            if (!frame->GetSlicerData(section, image_data)) {
+                return false;
+            }
+            EXPECT_EQ(image_data.size(), image_width * image_height);
+
+            // Check tiles data
+            for (int i = 0; i < image_bounds.size(); ++i) {
+                // Get the tile data
+                auto& bounds = image_bounds[i];
+                int tile_width = bounds.x_max() - bounds.x_min();
+                int tile_height = bounds.y_max() - bounds.y_min();
+                if ((tile_width == 0) || (tile_height == 0)) { // Don't get the tile data with zero area
+                    continue;
+                }
+
+                int x_min = bounds.x_min();
+                int x_max = bounds.x_max() - 1;
+                int y_min = bounds.y_min();
+                int y_max = bounds.y_max() - 1;
+
+                casacore::Slicer tile_section =
+                    frame->GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
+
+                std::vector<float> tile_data;
+                if (!frame->GetSlicerData(tile_section, tile_data)) {
+                    return false;
+                }
+
+                EXPECT_GT(tile_data.size(), 0);
+                EXPECT_EQ(tile_data.size(), tile_width * tile_height);
+
+                for (int j = 0; j < tile_data.size(); ++j) {
+                    // Convert the tile coordinate to image coordinate
+                    int tile_x = j % tile_width;
+                    int tile_y = j / tile_width;
+                    int image_x = x_min + tile_x;
+                    int image_y = y_min + tile_y;
+                    int image_index = image_y * image_width + image_x;
+                    if (!std::isnan(image_data[image_index]) || !std::isnan(tile_data[j])) {
+                        EXPECT_FLOAT_EQ(image_data[image_index], tile_data[j]);
+                    }
                 }
             }
             return true;
@@ -362,4 +431,38 @@ TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
     TestRasterTilesGeneration(513, 513, 4);
     TestRasterTilesGeneration(513, 513, 8);
     TestRasterTilesGeneration(513, 513, 16);
+
+    TestRasterTilesGeneration(110, 110, 1);
+    TestRasterTilesGeneration(110, 110, 2);
+    TestRasterTilesGeneration(110, 110, 4);
+    TestRasterTilesGeneration(110, 110, 8);
+    TestRasterTilesGeneration(110, 110, 16);
+}
+
+TEST_F(VectorFieldTest, TestTilesData) {
+    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 10));
+
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 10));
+
+    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 10));
+
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 10));
 }
