@@ -1910,10 +1910,8 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
 
     if (_frames.count(file_id)) {
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
-        std::unique_lock<std::mutex> ulock(_animation_object_mutex);
         _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
             msg.matched_frames(), frame_rate, looping, reverse_at_end, always_wait));
-        ulock.unlock();
         ack_message.set_success(true);
         ack_message.set_animation_id(_animation_id);
         ack_message.set_message("Starting animation");
@@ -2048,7 +2046,6 @@ bool Session::ExecuteAnimationFrame() {
         return false;
     }
 
-    std::unique_lock<std::mutex> ulock(_animation_object_mutex);
     if (_animation_object->_waiting_flow_event) {
         return false;
     }
@@ -2113,7 +2110,6 @@ bool Session::ExecuteAnimationFrame() {
         }
         _animation_object->_t_last = std::chrono::high_resolution_clock::now();
     }
-    ulock.unlock();
 
     return recycle_task;
 }
@@ -2153,10 +2149,6 @@ int Session::CalculateAnimationFlowWindow() {
 }
 
 void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
-    if (!_animation_object) {
-        return;
-    }
-
     int gap;
 
     _animation_object->_last_flow_frame = message.received_frame();
