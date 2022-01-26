@@ -31,7 +31,7 @@ PvGenerator::PvGenerator(int file_id, const std::string& filename) {
 }
 
 bool PvGenerator::GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
-    double offset_increment, int stokes, carta::GeneratedImage& pv_image, std::string& message) {
+    double offset_increment, int stokes, GeneratedImage& pv_image, std::string& message) {
     // Create PV image with input data. Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
     // Create casacore::TempImage
     casacore::IPosition pv_shape = pv_data.shape();

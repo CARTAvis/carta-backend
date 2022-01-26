@@ -735,7 +735,7 @@ bool RegionHandler::ApplyRegionToFile(
 
 bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<carta::GeneratedImage>& collapse_results) {
+    std::vector<GeneratedImage>& collapse_results) {
     casacore::ImageRegion image_region;
     int z_min(moment_request.spectral_range().min());
     int z_max(moment_request.spectral_range().max());
@@ -748,7 +748,7 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 }
 
 bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std::shared_ptr<Frame>& frame,
-    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, carta::GeneratedImage& pv_image) {
+    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
     // Generate PV image by approximating line as box regions and getting spectral profile for each.
     // Returns whether PV image was generated.
     pv_response.set_success(false);
@@ -971,7 +971,7 @@ bool RegionHandler::GetRegionHistogramData(
         if (_histogram_cache.count(cache_id)) {
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
-                carta::Histogram hist;
+                Histogram hist;
                 if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
                     FillHistogram(histogram, stats, hist);

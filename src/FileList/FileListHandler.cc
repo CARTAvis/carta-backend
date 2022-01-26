@@ -20,6 +20,8 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
+using namespace carta;
+
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
     : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder("nofolder") {}
@@ -98,6 +100,13 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
             }
         }
     }
+
+    if ((_top_level_folder.find(requested_folder) == 0) && (requested_folder.length() < _top_level_folder.length())) {
+        file_list.set_success(false);
+        file_list.set_message("Forbidden path.");
+        return;
+    }
+
     casacore::File folder_path(requested_folder);
     std::string message;
 

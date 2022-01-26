@@ -12,6 +12,8 @@
 
 #include <carta-protobuf/defs.pb.h>
 
+namespace carta {
+
 class ListProgressReporter {
 public:
     ListProgressReporter(size_t total_steps, std::function<void(CARTA::ListProgress)> progress_callback);
@@ -28,5 +30,7 @@ private:
     std::chrono::high_resolution_clock::time_point _current_time;
     std::function<void(CARTA::ListProgress)> _progress_callback;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_TIMER_LISTPROGRESSREPORTER_H_

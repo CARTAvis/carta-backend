@@ -15,6 +15,8 @@
 #include "../Logger/Logger.h"
 #include "Util/File.h"
 
+using namespace carta;
+
 FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;
 }

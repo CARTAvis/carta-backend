@@ -12,6 +12,8 @@
 
 #include <fitsio.h>
 
+namespace carta {
+
 class FitsHduList {
 public:
     FitsHduList(const std::string& filename);
@@ -22,5 +24,7 @@ private:
 
     std::string _filename;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND_FILELIST_FITSHDULIST_H_

@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 namespace carta {
 
@@ -201,7 +201,7 @@ void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, C
         size_t num_entries = entries.size();
 
         if (is_subset) {
-            for (auto i : existing_indices) {
+            for (const auto& i : existing_indices) {
                 // Skip invalid entries
                 if (i < 0 || i >= num_entries) {
                     continue;

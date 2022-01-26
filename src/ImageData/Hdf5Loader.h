@@ -13,7 +13,7 @@
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
-#include "../Frame.h"
+#include "Frame/Frame.h"
 
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"

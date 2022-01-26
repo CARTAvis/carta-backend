@@ -14,12 +14,11 @@
 #include "../Logger/Logger.h"
 
 #include "DataColumn.tcc"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/File.h"
 #include "Util/FileSystem.h"
 
 namespace carta {
-using namespace std;
 
 Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
     fs::path file_path(filename);
@@ -183,7 +182,7 @@ bool Table::PopulateParams(const pugi::xml_node& table) {
         if (description_node) {
             description = description_node.child_value();
         }
-        _params.emplace_back(carta::TableParam({name, description, value}));
+        _params.emplace_back(TableParam({name, description, value}));
     }
 
     return true;
