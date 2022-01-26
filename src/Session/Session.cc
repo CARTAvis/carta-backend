@@ -2110,7 +2110,6 @@ bool Session::ExecuteAnimationFrame() {
         }
         _animation_object->_t_last = std::chrono::high_resolution_clock::now();
     }
-
     return recycle_task;
 }
 
