@@ -28,15 +28,8 @@ public:
             LoaderCache loaders(LOADER_CACHE_SIZE);
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
 
-            PolarizationCalculator polarization_calculator(
-                frame->_loader->GetImage(), AxisRange(frame->_z_index), AxisRange(ALL_X), AxisRange(ALL_Y));
-
-            auto stokes_image = polarization_calculator.GetStokesImage(stokes_type);
-            if (stokes_image == nullptr) {
-                return false;
-            }
-
-            casacore::Slicer section = frame->GetImageSlicer(AxisRange(0), stokes_type);
+            // Get stokes image data
+            casacore::Slicer section = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_type);
             std::vector<float> stokes_image_data;
             if (!frame->GetSlicerData(section, stokes_image_data)) {
                 return false;
@@ -51,7 +44,6 @@ public:
             const int num_image_rows = frame->_height;
             size_t num_region_rows = std::ceil((float)req_height / mip);
             size_t num_region_columns = std::ceil((float)req_width / mip);
-
             std::vector<float> down_sampled_data(num_region_rows * num_region_columns);
 
             BlockSmooth(stokes_image_data.data(), down_sampled_data.data(), num_image_columns, num_image_rows, num_region_columns,
@@ -69,20 +61,9 @@ public:
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
 
             // Get Stokes I, Q, and U images data
-            PolarizationCalculator polarization_calculator(
-                frame->_loader->GetImage(), AxisRange(frame->_z_index), AxisRange(ALL_X), AxisRange(ALL_Y));
-
-            auto stokes_i_image = polarization_calculator.GetStokesImage(PolarizationCalculator::StokesTypes::I);
-            auto stokes_q_image = polarization_calculator.GetStokesImage(PolarizationCalculator::StokesTypes::Q);
-            auto stokes_u_image = polarization_calculator.GetStokesImage(PolarizationCalculator::StokesTypes::U);
-
-            if ((stokes_i_image == nullptr) || (stokes_q_image == nullptr) || (stokes_u_image == nullptr)) {
-                return false;
-            }
-
-            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(0), PolarizationCalculator::StokesTypes::I);
-            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(0), PolarizationCalculator::StokesTypes::Q);
-            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(0), PolarizationCalculator::StokesTypes::U);
+            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(frame->_z_index), PolarizationCalculator::StokesTypes::I);
+            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(frame->_z_index), PolarizationCalculator::StokesTypes::Q);
+            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(frame->_z_index), PolarizationCalculator::StokesTypes::U);
 
             std::vector<float> stokes_i_data;
             std::vector<float> stokes_q_data;
@@ -98,12 +79,11 @@ public:
             EXPECT_EQ(stokes_i_data.size(), stokes_u_data.size());
 
             // Block averaging
+            // Calculate down sampled data size
             const int x = 0;
             const int y = 0;
             const int req_height = frame->_width - y;
             const int req_width = frame->_height - x;
-            const int num_image_columns = frame->_width;
-            const int num_image_rows = frame->_height;
             size_t num_region_rows = std::ceil((float)req_height / mip);
             size_t num_region_columns = std::ceil((float)req_width / mip);
             size_t res_size = num_region_rows * num_region_columns;
@@ -111,6 +91,10 @@ public:
             std::vector<float> down_sampled_i(res_size);
             std::vector<float> down_sampled_q(res_size);
             std::vector<float> down_sampled_u(res_size);
+
+            // Original image data size
+            const int num_image_columns = frame->_width;
+            const int num_image_rows = frame->_height;
 
             BlockSmooth(stokes_i_data.data(), down_sampled_i.data(), num_image_columns, num_image_rows, num_region_columns, num_region_rows,
                 x, y, mip);
@@ -200,6 +184,11 @@ public:
             }
         }
     }
+
+    void TestMipLayerConversion(int mip, int image_width, int image_height) {
+        int layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
+        EXPECT_EQ(mip, Tile::LayerToMip(layer, image_width, image_height, TILE_SIZE, TILE_SIZE));
+    }
 };
 
 TEST_F(VectorFieldTest, TestBlockSmooth) {
@@ -248,4 +237,22 @@ TEST_F(VectorFieldTest, TestCalculation) {
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2, 1e-3, 1e-3));
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 4, 1e-3, 1e-3));
     EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 8, 1e-3, 1e-3));
+}
+
+TEST_F(VectorFieldTest, TestMipLayerConversion) {
+    TestMipLayerConversion(1, 512, 1024);
+    TestMipLayerConversion(2, 512, 1024);
+    TestMipLayerConversion(4, 512, 1024);
+    TestMipLayerConversion(8, 512, 1024);
+
+    TestMipLayerConversion(1, 1024, 1024);
+    TestMipLayerConversion(2, 1024, 1024);
+    TestMipLayerConversion(4, 1024, 1024);
+    TestMipLayerConversion(8, 1024, 1024);
+
+    TestMipLayerConversion(1, 5241, 5224);
+    TestMipLayerConversion(2, 5241, 5224);
+    TestMipLayerConversion(4, 5241, 5224);
+    TestMipLayerConversion(8, 5241, 5224);
+    TestMipLayerConversion(16, 5241, 5224);
 }
