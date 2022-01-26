@@ -23,6 +23,7 @@ void SessionManager::DeleteSession(int session_id) {
         spdlog::info(
             "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
         session->WaitForTaskCancellation();
+        session->CloseAllScriptingRequests();
         if (!session->DecreaseRefCount()) {
             delete session;
             _sessions.erase(session_id);
@@ -533,7 +534,7 @@ bool SessionManager::EnableScripting() {
 
 bool SessionManager::SendScriptingRequest(int session_id, uint32_t scripting_request_id, std::string target, std::string action,
     std::string parameters, bool async, std::string return_path,
-    std::function<void(const bool&, const std::string&, const std::string&)> callback) {
+    std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback) {
     Session* session = _sessions[session_id];
     if (!session) {
         return false;
@@ -547,7 +548,7 @@ bool SessionManager::SendScriptingRequest(int session_id, uint32_t scripting_req
     message.set_async(async);
     message.set_return_path(return_path);
 
-    session->SendScriptingRequest(message, callback);
+    session->SendScriptingRequest(message, callback, session_closed_callback);
     return true;
 }
 

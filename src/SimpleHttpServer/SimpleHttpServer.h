@@ -50,8 +50,8 @@ protected:
     nlohmann::json GetExistingObjects(const std::string& object_type);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
-    std::string_view SendScriptingRequest(
-        const std::string& buffer, int& session_id, std::function<void(const bool&, const std::string&, const std::string&)> callback);
+    std::string_view SendScriptingRequest(const std::string& buffer, int& session_id,
+        std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback);
     std::string_view OnScriptingResponse(
         std::string& response_buffer, const bool& success, const std::string& message, const std::string& response);
     void OnScriptingAbort(int session_id, uint32_t scripting_request_id);

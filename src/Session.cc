@@ -2118,31 +2118,40 @@ void Session::CancelExistingAnimation() {
     }
 }
 
-void Session::SendScriptingRequest(
-    CARTA::ScriptingRequest message, std::function<void(const bool&, const std::string&, const std::string&)> callback) {
+void Session::SendScriptingRequest(CARTA::ScriptingRequest message,
+    std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback) {
     int scripting_request_id(message.scripting_request_id());
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    _scripting_callback[scripting_request_id] = callback;
+    _scripting_callbacks[scripting_request_id] = std::make_tuple(callback, session_closed_callback);
 }
 
 void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id) {
     int scripting_request_id(message.scripting_request_id());
 
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    auto callback_iter = _scripting_callback.find(scripting_request_id);
-    if (callback_iter == _scripting_callback.end()) {
+    auto callback_iter = _scripting_callbacks.find(scripting_request_id);
+    if (callback_iter == _scripting_callbacks.end()) {
         spdlog::warn("Could not find callback for scripting response with request ID {}.", scripting_request_id);
     } else {
-        auto callback = callback_iter->second;
+        auto [callback, session_closed_callback] = callback_iter->second;
         callback(message.success(), message.message(), message.response());
-        _scripting_callback.erase(scripting_request_id);
+        _scripting_callbacks.erase(scripting_request_id);
     }
 }
 
 void Session::OnScriptingAbort(uint32_t scripting_request_id) {
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    _scripting_callback.erase(scripting_request_id);
+    _scripting_callbacks.erase(scripting_request_id);
+}
+
+void Session::CloseAllScriptingRequests() {
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    for (auto& [key, callbacks] : _scripting_callbacks) {
+        auto [callback, session_closed_callback] = callbacks;
+        session_closed_callback();
+    }
+    _scripting_callbacks.clear();
 }
 
 void Session::StopImageFileList() {

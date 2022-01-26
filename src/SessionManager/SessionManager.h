@@ -34,7 +34,8 @@ public:
     void RunApp();
     bool EnableScripting();
     bool SendScriptingRequest(int session_id, uint32_t scripting_request_id, std::string target, std::string action, std::string parameters,
-        bool async, std::string return_path, std::function<void(const bool&, const std::string&, const std::string&)> callback);
+        bool async, std::string return_path, std::function<void(const bool&, const std::string&, const std::string&)> callback,
+        std::function<void()> session_closed_callback);
     void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
 
 private:

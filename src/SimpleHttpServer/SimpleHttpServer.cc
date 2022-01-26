@@ -547,7 +547,8 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
         int session_id;
 
         auto status = SendScriptingRequest(
-            buffer, session_id, [this, res](const bool& success, const std::string& message, const std::string& response) {
+            buffer, session_id,
+            [this, res](const bool& success, const std::string& message, const std::string& response) {
                 std::string response_buffer;
                 auto status = OnScriptingResponse(response_buffer, success, message, response);
 
@@ -558,7 +559,8 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
                 } else {
                     res->end();
                 }
-            });
+            },
+            [res]() { res->writeStatus(HTTP_404)->end(); });
 
         if (status != HTTP_200) {
             res->writeStatus(status);
@@ -574,8 +576,8 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleHttpServer::SendScriptingRequest(
-    const std::string& buffer, int& session_id, std::function<void(const bool&, const std::string&, const std::string&)> callback) {
+std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffer, int& session_id,
+    std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback) {
     try {
         json req = json::parse(buffer);
 
@@ -594,7 +596,7 @@ std::string_view SimpleHttpServer::SendScriptingRequest(
         }
 
         if (!_session_manager->SendScriptingRequest(
-                session_id, _scripting_request_id, target, action, params, async, return_path, callback)) {
+                session_id, _scripting_request_id, target, action, params, async, return_path, callback, session_closed_callback)) {
             return HTTP_404;
         }
 
