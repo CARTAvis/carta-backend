@@ -12,7 +12,7 @@
 #include "ImageData/PolarizationCalculator.h"
 #include "Session/Session.h"
 
-static const std::string IMAGE_SHAPE = "11 11 25 4";
+static const std::string IMAGE_SHAPE = "110 110 25 4";
 static const std::string IMAGE_OPTS = "-s 0";
 static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
 
@@ -40,11 +40,13 @@ public:
             const int y = 0;
             const int req_height = frame->_width - y;
             const int req_width = frame->_height - x;
-            const int num_image_columns = frame->_width;
-            const int num_image_rows = frame->_height;
             size_t num_region_rows = std::ceil((float)req_height / mip);
             size_t num_region_columns = std::ceil((float)req_width / mip);
             std::vector<float> down_sampled_data(num_region_rows * num_region_columns);
+
+            // Original image data size
+            const int num_image_columns = frame->_width;
+            const int num_image_rows = frame->_height;
 
             BlockSmooth(stokes_image_data.data(), down_sampled_data.data(), num_image_columns, num_image_rows, num_region_columns,
                 num_region_rows, x, y, mip);
@@ -157,7 +159,7 @@ public:
         int dest_width, int dest_height, int mip) {
         EXPECT_GE(src_data.size(), 0);
         EXPECT_GE(dest_data.size(), 0);
-        if ((src_width % 2 == 0) && (src_height % 2 == 0)) {
+        if ((src_width % mip == 0) && (src_height % mip == 0)) {
             EXPECT_TRUE(src_data.size() == dest_data.size() * pow(mip, 2));
         } else {
             EXPECT_TRUE(src_data.size() < dest_data.size() * pow(mip, 2));
@@ -188,6 +190,65 @@ public:
     void TestMipLayerConversion(int mip, int image_width, int image_height) {
         int layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
         EXPECT_EQ(mip, Tile::LayerToMip(layer, image_width, image_height, TILE_SIZE, TILE_SIZE));
+    }
+
+    static void TesRasterTilesGeneration(int image_width, int image_height, int mip) {
+        std::vector<Tile> tiles;
+        std::vector<CARTA::ImageBounds> image_bounds;
+        int num_tile_rows, num_tile_columns;
+        GenTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
+
+        // Check the coverage of tiles on the image area
+        std::vector<int> image_mask(image_width * image_height, 0);
+        int count = 0;
+        for (int i = 0; i < num_tile_columns; ++i) {
+            for (int j = 0; j < num_tile_rows; ++j) {
+                auto& bounds = image_bounds[j * num_tile_columns + i];
+                for (int x = bounds.x_min(); x < bounds.x_max(); ++x) {
+                    for (int y = bounds.y_min(); y < bounds.y_max(); ++y) {
+                        image_mask[y * image_width + x] = 1;
+                        count++;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < image_mask.size(); ++i) {
+            EXPECT_EQ(image_mask[i], 1);
+        }
+        EXPECT_EQ(count, image_mask.size());
+    }
+
+    static void GenTilesAndBounds(int image_width, int image_height, int mip, std::vector<Tile>& tiles,
+        std::vector<CARTA::ImageBounds>& image_bounds, int& num_tile_rows, int& num_tile_columns) {
+        // Generate tiles
+        num_tile_columns = ceil((double)image_width / mip);
+        num_tile_rows = ceil((double)image_height / mip);
+        int num_tiles = num_tile_columns * num_tile_rows;
+        int32_t tile_layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
+
+        tiles.resize(num_tile_rows * num_tile_columns);
+        for (int i = 0; i < num_tile_columns; ++i) {
+            for (int j = 0; j < num_tile_rows; ++j) {
+                tiles[j * num_tile_columns + i].x = i;
+                tiles[j * num_tile_columns + i].y = j;
+                tiles[j * num_tile_columns + i].layer = tile_layer;
+            }
+        }
+
+        // Generate image bounds with respect to tiles
+        int tile_size_original = TILE_SIZE * mip;
+        image_bounds.resize(num_tile_rows * num_tile_columns);
+        for (int i = 0; i < num_tile_columns; ++i) {
+            for (int j = 0; j < num_tile_rows; ++j) {
+                auto& tile = tiles[j * num_tile_columns + i];
+                auto& bounds = image_bounds[j * num_tile_columns + i];
+                bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), image_width));
+                bounds.set_x_max(std::min(image_width, (tile.x + 1) * tile_size_original));
+                bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), image_height));
+                bounds.set_y_max(std::min(image_height, (tile.y + 1) * tile_size_original));
+            }
+        }
     }
 };
 
@@ -255,4 +316,12 @@ TEST_F(VectorFieldTest, TestMipLayerConversion) {
     TestMipLayerConversion(4, 5241, 5224);
     TestMipLayerConversion(8, 5241, 5224);
     TestMipLayerConversion(16, 5241, 5224);
+}
+
+TEST_F(VectorFieldTest, TesRasterTilesGeneration) {
+    TesRasterTilesGeneration(513, 513, 1);
+    TesRasterTilesGeneration(513, 513, 2);
+    TesRasterTilesGeneration(513, 513, 4);
+    TesRasterTilesGeneration(513, 513, 8);
+    TesRasterTilesGeneration(513, 513, 16);
 }
