@@ -544,64 +544,62 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
     }
 
     WaitForData(res, req, [this, res](const string& buffer) {
-        std::string response_buffer;
-        auto status = ProcessScriptingRequest(buffer, response_buffer);
+        int session_id;
 
-        res->writeStatus(status);
-        AddNoCacheHeaders(res);
+        auto status = SendScriptingRequest(
+            buffer, session_id, [this, res](const bool& success, const std::string& message, const std::string& response) {
+                std::string response_buffer;
+                auto status = OnScriptingResponse(response_buffer, success, message, response);
 
-        if (status == HTTP_200) {
-            res->end(response_buffer);
-        } else {
+                res->writeStatus(status);
+                AddNoCacheHeaders(res);
+                if (status == HTTP_200) {
+                    res->end(response_buffer);
+                } else {
+                    res->end();
+                }
+            });
+
+        if (status != HTTP_200) {
+            res->writeStatus(status);
+            AddNoCacheHeaders(res);
             res->end();
+            return;
         }
+
+        res->onAborted([this, session_id, res]() {
+            OnScriptingAbort(session_id, _scripting_request_id);
+            res->writeStatus(HTTP_500)->end();
+        });
     });
 }
 
-std::string_view SimpleHttpServer::ProcessScriptingRequest(const std::string& buffer, std::string& response_buffer) {
+std::string_view SimpleHttpServer::SendScriptingRequest(
+    const std::string& buffer, int& session_id, std::function<void(const bool&, const std::string&, const std::string&)> callback) {
     try {
         json req = json::parse(buffer);
 
         _scripting_request_id++;
         _scripting_request_id = std::max(_scripting_request_id, 1u);
 
-        int session_id = req["session_id"].get<int>();
+        session_id = req["session_id"].get<int>();
         std::string target = req["path"].get<std::string>();
         std::string action = req["action"].get<std::string>();
         std::string params = req["parameters"].dump();
         bool async = req["async"].get<bool>();
-        std::string return_path = req["return_path"].get<std::string>();
 
-        if (!_session_manager->SendScriptingRequest(session_id, _scripting_request_id, target, action, params, async, return_path)) {
+        std::string return_path;
+        if (req.contains("return_path")) {
+            return_path = req["return_path"].get<std::string>();
+        }
+
+        if (!_session_manager->SendScriptingRequest(
+                session_id, _scripting_request_id, target, action, params, async, return_path, callback)) {
             return HTTP_404;
         }
 
-        bool success;
-        std::string message;
-        std::string response;
-
-        bool session_not_found(0);
-        auto t_start = std::chrono::system_clock::now();
-
-        while (!_session_manager->GetScriptingResponse(session_id, _scripting_request_id, success, message, response, session_not_found)) {
-            if (session_not_found) {
-                return HTTP_404;
-            }
-            auto t_end = std::chrono::system_clock::now();
-            std::chrono::duration<double> elapsed_sec = t_end - t_start;
-            if (elapsed_sec.count() > SCRIPTING_TIMEOUT) {
-                return HTTP_504;
-            }
-        }
-
-        json response_obj;
-
-        response_obj["success"] = success;
-        response_obj["message"] = message;
-        response_obj["response"] = json::parse(response);
-
-        response_buffer = response_obj.dump();
         return HTTP_200;
+
     } catch (json::exception e) {
         spdlog::warn(e.what());
         return HTTP_400;
@@ -609,6 +607,33 @@ std::string_view SimpleHttpServer::ProcessScriptingRequest(const std::string& bu
         spdlog::warn(e.what());
         return HTTP_500;
     }
+}
+
+std::string_view SimpleHttpServer::OnScriptingResponse(
+    std::string& response_buffer, const bool& success, const std::string& message, const std::string& response) {
+    json response_obj;
+
+    response_obj["success"] = success;
+
+    if (!message.empty()) {
+        response_obj["message"] = message;
+    }
+
+    if (!response.empty()) {
+        try {
+            response_obj["response"] = json::parse(response);
+        } catch (json::exception e) {
+            spdlog::warn(e.what());
+            return HTTP_500;
+        }
+    }
+
+    response_buffer = response_obj.dump();
+    return HTTP_200;
+}
+
+void SimpleHttpServer::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
+    _session_manager->OnScriptingAbort(session_id, scripting_request_id);
 }
 
 void SimpleHttpServer::Forbidden(Res* res, Req* req) {

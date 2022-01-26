@@ -2118,33 +2118,31 @@ void Session::CancelExistingAnimation() {
     }
 }
 
-void Session::SendScriptingRequest(CARTA::ScriptingRequest message) {
+void Session::SendScriptingRequest(
+    CARTA::ScriptingRequest message, std::function<void(const bool&, const std::string&, const std::string&)> callback) {
+    int scripting_request_id(message.scripting_request_id());
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    _scripting_callback[scripting_request_id] = callback;
 }
 
 void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id) {
-    // Save response to scripting request
     int scripting_request_id(message.scripting_request_id());
+
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    _scripting_response[scripting_request_id] = message;
+    auto callback_iter = _scripting_callback.find(scripting_request_id);
+    if (callback_iter == _scripting_callback.end()) {
+        spdlog::warn("Could not find callback for scripting response with request ID {}.", scripting_request_id);
+    } else {
+        auto callback = callback_iter->second;
+        callback(message.success(), message.message(), message.response());
+        _scripting_callback.erase(scripting_request_id);
+    }
 }
 
-bool Session::GetScriptingResponse(uint32_t scripting_request_id, bool& success, std::string& message, std::string& response) {
+void Session::OnScriptingAbort(uint32_t scripting_request_id) {
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    auto scripting_response = _scripting_response.find(scripting_request_id);
-    if (scripting_response == _scripting_response.end()) {
-        return false;
-    } else {
-        auto msg = scripting_response->second;
-
-        success = msg.success();
-        message = msg.message();
-        response = msg.response();
-
-        _scripting_response.erase(scripting_request_id);
-
-        return true;
-    }
+    _scripting_callback.erase(scripting_request_id);
 }
 
 void Session::StopImageFileList() {

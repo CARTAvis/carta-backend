@@ -34,9 +34,8 @@ public:
     void RunApp();
     bool EnableScripting();
     bool SendScriptingRequest(int session_id, uint32_t scripting_request_id, std::string target, std::string action, std::string parameters,
-        bool async, std::string return_path);
-    bool GetScriptingResponse(
-        int session_id, uint32_t scripting_request_id, bool& success, std::string& message, std::string& response, bool& session_not_found);
+        bool async, std::string return_path, std::function<void(const bool&, const std::string&, const std::string&)> callback);
+    void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
 
 private:
     // Sessions map

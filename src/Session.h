@@ -222,9 +222,10 @@ public:
     FileSettings _file_settings;
     std::unordered_map<int, carta::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
-    void SendScriptingRequest(CARTA::ScriptingRequest message);
+    void SendScriptingRequest(
+        CARTA::ScriptingRequest message, std::function<void(const bool&, const std::string&, const std::string&)> callback);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
-    bool GetScriptingResponse(uint32_t scripting_request_id, bool& success, std::string& message, std::string& response);
+    void OnScriptingAbort(uint32_t scripting_request_id);
 
     void StopImageFileList();
     void StopCatalogFileList();
@@ -333,8 +334,8 @@ protected:
     static bool _exit_when_all_sessions_closed;
     static std::thread* _animation_thread;
 
-    // Scripting responses from the client
-    std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
+    // Callbacks for scripting responses from the frontend
+    std::unordered_map<int, std::function<void(const bool&, const std::string&, const std::string&)>> _scripting_callback;
     std::mutex _scripting_mutex;
 
     // Timestamp for the last protobuf message

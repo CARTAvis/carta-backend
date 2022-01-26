@@ -23,9 +23,6 @@ namespace carta {
 #define HTTP_403 "403 Forbidden"
 #define HTTP_500 "500 Internal Server Error"
 #define HTTP_501 "501 Not Implemented"
-#define HTTP_504 "504 Gateway Timeout"
-
-#define SCRIPTING_TIMEOUT 10 // seconds
 
 // Schema URLs
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preferences_schema_2.json"
@@ -53,7 +50,11 @@ protected:
     nlohmann::json GetExistingObjects(const std::string& object_type);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
-    std::string_view ProcessScriptingRequest(const std::string& buffer, std::string& response_buffer);
+    std::string_view SendScriptingRequest(
+        const std::string& buffer, int& session_id, std::function<void(const bool&, const std::string&, const std::string&)> callback);
+    std::string_view OnScriptingResponse(
+        std::string& response_buffer, const bool& success, const std::string& message, const std::string& response);
+    void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);

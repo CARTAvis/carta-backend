@@ -532,7 +532,8 @@ bool SessionManager::EnableScripting() {
 }
 
 bool SessionManager::SendScriptingRequest(int session_id, uint32_t scripting_request_id, std::string target, std::string action,
-    std::string parameters, bool async, std::string return_path) {
+    std::string parameters, bool async, std::string return_path,
+    std::function<void(const bool&, const std::string&, const std::string&)> callback) {
     Session* session = _sessions[session_id];
     if (!session) {
         return false;
@@ -546,19 +547,17 @@ bool SessionManager::SendScriptingRequest(int session_id, uint32_t scripting_req
     message.set_async(async);
     message.set_return_path(return_path);
 
-    session->SendScriptingRequest(message);
+    session->SendScriptingRequest(message, callback);
     return true;
 }
 
-bool SessionManager::GetScriptingResponse(
-    int session_id, uint32_t scripting_request_id, bool& success, std::string& message, std::string& response, bool& session_not_found) {
+void SessionManager::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
     Session* session = _sessions[session_id];
     if (!session) {
-        session_not_found = true;
-        return false;
+        return; // Session is gone; nothing to do
     }
 
-    return session->GetScriptingResponse(scripting_request_id, success, message, response);
+    session->OnScriptingAbort(scripting_request_id);
 }
 
 std::string SessionManager::IPAsText(std::string_view binary) {
