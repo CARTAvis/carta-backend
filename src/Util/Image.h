@@ -10,7 +10,10 @@
 #include <cmath>
 #include <string>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
+
+#include "DataStream/Tile.h"
 
 // region ids
 #define CUBE_REGION_ID -2
@@ -123,5 +126,10 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
+
+using namespace carta;
+
+void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles);
+CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_height, int mip);
 
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_
