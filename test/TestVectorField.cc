@@ -61,7 +61,7 @@ public:
             return true;
         }
 
-        static bool TestCalculation(std::string sample_file_path, int mip, double q_err = 0, double u_err = 0, double threshold = 0) {
+        static bool TestCalculations(std::string sample_file_path, int mip, double q_err = 0, double u_err = 0, double threshold = 0) {
             // Open the file
             LoaderCache loaders(LOADER_CACHE_SIZE);
             std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
@@ -72,10 +72,11 @@ public:
                 !frame->GetStokesTypeIndex("Ux", stokes_u)) {
                 return false;
             }
+            int channel = frame->_z_index;
 
-            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_i);
-            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_q);
-            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes_u);
+            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(channel), stokes_i);
+            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(channel), stokes_q);
+            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(channel), stokes_u);
 
             std::vector<float> stokes_i_data;
             std::vector<float> stokes_q_data;
@@ -150,6 +151,13 @@ public:
                 return std::numeric_limits<float>::quiet_NaN();
             };
 
+            auto reset_pa = [&](float pi, float pa) {
+                if (std::isnan(pi)) {
+                    return std::numeric_limits<float>::quiet_NaN();
+                }
+                return pa;
+            };
+
             // Calculate PI
             std::vector<float> pi(res_size);
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
@@ -164,6 +172,9 @@ public:
             std::vector<float> pa(res_size);
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
 
+            // Set NaN for PA if PI is NaN
+            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+
             // Check calculation results
             for (int i = 0; i < res_size; ++i) {
                 float expected_pi = sqrt(pow(down_sampled_q[i], 2) + pow(down_sampled_u[i], 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
@@ -172,6 +183,7 @@ public:
 
                 expected_pi = (expected_pi > threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
                 expected_fpi = (expected_fpi > threshold) ? expected_fpi : std::numeric_limits<float>::quiet_NaN();
+                expected_pa = (expected_pi > threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
 
                 if (!std::isnan(pi[i]) || !std::isnan(expected_pi)) {
                     EXPECT_FLOAT_EQ(pi[i], expected_pi);
@@ -220,7 +232,7 @@ public:
                 auto& bounds = image_bounds[i];
                 int tile_width = bounds.x_max() - bounds.x_min();
                 int tile_height = bounds.y_max() - bounds.y_min();
-                if ((tile_width == 0) || (tile_height == 0)) { // Don't get the tile data with zero area
+                if (tile_width * tile_height == 0) { // Don't get the tile data with zero area
                     continue;
                 }
 
@@ -355,6 +367,10 @@ public:
 
 TEST_F(VectorFieldTest, TestBlockSmooth) {
     auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 1));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 1));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 1));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Vx", 1));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 2));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 2));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 2));
@@ -367,8 +383,16 @@ TEST_F(VectorFieldTest, TestBlockSmooth) {
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 8));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 8));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Vx", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 16));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Qx", 16));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ux", 16));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Vx", 16));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ix", 1));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 1));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 1));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Vx", 1));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ix", 2));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 2));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 2));
@@ -381,30 +405,46 @@ TEST_F(VectorFieldTest, TestBlockSmooth) {
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 8));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 8));
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Vx", 8));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ix", 16));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Qx", 16));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Ux", 16));
+    EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_nan_file, "Vx", 16));
 }
 
-TEST_F(VectorFieldTest, TestCalculation) {
+TEST_F(VectorFieldTest, TestCalculations) {
     auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 2));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 4));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 8));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 2, 1e-3, 1e-3));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 4, 1e-3, 1e-3));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 8, 1e-3, 1e-3));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 2, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 4, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_file, 8, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 2));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 4));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 8));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 16));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 1, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 2, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 4, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 8, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 16, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 1, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 2, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 4, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 8, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_file, 16, 1e-3, 1e-3, 0.1));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 4));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 8));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2, 1e-3, 1e-3));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 4, 1e-3, 1e-3));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 8, 1e-3, 1e-3));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 2, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 4, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrame::TestCalculation(sample_nan_file, 8, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 2));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 4));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 8));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 16));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 1, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 2, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 4, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 8, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 16, 1e-3, 1e-3));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 1, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 2, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 4, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 8, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 16, 1e-3, 1e-3, 0.1));
 }
 
 TEST_F(VectorFieldTest, TestMipLayerConversion) {
@@ -412,11 +452,13 @@ TEST_F(VectorFieldTest, TestMipLayerConversion) {
     TestMipLayerConversion(2, 512, 1024);
     TestMipLayerConversion(4, 512, 1024);
     TestMipLayerConversion(8, 512, 1024);
+    TestMipLayerConversion(16, 512, 1024);
 
     TestMipLayerConversion(1, 1024, 1024);
     TestMipLayerConversion(2, 1024, 1024);
     TestMipLayerConversion(4, 1024, 1024);
     TestMipLayerConversion(8, 1024, 1024);
+    TestMipLayerConversion(16, 1024, 1024);
 
     TestMipLayerConversion(1, 5241, 5224);
     TestMipLayerConversion(2, 5241, 5224);
@@ -445,24 +487,24 @@ TEST_F(VectorFieldTest, TestTilesData) {
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 2));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 4));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 10));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 16));
 
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 1));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 2));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 4));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 10));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 16));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 1));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 2));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 4));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 10));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 16));
 
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 1));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 2));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 4));
     EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 10));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 16));
 }
