@@ -39,7 +39,9 @@ public:
             int num_tile_rows, num_tile_columns;
             int image_width = frame->_width;
             int image_height = frame->_height;
-            GenTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
+            GetTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
+
+            EXPECT_EQ(tiles.size(), image_bounds.size());
 
             // Get full 2D stokes data
             int channel = frame->_z_index;
@@ -54,9 +56,9 @@ public:
             for (int i = 0; i < image_bounds.size(); ++i) {
                 // Get the tile data
                 auto& bounds = image_bounds[i];
-                int tile_width = bounds.x_max() - bounds.x_min();
-                int tile_height = bounds.y_max() - bounds.y_min();
-                if (tile_width * tile_height == 0) { // Don't get the tile data with zero area
+                int tile_original_width = bounds.x_max() - bounds.x_min();
+                int tile_original_height = bounds.y_max() - bounds.y_min();
+                if (tile_original_width * tile_original_height == 0) { // Don't get the tile data with zero area
                     continue;
                 }
 
@@ -64,7 +66,6 @@ public:
                 int x_max = bounds.x_max() - 1;
                 int y_min = bounds.y_min();
                 int y_max = bounds.y_max() - 1;
-
                 casacore::Slicer tile_section =
                     frame->GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
 
@@ -74,12 +75,21 @@ public:
                 }
 
                 EXPECT_GT(tile_data.size(), 0);
-                EXPECT_EQ(tile_data.size(), tile_width * tile_height);
+                EXPECT_EQ(tile_data.size(), tile_original_width * tile_original_height);
 
+                // Check tile's x and y
+                auto& tile = tiles[i];
+                int tile_size_original = TILE_SIZE * mip;
+                EXPECT_EQ(bounds.x_min(), std::max(0, tile.x * tile_size_original));
+                EXPECT_EQ(bounds.x_max(), std::min(image_width, (tile.x + 1) * tile_size_original));
+                EXPECT_EQ(bounds.y_min(), std::max(0, tile.y * tile_size_original));
+                EXPECT_EQ(bounds.y_max(), std::min(image_height, (tile.y + 1) * tile_size_original));
+
+                // Check is the tile coordinate correct when converted to the original image coordinate
                 for (int j = 0; j < tile_data.size(); ++j) {
                     // Convert the tile coordinate to image coordinate
-                    int tile_x = j % tile_width;
-                    int tile_y = j / tile_width;
+                    int tile_x = j % tile_original_width;
+                    int tile_y = j / tile_original_width;
                     int image_x = x_min + tile_x;
                     int image_y = y_min + tile_y;
                     int image_index = image_y * image_width + image_x;
@@ -288,7 +298,7 @@ public:
             int num_tile_rows, num_tile_columns;
             int image_width = frame->_width;
             int image_height = frame->_height;
-            GenTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
+            GetTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
 
             EXPECT_GT(tiles.size(), 0);
             EXPECT_EQ(tiles.size(), image_bounds.size());
@@ -547,7 +557,7 @@ public:
         std::vector<Tile> tiles;
         std::vector<CARTA::ImageBounds> image_bounds;
         int num_tile_rows, num_tile_columns;
-        GenTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
+        GetTilesAndBounds(image_width, image_height, mip, tiles, image_bounds, num_tile_rows, num_tile_columns);
 
         // Check the coverage of tiles on the image area
         std::vector<int> image_mask(image_width * image_height, 0);
@@ -570,7 +580,7 @@ public:
         EXPECT_EQ(count, image_mask.size());
     }
 
-    static void GenTilesAndBounds(int image_width, int image_height, int mip, std::vector<Tile>& tiles,
+    static void GetTilesAndBounds(int image_width, int image_height, int mip, std::vector<Tile>& tiles,
         std::vector<CARTA::ImageBounds>& image_bounds, int& num_tile_rows, int& num_tile_columns) {
         // Generate tiles
         num_tile_columns = ceil((double)image_width / mip);
