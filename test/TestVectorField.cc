@@ -22,182 +22,6 @@ public:
         TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
             : Frame(session_id, loader, hdu, default_z) {}
 
-        static bool TestBlockSmooth(std::string sample_file_path, std::string stokes_type, int mip) {
-            // Open the file
-            LoaderCache loaders(LOADER_CACHE_SIZE);
-            std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
-
-            // Get stokes image data
-            int stokes;
-            if (!frame->GetStokesTypeIndex(stokes_type, stokes)) {
-                return false;
-            }
-
-            casacore::Slicer section = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes);
-            std::vector<float> stokes_image_data;
-            if (!frame->GetSlicerData(section, stokes_image_data)) {
-                return false;
-            }
-
-            // Block averaging
-            const int x = 0;
-            const int y = 0;
-            const int req_height = frame->_width - y;
-            const int req_width = frame->_height - x;
-            size_t num_region_rows = std::ceil((float)req_height / mip);
-            size_t num_region_columns = std::ceil((float)req_width / mip);
-            std::vector<float> down_sampled_data(num_region_rows * num_region_columns);
-
-            // Original image data size
-            const int num_image_columns = frame->_width;
-            const int num_image_rows = frame->_height;
-
-            BlockSmooth(stokes_image_data.data(), down_sampled_data.data(), num_image_columns, num_image_rows, num_region_columns,
-                num_region_rows, x, y, mip);
-
-            CheckDownSampledData(
-                stokes_image_data, down_sampled_data, num_image_columns, num_image_rows, num_region_columns, num_region_rows, mip);
-
-            return true;
-        }
-
-        static bool TestCalculations(std::string sample_file_path, int mip, double q_err = 0, double u_err = 0, double threshold = 0) {
-            // Open the file
-            LoaderCache loaders(LOADER_CACHE_SIZE);
-            std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
-
-            // Get Stokes I, Q, and U images data
-            int stokes_i, stokes_q, stokes_u;
-            if (!frame->GetStokesTypeIndex("Ix", stokes_i) || !frame->GetStokesTypeIndex("Qx", stokes_q) ||
-                !frame->GetStokesTypeIndex("Ux", stokes_u)) {
-                return false;
-            }
-            int channel = frame->_z_index;
-
-            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(channel), stokes_i);
-            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(channel), stokes_q);
-            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(channel), stokes_u);
-
-            std::vector<float> stokes_i_data;
-            std::vector<float> stokes_q_data;
-            std::vector<float> stokes_u_data;
-
-            if (!frame->GetSlicerData(section_i, stokes_i_data) || !frame->GetSlicerData(section_q, stokes_q_data) ||
-                !frame->GetSlicerData(section_u, stokes_u_data)) {
-                return false;
-            }
-
-            EXPECT_GT(stokes_i_data.size(), 0);
-            EXPECT_EQ(stokes_i_data.size(), stokes_q_data.size());
-            EXPECT_EQ(stokes_i_data.size(), stokes_u_data.size());
-
-            // Block averaging
-            // Calculate down sampled data size
-            const int x = 0;
-            const int y = 0;
-            const int req_height = frame->_width - y;
-            const int req_width = frame->_height - x;
-            size_t num_region_rows = std::ceil((float)req_height / mip);
-            size_t num_region_columns = std::ceil((float)req_width / mip);
-            size_t res_size = num_region_rows * num_region_columns;
-
-            std::vector<float> down_sampled_i(res_size);
-            std::vector<float> down_sampled_q(res_size);
-            std::vector<float> down_sampled_u(res_size);
-
-            // Original image data size
-            const int num_image_columns = frame->_width;
-            const int num_image_rows = frame->_height;
-
-            BlockSmooth(stokes_i_data.data(), down_sampled_i.data(), num_image_columns, num_image_rows, num_region_columns, num_region_rows,
-                x, y, mip);
-            BlockSmooth(stokes_q_data.data(), down_sampled_q.data(), num_image_columns, num_image_rows, num_region_columns, num_region_rows,
-                x, y, mip);
-            BlockSmooth(stokes_u_data.data(), down_sampled_u.data(), num_image_columns, num_image_rows, num_region_columns, num_region_rows,
-                x, y, mip);
-
-            // Calculate PI, FPI, and PA
-            auto calc_pi = [&](float q, float u) {
-                if (!std::isnan(q) && !isnan(u)) {
-                    float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
-                    if (result > threshold) {
-                        return result;
-                    }
-                }
-                return std::numeric_limits<float>::quiet_NaN();
-            };
-
-            auto calc_tmp_pi = [&](float q, float u) {
-                if (!std::isnan(q) && !isnan(u)) {
-                    return sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
-                }
-                return std::numeric_limits<double>::quiet_NaN();
-            };
-
-            auto calc_fpi = [&](float i, float pi) {
-                if (!std::isnan(i) && !isnan(pi)) {
-                    float result = (pi / i);
-                    if (result > threshold) {
-                        return result;
-                    }
-                }
-                return std::numeric_limits<float>::quiet_NaN();
-            };
-
-            auto calc_pa = [&](float q, float u) {
-                if (!std::isnan(q) && !isnan(u)) {
-                    return atan2(u, q) / 2;
-                }
-                return std::numeric_limits<float>::quiet_NaN();
-            };
-
-            auto reset_pa = [&](float pi, float pa) {
-                if (std::isnan(pi)) {
-                    return std::numeric_limits<float>::quiet_NaN();
-                }
-                return pa;
-            };
-
-            // Calculate PI
-            std::vector<float> pi(res_size);
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
-
-            // Calculate FPI
-            std::vector<float> tmp_pi(res_size);
-            std::vector<float> fpi(res_size);
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), tmp_pi.begin(), calc_tmp_pi);
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), tmp_pi.begin(), fpi.begin(), calc_fpi);
-
-            // Calculate PA
-            std::vector<float> pa(res_size);
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
-
-            // Set NaN for PA if PI is NaN
-            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
-
-            // Check calculation results
-            for (int i = 0; i < res_size; ++i) {
-                float expected_pi = sqrt(pow(down_sampled_q[i], 2) + pow(down_sampled_u[i], 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
-                float expected_fpi = expected_pi / down_sampled_i[i];
-                float expected_pa = atan2(down_sampled_u[i], down_sampled_q[i]) / 2; // i.e., 0.5 * tan^-1 (U∕Q)
-
-                expected_pi = (expected_pi > threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
-                expected_fpi = (expected_fpi > threshold) ? expected_fpi : std::numeric_limits<float>::quiet_NaN();
-                expected_pa = (expected_pi > threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
-
-                if (!std::isnan(pi[i]) || !std::isnan(expected_pi)) {
-                    EXPECT_FLOAT_EQ(pi[i], expected_pi);
-                }
-                if (!std::isnan(fpi[i]) || !std::isnan(expected_fpi)) {
-                    EXPECT_FLOAT_EQ(fpi[i], expected_fpi);
-                }
-                if (!std::isnan(pa[i]) || !std::isnan(expected_pa)) {
-                    EXPECT_FLOAT_EQ(pa[i], expected_pa);
-                }
-            }
-            return true;
-        }
-
         static bool TestTilesData(std::string sample_file_path, std::string stokes_type, int mip) {
             // Open the file
             LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -262,6 +86,181 @@ public:
                     if (!std::isnan(image_data[image_index]) || !std::isnan(tile_data[j])) {
                         EXPECT_FLOAT_EQ(image_data[image_index], tile_data[j]);
                     }
+                }
+            }
+            return true;
+        }
+
+        static bool TestBlockSmooth(std::string sample_file_path, std::string stokes_type, int mip) {
+            // Open the file
+            LoaderCache loaders(LOADER_CACHE_SIZE);
+            std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
+
+            // Get stokes image data
+            int stokes;
+            if (!frame->GetStokesTypeIndex(stokes_type, stokes)) {
+                return false;
+            }
+
+            casacore::Slicer section = frame->GetImageSlicer(AxisRange(frame->_z_index), stokes);
+            std::vector<float> image_data;
+            if (!frame->GetSlicerData(section, image_data)) {
+                return false;
+            }
+
+            // Block averaging
+            int x = 0;
+            int y = 0;
+            int req_height = frame->_width - y;
+            int req_width = frame->_height - x;
+            int down_sampled_height = std::ceil((float)req_height / mip);
+            int down_sampled_width = std::ceil((float)req_width / mip);
+            std::vector<float> down_sampled_data(down_sampled_height * down_sampled_width);
+
+            // Original image data size
+            int image_width = frame->_width;
+            int image_height = frame->_height;
+
+            BlockSmooth(
+                image_data.data(), down_sampled_data.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+
+            CheckDownSampledData(image_data, down_sampled_data, image_width, image_height, down_sampled_width, down_sampled_height, mip);
+
+            return true;
+        }
+
+        static bool TestCalculations(std::string sample_file_path, int mip, double q_err = 0, double u_err = 0, double threshold = 0) {
+            // Open the file
+            LoaderCache loaders(LOADER_CACHE_SIZE);
+            std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(sample_file_path), "0"));
+
+            // Get Stokes I, Q, and U images data
+            int stokes_i, stokes_q, stokes_u;
+            if (!frame->GetStokesTypeIndex("Ix", stokes_i) || !frame->GetStokesTypeIndex("Qx", stokes_q) ||
+                !frame->GetStokesTypeIndex("Ux", stokes_u)) {
+                return false;
+            }
+            int channel = frame->_z_index;
+
+            casacore::Slicer section_i = frame->GetImageSlicer(AxisRange(channel), stokes_i);
+            casacore::Slicer section_q = frame->GetImageSlicer(AxisRange(channel), stokes_q);
+            casacore::Slicer section_u = frame->GetImageSlicer(AxisRange(channel), stokes_u);
+
+            std::vector<float> stokes_i_data;
+            std::vector<float> stokes_q_data;
+            std::vector<float> stokes_u_data;
+
+            if (!frame->GetSlicerData(section_i, stokes_i_data) || !frame->GetSlicerData(section_q, stokes_q_data) ||
+                !frame->GetSlicerData(section_u, stokes_u_data)) {
+                return false;
+            }
+
+            EXPECT_GT(stokes_i_data.size(), 0);
+            EXPECT_EQ(stokes_i_data.size(), stokes_q_data.size());
+            EXPECT_EQ(stokes_i_data.size(), stokes_u_data.size());
+
+            // Block averaging
+            // Calculate down sampled data size
+            int x = 0;
+            int y = 0;
+            int req_height = frame->_width - y;
+            int req_width = frame->_height - x;
+            int down_sampled_height = std::ceil((float)req_height / mip);
+            int down_sampled_width = std::ceil((float)req_width / mip);
+            int down_sampled_area = down_sampled_height * down_sampled_width;
+
+            std::vector<float> down_sampled_i(down_sampled_area);
+            std::vector<float> down_sampled_q(down_sampled_area);
+            std::vector<float> down_sampled_u(down_sampled_area);
+
+            // Original image data size
+            int image_width = frame->_width;
+            int image_height = frame->_height;
+
+            BlockSmooth(
+                stokes_i_data.data(), down_sampled_i.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+            BlockSmooth(
+                stokes_q_data.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+            BlockSmooth(
+                stokes_u_data.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+
+            // Calculate PI, FPI, and PA
+            auto calc_pi = [&](float q, float u) {
+                if (!std::isnan(q) && !isnan(u)) {
+                    float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
+                    if (result > threshold) {
+                        return result;
+                    }
+                }
+                return std::numeric_limits<float>::quiet_NaN();
+            };
+
+            auto calc_tmp_pi = [&](float q, float u) {
+                if (!std::isnan(q) && !isnan(u)) {
+                    return sqrt(pow(q, 2) + pow(u, 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
+                }
+                return std::numeric_limits<double>::quiet_NaN();
+            };
+
+            auto calc_fpi = [&](float i, float pi) {
+                if (!std::isnan(i) && !isnan(pi)) {
+                    float result = (pi / i);
+                    if (result > threshold) {
+                        return result;
+                    }
+                }
+                return std::numeric_limits<float>::quiet_NaN();
+            };
+
+            auto calc_pa = [&](float q, float u) {
+                if (!std::isnan(q) && !isnan(u)) {
+                    return atan2(u, q) / 2;
+                }
+                return std::numeric_limits<float>::quiet_NaN();
+            };
+
+            auto reset_pa = [&](float pi, float pa) {
+                if (std::isnan(pi)) {
+                    return std::numeric_limits<float>::quiet_NaN();
+                }
+                return pa;
+            };
+
+            // Calculate PI
+            std::vector<float> pi(down_sampled_area);
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+
+            // Calculate FPI
+            std::vector<float> tmp_pi(down_sampled_area);
+            std::vector<float> fpi(down_sampled_area);
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), tmp_pi.begin(), calc_tmp_pi);
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), tmp_pi.begin(), fpi.begin(), calc_fpi);
+
+            // Calculate PA
+            std::vector<float> pa(down_sampled_area);
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+
+            // Set NaN for PA if PI is NaN
+            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+
+            // Check calculation results
+            for (int i = 0; i < down_sampled_area; ++i) {
+                float expected_pi = sqrt(pow(down_sampled_q[i], 2) + pow(down_sampled_u[i], 2) - (pow(q_err, 2) + pow(u_err, 2)) / 2.0);
+                float expected_fpi = expected_pi / down_sampled_i[i];
+                float expected_pa = atan2(down_sampled_u[i], down_sampled_q[i]) / 2; // i.e., 0.5 * tan^-1 (U∕Q)
+
+                expected_pi = (expected_pi > threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
+                expected_fpi = (expected_fpi > threshold) ? expected_fpi : std::numeric_limits<float>::quiet_NaN();
+                expected_pa = (expected_pi > threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
+
+                if (!std::isnan(pi[i]) || !std::isnan(expected_pi)) {
+                    EXPECT_FLOAT_EQ(pi[i], expected_pi);
+                }
+                if (!std::isnan(fpi[i]) || !std::isnan(expected_fpi)) {
+                    EXPECT_FLOAT_EQ(fpi[i], expected_fpi);
+                }
+                if (!std::isnan(pa[i]) || !std::isnan(expected_pa)) {
+                    EXPECT_FLOAT_EQ(pa[i], expected_pa);
                 }
             }
             return true;
@@ -365,6 +364,68 @@ public:
     }
 };
 
+TEST_F(VectorFieldTest, TestMipLayerConversion) {
+    TestMipLayerConversion(1, 512, 1024);
+    TestMipLayerConversion(2, 512, 1024);
+    TestMipLayerConversion(4, 512, 1024);
+    TestMipLayerConversion(8, 512, 1024);
+    TestMipLayerConversion(16, 512, 1024);
+
+    TestMipLayerConversion(1, 1024, 1024);
+    TestMipLayerConversion(2, 1024, 1024);
+    TestMipLayerConversion(4, 1024, 1024);
+    TestMipLayerConversion(8, 1024, 1024);
+    TestMipLayerConversion(16, 1024, 1024);
+
+    TestMipLayerConversion(1, 5241, 5224);
+    TestMipLayerConversion(2, 5241, 5224);
+    TestMipLayerConversion(4, 5241, 5224);
+    TestMipLayerConversion(8, 5241, 5224);
+    TestMipLayerConversion(16, 5241, 5224);
+}
+
+TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
+    TestRasterTilesGeneration(513, 513, 1);
+    TestRasterTilesGeneration(513, 513, 2);
+    TestRasterTilesGeneration(513, 513, 4);
+    TestRasterTilesGeneration(513, 513, 8);
+    TestRasterTilesGeneration(513, 513, 16);
+
+    TestRasterTilesGeneration(110, 110, 1);
+    TestRasterTilesGeneration(110, 110, 2);
+    TestRasterTilesGeneration(110, 110, 4);
+    TestRasterTilesGeneration(110, 110, 8);
+    TestRasterTilesGeneration(110, 110, 16);
+}
+
+TEST_F(VectorFieldTest, TestTilesData) {
+    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 16));
+
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 16));
+
+    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 16));
+
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 1));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 2));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 4));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 8));
+    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 16));
+}
+
 TEST_F(VectorFieldTest, TestBlockSmooth) {
     auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
     EXPECT_TRUE(TestFrame::TestBlockSmooth(sample_file, "Ix", 1));
@@ -445,66 +506,4 @@ TEST_F(VectorFieldTest, TestCalculations) {
     EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 4, 1e-3, 1e-3, 0.1));
     EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 8, 1e-3, 1e-3, 0.1));
     EXPECT_TRUE(TestFrame::TestCalculations(sample_nan_file, 16, 1e-3, 1e-3, 0.1));
-}
-
-TEST_F(VectorFieldTest, TestMipLayerConversion) {
-    TestMipLayerConversion(1, 512, 1024);
-    TestMipLayerConversion(2, 512, 1024);
-    TestMipLayerConversion(4, 512, 1024);
-    TestMipLayerConversion(8, 512, 1024);
-    TestMipLayerConversion(16, 512, 1024);
-
-    TestMipLayerConversion(1, 1024, 1024);
-    TestMipLayerConversion(2, 1024, 1024);
-    TestMipLayerConversion(4, 1024, 1024);
-    TestMipLayerConversion(8, 1024, 1024);
-    TestMipLayerConversion(16, 1024, 1024);
-
-    TestMipLayerConversion(1, 5241, 5224);
-    TestMipLayerConversion(2, 5241, 5224);
-    TestMipLayerConversion(4, 5241, 5224);
-    TestMipLayerConversion(8, 5241, 5224);
-    TestMipLayerConversion(16, 5241, 5224);
-}
-
-TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
-    TestRasterTilesGeneration(513, 513, 1);
-    TestRasterTilesGeneration(513, 513, 2);
-    TestRasterTilesGeneration(513, 513, 4);
-    TestRasterTilesGeneration(513, 513, 8);
-    TestRasterTilesGeneration(513, 513, 16);
-
-    TestRasterTilesGeneration(110, 110, 1);
-    TestRasterTilesGeneration(110, 110, 2);
-    TestRasterTilesGeneration(110, 110, 4);
-    TestRasterTilesGeneration(110, 110, 8);
-    TestRasterTilesGeneration(110, 110, 16);
-}
-
-TEST_F(VectorFieldTest, TestTilesData) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 1));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 2));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 4));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Ix", 16));
-
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 1));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 2));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 4));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_file, "Qx", 16));
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 1));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 2));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 4));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Ix", 16));
-
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 1));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 2));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 4));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 8));
-    EXPECT_TRUE(TestFrame::TestTilesData(sample_nan_file, "Qx", 16));
 }
