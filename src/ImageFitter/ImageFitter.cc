@@ -19,7 +19,7 @@ ImageFitter::ImageFitter(float* image, size_t width, size_t height, std::string 
     _fdf.params = &_fit_data;
 }
 
-bool ImageFitter::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {    
+bool ImageFitter::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
     SetInitialValues(fitting_request);
     int status = SolveSystem();
     if (!status) {
@@ -77,24 +77,20 @@ void ImageFitter::SetInitialValues(const CARTA::FittingRequest& fitting_request)
 
 int ImageFitter::SolveSystem() {
     gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
-    const gsl_multifit_nlinear_type *T = gsl_multifit_nlinear_trust;
+    const gsl_multifit_nlinear_type* T = gsl_multifit_nlinear_trust;
     const size_t max_iter = 200;
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
     const size_t n = _fdf.n;
     const size_t p = _fdf.p;
-    gsl_multifit_nlinear_workspace *work = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
+    gsl_multifit_nlinear_workspace* work = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
     gsl_vector* f = gsl_multifit_nlinear_residual(work);
     gsl_vector* y = gsl_multifit_nlinear_position(work);
 
     gsl_multifit_nlinear_init(_fit_params, &_fdf, work);
     gsl_blas_ddot(f, f, &_chisq0);
-    auto t_start_fitting = std::chrono::high_resolution_clock::now();
     int status = gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol, _print_iter ? Callback : NULL, NULL, &_info, work);
-    auto t_end_fitting = std::chrono::high_resolution_clock::now();
-    auto dt_fitting = std::chrono::duration_cast<std::chrono::microseconds>(t_end_fitting - t_start_fitting).count();
-    spdlog::performance("time of the driver: {:.3f} ms", dt_fitting * 1e-3);
     gsl_blas_ddot(f, f, &_chisq);
     gsl_multifit_nlinear_rcond(&_rcond, work);
     gsl_vector_memcpy(_fit_params, y);
@@ -135,8 +131,8 @@ void ImageFitter::SetLog() {
     _log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _rcond);
 }
 
-double ImageFitter::Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y, const double theta,
-                             const double x, const double y) {
+double ImageFitter::Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,
+    const double theta, const double x, const double y) {
     const double sq_std_x = pow(fwhm_x, 2) / 8 / log(2);
     const double sq_std_y = pow(fwhm_y, 2) / 8 / log(2);
     const double theta_radian = theta * M_PI / 180.0;
@@ -147,7 +143,7 @@ double ImageFitter::Gaussian(const double center_x, const double center_y, const
 }
 
 int ImageFitter::FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f) {
-    struct FitData *d = (struct FitData *) fit_data;
+    struct FitData* d = (struct FitData*)fit_data;
 
     for (size_t i = 0; i < d->n; i++) {
         float x = d->x[i];
@@ -171,21 +167,21 @@ int ImageFitter::FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector*
     return GSL_SUCCESS;
 }
 
-void ImageFitter::Callback(const size_t iter, void *params, const gsl_multifit_nlinear_workspace *w) {
-    gsl_vector *f = gsl_multifit_nlinear_residual(w);
-    gsl_vector *x = gsl_multifit_nlinear_position(w);
+void ImageFitter::Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w) {
+    gsl_vector* f = gsl_multifit_nlinear_residual(w);
+    gsl_vector* x = gsl_multifit_nlinear_position(w);
     double avratio = gsl_multifit_nlinear_avratio(w);
     double rcond;
 
-    (void) params; /* not used */
+    (void)params; /* not used */
 
     /* compute reciprocal condition number of J(x) */
     gsl_multifit_nlinear_rcond(&rcond, w);
 
     spdlog::debug("iter {}, |a|/|v| = {:.4f} cond(J) = {:8.4f}, |f(x)| = {:.4f}", iter, avratio, 1.0 / rcond, gsl_blas_dnrm2(f));
     for (int k = 0; k < x->size / 6; ++k) {
-        spdlog::debug("component {}: ({:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f})", k + 1,
-            gsl_vector_get(x, k * 6 + 0), gsl_vector_get(x, k * 6 + 1), gsl_vector_get(x, k * 6 + 2),
-            gsl_vector_get(x, k * 6 + 3), gsl_vector_get(x, k * 6 + 4), gsl_vector_get(x, k * 6 + 5));
+        spdlog::debug("component {}: ({:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f})", k + 1, gsl_vector_get(x, k * 6 + 0),
+            gsl_vector_get(x, k * 6 + 1), gsl_vector_get(x, k * 6 + 2), gsl_vector_get(x, k * 6 + 3), gsl_vector_get(x, k * 6 + 4),
+            gsl_vector_get(x, k * 6 + 5));
     }
 }
