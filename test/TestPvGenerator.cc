@@ -8,10 +8,10 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
-#include "Frame.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 #include "Region/RegionHandler.h"
+#include "src/Frame/Frame.h"
 
 using namespace carta;
 

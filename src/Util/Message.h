@@ -9,6 +9,7 @@
 
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
@@ -76,6 +77,9 @@ public:
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
     static CARTA::FileListRequest FileListRequest(const std::string& directory);
     static CARTA::FileInfoRequest FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu = "");
+    static CARTA::SetContourParameters SetContourParameters(int file_id, int ref_file_id, int x_min, int x_max, int y_min, int y_max,
+        const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int smoothing_factor, int decimation_factor,
+        int compression_level, int contour_chunk_size);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,

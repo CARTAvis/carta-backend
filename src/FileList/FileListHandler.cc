@@ -20,6 +20,8 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
+using namespace carta;
+
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
     : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder("nofolder") {}

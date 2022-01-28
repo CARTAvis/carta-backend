@@ -29,7 +29,8 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include "Concurrency.h"
+#include "Cache/RequirementsCache.h"
+#include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
@@ -39,11 +40,12 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "Region/Region.h"
-#include "RequirementsCache.h"
-#include "TileCache.h"
+#include "ThreadingManager/Concurrency.h"
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
+
+namespace carta {
 
 struct ContourSettings {
     std::vector<double> levels;
@@ -86,7 +88,7 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
 
 class Frame {
 public:
-    Frame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
     ~Frame(){};
 
     bool IsValid();
@@ -139,11 +141,11 @@ public:
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
     bool FillRegionHistogramData(
         std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
-    bool GetBasicStats(int z, int stokes, carta::BasicStats<float>& stats);
-    bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram& hist);
+    bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
+    bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, BasicStats<float>& stats, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
-    void CacheCubeStats(int stokes, carta::BasicStats<float>& stats);
-    void CacheCubeHistogram(int stokes, carta::Histogram& hist);
+    void CacheCubeStats(int stokes, BasicStats<float>& stats);
+    void CacheCubeHistogram(int stokes, Histogram& hist);
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
@@ -165,7 +167,7 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, bool report_error = true);
+    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
@@ -184,8 +186,7 @@ public:
 
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        std::vector<carta::GeneratedImage>& collapse_results);
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
     void StopMomentCalc();
 
     // Image fitting
@@ -231,8 +232,8 @@ protected:
     bool FillHistogramFromCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram);       // histogram message
     bool FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
     bool FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram);  // histogram message
-    bool GetCachedImageHistogram(int z, int stokes, int num_bins, carta::Histogram& hist);           // internal histogram
-    bool GetCachedCubeHistogram(int stokes, int num_bins, carta::Histogram& hist);                   // internal histogram
+    bool GetCachedImageHistogram(int z, int stokes, int num_bins, Histogram& hist);                  // internal histogram
+    bool GetCachedCubeHistogram(int stokes, int num_bins, Histogram& hist);                          // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
@@ -263,7 +264,7 @@ protected:
     volatile bool _connected = true;
 
     // Image loader for image type
-    std::shared_ptr<carta::FileLoader> _loader;
+    std::shared_ptr<FileLoader> _loader;
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
@@ -303,8 +304,8 @@ protected:
 
     // Cache maps
     // For image, key is cache key (z/stokes); for cube, key is stokes.
-    std::unordered_map<int, std::vector<carta::Histogram>> _image_histograms, _cube_histograms;
-    std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
+    std::unordered_map<int, std::vector<Histogram>> _image_histograms, _cube_histograms;
+    std::unordered_map<int, BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
 
     // Moment generator
@@ -313,5 +314,7 @@ protected:
     // Image fitter
     std::unique_ptr<ImageFitter> _image_fitter;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FRAME_H_

@@ -17,9 +17,8 @@
 #endif
 
 using namespace carta;
-using namespace std;
 
-TableController::TableController(const string& top_level_folder, const string& starting_folder)
+TableController::TableController(const std::string& top_level_folder, const std::string& starting_folder)
     : _top_level_folder(top_level_folder), _starting_folder(starting_folder) {}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
@@ -110,7 +109,7 @@ void TableController::OnFilterRequest(
         auto& view = cache.view;
         std::vector<CARTA::FilterConfig> new_filter_configs = {
             filter_request.filter_configs().begin(), filter_request.filter_configs().end()};
-        string sort_column_name = filter_request.sort_column();
+        std::string sort_column_name = filter_request.sort_column();
         CARTA::SortingType sorting_type = filter_request.sorting_type();
         if (TableController::FilterParamsChanged(new_filter_configs, sort_column_name, sorting_type, cache)) {
             cache.filter_configs = new_filter_configs;
@@ -135,7 +134,7 @@ void TableController::OnFilterRequest(
         int num_results = view.NumRows();
 
         filter_response.set_filter_data_size(num_results);
-        int response_size = min(num_rows, num_results - start_index);
+        int response_size = std::min(num_rows, num_results - start_index);
         filter_response.set_request_end_index(start_index + response_size);
 
         auto num_columns = filter_request.column_indices_size();
@@ -156,7 +155,7 @@ void TableController::OnFilterRequest(
         }
 
         while (num_remaining_rows > 0) {
-            int chunk_size = min(num_remaining_rows, max_chunk_size);
+            int chunk_size = std::min(num_remaining_rows, max_chunk_size);
             int chunk_end_index = chunk_start_index + chunk_size;
             filter_response.set_subset_data_size(chunk_size);
             filter_response.set_subset_end_index(chunk_end_index);
@@ -304,7 +303,7 @@ void TableController::OnFileInfoRequest(
     file_info->set_name(file_path.filename().string());
     file_info->set_type(table.Type());
     file_info->set_file_size(fs::file_size(file_path));
-    string file_info_string = fmt::format("Name: {}\n", file_info->name());
+    std::string file_info_string = fmt::format("Name: {}\n", file_info->name());
     if (table.Description().size()) {
         file_info_string += fmt::format("Description: {}\n", table.Description());
     }
@@ -344,7 +343,7 @@ void TableController::OnFileInfoRequest(
 }
 
 void TableController::ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view) {
-    string column_name = filter_config.column_name();
+    std::string column_name = filter_config.column_name();
     auto column = view.GetTable()[column_name];
     if (!column) {
         spdlog::error("Could not filter on non-existing column \"{}\"", column_name);
@@ -413,7 +412,7 @@ fs::path TableController::GetPath(std::string directory, std::string name) {
 
         // Remove leading /
         auto start_index = directory.find_first_not_of('/');
-        if (start_index != 0 && start_index != string::npos) {
+        if (start_index != 0 && start_index != std::string::npos) {
             directory = directory.substr(start_index);
         }
 

@@ -11,26 +11,19 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
-#include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
 #include "Logger/Logger.h"
-#include "SessionManager/ProgramSettings.h"
-#include "SessionManager/SessionManager.h"
-#include "SessionManager/WebBrowser.h"
+#include "ProgramSettings.h"
+#include "Session/SessionManager.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
 #include "Util/Token.h"
-
-#define TBB_TASK_THREAD_COUNT 3
-
-using namespace std;
+#include "WebBrowser.h"
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
-    ProgramSettings settings;
-
     std::shared_ptr<FileListHandler> file_list_handler;
     std::unique_ptr<SimpleFrontendServer> http_server;
     std::shared_ptr<GrpcManager> grpc_manager;
@@ -43,7 +36,7 @@ int main(int argc, char* argv[]) {
         sig_handler.sa_handler = [](int s) {
             spdlog::info("Exiting backend.");
             ThreadManager::ExitEventHandlingThreads();
-            FlushLogFile();
+            carta::logger::FlushLogFile();
             exit(0);
         };
 
@@ -51,14 +44,15 @@ int main(int argc, char* argv[]) {
         sig_handler.sa_flags = 0;
         sigaction(SIGINT, &sig_handler, nullptr);
 
-        // Settings
+        // Main
         carta::ProgramSettings settings(argc, argv);
 
         if (settings.help || settings.version) {
             exit(0);
         }
 
-        InitLogger(settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
+        carta::logger::InitLogger(
+            settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         if (settings.wait_time >= 0) {
@@ -80,7 +74,7 @@ int main(int argc, char* argv[]) {
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
-            FlushLogFile();
+            carta::logger::FlushLogFile();
             return 1;
         }
 
@@ -126,7 +120,7 @@ int main(int argc, char* argv[]) {
                 }
             } else {
                 spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", settings.grpc_port);
-                FlushLogFile();
+                carta::logger::FlushLogFile();
                 return 1;
             }
         } else {
@@ -215,14 +209,14 @@ int main(int argc, char* argv[]) {
         }
     } catch (exception& e) {
         spdlog::critical("{}", e.what());
-        FlushLogFile();
+        carta::logger::FlushLogFile();
         return 1;
     } catch (...) {
         spdlog::critical("Unknown error");
-        FlushLogFile();
+        carta::logger::FlushLogFile();
         return 1;
     }
 
-    FlushLogFile();
+    carta::logger::FlushLogFile();
     return 0;
 }

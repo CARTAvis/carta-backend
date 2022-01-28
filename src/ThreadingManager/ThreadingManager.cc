@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "Threading.h"
+#include "ThreadingManager.h"
 
 namespace carta {
 int ThreadManager::_omp_thread_count = 0;

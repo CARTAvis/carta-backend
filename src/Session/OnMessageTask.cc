@@ -5,9 +5,11 @@
 */
 
 #include "OnMessageTask.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 #include <algorithm>
+
+using namespace carta;
 
 OnMessageTask* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;

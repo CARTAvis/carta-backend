@@ -23,6 +23,8 @@
 
 #define SMOOTHING_TEMP_BUFFER_SIZE_MB 200
 
+namespace carta {
+
 #ifdef __AVX__
 #define SIMD_WIDTH 8
 
@@ -72,4 +74,7 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
 
 void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width, int64_t dest_width, int64_t dest_height, int64_t x_offset,
     int64_t y_offset, int smoothing_factor);
+
+} // namespace carta
+
 #endif // CARTA_BACKEND__SMOOTHING_H_

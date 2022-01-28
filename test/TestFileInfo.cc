@@ -9,8 +9,10 @@
 #include "CommonTestUtilities.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
-#include "Session.h"
+#include "Session/Session.h"
 #include "Util/Message.h"
+
+using namespace carta;
 
 static const std::string SAMPLE_FILES_PATH = (TestRoot() / "data" / "images" / "mix").string();
 

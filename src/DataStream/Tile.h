@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <iostream>
 
+namespace carta {
+
 struct Tile {
     int32_t x;
     int32_t y;
@@ -40,5 +42,7 @@ struct Tile {
         return pow(2.0, total_layers - layer);
     }
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__TILE_H_

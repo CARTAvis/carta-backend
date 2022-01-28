@@ -7,7 +7,10 @@
 #ifndef CARTA_BACKEND__REQUIREMENTSCACHE_H_
 #define CARTA_BACKEND__REQUIREMENTSCACHE_H_
 
+#include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
+
+namespace carta {
 
 struct ConfigId {
     int file_id;
@@ -71,12 +74,12 @@ struct RegionHistogramConfig {
 };
 
 struct HistogramCache {
-    carta::BasicStats<float> stats;
-    std::unordered_map<int, carta::Histogram> histograms; // key is num_bins
+    BasicStats<float> stats;
+    std::unordered_map<int, Histogram> histograms; // key is num_bins
 
     HistogramCache() {}
 
-    bool GetBasicStats(carta::BasicStats<float>& stats_) {
+    bool GetBasicStats(BasicStats<float>& stats_) {
         if (stats.num_pixels > 0) {
             stats_ = stats;
             return true;
@@ -84,11 +87,11 @@ struct HistogramCache {
         return false;
     }
 
-    void SetBasicStats(carta::BasicStats<float>& stats_) {
+    void SetBasicStats(BasicStats<float>& stats_) {
         stats = stats_;
     }
 
-    bool GetHistogram(int num_bins_, carta::Histogram& histogram_) {
+    bool GetHistogram(int num_bins_, Histogram& histogram_) {
         if (histograms.count(num_bins_)) {
             histogram_ = histograms.at(num_bins_);
             return true;
@@ -96,12 +99,12 @@ struct HistogramCache {
         return false;
     }
 
-    void SetHistogram(int num_bins_, carta::Histogram& histogram_) {
+    void SetHistogram(int num_bins_, Histogram& histogram_) {
         histograms[num_bins_] = histogram_;
     }
 
     void ClearHistograms() {
-        stats = carta::BasicStats<float>();
+        stats = BasicStats<float>();
         histograms.clear();
     }
 };
@@ -132,7 +135,7 @@ struct SpectralConfig {
 
     bool HasStat(CARTA::StatsType type) {
         // Cancel when stat no longer in requirements
-        for (auto stat : all_stats) {
+        for (const auto& stat : all_stats) {
             if (stat == type) {
                 return true;
             }
@@ -192,5 +195,7 @@ struct StatsCache {
         stats.clear();
     }
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__REQUIREMENTSCACHE_H_

@@ -83,7 +83,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
                     // Use cfitsio to access data in CartaFitsImage.
                     // casacore throws exception "No data in the zeroth or first extension"
                     use_casacore_fits = false;
-                    _image.reset(new carta::CartaFitsImage(_filename, hdu_num));
+                    _image.reset(new CartaFitsImage(_filename, hdu_num));
                 } else {
                     // use casacore for unzipped FITS file
                     _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
@@ -96,7 +96,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             if (use_casacore_fits) {
                 // casacore::FITSImage failed, try CartaFitsImage
                 try {
-                    _image.reset(new carta::CartaFitsImage(_filename, hdu_num));
+                    _image.reset(new CartaFitsImage(_filename, hdu_num));
                 } catch (const casacore::AipsError& err) {
                     spdlog::error(err.getMesg());
                 }

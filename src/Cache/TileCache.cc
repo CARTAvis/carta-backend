@@ -12,53 +12,7 @@
 
 // TILE POOL
 
-void TilePool::Grow(int size) {
-    _capacity += size;
-}
-
-TilePtr TilePool::Pull() {
-    std::unique_lock<std::mutex> guard(_tile_pool_mutex);
-
-    if (_stack.empty()) {
-        _stack.push(Create());
-    }
-
-    auto tile = _stack.top();
-    _stack.pop();
-
-    // Attach custom deleter to pool
-    auto deleter = std::get_deleter<TilePool::TilePtrDeleter>(tile);
-    deleter->_pool = std::move(this->weak_from_this());
-
-    return tile;
-}
-
-void TilePool::Push(std::unique_ptr<std::vector<float>>& unique_tile) noexcept {
-    TilePtr tile(unique_tile.release(), TilePool::TilePtrDeleter());
-    std::unique_lock<std::mutex> guard(_tile_pool_mutex);
-    _stack.push(tile);
-}
-
-bool TilePool::Full() {
-    return _stack.size() >= _capacity;
-}
-
-TilePtr TilePool::Create() {
-    auto unique_tile = std::make_unique<std::vector<float>>(TILE_SIZE * TILE_SIZE, NAN);
-    TilePtr tile(unique_tile.release(), TilePool::TilePtrDeleter());
-    return tile;
-}
-
-void TilePool::TilePtrDeleter::operator()(std::vector<float>* raw_tile) const noexcept {
-    std::unique_ptr<std::vector<float>> unique_tile(raw_tile);
-    if (const auto pool = _pool.lock()) {
-        if (!pool->Full()) {
-            pool->Push(unique_tile);
-        }
-    }
-}
-
-// TILE CACHE
+using namespace carta;
 
 TileCache::TileCache(int capacity) : _capacity(capacity), _z(0), _stokes(0), _pool(std::make_shared<TilePool>()) {
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
@@ -74,7 +28,7 @@ TilePtr TileCache::Peek(Key key) {
     }
 }
 
-TilePtr TileCache::Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
+TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     bool valid(1);
 
@@ -124,7 +78,7 @@ TileCache::Key TileCache::ChunkKey(Key tile_key) {
     return Key((tile_key.x / CHUNK_SIZE) * CHUNK_SIZE, (tile_key.y / CHUNK_SIZE) * CHUNK_SIZE);
 }
 
-bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
+bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
     // load a chunk from the file
     int data_width;
     int data_height;

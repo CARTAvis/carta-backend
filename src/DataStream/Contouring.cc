@@ -12,9 +12,9 @@
 #include <vector>
 
 #include "../Logger/Logger.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
-using namespace std;
+namespace carta {
 
 // Contour tracing code adapted from SAOImage DS9: https://github.com/SAOImageDS9/SAOImageDS9
 void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width, int64_t height, double scale, double offset, double level,
@@ -225,7 +225,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
-    carta::ThreadManager::ApplyThreadLimit();
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
     for (int64_t l = 0; l < levels.size(); l++) {
         vertex_data[l].clear();
@@ -250,3 +250,5 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
             height, dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
     }
 }
+
+} // namespace carta

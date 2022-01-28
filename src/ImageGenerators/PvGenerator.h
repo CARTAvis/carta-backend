@@ -22,7 +22,7 @@ public:
     PvGenerator(int file_id, const std::string& filename);
 
     bool GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
-        double offset_increment, int stokes, carta::GeneratedImage& pv_image, std::string& message);
+        double offset_increment, int stokes, GeneratedImage& pv_image, std::string& message);
 
 private:
     std::string GetPvFilename(const std::string& filename);
