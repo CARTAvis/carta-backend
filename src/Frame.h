@@ -33,6 +33,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
+#include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
@@ -308,6 +309,9 @@ protected:
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
+
+    // Image fitter
+    std::unique_ptr<ImageFitter> _image_fitter;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

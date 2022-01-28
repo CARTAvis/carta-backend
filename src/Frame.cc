@@ -1724,17 +1724,18 @@ void Frame::StopMomentCalc() {
 }
 
 bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
-    spdlog::info("Fitting {} gaussian component", fitting_request.initial_values_size());
-    for (int i = 0; i < fitting_request.initial_values_size(); i++) {
-        CARTA::GaussianComponent component(fitting_request.initial_values(i));
-        spdlog::info("component #{}: ({}, {}, {}, {}, {}, {})", i,
-            component.center_x(), component.center_y(), component.amp(),
-            component.fwhm_x(), component.fwhm_y(), component.pa());
+    if (!_image_fitter) {
+        _image_fitter = std::make_unique<ImageFitter>(_image_cache.data(), _width, _height, GetImage()->units().getName());
     }
-    fitting_response.set_success(true);
-    fitting_response.set_results("fitting results");
-    fitting_response.set_log("fitting log");
-    return true;
+
+    bool success = false;
+    fitting_response.set_success(false);
+    
+    if (_image_fitter) {
+        success = _image_fitter->FitImage(fitting_request, fitting_response);
+    }
+
+    return success;
 }
 
 // Export modified image to file, for changed range of channels/stokes and chopped region
