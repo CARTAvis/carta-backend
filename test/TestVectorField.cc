@@ -587,3 +587,29 @@ TEST_F(VectorFieldTest, TestTileCalculations) {
     EXPECT_TRUE(TestFrame::TestTileCalculations(sample_nan_file, 8, false, 1e-3, 1e-3, 0.1));
     EXPECT_TRUE(TestFrame::TestTileCalculations(sample_nan_file, 16, false, 1e-3, 1e-3, 0.1));
 }
+
+TEST_F(VectorFieldTest, TestVectorFieldSettings) {
+    VectorFieldSettings settings{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings1{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings2{4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings3{2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings4{2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings5{2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings6{2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings7{2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings8{2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings9{2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1};
+    VectorFieldSettings settings10{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1};
+    VectorFieldSettings settings11{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2};
+    EXPECT_TRUE(settings == settings1);
+    EXPECT_TRUE(settings != settings2);
+    EXPECT_TRUE(settings != settings3);
+    EXPECT_TRUE(settings != settings4);
+    EXPECT_TRUE(settings != settings5);
+    EXPECT_TRUE(settings != settings6);
+    EXPECT_TRUE(settings != settings7);
+    EXPECT_TRUE(settings != settings8);
+    EXPECT_TRUE(settings != settings9);
+    EXPECT_TRUE(settings != settings10);
+    EXPECT_TRUE(settings != settings11);
+}

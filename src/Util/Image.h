@@ -127,6 +127,31 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 
+struct VectorFieldSettings {
+    int smoothing_factor;
+    bool fractional;
+    double threshold;
+    bool debiasing;
+    double q_error;
+    double u_error;
+    int stokes_intensity;
+    int stokes_angle;
+    CARTA::CompressionType compression_type;
+    float compression_quality;
+
+    // Equality operator for checking if vector field settings have changed
+    bool operator==(const VectorFieldSettings& rhs) const {
+        return (this->smoothing_factor == rhs.smoothing_factor && this->fractional == rhs.fractional && this->threshold == rhs.threshold &&
+                this->debiasing == rhs.debiasing && this->q_error == rhs.q_error && this->u_error == rhs.u_error &&
+                this->stokes_intensity == rhs.stokes_intensity && this->stokes_angle == rhs.stokes_angle &&
+                this->compression_type == rhs.compression_type && this->compression_quality == rhs.compression_quality);
+    }
+
+    bool operator!=(const VectorFieldSettings& rhs) const {
+        return !(*this == rhs);
+    }
+};
+
 using namespace carta;
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles);
