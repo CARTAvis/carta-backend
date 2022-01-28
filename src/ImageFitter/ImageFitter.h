@@ -55,6 +55,7 @@ private:
         const double theta, const double x, const double y);
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);
+    static void ErrorHandler(const char* reason, const char* file, int line, int gsl_errno);
 };
 
 } // namespace carta

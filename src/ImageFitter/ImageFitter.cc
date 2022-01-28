@@ -17,6 +17,9 @@ ImageFitter::ImageFitter(float* image, size_t width, size_t height, std::string 
     _fdf.fvv = NULL;
     _fdf.n = _fit_data.n;
     _fdf.params = &_fit_data;
+
+    // avoid calling abort() by GSL default error handler
+    gsl_set_error_handler(&ErrorHandler);
 }
 
 bool ImageFitter::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
@@ -184,4 +187,8 @@ void ImageFitter::Callback(const size_t iter, void* params, const gsl_multifit_n
             gsl_vector_get(x, k * 6 + 1), gsl_vector_get(x, k * 6 + 2), gsl_vector_get(x, k * 6 + 3), gsl_vector_get(x, k * 6 + 4),
             gsl_vector_get(x, k * 6 + 5));
     }
+}
+
+void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, int gsl_errno) {
+    spdlog::error("gsl error: {} line{}: {}", file, line, reason);
 }
