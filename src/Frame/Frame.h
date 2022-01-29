@@ -27,6 +27,8 @@
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
+#include <carta-protobuf/vector_overlay.pb.h>
+#include <carta-protobuf/vector_overlay_tile.pb.h>
 
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
@@ -100,6 +102,8 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape();
+    size_t Width();     // length of x axis
+    size_t Height();    // length of y axis
     size_t Depth();     // length of z axis
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
@@ -203,6 +207,13 @@ public:
     // Close image with cached data
     void CloseCachedImage(const std::string& file);
 
+    // Polarization vector field
+    bool SetVectorFieldParameters(const CARTA::SetVectorOverlayParameters& message);
+    inline VectorFieldSettings& GetVectorFieldParameters() {
+        return _vector_field_settings;
+    };
+    bool VectorFieldImage(VectorFieldCallback& partial_vector_field_callback);
+
 protected:
     // Validate z and stokes index values
     bool CheckZ(int z);
@@ -305,6 +316,9 @@ protected:
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
+
+    // Vector field settings
+    VectorFieldSettings _vector_field_settings;
 };
 
 } // namespace carta

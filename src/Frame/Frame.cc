@@ -149,6 +149,14 @@ casacore::IPosition Frame::ImageShape() {
     return ipos;
 }
 
+size_t Frame::Width() {
+    return _width;
+}
+
+size_t Frame::Height() {
+    return _height;
+}
+
 size_t Frame::Depth() {
     return _depth;
 }
@@ -2158,6 +2166,172 @@ void Frame::CloseCachedImage(const std::string& file) {
     if (_loader->GetFileName() == file) {
         _loader->CloseImageIfUpdated();
     }
+}
+
+bool Frame::SetVectorFieldParameters(const CARTA::SetVectorOverlayParameters& message) {
+    VectorFieldSettings new_settings = {(int)message.smoothing_factor(), message.fractional(), message.threshold(), message.debiasing(),
+        message.q_error(), message.u_error(), message.stokes_intensity(), message.stokes_angle(), message.compression_type(),
+        message.compression_quality()};
+
+    if (_vector_field_settings != new_settings) {
+        _vector_field_settings = new_settings;
+        return true;
+    }
+    return false;
+}
+
+bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback) {
+    int& mip = _vector_field_settings.smoothing_factor;
+    double& q_error = _vector_field_settings.q_error;
+    double& u_error = _vector_field_settings.u_error;
+    bool& fractional = _vector_field_settings.fractional;
+    double& threshold = _vector_field_settings.threshold;
+
+    // Get Stokes I, Q, and U indices
+    int stokes_i, stokes_q, stokes_u;
+    if (!GetStokesTypeIndex("Ix", stokes_i) || !GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
+        return false;
+    }
+
+    // Get current channel
+    int channel = CurrentZ();
+
+    // Get tiles
+    std::vector<Tile> tiles;
+    int image_width = Width();
+    int image_height = Height();
+    GetTiles(image_width, image_height, mip, tiles);
+
+    // Get image tiles data
+    for (int i = 0; i < tiles.size(); ++i) {
+        double progress = (double)(i + 1) / tiles.size();
+        auto& tile = tiles[i];
+        auto bounds = GetImageBounds(tile, image_width, image_height, mip);
+
+        // Don't get the tile data with zero area
+        int tile_original_width = bounds.x_max() - bounds.x_min();
+        int tile_original_height = bounds.y_max() - bounds.y_min();
+        if (tile_original_width * tile_original_height == 0) {
+            continue;
+        }
+
+        // Get raster tile data
+        int x_min = bounds.x_min();
+        int x_max = bounds.x_max() - 1;
+        int y_min = bounds.y_min();
+        int y_max = bounds.y_max() - 1;
+
+        casacore::Slicer tile_section_i = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_i);
+        casacore::Slicer tile_section_q = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_q);
+        casacore::Slicer tile_section_u = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_u);
+
+        std::vector<float> tile_data_i;
+        std::vector<float> tile_data_q;
+        std::vector<float> tile_data_u;
+
+        if (!GetSlicerData(tile_section_i, tile_data_i) || !GetSlicerData(tile_section_q, tile_data_q) ||
+            !GetSlicerData(tile_section_u, tile_data_u)) {
+            return false;
+        }
+
+        // Block averaging, get down sampled data
+        int x = 0;
+        int y = 0;
+        int req_height = tile_original_height - y;
+        int req_width = tile_original_width - x;
+        int down_sampled_height = std::ceil((float)req_height / mip);
+        int down_sampled_width = std::ceil((float)req_width / mip);
+        int down_sampled_area = down_sampled_height * down_sampled_width;
+
+        std::vector<float> down_sampled_i(down_sampled_area);
+        std::vector<float> down_sampled_q(down_sampled_area);
+        std::vector<float> down_sampled_u(down_sampled_area);
+
+        BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
+            down_sampled_height, x, y, mip);
+        BlockSmooth(tile_data_q.data(), down_sampled_q.data(), tile_original_width, tile_original_height, down_sampled_width,
+            down_sampled_height, x, y, mip);
+        BlockSmooth(tile_data_u.data(), down_sampled_u.data(), tile_original_width, tile_original_height, down_sampled_width,
+            down_sampled_height, x, y, mip);
+
+        // Calculate PI, FPI, and PA
+        auto calc_pi = [&](float q, float u) {
+            if (!std::isnan(q) && !isnan(u)) {
+                float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
+                if (fractional) {
+                    return result;
+                } else {
+                    if (result > threshold) {
+                        return result;
+                    }
+                }
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        };
+
+        auto calc_fpi = [&](float i, float pi) {
+            if (!std::isnan(i) && !isnan(pi)) {
+                float result = (pi / i);
+                if (result > threshold) {
+                    return result;
+                }
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        };
+
+        auto calc_pa = [&](float q, float u) {
+            if (!std::isnan(q) && !isnan(u)) {
+                return atan2(u, q) / 2;
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        };
+
+        auto reset_pa = [&](float pi, float pa) {
+            if (std::isnan(pi)) {
+                return std::numeric_limits<float>::quiet_NaN();
+            }
+            return pa;
+        };
+
+        // Set PI/PA results data
+        CARTA::TileData tiles_pi;
+        CARTA::TileData tiles_pa;
+        std::vector<float> pi(down_sampled_area);
+        std::vector<float> pa(down_sampled_area);
+
+        // Calculate PI
+        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+
+        if (fractional) { // Calculate FPI
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+        }
+
+        // Calculate PA
+        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+
+        // Set NaN for PA if PI/FPI is NaN
+        std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+
+        // Fill PI tiles protobuf data
+        tiles_pi.set_x(tiles[i].x);
+        tiles_pi.set_y(tiles[i].y);
+        tiles_pi.set_layer(tiles[i].layer);
+        tiles_pi.set_width(down_sampled_width);
+        tiles_pi.set_height(down_sampled_height);
+        tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+
+        // Fill PA tiles protobuf data
+        tiles_pa.set_x(tiles[i].x);
+        tiles_pa.set_y(tiles[i].y);
+        tiles_pa.set_layer(tiles[i].layer);
+        tiles_pa.set_width(down_sampled_width);
+        tiles_pa.set_height(down_sampled_height);
+        tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+
+        // Send partial results to the frontend
+        partial_vector_field_callback(tiles_pi, tiles_pa, progress);
+    }
+    return true;
 }
 
 } // namespace carta

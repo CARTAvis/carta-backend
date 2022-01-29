@@ -152,6 +152,9 @@ struct VectorFieldSettings {
     }
 };
 
+// Polarization vector field callback (intensity_tile, angle_tile, progress)
+typedef const std::function<void(const CARTA::TileData&, const CARTA::TileData&, double)> VectorFieldCallback;
+
 using namespace carta;
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles);
