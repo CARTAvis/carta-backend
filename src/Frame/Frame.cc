@@ -2322,37 +2322,53 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         // Set PI/PA results data
         CARTA::TileData tiles_pi;
         CARTA::TileData tiles_pa;
-        std::vector<float> pi(down_sampled_area);
-        std::vector<float> pa(down_sampled_area);
+
+        std::vector<float> pi, pa;
+        if (calculate_stokes_intensity) {
+            pi.resize(down_sampled_area);
+        }
+        if (calculate_stokes_angle) {
+            pa.resize(down_sampled_area);
+        }
 
         // Calculate PI
-        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
-
-        if (fractional) { // Calculate FPI
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+        if (calculate_stokes_intensity) {
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+            // Calculate FPI
+            if (fractional) {
+                std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+            }
         }
 
         // Calculate PA
-        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+        if (calculate_stokes_angle) {
+            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+        }
 
         // Set NaN for PA if PI/FPI is NaN
-        std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+        if (calculate_stokes_intensity && calculate_stokes_angle) {
+            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+        }
 
         // Fill PI tiles protobuf data
-        tiles_pi.set_x(tiles[i].x);
-        tiles_pi.set_y(tiles[i].y);
-        tiles_pi.set_layer(tiles[i].layer);
-        tiles_pi.set_width(down_sampled_width);
-        tiles_pi.set_height(down_sampled_height);
-        tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+        if (calculate_stokes_intensity) {
+            tiles_pi.set_x(tiles[i].x);
+            tiles_pi.set_y(tiles[i].y);
+            tiles_pi.set_layer(tiles[i].layer);
+            tiles_pi.set_width(down_sampled_width);
+            tiles_pi.set_height(down_sampled_height);
+            tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+        }
 
         // Fill PA tiles protobuf data
-        tiles_pa.set_x(tiles[i].x);
-        tiles_pa.set_y(tiles[i].y);
-        tiles_pa.set_layer(tiles[i].layer);
-        tiles_pa.set_width(down_sampled_width);
-        tiles_pa.set_height(down_sampled_height);
-        tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+        if (calculate_stokes_angle) {
+            tiles_pa.set_x(tiles[i].x);
+            tiles_pa.set_y(tiles[i].y);
+            tiles_pa.set_layer(tiles[i].layer);
+            tiles_pa.set_width(down_sampled_width);
+            tiles_pa.set_height(down_sampled_height);
+            tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+        }
 
         // Send partial results to the frontend
         double progress = (double)(i + 1) / tiles.size();
