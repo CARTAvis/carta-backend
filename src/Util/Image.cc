@@ -23,8 +23,9 @@ CARTA::PolarizationType GetStokesType(int stokes_value) {
 }
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles) {
-    int num_tile_columns = ceil((double)image_width / mip);
-    int num_tile_rows = ceil((double)image_height / mip);
+    int tile_size_original = TILE_SIZE * mip;
+    int num_tile_columns = ceil((double)image_width / tile_size_original);
+    int num_tile_rows = ceil((double)image_height / tile_size_original);
     int32_t tile_layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
     tiles.resize(num_tile_rows * num_tile_columns);
 
@@ -38,8 +39,8 @@ void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& til
 }
 
 CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_height, int mip) {
-    CARTA::ImageBounds bounds;
     int tile_size_original = TILE_SIZE * mip;
+    CARTA::ImageBounds bounds;
     bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), image_width));
     bounds.set_x_max(std::min(image_width, (tile.x + 1) * tile_size_original));
     bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), image_height));

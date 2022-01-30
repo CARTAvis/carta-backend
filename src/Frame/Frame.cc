@@ -2204,7 +2204,6 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
-        double progress = (double)(i + 1) / tiles.size();
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
@@ -2329,6 +2328,7 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
 
         // Send partial results to the frontend
+        double progress = (double)(i + 1) / tiles.size();
         partial_vector_field_callback(tiles_pi, tiles_pa, progress);
     }
     return true;

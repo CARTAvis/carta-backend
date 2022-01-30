@@ -570,6 +570,7 @@ public:
         // Set results data
         std::vector<float> pi_data(down_sampled_area);
         std::vector<float> pa_data(down_sampled_area);
+        std::vector<double> progresses;
 
         // Set callback function
         auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
@@ -604,6 +605,9 @@ public:
                 int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
                 pa_data[y * down_sampled_width + x] = val_pa[i];
             }
+
+            // Record progress
+            progresses.push_back(progress);
         };
 
         // Do PI/PA calculations by the Frame function
@@ -622,6 +626,7 @@ public:
                 EXPECT_FLOAT_EQ(pa[i], pa_data[i]);
             }
         }
+        EXPECT_EQ(progresses.back(), 1);
         return true;
     }
 };
