@@ -425,8 +425,8 @@ public:
         EXPECT_EQ(count, image_mask.size());
     }
 
-    static bool TestFrameVectorField(
-        std::string sample_file_path, int mip, bool fractional, double q_error = 0, double u_error = 0, double threshold = 0) {
+    static bool TestFrameVectorField(std::string sample_file_path, int mip, bool fractional, bool debiasing = true, double q_error = 0,
+        double u_error = 0, double threshold = 0) {
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
         std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
@@ -483,6 +483,11 @@ public:
             stokes_data_q.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
         BlockSmooth(
             stokes_data_u.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+
+        // Reset Q and U errors as 0 if debiasing is not used
+        if (!debiasing) {
+            q_error = u_error = 0;
+        }
 
         // Calculate PI, FPI, and PA
         auto calc_pi = [&](float q, float u) {
@@ -547,7 +552,6 @@ public:
         message.set_smoothing_factor(mip);
         message.set_fractional(fractional);
         message.set_threshold(threshold);
-        bool debiasing((q_error != 0) || (u_error != 0));
         message.set_debiasing(debiasing);
         message.set_q_error(q_error);
         message.set_u_error(u_error);
@@ -812,22 +816,22 @@ TEST_F(VectorFieldTest, TestFrameVectorField) {
     EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true));
     EXPECT_TRUE(TestFrameVectorField(sample_file, 8, true));
     EXPECT_TRUE(TestFrameVectorField(sample_file, 16, true));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, true, true, 1e-3, 1e-3, 0.1));
 
     EXPECT_TRUE(TestFrameVectorField(sample_file, 1, false));
     EXPECT_TRUE(TestFrameVectorField(sample_file, 2, false));
     EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false));
     EXPECT_TRUE(TestFrameVectorField(sample_file, 8, false));
     EXPECT_TRUE(TestFrameVectorField(sample_file, 16, false));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, false, true, 1e-3, 1e-3, 0.1));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, true));
@@ -835,20 +839,34 @@ TEST_F(VectorFieldTest, TestFrameVectorField) {
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true));
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, true));
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, true));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, true, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, true, true, 1e-3, 1e-3, 0.1));
 
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, false));
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, false));
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false));
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, false));
     EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, false));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, false, true, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, false, true, 1e-3, 1e-3, 0.1));
+}
+
+TEST_F(VectorFieldTest, TestDebiasing) {
+    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true, false));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false, false));
+    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false, false, 1e-3, 1e-3, 0.1));
+
+    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true, false));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false, false));
+    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false, false, 1e-3, 1e-3, 0.1));
 }

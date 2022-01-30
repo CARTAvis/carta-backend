@@ -2182,10 +2182,17 @@ bool Frame::SetVectorFieldParameters(const CARTA::SetVectorOverlayParameters& me
 
 bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback) {
     int& mip = _vector_field_settings.smoothing_factor;
-    double& q_error = _vector_field_settings.q_error;
-    double& u_error = _vector_field_settings.u_error;
+    double q_error = _vector_field_settings.q_error;
+    double u_error = _vector_field_settings.u_error;
+
+    bool& debiasing = _vector_field_settings.debiasing;
+    if (!debiasing) {
+        q_error = u_error = 0;
+    }
+
     bool& fractional = _vector_field_settings.fractional;
     double& threshold = _vector_field_settings.threshold;
+
     bool calculate_stokes_intensity(_vector_field_settings.stokes_intensity >= 0);
     bool calculate_stokes_angle(_vector_field_settings.stokes_angle >= 0);
 
