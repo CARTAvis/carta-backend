@@ -2186,10 +2186,17 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     double& u_error = _vector_field_settings.u_error;
     bool& fractional = _vector_field_settings.fractional;
     double& threshold = _vector_field_settings.threshold;
+    bool calculate_stokes_intensity(_vector_field_settings.stokes_intensity >= 0);
+    bool calculate_stokes_angle(_vector_field_settings.stokes_angle >= 0);
 
     // Get Stokes I, Q, and U indices
-    int stokes_i, stokes_q, stokes_u;
-    if (!GetStokesTypeIndex("Ix", stokes_i) || !GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
+    int stokes_i;
+    if (fractional && !GetStokesTypeIndex("Ix", stokes_i)) {
+        return false;
+    }
+
+    int stokes_q, stokes_u;
+    if (!GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
         return false;
     }
 
@@ -2220,16 +2227,22 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         int y_min = bounds.y_min();
         int y_max = bounds.y_max() - 1;
 
-        casacore::Slicer tile_section_i = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_i);
+        casacore::Slicer tile_section_i;
+        if (fractional) {
+            tile_section_i = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_i);
+        }
+
         casacore::Slicer tile_section_q = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_q);
         casacore::Slicer tile_section_u = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_u);
 
         std::vector<float> tile_data_i;
+        if (fractional && !GetSlicerData(tile_section_i, tile_data_i)) {
+            return false;
+        }
+
         std::vector<float> tile_data_q;
         std::vector<float> tile_data_u;
-
-        if (!GetSlicerData(tile_section_i, tile_data_i) || !GetSlicerData(tile_section_q, tile_data_q) ||
-            !GetSlicerData(tile_section_u, tile_data_u)) {
+        if (!GetSlicerData(tile_section_q, tile_data_q) || !GetSlicerData(tile_section_u, tile_data_u)) {
             return false;
         }
 
@@ -2242,12 +2255,19 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         int down_sampled_width = std::ceil((float)req_width / mip);
         int down_sampled_area = down_sampled_height * down_sampled_width;
 
-        std::vector<float> down_sampled_i(down_sampled_area);
+        std::vector<float> down_sampled_i;
+        if (fractional) {
+            down_sampled_i.resize(down_sampled_area);
+        }
+
         std::vector<float> down_sampled_q(down_sampled_area);
         std::vector<float> down_sampled_u(down_sampled_area);
 
-        BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
-            down_sampled_height, x, y, mip);
+        if (fractional) {
+            BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
+                down_sampled_height, x, y, mip);
+        }
+
         BlockSmooth(tile_data_q.data(), down_sampled_q.data(), tile_original_width, tile_original_height, down_sampled_width,
             down_sampled_height, x, y, mip);
         BlockSmooth(tile_data_u.data(), down_sampled_u.data(), tile_original_width, tile_original_height, down_sampled_width,
