@@ -8,6 +8,7 @@
 #define CARTA_BACKEND__UTIL_IMAGE_H_
 
 #include <cmath>
+#include <functional>
 #include <string>
 
 #include <carta-protobuf/defs.pb.h>
