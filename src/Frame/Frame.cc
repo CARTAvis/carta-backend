@@ -2182,16 +2182,17 @@ bool Frame::SetVectorFieldParameters(const CARTA::SetVectorOverlayParameters& me
 
 bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback) {
     int& mip = _vector_field_settings.smoothing_factor;
+    bool& fractional = _vector_field_settings.fractional;
+    double& threshold = _vector_field_settings.threshold;
+    CARTA::CompressionType& compression_type = _vector_field_settings.compression_type;
+    float& compression_quality = _vector_field_settings.compression_quality;
+
     double q_error = _vector_field_settings.q_error;
     double u_error = _vector_field_settings.u_error;
-
     bool& debiasing = _vector_field_settings.debiasing;
     if (!debiasing) {
         q_error = u_error = 0;
     }
-
-    bool& fractional = _vector_field_settings.fractional;
-    double& threshold = _vector_field_settings.threshold;
 
     bool calculate_stokes_intensity(_vector_field_settings.stokes_intensity >= 0);
     bool calculate_stokes_angle(_vector_field_settings.stokes_angle >= 0);
@@ -2357,7 +2358,19 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             tiles_pi.set_layer(tiles[i].layer);
             tiles_pi.set_width(down_sampled_width);
             tiles_pi.set_height(down_sampled_height);
-            tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+            if (compression_type == CARTA::CompressionType::ZFP) {
+                // Get and fill the NaN data
+                auto nan_encodings = GetNanEncodingsBlock(pi, 0, down_sampled_width, down_sampled_height);
+                tiles_pi.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+                // Compress and fill the data
+                std::vector<char> compression_buffer;
+                size_t compressed_size;
+                int precision = lround(compression_quality);
+                Compress(pi, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
+                tiles_pi.set_image_data(compression_buffer.data(), compressed_size);
+            } else {
+                tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+            }
         }
 
         // Fill PA tiles protobuf data
@@ -2367,7 +2380,19 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             tiles_pa.set_layer(tiles[i].layer);
             tiles_pa.set_width(down_sampled_width);
             tiles_pa.set_height(down_sampled_height);
-            tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+            if (compression_type == CARTA::CompressionType::ZFP) {
+                // Get and fill the NaN data
+                auto nan_encodings = GetNanEncodingsBlock(pa, 0, down_sampled_width, down_sampled_height);
+                tiles_pa.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+                // Compress and fill the data
+                std::vector<char> compression_buffer;
+                size_t compressed_size;
+                int precision = lround(compression_quality);
+                Compress(pa, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
+                tiles_pa.set_image_data(compression_buffer.data(), compressed_size);
+            } else {
+                tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+            }
         }
 
         // Send partial results to the frontend

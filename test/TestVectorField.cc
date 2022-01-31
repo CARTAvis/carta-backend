@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
+#include "DataStream/Compression.h"
 #include "DataStream/Smoothing.h"
 #include "Frame/Frame.h"
 #include "Session/Session.h"
@@ -693,6 +694,169 @@ public:
 
         EXPECT_EQ(progresses.back(), 1);
     }
+
+    static void TestZFPCompression(std::string sample_file_path, int mip, int comprerssion_quality, bool fractional, bool debiasing = true,
+        double q_error = 0, double u_error = 0) {
+        double threshold = -1000;
+        int stokes_intensity = 0;
+        int stokes_angle = 0;
+
+        // Open a file in the Frame
+        LoaderCache loaders(LOADER_CACHE_SIZE);
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+
+        // Set the protobuf message
+        CARTA::SetVectorOverlayParameters message;
+        message.set_smoothing_factor(mip);
+        message.set_fractional(fractional);
+        message.set_threshold(threshold);
+        message.set_debiasing(debiasing);
+        message.set_q_error(q_error);
+        message.set_u_error(u_error);
+        message.set_stokes_intensity(stokes_intensity);
+        message.set_stokes_angle(stokes_angle);
+        message.set_compression_type(CARTA::CompressionType::NONE);
+        message.set_compression_quality(comprerssion_quality);
+
+        // Set vector field parameters
+        frame->SetVectorFieldParameters(message);
+
+        // Set results data
+        int req_width = frame->Width();
+        int req_height = frame->Height();
+        int down_sampled_width = std::ceil((float)req_width / mip);
+        int down_sampled_height = std::ceil((float)req_height / mip);
+        int down_sampled_area = down_sampled_height * down_sampled_width;
+
+        std::vector<float> pi_no_compression(down_sampled_area);
+        std::vector<float> pa_no_compression(down_sampled_area);
+
+        // Set callback function
+        auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
+            // Fill PI values
+            int tile_pi_x = tile_pi.x();
+            int tile_pi_y = tile_pi.y();
+            int tile_pi_width = tile_pi.width();
+            int tile_pi_height = tile_pi.height();
+            int tile_pi_layer = tile_pi.layer();
+            std::string buf_pi = tile_pi.image_data();
+            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
+            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
+
+            for (int i = 0; i < val_pi.size(); ++i) {
+                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                pi_no_compression[y * down_sampled_width + x] = val_pi[i];
+            }
+
+            // Fill PA values
+            int tile_pa_x = tile_pa.x();
+            int tile_pa_y = tile_pa.y();
+            int tile_pa_width = tile_pa.width();
+            int tile_pa_height = tile_pa.height();
+            int tile_pa_layer = tile_pa.layer();
+            std::string buf_pa = tile_pa.image_data();
+            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
+            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
+
+            for (int i = 0; i < val_pa.size(); ++i) {
+                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                pa_no_compression[y * down_sampled_width + x] = val_pa[i];
+            }
+        };
+
+        // Do PI/PA calculations by the Frame function
+        frame->VectorFieldImage(callback);
+
+        // =============================================================================
+
+        // Set the protobuf message
+        CARTA::SetVectorOverlayParameters message2;
+        message2.set_smoothing_factor(mip);
+        message2.set_fractional(fractional);
+        message2.set_threshold(threshold);
+        message2.set_debiasing(debiasing);
+        message2.set_q_error(q_error);
+        message2.set_u_error(u_error);
+        message2.set_stokes_intensity(stokes_intensity);
+        message2.set_stokes_angle(stokes_angle);
+        message2.set_compression_type(CARTA::CompressionType::ZFP);
+        message2.set_compression_quality(comprerssion_quality);
+
+        // Set vector field parameters
+        frame->SetVectorFieldParameters(message2);
+
+        // Set results data
+        std::vector<float> pi_compression(down_sampled_area);
+        std::vector<float> pa_compression(down_sampled_area);
+
+        // Set callback function
+        auto callback2 = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
+            // Fill PI values
+            int tile_pi_x = tile_pi.x();
+            int tile_pi_y = tile_pi.y();
+            int tile_pi_width = tile_pi.width();
+            int tile_pi_height = tile_pi.height();
+            int tile_pi_layer = tile_pi.layer();
+            std::vector<char> buf_pi(tile_pi.image_data().begin(), tile_pi.image_data().end());
+
+            // Decompress the data
+            std::vector<float> val_pi(tile_pi_width * tile_pi_height);
+            Decompress(val_pi, buf_pi, buf_pi.size(), tile_pi_width, tile_pi_height, comprerssion_quality);
+
+            for (int i = 0; i < val_pi.size(); ++i) {
+                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                pi_compression[y * down_sampled_width + x] = val_pi[i];
+            }
+
+            // Fill PA values
+            int tile_pa_x = tile_pa.x();
+            int tile_pa_y = tile_pa.y();
+            int tile_pa_width = tile_pa.width();
+            int tile_pa_height = tile_pa.height();
+            int tile_pa_layer = tile_pa.layer();
+            std::vector<char> buf_pa(tile_pa.image_data().begin(), tile_pa.image_data().end());
+
+            // Decompress the data
+            std::vector<float> val_pa(tile_pi_width * tile_pi_height);
+            Decompress(val_pa, buf_pa, buf_pa.size(), tile_pa_width, tile_pa_height, comprerssion_quality);
+
+            for (int i = 0; i < val_pa.size(); ++i) {
+                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                pa_compression[y * down_sampled_width + x] = val_pa[i];
+            }
+        };
+
+        // Do PI/PA calculations by the Frame function
+        frame->VectorFieldImage(callback2);
+
+        // Check the absolute mean of error
+        float abs_mean_errpr_pi = 0;
+        int count_pi = 0;
+        for (int i = 0; i < down_sampled_area; ++i) {
+            if (!std::isnan(pi_no_compression[i]) && !std::isnan(pi_compression[i])) {
+                abs_mean_errpr_pi += fabs(pi_no_compression[i] - pi_compression[i]);
+                ++count_pi;
+            }
+        }
+        abs_mean_errpr_pi /= count_pi;
+
+        float abs_mean_errpr_pa = 0;
+        int count_pa = 0;
+        for (int i = 0; i < down_sampled_area; ++i) {
+            if (!std::isnan(pa_no_compression[i]) && !std::isnan(pa_compression[i])) {
+                abs_mean_errpr_pa += fabs(pa_no_compression[i] - pa_compression[i]);
+                ++count_pa;
+            }
+        }
+        abs_mean_errpr_pa /= count_pa;
+
+        spdlog::info("For compression quality {}, the average of absolute errors for PI/PA are {}/{}.", comprerssion_quality,
+            abs_mean_errpr_pi, abs_mean_errpr_pa);
+    }
 };
 
 TEST_F(VectorFieldTest, TestMipLayerConversion) {
@@ -956,4 +1120,17 @@ TEST_F(VectorFieldTest, TestStokesIntensityOrAngleSettings) {
     TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, 0, -1);
     TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, 0, 0);
     TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, -1, -1);
+}
+
+TEST_F(VectorFieldTest, TestZFPCompression) {
+    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    int mip = 4;
+    bool fractional = true;
+    bool debiasing = false;
+    TestZFPCompression(sample_file, mip, 10, fractional, debiasing);
+    TestZFPCompression(sample_file, mip, 12, fractional, debiasing);
+    TestZFPCompression(sample_file, mip, 14, fractional, debiasing);
+    TestZFPCompression(sample_file, mip, 16, fractional, debiasing);
+    TestZFPCompression(sample_file, mip, 18, fractional, debiasing);
+    TestZFPCompression(sample_file, mip, 20, fractional, debiasing);
 }
