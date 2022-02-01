@@ -8,6 +8,7 @@
 
 #include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
+#include "Logger/Logger.h"
 
 class ImageExprTest : public ::testing::Test {
 public:
@@ -72,10 +73,48 @@ public:
         for_each(image_yprofile.begin(), image_yprofile.end(), [](float& a) { a *= 2; });
         CmpVectors(image_yprofile, expr_yprofile.tovector());
     }
+
+    void SaveImageExpr(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {
+        std::string file_path;
+        if (file_type == CARTA::FileType::FITS) {
+            file_path = FileFinder::FitsImagePath(file_name);
+        } else if (file_type == CARTA::FileType::HDF5) {
+            file_path = FileFinder::Hdf5ImagePath(file_name);
+        }
+
+        // Use LEL expr to multiply image by 2
+        fs::path fs_path(file_path);
+        std::string expr = fs_path.filename().string() + " * 2";
+        std::string directory = fs_path.parent_path().string();
+
+        std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+        expr_loader->OpenFile(hdu);
+        casacore::IPosition expr_shape;
+        expr_loader->GetShape(expr_shape);
+
+        // Save LEL image, CASA format only allowed from loader (saves as LEL image)
+        std::string save_path = (fs_path.parent_path() / "test_save_expr.im").string();
+        std::string message;
+        ASSERT_TRUE(expr_loader->SaveFile(CARTA::FileType::CASA, save_path, message));
+
+        // Load saved image
+        std::shared_ptr<carta::FileLoader> saved_expr_loader(carta::FileLoader::GetLoader(save_path));
+        saved_expr_loader->OpenFile(hdu);
+        ASSERT_TRUE(expr_loader->GetImage().get() != nullptr);
+        ASSERT_EQ(expr_loader->GetImage()->imageType(), "ImageExpr");
+
+        casacore::IPosition saved_expr_shape;
+        saved_expr_loader->GetShape(saved_expr_shape);
+        ASSERT_EQ(expr_shape, saved_expr_shape);
+    }
 };
 
 TEST_F(ImageExprTest, FitsImageExprTimesTwo) {
     GenerateImageExprTimesTwo("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
+}
+
+TEST_F(ImageExprTest, FitsImageExprSave) {
+    SaveImageExpr("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
 }
 
 /*

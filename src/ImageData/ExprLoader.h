@@ -14,6 +14,7 @@
 #include <casacore/lattices/LEL/LatticeExprNode.h>
 
 #include "FileLoader.h"
+#include "Util/FileSystem.h"
 
 namespace carta {
 
@@ -35,11 +36,13 @@ void ExprLoader::OpenFile(const std::string& /*hdu*/) {
             _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(node), _filename));
         } else {
             // load LEL image from disk
+            fs::path file_path(_filename);
+            std::string directory = file_path.parent_path().string();
             casacore::JsonKVMap jmap = casacore::JsonParser::parseFile(_filename + "/imageexpr.json");
             casacore::String expr = jmap.get("ImageExpr").getString();
             casacore::PtrBlock<const casacore::ImageRegion*> regions;
-            casacore::LatticeExprNode node = casacore::ImageExprParse::command(expr, casacore::Block<casacore::LatticeExprNode>(), regions);
-            _image.reset(new casacore::ImageExpr<float>(node, expr, _filename, jmap));
+            casacore::LatticeExprNode node = casacore::ImageExprParse::command(expr, casacore::Block<casacore::LatticeExprNode>(), regions, directory);
+            _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(node), expr, _filename, jmap));
         }
 
         if (!_image) {
