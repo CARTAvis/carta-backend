@@ -426,11 +426,14 @@ public:
         EXPECT_EQ(count, image_mask.size());
     }
 
-    static bool TestFrameVectorField(std::string sample_file_path, int mip, bool fractional, bool debiasing = true, double q_error = 0,
-        double u_error = 0, double threshold = 0, int stokes_intensity = 0, int stokes_angle = 0) {
+    static bool TestVectorFieldCalculation(std::string sample_file_path, int mip, bool fractional, bool debiasing = true,
+        double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0, int stokes_angle = 0) {
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
         std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+
+        // =======================================================================================================
+        // Calculate the vector field with the whole 2D image data
 
         // Get Stokes I, Q, and U indices
         int stokes_i, stokes_q, stokes_u;
@@ -547,7 +550,203 @@ public:
         std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
 
         // =======================================================================================================
-        // Calculate the vector field tile by tile with the new function
+        // Calculate the vector field tile by tile with the new Frame function
+
+        // Set the protobuf message
+        CARTA::SetVectorOverlayParameters message;
+        message.set_smoothing_factor(mip);
+        message.set_fractional(fractional);
+        message.set_threshold(threshold);
+        message.set_debiasing(debiasing);
+        message.set_q_error(q_error);
+        message.set_u_error(u_error);
+        message.set_stokes_intensity(stokes_intensity);
+        message.set_stokes_angle(stokes_angle);
+        message.set_compression_quality(CARTA::CompressionType::NONE);
+        message.set_compression_quality(0);
+
+        // Set vector field parameters
+        frame->SetVectorFieldParameters(message);
+
+        // Set results data
+        std::vector<float> pi_data(down_sampled_area);
+        std::vector<float> pa_data(down_sampled_area);
+        std::vector<double> progresses;
+
+        // Set callback function
+        auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
+            // Fill PI values
+            int tile_pi_x = tile_pi.x();
+            int tile_pi_y = tile_pi.y();
+            int tile_pi_width = tile_pi.width();
+            int tile_pi_height = tile_pi.height();
+            int tile_pi_layer = tile_pi.layer();
+            std::string buf_pi = tile_pi.image_data();
+            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
+            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
+
+            for (int i = 0; i < val_pi.size(); ++i) {
+                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                pi_data[y * down_sampled_width + x] = val_pi[i];
+            }
+
+            // Fill PA values
+            int tile_pa_x = tile_pa.x();
+            int tile_pa_y = tile_pa.y();
+            int tile_pa_width = tile_pa.width();
+            int tile_pa_height = tile_pa.height();
+            int tile_pa_layer = tile_pa.layer();
+            std::string buf_pa = tile_pa.image_data();
+            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
+            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
+
+            for (int i = 0; i < val_pa.size(); ++i) {
+                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                pa_data[y * down_sampled_width + x] = val_pa[i];
+            }
+
+            // Record progress
+            progresses.push_back(progress);
+        };
+
+        // Do PI/PA calculations by the Frame function
+        frame->VectorFieldImage(callback);
+
+        // Check results
+        EXPECT_EQ(pi.size(), pi_data.size());
+        for (int i = 0; i < pi.size(); ++i) {
+            if (!std::isnan(pi[i]) || !std::isnan(pi_data[i])) {
+                EXPECT_FLOAT_EQ(pi[i], pi_data[i]);
+            }
+        }
+        EXPECT_EQ(pa.size(), pa_data.size());
+        for (int i = 0; i < pa.size(); ++i) {
+            if (!std::isnan(pa[i]) || !std::isnan(pa_data[i])) {
+                EXPECT_FLOAT_EQ(pa[i], pa_data[i]);
+            }
+        }
+        EXPECT_EQ(progresses.back(), 1);
+        return true;
+    }
+
+    static bool TestVectorFieldCalculation(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
+        int stokes_angle = 0) {
+        // Create the sample image
+        std::string file_path;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
+        // Create the image reader
+        std::shared_ptr<DataReader> reader = nullptr;
+        if (file_type == CARTA::FileType::HDF5) {
+            reader.reset(new Hdf5DataReader(file_path));
+        } else {
+            reader.reset(new FitsDataReader(file_path));
+        }
+
+        // =======================================================================================================
+        // Calculate the vector field with the whole 2D image data
+
+        int channel = 0;
+        int stokes_i = 0;
+        int stokes_q = 1;
+        int stokes_u = 2;
+
+        std::vector<float> stokes_data_i = reader->ReadXY(channel, stokes_i);
+        std::vector<float> stokes_data_q = reader->ReadXY(channel, stokes_q);
+        std::vector<float> stokes_data_u = reader->ReadXY(channel, stokes_u);
+
+        // Block averaging, get down sampled data
+        int image_width = reader->Width();
+        int image_height = reader->Height();
+        int down_sampled_width = std::ceil((float)image_width / mip);
+        int down_sampled_height = std::ceil((float)image_height / mip);
+        int down_sampled_area = down_sampled_height * down_sampled_width;
+
+        std::vector<float> down_sampled_i(down_sampled_area);
+        std::vector<float> down_sampled_q(down_sampled_area);
+        std::vector<float> down_sampled_u(down_sampled_area);
+
+        BlockSmooth(
+            stokes_data_i.data(), down_sampled_i.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+        BlockSmooth(
+            stokes_data_q.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+        BlockSmooth(
+            stokes_data_u.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+
+        // Reset Q and U errors as 0 if debiasing is not used
+        if (!debiasing) {
+            q_error = u_error = 0;
+        }
+
+        // Calculate PI, FPI, and PA
+        auto calc_pi = [&](float q, float u) {
+            if (!std::isnan(q) && !isnan(u)) {
+                float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
+                if (fractional) {
+                    return result;
+                } else {
+                    if (result > threshold) {
+                        return result;
+                    }
+                }
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        };
+
+        auto calc_fpi = [&](float i, float pi) {
+            if (!std::isnan(i) && !isnan(pi)) {
+                float result = (pi / i);
+                if (result > threshold) {
+                    return result;
+                }
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        };
+
+        auto calc_pa = [&](float q, float u) {
+            if (!std::isnan(q) && !isnan(u)) {
+                return atan2(u, q) / 2;
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        };
+
+        auto reset_pa = [&](float pi, float pa) {
+            if (std::isnan(pi)) {
+                return std::numeric_limits<float>::quiet_NaN();
+            }
+            return pa;
+        };
+
+        // Set PI/PA results
+        std::vector<float> pi(down_sampled_area);
+        std::vector<float> pa(down_sampled_area);
+
+        // Calculate PI
+        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+
+        if (fractional) { // Calculate FPI
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+        }
+
+        // Calculate PA
+        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+
+        // Set NaN for PA if PI/FPI is NaN
+        std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+
+        // =======================================================================================================
+        // Calculate the vector field tile by tile with the new Frame function
+
+        // Open file with the Frame
+        LoaderCache loaders(LOADER_CACHE_SIZE);
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path), "0"));
 
         // Set the protobuf message
         CARTA::SetVectorOverlayParameters message;
@@ -1048,71 +1247,85 @@ TEST_F(VectorFieldTest, TestVectorFieldSettings) {
     EXPECT_TRUE(settings != settings11);
 }
 
-TEST_F(VectorFieldTest, TestFrameVectorField) {
+TEST_F(VectorFieldTest, TestVectorFieldCalculation) {
     auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
     bool fractional = true;
     bool debiasing = true;
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 1, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 2, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 8, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 16, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
 
     fractional = false;
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 1, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 2, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 8, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 16, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
     fractional = true;
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 1, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 2, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 8, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 16, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
 
     fractional = false;
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, fractional));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 1, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 2, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 8, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 16, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
+}
+
+TEST_F(VectorFieldTest, TestVectorFieldCalculation2) {
+    bool fractional = true;
+    bool debiasing = true;
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
+
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional));
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
 }
 
 TEST_F(VectorFieldTest, TestDebiasing) {
     auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true, false));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, true, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false, false));
-    EXPECT_TRUE(TestFrameVectorField(sample_file, 4, false, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, true, false));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, true, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, false, false));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_file, 4, false, false, 1e-3, 1e-3, 0.1));
 
     auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true, false));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false, false));
-    EXPECT_TRUE(TestFrameVectorField(sample_nan_file, 4, false, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, true, false));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, false, false));
+    EXPECT_TRUE(TestVectorFieldCalculation(sample_nan_file, 4, false, false, 1e-3, 1e-3, 0.1));
 }
 
 TEST_F(VectorFieldTest, TestStokesIntensityOrAngleSettings) {
