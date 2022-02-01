@@ -547,6 +547,7 @@ public:
         std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
 
         // =======================================================================================================
+        // Calculate the vector field tile by tile with the new function
 
         // Set the protobuf message
         CARTA::SetVectorOverlayParameters message;
@@ -695,8 +696,8 @@ public:
         EXPECT_EQ(progresses.back(), 1);
     }
 
-    static void TestZFPCompression(std::string sample_file_path, int mip, int comprerssion_quality, bool fractional, bool debiasing = true,
-        double q_error = 0, double u_error = 0) {
+    static std::pair<float, float> TestZFPCompression(std::string sample_file_path, int mip, int comprerssion_quality, bool fractional,
+        bool debiasing = true, double q_error = 0, double u_error = 0) {
         double threshold = -1000;
         int stokes_intensity = 0;
         int stokes_angle = 0;
@@ -770,6 +771,7 @@ public:
         frame->VectorFieldImage(callback);
 
         // =============================================================================
+        // Compress the vector field data with ZFP
 
         // Set the protobuf message
         CARTA::SetVectorOverlayParameters message2;
@@ -802,8 +804,9 @@ public:
             std::vector<char> buf_pi(tile_pi.image_data().begin(), tile_pi.image_data().end());
 
             // Decompress the data
-            std::vector<float> val_pi(tile_pi_width * tile_pi_height);
-            Decompress(val_pi, buf_pi, buf_pi.size(), tile_pi_width, tile_pi_height, comprerssion_quality);
+            std::vector<float> val_pi;
+            Decompress(val_pi, buf_pi, tile_pi_width, tile_pi_height, comprerssion_quality);
+            EXPECT_EQ(val_pi.size(), tile_pi_width * tile_pi_height);
 
             for (int i = 0; i < val_pi.size(); ++i) {
                 int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
@@ -820,8 +823,9 @@ public:
             std::vector<char> buf_pa(tile_pa.image_data().begin(), tile_pa.image_data().end());
 
             // Decompress the data
-            std::vector<float> val_pa(tile_pi_width * tile_pi_height);
-            Decompress(val_pa, buf_pa, buf_pa.size(), tile_pa_width, tile_pa_height, comprerssion_quality);
+            std::vector<float> val_pa;
+            Decompress(val_pa, buf_pa, tile_pa_width, tile_pa_height, comprerssion_quality);
+            EXPECT_EQ(val_pa.size(), tile_pa_width * tile_pa_height);
 
             for (int i = 0; i < val_pa.size(); ++i) {
                 int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
@@ -834,28 +838,31 @@ public:
         frame->VectorFieldImage(callback2);
 
         // Check the absolute mean of error
-        float abs_mean_errpr_pi = 0;
+        float pi_abs_err_mean = 0;
         int count_pi = 0;
         for (int i = 0; i < down_sampled_area; ++i) {
             if (!std::isnan(pi_no_compression[i]) && !std::isnan(pi_compression[i])) {
-                abs_mean_errpr_pi += fabs(pi_no_compression[i] - pi_compression[i]);
+                pi_abs_err_mean += fabs(pi_no_compression[i] - pi_compression[i]);
                 ++count_pi;
             }
         }
-        abs_mean_errpr_pi /= count_pi;
+        EXPECT_GT(count_pi, 0);
+        pi_abs_err_mean /= count_pi;
 
-        float abs_mean_errpr_pa = 0;
+        float pa_abs_err_mean = 0;
         int count_pa = 0;
         for (int i = 0; i < down_sampled_area; ++i) {
             if (!std::isnan(pa_no_compression[i]) && !std::isnan(pa_compression[i])) {
-                abs_mean_errpr_pa += fabs(pa_no_compression[i] - pa_compression[i]);
+                pa_abs_err_mean += fabs(pa_no_compression[i] - pa_compression[i]);
                 ++count_pa;
             }
         }
-        abs_mean_errpr_pa /= count_pa;
+        EXPECT_GT(count_pa, 0);
+        pa_abs_err_mean /= count_pa;
 
         spdlog::info("For compression quality {}, the average of absolute errors for PI/PA are {}/{}.", comprerssion_quality,
-            abs_mean_errpr_pi, abs_mean_errpr_pa);
+            pi_abs_err_mean, pa_abs_err_mean);
+        return std::make_pair(pi_abs_err_mean, pa_abs_err_mean);
     }
 };
 
@@ -1127,10 +1134,25 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
     int mip = 4;
     bool fractional = true;
     bool debiasing = false;
-    TestZFPCompression(sample_file, mip, 10, fractional, debiasing);
-    TestZFPCompression(sample_file, mip, 12, fractional, debiasing);
-    TestZFPCompression(sample_file, mip, 14, fractional, debiasing);
-    TestZFPCompression(sample_file, mip, 16, fractional, debiasing);
-    TestZFPCompression(sample_file, mip, 18, fractional, debiasing);
-    TestZFPCompression(sample_file, mip, 20, fractional, debiasing);
+    auto errors1 = TestZFPCompression(sample_file, mip, 10, fractional, debiasing);
+
+    auto errors2 = TestZFPCompression(sample_file, mip, 12, fractional, debiasing);
+    EXPECT_GT(errors1.first, errors2.first);
+    EXPECT_GT(errors1.second, errors2.second);
+
+    auto errors3 = TestZFPCompression(sample_file, mip, 14, fractional, debiasing);
+    EXPECT_GT(errors2.first, errors3.first);
+    EXPECT_GT(errors2.second, errors3.second);
+
+    auto errors4 = TestZFPCompression(sample_file, mip, 16, fractional, debiasing);
+    EXPECT_GT(errors3.first, errors4.first);
+    EXPECT_GT(errors3.second, errors4.second);
+
+    auto errors5 = TestZFPCompression(sample_file, mip, 18, fractional, debiasing);
+    EXPECT_GT(errors4.first, errors5.first);
+    EXPECT_GT(errors4.second, errors5.second);
+
+    auto errors6 = TestZFPCompression(sample_file, mip, 20, fractional, debiasing);
+    EXPECT_GT(errors5.first, errors6.first);
+    EXPECT_GT(errors5.second, errors6.second);
 }
