@@ -1782,6 +1782,12 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
+    // Try to save file from loader (for entire LEL image in CASA format only)
+    if (!region && _loader->SaveFile(output_file_type, output_filename.string(), message)) {
+        save_file_ack.set_success(true);
+        return;
+    }
+
     // Modify image to export
     auto image_shape = ImageShape();
 

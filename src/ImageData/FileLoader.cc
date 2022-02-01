@@ -25,8 +25,11 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    if (IsCompressedFits(filename)) {
+FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
+    if (!directory.empty()) {
+        // filename is LEL expression for image(s) in directory
+        return new ExprLoader(filename, directory);
+    } else if (IsCompressedFits(filename)) {
         return new FitsLoader(filename, true);
     }
 
@@ -66,10 +69,12 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
-FileLoader::FileLoader(const std::string& filename, bool is_gz)
-    : _filename(filename), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
-    // Set initial modify time
-    ImageUpdated();
+FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
+    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
+    // Set initial modify time if filename is not LEL expression for file in directory
+    if (directory.empty()) {
+        ImageUpdated();
+    }
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
@@ -307,10 +312,10 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             data.resize(slicer.length());
         }
 
-        if (image->imageType() == "CartaFitsImage") {
-            // Read subset with cfitsio
-            bool ok = image->doGetSlice(data, slicer);
-            return ok;
+        auto image_type = image->imageType();
+        if ((image_type == "CartaFitsImage") || (image_type == "ImageExpr")) {
+            // Use cfitsio (FITS) or LatticeExpr (ImageExpr) for slice
+            return image->doGetSlice(data, slicer);
         }
 
         // Get data slice with mask applied.
@@ -873,4 +878,10 @@ void FileLoader::SetStokesCrpix(float stokes_crpix) {
 
 void FileLoader::SetStokesCdelt(int stokes_cdelt) {
     _stokes_cdelt = stokes_cdelt;
+}
+
+bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+    // Override in ExprLoader
+    message = "Cannot save image type from loader.";
+    return false;
 }
