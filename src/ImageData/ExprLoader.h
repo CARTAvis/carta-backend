@@ -41,7 +41,8 @@ void ExprLoader::OpenFile(const std::string& /*hdu*/) {
             casacore::JsonKVMap jmap = casacore::JsonParser::parseFile(_filename + "/imageexpr.json");
             casacore::String expr = jmap.get("ImageExpr").getString();
             casacore::PtrBlock<const casacore::ImageRegion*> regions;
-            casacore::LatticeExprNode node = casacore::ImageExprParse::command(expr, casacore::Block<casacore::LatticeExprNode>(), regions, directory);
+            casacore::LatticeExprNode node =
+                casacore::ImageExprParse::command(expr, casacore::Block<casacore::LatticeExprNode>(), regions, directory);
             _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(node), expr, _filename, jmap));
         }
 
