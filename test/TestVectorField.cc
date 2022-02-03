@@ -553,20 +553,11 @@ public:
         // Calculate the vector field tile by tile with the new Frame function
 
         // Set the protobuf message
-        CARTA::SetVectorOverlayParameters message;
-        message.set_smoothing_factor(mip);
-        message.set_fractional(fractional);
-        message.set_threshold(threshold);
-        message.set_debiasing(debiasing);
-        message.set_q_error(q_error);
-        message.set_u_error(u_error);
-        message.set_stokes_intensity(stokes_intensity);
-        message.set_stokes_angle(stokes_angle);
-        message.set_compression_quality(CARTA::CompressionType::NONE);
-        message.set_compression_quality(0);
+        auto message = Message::SetVectorOverlayParameters(
+            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
-        frame->SetVectorFieldParameters(message);
+        frame->SetVectorOverlayParameters(message);
 
         // Set results data
         std::vector<float> pi_data(down_sampled_area);
@@ -574,40 +565,49 @@ public:
         std::vector<double> progresses;
 
         // Set callback function
-        auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
-            // Fill PI values
-            int tile_pi_x = tile_pi.x();
-            int tile_pi_y = tile_pi.y();
-            int tile_pi_width = tile_pi.width();
-            int tile_pi_height = tile_pi.height();
-            int tile_pi_layer = tile_pi.layer();
-            std::string buf_pi = tile_pi.image_data();
-            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
-            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
+        auto callback = [&](CARTA::VectorOverlayTileData& response) {
+            EXPECT_EQ(response.intensity_tiles_size(), 1);
+            if (response.intensity_tiles_size()) {
+                auto tile_pi = response.intensity_tiles(0);
+                // Fill PI values
+                int tile_pi_x = tile_pi.x();
+                int tile_pi_y = tile_pi.y();
+                int tile_pi_width = tile_pi.width();
+                int tile_pi_height = tile_pi.height();
+                int tile_pi_layer = tile_pi.layer();
+                std::string buf_pi = tile_pi.image_data();
+                std::vector<float> val_pi(buf_pi.size() / sizeof(float));
+                memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
 
-            for (int i = 0; i < val_pi.size(); ++i) {
-                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
-                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
-                pi_data[y * down_sampled_width + x] = val_pi[i];
+                for (int i = 0; i < val_pi.size(); ++i) {
+                    int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                    int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                    pi_data[y * down_sampled_width + x] = val_pi[i];
+                }
             }
 
-            // Fill PA values
-            int tile_pa_x = tile_pa.x();
-            int tile_pa_y = tile_pa.y();
-            int tile_pa_width = tile_pa.width();
-            int tile_pa_height = tile_pa.height();
-            int tile_pa_layer = tile_pa.layer();
-            std::string buf_pa = tile_pa.image_data();
-            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
-            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
+            EXPECT_EQ(response.angle_tiles_size(), 1);
+            if (response.angle_tiles_size()) {
+                auto tile_pa = response.angle_tiles(0);
+                // Fill PA values
+                int tile_pa_x = tile_pa.x();
+                int tile_pa_y = tile_pa.y();
+                int tile_pa_width = tile_pa.width();
+                int tile_pa_height = tile_pa.height();
+                int tile_pa_layer = tile_pa.layer();
+                std::string buf_pa = tile_pa.image_data();
+                std::vector<float> val_pa(buf_pa.size() / sizeof(float));
+                memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
 
-            for (int i = 0; i < val_pa.size(); ++i) {
-                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
-                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
-                pa_data[y * down_sampled_width + x] = val_pa[i];
+                for (int i = 0; i < val_pa.size(); ++i) {
+                    int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                    int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                    pa_data[y * down_sampled_width + x] = val_pa[i];
+                }
             }
 
             // Record progress
+            double progress = response.progress();
             progresses.push_back(progress);
         };
 
@@ -749,20 +749,11 @@ public:
         std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path), "0"));
 
         // Set the protobuf message
-        CARTA::SetVectorOverlayParameters message;
-        message.set_smoothing_factor(mip);
-        message.set_fractional(fractional);
-        message.set_threshold(threshold);
-        message.set_debiasing(debiasing);
-        message.set_q_error(q_error);
-        message.set_u_error(u_error);
-        message.set_stokes_intensity(stokes_intensity);
-        message.set_stokes_angle(stokes_angle);
-        message.set_compression_quality(CARTA::CompressionType::NONE);
-        message.set_compression_quality(0);
+        auto message = Message::SetVectorOverlayParameters(
+            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
-        frame->SetVectorFieldParameters(message);
+        frame->SetVectorOverlayParameters(message);
 
         // Set results data
         std::vector<float> pi_data(down_sampled_area);
@@ -770,40 +761,49 @@ public:
         std::vector<double> progresses;
 
         // Set callback function
-        auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
-            // Fill PI values
-            int tile_pi_x = tile_pi.x();
-            int tile_pi_y = tile_pi.y();
-            int tile_pi_width = tile_pi.width();
-            int tile_pi_height = tile_pi.height();
-            int tile_pi_layer = tile_pi.layer();
-            std::string buf_pi = tile_pi.image_data();
-            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
-            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
+        auto callback = [&](CARTA::VectorOverlayTileData& response) {
+            EXPECT_EQ(response.intensity_tiles_size(), 1);
+            if (response.intensity_tiles_size()) {
+                auto tile_pi = response.intensity_tiles(0);
+                // Fill PI values
+                int tile_pi_x = tile_pi.x();
+                int tile_pi_y = tile_pi.y();
+                int tile_pi_width = tile_pi.width();
+                int tile_pi_height = tile_pi.height();
+                int tile_pi_layer = tile_pi.layer();
+                std::string buf_pi = tile_pi.image_data();
+                std::vector<float> val_pi(buf_pi.size() / sizeof(float));
+                memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
 
-            for (int i = 0; i < val_pi.size(); ++i) {
-                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
-                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
-                pi_data[y * down_sampled_width + x] = val_pi[i];
+                for (int i = 0; i < val_pi.size(); ++i) {
+                    int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                    int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                    pi_data[y * down_sampled_width + x] = val_pi[i];
+                }
             }
 
-            // Fill PA values
-            int tile_pa_x = tile_pa.x();
-            int tile_pa_y = tile_pa.y();
-            int tile_pa_width = tile_pa.width();
-            int tile_pa_height = tile_pa.height();
-            int tile_pa_layer = tile_pa.layer();
-            std::string buf_pa = tile_pa.image_data();
-            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
-            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
+            EXPECT_EQ(response.angle_tiles_size(), 1);
+            if (response.angle_tiles_size()) {
+                auto tile_pa = response.angle_tiles(0);
+                // Fill PA values
+                int tile_pa_x = tile_pa.x();
+                int tile_pa_y = tile_pa.y();
+                int tile_pa_width = tile_pa.width();
+                int tile_pa_height = tile_pa.height();
+                int tile_pa_layer = tile_pa.layer();
+                std::string buf_pa = tile_pa.image_data();
+                std::vector<float> val_pa(buf_pa.size() / sizeof(float));
+                memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
 
-            for (int i = 0; i < val_pa.size(); ++i) {
-                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
-                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
-                pa_data[y * down_sampled_width + x] = val_pa[i];
+                for (int i = 0; i < val_pa.size(); ++i) {
+                    int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                    int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                    pa_data[y * down_sampled_width + x] = val_pa[i];
+                }
             }
 
             // Record progress
+            double progress = response.progress();
             progresses.push_back(progress);
         };
 
@@ -837,56 +837,30 @@ public:
         std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
 
         // Set the protobuf message
-        CARTA::SetVectorOverlayParameters message;
-        message.set_smoothing_factor(mip);
-        message.set_fractional(fractional);
-        message.set_threshold(threshold);
-        message.set_debiasing(debiasing);
-        message.set_q_error(q_error);
-        message.set_u_error(u_error);
-        message.set_stokes_intensity(stokes_intensity);
-        message.set_stokes_angle(stokes_angle);
-        message.set_compression_quality(CARTA::CompressionType::NONE);
-        message.set_compression_quality(0);
+        auto message = Message::SetVectorOverlayParameters(
+            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
-        frame->SetVectorFieldParameters(message);
+        frame->SetVectorOverlayParameters(message);
 
         // Set results data
         std::vector<double> progresses;
 
         // Set callback function
-        auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
-            // Fill PI values
-            int tile_pi_x = tile_pi.x();
-            int tile_pi_y = tile_pi.y();
-            int tile_pi_width = tile_pi.width();
-            int tile_pi_height = tile_pi.height();
-            int tile_pi_layer = tile_pi.layer();
-            std::string buf_pi = tile_pi.image_data();
-            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
-            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
-
+        auto callback = [&](CARTA::VectorOverlayTileData& response) {
             if (calculate_stokes_intensity) {
-                EXPECT_GT(val_pi.size(), 0);
+                EXPECT_GE(response.intensity_tiles_size(), 1);
+            } else {
+                EXPECT_EQ(response.intensity_tiles_size(), 1);
             }
-
-            // Fill PA values
-            int tile_pa_x = tile_pa.x();
-            int tile_pa_y = tile_pa.y();
-            int tile_pa_width = tile_pa.width();
-            int tile_pa_height = tile_pa.height();
-            int tile_pa_layer = tile_pa.layer();
-            std::string buf_pa = tile_pa.image_data();
-            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
-            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
 
             if (calculate_stokes_angle) {
-                EXPECT_GT(val_pa.size(), 0);
+                EXPECT_GE(response.angle_tiles_size(), 1);
+            } else {
+                EXPECT_EQ(response.angle_tiles_size(), 1);
             }
 
-            // Record progress
-            progresses.push_back(progress);
+            progresses.push_back(response.progress());
         };
 
         // Do PI/PA calculations by the Frame function
@@ -906,20 +880,11 @@ public:
         std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
 
         // Set the protobuf message
-        CARTA::SetVectorOverlayParameters message;
-        message.set_smoothing_factor(mip);
-        message.set_fractional(fractional);
-        message.set_threshold(threshold);
-        message.set_debiasing(debiasing);
-        message.set_q_error(q_error);
-        message.set_u_error(u_error);
-        message.set_stokes_intensity(stokes_intensity);
-        message.set_stokes_angle(stokes_angle);
-        message.set_compression_type(CARTA::CompressionType::NONE);
-        message.set_compression_quality(comprerssion_quality);
+        auto message = Message::SetVectorOverlayParameters(
+            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
-        frame->SetVectorFieldParameters(message);
+        frame->SetVectorOverlayParameters(message);
 
         // Set results data
         int req_width = frame->Width();
@@ -932,37 +897,45 @@ public:
         std::vector<float> pa_no_compression(down_sampled_area);
 
         // Set callback function
-        auto callback = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
-            // Fill PI values
-            int tile_pi_x = tile_pi.x();
-            int tile_pi_y = tile_pi.y();
-            int tile_pi_width = tile_pi.width();
-            int tile_pi_height = tile_pi.height();
-            int tile_pi_layer = tile_pi.layer();
-            std::string buf_pi = tile_pi.image_data();
-            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
-            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
+        auto callback = [&](CARTA::VectorOverlayTileData& response) {
+            EXPECT_EQ(response.intensity_tiles_size(), 1);
+            if (response.intensity_tiles_size()) {
+                auto tile_pi = response.intensity_tiles(0);
+                // Fill PI values
+                int tile_pi_x = tile_pi.x();
+                int tile_pi_y = tile_pi.y();
+                int tile_pi_width = tile_pi.width();
+                int tile_pi_height = tile_pi.height();
+                int tile_pi_layer = tile_pi.layer();
+                std::string buf_pi = tile_pi.image_data();
+                std::vector<float> val_pi(buf_pi.size() / sizeof(float));
+                memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
 
-            for (int i = 0; i < val_pi.size(); ++i) {
-                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
-                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
-                pi_no_compression[y * down_sampled_width + x] = val_pi[i];
+                for (int i = 0; i < val_pi.size(); ++i) {
+                    int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                    int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                    pi_no_compression[y * down_sampled_width + x] = val_pi[i];
+                }
             }
 
-            // Fill PA values
-            int tile_pa_x = tile_pa.x();
-            int tile_pa_y = tile_pa.y();
-            int tile_pa_width = tile_pa.width();
-            int tile_pa_height = tile_pa.height();
-            int tile_pa_layer = tile_pa.layer();
-            std::string buf_pa = tile_pa.image_data();
-            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
-            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
+            EXPECT_EQ(response.angle_tiles_size(), 1);
+            if (response.angle_tiles_size()) {
+                auto tile_pa = response.angle_tiles(0);
+                // Fill PA values
+                int tile_pa_x = tile_pa.x();
+                int tile_pa_y = tile_pa.y();
+                int tile_pa_width = tile_pa.width();
+                int tile_pa_height = tile_pa.height();
+                int tile_pa_layer = tile_pa.layer();
+                std::string buf_pa = tile_pa.image_data();
+                std::vector<float> val_pa(buf_pa.size() / sizeof(float));
+                memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
 
-            for (int i = 0; i < val_pa.size(); ++i) {
-                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
-                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
-                pa_no_compression[y * down_sampled_width + x] = val_pa[i];
+                for (int i = 0; i < val_pa.size(); ++i) {
+                    int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                    int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                    pa_no_compression[y * down_sampled_width + x] = val_pa[i];
+                }
             }
         };
 
@@ -973,63 +946,62 @@ public:
         // Compress the vector field data with ZFP
 
         // Set the protobuf message
-        CARTA::SetVectorOverlayParameters message2;
-        message2.set_smoothing_factor(mip);
-        message2.set_fractional(fractional);
-        message2.set_threshold(threshold);
-        message2.set_debiasing(debiasing);
-        message2.set_q_error(q_error);
-        message2.set_u_error(u_error);
-        message2.set_stokes_intensity(stokes_intensity);
-        message2.set_stokes_angle(stokes_angle);
-        message2.set_compression_type(CARTA::CompressionType::ZFP);
-        message2.set_compression_quality(comprerssion_quality);
+        auto message2 = Message::SetVectorOverlayParameters(0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity,
+            stokes_angle, CARTA::CompressionType::ZFP, comprerssion_quality);
 
         // Set vector field parameters
-        frame->SetVectorFieldParameters(message2);
+        frame->SetVectorOverlayParameters(message2);
 
         // Set results data
         std::vector<float> pi_compression(down_sampled_area);
         std::vector<float> pa_compression(down_sampled_area);
 
         // Set callback function
-        auto callback2 = [&](const CARTA::TileData& tile_pi, const CARTA::TileData& tile_pa, double progress) {
-            // Fill PI values
-            int tile_pi_x = tile_pi.x();
-            int tile_pi_y = tile_pi.y();
-            int tile_pi_width = tile_pi.width();
-            int tile_pi_height = tile_pi.height();
-            int tile_pi_layer = tile_pi.layer();
-            std::vector<char> buf_pi(tile_pi.image_data().begin(), tile_pi.image_data().end());
+        auto callback2 = [&](CARTA::VectorOverlayTileData& response) {
+            EXPECT_EQ(response.intensity_tiles_size(), 1);
+            if (response.intensity_tiles_size()) {
+                auto tile_pi = response.intensity_tiles(0);
+                // Fill PI values
+                int tile_pi_x = tile_pi.x();
+                int tile_pi_y = tile_pi.y();
+                int tile_pi_width = tile_pi.width();
+                int tile_pi_height = tile_pi.height();
+                int tile_pi_layer = tile_pi.layer();
+                std::vector<char> buf_pi(tile_pi.image_data().begin(), tile_pi.image_data().end());
 
-            // Decompress the data
-            std::vector<float> val_pi;
-            Decompress(val_pi, buf_pi, tile_pi_width, tile_pi_height, comprerssion_quality);
-            EXPECT_EQ(val_pi.size(), tile_pi_width * tile_pi_height);
+                // Decompress the data
+                std::vector<float> val_pi;
+                Decompress(val_pi, buf_pi, tile_pi_width, tile_pi_height, comprerssion_quality);
+                EXPECT_EQ(val_pi.size(), tile_pi_width * tile_pi_height);
 
-            for (int i = 0; i < val_pi.size(); ++i) {
-                int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
-                int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
-                pi_compression[y * down_sampled_width + x] = val_pi[i];
+                for (int i = 0; i < val_pi.size(); ++i) {
+                    int x = tile_pi_x * TILE_SIZE + (i % tile_pi_width);
+                    int y = tile_pi_y * TILE_SIZE + (i / tile_pi_width);
+                    pi_compression[y * down_sampled_width + x] = val_pi[i];
+                }
             }
 
-            // Fill PA values
-            int tile_pa_x = tile_pa.x();
-            int tile_pa_y = tile_pa.y();
-            int tile_pa_width = tile_pa.width();
-            int tile_pa_height = tile_pa.height();
-            int tile_pa_layer = tile_pa.layer();
-            std::vector<char> buf_pa(tile_pa.image_data().begin(), tile_pa.image_data().end());
+            EXPECT_EQ(response.angle_tiles_size(), 1);
+            if (response.angle_tiles_size()) {
+                auto tile_pa = response.angle_tiles(0);
+                // Fill PA values
+                int tile_pa_x = tile_pa.x();
+                int tile_pa_y = tile_pa.y();
+                int tile_pa_width = tile_pa.width();
+                int tile_pa_height = tile_pa.height();
+                int tile_pa_layer = tile_pa.layer();
+                std::vector<char> buf_pa(tile_pa.image_data().begin(), tile_pa.image_data().end());
 
-            // Decompress the data
-            std::vector<float> val_pa;
-            Decompress(val_pa, buf_pa, tile_pa_width, tile_pa_height, comprerssion_quality);
-            EXPECT_EQ(val_pa.size(), tile_pa_width * tile_pa_height);
+                // Decompress the data
+                std::vector<float> val_pa;
+                Decompress(val_pa, buf_pa, tile_pa_width, tile_pa_height, comprerssion_quality);
+                EXPECT_EQ(val_pa.size(), tile_pa_width * tile_pa_height);
 
-            for (int i = 0; i < val_pa.size(); ++i) {
-                int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
-                int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
-                pa_compression[y * down_sampled_width + x] = val_pa[i];
+                for (int i = 0; i < val_pa.size(); ++i) {
+                    int x = tile_pa_x * TILE_SIZE + (i % tile_pa_width);
+                    int y = tile_pa_y * TILE_SIZE + (i / tile_pa_width);
+                    pa_compression[y * down_sampled_width + x] = val_pa[i];
+                }
             }
         };
 

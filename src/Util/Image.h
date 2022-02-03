@@ -13,6 +13,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/vector_overlay_tile.pb.h>
 
 #include "DataStream/Tile.h"
 
@@ -154,7 +155,7 @@ struct VectorFieldSettings {
 };
 
 // Polarization vector field callback (intensity_tile, angle_tile, progress)
-using VectorFieldCallback = const std::function<void(const CARTA::TileData&, const CARTA::TileData&, double)>;
+using VectorFieldCallback = const std::function<void(CARTA::VectorOverlayTileData&)>;
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);

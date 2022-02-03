@@ -208,7 +208,7 @@ public:
     void CloseCachedImage(const std::string& file);
 
     // Polarization vector field
-    bool SetVectorFieldParameters(const CARTA::SetVectorOverlayParameters& message);
+    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     inline VectorFieldSettings& GetVectorFieldParameters() {
         return _vector_field_settings;
     };

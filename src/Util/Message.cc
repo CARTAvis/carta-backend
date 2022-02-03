@@ -339,6 +339,24 @@ CARTA::SetContourParameters Message::SetContourParameters(int file_id, int ref_f
     return message;
 }
 
+CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(int file_id, int mip, bool fractional, bool debiasing, double q_error,
+    double u_error, double threshold, int stokes_intensity, int stokes_angle, const CARTA::CompressionType& compression_type,
+    float compression_quality) {
+    CARTA::SetVectorOverlayParameters message;
+    message.set_file_id(file_id);
+    message.set_smoothing_factor(mip);
+    message.set_fractional(fractional);
+    message.set_threshold(threshold);
+    message.set_debiasing(debiasing);
+    message.set_q_error(q_error);
+    message.set_u_error(u_error);
+    message.set_stokes_intensity(stokes_intensity);
+    message.set_stokes_angle(stokes_angle);
+    message.set_compression_type(compression_type);
+    message.set_compression_quality(compression_quality);
+    return message;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

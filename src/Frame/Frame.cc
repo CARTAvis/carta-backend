@@ -2168,7 +2168,7 @@ void Frame::CloseCachedImage(const std::string& file) {
     }
 }
 
-bool Frame::SetVectorFieldParameters(const CARTA::SetVectorOverlayParameters& message) {
+bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     VectorFieldSettings new_settings = {(int)message.smoothing_factor(), message.fractional(), message.threshold(), message.debiasing(),
         message.q_error(), message.u_error(), message.stokes_intensity(), message.stokes_angle(), message.compression_type(),
         message.compression_quality()};
@@ -2194,8 +2194,10 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         q_error = u_error = 0;
     }
 
-    bool calculate_stokes_intensity(_vector_field_settings.stokes_intensity >= 0);
-    bool calculate_stokes_angle(_vector_field_settings.stokes_angle >= 0);
+    int& stokes_intensity = _vector_field_settings.stokes_intensity;
+    int& stokes_angle = _vector_field_settings.stokes_angle;
+    bool calculate_stokes_intensity(stokes_intensity >= 0);
+    bool calculate_stokes_angle(stokes_angle >= 0);
 
     // Get Stokes I, Q, and U indices
     int stokes_i;
@@ -2210,6 +2212,16 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
     // Get current channel
     int channel = CurrentZ();
+
+    // Set response messages
+    CARTA::VectorOverlayTileData response;
+    response.set_channel(channel);
+    response.set_stokes_intensity(stokes_intensity);
+    response.set_stokes_angle(stokes_angle);
+    response.set_compression_type(compression_type);
+    response.set_compression_quality(compression_quality);
+    auto* tile_pi = response.add_intensity_tiles();
+    auto* tile_pa = response.add_angle_tiles();
 
     // Get tiles
     std::vector<Tile> tiles;
@@ -2320,10 +2332,6 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             return pa;
         };
 
-        // Set PI/PA results data
-        CARTA::TileData tiles_pi;
-        CARTA::TileData tiles_pa;
-
         std::vector<float> pi, pa;
         if (calculate_stokes_intensity) {
             pi.resize(down_sampled_area);
@@ -2353,51 +2361,52 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
         // Fill PI tiles protobuf data
         if (calculate_stokes_intensity) {
-            tiles_pi.set_x(tiles[i].x);
-            tiles_pi.set_y(tiles[i].y);
-            tiles_pi.set_layer(tiles[i].layer);
-            tiles_pi.set_width(down_sampled_width);
-            tiles_pi.set_height(down_sampled_height);
+            tile_pi->set_x(tiles[i].x);
+            tile_pi->set_y(tiles[i].y);
+            tile_pi->set_layer(tiles[i].layer);
+            tile_pi->set_width(down_sampled_width);
+            tile_pi->set_height(down_sampled_height);
             if (compression_type == CARTA::CompressionType::ZFP) {
                 // Get and fill the NaN data
                 auto nan_encodings = GetNanEncodingsBlock(pi, 0, down_sampled_width, down_sampled_height);
-                tiles_pi.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+                tile_pi->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                 // Compress and fill the data
                 std::vector<char> compression_buffer;
                 size_t compressed_size;
                 int precision = lround(compression_quality);
                 Compress(pi, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
-                tiles_pi.set_image_data(compression_buffer.data(), compressed_size);
+                tile_pi->set_image_data(compression_buffer.data(), compressed_size);
             } else {
-                tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+                tile_pi->set_image_data(pi.data(), sizeof(float) * pi.size());
             }
         }
 
         // Fill PA tiles protobuf data
         if (calculate_stokes_angle) {
-            tiles_pa.set_x(tiles[i].x);
-            tiles_pa.set_y(tiles[i].y);
-            tiles_pa.set_layer(tiles[i].layer);
-            tiles_pa.set_width(down_sampled_width);
-            tiles_pa.set_height(down_sampled_height);
+            tile_pa->set_x(tiles[i].x);
+            tile_pa->set_y(tiles[i].y);
+            tile_pa->set_layer(tiles[i].layer);
+            tile_pa->set_width(down_sampled_width);
+            tile_pa->set_height(down_sampled_height);
             if (compression_type == CARTA::CompressionType::ZFP) {
                 // Get and fill the NaN data
                 auto nan_encodings = GetNanEncodingsBlock(pa, 0, down_sampled_width, down_sampled_height);
-                tiles_pa.set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+                tile_pa->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
                 // Compress and fill the data
                 std::vector<char> compression_buffer;
                 size_t compressed_size;
                 int precision = lround(compression_quality);
                 Compress(pa, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
-                tiles_pa.set_image_data(compression_buffer.data(), compressed_size);
+                tile_pa->set_image_data(compression_buffer.data(), compressed_size);
             } else {
-                tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+                tile_pa->set_image_data(pa.data(), sizeof(float) * pa.size());
             }
         }
 
         // Send partial results to the frontend
         double progress = (double)(i + 1) / tiles.size();
-        partial_vector_field_callback(tiles_pi, tiles_pa, progress);
+        response.set_progress(progress);
+        partial_vector_field_callback(response);
     }
     return true;
 }
