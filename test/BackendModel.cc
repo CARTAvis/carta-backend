@@ -271,6 +271,12 @@ void BackendModel::Receive(CARTA::CatalogListRequest message) {
     ThreadManager::QueueTask(tsk);
 }
 
+void BackendModel::Receive(CARTA::SetVectorOverlayParameters message) {
+    carta::logger::LogReceivedEventType(CARTA::EventType::SET_VECTOR_OVERLAY_PARAMETERS);
+    OnMessageTask* tsk = new GeneralMessageTask<CARTA::SetVectorOverlayParameters>(_session, message, DUMMY_REQUEST_ID);
+    ThreadManager::QueueTask(tsk);
+}
+
 //--------------------------------------------------------------
 
 bool BackendModel::TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message) {
