@@ -777,6 +777,29 @@ public:
         std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
     }
 
+    static void GetDownSampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip,
+        int& down_sampled_width, int& down_sampled_height, std::vector<float>& pa) {
+        // Create the image reader
+        std::shared_ptr<DataReader> reader = nullptr;
+        if (file_type == CARTA::FileType::HDF5) {
+            reader.reset(new Hdf5DataReader(file_path));
+        } else {
+            reader.reset(new FitsDataReader(file_path));
+        }
+
+        std::vector<float> image_data = reader->ReadXY(channel, -1);
+
+        // Block averaging, get down sampled data
+        int image_width = reader->Width();
+        int image_height = reader->Height();
+        down_sampled_width = std::ceil((float)image_width / mip);
+        down_sampled_height = std::ceil((float)image_height / mip);
+        int down_sampled_area = down_sampled_height * down_sampled_width;
+        pa.resize(down_sampled_area);
+
+        BlockSmooth(image_data.data(), pa.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+    }
+
     static void TestStokesIntensityOrAngleSettings(std::string sample_file_path, int mip, bool fractional, bool debiasing = true,
         double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0, int stokes_angle = 0) {
         bool calculate_stokes_intensity(stokes_intensity >= 0);
@@ -983,8 +1006,6 @@ public:
 
         dummy_backend->Receive(open_file);
 
-        dummy_backend->ClearMessagesQueue();
-
         auto set_image_channels = Message::SetImageChannels(0, channel, 0, CARTA::CompressionType::ZFP, 11);
 
         dummy_backend->Receive(set_image_channels);
@@ -1034,6 +1055,79 @@ public:
 
         // Check results
         CmpVectors(pi, pi2);
+        CmpVectors(pa, pa2);
+        EXPECT_EQ(progresses.back(), 1);
+    }
+
+    static void TestImageWithNoStokesAxis(std::string image_opts, const CARTA::FileType& file_type, int mip, int stokes_angle = 0) {
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath("1110 1110 25", image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath("1110 1110 25", image_opts);
+        }
+
+        // =======================================================================================================
+        // Calculate the vector field with the whole 2D image data
+
+        int channel = 0;
+        int down_sampled_width;
+        int down_sampled_height;
+        std::vector<float> pa;
+        GetDownSampledPixels(file_path_string, file_type, channel, mip, down_sampled_width, down_sampled_height, pa);
+
+        // =======================================================================================================
+        // Calculate the vector field tile by tile with by the Session
+
+        auto dummy_backend = BackendModel::GetDummyBackend();
+
+        std::filesystem::path file_path(file_path_string);
+
+        CARTA::OpenFile open_file = Message::OpenFile(file_path.parent_path(), file_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
+
+        dummy_backend->Receive(open_file);
+
+        auto set_image_channels = Message::SetImageChannels(0, channel, 0, CARTA::CompressionType::ZFP, 11);
+
+        dummy_backend->Receive(set_image_channels);
+
+        dummy_backend->WaitForJobFinished();
+
+        dummy_backend->ClearMessagesQueue();
+
+        // Set the protobuf message
+        auto set_vector_field_params =
+            Message::SetVectorOverlayParameters(0, mip, false, false, 0, 0, 0, -1, stokes_angle, CARTA::CompressionType::NONE, 0);
+
+        dummy_backend->Receive(set_vector_field_params);
+
+        dummy_backend->WaitForJobFinished();
+
+        // Set results data
+        std::pair<std::vector<char>, bool> message_pair;
+        std::vector<float> pa2(down_sampled_width * down_sampled_height);
+        std::vector<double> progresses;
+
+        while (dummy_backend->TryPopMessagesQueue(message_pair)) {
+            std::vector<char> message = message_pair.first;
+            CARTA::EventType event_type = Message::EventType(message);
+
+            if (event_type == CARTA::EventType::VECTOR_OVERLAY_TILE_DATA) {
+                auto response = Message::DecodeMessage<CARTA::VectorOverlayTileData>(message);
+                EXPECT_EQ(response.angle_tiles_size(), 1);
+                if (response.angle_tiles_size()) {
+                    // Fill PA values
+                    auto tile_pa = response.angle_tiles(0);
+                    GetTileData(tile_pa, down_sampled_width, pa2);
+                }
+
+                // Record progress
+                progresses.push_back(response.progress());
+            }
+        }
+
+        // Check results
         CmpVectors(pa, pa2);
         EXPECT_EQ(progresses.back(), 1);
     }
@@ -1356,4 +1450,11 @@ TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
+}
+
+TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
+    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
+    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
+    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
+    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
 }

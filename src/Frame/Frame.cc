@@ -2199,17 +2199,6 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     bool calculate_stokes_intensity(stokes_intensity >= 0);
     bool calculate_stokes_angle(stokes_angle >= 0);
 
-    // Get Stokes I, Q, and U indices
-    int stokes_i;
-    if (fractional && !GetStokesTypeIndex("Ix", stokes_i)) {
-        return false;
-    }
-
-    int stokes_q, stokes_u;
-    if (!GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
-        return false;
-    }
-
     // Get current channel
     int channel = CurrentZ();
 
@@ -2231,6 +2220,84 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
     // Prevent deleting the Frame while the loop is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
+
+    // Consider the case if an image has no stokes axis
+    if (_stokes_axis < 0) {
+        // Get image tiles data
+        for (int i = 0; i < tiles.size(); ++i) {
+            auto& tile = tiles[i];
+            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
+
+            // Don't get the tile data with zero area
+            int tile_original_width = bounds.x_max() - bounds.x_min();
+            int tile_original_height = bounds.y_max() - bounds.y_min();
+            if (tile_original_width * tile_original_height == 0) {
+                continue;
+            }
+
+            // Get raster tile data
+            int x_min = bounds.x_min();
+            int x_max = bounds.x_max() - 1;
+            int y_min = bounds.y_min();
+            int y_max = bounds.y_max() - 1;
+
+            casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), -1);
+            std::vector<float> tile_data;
+            if (!GetSlicerData(tile_section, tile_data)) {
+                return false;
+            }
+
+            // Block averaging, get down sampled data
+            int req_height = tile_original_height;
+            int req_width = tile_original_width;
+            int down_sampled_height = std::ceil((float)req_height / mip);
+            int down_sampled_width = std::ceil((float)req_width / mip);
+            int down_sampled_area = down_sampled_height * down_sampled_width;
+            std::vector<float> down_sampled_data(down_sampled_area);
+
+            BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
+                down_sampled_height, 0, 0, mip);
+
+            // Fill PA tiles protobuf data
+            if (calculate_stokes_angle) {
+                tile_pa->set_x(tiles[i].x);
+                tile_pa->set_y(tiles[i].y);
+                tile_pa->set_layer(tiles[i].layer);
+                tile_pa->set_width(down_sampled_width);
+                tile_pa->set_height(down_sampled_height);
+                if (compression_type == CARTA::CompressionType::ZFP) {
+                    // Get and fill the NaN data
+                    auto nan_encodings = GetNanEncodingsBlock(down_sampled_data, 0, down_sampled_width, down_sampled_height);
+                    tile_pa->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+                    // Compress and fill the data
+                    std::vector<char> compression_buffer;
+                    size_t compressed_size;
+                    int precision = lround(compression_quality);
+                    Compress(down_sampled_data, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
+                    tile_pa->set_image_data(compression_buffer.data(), compressed_size);
+                } else {
+                    tile_pa->set_image_data(down_sampled_data.data(), sizeof(float) * down_sampled_data.size());
+                }
+            }
+
+            // Send partial results to the frontend
+            double progress = (double)(i + 1) / tiles.size();
+            response.set_progress(progress);
+            partial_vector_field_callback(response);
+        }
+        return true;
+    }
+
+    // Consider the case if an image has stokes axis
+
+    // Get Stokes I, Q, and U indices
+    int stokes_i, stokes_q, stokes_u;
+    if (fractional && !GetStokesTypeIndex("Ix", stokes_i)) {
+        return false;
+    }
+    if (!GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
+        return false;
+    }
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
@@ -2270,10 +2337,8 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         }
 
         // Block averaging, get down sampled data
-        int x = 0;
-        int y = 0;
-        int req_height = tile_original_height - y;
-        int req_width = tile_original_width - x;
+        int req_height = tile_original_height;
+        int req_width = tile_original_width;
         int down_sampled_height = std::ceil((float)req_height / mip);
         int down_sampled_width = std::ceil((float)req_width / mip);
         int down_sampled_area = down_sampled_height * down_sampled_width;
@@ -2288,13 +2353,13 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
         if (fractional) {
             BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, x, y, mip);
+                down_sampled_height, 0, 0, mip);
         }
 
         BlockSmooth(tile_data_q.data(), down_sampled_q.data(), tile_original_width, tile_original_height, down_sampled_width,
-            down_sampled_height, x, y, mip);
+            down_sampled_height, 0, 0, mip);
         BlockSmooth(tile_data_u.data(), down_sampled_u.data(), tile_original_width, tile_original_height, down_sampled_width,
-            down_sampled_height, x, y, mip);
+            down_sampled_height, 0, 0, mip);
 
         // Calculate PI, FPI, and PA
         auto calc_pi = [&](float q, float u) {
