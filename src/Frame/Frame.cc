@@ -2181,21 +2181,21 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
 }
 
 bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback) {
-    int& mip = _vector_field_settings.smoothing_factor;
-    bool& fractional = _vector_field_settings.fractional;
-    double& threshold = _vector_field_settings.threshold;
-    CARTA::CompressionType& compression_type = _vector_field_settings.compression_type;
-    float& compression_quality = _vector_field_settings.compression_quality;
+    int mip = _vector_field_settings.smoothing_factor;
+    bool fractional = _vector_field_settings.fractional;
+    double threshold = _vector_field_settings.threshold;
+    CARTA::CompressionType compression_type = _vector_field_settings.compression_type;
+    float compression_quality = _vector_field_settings.compression_quality;
 
     double q_error = _vector_field_settings.q_error;
     double u_error = _vector_field_settings.u_error;
-    bool& debiasing = _vector_field_settings.debiasing;
+    bool debiasing = _vector_field_settings.debiasing;
     if (!debiasing) {
         q_error = u_error = 0;
     }
 
-    int& stokes_intensity = _vector_field_settings.stokes_intensity;
-    int& stokes_angle = _vector_field_settings.stokes_angle;
+    int stokes_intensity = _vector_field_settings.stokes_intensity;
+    int stokes_angle = _vector_field_settings.stokes_angle;
     bool calculate_stokes_intensity(stokes_intensity >= 0);
     bool calculate_stokes_angle(stokes_angle >= 0);
 
@@ -2228,6 +2228,9 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     int image_width = Width();
     int image_height = Height();
     GetTiles(image_width, image_height, mip, tiles);
+
+    // Prevent deleting the Frame while the loop is not finished yet
+    std::shared_lock lock(GetActiveTaskMutex());
 
     // Get image tiles data
     for (int i = 0; i < tiles.size(); ++i) {
