@@ -113,16 +113,12 @@ public:
         int image_height = frame->Height();
 
         // Block averaging
-        int x = 0;
-        int y = 0;
-        int req_height = image_height - y;
-        int req_width = image_width - x;
-        int down_sampled_height = std::ceil((float)req_height / mip);
-        int down_sampled_width = std::ceil((float)req_width / mip);
+        int down_sampled_height = std::ceil((float)image_height / mip);
+        int down_sampled_width = std::ceil((float)image_width / mip);
         std::vector<float> down_sampled_data(down_sampled_height * down_sampled_width);
 
         BlockSmooth(
-            image_data.data(), down_sampled_data.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+            image_data.data(), down_sampled_data.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
 
         CheckDownSampledData(image_data, down_sampled_data, image_width, image_height, down_sampled_width, down_sampled_height, mip);
 
@@ -193,20 +189,13 @@ public:
                 return false;
             }
 
-            EXPECT_GT(tile_data_i.size(), 0);
-            EXPECT_GT(tile_data_q.size(), 0);
-            EXPECT_GT(tile_data_u.size(), 0);
             EXPECT_EQ(tile_data_i.size(), tile_original_width * tile_original_height);
             EXPECT_EQ(tile_data_q.size(), tile_original_width * tile_original_height);
             EXPECT_EQ(tile_data_u.size(), tile_original_width * tile_original_height);
 
             // Block averaging, get down sampled data
-            int x = 0;
-            int y = 0;
-            int req_height = tile_original_height - y;
-            int req_width = tile_original_width - x;
-            int down_sampled_height = std::ceil((float)req_height / mip);
-            int down_sampled_width = std::ceil((float)req_width / mip);
+            int down_sampled_height = std::ceil((float)tile_original_height / mip);
+            int down_sampled_width = std::ceil((float)tile_original_width / mip);
             int down_sampled_area = down_sampled_height * down_sampled_width;
 
             if (mip > 1) {
@@ -222,11 +211,11 @@ public:
             std::vector<float> down_sampled_u(down_sampled_area);
 
             BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, x, y, mip);
+                down_sampled_height, 0, 0, mip);
             BlockSmooth(tile_data_q.data(), down_sampled_q.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, x, y, mip);
+                down_sampled_height, 0, 0, mip);
             BlockSmooth(tile_data_u.data(), down_sampled_u.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, x, y, mip);
+                down_sampled_height, 0, 0, mip);
 
             CheckDownSampledData(
                 tile_data_i, down_sampled_i, tile_original_width, tile_original_height, down_sampled_width, down_sampled_height, mip);
@@ -317,51 +306,32 @@ public:
             }
 
             // Fill tiles protobuf data
-            auto& tiles_pi = tiles_data_pi[i];
-            tiles_pi.set_x(tiles[i].x);
-            tiles_pi.set_y(tiles[i].y);
-            tiles_pi.set_layer(tiles[i].layer);
-            tiles_pi.set_width(down_sampled_width);
-            tiles_pi.set_height(down_sampled_height);
-            tiles_pi.set_image_data(pi.data(), sizeof(float) * pi.size());
+            auto& tile_pi = tiles_data_pi[i];
+            FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
+                CARTA::CompressionType::NONE, 0);
 
-            auto& tiles_pa = tiles_data_pa[i];
-            tiles_pa.set_x(tiles[i].x);
-            tiles_pa.set_y(tiles[i].y);
-            tiles_pa.set_layer(tiles[i].layer);
-            tiles_pa.set_width(down_sampled_width);
-            tiles_pa.set_height(down_sampled_height);
-            tiles_pa.set_image_data(pa.data(), sizeof(float) * pa.size());
+            auto& tile_pa = tiles_data_pa[i];
+            FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
+                CARTA::CompressionType::NONE, 0);
         }
 
         // Check tiles protobuf data
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile_pi = tiles_data_pi[i];
             std::string buf_pi = tile_pi.image_data();
-            std::vector<float> val_pi(buf_pi.size() / sizeof(float));
-            memcpy(val_pi.data(), buf_pi.data(), buf_pi.size());
+            std::vector<float> pi2(buf_pi.size() / sizeof(float));
+            memcpy(pi2.data(), buf_pi.data(), buf_pi.size());
 
             auto& tile_pa = tiles_data_pa[i];
             std::string buf_pa = tile_pa.image_data();
-            std::vector<float> val_pa(buf_pa.size() / sizeof(float));
-            memcpy(val_pa.data(), buf_pa.data(), buf_pa.size());
+            std::vector<float> pa2(buf_pa.size() / sizeof(float));
+            memcpy(pa2.data(), buf_pa.data(), buf_pa.size());
 
             auto& pi = pis[i];
             auto& pa = pas[i];
 
-            EXPECT_EQ(val_pi.size(), val_pa.size());
-            EXPECT_EQ(pi.size(), pa.size());
-            EXPECT_EQ(val_pi.size(), pi.size());
-            EXPECT_EQ(val_pa.size(), pa.size());
-
-            for (int j = 0; j < pi.size(); ++j) {
-                if (!std::isnan(pi[j]) || !std::isnan(val_pi[j])) {
-                    EXPECT_FLOAT_EQ(pi[j], val_pi[j]);
-                }
-                if (!std::isnan(pa[j]) || !std::isnan(val_pa[j])) {
-                    EXPECT_FLOAT_EQ(pa[j], val_pa[j]);
-                }
-            }
+            CmpVectors(pi, pi2);
+            CmpVectors(pa, pa2);
         }
         return true;
     }
@@ -470,12 +440,8 @@ public:
         }
 
         // Block averaging, get down sampled data
-        int x = 0;
-        int y = 0;
-        int req_width = image_width - x;
-        int req_height = image_height - y;
-        int down_sampled_width = std::ceil((float)req_width / mip);
-        int down_sampled_height = std::ceil((float)req_height / mip);
+        int down_sampled_width = std::ceil((float)image_width / mip);
+        int down_sampled_height = std::ceil((float)image_height / mip);
         int down_sampled_area = down_sampled_height * down_sampled_width;
 
         std::vector<float> down_sampled_i(down_sampled_area);
@@ -483,11 +449,11 @@ public:
         std::vector<float> down_sampled_u(down_sampled_area);
 
         BlockSmooth(
-            stokes_data_i.data(), down_sampled_i.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+            stokes_data_i.data(), down_sampled_i.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
         BlockSmooth(
-            stokes_data_q.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+            stokes_data_q.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
         BlockSmooth(
-            stokes_data_u.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, x, y, mip);
+            stokes_data_u.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
 
         // Reset Q and U errors as 0 if debiasing is not used
         if (!debiasing) {
@@ -591,8 +557,15 @@ public:
         // Check results
         CmpVectors(pi, pi2);
         CmpVectors(pa, pa2);
-        EXPECT_EQ(progresses.back(), 1);
+        CheckProgresses(progresses);
         return true;
+    }
+
+    static void CheckProgresses(const std::vector<double>& progresses) {
+        EXPECT_TRUE(!progresses.empty());
+        if (!progresses.empty()) {
+            EXPECT_EQ(progresses.back(), 1);
+        }
     }
 
     static void GetTileData(const CARTA::TileData& tile, int down_sampled_width, std::vector<float>& array) {
@@ -679,7 +652,7 @@ public:
         // Check results
         CmpVectors(pi, pi2);
         CmpVectors(pa, pa2);
-        EXPECT_EQ(progresses.back(), 1);
+        CheckProgresses(progresses);
     }
 
     static void CalcPiAndPa(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip, bool debiasing,
@@ -840,7 +813,7 @@ public:
         // Do PI/PA calculations by the Frame function
         frame->VectorFieldImage(callback);
 
-        EXPECT_EQ(progresses.back(), 1);
+        CheckProgresses(progresses);
     }
 
     static std::pair<float, float> TestZFPCompression(std::string sample_file_path, int mip, float comprerssion_quality, bool fractional,
@@ -861,10 +834,10 @@ public:
         frame->SetVectorOverlayParameters(message);
 
         // Set results data
-        int req_width = frame->Width();
-        int req_height = frame->Height();
-        int down_sampled_width = std::ceil((float)req_width / mip);
-        int down_sampled_height = std::ceil((float)req_height / mip);
+        int image_width = frame->Width();
+        int image_height = frame->Height();
+        int down_sampled_width = std::ceil((float)image_width / mip);
+        int down_sampled_height = std::ceil((float)image_height / mip);
         int down_sampled_area = down_sampled_height * down_sampled_width;
 
         std::vector<float> pi_no_compression(down_sampled_area);
@@ -1056,16 +1029,17 @@ public:
         // Check results
         CmpVectors(pi, pi2);
         CmpVectors(pa, pa2);
-        EXPECT_EQ(progresses.back(), 1);
+        CheckProgresses(progresses);
     }
 
-    static void TestImageWithNoStokesAxis(std::string image_opts, const CARTA::FileType& file_type, int mip, int stokes_angle = 0) {
+    static void TestImageWithNoStokesAxis(
+        std::string image_shape, std::string image_opts, const CARTA::FileType& file_type, int mip, int stokes_angle = 0) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath("1110 1110 25", image_opts);
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
         } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath("1110 1110 25", image_opts);
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(image_shape, image_opts);
         }
 
         // =======================================================================================================
@@ -1129,7 +1103,7 @@ public:
 
         // Check results
         CmpVectors(pa, pa2);
-        EXPECT_EQ(progresses.back(), 1);
+        CheckProgresses(progresses);
     }
 };
 
@@ -1453,8 +1427,12 @@ TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
 }
 
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
-    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
-    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
-    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
-    TestImageWithNoStokesAxis(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
 }

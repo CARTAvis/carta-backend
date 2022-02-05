@@ -2248,10 +2248,8 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             }
 
             // Block averaging, get down sampled data
-            int req_height = tile_original_height;
-            int req_width = tile_original_width;
-            int down_sampled_height = std::ceil((float)req_height / mip);
-            int down_sampled_width = std::ceil((float)req_width / mip);
+            int down_sampled_height = std::ceil((float)tile_original_height / mip);
+            int down_sampled_width = std::ceil((float)tile_original_width / mip);
             int down_sampled_area = down_sampled_height * down_sampled_width;
             std::vector<float> down_sampled_data(down_sampled_area);
 
@@ -2260,24 +2258,8 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
             // Fill PA tiles protobuf data
             if (calculate_stokes_angle) {
-                tile_pa->set_x(tiles[i].x);
-                tile_pa->set_y(tiles[i].y);
-                tile_pa->set_layer(tiles[i].layer);
-                tile_pa->set_width(down_sampled_width);
-                tile_pa->set_height(down_sampled_height);
-                if (compression_type == CARTA::CompressionType::ZFP) {
-                    // Get and fill the NaN data
-                    auto nan_encodings = GetNanEncodingsBlock(down_sampled_data, 0, down_sampled_width, down_sampled_height);
-                    tile_pa->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
-                    // Compress and fill the data
-                    std::vector<char> compression_buffer;
-                    size_t compressed_size;
-                    int precision = lround(compression_quality);
-                    Compress(down_sampled_data, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
-                    tile_pa->set_image_data(compression_buffer.data(), compressed_size);
-                } else {
-                    tile_pa->set_image_data(down_sampled_data.data(), sizeof(float) * down_sampled_data.size());
-                }
+                FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
+                    down_sampled_data, compression_type, compression_quality);
             }
 
             // Send partial results to the frontend
@@ -2337,10 +2319,8 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         }
 
         // Block averaging, get down sampled data
-        int req_height = tile_original_height;
-        int req_width = tile_original_width;
-        int down_sampled_height = std::ceil((float)req_height / mip);
-        int down_sampled_width = std::ceil((float)req_width / mip);
+        int down_sampled_height = std::ceil((float)tile_original_height / mip);
+        int down_sampled_width = std::ceil((float)tile_original_width / mip);
         int down_sampled_area = down_sampled_height * down_sampled_width;
 
         std::vector<float> down_sampled_i;
@@ -2429,46 +2409,14 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
         // Fill PI tiles protobuf data
         if (calculate_stokes_intensity) {
-            tile_pi->set_x(tiles[i].x);
-            tile_pi->set_y(tiles[i].y);
-            tile_pi->set_layer(tiles[i].layer);
-            tile_pi->set_width(down_sampled_width);
-            tile_pi->set_height(down_sampled_height);
-            if (compression_type == CARTA::CompressionType::ZFP) {
-                // Get and fill the NaN data
-                auto nan_encodings = GetNanEncodingsBlock(pi, 0, down_sampled_width, down_sampled_height);
-                tile_pi->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
-                // Compress and fill the data
-                std::vector<char> compression_buffer;
-                size_t compressed_size;
-                int precision = lround(compression_quality);
-                Compress(pi, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
-                tile_pi->set_image_data(compression_buffer.data(), compressed_size);
-            } else {
-                tile_pi->set_image_data(pi.data(), sizeof(float) * pi.size());
-            }
+            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
+                compression_type, compression_quality);
         }
 
         // Fill PA tiles protobuf data
         if (calculate_stokes_angle) {
-            tile_pa->set_x(tiles[i].x);
-            tile_pa->set_y(tiles[i].y);
-            tile_pa->set_layer(tiles[i].layer);
-            tile_pa->set_width(down_sampled_width);
-            tile_pa->set_height(down_sampled_height);
-            if (compression_type == CARTA::CompressionType::ZFP) {
-                // Get and fill the NaN data
-                auto nan_encodings = GetNanEncodingsBlock(pa, 0, down_sampled_width, down_sampled_height);
-                tile_pa->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
-                // Compress and fill the data
-                std::vector<char> compression_buffer;
-                size_t compressed_size;
-                int precision = lround(compression_quality);
-                Compress(pa, 0, compression_buffer, compressed_size, down_sampled_width, down_sampled_height, precision);
-                tile_pa->set_image_data(compression_buffer.data(), compressed_size);
-            } else {
-                tile_pa->set_image_data(pa.data(), sizeof(float) * pa.size());
-            }
+            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
+                compression_type, compression_quality);
         }
 
         // Send partial results to the frontend
