@@ -213,6 +213,8 @@ public:
         return _vector_field_settings;
     };
     bool VectorFieldImage(VectorFieldCallback& partial_vector_field_callback);
+    bool GetDownSampledRasterData(std::vector<float>& data, int& down_sampled_width, int& down_sampled_height, int z, int stokes,
+        const CARTA::ImageBounds& bounds, int mip);
 
 protected:
     // Validate z and stokes index values

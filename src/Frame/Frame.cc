@@ -2228,36 +2228,14 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             auto& tile = tiles[i];
             auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
-            // Don't get the tile data with zero area
-            int tile_original_width = bounds.x_max() - bounds.x_min();
-            int tile_original_height = bounds.y_max() - bounds.y_min();
-            if (tile_original_width * tile_original_height == 0) {
-                continue;
-            }
-
-            // Get raster tile data
-            int x_min = bounds.x_min();
-            int x_max = bounds.x_max() - 1;
-            int y_min = bounds.y_min();
-            int y_max = bounds.y_max() - 1;
-
-            casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), -1);
-            std::vector<float> tile_data;
-            if (!GetSlicerData(tile_section, tile_data)) {
-                return false;
-            }
-
-            // Block averaging, get down sampled data
-            int down_sampled_height = std::ceil((float)tile_original_height / mip);
-            int down_sampled_width = std::ceil((float)tile_original_width / mip);
-            int down_sampled_area = down_sampled_height * down_sampled_width;
-            std::vector<float> down_sampled_data(down_sampled_area);
-
-            BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, 0, 0, mip);
-
-            // Fill PA tiles protobuf data
             if (calculate_stokes_angle) {
+                // Get down sampled 2D pixel data
+                std::vector<float> down_sampled_data;
+                int down_sampled_width, down_sampled_height;
+                if (!GetDownSampledRasterData(down_sampled_data, down_sampled_width, down_sampled_height, channel, -1, bounds, mip)) {
+                    return false;
+                }
+                // Fill PA tiles protobuf data
                 FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
                     down_sampled_data, compression_type, compression_quality);
             }
@@ -2286,60 +2264,17 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
-        // Don't get the tile data with zero area
-        int tile_original_width = bounds.x_max() - bounds.x_min();
-        int tile_original_height = bounds.y_max() - bounds.y_min();
-        if (tile_original_width * tile_original_height == 0) {
-            continue;
-        }
-
-        // Get raster tile data
-        int x_min = bounds.x_min();
-        int x_max = bounds.x_max() - 1;
-        int y_min = bounds.y_min();
-        int y_max = bounds.y_max() - 1;
-
-        casacore::Slicer tile_section_i;
-        if (fractional) {
-            tile_section_i = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_i);
-        }
-
-        casacore::Slicer tile_section_q = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_q);
-        casacore::Slicer tile_section_u = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_u);
-
-        std::vector<float> tile_data_i;
-        if (fractional && !GetSlicerData(tile_section_i, tile_data_i)) {
+        // Get down sampled raster tile data
+        std::vector<float> down_sampled_i, down_sampled_q, down_sampled_u;
+        int down_sampled_width, down_sampled_height;
+        if (fractional &&
+            !GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
             return false;
         }
-
-        std::vector<float> tile_data_q;
-        std::vector<float> tile_data_u;
-        if (!GetSlicerData(tile_section_q, tile_data_q) || !GetSlicerData(tile_section_u, tile_data_u)) {
+        if (!GetDownSampledRasterData(down_sampled_q, down_sampled_width, down_sampled_height, channel, stokes_q, bounds, mip) ||
+            !GetDownSampledRasterData(down_sampled_u, down_sampled_width, down_sampled_height, channel, stokes_u, bounds, mip)) {
             return false;
         }
-
-        // Block averaging, get down sampled data
-        int down_sampled_height = std::ceil((float)tile_original_height / mip);
-        int down_sampled_width = std::ceil((float)tile_original_width / mip);
-        int down_sampled_area = down_sampled_height * down_sampled_width;
-
-        std::vector<float> down_sampled_i;
-        if (fractional) {
-            down_sampled_i.resize(down_sampled_area);
-        }
-
-        std::vector<float> down_sampled_q(down_sampled_area);
-        std::vector<float> down_sampled_u(down_sampled_area);
-
-        if (fractional) {
-            BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, 0, 0, mip);
-        }
-
-        BlockSmooth(tile_data_q.data(), down_sampled_q.data(), tile_original_width, tile_original_height, down_sampled_width,
-            down_sampled_height, 0, 0, mip);
-        BlockSmooth(tile_data_u.data(), down_sampled_u.data(), tile_original_width, tile_original_height, down_sampled_width,
-            down_sampled_height, 0, 0, mip);
 
         // Calculate PI, FPI, and PA
         auto calc_pi = [&](float q, float u) {
@@ -2380,12 +2315,13 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             return pa;
         };
 
+        // Set results data
         std::vector<float> pi, pa;
         if (calculate_stokes_intensity) {
-            pi.resize(down_sampled_area);
+            pi.resize(down_sampled_width * down_sampled_height);
         }
         if (calculate_stokes_angle) {
-            pa.resize(down_sampled_area);
+            pa.resize(down_sampled_width * down_sampled_height);
         }
 
         // Calculate PI
@@ -2425,6 +2361,35 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         partial_vector_field_callback(response);
     }
     return true;
+}
+
+bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int& down_sampled_width, int& down_sampled_height, int channel,
+    int stokes, const CARTA::ImageBounds& bounds, int mip) {
+    int tile_original_width = bounds.x_max() - bounds.x_min();
+    int tile_original_height = bounds.y_max() - bounds.y_min();
+    if (tile_original_width * tile_original_height == 0) {
+        return false;
+    }
+
+    // Get original raster tile data
+    int x_min = bounds.x_min();
+    int x_max = bounds.x_max() - 1;
+    int y_min = bounds.y_min();
+    int y_max = bounds.y_max() - 1;
+
+    std::vector<float> tile_data;
+    casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
+    if (!GetSlicerData(tile_section, tile_data)) {
+        return false;
+    }
+
+    // Get down sampled raster tile data by block averaging
+    down_sampled_width = std::ceil((float)tile_original_width / mip);
+    down_sampled_height = std::ceil((float)tile_original_height / mip);
+    down_sampled_data.resize(down_sampled_height * down_sampled_width);
+
+    return BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
+        down_sampled_height, 0, 0, mip);
 }
 
 } // namespace carta
