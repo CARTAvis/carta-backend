@@ -2364,11 +2364,19 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 }
 
 bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int& down_sampled_width, int& down_sampled_height, int channel,
-    int stokes, const CARTA::ImageBounds& bounds, int mip) {
+    int stokes, CARTA::ImageBounds& bounds, int mip) {
     int tile_original_width = bounds.x_max() - bounds.x_min();
     int tile_original_height = bounds.y_max() - bounds.y_min();
     if (tile_original_width * tile_original_height == 0) {
         return false;
+    }
+
+    down_sampled_width = std::ceil((float)tile_original_width / mip);
+    down_sampled_height = std::ceil((float)tile_original_height / mip);
+
+    // Check if the (HDF5) loader has down sampled data
+    if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(down_sampled_data, channel, stokes, bounds, mip, _image_mutex)) {
+        return true;
     }
 
     // Get original raster tile data
@@ -2384,10 +2392,7 @@ bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int&
     }
 
     // Get down sampled raster tile data by block averaging
-    down_sampled_width = std::ceil((float)tile_original_width / mip);
-    down_sampled_height = std::ceil((float)tile_original_height / mip);
     down_sampled_data.resize(down_sampled_height * down_sampled_width);
-
     return BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
         down_sampled_height, 0, 0, mip);
 }

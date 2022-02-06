@@ -650,8 +650,14 @@ public:
         frame->VectorFieldImage(callback);
 
         // Check results
-        CmpVectors(pi, pi2);
-        CmpVectors(pa, pa2);
+        if (file_type == CARTA::FileType::HDF5) {
+            CmpVectors(pi, pi2, 1e-5);
+            CmpVectors(pa, pa2, 1e-5);
+        } else {
+            CmpVectors(pi, pi2);
+            CmpVectors(pa, pa2);
+        }
+
         CheckProgresses(progresses);
     }
 
@@ -1027,8 +1033,14 @@ public:
         }
 
         // Check results
-        CmpVectors(pi, pi2);
-        CmpVectors(pa, pa2);
+        if (file_type == CARTA::FileType::HDF5) {
+            CmpVectors(pi, pi2, 1e-5);
+            CmpVectors(pa, pa2, 1e-5);
+        } else {
+            CmpVectors(pi, pi2);
+            CmpVectors(pa, pa2);
+        }
+
         CheckProgresses(progresses);
     }
 
@@ -1102,7 +1114,12 @@ public:
         }
 
         // Check results
-        CmpVectors(pa, pa2);
+        if (file_type == CARTA::FileType::HDF5) {
+            CmpVectors(pa, pa2, 1e-6);
+        } else {
+            CmpVectors(pa, pa2);
+        }
+
         CheckProgresses(progresses);
     }
 };
@@ -1343,16 +1360,20 @@ TEST_F(VectorFieldTest, TestVectorFieldCalc) {
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc2) {
-    bool fractional = true;
+    bool fractional = false;
     bool debiasing = true;
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional);
+    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional);
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional);
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
+    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
 
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional);
+    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional);
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional);
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
+    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
     TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
 }
 
@@ -1413,26 +1434,34 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
 }
 
 TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
-    bool fractional = true;
+    bool fractional = false;
     bool debiasing = true;
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional);
+    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
+    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
 
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional);
+    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
+    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
     TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
 }
 
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, 0);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, 0);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, 0);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, 0);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
 }
