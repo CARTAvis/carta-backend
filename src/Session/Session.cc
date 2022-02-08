@@ -1840,6 +1840,9 @@ bool Session::SendVectorFieldData(int file_id) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         auto settings = frame->GetVectorFieldParameters();
+        if (settings.smoothing_factor < 1) {
+            return true;
+        }
 
         if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
             CARTA::VectorOverlayTileData empty_response;
