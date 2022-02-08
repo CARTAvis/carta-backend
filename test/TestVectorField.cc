@@ -19,10 +19,18 @@ static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
 
 class VectorFieldTest : public ::testing::Test {
 public:
-    static bool TestTilesData(std::string sample_file_path, std::string stokes_type, int mip) {
+    static bool TestTilesData(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
 
         // Get Stokes index
         int stokes;
@@ -91,10 +99,18 @@ public:
         return true;
     }
 
-    static bool TestBlockSmooth(std::string sample_file_path, std::string stokes_type, int mip) {
+    static bool TestBlockSmooth(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
 
         // Get stokes image data
         int stokes;
@@ -125,11 +141,19 @@ public:
         return true;
     }
 
-    static bool TestTileCalc(
-        std::string sample_file_path, int mip, bool fractional, double q_error = 0, double u_error = 0, double threshold = 0) {
+    static bool TestTileCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional, double q_error = 0,
+        double u_error = 0, double threshold = 0) {
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
 
         // Get Stokes I, Q, and U indices
         int stokes_i, stokes_q, stokes_u;
@@ -397,11 +421,20 @@ public:
         EXPECT_EQ(count, image_mask.size());
     }
 
-    static bool TestVectorFieldCalc(std::string sample_file_path, int mip, bool fractional, bool debiasing = true, double q_error = 0,
-        double u_error = 0, double threshold = 0, int stokes_intensity = 0, int stokes_angle = 0) {
+    static bool TestVectorFieldCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
+        int stokes_angle = 0) {
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
 
         // =======================================================================================================
         // Calculate the vector field with the whole 2D image data
@@ -555,8 +588,13 @@ public:
         frame->VectorFieldImage(callback);
 
         // Check results
-        CmpVectors(pi, pi2);
-        CmpVectors(pa, pa2);
+        if (file_type == CARTA::FileType::HDF5) {
+            CmpVectors(pi, pi2, 1e-5);
+            CmpVectors(pa, pa2, 1e-5);
+        } else {
+            CmpVectors(pi, pi2);
+            CmpVectors(pa, pa2);
+        }
         CheckProgresses(progresses);
         return true;
     }
@@ -585,7 +623,7 @@ public:
         }
     }
 
-    static void TestVectorFieldCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
+    static void TestVectorFieldCalc2(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
         bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
         int stokes_angle = 0) {
         // Create the sample image
@@ -657,7 +695,6 @@ public:
             CmpVectors(pi, pi2);
             CmpVectors(pa, pa2);
         }
-
         CheckProgresses(progresses);
     }
 
@@ -779,14 +816,23 @@ public:
         BlockSmooth(image_data.data(), pa.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
     }
 
-    static void TestStokesIntensityOrAngleSettings(std::string sample_file_path, int mip, bool fractional, bool debiasing = true,
-        double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0, int stokes_angle = 0) {
+    static void TestStokesIntensityOrAngleSettings(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
+        int stokes_angle = 0) {
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
         bool calculate_stokes_intensity(stokes_intensity >= 0);
         bool calculate_stokes_angle(stokes_angle >= 0);
 
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
@@ -822,15 +868,22 @@ public:
         CheckProgresses(progresses);
     }
 
-    static std::pair<float, float> TestZFPCompression(std::string sample_file_path, int mip, float comprerssion_quality, bool fractional,
-        bool debiasing = true, double q_error = 0, double u_error = 0) {
-        double threshold = -1000;
+    static std::pair<float, float> TestZFPCompression(std::string image_opts, const CARTA::FileType& file_type, int mip,
+        float comprerssion_quality, bool fractional, bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0) {
         int stokes_intensity = 0;
         int stokes_angle = 0;
 
+        // Create the sample image
+        std::string file_path_string;
+        if (file_type == CARTA::FileType::HDF5) {
+            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(sample_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
@@ -1040,7 +1093,6 @@ public:
             CmpVectors(pi, pi2);
             CmpVectors(pa, pa2);
         }
-
         CheckProgresses(progresses);
     }
 
@@ -1119,7 +1171,6 @@ public:
         } else {
             CmpVectors(pa, pa2);
         }
-
         CheckProgresses(progresses);
     }
 };
@@ -1159,125 +1210,37 @@ TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
 }
 
 TEST_F(VectorFieldTest, TestTilesData) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestTilesData(sample_file, "Ix", 1));
-    EXPECT_TRUE(TestTilesData(sample_file, "Ix", 2));
-    EXPECT_TRUE(TestTilesData(sample_file, "Ix", 4));
-    EXPECT_TRUE(TestTilesData(sample_file, "Ix", 8));
-    EXPECT_TRUE(TestTilesData(sample_file, "Ix", 16));
-
-    EXPECT_TRUE(TestTilesData(sample_file, "Qx", 1));
-    EXPECT_TRUE(TestTilesData(sample_file, "Qx", 2));
-    EXPECT_TRUE(TestTilesData(sample_file, "Qx", 4));
-    EXPECT_TRUE(TestTilesData(sample_file, "Qx", 8));
-    EXPECT_TRUE(TestTilesData(sample_file, "Qx", 16));
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Ix", 1));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Ix", 2));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Ix", 4));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Ix", 8));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Ix", 16));
-
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Qx", 1));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Qx", 2));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Qx", 4));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Qx", 8));
-    EXPECT_TRUE(TestTilesData(sample_nan_file, "Qx", 16));
+    std::string image_opts = IMAGE_OPTS_NAN;
+    CARTA::FileType file_type = CARTA::FileType::FITS;
+    for (int mip = 1; mip < 17; ++mip) {
+        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ix", mip));
+        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Qx", mip));
+        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ux", mip));
+        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Vx", mip));
+    }
 }
 
 TEST_F(VectorFieldTest, TestBlockSmooth) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ix", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Qx", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ux", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Vx", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ix", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Qx", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ux", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Vx", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ix", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Qx", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ux", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Vx", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ix", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Qx", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ux", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Vx", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ix", 16));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Qx", 16));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Ux", 16));
-    EXPECT_TRUE(TestBlockSmooth(sample_file, "Vx", 16));
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ix", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Qx", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ux", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Vx", 1));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ix", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Qx", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ux", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Vx", 2));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ix", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Qx", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ux", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Vx", 4));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ix", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Qx", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ux", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Vx", 8));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ix", 16));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Qx", 16));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Ux", 16));
-    EXPECT_TRUE(TestBlockSmooth(sample_nan_file, "Vx", 16));
+    std::string image_opts = IMAGE_OPTS_NAN;
+    CARTA::FileType file_type = CARTA::FileType::FITS;
+    for (int mip = 1; mip < 17; ++mip) {
+        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ix", mip));
+        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Qx", mip));
+        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ux", mip));
+        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Vx", mip));
+    }
 }
 
 TEST_F(VectorFieldTest, TestTileCalc) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestTileCalc(sample_file, 1, true));
-    EXPECT_TRUE(TestTileCalc(sample_file, 2, true));
-    EXPECT_TRUE(TestTileCalc(sample_file, 4, true));
-    EXPECT_TRUE(TestTileCalc(sample_file, 8, true));
-    EXPECT_TRUE(TestTileCalc(sample_file, 16, true));
-    EXPECT_TRUE(TestTileCalc(sample_file, 1, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 2, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 4, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 8, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 16, true, 1e-3, 1e-3, 0.1));
-
-    EXPECT_TRUE(TestTileCalc(sample_file, 1, false));
-    EXPECT_TRUE(TestTileCalc(sample_file, 2, false));
-    EXPECT_TRUE(TestTileCalc(sample_file, 4, false));
-    EXPECT_TRUE(TestTileCalc(sample_file, 8, false));
-    EXPECT_TRUE(TestTileCalc(sample_file, 16, false));
-    EXPECT_TRUE(TestTileCalc(sample_file, 1, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 2, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 4, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 8, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_file, 16, false, 1e-3, 1e-3, 0.1));
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 1, true));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 2, true));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 4, true));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 8, true));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 16, true));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 1, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 2, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 4, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 8, true, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 16, true, 1e-3, 1e-3, 0.1));
-
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 1, false));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 2, false));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 4, false));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 8, false));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 16, false));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 1, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 2, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 4, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 8, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestTileCalc(sample_nan_file, 16, false, 1e-3, 1e-3, 0.1));
+    std::string image_opts = IMAGE_OPTS_NAN;
+    CARTA::FileType file_type = CARTA::FileType::FITS;
+    bool fractional = false;
+    double q_error = 1e-3;
+    double u_error = 1e-3;
+    double threshold = 1e-2;
+    for (int mip = 1; mip < 17; ++mip) {
+        EXPECT_TRUE(TestTileCalc(image_opts, file_type, mip, fractional, q_error, u_error, threshold));
+    }
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldSettings) {
@@ -1307,161 +1270,71 @@ TEST_F(VectorFieldTest, TestVectorFieldSettings) {
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    bool fractional = true;
+    std::string image_opts = IMAGE_OPTS_NAN;
+    CARTA::FileType file_type = CARTA::FileType::FITS;
+    bool fractional = false;
     bool debiasing = true;
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 1, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 2, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 8, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 16, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
-
-    fractional = false;
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 1, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 2, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 8, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 16, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    fractional = true;
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 1, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 2, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 8, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 16, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
-
-    fractional = false;
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 1, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 2, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 8, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 16, fractional));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 1, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 2, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 8, fractional, debiasing, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 16, fractional, debiasing, 1e-3, 1e-3, 0.1));
+    double q_error = 1e-3;
+    double u_error = 1e-3;
+    double threshold = 1e-2;
+    for (int mip = 1; mip < 17; ++mip) {
+        EXPECT_TRUE(TestVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold));
+    }
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc2) {
+    std::string image_opts = IMAGE_OPTS_NAN;
+    CARTA::FileType file_type = CARTA::FileType::HDF5;
     bool fractional = false;
     bool debiasing = true;
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
-
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
-}
-
-TEST_F(VectorFieldTest, TestDebiasing) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, true, false));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, true, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, false, false));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_file, 4, false, false, 1e-3, 1e-3, 0.1));
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, true, false));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, false, false));
-    EXPECT_TRUE(TestVectorFieldCalc(sample_nan_file, 4, false, false, 1e-3, 1e-3, 0.1));
+    double q_error = 1e-3;
+    double u_error = 1e-3;
+    double threshold = 1e-2;
+    for (int mip = 1; mip < 17; ++mip) {
+        TestVectorFieldCalc2(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
+    }
 }
 
 TEST_F(VectorFieldTest, TestStokesIntensityOrAngleSettings) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-    TestStokesIntensityOrAngleSettings(sample_file, 4, true, false, 1e-3, 1e-3, 0.1, -1, 0);
-    TestStokesIntensityOrAngleSettings(sample_file, 4, true, false, 1e-3, 1e-3, 0.1, 0, -1);
-    TestStokesIntensityOrAngleSettings(sample_file, 4, true, false, 1e-3, 1e-3, 0.1, 0, 0);
-    TestStokesIntensityOrAngleSettings(sample_file, 4, true, false, 1e-3, 1e-3, 0.1, -1, -1);
-
-    auto sample_nan_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS_NAN);
-    TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, -1, 0);
-    TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, 0, -1);
-    TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, 0, 0);
-    TestStokesIntensityOrAngleSettings(sample_nan_file, 4, true, false, 1e-3, 1e-3, 0.1, -1, -1);
+    TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, -1, 0);
+    TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, 0, -1);
+    TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, 0, 0);
+    TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, -1, -1);
 }
 
 TEST_F(VectorFieldTest, TestZFPCompression) {
-    auto sample_file = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    std::string image_opts = IMAGE_OPTS;
+    CARTA::FileType file_type = CARTA::FileType::FITS;
     int mip = 4;
     bool fractional = true;
     bool debiasing = false;
-    auto errors1 = TestZFPCompression(sample_file, mip, 10, fractional, debiasing);
+    std::pair<float, float> errors = TestZFPCompression(image_opts, file_type, mip, 10, fractional, debiasing);
 
-    auto errors2 = TestZFPCompression(sample_file, mip, 12, fractional, debiasing);
-    EXPECT_GT(errors1.first, errors2.first);
-    EXPECT_GT(errors1.second, errors2.second);
-
-    auto errors3 = TestZFPCompression(sample_file, mip, 14, fractional, debiasing);
-    EXPECT_GT(errors2.first, errors3.first);
-    EXPECT_GT(errors2.second, errors3.second);
-
-    auto errors4 = TestZFPCompression(sample_file, mip, 16, fractional, debiasing);
-    EXPECT_GT(errors3.first, errors4.first);
-    EXPECT_GT(errors3.second, errors4.second);
-
-    auto errors5 = TestZFPCompression(sample_file, mip, 18, fractional, debiasing);
-    EXPECT_GT(errors4.first, errors5.first);
-    EXPECT_GT(errors4.second, errors5.second);
-
-    auto errors6 = TestZFPCompression(sample_file, mip, 20, fractional, debiasing);
-    EXPECT_GT(errors5.first, errors6.first);
-    EXPECT_GT(errors5.second, errors6.second);
+    for (int compression_quality = 11; compression_quality < 22; ++compression_quality) {
+        auto tmp_errors = TestZFPCompression(image_opts, file_type, mip, compression_quality, fractional, debiasing);
+        EXPECT_GT(errors.first, tmp_errors.first);
+        EXPECT_GT(errors.second, tmp_errors.second);
+        errors = tmp_errors;
+    }
 }
 
 TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
+    std::string image_opts = IMAGE_OPTS_NAN;
+    CARTA::FileType file_type = CARTA::FileType::FITS;
     bool fractional = false;
     bool debiasing = true;
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
-
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, fractional, debiasing, 1e-3, 1e-3, 0.1);
-    TestSessionVectorFieldCalc(IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, fractional, debiasing, 1e-3, 1e-3, 0.1);
+    double q_error = 1e-3;
+    double u_error = 1e-3;
+    double threshold = 1e-2;
+    for (int mip = 1; mip < 17; ++mip) {
+        TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
+    }
 }
 
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, 0);
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 1, 0);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 2, 0);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, 0);
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, 0);
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 1, 0);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 2, 0);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, CARTA::FileType::HDF5, 4, 0);
+    CARTA::FileType file_type = CARTA::FileType::FITS;
+    for (int mip = 1; mip < 5; ++mip) {
+        TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0);
+        TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0);
+    }
 }
