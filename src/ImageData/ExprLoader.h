@@ -10,11 +10,9 @@
 #include <casacore/casa/Json/JsonKVMap.h>
 #include <casacore/casa/Json/JsonParser.h>
 #include <casacore/images/Images/ImageExpr.h>
-#include <casacore/images/Images/ImageExprGram.h>
 #include <casacore/images/Images/ImageExprParse.h>
 #include <casacore/lattices/LEL/LatticeExprNode.h>
 
-#include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Util/FileSystem.h"
 
