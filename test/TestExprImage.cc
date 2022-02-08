@@ -7,12 +7,13 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
+#include "ImageData/CartaHdf5Image.h"
 #include "ImageData/FileLoader.h"
 #include "Logger/Logger.h"
 
 class ImageExprTest : public ::testing::Test {
 public:
-    void GenerateImageExprTimesTwo(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type) {
+    void GenerateImageExprTimesTwo(const std::string& file_name, const std::string& hdu, CARTA::FileType file_type, bool invalid = false) {
         std::string file_path;
         if (file_type == CARTA::FileType::FITS) {
             file_path = FileFinder::FitsImagePath(file_name);
@@ -36,10 +37,17 @@ public:
         auto image_xprofile = reader->ReadProfileX(0);
         auto image_yprofile = reader->ReadProfileY(0);
 
-        // Use LEL expr to multiply image by 2
         fs::path fs_path(file_path);
-        std::string expr = fs_path.filename().string() + " * 2";
         std::string directory = fs_path.parent_path().string();
+
+        std::string expr;
+        if (invalid) {
+            // Use LEL expr with invalid syntax
+            expr = fs_path.filename().string() + " & 2";
+        } else {
+            // Use LEL expr to multiply image by 2
+            expr = fs_path.filename().string() + " * 2";
+        }
 
         std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
         expr_loader->OpenFile(hdu);
@@ -117,8 +125,10 @@ TEST_F(ImageExprTest, FitsImageExprSave) {
     SaveImageExpr("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
 }
 
-/*
-TEST_F(ImageExprTest, Hdf5ImageExprTimesTwo) {
-    GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5);
+TEST_F(ImageExprTest, ImageExprFails) {
+    // Forms invalid expression
+    ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.fits", "", CARTA::FileType::FITS, true), casacore::AipsError);
+
+    // HDF5 not supported
+    ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5), casacore::AipsError);
 }
-*/
