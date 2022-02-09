@@ -51,7 +51,7 @@ CartaHdf5Image::~CartaHdf5Image() {
     delete _pixel_mask;
 }
 
-casacore::LatticeBase* CartaHdf5Image::OpenCartaHdf5Image (const casacore::String& name, const casacore::MaskSpecifier& spec) {
+casacore::LatticeBase* CartaHdf5Image::OpenCartaHdf5Image(const casacore::String& name, const casacore::MaskSpecifier& spec) {
     return new CartaHdf5Image(name, "DATA", "0", spec);
 }
 

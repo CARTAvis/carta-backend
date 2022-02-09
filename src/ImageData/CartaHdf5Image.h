@@ -31,7 +31,7 @@ public:
     ~CartaHdf5Image() override;
 
     // Function to open a CARTA HDF5 image
-    static casacore::LatticeBase* OpenCartaHdf5Image (const casacore::String& name, const casacore::MaskSpecifier& spec);
+    static casacore::LatticeBase* OpenCartaHdf5Image(const casacore::String& name, const casacore::MaskSpecifier& spec);
 
     // Register the open function in casacore::ImageOpener
     static void RegisterOpenFunction();
