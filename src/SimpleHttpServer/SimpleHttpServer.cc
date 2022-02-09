@@ -26,7 +26,14 @@ uint32_t SimpleHttpServer::_scripting_request_id = 0;
 
 SimpleHttpServer::SimpleHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
-    : _session_manager(session_manager), _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode), _config_folder(user_directory / "config"), _enable_frontend(enable_frontend), _enable_database(enable_database), _enable_scripting(enable_scripting) {
+    : _session_manager(session_manager),
+      _http_root_folder(root_folder),
+      _auth_token(auth_token),
+      _read_only_mode(read_only_mode),
+      _config_folder(user_directory / "config"),
+      _enable_frontend(enable_frontend),
+      _enable_database(enable_database),
+      _enable_scripting(enable_scripting) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 

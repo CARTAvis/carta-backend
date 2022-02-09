@@ -7,9 +7,9 @@
 #include <gtest/gtest.h>
 #include <cxxopts/cxxopts.hpp>
 
+#include "CommonTestUtilities.h"
 #include "Main/ProgramSettings.h"
 #include "SimpleHttpServer/SimpleHttpServer.h"
-#include "CommonTestUtilities.h"
 
 #include <curl/curl.h>
 #include <fstream>
