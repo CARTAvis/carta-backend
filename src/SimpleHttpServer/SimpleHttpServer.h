@@ -13,7 +13,7 @@
 #include <uWebSockets/App.h>
 #include <nlohmann/json.hpp>
 
-#include "SessionManager/SessionManager.h"
+#include "Session/SessionManager.h"
 #include "Util/FileSystem.h"
 
 namespace carta {
