@@ -16,25 +16,17 @@
 #include "MimeTypes.h"
 #include "Util/Token.h"
 
-using namespace std;
 using json = nlohmann::json;
 
 namespace carta {
 
-const string success_string = json({{"success", true}}).dump();
+const std::string success_string = json({{"success", true}}).dump();
 
 uint32_t SimpleHttpServer::_scripting_request_id = 0;
 
 SimpleHttpServer::SimpleHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
-    : _session_manager(session_manager),
-      _http_root_folder(root_folder),
-      _auth_token(auth_token),
-      _read_only_mode(read_only_mode),
-      _config_folder(user_directory / "config"),
-      _enable_frontend(enable_frontend),
-      _enable_database(enable_database),
-      _enable_scripting(enable_scripting) {
+    : _session_manager(session_manager), _http_root_folder(root_folder), _auth_token(auth_token), _read_only_mode(read_only_mode), _config_folder(user_directory / "config"), _enable_frontend(enable_frontend), _enable_database(enable_database), _enable_scripting(enable_scripting) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -88,7 +80,7 @@ void SimpleHttpServer::HandleGetConfig(Res* res, Req* _req) {
 }
 
 void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
-    string_view url = req->getUrl();
+    std::string_view url = req->getUrl();
     fs::path path = _http_root_folder;
     if (url.empty() || url == "/") {
         path /= "index.html";
@@ -97,12 +89,12 @@ void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
         if (url[0] == '/') {
             url = url.substr(1);
         }
-        path /= string(url);
+        path /= std::string(url);
     }
 
     // Check if we can serve a gzip-compressed alternative
     auto req_encoding_header = req->getHeader("accept-encoding");
-    bool accepts_gzip = req_encoding_header.find("gzip") != string_view::npos;
+    bool accepts_gzip = req_encoding_header.find("gzip") != std::string_view::npos;
     bool gzip_compressed = false;
     auto gzip_path = path;
     gzip_path += ".gz";
@@ -114,15 +106,15 @@ void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
 
     if (fs::exists(path, error_code) && fs::is_regular_file(path, error_code)) {
         // Check file size
-        ifstream file(path.string(), ios::binary | ios::ate);
+        std::ifstream file(path.string(), std::ios::binary | std::ios::ate);
         if (!file.good()) {
             res->writeStatus(HTTP_404);
             return;
         }
-        streamsize size = file.tellg();
-        file.seekg(0, ios::beg);
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
 
-        vector<char> buffer(size);
+        std::vector<char> buffer(size);
         if (size && file.read(buffer.data(), size)) {
             res->writeStatus(HTTP_200);
 
@@ -136,7 +128,7 @@ void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
                 res->writeHeader("Content-Type", it->second);
             }
 
-            string_view sv(buffer.data(), buffer.size());
+            std::string_view sv(buffer.data(), buffer.size());
             res->write(sv);
         } else {
             res->writeStatus(HTTP_500);
@@ -160,7 +152,7 @@ bool SimpleHttpServer::IsValidFrontendFolder(fs::path folder) {
         return false;
     }
     // Check that index.html can be read
-    ifstream index_file(folder.string());
+    std::ifstream index_file(folder.string());
     return index_file.good();
 }
 
@@ -180,10 +172,10 @@ json SimpleHttpServer::GetExistingPreferences() {
         if (!fs::exists(preferences_path)) {
             return {{"version", 1}};
         }
-        ifstream file(preferences_path.string());
-        string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        std::ifstream file(preferences_path.string());
+        std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         return json::parse(json_string);
-    } catch (json::exception e) {
+    } catch (json::parse_error e) {
         spdlog::warn(e.what());
         return {};
     }
@@ -199,23 +191,26 @@ bool SimpleHttpServer::WritePreferencesFile(nlohmann::json& obj) {
 
     try {
         fs::create_directories(preferences_path.parent_path().string());
-        ofstream file(preferences_path.string());
+        std::ofstream file(preferences_path.string());
         // Ensure correct schema and version values are written
         obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
         obj["version"] = 2;
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
-    } catch (exception e) {
+    } catch (json::type_error e) {
+        spdlog::warn(e.what());
+        return false;
+    } catch (std::exception e) {
         spdlog::warn(e.what());
         return false;
     }
 }
 
-void SimpleHttpServer::WaitForData(Res* res, Req* req, const std::function<void(const string&)>& callback) {
+void SimpleHttpServer::WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback) {
     res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
 
-    string buffer;
+    std::string buffer;
     // Adapted from https://github.com/uNetworking/uWebSockets/issues/805#issuecomment-452182209
     res->onData([callback, buffer = std::move(buffer)](std::string_view data, bool last) mutable {
         buffer.append(data.data(), data.length());
@@ -243,7 +238,7 @@ void SimpleHttpServer::HandleGetPreferences(Res* res, Req* req) {
     }
 }
 
-std::string_view SimpleHttpServer::UpdatePreferencesFromString(const string& buffer) {
+std::string_view SimpleHttpServer::UpdatePreferencesFromString(const std::string& buffer) {
     try {
         json update_data = json::parse(buffer);
         json existing_data = GetExistingPreferences();
@@ -279,7 +274,7 @@ void SimpleHttpServer::HandleSetPreferences(Res* res, Req* req) {
     }
     AddNoCacheHeaders(res);
 
-    WaitForData(res, req, [this, res](const string& buffer) {
+    WaitForData(res, req, [this, res](const std::string& buffer) {
         auto status = UpdatePreferencesFromString(buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
@@ -290,7 +285,7 @@ void SimpleHttpServer::HandleSetPreferences(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleHttpServer::ClearPreferencesFromString(const string& buffer) {
+std::string_view SimpleHttpServer::ClearPreferencesFromString(const std::string& buffer) {
     try {
         json post_data = json::parse(buffer);
         auto keys_array = post_data["keys"];
@@ -300,7 +295,7 @@ std::string_view SimpleHttpServer::ClearPreferencesFromString(const string& buff
             if (!existing_data.empty()) {
                 for (auto& key : keys_array) {
                     if (key.is_string()) {
-                        auto key_string = key.get<string>();
+                        auto key_string = key.get<std::string>();
                         if (existing_data.count(key_string)) {
                             existing_data.erase(key_string);
                             modified_key_count++;
@@ -333,7 +328,7 @@ void SimpleHttpServer::HandleClearPreferences(Res* res, Req* req) {
     }
     AddNoCacheHeaders(res);
 
-    WaitForData(res, req, [this, res](const string& buffer) {
+    WaitForData(res, req, [this, res](const std::string& buffer) {
         auto status = ClearPreferencesFromString(buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
@@ -364,7 +359,7 @@ void SimpleHttpServer::HandleSetObject(const std::string& object_type, Res* res,
     }
     AddNoCacheHeaders(res);
 
-    WaitForData(res, req, [this, object_type, res](const string& buffer) {
+    WaitForData(res, req, [this, object_type, res](const std::string& buffer) {
         auto status = SetObjectFromString(object_type, buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
@@ -382,7 +377,7 @@ void SimpleHttpServer::HandleClearObject(const std::string& object_type, Res* re
     }
     AddNoCacheHeaders(res);
 
-    WaitForData(res, req, [this, object_type, res](const string& buffer) {
+    WaitForData(res, req, [this, object_type, res](const std::string& buffer) {
         auto status = ClearObjectFromString(object_type, buffer);
         res->writeStatus(status);
         if (status == HTTP_200) {
@@ -401,17 +396,17 @@ nlohmann::json SimpleHttpServer::GetExistingObjects(const std::string& object_ty
     if (fs::exists(object_folder, error_code)) {
         for (auto& p : fs::directory_iterator(object_folder)) {
             try {
-                string filename = p.path().filename().string();
-                regex object_regex(R"(^(.+)\.json$)");
-                smatch sm;
+                std::string filename = p.path().filename().string();
+                std::regex object_regex(R"(^(.+)\.json$)");
+                std::smatch sm;
                 if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
-                    string object_name = sm[1];
-                    ifstream file(p.path().string());
-                    string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+                    std::string object_name = sm[1];
+                    std::ifstream file(p.path().string());
+                    std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
                     json obj = json::parse(json_string);
                     objects[object_name] = obj;
                 }
-            } catch (exception e) {
+            } catch (json::exception e) {
                 spdlog::warn(e.what());
             }
         }
@@ -419,7 +414,7 @@ nlohmann::json SimpleHttpServer::GetExistingObjects(const std::string& object_ty
     return objects;
 }
 
-bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const string& object_name, nlohmann::json& obj) {
+bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
     if (_read_only_mode) {
         spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return false;
@@ -429,7 +424,7 @@ bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const str
 
     try {
         fs::create_directories(object_path.parent_path());
-        ofstream file(object_path.string());
+        std::ofstream file(object_path.string());
         // Ensure correct schema value is written
         if (object_type == "layout") {
             obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
@@ -440,44 +435,47 @@ bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const str
         auto json_string = obj.dump(4);
         file << json_string;
         return true;
-    } catch (exception e) {
+    } catch (json::type_error e) {
+        spdlog::warn(e.what());
+        return false;
+    } catch (std::exception e) {
         spdlog::warn(e.what());
         return false;
     }
 }
 
-std::string_view SimpleHttpServer::SetObjectFromString(const std::string& object_type, const string& buffer) {
+std::string_view SimpleHttpServer::SetObjectFromString(const std::string& object_type, const std::string& buffer) {
     try {
-        string field_name = object_type + "Name";
+        std::string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
         if (post_data[field_name].is_string()) {
-            string object_name = post_data[field_name];
+            std::string object_name = post_data[field_name];
             auto object_data = post_data[object_type];
             if (!object_name.empty() && object_data.is_object()) {
                 return WriteObjectFile(object_type, object_name, object_data) ? HTTP_200 : HTTP_400;
             }
         }
         return HTTP_400;
-    } catch (json::exception e) {
+    } catch (json::parse_error e) {
         spdlog::warn(e.what());
         return HTTP_400;
-    } catch (exception e) {
+    } catch (std::exception e) {
         spdlog::warn(e.what());
         return HTTP_500;
     }
 }
 
-std::string_view SimpleHttpServer::ClearObjectFromString(const std::string& object_type, const string& buffer) {
+std::string_view SimpleHttpServer::ClearObjectFromString(const std::string& object_type, const std::string& buffer) {
     if (_read_only_mode) {
         spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return HTTP_400;
     }
 
     try {
-        string field_name = object_type + "Name";
+        std::string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
         if (post_data[field_name].is_string()) {
-            string object_name = post_data[field_name];
+            std::string object_name = post_data[field_name];
             if (!object_name.empty()) {
                 auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
                 if (fs::exists(object_path) && fs::is_regular_file(object_path)) {
@@ -490,13 +488,13 @@ std::string_view SimpleHttpServer::ClearObjectFromString(const std::string& obje
     } catch (json::exception e) {
         spdlog::warn(e.what());
         return HTTP_400;
-    } catch (exception e) {
+    } catch (std::exception e) {
         spdlog::warn(e.what());
         return HTTP_500;
     }
 }
 
-std::string SimpleHttpServer::GetFileUrlString(vector<std::string> files) {
+std::string SimpleHttpServer::GetFileUrlString(std::vector<std::string> files) {
     if (files.empty()) {
         return std::string();
     } else if (files.size() == 1) {

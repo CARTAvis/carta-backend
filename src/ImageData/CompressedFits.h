@@ -19,6 +19,8 @@
 
 // Read compressed FITS file headers
 
+namespace carta {
+
 // Struct to hold beam header values
 struct BeamInfo {
     std::string bmaj;
@@ -85,8 +87,6 @@ struct BeamTableInfo {
         column_info.clear();
     }
 };
-
-namespace carta {
 
 class CompressedFits {
 public:

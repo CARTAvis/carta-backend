@@ -16,6 +16,8 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 
+using namespace carta;
+
 FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
     _type = GetCartaFileType(filename);
 }

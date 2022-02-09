@@ -6,6 +6,8 @@
 
 #include "ListProgressReporter.h"
 
+using namespace carta;
+
 ListProgressReporter::ListProgressReporter(size_t total_steps, std::function<void(CARTA::ListProgress)> progress_callback)
     : _total_steps(total_steps),
       _num_of_steps_done(0),

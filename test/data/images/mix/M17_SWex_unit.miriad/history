@@ -1,0 +1,1236 @@
+RADESYS = 'ICRS    '
+PC1_1   =   1.000000000000E+00
+PC2_1   =   0.000000000000E+00
+PC3_1   =   0.000000000000E+00
+PC4_1   =   0.000000000000E+00
+PC1_2   =   0.000000000000E+00
+PC2_2   =   1.000000000000E+00
+PC3_2   =   0.000000000000E+00
+PC4_2   =   0.000000000000E+00
+PC1_3   =   0.000000000000E+00
+PC2_3   =   0.000000000000E+00
+PC3_3   =   1.000000000000E+00
+PC4_3   =   0.000000000000E+00
+PC1_4   =   0.000000000000E+00
+PC2_4   =   0.000000000000E+00
+PC3_4   =   0.000000000000E+00
+PC4_4   =   1.000000000000E+00
+CUNIT1  = 'deg     '
+CUNIT2  = 'deg     '
+CUNIT3  = 'Hz      '
+CUNIT4  = '        '
+SPECSYS = 'LSRK    '           /Spectral reference frame
+casacore non-standard usage: 4 LSD, 5 GEO, 6 SOU, 7 GAL
+TIMESYS = 'UTC     '
+OBSGEO-X=   2.225142180269E+06
+OBSGEO-Y=  -5.440307370349E+06
+OBSGEO-Z=  -2.481029851874E+06
+CASA START LOGTABLE
+2016-09-07T16:37:18 INFO SRCCODE='imager::clean()'
+2016-09-07T16:37:18 INFO SRCCODE='imager::clean()'
+2021-11-18T05:43:01 INFO SRCCODE='::imsubimage'
+version: 6.1.0-118 CASAtools:v1.0.0
+2021-11-18T05:43:01 INFO SRCCODE='::imsubimage'
+imsubimage(imagename="/home/mingyi/carta-test-img/set_QA/M17_SWex.fits",
+> outfile="test.image", box="", region="box[[144pix,183pix],[149pix,188p
+>x]] range=[4pix,8pix]", chans="", stokes="", mask="", dropdeg=False, ov
+>rwrite=False, verbose=True, stretch=False, keepaxes=[])
+CASA END LOGTABLE
+Sun Aug 28 00:35:51 2016  HISTORY importasdm [] separationaxis = "auto"
+Sun Aug 28 00:35:51 2016  HISTORY importasdm [] singledish  = False
+Sun Aug 28 00:35:51 2016  HISTORY importasdm [] corr_mode   = "all"
+Sun Aug 28 00:35:51 2016  HISTORY importasdm [] time_sampling = "all"
+Sun Aug 28 00:35:51 2016  HISTORY importasdm [] compression = False
+Sun Aug 28 00:35:51 2016  HISTORY importasdm [] asis        = "Antenna S
+>tation Receiver Source CalAtmosphere CalWVR"
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] scans       = ""
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] process_syspower = True
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] process_pointing = True
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] tbuff       = 0.0
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] savecmds    = True
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] flagbackup  = True
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] overwrite   = False
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] useversion  = "v3"
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] with_pointing_correction
+> = False
+Sun Aug 28 00:35:52 2016  HISTORY importasdm [] convert_ephem2geo = True
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] taskname=flagdata
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] vis         = "/lustre0/de
+>fault/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.06
+>SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2b
+>Xd19/working/uid___A002_Xb1586e_X4716.ms"
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] autocorr    = False
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] reason      = "any"
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] spw         = ""
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] antenna     = ""
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] timerange   = ""
+Sun Aug 28 09:11:12 2016  HISTORY flagdata [] scan        = ""
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] array       = ""
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] feed        = ""
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] datacolumn  = "DATA"
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] channelavg  = False
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] timebin     = "0s"
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] quackinterval = 1.0
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] quackincrement = False
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] addantenna  = ""
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] upperlimit  = 90.0
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] combinescans = False
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] freqcutoff  = 3.0
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] freqfit     = "poly"
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] flagdimension = "freqtime"
+Sun Aug 28 09:11:13 2016  HISTORY flagdata [] halfwin     = 1
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] winsize     = 3
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] freqdev     = ""
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] freqdevscale = 5.0
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] spectralmin = 0.0
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] growtime    = 50.0
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] growaround  = False
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] flagnearfreq = False
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] maxrel      = 1.0
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] maxabs      = -1
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] spwcorr     = False
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] fieldcnt    = False
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] action      = "apply"
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] flagbackup  = False
+Sun Aug 28 09:11:14 2016  HISTORY flagdata [] cmdreason   = ""
+Sun Aug 28 09:11:15 2016  HISTORY flagdata [] writeflags  = True
+Sun Aug 28 21:23:35 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 21:24:25 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 21:25:18 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 21:26:38 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 21:32:24 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 22:59:16 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 23:01:40 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 23:04:00 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Sun Aug 28 23:06:38 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Mon Aug 29 00:56:57 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Mon Aug 29 00:59:25 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Mon Aug 29 01:01:45 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Mon Aug 29 01:04:18 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] version: 4.5.3 branches re
+>v. 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] mode        = "list"
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] inpfile     = ["mode='summ
+>ary' name='before'", "spw='29,31' antenna='DA62' reason='max_abs'", "sp
+>'29,31' antenna='DA62' reason='max_abs'", "mode='summary' name='after']
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] tbuff       = 0.0
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] field       = ""
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] uvrange     = ""
+Mon Aug 29 01:22:50 2016  HISTORY flagdata [] correlation = ""
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] intent      = ""
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] observation = ""
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] clipminmax  = []
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] clipoutside = True
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] timeavg     = False
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] clipzeros   = False
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] quackmode   = "beg"
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] tolerance   = 0.0
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] lowerlimit  = 0.0
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] ntime       = "scan"
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] timecutoff  = 4.0
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] timefit     = "line"
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] maxnpieces  = 7
+Mon Aug 29 01:22:51 2016  HISTORY flagdata [] usewindowstats = "none"
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] extendflags = True
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] timedev     = ""
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] timedevscale = 5.0
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] spectralmax = 1000000.0
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] extendpols  = True
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] growfreq    = 50.0
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] flagneartime = False
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] minrel      = 0.0
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] minabs      = 0
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] spwchan     = False
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] basecnt     = False
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] name        = "Summary"
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] display     = ""
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] savepars    = False
+Mon Aug 29 01:22:52 2016  HISTORY flagdata [] outfile     = ""
+Mon Aug 29 03:37:54 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] spw         = "23,25,27,29,31
+>,33"
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] intent      = "*FLUX*"
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 03:37:55 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 03:39:01 2016  HISTORY imager::data selection [mode=none ncha
+>n=[-1] start=[0] step=[1] mstart='Radialvelocity: 0' mstep='Radialveloc
+>y: 0' spectralwindowids=[] fieldids=[] msselect=]
+Mon Aug 29 03:39:19 2016  HISTORY imager::data selection [mode=none ncha
+>n=[-1] start=[0] step=[1] mstart='Radialvelocity: 0' mstep='Radialveloc
+>y: 0' spectralwindowids=[] fieldids=[] msselect=]
+Mon Aug 29 03:39:36 2016  HISTORY imager::data selection [mode=none ncha
+>n=[-1] start=[0] step=[1] mstart='Radialvelocity: 0' mstep='Radialveloc
+>y: 0' spectralwindowids=[] fieldids=[] msselect=]
+Mon Aug 29 03:39:45 2016  HISTORY setjy []  Neptune: spw spw33 Flux:[I=2
+>.56927919388,Q=0.0,U=0.0,V=0.0] +/- [I=0.0,Q=0.0,U=0.0,V=0.0] Jy
+Mon Aug 29 03:39:45 2016  HISTORY setjy []  Neptune: spw spw25 Flux:[I=2
+>.51333117485,Q=0.0,U=0.0,V=0.0] +/- [I=0.0,Q=0.0,U=0.0,V=0.0] Jy
+Mon Aug 29 03:39:45 2016  HISTORY setjy []  Neptune: spw spw29 Flux:[I=2
+>.66025567055,Q=0.0,U=0.0,V=0.0] +/- [I=0.0,Q=0.0,U=0.0,V=0.0] Jy
+Mon Aug 29 05:13:32 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 05:16:15 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 05:17:01 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 05:18:06 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 05:19:10 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 05:20:16 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 05:21:23 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 08:58:22 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 09:23:53 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 09:25:48 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 09:31:08 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 09:36:36 2016  HISTORY calibrater::fluxscale() [] Table /lust
+>re0/default/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11
+>9.060/SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A0
+>_X2fb_Xd19/working/uid___A002_Xb1586e_X4716.ms.hifa_gfluxscale.s15_4.pw
+>5_27_23_33_31_29.solintinf.gacal.tbl is of type: T Jones
+Mon Aug 29 09:36:38 2016  HISTORY fluxscale [] taskname=fluxscale
+Mon Aug 29 09:36:38 2016  HISTORY fluxscale [] vis         = "/lustre0/d
+>efault/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.0
+>/SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_Xf
+>_Xd19/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:36:38 2016  HISTORY fluxscale [] fluxtable   = "/lustre0/d
+>efault/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.0
+>/SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_Xf
+>_Xd19/working/uid___A002_Xb1586e_X4716.ms.hifa_gfluxscale.s15_5.fcal.bl
+Mon Aug 29 09:36:38 2016  HISTORY fluxscale [] transfer    = ['J1924-291
+>4,J1832-2039']
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale [] append      = False
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale [] gainthreshold = -1.0
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale [] timerange   = ""
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale [] incremental = False
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale [] display     = False
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale [] J1924-2914(field id=0)
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale []   Spw 1 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale []   Spw 3 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale []   Spw 5 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:39 2016  HISTORY fluxscale []   Spw 7 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 9 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 11 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 13 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 15 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 17 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 19 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 21 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 23(freq =  87.707GH
+>z) Flux density =   5.970845+/-  0.004383 Jy
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 25(freq =  85.934GH
+>z) Flux density =   6.021002+/-  0.006315 Jy
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 27(freq =  86.762GH
+>z) Flux density =   6.004932+/-  0.004690 Jy
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 29(freq =  88.638GH
+>z) Flux density =   5.958860+/-  0.004482 Jy
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 31(freq =  89.195GH
+>z) Flux density =   5.946537+/-  0.004132 Jy
+Mon Aug 29 09:36:40 2016  HISTORY fluxscale []   Spw 33(freq =  86.854GH
+>z) Flux density =   5.992264+/-  0.004497 Jy
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 35 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 37 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 39 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 41 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 43 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 45 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 47 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 49 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 51 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 53 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 55 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 57 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:41 2016  HISTORY fluxscale []   Spw 59 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 61 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 63 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 65 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 67 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 69 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 71 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spectral index fitting
+> coefficients [zero-point, alpha, beta] with errors :[0.777,-0.327,0.00
+>+/-[0.000,0.031,0.000]
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale [] J1832-2039(field id=3)
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 1 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 3 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 5 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 7 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:42 2016  HISTORY fluxscale []   Spw 9 insufficient data
+>, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 11 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 13 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 15 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 17 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 19 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 21 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 23(freq =  87.707GH
+>z) Flux density =   0.444559+/-  0.002147 Jy
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 25(freq =  85.934GH
+>z) Flux density =   0.449161+/-  0.002562 Jy
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 27(freq =  86.762GH
+>z) Flux density =   0.445802+/-  0.002497 Jy
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 29(freq =  88.638GH
+>z) Flux density =   0.444824+/-  0.002263 Jy
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 31(freq =  89.195GH
+>z) Flux density =   0.442206+/-  0.002169 Jy
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 33(freq =  86.854GH
+>z) Flux density =   0.445662+/-  0.002301 Jy
+Mon Aug 29 09:36:43 2016  HISTORY fluxscale []   Spw 35 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 37 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 39 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 41 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 43 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 45 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 47 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 49 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 51 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 53 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 55 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 57 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 59 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:44 2016  HISTORY fluxscale []   Spw 61 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:45 2016  HISTORY fluxscale []   Spw 63 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:45 2016  HISTORY fluxscale []   Spw 65 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:45 2016  HISTORY fluxscale []   Spw 67 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:45 2016  HISTORY fluxscale []   Spw 69 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:45 2016  HISTORY fluxscale []   Spw 71 insufficient dat
+>a, flux density is not determined.
+Mon Aug 29 09:36:45 2016  HISTORY fluxscale []   Spectral index fitting
+> coefficients [zero-point, alpha, beta] with errors :[-0.351,-0.319,0.0
+>]+/-[0.000,0.077,0.000]
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] spw         = "23"
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] intent      = "*BANDPASS*"
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 09:37:41 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 09:37:46 2016  HISTORY imager::data selection [] Selected 370
+>50 out of 54554282 rows.
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] field       = "J1924-2914"
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] selectdata  = True
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] scan        = ""
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] observation = ""
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] standard    = "manual"
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] modimage    = ""
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] fluxdensity = [6.02100248285,
+> 0.0, 0.0, 0.0]
+Mon Aug 29 09:38:24 2016  HISTORY setjy [] reffreq     = "1GHz"
+Mon Aug 29 09:38:25 2016  HISTORY setjy [] polangle    = []
+Mon Aug 29 09:38:25 2016  HISTORY setjy [] fluxdict    = {}
+Mon Aug 29 09:38:25 2016  HISTORY setjy [] interpolation = "nearest"
+Mon Aug 29 09:38:25 2016  HISTORY setjy [] ismms       = False
+Mon Aug 29 09:39:23 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 09:39:23 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:39:23 2016  HISTORY setjy [] spw         = "27"
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] intent      = "*BANDPASS*"
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 09:39:24 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 09:39:29 2016  HISTORY imager::data selection [] Selected 370
+>50 out of 54554282 rows.
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] field       = "J1924-2914"
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] selectdata  = True
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] scan        = ""
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] observation = ""
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] standard    = "manual"
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] modimage    = ""
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] fluxdensity = [5.95885956096,
+> 0.0, 0.0, 0.0]
+Mon Aug 29 09:40:15 2016  HISTORY setjy [] reffreq     = "1GHz"
+Mon Aug 29 09:40:16 2016  HISTORY setjy [] polangle    = []
+Mon Aug 29 09:40:16 2016  HISTORY setjy [] fluxdict    = {}
+Mon Aug 29 09:40:16 2016  HISTORY setjy [] interpolation = "nearest"
+Mon Aug 29 09:40:16 2016  HISTORY setjy [] ismms       = False
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] spw         = "31"
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] intent      = "*BANDPASS*"
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 09:41:07 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 09:41:12 2016  HISTORY imager::data selection [] Selected 370
+>50 out of 54554282 rows.
+Mon Aug 29 09:42:01 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 09:42:01 2016  HISTORY setjy [] field       = "J1924-2914"
+Mon Aug 29 09:42:01 2016  HISTORY setjy [] selectdata  = True
+Mon Aug 29 09:42:01 2016  HISTORY setjy [] scan        = ""
+Mon Aug 29 09:42:01 2016  HISTORY setjy [] observation = ""
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] standard    = "manual"
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] modimage    = ""
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] fluxdensity = [5.99226430118,
+> 0.0, 0.0, 0.0]
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] reffreq     = "1GHz"
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] polangle    = []
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] fluxdict    = {}
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] interpolation = "nearest"
+Mon Aug 29 09:42:02 2016  HISTORY setjy [] ismms       = False
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] spw         = "23"
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] intent      = "*PHASE*"
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 09:43:06 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 09:43:07 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 09:43:07 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 09:43:07 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 09:43:07 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 09:43:11 2016  HISTORY imager::data selection [] Selected 296
+>40 out of 54554282 rows.
+Mon Aug 29 09:43:45 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] field       = "J1832-2039"
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] selectdata  = True
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] scan        = ""
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] observation = ""
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] standard    = "manual"
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] modimage    = ""
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] fluxdensity = [0.449161194348
+>, 0.0, 0.0, 0.0]
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] reffreq     = "1GHz"
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] polangle    = []
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] fluxdict    = {}
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] interpolation = "nearest"
+Mon Aug 29 09:43:46 2016  HISTORY setjy [] ismms       = False
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] spw         = "27"
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] intent      = "*PHASE*"
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 09:44:34 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 09:44:35 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 09:44:35 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 09:44:35 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 09:44:35 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 09:44:35 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 09:44:35 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 09:44:39 2016  HISTORY imager::data selection [] Selected 296
+>40 out of 54554282 rows.
+Mon Aug 29 09:45:22 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 09:45:22 2016  HISTORY setjy [] field       = "J1832-2039"
+Mon Aug 29 09:45:22 2016  HISTORY setjy [] selectdata  = True
+Mon Aug 29 09:45:22 2016  HISTORY setjy [] scan        = ""
+Mon Aug 29 09:45:22 2016  HISTORY setjy [] observation = ""
+Mon Aug 29 09:45:22 2016  HISTORY setjy [] standard    = "manual"
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] modimage    = ""
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] fluxdensity = [0.444824207903
+>, 0.0, 0.0, 0.0]
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] reffreq     = "1GHz"
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] polangle    = []
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] fluxdict    = {}
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] interpolation = "nearest"
+Mon Aug 29 09:45:23 2016  HISTORY setjy [] ismms       = False
+Mon Aug 29 09:46:10 2016  HISTORY setjy [] taskname=setjy
+Mon Aug 29 09:46:10 2016  HISTORY setjy [] vis         = "/lustre0/defau
+>lt/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.060/S
+>S_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2fb_d
+>9/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 09:46:10 2016  HISTORY setjy [] spw         = "31"
+Mon Aug 29 09:46:10 2016  HISTORY setjy [] timerange   = ""
+Mon Aug 29 09:46:10 2016  HISTORY setjy [] intent      = "*PHASE*"
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] scalebychan = True
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] model       = ""
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] listmodels  = False
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] spix        = 0.0
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] polindex    = []
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] rotmeas     = 0.0
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] useephemdir = False
+Mon Aug 29 09:46:11 2016  HISTORY setjy [] usescratch  = True
+Mon Aug 29 09:46:15 2016  HISTORY imager::data selection [] Selected 296
+>40 out of 54554282 rows.
+Mon Aug 29 09:46:58 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 09:46:58 2016  HISTORY setjy [] field       = "J1832-2039"
+Mon Aug 29 09:46:58 2016  HISTORY setjy [] selectdata  = True
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] scan        = ""
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] observation = ""
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] standard    = "manual"
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] modimage    = ""
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] fluxdensity = [0.445661534626
+>, 0.0, 0.0, 0.0]
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] reffreq     = "1GHz"
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] polangle    = []
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] fluxdict    = {}
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] interpolation = "nearest"
+Mon Aug 29 09:46:59 2016  HISTORY setjy [] ismms       = False
+Mon Aug 29 11:46:57 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 11:53:18 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 11:58:27 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 12:03:58 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 17:26:43 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] taskname=applycal
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] vis         = "/lustre0/de
+>fault/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.06
+>SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2b
+>Xd19/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] spw         = "23,25,27,29
+>,31,33"
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] selectdata  = True
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] uvrange     = ""
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] scan        = ""
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] msselect    = ""
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] callib      = ""
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] gainfield   = ['nearest',
+> '', '', 'nearest', 'nearest', 'nearest']
+Mon Aug 29 17:31:58 2016  HISTORY applycal [] spwmap      = [[0, 1, 2, 3
+>, 4, 5, 6, 7, 8, 9, 10, 11, 12, 17, 19, 21, 23, 17, 17, 19, 19, 21, 21,
+> 23, 23, 17, 17, 17, 17, 19, 19, 19, 19, 21, 21], [], [], [], [0, 1, 2,
+> 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 2
+> 23, 24, 23, 26, 23, 28, 23, 30, 23, 32, 33], []]
+Mon Aug 29 17:31:59 2016  HISTORY applycal [] parang      = False
+Mon Aug 29 17:31:59 2016  HISTORY applycal [] flagbackup  = True
+Mon Aug 29 17:35:37 2016  HISTORY calibrater::correct [] Beginning corre
+>ct---------------------------
+Mon Aug 29 17:58:18 2016  HISTORY applycal [] version: 4.5.3 branches re
+>v. 36115 Wed 2016/02/10 13:31:05 UTC
+Mon Aug 29 17:58:18 2016  HISTORY applycal [] field       = "3,4,5,6,7,8
+>,9,10,11,12,13,14,15,16,17,18,19,20"
+Mon Aug 29 17:58:18 2016  HISTORY applycal [] intent      = "*PHASE*,*TA
+>RGET*"
+Mon Aug 29 17:58:18 2016  HISTORY applycal [] timerange   = ""
+Mon Aug 29 17:58:18 2016  HISTORY applycal [] antenna     = "*&*"
+Mon Aug 29 17:58:18 2016  HISTORY applycal [] observation = ""
+Mon Aug 29 17:58:19 2016  HISTORY applycal [] docallib    = False
+Mon Aug 29 17:58:19 2016  HISTORY applycal [] gaintable   = ['/lustre0/d
+>efault/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.0
+>/SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_Xf
+>_Xd19/working/uid___A002_Xb1586e_X4716.ms.hifa_tsyscal.s6_1.tsyscal.tl'
+> '/lustre0/default/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_0_26
+>00_11_59.060/SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOS_ui
+>___A001_X2fb_Xd19/working/uid___A002_Xb1586e_X4716.ms.hifa_wvrgcallag.s
+>_6.sm6_048s.wvrcal.tbl', '/lustre0/default/FromArchive/rmiura/pipline/2
+>15.1.01584.S_2016_08_26T00_11_59.060/SOUS_uid___A001_X2fb_Xd17/GUS_uid_
+>_A001_X2fb_Xd18/MOUS_uid___A001_X2fb_Xd19/working/uid___A002_Xb586e_X47
+>6.ms.hifa_bandpass.s13_3.spw23_25_27_29_31_33.channel.solintin.bcal.tbl
+>, '/lustre0/default/FromArchive/rmiura/pipeline/2015.1.01584._2016_08_2
+>T00_11_59.060/SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fbXd18/MOUS_u
+>d___A001_X2fb_Xd19/working/uid___A002_Xb1586e_X4716.ms.hifaspwphaseup.s
+>4_2.spw23_25_27_29_31_33.solintinf.gpcal.tbl', '/lustre0/dfault/FromArc
+>ive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.06/SOUS_uid___A0
+>1_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2b_Xd19/working/
+>id___A002_Xb1586e_X4716.ms.hifa_timegaincal.s16_3.spw2325_27_29_31_33.s
+>lintinf.gpcal.tbl', '/lustre0/default/FromArchive/rmiua/pipeline/2015.1
+>01584.S_2016_08_26T00_11_59.060/SOUS_uid___A001_X2fb_d17/GOUS_uid___A00
+>_X2fb_Xd18/MOUS_uid___A001_X2fb_Xd19/working/uid___A02_Xb1586e_X4716.ms
+>hifa_timegaincal.s16_5.spw23_25_27_29_31_33.solintif.gacal.tbl']
+Mon Aug 29 17:58:19 2016  HISTORY applycal [] interp      = ['linear,lin
+>ear', 'nearest', 'linearperobs,linearflag', 'linear,linear', 'linear,li
+>ar', 'linear,linear']
+Mon Aug 29 17:58:19 2016  HISTORY applycal [] calwt       = [True, False
+>, True, False, False, True]
+Mon Aug 29 17:58:19 2016  HISTORY applycal [] applymode   = "calflagstri
+>ct"
+Mon Aug 29 18:13:45 2016  HISTORY flagdata [] taskname=flagdata
+Mon Aug 29 18:13:45 2016  HISTORY flagdata [] vis         = "/lustre0/de
+>fault/FromArchive/rmiura/pipeline/2015.1.01584.S_2016_08_26T00_11_59.06
+>SOUS_uid___A001_X2fb_Xd17/GOUS_uid___A001_X2fb_Xd18/MOUS_uid___A001_X2b
+>Xd19/working/uid___A002_Xb1586e_X4716.ms"
+Mon Aug 29 18:13:45 2016  HISTORY flagdata [] autocorr    = False
+Mon Aug 29 18:13:45 2016  HISTORY flagdata [] reason      = "any"
+Mon Aug 29 18:13:45 2016  HISTORY flagdata [] spw         = ""
+Mon Aug 29 18:13:45 2016  HISTORY flagdata [] antenna     = ""
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] timerange   = ""
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] scan        = ""
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] array       = ""
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] feed        = ""
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] datacolumn  = "DATA"
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] channelavg  = False
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] timebin     = "0s"
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] quackinterval = 1.0
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] quackincrement = False
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] addantenna  = ""
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] upperlimit  = 90.0
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] combinescans = False
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] freqcutoff  = 3.0
+Mon Aug 29 18:13:46 2016  HISTORY flagdata [] freqfit     = "poly"
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] flagdimension = "freqtime"
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] halfwin     = 1
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] winsize     = 3
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] freqdev     = ""
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] freqdevscale = 5.0
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] spectralmin = 0.0
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] growtime    = 50.0
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] growaround  = False
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] flagnearfreq = False
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] maxrel      = 1.0
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] maxabs      = -1
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] spwcorr     = False
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] fieldcnt    = False
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] action      = "apply"
+Mon Aug 29 18:13:47 2016  HISTORY flagdata [] flagbackup  = False
+Mon Aug 29 18:13:48 2016  HISTORY flagdata [] cmdreason   = ""
+Mon Aug 29 18:13:48 2016  HISTORY flagdata [] writeflags  = True
+Tue Aug 30 04:16:43 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[23] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:16:43 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 04:19:40 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:21:03 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:21:33 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[25] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:21:33 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 04:27:04 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:35:31 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:36:01 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[27] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:36:01 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 04:41:30 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:49:54 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:50:25 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[29] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 04:50:25 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 04:55:55 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:04:24 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:04:55 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[31] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:04:55 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 05:10:35 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:19:09 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:19:43 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[33] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:19:43 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 05:28:33 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:45:11 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='19:24:51.06,  330.45.29.88, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:45:41 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[23] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:45:41 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 05:48:41 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:49:59 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:50:30 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[25] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 05:50:30 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 05:55:56 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:02:45 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:03:15 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[27] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:03:15 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 06:08:19 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:15:10 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:15:41 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[29] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:15:41 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 06:20:44 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:27:34 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:28:05 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[31] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:28:05 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 06:33:06 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:39:57 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:40:28 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='0.18arcsec' celly='0.18arcsec' stokes=
+> mode=MFS nchan=-1 start=0 step=0 spwids=[33] fieldid=0 facets=1 frame1
+> distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 0' qSte=
+>0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 06:40:28 2016  HISTORY pipeline.hif.heuristics.tclean::imager
+>::weight() [] Briggs weighting: sidelobes will be suppressed over fullm
+>ge
+Tue Aug 30 06:47:56 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 07:01:23 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=300 ny=300 cellx='-8.73e-07rad' celly='8.73e-07rad' stok
+>=I' mode=MFS nchan=1 start=0 step=0 spwids=[0] fieldid=-1 facets=1 frae
+>1 distance='0',  phaseCenter='18:32:11.05,  339.20.11.80, ' mStart='Rdi
+>lvelocity: 0' qStep='0 '' mFreqStart='Frequency: 0]
+Tue Aug 30 11:30:00 2016  HISTORY split [] taskname=split
+Tue Aug 30 11:30:00 2016  HISTORY split [] vis         = "uid___A002_Xb1
+>586e_X4716.ms"
+Tue Aug 30 11:30:00 2016  HISTORY split [] datacolumn  = "corrected"
+Tue Aug 30 11:30:00 2016  HISTORY split [] spw         = "23,25,27,29,31
+>,33"
+Tue Aug 30 11:30:00 2016  HISTORY split [] antenna     = ""
+Tue Aug 30 11:30:00 2016  HISTORY split [] timerange   = ""
+Tue Aug 30 11:30:00 2016  HISTORY split [] intent      = ""
+Tue Aug 30 11:30:00 2016  HISTORY split [] uvrange     = ""
+Tue Aug 30 11:30:00 2016  HISTORY split [] observation = ""
+Tue Aug 30 11:30:00 2016  HISTORY split [] keepflags   = True
+Tue Aug 30 12:27:00 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Tue Aug 30 12:27:00 2016  HISTORY setjy [] field       = "J1832-2039"
+Tue Aug 30 12:27:00 2016  HISTORY setjy [] selectdata  = False
+Tue Aug 30 12:27:00 2016  HISTORY setjy [] scan        = ""
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] observation = ""
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] standard    = "manual"
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] modimage    = ""
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] fluxdensity = [0.459215999999
+>99996, 0, 0, 0]
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] reffreq     = "1GHz"
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] polangle    = []
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] fluxdict    = {}
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] interpolation = "nearest"
+Tue Aug 30 12:27:01 2016  HISTORY setjy [] ismms       = False
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] taskname=setjy
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] vis         = "calibrated/uid
+>___A002_Xb1586e_X4716.ms.split.cal"
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] spw         = "0"
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] timerange   = ""
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] intent      = ""
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] scalebychan = True
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] model       = ""
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] listmodels  = False
+Tue Aug 30 12:34:19 2016  HISTORY setjy [] spix        = 0.0
+Tue Aug 30 12:34:20 2016  HISTORY setjy [] polindex    = []
+Tue Aug 30 12:34:20 2016  HISTORY setjy [] rotmeas     = 0.0
+Tue Aug 30 12:34:20 2016  HISTORY setjy [] useephemdir = False
+Tue Aug 30 12:34:20 2016  HISTORY setjy [] usescratch  = False
+Tue Aug 30 12:34:20 2016  HISTORY imager::data selection [] Selected 918
+>84 out of 2556450 rows.
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] field       = "J1832-2039"
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] selectdata  = False
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] scan        = ""
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] observation = ""
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] standard    = "manual"
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] modimage    = ""
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] fluxdensity = [0.46391, 0, 0,
+> 0]
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] reffreq     = "1GHz"
+Tue Aug 30 12:34:33 2016  HISTORY setjy [] polangle    = []
+Tue Aug 30 12:34:34 2016  HISTORY setjy [] fluxdict    = {}
+Tue Aug 30 12:34:34 2016  HISTORY setjy [] interpolation = "nearest"
+Tue Aug 30 12:34:34 2016  HISTORY setjy [] ismms       = False
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] taskname=setjy
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] vis         = "calibrated/uid
+>___A002_Xb1586e_X4716.ms.split.cal"
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] spw         = "2"
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] timerange   = ""
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] intent      = ""
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] scalebychan = True
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] model       = ""
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] listmodels  = False
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] spix        = 0.0
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] polindex    = []
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] rotmeas     = 0.0
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] useephemdir = False
+Tue Aug 30 12:34:46 2016  HISTORY setjy [] usescratch  = False
+Tue Aug 30 12:34:47 2016  HISTORY imager::data selection [] Selected 296
+>40 out of 2556450 rows.
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] field       = "J1832-2039"
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] selectdata  = False
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] scan        = ""
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] observation = ""
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] standard    = "manual"
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] modimage    = ""
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] fluxdensity = [0.458909, 0, 0
+>, 0]
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] reffreq     = "1GHz"
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] polangle    = []
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] fluxdict    = {}
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] interpolation = "nearest"
+Tue Aug 30 12:34:59 2016  HISTORY setjy [] ismms       = False
+Tue Aug 30 12:35:11 2016  HISTORY setjy [] taskname=setjy
+Tue Aug 30 12:35:11 2016  HISTORY setjy [] vis         = "calibrated/uid
+>___A002_Xb1586e_X4716.ms.split.cal"
+Tue Aug 30 12:35:11 2016  HISTORY setjy [] spw         = "4"
+Tue Aug 30 12:35:11 2016  HISTORY setjy [] timerange   = ""
+Tue Aug 30 12:35:11 2016  HISTORY setjy [] intent      = ""
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] scalebychan = True
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] model       = ""
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] listmodels  = False
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] spix        = 0.0
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] polindex    = []
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] rotmeas     = 0.0
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] useephemdir = False
+Tue Aug 30 12:35:12 2016  HISTORY setjy [] usescratch  = False
+Tue Aug 30 12:35:13 2016  HISTORY imager::data selection [] Selected 296
+>40 out of 2556450 rows.
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] version: 4.5.3 branches rev.
+> 36115 Wed 2016/02/10 13:31:05 UTC
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] field       = "J1832-2039"
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] selectdata  = False
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] scan        = ""
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] observation = ""
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] standard    = "manual"
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] modimage    = ""
+Tue Aug 30 12:35:24 2016  HISTORY setjy [] fluxdensity = [0.4605885, 0,
+> 0, 0]
+Tue Aug 30 12:35:25 2016  HISTORY setjy [] reffreq     = "1GHz"
+Tue Aug 30 12:35:25 2016  HISTORY setjy [] polangle    = []
+Tue Aug 30 12:35:25 2016  HISTORY setjy [] fluxdict    = {}
+Tue Aug 30 12:35:25 2016  HISTORY setjy [] interpolation = "nearest"
+Tue Aug 30 12:35:25 2016  HISTORY setjy [] ismms       = False
+Tue Aug 30 12:35:37 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Tue Aug 30 12:46:13 2016  HISTORY calibrater::setdata [Beginning selectv
+>is--(MSSelection version)-------, chanmode=none nchan=1 start=0 step=1S
+>art='0km/s' mStep='0km/s' msSelect='']
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] taskname=applycal
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] vis         = "calibrated/
+>uid___A002_Xb1586e_X4716.ms.split.cal"
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] spw         = ""
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] selectdata  = True
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] uvrange     = ""
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] scan        = ""
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] msselect    = ""
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] callib      = ""
+Tue Aug 30 13:06:32 2016  HISTORY applycal [] gainfield   = ['3']
+Tue Aug 30 13:06:33 2016  HISTORY applycal [] spwmap      = []
+Tue Aug 30 13:06:33 2016  HISTORY applycal [] parang      = False
+Tue Aug 30 13:06:33 2016  HISTORY applycal [] flagbackup  = False
+Tue Aug 30 17:39:30 2016  HISTORY concat [] vis          = "['calibrated
+>/uid___A002_Xb162a6_X3198.ms.split.cal', 'calibrated/uid___A002_Xb39557
+>2d2e.ms.split.cal', 'calibrated/uid___A002_Xb40d55_X1757.ms.split.cal'
+>calibrated/uid___A002_Xb4264b_X23ce.ms.split.cal']"
+Tue Aug 30 17:39:30 2016  HISTORY concat [] freqtol      = ""
+Tue Aug 30 17:39:30 2016  HISTORY concat [] respectname  = "False"
+Tue Aug 30 17:39:30 2016  HISTORY concat [] visweightscale = "[0, 0, 0,
+> 0, 0]"
+Tue Aug 30 23:23:10 2016  HISTORY uvcontsub [] taskname=uvcontsub
+Tue Aug 30 23:23:10 2016  HISTORY uvcontsub [] vis         = "calibrated
+>.ms"
+Tue Aug 30 23:23:10 2016  HISTORY uvcontsub [] fitspw      = "0,  1:20~9
+>00;1000~1900, 2:20~900;1000~1900, 3:20~900;1000~1900, 4:20~920;1000~190
+> 5:40~1800;2000~3800, 6,  7:20~900;1000~1900, 8:20~900;1000~1900, 9:209
+>0;1000~1900,10:20~920;1000~1900,11:40~1800;2000~3800, 12,13:20~900;100~
+>900,14:20~900;1000~1900,15:20~900;1000~1900,16:20~920;1000~1900,17:4~18
+>0;2000~3800, 18,19:20~900;1000~1900,20:20~900;1000~1900,21:20~900;100~1
+>00,22:20~920;1000~1900,23:40~1800;2000~3800, 24,25:20~900;1000~190,26:2
+>~900;1000~1900,27:20~900;1000~1900,28:20~920;1000~1900,29:40~18002000~3
+>00"
+Tue Aug 30 23:23:10 2016  HISTORY uvcontsub [] combine     = ""
+Tue Aug 30 23:23:10 2016  HISTORY uvcontsub [] fitorder    = 1
+Tue Aug 30 23:23:10 2016  HISTORY uvcontsub [] want_cont   = False
+Wed Aug 31 00:48:30 2016  HISTORY calibrater::solve [] Beginning solve--
+>---------------------------
+Wed Aug 31 06:30:14 2016  HISTORY calibrater::correct [] Beginning corre
+>ct---------------------------
+Wed Aug 31 08:21:08 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I'
+> mode=RADIOVELOCITY nchan=25 start=-1 step=0 spwids=[1, 7, 13, 19, 25]i
+>ldid=0 facets=1 frame=1 distance='0',  phaseCenter='field-0 ' mStart=Ra
+>ialvelocity: 10000' qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Wed Aug 31 08:21:09 2016  HISTORY imager::weight() [] Briggs weighting:
+> sidelobes will be suppressed over full image
+Wed Aug 31 11:25:47 2016  HISTORY imager::clean() [] Starting deconvolut
+>ion
+Wed Aug 31 12:31:40 2016  HISTORY imager::clean() [] Beam used in restor
+>ation: 1.75984 by 1.30432 (arcsec) at pa -75.2484 (deg)
+Wed Aug 31 12:58:48 2016  HISTORY imager::defineimage() [Defining image
+> properties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I'
+> mode=RADIOVELOCITY nchan=25 start=-1 step=0 spwids=[2, 8, 14, 20, 26]i
+>ldid=0 facets=1 frame=1 distance='0',  phaseCenter='field-0 ' mStart=Ra
+>ialvelocity: 10000' qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Wed Aug 31 12:58:49 2016  HISTORY imager::weight() [] Briggs weighting:
+> sidelobes will be suppressed over full image
+Wed Aug 31 22:57:02 2016  HISTORY imager::clean() [] Continuing deconvol
+>ution
+Thu Sep 1 00:01:50 2016  HISTORY imager::iClean() [] Restoring Image(s)
+> with the clean-beam
+Thu Sep 1 00:01:57 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Thu Sep 1 00:04:07 2016  HISTORY imager::clean() [] Using multifield Cla
+>rk clean
+Thu Sep 1 00:04:07 2016  HISTORY imager::clean() [] Starting deconvoluti
+>on
+Thu Sep 1 03:55:32 2016  HISTORY imager::clean() [] Fitted beam used in
+> restoration: 1.75868 by 1.27231 (arcsec) at pa -72.5301 (deg)
+Thu Sep 1 03:55:43 2016  HISTORY imager::defineimage() [Defining image p
+>roperties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I' m
+>e=RADIOVELOCITY nchan=80 start=-1 step=0 spwids=[4, 10, 16, 22, 28] fil
+>id=0 facets=1 frame=1 distance='0',  phaseCenter='field-0 ' mStart='Rdi
+>lvelocity: -15000' qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Thu Sep 1 03:55:45 2016  HISTORY imager::weight() [] Briggs weighting: s
+>idelobes will be suppressed over full image
+Thu Sep 1 03:57:52 2016  HISTORY imager::clean() [] Clean gain = 0.1, Ni
+>ter = 500, Threshold = 4 mJy
+Thu Sep 1 07:52:41 2016  HISTORY imager::clean() [] Threshhold not reach
+>ed yet.
+Thu Sep 1 07:52:46 2016  HISTORY imager::iClean() [] Restoring Image(s)
+> with the clean-beam
+Thu Sep 1 07:52:53 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Thu Sep 1 07:57:17 2016  HISTORY imager::clean() [] Using multifield Cla
+>rk clean
+Thu Sep 1 07:57:17 2016  HISTORY imager::clean() [] Starting deconvoluti
+>on
+Thu Sep 1 12:07:12 2016  HISTORY imager::clean() [] Fitted beam used in
+> restoration: 1.75904 by 1.22174 (arcsec) at pa -77.92 (deg)
+Thu Sep 1 21:05:19 2016  HISTORY imager::defineimage() [Defining image p
+>roperties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I' m
+>e=RADIOVELOCITY nchan=80 start=-1 step=0 spwids=[5, 11, 17, 23, 29] fil
+>id=0 facets=1 frame=1 distance='0',  phaseCenter='field-0 ' mStart='Rdi
+>lvelocity: -15000' qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Thu Sep 1 21:05:21 2016  HISTORY imager::weight() [] Briggs weighting: s
+>idelobes will be suppressed over full image
+Thu Sep 1 21:09:45 2016  HISTORY imager::clean() [] Clean gain = 0.1, Ni
+>ter = 500, Threshold = 4 mJy
+Fri Sep 2 01:21:10 2016  HISTORY imager::clean() [] Threshhold not reach
+>ed yet.
+Fri Sep 2 01:21:16 2016  HISTORY imager::iClean() [] Restoring Image(s)
+> with the clean-beam
+Tue Sep 6 04:25:52 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Tue Sep 6 04:28:08 2016  HISTORY imager::filter() [] Imaging weights wil
+>l be tapered
+Tue Sep 6 10:51:37 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Tue Sep 6 10:53:55 2016  HISTORY imager::filter() [] Imaging weights wil
+>l be tapered
+Tue Sep 6 21:08:53 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Tue Sep 6 21:10:55 2016  HISTORY imager::filter() [] Imaging weights wil
+>l be tapered
+Wed Sep 7 00:17:53 2016  HISTORY imager::clean() [] Starting deconvoluti
+>on
+Wed Sep 7 01:29:34 2016  HISTORY imager::clean() [] Beam used in restora
+>tion: 2.45985 by 2.08601 (arcsec) at pa -71.9539 (deg)
+Wed Sep 7 03:56:25 2016  HISTORY imager::defineimage() [Defining image p
+>roperties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I' m
+>e=RADIOVELOCITY nchan=1 start=-1 step=0 spwids=[2, 8, 14, 20, 26] fieli
+>=0 facets=1 frame=1 distance='0',  phaseCenter='field-0 ' mStart='Radal
+>elocity: 10000' qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Wed Sep 7 03:57:40 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Wed Sep 7 03:57:51 2016  HISTORY imager::filter() [] Imaging weights wil
+>l be tapered
+Wed Sep 7 03:57:52 2016  HISTORY imager::clean() [] Clean gain = 0.1, Ni
+>ter = 0, Threshold = 0 mJy
+Wed Sep 7 06:05:35 2016  HISTORY imager::clean() [] Threshhold not reach
+>ed yet.
+Wed Sep 7 06:06:01 2016  HISTORY imager::iClean() [] Restoring Image(s)
+> with the clean-beam
+Wed Sep 7 07:04:42 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Wed Sep 7 07:07:28 2016  HISTORY imager::defineimage() [Defining image p
+>roperties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I' m
+>e=RADIOVELOCITY nchan=1 start=-1 step=0 spwids=[2] fieldid=0 facets=1ra
+>e=1 distance='0',  phaseCenter='field-0 ' mStart='Radialvelocity: 1000'
+> qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Wed Sep 7 07:07:28 2016  HISTORY imager::weight() [] Briggs weighting: s
+>idelobes will be suppressed over full image
+Wed Sep 7 07:07:30 2016  HISTORY imager::clean() [] Clean gain = 0.1, Ni
+>ter = 0, Threshold = 0 mJy
+Wed Sep 7 09:11:27 2016  HISTORY imager::clean() [] Threshhold not reach
+>ed yet.
+Wed Sep 7 09:17:13 2016  HISTORY imager::iClean() [] Restoring Image(s)
+> with the clean-beam
+Wed Sep 7 10:09:06 2016  HISTORY imager::weight() [] Weighting MS: Imagi
+>ng weights will be changed
+Wed Sep 7 12:25:31 2016  HISTORY imager::defineimage() [Defining image p
+>roperties:nx=640 ny=800 cellx='0.4arcsec' celly='0.4arcsec' stokes=I' m
+>e=RADIOVELOCITY nchan=25 start=-1 step=0 spwids=[2, 8, 14, 20, 26] fied
+>d=0 facets=1 frame=1 distance='0',  phaseCenter='field-0 ' mStart='Raia
+>velocity: 10000' qStep='0.844 km/s'' mFreqStart='Frequency: 0]
+Wed Sep 7 12:25:32 2016  HISTORY imager::weight() [] Briggs weighting: s
+>idelobes will be suppressed over full image
+Wed Sep 7 12:27:39 2016  HISTORY imager::clean() [] Clean gain = 0.1, Ni
+>ter = 500, Threshold = 4 mJy
+Wed Sep 7 16:37:14 2016  HISTORY imager::clean() [] Threshhold not reach
+>ed yet.
+Wed Sep 7 16:37:16 2016  HISTORY imager::iClean() [] Restoring Image(s)
+> with the clean-beam
+CASA START LOGTABLE
+2021-11-18T05:43:01 INFO SRCCODE='::imsubimage'
+version: 6.1.0-118 CASAtools:v1.0.0
+2021-11-18T05:43:01 INFO SRCCODE='::imsubimage'
+imsubimage(imagename="/home/mingyi/carta-test-img/set_QA/M17_SWex.fits",
+> outfile="test.image", box="", region="box[[144pix,183pix],[149pix,188p
+>x]] range=[4pix,8pix]", chans="", stokes="", mask="", dropdeg=False, ov
+>rwrite=False, verbose=True, stretch=False, keepaxes=[])
+CASA END LOGTABLE
+FITS: Miriad fits: CVS Revision 1.24, 2013/03/14 17:33:00 UTC
+FITS: Executed on: 2021-11-18T15:37:59.0
+FITS: Command line inputs follow:
+FITS:   in=test.fits
+FITS:   op=xyin
+FITS:   out=test.miriad

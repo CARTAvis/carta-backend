@@ -20,9 +20,11 @@
 #include <carta-protobuf/file_info.pb.h>
 #include "../ImageData/FileLoader.h"
 
+namespace carta {
+
 class FileExtInfoLoader {
 public:
-    FileExtInfoLoader(std::shared_ptr<carta::FileLoader> loader);
+    FileExtInfoLoader(std::shared_ptr<FileLoader> loader);
 
     // Fill extended file info for all FITS image hdus
     bool FillFitsFileInfoMap(
@@ -62,8 +64,10 @@ private:
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
         std::string& projection);
 
-    std::shared_ptr<carta::FileLoader> _loader;
+    std::shared_ptr<FileLoader> _loader;
     CARTA::FileType _type;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_

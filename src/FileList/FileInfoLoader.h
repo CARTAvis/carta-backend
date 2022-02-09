@@ -13,6 +13,8 @@
 
 #include <carta-protobuf/file_info.pb.h>
 
+namespace carta {
+
 class FileInfoLoader {
 public:
     FileInfoLoader(const std::string& filename);
@@ -28,5 +30,7 @@ private:
     std::string _filename;
     CARTA::FileType _type;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_

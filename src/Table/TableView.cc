@@ -10,11 +10,9 @@
 #include <numeric>
 
 #include "Table.h"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 namespace carta {
-
-using namespace std;
 
 TableView::TableView(const Table& table) : _table(table) {
     _is_subset = false;

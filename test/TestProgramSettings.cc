@@ -7,9 +7,8 @@
 #include <gtest/gtest.h>
 #include <cxxopts/cxxopts.hpp>
 
-#include "SessionManager/ProgramSettings.h"
+#include "Main/ProgramSettings.h"
 #include "SimpleHttpServer/SimpleHttpServer.h"
-
 #include "CommonTestUtilities.h"
 
 #include <curl/curl.h>

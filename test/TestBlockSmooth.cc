@@ -27,6 +27,8 @@
 #define NUM_ITERS 10
 #define MAX_DOWNSAMPLE_FACTOR 256
 
+using namespace carta;
+
 typedef casacore::Matrix<float> Matrix2F;
 
 class BlockSmoothingTest : public ::testing::Test {

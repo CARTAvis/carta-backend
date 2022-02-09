@@ -19,6 +19,8 @@
 #include <carta-protobuf/region_file_info.pb.h>
 #include <carta-protobuf/region_list.pb.h>
 
+namespace carta {
+
 class FileListHandler {
 public:
     FileListHandler(const std::string& top_level_folder, const std::string& starting_folder);
@@ -64,5 +66,7 @@ private:
     volatile bool _first_report_made;
     std::function<void(CARTA::ListProgress)> _progress_callback;
 };
+
+} // namespace carta
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_

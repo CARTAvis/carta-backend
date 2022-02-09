@@ -29,8 +29,8 @@ fs::path UserDirectory();
 
 class ImageGenerator {
 public:
-    static std::string GeneratedFitsImagePath(const std::string& params);
-    static std::string GeneratedHdf5ImagePath(const std::string& params);
+    static std::string GeneratedFitsImagePath(const std::string& params, const std::string& opts = "-s 0");
+    static std::string GeneratedHdf5ImagePath(const std::string& params, const std::string& opts = "-s 0");
 };
 
 class FileFinder {
@@ -85,5 +85,8 @@ public:
     void SetUp() override;
     void TearDown() override;
 };
+
+void CmpValues(float data1, float data2, float abs_err = 0);
+void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);
 
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_

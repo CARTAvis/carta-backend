@@ -6,8 +6,8 @@
 
 #include <gtest/gtest.h>
 
+#include "ImageGenerators/ImageMoments.h"
 #include "Logger/Logger.h"
-#include "Moment/ImageMoments.h"
 
 #include <casacore/images/Images/PagedImage.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
