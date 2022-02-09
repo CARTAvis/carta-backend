@@ -11,8 +11,10 @@
 #include <casacore/casa/Json/JsonParser.h>
 #include <casacore/images/Images/ImageExpr.h>
 #include <casacore/images/Images/ImageExprParse.h>
+#include <casacore/images/Images/ImageOpener.h>
 #include <casacore/lattices/LEL/LatticeExprNode.h>
 
+#include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Util/FileSystem.h"
 
@@ -33,20 +35,11 @@ void ExprLoader::OpenFile(const std::string& /*hdu*/) {
         if (!_directory.empty()) {
             // create image from LEL expression stored in _filename
             casacore::String expr(_filename);
-            casacore::LatticeExprNode expr_node;
 
-            try {
-                expr_node = casacore::LatticeExprNode(casacore::ImageExprParse::command(expr, _directory));
-            } catch (const casacore::AipsError& err) {
-                casacore::String error = err.getMesg();
+            // Open HDF5 with CartaHdf5Image
+            CartaHdf5Image::RegisterOpenFunction();
 
-                if (error.contains("hdf5")) {
-                    throw(casacore::AipsError("LEL expressions not supported for HDF5 images."));
-                } else {
-                    throw(err);
-                }
-            }
-
+            casacore::LatticeExprNode expr_node = casacore::LatticeExprNode(casacore::ImageExprParse::command(expr, _directory));
             _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(expr_node), expr));
         } else {
             // load LEL image from disk
