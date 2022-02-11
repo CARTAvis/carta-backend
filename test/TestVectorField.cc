@@ -153,12 +153,15 @@ public:
         int image_height_tmp = std::ceil((float)image_height / 2);
         int down_sampled_width_tmp = std::ceil((float)image_width_tmp / 5);
         int down_sampled_height_tmp = std::ceil((float)image_height_tmp / 5);
-
         down_sampled_data1.resize(down_sampled_height_tmp * down_sampled_width_tmp);
         if (!BlockSmooth(tmp_down_sampled_data.data(), down_sampled_data1.data(), image_width_tmp, image_height_tmp, down_sampled_width_tmp,
                 down_sampled_height_tmp, 0, 0, 5)) {
             return false;
         }
+
+        // Check does the function BlockSmooth work well
+        CheckDownSampledData(tmp_down_sampled_data, down_sampled_data1, image_width_tmp, image_height_tmp, down_sampled_width_tmp,
+            down_sampled_height_tmp, 5);
 
         // Get downsampled data (mip = 10) from the full resolution raster data
         if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, 10)) {
