@@ -111,12 +111,12 @@ public:
         }
 
         // Compare two downsampled data
-        CmpVectors(down_sampled_data1, down_sampled_data2, 1e-6); //!!!! set absolute error as 1e-6
+        CmpVectors(down_sampled_data1, down_sampled_data2, 1e-6);
         return true;
     }
 
     bool TestBlockSmoothDownSampledData(std::string image_shape, std::string image_opts, std::string stokes_type,
-        std::vector<float>& down_sampled_data1, std::vector<float>& down_sampled_data2) {
+        std::vector<float>& down_sampled_data1, std::vector<float>& down_sampled_data2, float abs_error) {
         // Create the sample image
         std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
 
@@ -171,7 +171,7 @@ public:
         EXPECT_EQ(down_sampled_height, image_height / 10);
 
         // Compare two downsampled data
-        CmpVectors(down_sampled_data1, down_sampled_data2, 0.3); //!!!! set absolute error as 0.3
+        CmpVectors(down_sampled_data1, down_sampled_data2, abs_error);
         return true;
     }
 
@@ -1489,17 +1489,22 @@ TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
 }
 
 TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ix", 2));
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Qx", 2));
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ux", 2));
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Vx", 2));
+    std::string image_opts = IMAGE_OPTS;
+    float abs_error = 1e-6;
+    // std::string image_opts = IMAGE_OPTS_NAN;
+    // float abs_error = 0.3;
+
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Ix", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Qx", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Ux", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Vx", 2));
 
     std::vector<float> data1_i, data2_i;
     std::vector<float> data1_q, data2_q;
     std::vector<float> data1_u, data2_u;
     std::vector<float> data1_v, data2_v;
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ix", data1_i, data2_i));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Qx", data1_q, data2_q));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ux", data1_u, data2_u));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Vx", data1_v, data2_v));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Ix", data1_i, data2_i, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Qx", data1_q, data2_q, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Ux", data1_u, data2_u, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Vx", data1_v, data2_v, abs_error));
 }
