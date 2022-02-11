@@ -394,20 +394,7 @@ pipeline {
                     }
                 }
                 stages {
-                    stage('session') {
-                        agent {
-                            label "${PLATFORM}-docker-agent"
-                        }
-                        steps {
-                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
-                                unstash "${PLATFORM}-ICD"
-                                session()
-                            }
-                        }
-                    }
-                    stage('file_browser') {
+                    stage('session and file_browser') {
                         agent {
                             label "${PLATFORM}-docker-agent"
                         }
@@ -430,19 +417,6 @@ pipeline {
                                 sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 animator()
-                            }
-                        }
-                    }
-                    stage('contour') {
-                        agent {
-                            label "${PLATFORM}-docker-agent"
-                        }
-                        steps {
-                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
-                                unstash "${PLATFORM}-ICD"
-                                contour()
                             }
                         }
                     }
@@ -482,19 +456,6 @@ pipeline {
                                 sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 cube_histogram()
-                            }
-                        }
-                    }
-                    stage('spatial_profiler') {
-                        agent {
-                            label "${PLATFORM}-docker-agent"
-                        }
-                        steps {
-                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
-                                unstash "${PLATFORM}-ICD"
-                                spatial_profiler()
                             }
                         }
                     }
@@ -744,37 +705,6 @@ def prepare_macos12_ICD() {
     }
 }
 
-def session() {
-    script {
-        dir ('carta-backend-ICD-test') {
-            sh "npm install && ./protobuf/build_proto.sh"
-            ret = false
-            retry(3) {
-                if (ret) {
-                    sleep(time:30,unit:"SECONDS")
-                    sh "cat /root/.carta/log/carta.log"
-                    echo "Trying again"
-                } else {
-                    ret = true
-                }
-                sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts # test 3 of 6"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
-                sh "pgrep carta_backend"
-            }
-        }
-    }
-}
-
 def file_browser() {
     script {
         dir ('carta-backend-ICD-test') {
@@ -788,24 +718,13 @@ def file_browser() {
                 } else {
                     ret = true
                 }
+                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 1 of 1"
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/GET_FILELIST.test.ts # test 1 of 9"
+                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 1 of 3"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 9"
+                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 2 of 3"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts # test 3 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_FITS.test.ts # test 4 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_CASA.test.ts # test 5 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts # test 6 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts # test 7 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 8 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
+                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 3 of 3"
                 sh "pgrep carta_backend"
             }
         }
@@ -834,28 +753,6 @@ def animator() {
                 sh "sleep 3 && pgrep carta_backend"
                 sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 4 of 4"
                 sh "pgrep carta_backend"
-            }
-        }
-    }
-}
-
-def contour() {
-    script {
-        dir ('carta-backend-ICD-test') {
-            sh "npm install && ./protobuf/build_proto.sh"
-            ret = false
-            retry(3) {
-                if (ret) {
-                    sleep(time:30,unit:"SECONDS")
-                    sh "cat /root/.carta/log/carta.log"
-                    echo "Trying again"
-                } else {
-                    ret = true
-                }
-                sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts # test 1 of 3"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts # test 2 of 2"
             }
         }
     }
@@ -900,23 +797,21 @@ def region_manipulation() {
                     ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 9"
+                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 1 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 9"
+                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 2 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 9"
+                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 3 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 9"
+                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 4 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 9"
+                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 5 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 9"
+                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 6 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 7 of 9"
+                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 7 of 8"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 9"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 9 of 9"
+                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 8 of 8"
                 sh "pgrep carta_backend"
             }
         }
@@ -938,29 +833,6 @@ def cube_histogram() {
                 }
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 1 of 1"
-            }
-        }
-    }
-}
-
-def spatial_profiler() {
-    script {
-        dir ('carta-backend-ICD-test') {
-            sh "npm install && ./protobuf/build_proto.sh"
-            ret = false
-            retry(3) {
-                if (ret) {
-                    sleep(time:30,unit:"SECONDS")
-                    sh "cat /root/.carta/log/carta.log"
-                    echo "Trying again"
-                } else {
-                    ret = true
-                }
-                sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts # test 1 of 2"
-                sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
-                sh "pgrep carta_backend"
             }
         }
     }
