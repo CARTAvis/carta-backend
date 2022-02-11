@@ -130,7 +130,7 @@ int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 
 struct VectorFieldSettings {
-    int smoothing_factor;
+    int smoothing_factor = 0; // Initialize as 0 which represents the empty setting
     bool fractional;
     double threshold;
     bool debiasing;

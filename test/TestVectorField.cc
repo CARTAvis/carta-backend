@@ -1212,23 +1212,21 @@ TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
 TEST_F(VectorFieldTest, TestTilesData) {
     std::string image_opts = IMAGE_OPTS_NAN;
     CARTA::FileType file_type = CARTA::FileType::FITS;
-    for (int mip = 1; mip < 17; ++mip) {
-        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ix", mip));
-        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Qx", mip));
-        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ux", mip));
-        EXPECT_TRUE(TestTilesData(image_opts, file_type, "Vx", mip));
-    }
+    int mip = 4;
+    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ix", mip));
+    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Qx", mip));
+    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ux", mip));
+    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Vx", mip));
 }
 
 TEST_F(VectorFieldTest, TestBlockSmooth) {
     std::string image_opts = IMAGE_OPTS_NAN;
     CARTA::FileType file_type = CARTA::FileType::FITS;
-    for (int mip = 1; mip < 17; ++mip) {
-        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ix", mip));
-        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Qx", mip));
-        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ux", mip));
-        EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Vx", mip));
-    }
+    int mip = 4;
+    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ix", mip));
+    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Qx", mip));
+    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ux", mip));
+    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Vx", mip));
 }
 
 TEST_F(VectorFieldTest, TestTileCalc) {
@@ -1238,9 +1236,8 @@ TEST_F(VectorFieldTest, TestTileCalc) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    for (int mip = 1; mip < 17; ++mip) {
-        EXPECT_TRUE(TestTileCalc(image_opts, file_type, mip, fractional, q_error, u_error, threshold));
-    }
+    int mip = 4;
+    EXPECT_TRUE(TestTileCalc(image_opts, file_type, mip, fractional, q_error, u_error, threshold));
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldSettings) {
@@ -1277,9 +1274,8 @@ TEST_F(VectorFieldTest, TestVectorFieldCalc) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    for (int mip = 1; mip < 17; ++mip) {
-        EXPECT_TRUE(TestVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold));
-    }
+    int mip = 4;
+    EXPECT_TRUE(TestVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold));
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc2) {
@@ -1290,9 +1286,8 @@ TEST_F(VectorFieldTest, TestVectorFieldCalc2) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    for (int mip = 1; mip < 17; ++mip) {
-        TestVectorFieldCalc2(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
-    }
+    int mip = 4;
+    TestVectorFieldCalc2(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
 TEST_F(VectorFieldTest, TestStokesIntensityOrAngleSettings) {
@@ -1311,7 +1306,7 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
     std::pair<float, float> errors = TestZFPCompression(image_opts, file_type, mip, 10, fractional, debiasing);
 
     for (int compression_quality = 11; compression_quality < 22; ++compression_quality) {
-        auto tmp_errors = TestZFPCompression(image_opts, file_type, mip, compression_quality, fractional, debiasing);
+        auto tmp_errors = TestZFPCompression(image_opts, file_type, mip, (float)compression_quality, fractional, debiasing);
         EXPECT_GT(errors.first, tmp_errors.first);
         EXPECT_GT(errors.second, tmp_errors.second);
         errors = tmp_errors;
@@ -1326,15 +1321,13 @@ TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    for (int mip = 1; mip < 17; ++mip) {
-        TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
-    }
+    int mip = 4;
+    TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     CARTA::FileType file_type = CARTA::FileType::FITS;
-    for (int mip = 1; mip < 5; ++mip) {
-        TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0);
-        TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0);
-    }
+    int mip = 4;
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip);
 }
