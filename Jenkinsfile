@@ -262,19 +262,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "macos11-unit-tests"
-                            dir ('test') {
-                                ret = false
-                                retry(3) {
-                                    if (ret) {
-                                        sleep(time:10,unit:"SECONDS")
-                                        sh "cat /root/.carta/log/carta.log"
-                                        echo "Unit test failure. Trying again"
-                                    } else {
-                                        ret = true
-                                    }
-                                    sh "./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
-                                }
-                            }
+                            macos11-unit-tests()
                         }
                     }
                     post {
@@ -290,26 +278,14 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "macos12-unit-tests"
-                            dir ('test') {
-                                ret = false
-                                retry(3) {
-                                    if (ret) {
-                                        sleep(time:10,unit:"SECONDS")
-                                        sh "cat /root/.carta/log/carta.log"
-                                        echo "Unit test failure. Trying again"
-                                    } else {
-                                        ret = true
-                                    }
-                                    sh "./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
-                                }
-                            }
+                            macos12-unit-tests()
                         }
                     }
                     post {
                         always {
                             junit 'test/macos12_test_detail.xml'
                         }
-                    }
+                    } 
                 }
                 stage('6 RHEL7') {
                     agent {
@@ -601,6 +577,42 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+def macos11-unit-tests() {
+    script {
+        dir ('test') {
+            ret = false
+            retry(3) {
+                if (ret) {
+                    sleep(time:10,unit:"SECONDS")
+                    sh "cat /root/.carta/log/carta.log"
+                    echo "Unit test failure. Trying again"
+                } else {
+                    ret = true
+                }
+                sh "./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
+            }
+        }
+    }
+}
+
+def macos12-unit-tests() {
+    script {
+        dir ('test') {
+            ret = false
+            retry(3) {
+                if (ret) {
+                    sleep(time:10,unit:"SECONDS")
+                    sh "cat /root/.carta/log/carta.log"
+                    echo "Unit test failure. Trying again"
+                } else {
+                    ret = true
+                }
+                sh "./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
             }
         }
     }
