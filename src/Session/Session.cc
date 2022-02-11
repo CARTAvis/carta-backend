@@ -780,7 +780,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         }
 
         // Update the spatial profile data if it is a point region
-        if (_region_handler->IsPointRegion(region_id)) {
+        if (_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) {
             SendSpatialProfileDataByRegionId(region_id);
         }
     } else {
@@ -921,7 +921,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         if (region_id == CURSOR_REGION_ID) {
             _frames.at(file_id)->SetSpatialRequirements(profiles);
             SendSpatialProfileData(file_id, region_id);
-        } else if (_region_handler->IsPointRegion(region_id)) {
+        } else if (_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) {
             _region_handler->SetSpatialRequirements(region_id, file_id, _frames.at(file_id), profiles);
             SendSpatialProfileData(file_id, region_id);
         } else {
@@ -1561,13 +1561,13 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
         if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_data_vec)) {
             send_results(file_id, region_id, spatial_profile_data_vec);
         }
-    } else if (_region_handler->IsPointRegion(region_id) && _frames.count(file_id)) {
-        // Point region spatial profile
+    } else if ((_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) && _frames.count(file_id)) {
+        // Point/line region spatial profile
         if (_region_handler->FillSpatialProfileData(file_id, region_id, spatial_profile_data_vec)) {
             send_results(file_id, region_id, spatial_profile_data_vec);
         }
     } else {
-        string error = fmt::format("Spatial profiles not valid for non-point region {}", region_id);
+        string error = fmt::format("Spatial profiles not valid for region {} type", region_id);
         SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
     return data_sent;

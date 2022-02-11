@@ -20,6 +20,7 @@
 #include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
@@ -67,7 +68,8 @@ public:
         CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate = 5);
     static CARTA::AnimationFlowControl AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
     static CARTA::StopAnimation StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame);
-    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(std::string coordinate, int start = 0, int end = 0, int mip = 0);
+    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
+        std::string coordinate, int start = 0, int end = 0, int mip = 0, int width = 0);
     static CARTA::IntBounds IntBounds(int min, int max);
     static CARTA::FloatBounds FloatBounds(float min, float max);
     static CARTA::MomentRequest MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
@@ -85,6 +87,8 @@ public:
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
         std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
         std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+    static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
+        int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
