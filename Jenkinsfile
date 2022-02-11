@@ -255,6 +255,24 @@ pipeline {
                         }
                     }   
                 }
+                stage('4 macOS 11') {
+                    agent {
+                        label "macos11-docker-agent"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            unstash "macos11-unit-tests"
+                            dir ('test') {
+                                sh "./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'test/macos11_test_detail.xml'
+                        }
+                    }
+                }
                 stage('5 macOS 12') {
                     agent {
                         label "macos12-docker-agent"
