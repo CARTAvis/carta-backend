@@ -17,8 +17,161 @@ static const std::string IMAGE_SHAPE = "1110 1110 25 4";
 static const std::string IMAGE_OPTS = "-s 0";
 static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
 
+class TestFrame : public Frame {
+public:
+    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
+        : Frame(session_id, loader, hdu, default_z) {}
+    FRIEND_TEST(VectorFieldTest, ExampleFriendTest);
+
+    bool GetLoaderDownSampledData(std::vector<float>& down_sampled_data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) {
+        if (!ImageBoundsValid(bounds)) {
+            return false;
+        }
+        if (!_loader->HasMip(mip) || !_loader->GetDownsampledRasterData(down_sampled_data, channel, stokes, bounds, mip, _image_mutex)) {
+            return false;
+        }
+        return true;
+    }
+
+    bool GetDownSampledData(std::vector<float>& down_sampled_data, int& down_sampled_width, int& down_sampled_height, int channel,
+        int stokes, CARTA::ImageBounds& bounds, int mip) {
+        if (!ImageBoundsValid(bounds)) {
+            return false;
+        }
+
+        // Get original raster tile data
+        int x_min = bounds.x_min();
+        int x_max = bounds.x_max() - 1;
+        int y_min = bounds.y_min();
+        int y_max = bounds.y_max() - 1;
+
+        std::vector<float> tile_data;
+        casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
+        if (!GetSlicerData(tile_section, tile_data)) {
+            return false;
+        }
+
+        int tile_original_width = bounds.x_max() - bounds.x_min();
+        int tile_original_height = bounds.y_max() - bounds.y_min();
+        down_sampled_width = std::ceil((float)tile_original_width / mip);
+        down_sampled_height = std::ceil((float)tile_original_height / mip);
+
+        // Get down sampled raster tile data by block averaging
+        down_sampled_data.resize(down_sampled_height * down_sampled_width);
+        return BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
+            down_sampled_height, 0, 0, mip);
+    }
+
+    bool ImageBoundsValid(const CARTA::ImageBounds& bounds) {
+        int tile_original_width = bounds.x_max() - bounds.x_min();
+        int tile_original_height = bounds.y_max() - bounds.y_min();
+        if (tile_original_width * tile_original_height <= 0) {
+            return false;
+        }
+        return true;
+    }
+};
+
 class VectorFieldTest : public ::testing::Test {
 public:
+    bool TestLoaderDownSampledData(std::string image_shape, std::string image_opts, std::string stokes_type, int mip) {
+        // Create the sample image
+        std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
+
+        // Open the file
+        LoaderCache loaders(LOADER_CACHE_SIZE);
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(file_path_string), "0"));
+
+        // Get Stokes index
+        int stokes;
+        if (!frame->GetStokesTypeIndex(stokes_type, stokes)) {
+            return false;
+        }
+
+        int channel = frame->CurrentZ();
+
+        int down_sampled_width;
+        int down_sampled_height;
+        CARTA::ImageBounds bounds;
+        bounds.set_x_min(0);
+        bounds.set_x_max(frame->Width());
+        bounds.set_y_min(0);
+        bounds.set_y_max(frame->Height());
+
+        // Get (HDF5) loader downsampled data
+        std::vector<float> down_sampled_data1;
+        if (!frame->GetLoaderDownSampledData(down_sampled_data1, channel, stokes, bounds, mip)) {
+            return false;
+        }
+
+        // Get downsampled data from the full resolution raster data
+        std::vector<float> down_sampled_data2;
+        if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, mip)) {
+            return false;
+        }
+
+        // Compare two downsampled data
+        CmpVectors(down_sampled_data1, down_sampled_data2, 1e-6); //!!!! set absolute error as 1e-6
+        return true;
+    }
+
+    bool TestBlockSmoothDownSampledData(std::string image_shape, std::string image_opts, std::string stokes_type,
+        std::vector<float>& down_sampled_data1, std::vector<float>& down_sampled_data2) {
+        // Create the sample image
+        std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
+
+        // Open the file
+        LoaderCache loaders(LOADER_CACHE_SIZE);
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(file_path_string), "0"));
+
+        // Get Stokes index
+        int stokes;
+        if (!frame->GetStokesTypeIndex(stokes_type, stokes)) {
+            return false;
+        }
+
+        int channel = frame->CurrentZ();
+        int image_width = frame->Width();
+        int image_height = frame->Height();
+
+        int down_sampled_width;
+        int down_sampled_height;
+        CARTA::ImageBounds bounds;
+        bounds.set_x_min(0);
+        bounds.set_x_max(image_width);
+        bounds.set_y_min(0);
+        bounds.set_y_max(image_height);
+
+        // Get (HDF5) loader downsampled data (mip = 2)
+        std::vector<float> tmp_down_sampled_data;
+        if (!frame->GetLoaderDownSampledData(tmp_down_sampled_data, channel, stokes, bounds, 2)) {
+            return false;
+        }
+
+        // Get downsampled data (mip = 10) from the loader downsampled data (mip = 2)
+        int image_width_tmp = std::ceil((float)image_width / 2);
+        int image_height_tmp = std::ceil((float)image_height / 2);
+        int down_sampled_width_tmp = std::ceil((float)image_width_tmp / 5);
+        int down_sampled_height_tmp = std::ceil((float)image_height_tmp / 5);
+
+        down_sampled_data1.resize(down_sampled_height_tmp * down_sampled_width_tmp);
+        if (!BlockSmooth(tmp_down_sampled_data.data(), down_sampled_data1.data(), image_width_tmp, image_height_tmp, down_sampled_width_tmp,
+                down_sampled_height_tmp, 0, 0, 5)) {
+            return false;
+        }
+
+        // Get downsampled data (mip = 10) from the full resolution raster data
+        if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, 10)) {
+            return false;
+        }
+        EXPECT_EQ(down_sampled_width, image_width / 10);
+        EXPECT_EQ(down_sampled_height, image_height / 10);
+
+        // Compare two downsampled data
+        CmpVectors(down_sampled_data1, down_sampled_data2, 0.3); //!!!! set absolute error as 0.3
+        return true;
+    }
+
     static bool TestTilesData(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
         // Create the sample image
         std::string file_path_string;
@@ -1330,4 +1483,20 @@ TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     int mip = 4;
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip);
+}
+
+TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ix", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Qx", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ux", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Vx", 2));
+
+    std::vector<float> data1_i, data2_i;
+    std::vector<float> data1_q, data2_q;
+    std::vector<float> data1_u, data2_u;
+    std::vector<float> data1_v, data2_v;
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ix", data1_i, data2_i));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Qx", data1_q, data2_q));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Ux", data1_u, data2_u));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", IMAGE_OPTS_NAN, "Vx", data1_v, data2_v));
 }
