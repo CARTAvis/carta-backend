@@ -262,7 +262,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "macos11-unit-tests"
-                            macos11-unit-tests()
+                            run-macos11-unit-tests()
                         }
                     }
                     post {
@@ -278,7 +278,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "macos12-unit-tests"
-                            macos12-unit-tests()
+                            run-macos12-unit-tests()
                         }
                     }
                     post {
@@ -582,7 +582,7 @@ pipeline {
     }
 }
 
-def macos11-unit-tests() {
+def run-macos11-unit-tests() {
     script {
         dir ('test') {
             ret = false
@@ -600,7 +600,7 @@ def macos11-unit-tests() {
     }
 }
 
-def macos12-unit-tests() {
+def run-macos12-unit-tests() {
     script {
         dir ('test') {
             ret = false
