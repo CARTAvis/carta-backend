@@ -16,6 +16,8 @@
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/scripting.pb.h>
 
+using namespace carta;
+
 uint32_t CartaGrpcService::_scripting_request_id = 0;
 
 void GrpcSilentLogger(gpr_log_func_args*) {}

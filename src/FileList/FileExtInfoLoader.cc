@@ -31,7 +31,7 @@
 
 using namespace carta;
 
-FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<carta::FileLoader> loader) : _loader(loader) {}
+FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<FileLoader> loader) : _loader(loader) {}
 
 bool FileExtInfoLoader::FillFitsFileInfoMap(
     std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message) {
@@ -154,11 +154,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     casacore::Vector<casacore::String> headers = FitsHeaderStrings(filename, FileInfo::GetFitsHdu(hdu));
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else if (image_type == "CartaFitsImage") {
-                    carta::CartaFitsImage* fits_image = dynamic_cast<carta::CartaFitsImage*>(image.get());
+                    CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(image.get());
                     casacore::Vector<casacore::String> headers = fits_image->FitsHeaderStrings();
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else if (image_type == "CartaHdf5Image") {
-                    carta::CartaHdf5Image* hdf5_image = dynamic_cast<carta::CartaHdf5Image*>(image.get());
+                    CartaHdf5Image* hdf5_image = dynamic_cast<CartaHdf5Image*>(image.get());
                     casacore::Vector<casacore::String> headers = hdf5_image->FitsHeaderStrings();
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else {

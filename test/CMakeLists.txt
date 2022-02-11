@@ -39,6 +39,9 @@ set(TEST_SOURCES
         CommonTestUtilities.cc
         BackendModel.cc
         TestBlockSmooth.cc
+        TestContour.cc
+        TestFileInfo.cc
+        TestFileList.cc
         TestFitsTable.cc
         TestFitsImage.cc
         TestHdf5Attributes.cc
@@ -48,18 +51,19 @@ set(TEST_SOURCES
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
+        TestPvGenerator.cc
+        TestRestApi.cc
         TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc
-        TestRestApi.cc
         TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})
     list(APPEND SOURCES ../${src_file})
 endforeach()
-list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main.cc)
+list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
 
 # Copy test data to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

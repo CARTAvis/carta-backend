@@ -8,14 +8,16 @@
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
-#include "Frame.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Message.h"
+#include "src/Frame/Frame.h"
 
 using namespace carta;
 
 using ::testing::FloatNear;
 using ::testing::Pointwise;
+
+static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 
 class SpatialProfileTest : public ::testing::Test, public ImageGenerator {
 public:
@@ -41,12 +43,20 @@ public:
         for (size_t i = 0; i < num_decimated_pairs; i++) {
             std::vector<float> segment(
                 full_resolution.begin() + i * mip * 2, std::min(full_resolution.begin() + (i + 1) * mip * 2, full_resolution.end()));
-            // First occurrence of smallest element
-            auto minpos = std::min_element(segment.begin(), segment.end());
-            // Last occurrence of largest element (because the real code uses min_max_element)
-            auto maxpos = (std::max_element(segment.rbegin(), segment.rend()) + 1).base();
-            result[i * 2] = (minpos < maxpos) ? *minpos : *maxpos;
-            result[i * 2 + 1] = (minpos < maxpos) ? *maxpos : *minpos;
+            // Remove NaN elements
+            segment.erase(
+                std::remove_if(segment.begin(), segment.end(), [](const auto& value) { return std::isnan(value); }), segment.end());
+
+            if (!segment.empty()) {
+                // First occurrence of smallest element
+                auto minpos = std::min_element(segment.begin(), segment.end());
+                // Last occurrence of largest element (because the real code uses min_max_element)
+                auto maxpos = (std::max_element(segment.rbegin(), segment.rend()) + 1).base();
+                result[i * 2] = (minpos < maxpos) ? *minpos : *maxpos;
+                result[i * 2 + 1] = (minpos < maxpos) ? *maxpos : *minpos;
+            } else {
+                result[i * 2] = result[i * 2 + 1] = std::numeric_limits<float>::quiet_NaN();
+            }
         }
         return result;
     }
@@ -62,11 +72,17 @@ public:
         for (size_t b = 0; b < num_downsampled; b++) {
             for (size_t i = b * mip; i < std::min((b + 1) * mip, width); i++) {
                 for (size_t j = 0; j < mip; j++) {
-                    result[b] += profiles[j][i];
-                    count[b]++;
+                    if (!std::isnan(profiles[j][i])) {
+                        result[b] += profiles[j][i];
+                        count[b]++;
+                    }
                 }
             }
-            result[b] /= count[b];
+            if (count[b] > 0) {
+                result[b] /= count[b];
+            } else {
+                result[b] = std::numeric_limits<float>::quiet_NaN();
+            }
         }
 
         return result;
@@ -84,7 +100,7 @@ public:
 };
 
 TEST_F(SpatialProfileTest, SmallFitsProfile) {
-    auto path_string = GeneratedFitsImagePath("10 10");
+    auto path_string = GeneratedFitsImagePath("10 10", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
@@ -103,7 +119,7 @@ TEST_F(SpatialProfileTest, SmallFitsProfile) {
         EXPECT_EQ(data.y(), 5);
         EXPECT_EQ(data.channel(), 0);
         EXPECT_EQ(data.stokes(), 0);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5));
+        CmpValues(data.value(), reader.ReadPointXY(5, 5));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -113,19 +129,19 @@ TEST_F(SpatialProfileTest, SmallFitsProfile) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5)));
+        CmpVectors(x_vals, reader.ReadProfileX(5));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
+        CmpVectors(y_vals, reader.ReadProfileY(5));
     }
 }
 
 TEST_F(SpatialProfileTest, SmallHdf5Profile) {
-    auto path_string = GeneratedHdf5ImagePath("10 10");
+    auto path_string = GeneratedHdf5ImagePath("10 10", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -144,7 +160,7 @@ TEST_F(SpatialProfileTest, SmallHdf5Profile) {
         EXPECT_EQ(data.y(), 5);
         EXPECT_EQ(data.channel(), 0);
         EXPECT_EQ(data.stokes(), 0);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5));
+        CmpValues(data.value(), reader.ReadPointXY(5, 5));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -154,19 +170,19 @@ TEST_F(SpatialProfileTest, SmallHdf5Profile) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5)));
+        CmpVectors(x_vals, reader.ReadProfileX(5));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5)));
+        CmpVectors(y_vals, reader.ReadProfileY(5));
     }
 }
 
 TEST_F(SpatialProfileTest, LowResFitsProfile) {
-    auto path_string = GeneratedFitsImagePath("130 100");
+    auto path_string = GeneratedFitsImagePath("130 100", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
@@ -189,19 +205,19 @@ TEST_F(SpatialProfileTest, LowResFitsProfile) {
         EXPECT_EQ(x_profile.mip(), 2);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 66);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileX(50), 2)));
+        CmpVectors(x_vals, Decimated(reader.ReadProfileX(50), 2));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileY(50), 2)));
+        CmpVectors(y_vals, Decimated(reader.ReadProfileY(50), 2));
     }
 }
 
 TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
-    auto path_string = GeneratedHdf5ImagePath("130 100");
+    auto path_string = GeneratedHdf5ImagePath("130 100", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -224,19 +240,19 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
         EXPECT_EQ(x_profile.mip(), 2);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 65);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)})));
+        CmpVectors(x_vals, Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)}), 1e-5);
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)})));
+        CmpVectors(y_vals, Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)}), 1e-5);
     }
 }
 
 TEST_F(SpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
-    auto path_string = GeneratedHdf5ImagePath("130 100");
+    auto path_string = GeneratedHdf5ImagePath("130 100", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -261,19 +277,19 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
         EXPECT_EQ(x_profile.mip(), 2);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 65);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)})));
+        CmpVectors(x_vals, Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)}), 1e-5);
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)})));
+        CmpVectors(y_vals, Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)}), 1e-5);
     }
 }
 
 TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
-    auto path_string = GeneratedHdf5ImagePath("120 100");
+    auto path_string = GeneratedHdf5ImagePath("120 100", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -298,19 +314,19 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
         EXPECT_EQ(x_profile.mip(), 2);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 60);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileX(50), 2)));
+        CmpVectors(x_vals, Decimated(reader.ReadProfileX(50), 2));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(reader.ReadProfileY(50), 2)));
+        CmpVectors(y_vals, Decimated(reader.ReadProfileY(50), 2));
     }
 }
 
 TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
-    auto path_string = GeneratedFitsImagePath("400 300");
+    auto path_string = GeneratedFitsImagePath("400 300", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
@@ -333,19 +349,19 @@ TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 100);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileX(150), 100, 200)));
+        CmpVectors(x_vals, Segment(reader.ReadProfileX(150), 100, 200));
 
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 100);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileY(150), 100, 200)));
+        CmpVectors(y_vals, Segment(reader.ReadProfileY(150), 100, 200));
     }
 }
 
 TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
-    auto path_string = GeneratedHdf5ImagePath("400 300");
+    auto path_string = GeneratedHdf5ImagePath("400 300", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -368,19 +384,19 @@ TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 100);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileX(150), 100, 200)));
+        CmpVectors(x_vals, Segment(reader.ReadProfileX(150), 100, 200));
 
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 100);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileY(150), 100, 200)));
+        CmpVectors(y_vals, Segment(reader.ReadProfileY(150), 100, 200));
     }
 }
 
 TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
-    auto path_string = GeneratedFitsImagePath("400 300");
+    auto path_string = GeneratedFitsImagePath("400 300", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
@@ -404,7 +420,7 @@ TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 24);
         // Data to decimate has endpoints rounded up to mip*2
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Decimated(Segment(reader.ReadProfileX(150), 104, 200), 4)));
+        CmpVectors(x_vals, Decimated(Segment(reader.ReadProfileX(150), 104, 200), 4));
 
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
@@ -412,12 +428,12 @@ TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 24);
         // Data to decimate has endpoints rounded up to mip*2
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Decimated(Segment(reader.ReadProfileY(150), 104, 200), 4)));
+        CmpVectors(y_vals, Decimated(Segment(reader.ReadProfileY(150), 104, 200), 4));
     }
 }
 
 TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
-    auto path_string = GeneratedHdf5ImagePath("400 300");
+    auto path_string = GeneratedHdf5ImagePath("400 300", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -441,9 +457,10 @@ TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 25);
         // Downsampled region is selected so that it includes the requested row
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Segment(Downsampled({reader.ReadProfileX(148), reader.ReadProfileX(149),
-                                                                   reader.ReadProfileX(150), reader.ReadProfileX(151)}),
-                                                           25, 50)));
+        CmpVectors(x_vals,
+            Segment(Downsampled({reader.ReadProfileX(148), reader.ReadProfileX(149), reader.ReadProfileX(150), reader.ReadProfileX(151)}),
+                25, 50),
+            1e-5);
 
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
@@ -451,14 +468,15 @@ TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 25);
         // Downsampled region is selected so that it includes the requested column
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(Downsampled({reader.ReadProfileY(148), reader.ReadProfileY(149),
-                                                                   reader.ReadProfileY(150), reader.ReadProfileY(151)}),
-                                                           25, 50)));
+        CmpVectors(y_vals,
+            Segment(Downsampled({reader.ReadProfileY(148), reader.ReadProfileY(149), reader.ReadProfileY(150), reader.ReadProfileY(151)}),
+                25, 50),
+            1e-5);
     }
 }
 
 TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullRes) {
-    auto path_string = GeneratedHdf5ImagePath("3000 2000");
+    auto path_string = GeneratedHdf5ImagePath("3000 2000", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -480,19 +498,19 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullRes) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 3000);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(150)));
+        CmpVectors(x_vals, reader.ReadProfileX(150));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 2000);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 2000);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(150)));
+        CmpVectors(y_vals, reader.ReadProfileY(150));
     }
 }
 
 TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
-    auto path_string = GeneratedHdf5ImagePath("3000 2000");
+    auto path_string = GeneratedHdf5ImagePath("3000 2000", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -515,19 +533,19 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 500);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileX(1250), 1000, 1500)));
+        CmpVectors(x_vals, Segment(reader.ReadProfileX(1250), 1000, 1500));
 
         EXPECT_EQ(y_profile.start(), 1000);
         EXPECT_EQ(y_profile.end(), 1500);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 500);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), Segment(reader.ReadProfileY(1250), 1000, 1500)));
+        CmpVectors(y_vals, Segment(reader.ReadProfileY(1250), 1000, 1500));
     }
 }
 
 TEST_F(SpatialProfileTest, FitsChannelChange) {
-    auto path_string = GeneratedFitsImagePath("10 10 2");
+    auto path_string = GeneratedFitsImagePath("10 10 2", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
@@ -548,7 +566,7 @@ TEST_F(SpatialProfileTest, FitsChannelChange) {
         EXPECT_EQ(data.y(), 5);
         EXPECT_EQ(data.channel(), 1);
         EXPECT_EQ(data.stokes(), 0);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5, 1));
+        CmpValues(data.value(), reader.ReadPointXY(5, 5, 1));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -558,19 +576,19 @@ TEST_F(SpatialProfileTest, FitsChannelChange) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5, 1)));
+        CmpVectors(x_vals, reader.ReadProfileX(5, 1));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5, 1)));
+        CmpVectors(y_vals, reader.ReadProfileY(5, 1));
     }
 }
 
 TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
-    auto path_string = GeneratedFitsImagePath("10 10 2 2");
+    auto path_string = GeneratedFitsImagePath("10 10 2 2", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     FitsDataReader reader(path_string);
@@ -597,7 +615,7 @@ TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
         EXPECT_EQ(data.y(), y);
         EXPECT_EQ(data.channel(), channel);
         EXPECT_EQ(data.stokes(), spatial_config_stokes);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
+        CmpValues(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -607,19 +625,19 @@ TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(y, channel, spatial_config_stokes)));
+        CmpVectors(x_vals, reader.ReadProfileX(y, channel, spatial_config_stokes));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(x, channel, spatial_config_stokes)));
+        CmpVectors(y_vals, reader.ReadProfileY(x, channel, spatial_config_stokes));
     }
 }
 
 TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
-    auto path_string = GeneratedHdf5ImagePath("10 10 2");
+    auto path_string = GeneratedHdf5ImagePath("10 10 2", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -640,7 +658,7 @@ TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
         EXPECT_EQ(data.y(), 5);
         EXPECT_EQ(data.channel(), 1);
         EXPECT_EQ(data.stokes(), 0);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5, 1));
+        CmpValues(data.value(), reader.ReadPointXY(5, 5, 1));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -650,19 +668,19 @@ TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5, 1)));
+        CmpVectors(x_vals, reader.ReadProfileX(5, 1));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5, 1)));
+        CmpVectors(y_vals, reader.ReadProfileY(5, 1));
     }
 }
 
 TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
-    auto path_string = GeneratedHdf5ImagePath("1000 1000 2");
+    auto path_string = GeneratedHdf5ImagePath("1000 1000 2", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -683,7 +701,7 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
         EXPECT_EQ(data.y(), 5);
         EXPECT_EQ(data.channel(), 1);
         EXPECT_EQ(data.stokes(), 0);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(5, 5, 1));
+        CmpValues(data.value(), reader.ReadPointXY(5, 5, 1));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -693,19 +711,19 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 1000);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(5, 1)));
+        CmpVectors(x_vals, reader.ReadProfileX(5, 1));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 1000);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 1000);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(5, 1)));
+        CmpVectors(y_vals, reader.ReadProfileY(5, 1));
     }
 }
 
 TEST_F(SpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
-    auto path_string = GeneratedHdf5ImagePath("1000 1000 2 2");
+    auto path_string = GeneratedHdf5ImagePath("1000 1000 2 2", IMAGE_OPTS);
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
     std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
     Hdf5DataReader reader(path_string);
@@ -732,7 +750,7 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
         EXPECT_EQ(data.y(), y);
         EXPECT_EQ(data.channel(), channel);
         EXPECT_EQ(data.stokes(), spatial_config_stokes);
-        EXPECT_FLOAT_EQ(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
+        CmpValues(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
         EXPECT_EQ(data.profiles_size(), 2);
 
         auto [x_profile, y_profile] = GetProfiles(data);
@@ -742,13 +760,13 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
         EXPECT_EQ(x_profile.mip(), 0);
         auto x_vals = ProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 1000);
-        EXPECT_THAT(x_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileX(y, channel, spatial_config_stokes)));
+        CmpVectors(x_vals, reader.ReadProfileX(y, channel, spatial_config_stokes));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 1000);
         EXPECT_EQ(y_profile.mip(), 0);
         auto y_vals = ProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 1000);
-        EXPECT_THAT(y_vals, Pointwise(FloatNear(1e-5), reader.ReadProfileY(x, channel, spatial_config_stokes)));
+        CmpVectors(y_vals, reader.ReadProfileY(x, channel, spatial_config_stokes));
     }
 }

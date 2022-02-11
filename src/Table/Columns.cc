@@ -12,10 +12,9 @@
 #include <spdlog/fmt/fmt.h>
 
 #include "DataColumn.tcc"
-#include "Threading.h"
+#include "ThreadingManager/ThreadingManager.h"
 
 namespace carta {
-using namespace std;
 
 Column::Column(const string& name_chr) {
     name = name_chr;

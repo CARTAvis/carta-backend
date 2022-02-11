@@ -416,6 +416,11 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     if (progress >= 1.0) {
         // the stats calculation is completed
         _region_stats[region_stats_id].completed = true;
+
+        if (region_id == TEMP_REGION_ID) {
+            // clear for next temp region
+            _region_stats.erase(region_stats_id);
+        }
     }
 
     return true;
