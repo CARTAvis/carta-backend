@@ -17,7 +17,7 @@ pipeline {
             parallel {
                 stage('1 Ubuntu 18.04') {
                     agent {
-                        label "bionic-docker-agent"
+                        label "bionic-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -43,7 +43,7 @@ pipeline {
                 }
                 stage('2 Ubuntu 20.04') {
                     agent {
-                        label "focal-docker-agent"
+                        label "focal-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -69,7 +69,7 @@ pipeline {
                 }
                 stage('3 Ubuntu 21.10') {
                     agent {
-                        label "hirsute-docker-agent"
+                        label "hirsute-agent"
                     }       
                     steps { 
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -95,7 +95,7 @@ pipeline {
                 }
                 stage('4 macOS 11') {
                     agent {
-                        label "macos11-docker-agent"
+                        label "macos11-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -121,7 +121,7 @@ pipeline {
                 }
                 stage('5 macOS 12') {
                     agent {
-                        label "macos12-docker-agent"
+                        label "macos12-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -147,7 +147,7 @@ pipeline {
                 }
                 stage('6 RHEL7') {
                     agent {
-                        label "rhel7-docker-agent"
+                        label "rhel7-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -173,7 +173,7 @@ pipeline {
                 }
                 stage('7 RHEL8') {
                     agent {
-                        label "rhel8-docker-agent"
+                        label "rhel8-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -203,7 +203,7 @@ pipeline {
            parallel {
                 stage('1 Ubuntu 18.04') {
                     agent {
-                        label "bionic-docker-agent"
+                        label "bionic-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -221,7 +221,7 @@ pipeline {
                 }
                 stage('2 Ubuntu 20.04') {
                     agent {
-                        label "focal-docker-agent"
+                        label "focal-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -239,7 +239,7 @@ pipeline {
                 }
                 stage('3 Ubuntu 21.10') {
                     agent {
-                        label "hirsute-docker-agent"
+                        label "hirsute-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -257,7 +257,7 @@ pipeline {
                 }
                 stage('4 macOS 11') {
                     agent {
-                        label "macos11-docker-agent"
+                        label "macos11-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -273,7 +273,7 @@ pipeline {
                 }
                 stage('5 macOS 12') {
                     agent {
-                        label "macos12-docker-agent"
+                        label "macos12-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -289,7 +289,7 @@ pipeline {
                 }
                 stage('6 RHEL7') {
                     agent {
-                        label "rhel7-docker-agent"
+                        label "rhel7-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -307,7 +307,7 @@ pipeline {
                 }
                 stage('7 RHEL8') {
                     agent {
-                        label "rhel8-docker-agent"
+                        label "rhel8-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -329,7 +329,7 @@ pipeline {
            parallel {
                 stage('1 Ubuntu 18.04') {
                     agent {
-                        label "bionic-docker-agent"
+                        label "bionic-agent"
                     }
                     steps {
                         prepare_bionic_ICD()
@@ -337,7 +337,7 @@ pipeline {
                 }
                 stage('2 Ubuntu 20.04') {
                     agent {
-                        label "focal-docker-agent"
+                        label "focal-agent"
                     }
                     steps {
                         prepare_focal_ICD()
@@ -345,7 +345,7 @@ pipeline {
                 }
                 stage('3 Ubuntu 21.10') {
                     agent {
-                        label "hirsute-docker-agent"
+                        label "hirsute-agent"
                     }
                     steps {
                         prepare_hirsute_ICD()
@@ -353,7 +353,7 @@ pipeline {
                 }
                 stage('4 macOS 11') {
                     agent {
-                        label "macos11-docker-agent"
+                        label "macos11-agent"
                     }
                     steps {
                         prepare_macos11_ICD()
@@ -361,7 +361,7 @@ pipeline {
                 }
                 stage('5 macOS 12') {
                     agent {
-                        label "macos12-docker-agent"
+                        label "macos12-agent"
                     }
                     steps {
                         prepare_macos12_ICD()
@@ -369,7 +369,7 @@ pipeline {
                 }
                 stage('6 RHEL7') {
                     agent {
-                        label "rhel7-docker-agent"
+                        label "rhel7-agent"
                     }
                     steps {
                         prepare_rhel7_ICD()
@@ -377,7 +377,7 @@ pipeline {
                 }
                 stage('7 RHEL8') {
                     agent {
-                        label "rhel8-docker-agent"
+                        label "rhel8-agent"
                     }
                     steps {
                         prepare_rhel8_ICD()
@@ -396,7 +396,7 @@ pipeline {
                 stages {
                     stage('session and file_browser') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -409,7 +409,7 @@ pipeline {
                     }
                     stage('animator') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -422,7 +422,7 @@ pipeline {
                     }
                     stage('region_statistics') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -435,7 +435,7 @@ pipeline {
                     }
                     stage('region_manipulation') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -448,7 +448,7 @@ pipeline {
                     }
                     stage('cube_histogram') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -461,7 +461,7 @@ pipeline {
                     }
                     stage('raster_tiles') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -474,7 +474,7 @@ pipeline {
                     }
                     stage('catalog') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -487,7 +487,7 @@ pipeline {
                     }
                     stage('moment') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -500,7 +500,7 @@ pipeline {
                     }
                     stage('resume') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -513,7 +513,7 @@ pipeline {
                     }
                     stage('match') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -526,7 +526,7 @@ pipeline {
                     }
                     stage('close_file') {
                         agent {
-                            label "${PLATFORM}-docker-agent"
+                            label "${PLATFORM}-agent"
                         }
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
