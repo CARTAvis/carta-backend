@@ -115,8 +115,8 @@ public:
         return true;
     }
 
-    bool TestBlockSmoothDownSampledData(std::string image_shape, std::string image_opts, std::string stokes_type,
-        std::vector<float>& down_sampled_data1, std::vector<float>& down_sampled_data2, float abs_error) {
+    bool TestBlockSmoothDownSampledData(
+        std::string image_shape, std::string image_opts, std::string stokes_type, int mip, int loader_mip, float abs_error) {
         // Create the sample image
         std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
 
@@ -142,33 +142,35 @@ public:
         bounds.set_y_min(0);
         bounds.set_y_max(image_height);
 
-        // Get (HDF5) loader downsampled data (mip = 2)
+        // Get (HDF5) loader downsampled data
         std::vector<float> tmp_down_sampled_data;
-        if (!frame->GetLoaderDownSampledData(tmp_down_sampled_data, channel, stokes, bounds, 2)) {
+        if (!frame->GetLoaderDownSampledData(tmp_down_sampled_data, channel, stokes, bounds, loader_mip)) {
             return false;
         }
 
-        // Get downsampled data (mip = 10) from the loader downsampled data (mip = 2)
-        int image_width_tmp = std::ceil((float)image_width / 2);
-        int image_height_tmp = std::ceil((float)image_height / 2);
-        int down_sampled_width_tmp = std::ceil((float)image_width_tmp / 5);
-        int down_sampled_height_tmp = std::ceil((float)image_height_tmp / 5);
-        down_sampled_data1.resize(down_sampled_height_tmp * down_sampled_width_tmp);
+        // Get downsampled data from the smaller loader downsampled data
+        int image_width_tmp = std::ceil((float)image_width / loader_mip);
+        int image_height_tmp = std::ceil((float)image_height / loader_mip);
+        int new_mip = mip / loader_mip;
+        int down_sampled_width_tmp = std::ceil((float)image_width_tmp / new_mip);
+        int down_sampled_height_tmp = std::ceil((float)image_height_tmp / new_mip);
+        std::vector<float> down_sampled_data1(down_sampled_height_tmp * down_sampled_width_tmp);
         if (!BlockSmooth(tmp_down_sampled_data.data(), down_sampled_data1.data(), image_width_tmp, image_height_tmp, down_sampled_width_tmp,
-                down_sampled_height_tmp, 0, 0, 5)) {
+                down_sampled_height_tmp, 0, 0, new_mip)) {
             return false;
         }
 
         // Check does the function BlockSmooth work well
         CheckDownSampledData(tmp_down_sampled_data, down_sampled_data1, image_width_tmp, image_height_tmp, down_sampled_width_tmp,
-            down_sampled_height_tmp, 5);
+            down_sampled_height_tmp, new_mip);
 
-        // Get downsampled data (mip = 10) from the full resolution raster data
-        if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, 10)) {
+        // Get downsampled data from the full resolution raster data
+        std::vector<float> down_sampled_data2;
+        if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, mip)) {
             return false;
         }
-        EXPECT_EQ(down_sampled_width, image_width / 10);
-        EXPECT_EQ(down_sampled_height, image_height / 10);
+        EXPECT_EQ(down_sampled_width, std::ceil((float)image_width / mip));
+        EXPECT_EQ(down_sampled_height, std::ceil((float)image_height / mip));
 
         // Compare two downsampled data
         CmpVectors(down_sampled_data1, down_sampled_data2, abs_error);
@@ -1477,8 +1479,22 @@ TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    int mip = 4;
-    TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
+    for (int mip = 1; mip < 17; ++mip) {
+        TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
+    }
+}
+
+TEST_F(VectorFieldTest, TestHdf5DownSampledData) {
+    std::string image_opts = IMAGE_OPTS;
+    CARTA::FileType file_type = CARTA::FileType::HDF5;
+    bool fractional = false;
+    bool debiasing = true;
+    double q_error = 1e-3;
+    double u_error = 1e-3;
+    double threshold = 1e-2;
+    for (int mip = 1; mip < 17; ++mip) {
+        TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
+    }
 }
 
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
@@ -1489,22 +1505,21 @@ TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
 }
 
 TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
+    std::string image_shape = "1000 1000 25 4";
+    int mip = 12;
+    int loader_mip = 4;
     std::string image_opts = IMAGE_OPTS;
     float abs_error = 1e-6;
     // std::string image_opts = IMAGE_OPTS_NAN;
     // float abs_error = 0.3;
 
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Ix", 2));
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Qx", 2));
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Ux", 2));
-    EXPECT_TRUE(TestLoaderDownSampledData("1000 1000 25 4", image_opts, "Vx", 2));
+    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ix", loader_mip));
+    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Qx", loader_mip));
+    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ux", loader_mip));
+    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Vx", loader_mip));
 
-    std::vector<float> data1_i, data2_i;
-    std::vector<float> data1_q, data2_q;
-    std::vector<float> data1_u, data2_u;
-    std::vector<float> data1_v, data2_v;
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Ix", data1_i, data2_i, abs_error));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Qx", data1_q, data2_q, abs_error));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Ux", data1_u, data2_u, abs_error));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData("1000 1000 25 4", image_opts, "Vx", data1_v, data2_v, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Qx", mip, loader_mip, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ux", mip, loader_mip, abs_error));
+    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Vx", mip, loader_mip, abs_error));
 }

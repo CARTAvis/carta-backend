@@ -2373,22 +2373,42 @@ bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int&
 
     down_sampled_width = std::ceil((float)tile_original_width / mip);
     down_sampled_height = std::ceil((float)tile_original_height / mip);
+    std::vector<float> tile_data;
+    bool use_loader_downsampled_data(false);
 
-    // Check if the (HDF5) loader has down sampled data
+    // Check does the (HDF5) loader has the right (mip) downsampled data
     if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(down_sampled_data, channel, stokes, bounds, mip, _image_mutex)) {
         return true;
+    } else {
+        // Check is there another downsampled data that we can use to downsample
+        for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
+            if (mip % sub_mip == 0) {
+                int loader_mip = mip / sub_mip;
+                if (_loader->HasMip(loader_mip) && (tile_original_width % loader_mip == 0) && (tile_original_height % loader_mip == 0) &&
+                    _loader->GetDownsampledRasterData(tile_data, channel, stokes, bounds, loader_mip, _image_mutex)) {
+                    use_loader_downsampled_data = true;
+                    // Reset mip
+                    mip = sub_mip;
+                    // Reset the original tile width and height
+                    tile_original_width /= loader_mip;
+                    tile_original_height /= loader_mip;
+                    break;
+                }
+            }
+        }
     }
 
-    // Get original raster tile data
-    int x_min = bounds.x_min();
-    int x_max = bounds.x_max() - 1;
-    int y_min = bounds.y_min();
-    int y_max = bounds.y_max() - 1;
+    if (!use_loader_downsampled_data) {
+        // Get full resolution raster tile data
+        int x_min = bounds.x_min();
+        int x_max = bounds.x_max() - 1;
+        int y_min = bounds.y_min();
+        int y_max = bounds.y_max() - 1;
 
-    std::vector<float> tile_data;
-    casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
-    if (!GetSlicerData(tile_section, tile_data)) {
-        return false;
+        casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
+        if (!GetSlicerData(tile_section, tile_data)) {
+            return false;
+        }
     }
 
     // Get down sampled raster tile data by block averaging
