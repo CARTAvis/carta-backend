@@ -23,6 +23,16 @@ public:
         : Frame(session_id, loader, hdu, default_z) {}
     FRIEND_TEST(VectorFieldTest, ExampleFriendTest);
 
+    std::vector<int> GetLoaderMips() {
+        std::vector<int> results;
+        for (int loader_mip = 0; loader_mip < 17; ++loader_mip) {
+            if (_loader->HasMip(loader_mip)) {
+                results.push_back(loader_mip);
+            }
+        }
+        return results;
+    }
+
     bool GetLoaderDownSampledData(std::vector<float>& down_sampled_data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) {
         if (!ImageBoundsValid(bounds)) {
             return false;
@@ -74,13 +84,18 @@ public:
 
 class VectorFieldTest : public ::testing::Test {
 public:
-    bool TestLoaderDownSampledData(std::string image_shape, std::string image_opts, std::string stokes_type, int mip) {
+    bool TestLoaderDownSampledData(
+        std::string image_shape, std::string image_opts, std::string stokes_type, std::vector<int>& loader_mips) {
         // Create the sample image
         std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(file_path_string), "0"));
+
+        // Get loader mips
+        loader_mips = frame->GetLoaderMips();
+        EXPECT_TRUE(!loader_mips.empty());
 
         // Get Stokes index
         int stokes;
@@ -98,20 +113,23 @@ public:
         bounds.set_y_min(0);
         bounds.set_y_max(frame->Height());
 
-        // Get (HDF5) loader downsampled data
-        std::vector<float> down_sampled_data1;
-        if (!frame->GetLoaderDownSampledData(down_sampled_data1, channel, stokes, bounds, mip)) {
-            return false;
-        }
+        for (auto loader_mip : loader_mips) {
+            // Get (HDF5) loader downsampled data
+            std::vector<float> down_sampled_data1;
+            if (!frame->GetLoaderDownSampledData(down_sampled_data1, channel, stokes, bounds, loader_mip)) {
+                return false;
+            }
 
-        // Get downsampled data from the full resolution raster data
-        std::vector<float> down_sampled_data2;
-        if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, mip)) {
-            return false;
-        }
+            // Get downsampled data from the full resolution raster data
+            std::vector<float> down_sampled_data2;
+            if (!frame->GetDownSampledData(
+                    down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, loader_mip)) {
+                return false;
+            }
 
-        // Compare two downsampled data
-        CmpVectors(down_sampled_data1, down_sampled_data2, 1e-6);
+            // Compare two downsampled data
+            CmpVectors(down_sampled_data1, down_sampled_data2, 1e-6);
+        }
         return true;
     }
 
@@ -143,36 +161,36 @@ public:
         bounds.set_y_max(image_height);
 
         // Get (HDF5) loader downsampled data
-        std::vector<float> tmp_down_sampled_data;
-        if (!frame->GetLoaderDownSampledData(tmp_down_sampled_data, channel, stokes, bounds, loader_mip)) {
+        std::vector<float> loader_down_sampled_data;
+        if (!frame->GetLoaderDownSampledData(loader_down_sampled_data, channel, stokes, bounds, loader_mip)) {
             return false;
         }
 
-        // Get downsampled data from the smaller loader downsampled data
-        int image_width_tmp = std::ceil((float)image_width / loader_mip);
-        int image_height_tmp = std::ceil((float)image_height / loader_mip);
-        int new_mip = mip / loader_mip;
-        int down_sampled_width_tmp = std::ceil((float)image_width_tmp / new_mip);
-        int down_sampled_height_tmp = std::ceil((float)image_height_tmp / new_mip);
-        std::vector<float> down_sampled_data1(down_sampled_height_tmp * down_sampled_width_tmp);
-        if (!BlockSmooth(tmp_down_sampled_data.data(), down_sampled_data1.data(), image_width_tmp, image_height_tmp, down_sampled_width_tmp,
-                down_sampled_height_tmp, 0, 0, new_mip)) {
+        // Get down sampled data from the smaller loader down sampled data
+        int down_sampled_width_1st = std::ceil((float)image_width / loader_mip);
+        int down_sampled_height_1st = std::ceil((float)image_height / loader_mip);
+        int mip_2nd = mip / loader_mip;
+        int down_sampled_width_2nd = std::ceil((float)down_sampled_width_1st / mip_2nd);
+        int down_sampled_height_2nd = std::ceil((float)down_sampled_height_1st / mip_2nd);
+        std::vector<float> down_sampled_data1(down_sampled_height_2nd * down_sampled_width_2nd);
+        if (!BlockSmooth(loader_down_sampled_data.data(), down_sampled_data1.data(), down_sampled_width_1st, down_sampled_height_1st,
+                down_sampled_width_2nd, down_sampled_height_2nd, 0, 0, mip_2nd)) {
             return false;
         }
 
         // Check does the function BlockSmooth work well
-        CheckDownSampledData(tmp_down_sampled_data, down_sampled_data1, image_width_tmp, image_height_tmp, down_sampled_width_tmp,
-            down_sampled_height_tmp, new_mip);
+        CheckDownSampledData(loader_down_sampled_data, down_sampled_data1, down_sampled_width_1st, down_sampled_height_1st,
+            down_sampled_width_2nd, down_sampled_height_2nd, mip_2nd);
 
-        // Get downsampled data from the full resolution raster data
+        // Get down sampled data from the full resolution raster data
         std::vector<float> down_sampled_data2;
         if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, mip)) {
             return false;
         }
-        EXPECT_EQ(down_sampled_width, std::ceil((float)image_width / mip));
-        EXPECT_EQ(down_sampled_height, std::ceil((float)image_height / mip));
+        EXPECT_EQ(down_sampled_width, down_sampled_width_2nd);
+        EXPECT_EQ(down_sampled_height, down_sampled_height_2nd);
 
-        // Compare two downsampled data
+        // Compare two down sampled data
         CmpVectors(down_sampled_data1, down_sampled_data2, abs_error);
         return true;
     }
@@ -1479,9 +1497,8 @@ TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    for (int mip = 1; mip < 17; ++mip) {
-        TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
-    }
+    int mip = 12;
+    TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
 TEST_F(VectorFieldTest, TestHdf5DownSampledData) {
@@ -1492,9 +1509,8 @@ TEST_F(VectorFieldTest, TestHdf5DownSampledData) {
     double q_error = 1e-3;
     double u_error = 1e-3;
     double threshold = 1e-2;
-    for (int mip = 1; mip < 17; ++mip) {
-        TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
-    }
+    int mip = 12;
+    TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
@@ -1505,21 +1521,19 @@ TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
 }
 
 TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
-    std::string image_shape = "1000 1000 25 4";
+    int image_width = 1110;
+    int image_height = 1110;
+    std::string image_shape = fmt::format("{} {} 25 4", image_width, image_height);
+    std::string image_opts = IMAGE_OPTS; // or IMAGE_OPTS_NAN
+    float abs_error = 1e-6;              // or 0.3
     int mip = 12;
-    int loader_mip = 4;
-    std::string image_opts = IMAGE_OPTS;
-    float abs_error = 1e-6;
-    // std::string image_opts = IMAGE_OPTS_NAN;
-    // float abs_error = 0.3;
+    std::vector<int> loader_mips;
 
-    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ix", loader_mip));
-    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Qx", loader_mip));
-    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ux", loader_mip));
-    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Vx", loader_mip));
+    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ix", loader_mips));
 
-    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Qx", mip, loader_mip, abs_error));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ux", mip, loader_mip, abs_error));
-    EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Vx", mip, loader_mip, abs_error));
+    for (auto loader_mip : loader_mips) {
+        if ((mip % loader_mip == 0) && (image_width % loader_mip == 0) && (image_height % loader_mip == 0)) {
+            EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
+        }
+    }
 }
