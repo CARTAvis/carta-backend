@@ -2384,14 +2384,14 @@ bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int&
         for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
             if (mip % sub_mip == 0) {
                 int loader_mip = mip / sub_mip;
-                if (_loader->HasMip(loader_mip) && (tile_original_width % loader_mip == 0) && (tile_original_height % loader_mip == 0) &&
+                if (_loader->HasMip(loader_mip) &&
                     _loader->GetDownsampledRasterData(tile_data, channel, stokes, bounds, loader_mip, _image_mutex)) {
                     use_loader_downsampled_data = true;
                     // Reset mip
                     mip = sub_mip;
                     // Reset the original tile width and height
-                    tile_original_width /= loader_mip;
-                    tile_original_height /= loader_mip;
+                    tile_original_width = std::ceil((float)tile_original_width / loader_mip);
+                    tile_original_height = std::ceil((float)tile_original_height / loader_mip);
                     break;
                 }
             }

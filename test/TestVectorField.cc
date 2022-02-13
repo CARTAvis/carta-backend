@@ -152,8 +152,6 @@ public:
         int image_width = frame->Width();
         int image_height = frame->Height();
 
-        int down_sampled_width;
-        int down_sampled_height;
         CARTA::ImageBounds bounds;
         bounds.set_x_min(0);
         bounds.set_x_max(image_width);
@@ -183,12 +181,32 @@ public:
             down_sampled_width_2nd, down_sampled_height_2nd, mip_2nd);
 
         // Get down sampled data from the full resolution raster data
+        int down_sampled_width;
+        int down_sampled_height;
         std::vector<float> down_sampled_data2;
         if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, mip)) {
             return false;
         }
         EXPECT_EQ(down_sampled_width, down_sampled_width_2nd);
         EXPECT_EQ(down_sampled_height, down_sampled_height_2nd);
+
+        if (image_width % loader_mip != 0) {
+            // Remove the right edge pixels
+            for (int i = 0; i < down_sampled_data2.size(); ++i) {
+                if ((i + 1) % down_sampled_width == 0) {
+                    down_sampled_data1[i] = down_sampled_data2[i] = std::numeric_limits<float>::quiet_NaN();
+                }
+            }
+        }
+
+        if (image_height % loader_mip != 0) {
+            // Remove the bottom edge pixels
+            for (int i = 0; i < down_sampled_data2.size(); ++i) {
+                if (i / down_sampled_width == down_sampled_height - 1) {
+                    down_sampled_data1[i] = down_sampled_data2[i] = std::numeric_limits<float>::quiet_NaN();
+                }
+            }
+        }
 
         // Compare two down sampled data
         CmpVectors(down_sampled_data1, down_sampled_data2, abs_error);
@@ -765,6 +783,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
+            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-5);
         } else {
@@ -865,6 +884,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
+            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-5);
         } else {
@@ -1263,6 +1283,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
+            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-5);
         } else {
@@ -1348,6 +1369,30 @@ public:
             CmpVectors(pa, pa2);
         }
         CheckProgresses(progresses);
+    }
+
+    static void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa,
+        std::vector<float>& pa2, int down_sampled_width, int down_sampled_height) {
+        // For HDF5 files, if its down sampled data is calculated from the smaller mip (down sampled) data,
+        // and the remainder of image width or height divided by this smaller mip is not 0.
+        // Then the error would happen on the right or bottom edge of down sampled pixels compared to that down sampled from the full
+        // resolution pixels. Because the "weight" of pixels for averaging in a mip X mip block are not equal.
+        // In such case, we ignore the comparison of the data which on the right or bottom edge.
+
+        // Remove the right edge data
+        for (int i = 0; i < pi.size(); ++i) {
+            if ((i + 1) % down_sampled_width == 0) {
+                pi[i] = pi2[i] = std::numeric_limits<float>::quiet_NaN();
+                pa[i] = pa2[i] = std::numeric_limits<float>::quiet_NaN();
+            }
+        }
+        // Remove the bottom edge data
+        for (int i = 0; i < pi.size(); ++i) {
+            if (i / down_sampled_width == down_sampled_height - 1) {
+                pi[i] = pi2[i] = std::numeric_limits<float>::quiet_NaN();
+                pa[i] = pa2[i] = std::numeric_limits<float>::quiet_NaN();
+            }
+        }
     }
 };
 
@@ -1489,6 +1534,13 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
     }
 }
 
+TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
+    CARTA::FileType file_type = CARTA::FileType::FITS;
+    int mip = 4;
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip);
+}
+
 TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
     std::string image_opts = IMAGE_OPTS_NAN;
     CARTA::FileType file_type = CARTA::FileType::FITS;
@@ -1513,13 +1565,6 @@ TEST_F(VectorFieldTest, TestHdf5DownSampledData) {
     TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
-TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
-    CARTA::FileType file_type = CARTA::FileType::FITS;
-    int mip = 4;
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip);
-}
-
 TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
     int image_width = 1110;
     int image_height = 1110;
@@ -1532,7 +1577,7 @@ TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
     EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ix", loader_mips));
 
     for (auto loader_mip : loader_mips) {
-        if ((mip % loader_mip == 0) && (image_width % loader_mip == 0) && (image_height % loader_mip == 0)) {
+        if (mip % loader_mip == 0) {
             EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
         }
     }
