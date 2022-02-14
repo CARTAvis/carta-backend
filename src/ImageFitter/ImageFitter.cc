@@ -18,7 +18,7 @@ ImageFitter::ImageFitter(float* image, size_t width, size_t height, std::string 
     _fdf.n = _fit_data.n;
     _fdf.params = &_fit_data;
 
-    // avoid calling abort() by GSL default error handler
+    // avoid GSL default error handler calling abort()
     gsl_set_error_handler(&ErrorHandler);
 }
 
