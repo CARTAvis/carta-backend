@@ -33,6 +33,19 @@ TEST_F(Hdf5ImageTest, BasicLoadingTest) {
     EXPECT_TRUE(frame->IsValid());
 }
 
+TEST_F(Hdf5ImageTest, LoopLoadingTest) {
+    // auto path_string = "/Users/lopez/temp/CARTAvis/data/memleak/supermosaic.10-001.hdf5";
+    auto path_string = GeneratedHdf5ImagePath("10 10");
+    const int trials = 100;
+    for (int i=0; i<trials; ++i) {
+        std::shared_ptr<FileLoader> loader(FileLoader::GetLoader(path_string));
+        EXPECT_NE(loader.get(), nullptr);
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+        EXPECT_NE(frame.get(), nullptr);
+        EXPECT_TRUE(frame->IsValid());
+    }
+}
+
 TEST_F(Hdf5ImageTest, ExampleFriendTest) {
     auto path_string = GeneratedHdf5ImagePath("10 10");
     // TestFrame used instead of Frame if access to protected values is required
