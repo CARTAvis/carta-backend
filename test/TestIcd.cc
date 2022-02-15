@@ -381,6 +381,8 @@ public:
             }
         }
 
+        _dummy_backend->WaitForJobFinished();
+
         EXPECT_EQ(_message_count, expected_response_messages);
 
         // Play animation backward
@@ -444,6 +446,8 @@ public:
                 }
             }
         }
+
+        _dummy_backend->WaitForJobFinished();
 
         EXPECT_EQ(_message_count, expected_response_messages);
     }
