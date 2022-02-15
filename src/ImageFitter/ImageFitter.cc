@@ -23,24 +23,22 @@ ImageFitter::ImageFitter(float* image, size_t width, size_t height, std::string 
 }
 
 bool ImageFitter::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+    bool success = false;
     SetInitialValues(fitting_request);
     int status = SolveSystem();
-    if (!status) {
-        spdlog::info("Writing fitting results and log.");
-        SetResults();
-        SetLog();
-    }
-    gsl_vector_free(_fit_params);
 
     if (status) {
         fitting_response.set_message(fmt::format("Image fitting failed: {}.", gsl_strerror(status)));
-        return false;
     } else {
+        success = true;
         fitting_response.set_success(true);
-        fitting_response.set_results(_results);
-        fitting_response.set_log(_log);
-        return true;
+        spdlog::info("Writing fitting results and log.");
+        fitting_response.set_results(GetResults());
+        fitting_response.set_log(GetLog());
     }
+
+    gsl_vector_free(_fit_params);
+    return success;
 }
 
 void ImageFitter::SetFitData(float* image, size_t width, size_t height) {
@@ -85,6 +83,7 @@ int ImageFitter::SolveSystem() {
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
+    const bool print_iter = false;
     const size_t n = _fdf.n;
     const size_t p = _fdf.p;
     gsl_multifit_nlinear_workspace* work = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
@@ -93,7 +92,7 @@ int ImageFitter::SolveSystem() {
 
     gsl_multifit_nlinear_init(_fit_params, &_fdf, work);
     gsl_blas_ddot(f, f, &_chisq0);
-    int status = gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol, _print_iter ? Callback : NULL, NULL, &_info, work);
+    int status = gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol, print_iter ? Callback : NULL, NULL, &_info, work);
     gsl_blas_ddot(f, f, &_chisq);
     gsl_multifit_nlinear_rcond(&_rcond, work);
     gsl_vector_memcpy(_fit_params, y);
@@ -105,33 +104,37 @@ int ImageFitter::SolveSystem() {
     return status;
 }
 
-void ImageFitter::SetResults() {
-    _results = "";
+std::string ImageFitter::GetResults() {
+    std::string results = "";
     for (size_t i = 0; i < _num_components; i++) {
-        _results += fmt::format("Component #{}:\n", i + 1);
-        _results += fmt::format("Center X  = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 0));
-        _results += fmt::format("Center Y  = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1));
-        _results += fmt::format("Amplitude = {:6f} ({})\n", gsl_vector_get(_fit_params, i * 6 + 2), _image_unit);
-        _results += fmt::format("FWHM X    = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 3));
-        _results += fmt::format("FWHM Y    = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 4));
-        _results += fmt::format("P.A.      = {:6f} (deg)\n", gsl_vector_get(_fit_params, i * 6 + 5));
-        _results += "\n";
+        results += fmt::format("Component #{}:\n", i + 1);
+        results += fmt::format("Center X  = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 0));
+        results += fmt::format("Center Y  = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1));
+        results += fmt::format("Amplitude = {:6f} ({})\n", gsl_vector_get(_fit_params, i * 6 + 2), _image_unit);
+        results += fmt::format("FWHM X    = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 3));
+        results += fmt::format("FWHM Y    = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 4));
+        results += fmt::format("P.A.      = {:6f} (deg)\n", gsl_vector_get(_fit_params, i * 6 + 5));
+        results += "\n";
     }
+
+    return results;
 }
 
-void ImageFitter::SetLog() {
-    _log = "";
-    _log += fmt::format("Gaussian fitting with {} component(s)\n", _num_components);
-    _log += fmt::format("summary from method '{}':\n", _method);
-    _log += fmt::format("number of iterations = {}\n", _num_iter);
-    _log += fmt::format("function evaluations = {}\n", _fdf.nevalf);
-    _log += fmt::format("Jacobian evaluations = {}\n", _fdf.nevaldf);
-    _log += fmt::format("reason for stopping  = {}\n", (_info == 1) ? "small step size" : "small gradient");
-    _log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_chisq0));
-    _log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_chisq));
-    _log += fmt::format("initial cost         = {:.12e}\n", _chisq0);
-    _log += fmt::format("final cost           = {:.12e}\n", _chisq);
-    _log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _rcond);
+std::string ImageFitter::GetLog() {
+    std::string log = "";
+    log += fmt::format("Gaussian fitting with {} component(s)\n", _num_components);
+    log += fmt::format("summary from method '{}':\n", _method);
+    log += fmt::format("number of iterations = {}\n", _num_iter);
+    log += fmt::format("function evaluations = {}\n", _fdf.nevalf);
+    log += fmt::format("Jacobian evaluations = {}\n", _fdf.nevaldf);
+    log += fmt::format("reason for stopping  = {}\n", (_info == 1) ? "small step size" : "small gradient");
+    log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_chisq0));
+    log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_chisq));
+    log += fmt::format("initial cost         = {:.12e}\n", _chisq0);
+    log += fmt::format("final cost           = {:.12e}\n", _chisq);
+    log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _rcond);
+
+    return log;
 }
 
 double ImageFitter::Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,

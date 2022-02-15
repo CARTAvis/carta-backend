@@ -37,19 +37,17 @@ private:
     size_t _num_components;
     gsl_vector* _fit_params;
     gsl_multifit_nlinear_fdf _fdf;
-    bool _print_iter = false;
+
     std::string _method;
     size_t _num_iter;
     int _info;
     double _chisq0, _chisq, _rcond;
-    std::string _results;
-    std::string _log;
 
     void SetFitData(float* image, size_t width, size_t height);
     void SetInitialValues(const CARTA::FittingRequest& fitting_request);
     int SolveSystem();
-    void SetResults();
-    void SetLog();
+    std::string GetResults();
+    std::string GetLog();
 
     static double Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,
         const double theta, const double x, const double y);
