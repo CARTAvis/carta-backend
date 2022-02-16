@@ -32,7 +32,6 @@ public:
     void Listen(std::string host, std::vector<int> ports, int default_port, int& port);
     uWS::App& App();
     void RunApp();
-    bool EnableScripting();
     bool SendScriptingRequest(int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action,
         std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
         ScriptingSessionClosedCallback session_closed_callback);

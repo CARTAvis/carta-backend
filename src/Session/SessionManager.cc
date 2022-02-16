@@ -543,10 +543,6 @@ void SessionManager::RunApp() {
         .run();
 }
 
-bool SessionManager::EnableScripting() {
-    return _settings.enable_scripting;
-}
-
 bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action,
     std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
     ScriptingSessionClosedCallback session_closed_callback) {
