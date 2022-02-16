@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "SimpleHttpServer.h"
+#include "HttpServer.h"
 
 #include <fstream>
 #include <regex>
@@ -22,9 +22,9 @@ namespace carta {
 
 const std::string success_string = json({{"success", true}}).dump();
 
-uint32_t SimpleHttpServer::_scripting_request_id = 0;
+uint32_t HttpServer::_scripting_request_id = 0;
 
-SimpleHttpServer::SimpleHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
+HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
@@ -45,7 +45,7 @@ SimpleHttpServer::SimpleHttpServer(std::shared_ptr<SessionManager> session_manag
     }
 }
 
-void SimpleHttpServer::RegisterRoutes() {
+void HttpServer::RegisterRoutes() {
     uWS::App& app = _session_manager->App();
 
     if (_enable_scripting) {
@@ -80,13 +80,13 @@ void SimpleHttpServer::RegisterRoutes() {
     }
 }
 
-void SimpleHttpServer::HandleGetConfig(Res* res, Req* _req) {
+void HttpServer::HandleGetConfig(Res* res, Req* _req) {
     json runtime_config = {{"apiAddress", "/api"}};
     res->writeHeader("Content-Type", "application/json");
     res->writeStatus(HTTP_200)->end(runtime_config.dump());
 }
 
-void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
+void HttpServer::HandleStaticRequest(Res* res, Req* req) {
     std::string_view url = req->getUrl();
     fs::path path = _http_root_folder;
     if (url.empty() || url == "/") {
@@ -146,7 +146,7 @@ void SimpleHttpServer::HandleStaticRequest(Res* res, Req* req) {
     res->end();
 }
 
-bool SimpleHttpServer::IsValidFrontendFolder(fs::path folder) {
+bool HttpServer::IsValidFrontendFolder(fs::path folder) {
     std::error_code error_code;
 
     // Check that the folder exists
@@ -163,17 +163,17 @@ bool SimpleHttpServer::IsValidFrontendFolder(fs::path folder) {
     return index_file.good();
 }
 
-bool SimpleHttpServer::IsAuthenticated(uWS::HttpRequest* req) {
+bool HttpServer::IsAuthenticated(uWS::HttpRequest* req) {
     return ValidateAuthToken(req, _auth_token);
 }
 
-void SimpleHttpServer::AddNoCacheHeaders(Res* res) {
+void HttpServer::AddNoCacheHeaders(Res* res) {
     res->writeHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
     res->writeHeader("Expires", "-1");
     res->writeHeader("Pragma", "no-cache");
 }
 
-json SimpleHttpServer::GetExistingPreferences() {
+json HttpServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
     try {
         if (!fs::exists(preferences_path)) {
@@ -188,7 +188,7 @@ json SimpleHttpServer::GetExistingPreferences() {
     }
 }
 
-bool SimpleHttpServer::WritePreferencesFile(nlohmann::json& obj) {
+bool HttpServer::WritePreferencesFile(nlohmann::json& obj) {
     if (_read_only_mode) {
         spdlog::warn("Writing preferences file is not allowed in read-only mode");
         return false;
@@ -214,7 +214,7 @@ bool SimpleHttpServer::WritePreferencesFile(nlohmann::json& obj) {
     }
 }
 
-void SimpleHttpServer::WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback) {
+void HttpServer::WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback) {
     res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
 
     std::string buffer;
@@ -227,7 +227,7 @@ void SimpleHttpServer::WaitForData(Res* res, Req* req, const std::function<void(
     });
 }
 
-void SimpleHttpServer::HandleGetPreferences(Res* res, Req* req) {
+void HttpServer::HandleGetPreferences(Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -245,7 +245,7 @@ void SimpleHttpServer::HandleGetPreferences(Res* res, Req* req) {
     }
 }
 
-std::string_view SimpleHttpServer::UpdatePreferencesFromString(const std::string& buffer) {
+std::string_view HttpServer::UpdatePreferencesFromString(const std::string& buffer) {
     try {
         json update_data = json::parse(buffer);
         json existing_data = GetExistingPreferences();
@@ -273,7 +273,7 @@ std::string_view SimpleHttpServer::UpdatePreferencesFromString(const std::string
     }
 }
 
-void SimpleHttpServer::HandleSetPreferences(Res* res, Req* req) {
+void HttpServer::HandleSetPreferences(Res* res, Req* req) {
     // Check authentication
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
@@ -292,7 +292,7 @@ void SimpleHttpServer::HandleSetPreferences(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleHttpServer::ClearPreferencesFromString(const std::string& buffer) {
+std::string_view HttpServer::ClearPreferencesFromString(const std::string& buffer) {
     try {
         json post_data = json::parse(buffer);
         auto keys_array = post_data["keys"];
@@ -328,7 +328,7 @@ std::string_view SimpleHttpServer::ClearPreferencesFromString(const std::string&
     }
 }
 
-void SimpleHttpServer::HandleClearPreferences(Res* res, Req* req) {
+void HttpServer::HandleClearPreferences(Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -346,7 +346,7 @@ void SimpleHttpServer::HandleClearPreferences(Res* res, Req* req) {
     });
 }
 
-void SimpleHttpServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
+void HttpServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -359,7 +359,7 @@ void SimpleHttpServer::HandleGetObjects(const std::string& object_type, Res* res
     res->writeStatus(HTTP_200)->end(body.dump());
 }
 
-void SimpleHttpServer::HandleSetObject(const std::string& object_type, Res* res, Req* req) {
+void HttpServer::HandleSetObject(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -377,7 +377,7 @@ void SimpleHttpServer::HandleSetObject(const std::string& object_type, Res* res,
     });
 }
 
-void SimpleHttpServer::HandleClearObject(const std::string& object_type, Res* res, Req* req) {
+void HttpServer::HandleClearObject(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -395,7 +395,7 @@ void SimpleHttpServer::HandleClearObject(const std::string& object_type, Res* re
     });
 }
 
-nlohmann::json SimpleHttpServer::GetExistingObjects(const std::string& object_type) {
+nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {
     auto object_folder = _config_folder / (object_type + "s");
     json objects = json::object();
     std::error_code error_code;
@@ -421,7 +421,7 @@ nlohmann::json SimpleHttpServer::GetExistingObjects(const std::string& object_ty
     return objects;
 }
 
-bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
+bool HttpServer::WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj) {
     if (_read_only_mode) {
         spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return false;
@@ -451,7 +451,7 @@ bool SimpleHttpServer::WriteObjectFile(const std::string& object_type, const std
     }
 }
 
-std::string_view SimpleHttpServer::SetObjectFromString(const std::string& object_type, const std::string& buffer) {
+std::string_view HttpServer::SetObjectFromString(const std::string& object_type, const std::string& buffer) {
     try {
         std::string field_name = object_type + "Name";
         json post_data = json::parse(buffer);
@@ -472,7 +472,7 @@ std::string_view SimpleHttpServer::SetObjectFromString(const std::string& object
     }
 }
 
-std::string_view SimpleHttpServer::ClearObjectFromString(const std::string& object_type, const std::string& buffer) {
+std::string_view HttpServer::ClearObjectFromString(const std::string& object_type, const std::string& buffer) {
     if (_read_only_mode) {
         spdlog::warn("Writing {} file is not allowed in read-only mode", object_type);
         return HTTP_400;
@@ -501,7 +501,7 @@ std::string_view SimpleHttpServer::ClearObjectFromString(const std::string& obje
     }
 }
 
-std::string SimpleHttpServer::GetFileUrlString(std::vector<std::string> files) {
+std::string HttpServer::GetFileUrlString(std::vector<std::string> files) {
     if (files.empty()) {
         return std::string();
     } else if (files.size() == 1) {
@@ -542,7 +542,7 @@ std::string SimpleHttpServer::GetFileUrlString(std::vector<std::string> files) {
     }
 }
 
-void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
+void HttpServer::HandleScriptingAction(Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
         return;
@@ -590,7 +590,7 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
+std::string_view HttpServer::SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
     ScriptingSessionClosedCallback session_closed_callback, ScriptingRequestHandler request_handler) {
     try {
         json req = json::parse(buffer);
@@ -625,7 +625,7 @@ std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffe
     }
 }
 
-std::string_view SimpleHttpServer::OnScriptingResponse(
+std::string_view HttpServer::OnScriptingResponse(
     std::string& response_buffer, const bool& success, const std::string& message, const std::string& response) {
     json response_obj;
 
@@ -648,11 +648,11 @@ std::string_view SimpleHttpServer::OnScriptingResponse(
     return HTTP_200;
 }
 
-void SimpleHttpServer::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
+void HttpServer::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
     _session_manager->OnScriptingAbort(session_id, scripting_request_id);
 }
 
-void SimpleHttpServer::Forbidden(Res* res, Req* req) {
+void HttpServer::Forbidden(Res* res, Req* req) {
     res->writeStatus(HTTP_403)->end();
     return;
 }

@@ -11,10 +11,10 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
+#include "HttpServer/HttpServer.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"
 #include "Session/SessionManager.h"
-#include "SimpleHttpServer/SimpleHttpServer.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
@@ -24,7 +24,7 @@
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
     std::shared_ptr<FileListHandler> file_list_handler;
-    std::unique_ptr<SimpleHttpServer> http_server;
+    std::unique_ptr<HttpServer> http_server;
     std::shared_ptr<SessionManager> session_manager;
 
     try {
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            http_server = std::make_unique<SimpleHttpServer>(session_manager, frontend_path, settings.user_directory, auth_token,
+            http_server = std::make_unique<HttpServer>(session_manager, frontend_path, settings.user_directory, auth_token,
                 settings.read_only_mode, !settings.no_frontend, !settings.no_database, settings.enable_scripting);
             http_server->RegisterRoutes();
 
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
                         query_url += fmt::format("/?token={}", auth_token);
                     }
 
-                    auto file_query_url = SimpleHttpServer::GetFileUrlString(settings.files);
+                    auto file_query_url = HttpServer::GetFileUrlString(settings.files);
                     if (!file_query_url.empty()) {
                         query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
                     }

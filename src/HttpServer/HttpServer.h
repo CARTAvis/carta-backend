@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
-#define CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
+#ifndef CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
+#define CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
 
 #include <chrono>
 #include <string>
@@ -35,9 +35,9 @@ typedef std::function<bool(int&, uint32_t&, std::string&, std::string&, std::str
     ScriptingSessionClosedCallback)>
     ScriptingRequestHandler;
 
-class SimpleHttpServer {
+class HttpServer {
 public:
-    SimpleHttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
+    HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
         bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false);
     bool CanServeFrontend() {
         return _frontend_found;
@@ -92,4 +92,4 @@ private:
 };
 
 } // namespace carta
-#endif // CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
+#endif // CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_

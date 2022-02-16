@@ -219,7 +219,7 @@ set(SOURCE_FILES
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/SimpleHttpServer/SimpleHttpServer.cc
+        src/HttpServer/HttpServer.cc
         src/SpectralLine/SpectralLineCrawler.cc
         src/Table/Columns.cc
         src/Table/Table.cc
