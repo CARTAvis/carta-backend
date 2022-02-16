@@ -8,23 +8,23 @@
 
 using namespace carta;
 
-ImageFitter::ImageFitter(float* image, size_t width, size_t height, std::string unit) {
-    SetFitData(image, width, height);
+ImageFitter::ImageFitter(std::string unit) {
     _image_unit = unit;
 
     _fdf.f = FuncF;
     _fdf.df = NULL; // internally computed using finite difference approximations of f when set to NULL
     _fdf.fvv = NULL;
-    _fdf.n = _fit_data.n;
     _fdf.params = &_fit_data;
 
     // avoid GSL default error handler calling abort()
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+bool ImageFitter::FitImage(float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
     bool success = false;
+    SetFitData(image, width, height);
     SetInitialValues(fitting_request);
+    spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n, _num_components);
     int status = SolveSystem();
 
     if (status) {
@@ -43,24 +43,34 @@ bool ImageFitter::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::
 
 void ImageFitter::SetFitData(float* image, size_t width, size_t height) {
     size_t n = width * height;
-    _fit_data.n = n;
-    _fit_data.data = image;
-
+    _fit_data.data.resize(n);
     _fit_data.x.resize(n);
     _fit_data.y.resize(n);
-    size_t index = 0;
-    for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
-            _fit_data.x[index] = j;
-            _fit_data.y[index] = i;
-            index++;
+
+    size_t i = 0;
+    for (size_t j = 0; j < height; j++) {
+        for (size_t k = 0; k < width; k++) {
+            double data = image[j * width + k];
+            if (!isnan(data)) {
+                _fit_data.data[i] = data;
+                _fit_data.x[i] = k;
+                _fit_data.y[i] = j;
+                i++;
+            } else {
+                n--;
+            }
         }
     }
+
+    _fit_data.n = n;
+    _fit_data.data.resize(n);
+    _fit_data.x.resize(n);
+    _fit_data.y.resize(n);
+    _fdf.n = n;
 }
 
 void ImageFitter::SetInitialValues(const CARTA::FittingRequest& fitting_request) {
     _num_components = fitting_request.initial_values_size();
-    spdlog::info("Fitting image with {} Gaussian component(s).", _num_components);
 
     size_t p = _num_components * 6;
     _fit_params = gsl_vector_alloc(p);

@@ -1750,14 +1750,14 @@ void Frame::StopMomentCalc() {
 
 bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
     if (!_image_fitter) {
-        _image_fitter = std::make_unique<ImageFitter>(_image_cache.data(), _width, _height, GetImage()->units().getName());
+        _image_fitter = std::make_unique<ImageFitter>(GetImage()->units().getName());
     }
 
     bool success = false;
     fitting_response.set_success(false);
 
     if (_image_fitter) {
-        success = _image_fitter->FitImage(fitting_request, fitting_response);
+        success = _image_fitter->FitImage(_image_cache.data(), _width, _height, fitting_request, fitting_response);
     }
 
     return success;

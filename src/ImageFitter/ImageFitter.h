@@ -22,14 +22,14 @@ namespace carta {
 struct FitData {
     std::vector<float> x;
     std::vector<float> y;
-    float* data;
+    std::vector<float> data;
     size_t n;
 };
 
 class ImageFitter {
 public:
-    ImageFitter(float* image, size_t width, size_t height, std::string unit);
-    bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
+    ImageFitter(std::string unit);
+    bool FitImage(float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
 
 private:
     FitData _fit_data;
