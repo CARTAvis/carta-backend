@@ -29,13 +29,15 @@ struct FitData {
 class ImageFitter {
 public:
     ImageFitter(std::string unit);
-    bool FitImage(float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
+    bool FitImage(
+        float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
 
 private:
     FitData _fit_data;
     std::string _image_unit;
     size_t _num_components;
     gsl_vector* _fit_params;
+    gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
 
     std::string _method;

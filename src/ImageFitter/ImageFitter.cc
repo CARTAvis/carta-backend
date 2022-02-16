@@ -20,7 +20,8 @@ ImageFitter::ImageFitter(std::string unit) {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+bool ImageFitter::FitImage(
+    float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
     bool success = false;
     SetFitData(image, width, height);
     SetInitialValues(fitting_request);
@@ -38,6 +39,7 @@ bool ImageFitter::FitImage(float* image, size_t width, size_t height, const CART
     }
 
     gsl_vector_free(_fit_params);
+    gsl_vector_free(_fit_errors);
     return success;
 }
 
@@ -74,6 +76,7 @@ void ImageFitter::SetInitialValues(const CARTA::FittingRequest& fitting_request)
 
     size_t p = _num_components * 6;
     _fit_params = gsl_vector_alloc(p);
+    _fit_errors = gsl_vector_alloc(p);
     for (size_t i = 0; i < _num_components; i++) {
         CARTA::GaussianComponent component(fitting_request.initial_values()[i]);
         gsl_vector_set(_fit_params, i * 6 + 0, component.center_x());
@@ -99,6 +102,7 @@ int ImageFitter::SolveSystem() {
     gsl_multifit_nlinear_workspace* work = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
     gsl_vector* f = gsl_multifit_nlinear_residual(work);
     gsl_vector* y = gsl_multifit_nlinear_position(work);
+    gsl_matrix* covar = gsl_matrix_alloc(p, p);
 
     gsl_multifit_nlinear_init(_fit_params, &_fdf, work);
     gsl_blas_ddot(f, f, &_chisq0);
@@ -107,10 +111,18 @@ int ImageFitter::SolveSystem() {
     gsl_multifit_nlinear_rcond(&_rcond, work);
     gsl_vector_memcpy(_fit_params, y);
 
+    gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
+    gsl_multifit_nlinear_covar(jac, 0.0, covar);
+    double c = GSL_MAX_DBL(1, sqrt(_chisq / (n - p)));
+    for (size_t i = 0; i < p; i++) {
+        gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
+    }
+
     _method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
     _num_iter = gsl_multifit_nlinear_niter(work);
 
     gsl_multifit_nlinear_free(work);
+    gsl_matrix_free(covar);
     return status;
 }
 
@@ -118,12 +130,18 @@ std::string ImageFitter::GetResults() {
     std::string results = "";
     for (size_t i = 0; i < _num_components; i++) {
         results += fmt::format("Component #{}:\n", i + 1);
-        results += fmt::format("Center X  = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 0));
-        results += fmt::format("Center Y  = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1));
-        results += fmt::format("Amplitude = {:6f} ({})\n", gsl_vector_get(_fit_params, i * 6 + 2), _image_unit);
-        results += fmt::format("FWHM X    = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 3));
-        results += fmt::format("FWHM Y    = {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 4));
-        results += fmt::format("P.A.      = {:6f} (deg)\n", gsl_vector_get(_fit_params, i * 6 + 5));
+        results += fmt::format(
+            "Center X  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 0), gsl_vector_get(_fit_errors, i * 6 + 0));
+        results += fmt::format(
+            "Center Y  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1), gsl_vector_get(_fit_errors, i * 6 + 1));
+        results += fmt::format("Amplitude = {:6f} +/- {:6f} ({})\n", gsl_vector_get(_fit_params, i * 6 + 2),
+            gsl_vector_get(_fit_errors, i * 6 + 2), _image_unit);
+        results += fmt::format(
+            "FWHM X    = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 3), gsl_vector_get(_fit_errors, i * 6 + 3));
+        results += fmt::format(
+            "FWHM Y    = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 4), gsl_vector_get(_fit_errors, i * 6 + 4));
+        results += fmt::format(
+            "P.A.      = {:6f} +/- {:6f} (deg)\n", gsl_vector_get(_fit_params, i * 6 + 5), gsl_vector_get(_fit_errors, i * 6 + 5));
         results += "\n";
     }
 
