@@ -193,6 +193,7 @@ set(SOURCE_FILES
         src/FileList/FileListHandler.cc
         src/FileList/FitsHduList.cc
         src/Frame/Frame.cc
+        src/HttpServer/HttpServer.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
@@ -219,7 +220,6 @@ set(SOURCE_FILES
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/HttpServer/HttpServer.cc
         src/SpectralLine/SpectralLineCrawler.cc
         src/Table/Columns.cc
         src/Table/Table.cc
