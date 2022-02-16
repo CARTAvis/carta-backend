@@ -2176,8 +2176,8 @@ void Session::CancelExistingAnimation() {
     }
 }
 
-void Session::SendScriptingRequest(CARTA::ScriptingRequest message,
-    std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback) {
+void Session::SendScriptingRequest(
+    CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
     int scripting_request_id(message.scripting_request_id());
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
     std::unique_lock<std::mutex> lock(_scripting_mutex);

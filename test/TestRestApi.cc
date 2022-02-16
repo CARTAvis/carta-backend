@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Logger/Logger.h"
+#include "Main/ProgramSettings.h"
 #include "SimpleHttpServer/SimpleHttpServer.h"
 
 #include "CommonTestUtilities.h"
@@ -52,6 +53,14 @@ public:
     FRIEND_TEST(RestApiTest, DeleteSnippetMissingName);
     FRIEND_TEST(RestApiTest, SetSnippet);
     FRIEND_TEST(RestApiTest, SetSnippetReadOnly);
+
+    FRIEND_TEST(RestApiTest, SendScriptingRequest);
+    FRIEND_TEST(RestApiTest, SendScriptingRequestSessionNotFound);
+    FRIEND_TEST(RestApiTest, SendScriptingRequestBadJson);
+    FRIEND_TEST(RestApiTest, SendScriptingRequestServerError);
+    FRIEND_TEST(RestApiTest, OnScriptingResponse);
+    FRIEND_TEST(RestApiTest, OnScriptingResponseFailure);
+    FRIEND_TEST(RestApiTest, OnScriptingResponseBadResponse);
 };
 
 class RestApiTest : public ::testing::Test {
@@ -388,4 +397,107 @@ TEST_F(RestApiTest, SetSnippetReadOnly) {
     body = {{"snippetName", "test_snippet"}};
     status = _frontend_server_read_only_mode->ClearObjectFromString("snippet", body.dump());
     EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, SendScriptingRequest) {
+    json body = {{"session_id", 1}, {"path", ""}, {"action", "openFile"}, {"parameters", {"/path/to/directory", "filename.hdf5", ""}},
+        {"async", false}, {"return_path", "frameInfo.fileId"}};
+
+    int last_session_id(0);
+    std::string last_target;
+    std::string last_action;
+    std::string last_parameters;
+    bool last_async(true);
+    std::string last_return_path;
+
+    int requested_session_id(1);
+
+    auto status = _frontend_server->SendScriptingRequest(
+        body.dump(), requested_session_id, [](const bool&, const std::string&, const std::string&) {}, []() {},
+        [&](int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action, std::string& parameters, bool& async,
+            std::string& return_path, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
+            last_session_id = session_id;
+            last_target = target;
+            last_action = action;
+            last_parameters = parameters;
+            last_async = async;
+            last_return_path = return_path;
+
+            return true;
+        });
+    EXPECT_EQ(status, HTTP_200);
+    EXPECT_EQ(last_session_id, 1);
+    EXPECT_EQ(last_target, "");
+    EXPECT_EQ(last_action, "openFile");
+    EXPECT_EQ(last_parameters, body["parameters"].dump());
+    EXPECT_EQ(last_async, false);
+    EXPECT_EQ(last_return_path, "frameInfo.fileId");
+}
+
+TEST_F(RestApiTest, SendScriptingRequestSessionNotFound) {
+    json body = {{"session_id", 1}, {"path", ""}, {"action", "openFile"}, {"parameters", {"/path/to/directory", "filename.hdf5", ""}},
+        {"async", false}, {"return_path", "frameInfo.fileId"}};
+
+    int requested_session_id(1);
+
+    auto status = _frontend_server->SendScriptingRequest(
+        body.dump(), requested_session_id, [](const bool&, const std::string&, const std::string&) {}, []() {},
+        [&](int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action, std::string& parameters, bool& async,
+            std::string& return_path, ScriptingResponseCallback callback,
+            ScriptingSessionClosedCallback session_closed_callback) { return false; });
+    EXPECT_EQ(status, HTTP_404);
+}
+
+TEST_F(RestApiTest, SendScriptingRequestBadJson) {
+    int requested_session_id(1);
+
+    auto status = _frontend_server->SendScriptingRequest(
+        "this isn't valid json", requested_session_id, [](const bool&, const std::string&, const std::string&) {}, []() {},
+        [&](int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action, std::string& parameters, bool& async,
+            std::string& return_path, ScriptingResponseCallback callback,
+            ScriptingSessionClosedCallback session_closed_callback) { return true; });
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, SendScriptingRequestServerError) {
+    json body = {{"session_id", 1}, {"path", ""}, {"action", "openFile"}, {"parameters", {"/path/to/directory", "filename.hdf5", ""}},
+        {"async", false}, {"return_path", "frameInfo.fileId"}};
+
+    int requested_session_id(1);
+
+    auto status = _frontend_server->SendScriptingRequest(
+        body.dump(), requested_session_id, [](const bool&, const std::string&, const std::string&) {}, []() {},
+        [&](int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action, std::string& parameters, bool& async,
+            std::string& return_path, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
+            throw std::runtime_error("Something went wrong!");
+            return true;
+        });
+    EXPECT_EQ(status, HTTP_500);
+}
+
+TEST_F(RestApiTest, OnScriptingResponse) {
+    std::string response_buffer;
+    json response = {{"some", "valid"}, {"json", "data"}};
+    auto status = _frontend_server->OnScriptingResponse(response_buffer, true, "", response.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto response_obj = json::parse(response_buffer);
+    EXPECT_EQ(response_obj["success"], true);
+    EXPECT_EQ(response_obj["response"], response);
+    EXPECT_EQ(response_obj.contains("message"), false);
+}
+
+TEST_F(RestApiTest, OnScriptingResponseFailure) {
+    std::string response_buffer;
+    auto status = _frontend_server->OnScriptingResponse(response_buffer, false, "Action failed", "");
+    EXPECT_EQ(status, HTTP_200);
+    auto response_obj = json::parse(response_buffer);
+    EXPECT_EQ(response_obj["success"], false);
+    EXPECT_EQ(response_obj["message"], "Action failed");
+    EXPECT_EQ(response_obj.contains("response"), false);
+}
+
+TEST_F(RestApiTest, OnScriptingResponseBadResponse) {
+    std::string response_buffer;
+    auto status = _frontend_server->OnScriptingResponse(response_buffer, true, "", "This isn't json.");
+    EXPECT_EQ(status, HTTP_500);
 }

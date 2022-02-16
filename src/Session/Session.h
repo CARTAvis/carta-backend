@@ -60,6 +60,9 @@
 
 namespace carta {
 
+typedef std::function<void(const bool&, const std::string&, const std::string&)> ScriptingResponseCallback;
+typedef std::function<void()> ScriptingSessionClosedCallback;
+
 struct PerSocketData {
     uint32_t session_id;
     string address;
@@ -228,8 +231,8 @@ public:
     CursorSettings _file_settings;
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
-    void SendScriptingRequest(CARTA::ScriptingRequest message,
-        std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback);
+    void SendScriptingRequest(
+        CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     void OnScriptingAbort(uint32_t scripting_request_id);
     void CloseAllScriptingRequests();
@@ -349,8 +352,7 @@ protected:
     static std::thread* _animation_thread;
 
     // Callbacks for scripting responses from the frontend
-    std::unordered_map<int, std::tuple<std::function<void(const bool&, const std::string&, const std::string&)>, std::function<void()>>>
-        _scripting_callbacks;
+    std::unordered_map<int, std::tuple<ScriptingResponseCallback, ScriptingSessionClosedCallback>> _scripting_callbacks;
     std::mutex _scripting_mutex;
 
     // Timestamp for the last protobuf message

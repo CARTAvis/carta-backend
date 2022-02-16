@@ -551,21 +551,30 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
     WaitForData(res, req, [this, res](const string& buffer) {
         int session_id;
 
-        auto status = SendScriptingRequest(
-            buffer, session_id,
-            [this, res](const bool& success, const std::string& message, const std::string& response) {
-                std::string response_buffer;
-                auto status = OnScriptingResponse(response_buffer, success, message, response);
+        ScriptingResponseCallback callback = [this, res](const bool& success, const std::string& message, const std::string& response) {
+            std::string response_buffer;
+            auto status = OnScriptingResponse(response_buffer, success, message, response);
 
-                res->writeStatus(status);
-                AddNoCacheHeaders(res);
-                if (status == HTTP_200) {
-                    res->end(response_buffer);
-                } else {
-                    res->end();
-                }
-            },
-            [res]() { res->writeStatus(HTTP_404)->end(); });
+            res->writeStatus(status);
+            AddNoCacheHeaders(res);
+            if (status == HTTP_200) {
+                res->end(response_buffer);
+            } else {
+                res->end();
+            }
+        };
+
+        ScriptingSessionClosedCallback session_closed_callback = [res]() { res->writeStatus(HTTP_404)->end(); };
+
+        ScriptingRequestHandler request_handler = [this](int& session_id, uint32_t& scripting_request_id, std::string& target,
+                                                      std::string& action, std::string& parameters, bool& async, std::string& return_path,
+                                                      ScriptingResponseCallback callback,
+                                                      ScriptingSessionClosedCallback session_closed_callback) {
+            return _session_manager->SendScriptingRequest(
+                session_id, scripting_request_id, target, action, parameters, async, return_path, callback, session_closed_callback);
+        };
+
+        auto status = SendScriptingRequest(buffer, session_id, callback, session_closed_callback, request_handler);
 
         if (status != HTTP_200) {
             res->writeStatus(status);
@@ -581,8 +590,8 @@ void SimpleHttpServer::HandleScriptingAction(Res* res, Req* req) {
     });
 }
 
-std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffer, int& session_id,
-    std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback) {
+std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
+    ScriptingSessionClosedCallback session_closed_callback, ScriptingRequestHandler request_handler) {
     try {
         json req = json::parse(buffer);
 
@@ -592,7 +601,7 @@ std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffe
         session_id = req["session_id"].get<int>();
         std::string target = req["path"].get<std::string>();
         std::string action = req["action"].get<std::string>();
-        std::string params = req["parameters"].dump();
+        std::string parameters = req["parameters"].dump();
         bool async = req["async"].get<bool>();
 
         std::string return_path;
@@ -600,8 +609,8 @@ std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffe
             return_path = req["return_path"].get<std::string>();
         }
 
-        if (!_session_manager->SendScriptingRequest(
-                session_id, _scripting_request_id, target, action, params, async, return_path, callback, session_closed_callback)) {
+        if (!request_handler(
+                session_id, _scripting_request_id, target, action, parameters, async, return_path, callback, session_closed_callback)) {
             return HTTP_404;
         }
 
@@ -610,7 +619,7 @@ std::string_view SimpleHttpServer::SendScriptingRequest(const std::string& buffe
     } catch (json::exception e) {
         spdlog::warn(e.what());
         return HTTP_400;
-    } catch (exception e) {
+    } catch (std::exception e) {
         spdlog::warn(e.what());
         return HTTP_500;
     }

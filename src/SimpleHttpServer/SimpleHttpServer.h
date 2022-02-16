@@ -31,6 +31,9 @@ namespace carta {
 
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;
+typedef std::function<bool(int&, uint32_t&, std::string&, std::string&, std::string&, bool&, std::string&, ScriptingResponseCallback,
+    ScriptingSessionClosedCallback)>
+    ScriptingRequestHandler;
 
 class SimpleHttpServer {
 public:
@@ -50,8 +53,8 @@ protected:
     nlohmann::json GetExistingObjects(const std::string& object_type);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
-    std::string_view SendScriptingRequest(const std::string& buffer, int& session_id,
-        std::function<void(const bool&, const std::string&, const std::string&)> callback, std::function<void()> session_closed_callback);
+    std::string_view SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
+        ScriptingSessionClosedCallback session_closed_callback, ScriptingRequestHandler request_handler);
     std::string_view OnScriptingResponse(
         std::string& response_buffer, const bool& success, const std::string& message, const std::string& response);
     void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
