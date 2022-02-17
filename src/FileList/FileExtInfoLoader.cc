@@ -1173,6 +1173,129 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
     }
 }
 
+void FileExtInfoLoader::GetCoordRanges(std::vector<std::string>& ra_range, std::vector<std::string>& dec_range,
+    std::vector<std::string>& freq_range, std::string& freq_units, std::vector<std::string>& velo_range, std::string& velo_units,
+    std::vector<std::string>& stokes) {
+    auto shape = _loader->GetImage()->shape().asVector();
+    if (shape.empty()) {
+        return;
+    }
+    casacore::CoordinateSystem coord_system(_loader->GetImage()->coordinates());
+
+    if (coord_system.hasDirectionCoordinate()) {
+        auto direction_coord = coord_system.directionCoordinate();
+        casacore::Vector<double> ref_val = direction_coord.referenceValue();
+        if (ref_val.size() == 2) {
+            casacore::Vector<int> direction_axes = coord_system.directionAxesNumbers();
+            casacore::Vector<double> pix(direction_axes.size(), 0);
+            casacore::Vector<double> world(pix.size());
+            casacore::Vector<double> ra_range_vec(2);
+            casacore::Vector<double> dec_range_vec(2);
+            casacore::String units;
+
+            // Get start world coord
+            direction_coord.toWorld(world, pix);
+            ra_range_vec[0] = world[0];
+            ra_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true));
+            dec_range_vec[0] = world[1];
+            dec_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true));
+
+            // Get end world coord
+            for (unsigned int i = 0; i < pix.size(); ++i) {
+                pix[i] = shape[direction_axes[i]];
+            }
+            direction_coord.toWorld(world, pix);
+            ra_range_vec[1] = world[0];
+            ra_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true));
+            dec_range_vec[1] = world[1];
+            dec_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true));
+        }
+    }
+
+    if (coord_system.hasSpectralAxis() && shape[coord_system.spectralAxisNumber()] > 1) {
+        auto spectral_coord = coord_system.spectralCoordinate();
+        casacore::Vector<casacore::String> spec_unit_vec = spectral_coord.worldAxisUnits();
+        if (spec_unit_vec(0) == "Hz") {
+            spec_unit_vec(0) = "GHz";
+        }
+        spectral_coord.setWorldAxisUnits(spec_unit_vec);
+
+        std::vector<double> frequencies(shape[coord_system.spectralAxisNumber()]);
+        std::vector<double> velocities(frequencies.size());
+        freq_units = spec_unit_vec(0);
+        velo_units = "km/s";
+        spectral_coord.setVelocity(velo_units);
+
+        for (int i = 0; i < shape[coord_system.spectralAxisNumber()]; ++i) {
+            if (!spectral_coord.toWorld(frequencies[i], i)) {
+                frequencies.resize(0);
+                velocities.resize(0);
+                break;
+            }
+            if (spectral_coord.restFrequency() == 0 || !spectral_coord.pixelToVelocity(velocities[i], i)) {
+                frequencies.resize(0);
+                velocities.resize(0);
+                break;
+            }
+        }
+        if (frequencies.size() > 1) {
+            freq_range.push_back(std::to_string(frequencies.front()));
+            freq_range.push_back(std::to_string(frequencies.back()));
+        }
+        if (velocities.size() > 1) {
+            velo_range.push_back(std::to_string(velocities.front()));
+            velo_range.push_back(std::to_string(velocities.back()));
+        }
+    }
+
+    if (coord_system.hasPolarizationAxis() && shape[coord_system.polarizationAxisNumber()] > 0) {
+        auto stokes_coord = coord_system.stokesCoordinate();
+        for (int i = 0; i < shape[coord_system.polarizationAxisNumber()]; ++i) {
+            auto stokes_type = stokes_coord.toWorld(i);
+            switch (stokes_type) {
+                case casacore::Stokes::StokesTypes::I:
+                    stokes.push_back("I");
+                    break;
+                case casacore::Stokes::StokesTypes::Q:
+                    stokes.push_back("Q");
+                    break;
+                case casacore::Stokes::StokesTypes::U:
+                    stokes.push_back("U");
+                    break;
+                case casacore::Stokes::StokesTypes::V:
+                    stokes.push_back("V");
+                    break;
+                case casacore::Stokes::StokesTypes::RR:
+                    stokes.push_back("RR");
+                    break;
+                case casacore::Stokes::StokesTypes::LL:
+                    stokes.push_back("LL");
+                    break;
+                case casacore::Stokes::StokesTypes::RL:
+                    stokes.push_back("RL");
+                    break;
+                case casacore::Stokes::StokesTypes::LR:
+                    stokes.push_back("LR");
+                    break;
+                case casacore::Stokes::StokesTypes::XX:
+                    stokes.push_back("XX");
+                    break;
+                case casacore::Stokes::StokesTypes::YY:
+                    stokes.push_back("YY");
+                    break;
+                case casacore::Stokes::StokesTypes::XY:
+                    stokes.push_back("XY");
+                    break;
+                case casacore::Stokes::StokesTypes::YX:
+                    stokes.push_back("YX");
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
 casacore::Vector<casacore::String> FileExtInfoLoader::FitsHeaderStrings(casacore::String& name, unsigned int hdu) {
     // Use fitsio to get header strings from FITS image
     fitsfile* fptr;
