@@ -28,6 +28,7 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 #include "Util/FileSystem.h"
+#include "Util/Image.h"
 
 using namespace carta;
 
@@ -190,6 +191,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     std::vector<int> render_axes = _loader->GetRenderAxes();
                     AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
                     AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
+                    FillCoordRanges(extended_info);
                     info_ok = true;
                 }
             } else { // image failed
@@ -1173,9 +1175,7 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
     }
 }
 
-void FileExtInfoLoader::GetCoordRanges(std::vector<std::string>& ra_range, std::vector<std::string>& dec_range,
-    std::vector<std::string>& freq_range, std::string& freq_units, std::vector<std::string>& velo_range, std::string& velo_units,
-    std::vector<std::string>& stokes) {
+void FileExtInfoLoader::FillCoordRanges(CARTA::FileInfoExtended& extended_info) {
     auto shape = _loader->GetImage()->shape().asVector();
     if (shape.empty()) {
         return;
@@ -1196,9 +1196,9 @@ void FileExtInfoLoader::GetCoordRanges(std::vector<std::string>& ra_range, std::
             // Get start world coord
             direction_coord.toWorld(world, pix);
             ra_range_vec[0] = world[0];
-            ra_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true));
+            std::string ra_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
             dec_range_vec[0] = world[1];
-            dec_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true));
+            std::string dec_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
 
             // Get end world coord
             for (unsigned int i = 0; i < pix.size(); ++i) {
@@ -1206,25 +1206,35 @@ void FileExtInfoLoader::GetCoordRanges(std::vector<std::string>& ra_range, std::
             }
             direction_coord.toWorld(world, pix);
             ra_range_vec[1] = world[0];
-            ra_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true));
+            std::string ra_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
             dec_range_vec[1] = world[1];
-            dec_range.push_back(direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true));
+            std::string dec_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
+
+            auto* ra_entry = extended_info.add_computed_entries();
+            ra_entry->set_name("Right Ascension Range");
+            ra_entry->set_value(fmt::format("[{}, {}]", ra_start, ra_end));
+            ra_entry->set_entry_type(CARTA::EntryType::STRING);
+
+            auto* dec_entry = extended_info.add_computed_entries();
+            dec_entry->set_name("Declination Range");
+            dec_entry->set_value(fmt::format("[{}, {}]", dec_start, dec_end));
+            dec_entry->set_entry_type(CARTA::EntryType::STRING);
         }
     }
 
     if (coord_system.hasSpectralAxis() && shape[coord_system.spectralAxisNumber()] > 1) {
         auto spectral_coord = coord_system.spectralCoordinate();
-        casacore::Vector<casacore::String> spec_unit_vec = spectral_coord.worldAxisUnits();
-        if (spec_unit_vec(0) == "Hz") {
-            spec_unit_vec(0) = "GHz";
+        casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
+        if (spectral_units(0) == "Hz") {
+            spectral_units(0) = "GHz";
         }
-        spectral_coord.setWorldAxisUnits(spec_unit_vec);
+        spectral_coord.setWorldAxisUnits(spectral_units);
 
         std::vector<double> frequencies(shape[coord_system.spectralAxisNumber()]);
         std::vector<double> velocities(frequencies.size());
-        freq_units = spec_unit_vec(0);
-        velo_units = "km/s";
-        spectral_coord.setVelocity(velo_units);
+        std::string frequency_units = spectral_units(0);
+        std::string velocity_units = "km/s";
+        spectral_coord.setVelocity(velocity_units);
 
         for (int i = 0; i < shape[coord_system.spectralAxisNumber()]; ++i) {
             if (!spectral_coord.toWorld(frequencies[i], i)) {
@@ -1238,61 +1248,34 @@ void FileExtInfoLoader::GetCoordRanges(std::vector<std::string>& ra_range, std::
                 break;
             }
         }
+
         if (frequencies.size() > 1) {
-            freq_range.push_back(std::to_string(frequencies.front()));
-            freq_range.push_back(std::to_string(frequencies.back()));
+            auto* frequency_entry = extended_info.add_computed_entries();
+            frequency_entry->set_name("Frequency Range");
+            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies.front(), frequencies.back(), frequency_units));
+            frequency_entry->set_entry_type(CARTA::EntryType::STRING);
         }
+
         if (velocities.size() > 1) {
-            velo_range.push_back(std::to_string(velocities.front()));
-            velo_range.push_back(std::to_string(velocities.back()));
+            auto* velocity_entry = extended_info.add_computed_entries();
+            velocity_entry->set_name("Velocity Range");
+            velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities.front(), velocities.back(), velocity_units));
+            velocity_entry->set_entry_type(CARTA::EntryType::STRING);
         }
     }
 
     if (coord_system.hasPolarizationAxis() && shape[coord_system.polarizationAxisNumber()] > 0) {
-        auto stokes_coord = coord_system.stokesCoordinate();
-        for (int i = 0; i < shape[coord_system.polarizationAxisNumber()]; ++i) {
-            auto stokes_type = stokes_coord.toWorld(i);
-            switch (stokes_type) {
-                case casacore::Stokes::StokesTypes::I:
-                    stokes.push_back("I");
-                    break;
-                case casacore::Stokes::StokesTypes::Q:
-                    stokes.push_back("Q");
-                    break;
-                case casacore::Stokes::StokesTypes::U:
-                    stokes.push_back("U");
-                    break;
-                case casacore::Stokes::StokesTypes::V:
-                    stokes.push_back("V");
-                    break;
-                case casacore::Stokes::StokesTypes::RR:
-                    stokes.push_back("RR");
-                    break;
-                case casacore::Stokes::StokesTypes::LL:
-                    stokes.push_back("LL");
-                    break;
-                case casacore::Stokes::StokesTypes::RL:
-                    stokes.push_back("RL");
-                    break;
-                case casacore::Stokes::StokesTypes::LR:
-                    stokes.push_back("LR");
-                    break;
-                case casacore::Stokes::StokesTypes::XX:
-                    stokes.push_back("XX");
-                    break;
-                case casacore::Stokes::StokesTypes::YY:
-                    stokes.push_back("YY");
-                    break;
-                case casacore::Stokes::StokesTypes::XY:
-                    stokes.push_back("XY");
-                    break;
-                case casacore::Stokes::StokesTypes::YX:
-                    stokes.push_back("YX");
-                    break;
-                default:
-                    break;
+        auto stokes_indices = _loader->GetStokesIndices();
+        std::string stokes;
+        for (auto stokes_index : stokes_indices) {
+            if (StokesTypesString.count(stokes_index.first)) {
+                stokes += StokesTypesString[stokes_index.first] + ", ";
             }
         }
+        auto* stokes_entry = extended_info.add_computed_entries();
+        stokes_entry->set_name("Stokes Coverage");
+        stokes_entry->set_value(fmt::format("[{}]", stokes.substr(0, stokes.size() - 2)));
+        stokes_entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
 

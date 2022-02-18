@@ -32,8 +32,7 @@ public:
 
     // Fill extended file info for specified hdu
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
-    void GetCoordRanges(std::vector<std::string>& ra_range, std::vector<std::string>& dec_range, std::vector<std::string>& freq_range,
-        std::string& freq_units, std::vector<std::string>& velo_range, std::string& velo_units, std::vector<std::string>& stokes);
+    void FillCoordRanges(CARTA::FileInfoExtended& extended_info);
 
 private:
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);

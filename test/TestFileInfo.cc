@@ -52,32 +52,16 @@ public:
         bool file_info_ok;
         std::string message;
         std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map;
-        std::vector<std::string> ra_range, dec_range, freq_range, velo_range, stokes;
-        std::string freq_units, velo_units;
 
         if (request_file_type == CARTA::FileType::FITS) {
             file_info_ok = ext_info_loader.FillFitsFileInfoMap(file_info_extended_map, fullname, message);
-            ext_info_loader.GetCoordRanges(ra_range, dec_range, freq_range, freq_units, velo_range, velo_units, stokes);
         } else {
             CARTA::FileInfoExtended file_info_ext;
             file_info_ok = ext_info_loader.FillFileExtInfo(file_info_ext, fullname, request_hdu, message);
-            ext_info_loader.GetCoordRanges(ra_range, dec_range, freq_range, freq_units, velo_range, velo_units, stokes);
             if (file_info_ok) {
                 file_info_extended_map[request_hdu] = file_info_ext;
             }
         }
-
-        EXPECT_EQ(ra_range[0], "18:20:25.888");
-        EXPECT_EQ(ra_range[1], "18:20:25.721");
-        EXPECT_EQ(dec_range[0], "-16.13.36.797");
-        EXPECT_EQ(dec_range[1], "-16.13.34.397");
-        EXPECT_EQ(freq_range[0], "86.750419");
-        EXPECT_EQ(freq_range[1], "86.749442");
-        EXPECT_EQ(freq_units, "GHz");
-        EXPECT_EQ(velo_range[0], "13.376000");
-        EXPECT_EQ(velo_range[1], "16.752000");
-        EXPECT_EQ(velo_units, "km/s");
-        EXPECT_TRUE(stokes.empty());
 
         CheckFileInfoExtended(file_info_extended_map, request_filename, request_hdu);
     }
@@ -144,6 +128,16 @@ public:
                 CheckHeaderEntry(computed_entries, "Jy/beam", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "Pixel increment") {
                 CheckHeaderEntry(computed_entries, "-0.4\", 0.4\"", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Right Ascension Range") {
+                CheckHeaderEntry(computed_entries, "[18:20:25.888, 18:20:25.721]", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Declination Range") {
+                CheckHeaderEntry(computed_entries, "[-16.13.36.797, -16.13.34.397]", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Frequency Range") {
+                CheckHeaderEntry(computed_entries, "[86.7504, 86.7494] (GHz)", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Velocity Range") {
+                CheckHeaderEntry(computed_entries, "[13.3760, 16.7520] (km/s)", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Stokes Coverage") {
+                CheckHeaderEntry(computed_entries, "[I]", CARTA::EntryType::STRING);
             }
         }
     }
