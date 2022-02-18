@@ -135,6 +135,7 @@ private:
     bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
         double& increment, bool& cancelled);
+    size_t LinePixelLength(const std::vector<CARTA::Point>& control_points);
     bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
     bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
