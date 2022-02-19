@@ -1184,27 +1184,26 @@ void FileExtInfoLoader::FillCoordRanges(CARTA::FileInfoExtended& extended_info) 
 
     if (coord_system.hasDirectionCoordinate()) {
         auto direction_coord = coord_system.directionCoordinate();
-        casacore::Vector<double> ref_val = direction_coord.referenceValue();
-        if (ref_val.size() == 2) {
+        if (direction_coord.referenceValue().size() == 2) {
             casacore::Vector<int> direction_axes = coord_system.directionAxesNumbers();
-            casacore::Vector<double> pix(direction_axes.size(), 0);
-            casacore::Vector<double> world(pix.size());
+            casacore::Vector<double> pixels(direction_axes.size(), 0);
+            casacore::Vector<double> world(direction_axes.size(), 0);
             casacore::Vector<double> ra_range_vec(2);
             casacore::Vector<double> dec_range_vec(2);
             casacore::String units;
 
             // Get start world coord
-            direction_coord.toWorld(world, pix);
+            direction_coord.toWorld(world, pixels);
             ra_range_vec[0] = world[0];
             std::string ra_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
             dec_range_vec[0] = world[1];
             std::string dec_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
 
             // Get end world coord
-            for (unsigned int i = 0; i < pix.size(); ++i) {
-                pix[i] = shape[direction_axes[i]];
+            for (unsigned int i = 0; i < pixels.size(); ++i) {
+                pixels[i] = shape[direction_axes[i]] - 1;
             }
-            direction_coord.toWorld(world, pix);
+            direction_coord.toWorld(world, pixels);
             ra_range_vec[1] = world[0];
             std::string ra_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
             dec_range_vec[1] = world[1];
@@ -1230,36 +1229,31 @@ void FileExtInfoLoader::FillCoordRanges(CARTA::FileInfoExtended& extended_info) 
         }
         spectral_coord.setWorldAxisUnits(spectral_units);
 
-        std::vector<double> frequencies(shape[coord_system.spectralAxisNumber()]);
-        std::vector<double> velocities(frequencies.size());
+        std::vector<double> frequencies(2);
+        std::vector<double> velocities(2);
         std::string frequency_units = spectral_units(0);
         std::string velocity_units = "km/s";
         spectral_coord.setVelocity(velocity_units);
 
-        for (int i = 0; i < shape[coord_system.spectralAxisNumber()]; ++i) {
-            if (!spectral_coord.toWorld(frequencies[i], i)) {
-                frequencies.resize(0);
-                velocities.resize(0);
-                break;
-            }
-            if (spectral_coord.restFrequency() == 0 || !spectral_coord.pixelToVelocity(velocities[i], i)) {
-                frequencies.resize(0);
-                velocities.resize(0);
-                break;
-            }
-        }
+        bool freq_ok(false);
+        bool velo_ok(false);
+        double start_pixel = 0;
+        double end_pixel = shape[coord_system.spectralAxisNumber()] - 1;
+        freq_ok = spectral_coord.toWorld(frequencies[0], start_pixel);
+        velo_ok = (spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel);
+        freq_ok = spectral_coord.toWorld(frequencies[1], end_pixel);
+        velo_ok = (spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[1], end_pixel);
 
-        if (frequencies.size() > 1) {
+        if (freq_ok) {
             auto* frequency_entry = extended_info.add_computed_entries();
             frequency_entry->set_name("Frequency Range");
-            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies.front(), frequencies.back(), frequency_units));
+            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], frequency_units));
             frequency_entry->set_entry_type(CARTA::EntryType::STRING);
         }
-
-        if (velocities.size() > 1) {
+        if (velo_ok) {
             auto* velocity_entry = extended_info.add_computed_entries();
             velocity_entry->set_name("Velocity Range");
-            velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities.front(), velocities.back(), velocity_units));
+            velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities[0], velocities[1], velocity_units));
             velocity_entry->set_entry_type(CARTA::EntryType::STRING);
         }
     }
@@ -1272,9 +1266,11 @@ void FileExtInfoLoader::FillCoordRanges(CARTA::FileInfoExtended& extended_info) 
                 stokes += StokesTypesString[stokes_index.first] + ", ";
             }
         }
+        stokes = stokes.size() > 2 ? stokes.substr(0, stokes.size() - 2) : stokes;
+
         auto* stokes_entry = extended_info.add_computed_entries();
         stokes_entry->set_name("Stokes Coverage");
-        stokes_entry->set_value(fmt::format("[{}]", stokes.substr(0, stokes.size() - 2)));
+        stokes_entry->set_value(fmt::format("[{}]", stokes));
         stokes_entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }

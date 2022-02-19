@@ -32,7 +32,6 @@ public:
 
     // Fill extended file info for specified hdu
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
-    void FillCoordRanges(CARTA::FileInfoExtended& extended_info);
 
 private:
     bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
@@ -54,6 +53,7 @@ private:
         const std::vector<int>& display_axes, bool use_image_for_entries);
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes);
     void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set);
+    void FillCoordRanges(CARTA::FileInfoExtended& extended_info);
 
     // Convert MVAngle to string; returns Quantity string if not direction
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);
