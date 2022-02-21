@@ -1224,33 +1224,24 @@ void FileExtInfoLoader::FillCoordRanges(CARTA::FileInfoExtended& extended_info) 
     if (coord_system.hasSpectralAxis() && shape[coord_system.spectralAxisNumber()] > 1) {
         auto spectral_coord = coord_system.spectralCoordinate();
         casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
-        if (spectral_units(0) == "Hz") {
-            spectral_units(0) = "GHz";
-        }
+        spectral_units(0) = spectral_units(0) == "Hz" ? "GHz" : spectral_units(0);
         spectral_coord.setWorldAxisUnits(spectral_units);
-
-        std::vector<double> frequencies(2);
-        std::vector<double> velocities(2);
-        std::string frequency_units = spectral_units(0);
         std::string velocity_units = "km/s";
         spectral_coord.setVelocity(velocity_units);
-
-        bool freq_ok(false);
-        bool velo_ok(false);
+        std::vector<double> frequencies(2);
+        std::vector<double> velocities(2);
         double start_pixel = 0;
         double end_pixel = shape[coord_system.spectralAxisNumber()] - 1;
-        freq_ok = spectral_coord.toWorld(frequencies[0], start_pixel);
-        velo_ok = (spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel);
-        freq_ok = spectral_coord.toWorld(frequencies[1], end_pixel);
-        velo_ok = (spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[1], end_pixel);
 
-        if (freq_ok) {
+        if (spectral_coord.toWorld(frequencies[0], start_pixel) && spectral_coord.toWorld(frequencies[1], end_pixel)) {
             auto* frequency_entry = extended_info.add_computed_entries();
             frequency_entry->set_name("Frequency Range");
-            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], frequency_units));
+            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], spectral_units(0)));
             frequency_entry->set_entry_type(CARTA::EntryType::STRING);
         }
-        if (velo_ok) {
+
+        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel) &&
+            spectral_coord.pixelToVelocity(velocities[1], end_pixel)) {
             auto* velocity_entry = extended_info.add_computed_entries();
             velocity_entry->set_name("Velocity Range");
             velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities[0], velocities[1], velocity_units));
