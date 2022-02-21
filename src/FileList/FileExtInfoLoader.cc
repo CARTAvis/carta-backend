@@ -1176,11 +1176,14 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
 }
 
 void FileExtInfoLoader::FillCoordRanges(CARTA::FileInfoExtended& extended_info) {
+    if (!_loader) {
+        return;
+    }
     auto shape = _loader->GetImage()->shape().asVector();
     if (shape.empty()) {
         return;
     }
-    casacore::CoordinateSystem coord_system(_loader->GetImage()->coordinates());
+    casacore::CoordinateSystem coord_system = _loader->GetImage()->coordinates();
 
     if (coord_system.hasDirectionCoordinate()) {
         auto direction_coord = coord_system.directionCoordinate();
