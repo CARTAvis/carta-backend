@@ -26,6 +26,13 @@ struct FitData {
     size_t n;
 };
 
+struct FitStatus {
+    std::string method;
+    size_t num_iter;
+    int info;
+    double chisq0, chisq, rcond;
+};
+
 class ImageFitter {
 public:
     ImageFitter(std::string unit);
@@ -39,11 +46,7 @@ private:
     gsl_vector* _fit_params;
     gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
-
-    std::string _method;
-    size_t _num_iter;
-    int _info;
-    double _chisq0, _chisq, _rcond;
+    FitStatus _fit_status;
 
     void SetFitData(float* image, size_t width, size_t height);
     void SetInitialValues(const CARTA::FittingRequest& fitting_request);

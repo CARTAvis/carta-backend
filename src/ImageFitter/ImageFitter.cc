@@ -105,21 +105,21 @@ int ImageFitter::SolveSystem() {
     gsl_matrix* covar = gsl_matrix_alloc(p, p);
 
     gsl_multifit_nlinear_init(_fit_params, &_fdf, work);
-    gsl_blas_ddot(f, f, &_chisq0);
-    int status = gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol, print_iter ? Callback : NULL, NULL, &_info, work);
-    gsl_blas_ddot(f, f, &_chisq);
-    gsl_multifit_nlinear_rcond(&_rcond, work);
+    gsl_blas_ddot(f, f, &_fit_status.chisq0);
+    int status = gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol, print_iter ? Callback : NULL, NULL, &_fit_status.info, work);
+    gsl_blas_ddot(f, f, &_fit_status.chisq);
+    gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
     gsl_vector_memcpy(_fit_params, y);
 
     gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
     gsl_multifit_nlinear_covar(jac, 0.0, covar);
-    double c = GSL_MAX_DBL(1, sqrt(_chisq / (n - p)));
+    const double c = GSL_MAX_DBL(1, sqrt(_fit_status.chisq / (n - p)));
     for (size_t i = 0; i < p; i++) {
         gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
     }
 
-    _method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
-    _num_iter = gsl_multifit_nlinear_niter(work);
+    _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
+    _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
 
     gsl_multifit_nlinear_free(work);
     gsl_matrix_free(covar);
@@ -151,16 +151,16 @@ std::string ImageFitter::GetResults() {
 std::string ImageFitter::GetLog() {
     std::string log = "";
     log += fmt::format("Gaussian fitting with {} component(s)\n", _num_components);
-    log += fmt::format("summary from method '{}':\n", _method);
-    log += fmt::format("number of iterations = {}\n", _num_iter);
+    log += fmt::format("summary from method '{}':\n", _fit_status.method);
+    log += fmt::format("number of iterations = {}\n", _fit_status.num_iter);
     log += fmt::format("function evaluations = {}\n", _fdf.nevalf);
     log += fmt::format("Jacobian evaluations = {}\n", _fdf.nevaldf);
-    log += fmt::format("reason for stopping  = {}\n", (_info == 1) ? "small step size" : "small gradient");
-    log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_chisq0));
-    log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_chisq));
-    log += fmt::format("initial cost         = {:.12e}\n", _chisq0);
-    log += fmt::format("final cost           = {:.12e}\n", _chisq);
-    log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _rcond);
+    log += fmt::format("reason for stopping  = {}\n", (_fit_status.info == 1) ? "small step size" : "small gradient");
+    log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_fit_status.chisq0));
+    log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_fit_status.chisq));
+    log += fmt::format("initial cost         = {:.12e}\n", _fit_status.chisq0);
+    log += fmt::format("final cost           = {:.12e}\n", _fit_status.chisq);
+    log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
 
     return log;
 }

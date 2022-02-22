@@ -1757,6 +1757,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
     fitting_response.set_success(false);
 
     if (_image_fitter) {
+        FillImageCache();
         success = _image_fitter->FitImage(_image_cache.data(), _width, _height, fitting_request, fitting_response);
     }
 
