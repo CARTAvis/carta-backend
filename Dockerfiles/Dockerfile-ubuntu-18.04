@@ -18,7 +18,7 @@ RUN \
   apt-add-repository -y -s ppa:kernsuite/kern-5 && \
   add-apt-repository -y ppa:cartavis-team/carta && \
   apt-get -y update && \
-  apt-get -y install carta-casacore-dev googletest fits2idia libgrpc++-dev libprotobuf-dev libzfp-dev protobuf-compiler-grpc 
+  apt-get -y install carta-casacore-dev googletest fits2idia libprotobuf-dev libzfp-dev protobuf-compiler
 
 # Get googletest 1.10 from Xbmc PPA (Required for the unit tests)
 RUN \
@@ -29,8 +29,6 @@ RUN \
 # Forward port so that the webapp can properly access it
 # from outside of the container
 EXPOSE 3002
-# Do the same with the gRPC service port
-EXPOSE 50051
 
 ENV HOME /root
 WORKDIR /root
