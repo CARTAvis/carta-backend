@@ -169,10 +169,10 @@ double ImageFitter::Gaussian(const double center_x, const double center_y, const
     const double theta, const double x, const double y) {
     const double sq_std_x = pow(fwhm_x, 2) / 8 / log(2);
     const double sq_std_y = pow(fwhm_y, 2) / 8 / log(2);
-    const double theta_radian = theta * M_PI / 180.0;
-    const double a = pow(cos(theta_radian), 2) / (2 * pow(sq_std_x, 2)) + pow(sin(theta_radian), 2) / (2 * pow(sq_std_y, 2));
-    const double b = -sin(2 * theta_radian) / (4 * pow(sq_std_x, 2)) + sin(2 * theta_radian) / (4 * pow(sq_std_y, 2));
-    const double c = pow(sin(theta_radian), 2) / (2 * pow(sq_std_x, 2)) + pow(cos(theta_radian), 2) / (2 * pow(sq_std_y, 2));
+    const double theta_radian = theta * M_PI / 180.0; // counterclockwise rotation
+    const double a = pow(cos(theta_radian), 2) / (2 * sq_std_x) + pow(sin(theta_radian), 2) / (2 * sq_std_y);
+    const double b = sin(2 * theta_radian) / (4 * sq_std_x) - sin(2 * theta_radian) / (4 * sq_std_y);
+    const double c = pow(sin(theta_radian), 2) / (2 * sq_std_x) + pow(cos(theta_radian), 2) / (2 * sq_std_y);
     return amp * exp(-(a * pow((x - center_x), 2) + 2 * b * (x - center_x) * (y - center_y) + c * pow((y - center_y), 2)));
 }
 
