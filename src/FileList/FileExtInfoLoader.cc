@@ -1214,12 +1214,12 @@ void FileExtInfoLoader::AddCoordRanges(
             if (axis_names(0) == "Right Ascension") {
                 axis_names(0) = "RA";
             } else if (axis_names(0) == "Longitude") {
-                axis_names(0) = "GLON";
+                axis_names(0) = "LON";
             }
             if (axis_names(1) == "Declination") {
                 axis_names(1) = "DEC";
             } else if (axis_names(1) == "Latitude") {
-                axis_names(1) = "GLAT";
+                axis_names(1) = "LAT";
             }
 
             auto* x_entry = extended_info.add_computed_entries();
