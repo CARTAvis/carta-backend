@@ -132,3 +132,22 @@ TEST_F(ImageExprTest, ImageExprFails) {
     // HDF5 not supported
     ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5), casacore::AipsError);
 }
+
+TEST_F(ImageExprTest, ImageExprTwoDirs) {
+    // Add images in different directories
+    auto image_path = TestRoot() / "data/images/fits";
+    std::string directory = image_path.string();
+    std::string expr = "noise_10px_10px.fits + '../casa/noise_10px_10px.im'";
+
+    std::shared_ptr<carta::FileLoader> expr_loader(carta::FileLoader::GetLoader(expr, directory));
+    expr_loader->OpenFile("");
+    casacore::IPosition expr_shape;
+    expr_loader->GetShape(expr_shape);
+
+    auto fits_path = FileFinder::FitsImagePath("noise_10px_10px.fits");
+    std::shared_ptr<carta::FileLoader> fits_loader(carta::FileLoader::GetLoader(fits_path));
+    fits_loader->OpenFile("");
+    casacore::IPosition fits_shape;
+    fits_loader->GetShape(fits_shape);
+    ASSERT_EQ(fits_shape, expr_shape);
+}

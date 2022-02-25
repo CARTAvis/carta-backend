@@ -472,7 +472,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     string err_message;
 
     if (is_lel_expr) {
-        auto loader = _loaders.Get(filename, directory);
+        // filename field is LEL expression
+        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
+        auto loader = _loaders.Get(filename, dir_path);
 
         try {
             loader->OpenFile(hdu);

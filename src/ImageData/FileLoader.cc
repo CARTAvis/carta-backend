@@ -90,14 +90,20 @@ typename FileLoader::ImageRef FileLoader::GetImage() {
 }
 
 void FileLoader::CloseImageIfUpdated() {
-    // Close image if updated when only the loader owns it unless decompressed
-    if (!_is_gz && _image.unique() && ImageUpdated()) {
+    // Close image if updated when only the loader owns
+    if (_image.unique() && ImageUpdated()) {
         _image->tempClose();
     }
 }
 
 bool FileLoader::ImageUpdated() {
     bool changed(false);
+
+    // Do not close compressed image or run getstat on LEL ImageExpr (sets directory)
+    if (_is_gz || !_directory.empty()) {
+        return changed;
+    }
+
     casacore::File ccfile(_filename);
     auto updated_time = ccfile.modifyTime();
 
@@ -313,9 +319,15 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
         }
 
         auto image_type = image->imageType();
-        if ((image_type == "CartaFitsImage") || (image_type == "ImageExpr")) {
-            // Use cfitsio (FITS) or LatticeExpr (ImageExpr) for slice
+        if (image_type == "CartaFitsImage") {
+            // Use cfitsio for slice
             return image->doGetSlice(data, slicer);
+        } else if (image_type == "ImageExpr") {
+            // Use ImageExpr for slice
+            casacore::Array<float> slice_data;
+            image->doGetSlice(slice_data, slicer);
+            data = slice_data; // copy from reference
+            return true;
         }
 
         // Get data slice with mask applied.
