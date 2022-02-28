@@ -43,8 +43,6 @@
 #include <carta-protobuf/stop_pv_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include <carta-scripting-grpc/carta_service.grpc.pb.h>
-
 #include "AnimationObject.h"
 #include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
@@ -61,6 +59,9 @@
 #define LOADER_CACHE_SIZE 25
 
 namespace carta {
+
+typedef std::function<void(const bool&, const std::string&, const std::string&)> ScriptingResponseCallback;
+typedef std::function<void()> ScriptingSessionClosedCallback;
 
 struct PerSocketData {
     uint32_t session_id;
@@ -84,7 +85,8 @@ private:
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port = -1, bool read_only_mode = false);
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false,
+        bool enable_scripting = false);
     ~Session();
 
     // CARTA ICD
@@ -230,9 +232,10 @@ public:
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(
-        uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path);
+        CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
-    bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
+    void OnScriptingAbort(uint32_t scripting_request_id);
+    void CloseAllScriptingRequests();
 
     void StopImageFileList();
     void StopCatalogFileList();
@@ -297,8 +300,8 @@ protected:
     std::string _address;
     std::string _top_level_folder;
     std::string _starting_folder;
-    int _grpc_port;
     bool _read_only_mode;
+    bool _enable_scripting;
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
@@ -348,8 +351,8 @@ protected:
     static bool _exit_when_all_sessions_closed;
     static std::thread* _animation_thread;
 
-    // Scripting responses from the client
-    std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
+    // Callbacks for scripting responses from the frontend
+    std::unordered_map<int, std::tuple<ScriptingResponseCallback, ScriptingSessionClosedCallback>> _scripting_callbacks;
     std::mutex _scripting_mutex;
 
     // Timestamp for the last protobuf message
