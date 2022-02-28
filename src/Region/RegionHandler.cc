@@ -1668,9 +1668,9 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     float progress(0.0);
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    for (size_t iline = 0; iline < num_lines; iline++) {
+    for (size_t iline = num_lines; iline > 0; iline--) {
         // Get profiles for each line segment
-        std::vector<CARTA::Point> endpoints = {control_points[iline], control_points[iline + 1]};
+        std::vector<CARTA::Point> endpoints = {control_points[iline - 1], control_points[iline]};
 
         auto rotation = region_state.rotation;
         if (rotation == 0.0) {
@@ -1887,13 +1887,13 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     float progress(0.0);
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    for (auto iline = 0; iline < num_lines; ++iline) {
+    for (size_t iline = num_lines; iline > 0; iline--) {
         // Convert pixel coordinates to MVDirection to get angular separation of entire line
         casacore::Vector<double> endpoint0(2), endpoint1(2);
-        endpoint0[0] = control_points[iline].x();
-        endpoint0[1] = control_points[iline].y();
-        endpoint1[0] = control_points[iline + 1].x();
-        endpoint1[1] = control_points[iline + 1].y();
+        endpoint0[0] = control_points[iline - 1].x();
+        endpoint0[1] = control_points[iline - 1].y();
+        endpoint1[0] = control_points[iline].x();
+        endpoint1[1] = control_points[iline].y();
         auto direction_coord = reference_csys->directionCoordinate();
         casacore::MVDirection mvdir0, mvdir1;
 

@@ -162,14 +162,15 @@ TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     auto profile = spatial_profiles[0].profiles(0);
     std::vector<float> profile_data = ProfileValues(profile);
     EXPECT_EQ(profile_data.size(), 14);
+    casacore::Vector<float> cc_profile(profile_data);
 
-    // Read image data slice for first channel
+    // Read image data slice for first channel; start at end
     FitsDataReader reader(image_path);
-    auto line1_data = reader.ReadRegion({9, 1, 0}, {10, 6, 1});
-    auto line2_data = reader.ReadRegion({1, 1, 0}, {10, 2, 1});
+    auto line1_data = reader.ReadRegion({1, 1, 0}, {10, 2, 1});
+    auto line0_data = reader.ReadRegion({9, 1, 0}, {10, 6, 1});
     auto image_data = line1_data;
-    for (size_t i = 0; i < line2_data.size(); ++i) {
-        image_data.push_back(line2_data[i]);
+    for (size_t i = 0; i < line0_data.size(); ++i) {
+        image_data.push_back(line0_data[i]);
     }
 
     // Profile data width=1 of polyline is same as slices
