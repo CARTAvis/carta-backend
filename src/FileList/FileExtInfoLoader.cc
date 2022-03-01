@@ -1070,8 +1070,9 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
     }
 
     if (!gaussian_beam.isNull()) {
-        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
-            gaussian_beam.getPA("deg").getValue());
+        casacore::Quantity beam_pos_angle(gaussian_beam.getPA());
+        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} {}", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
+            beam_pos_angle.getValue(), beam_pos_angle.getUnit());
 
         auto entry = extended_info.add_computed_entries();
         entry->set_name(entry_name);
