@@ -11,7 +11,7 @@ RUN \
   yum -y install centos-release-openstack-train && \
   yum -y install epel-release && \
   yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel cmake3 curl-devel flex \
-    git git-lfs gsl-devel grpc-devel grpc-plugins hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
+    git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
     make openssl-devel protobuf-devel pugixml-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
     zlib-devel libuuid-devel zfp-devel && \
   pip3 install numpy astropy && \
@@ -25,8 +25,6 @@ RUN \
 # Forward port so that the webapp can properly access it
 # from outside of the container
 EXPOSE 3002
-# Do the same with the gRPC service port
-EXPOSE 50051
 
 ENV LD_LIBRARY_PATH "/usr/local/lib"
 ENV PKG_CONFIG_PATH "/usr/local/lib/pkgconfig"

@@ -14,14 +14,8 @@
 
 namespace carta {
 
-SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler,
-    std::shared_ptr<CartaGrpcService> grpc_service)
-    : _session_number(0),
-      _app(uWS::App()),
-      _settings(settings),
-      _auth_token(auth_token),
-      _file_list_handler(file_list_handler),
-      _grpc_service(grpc_service) {}
+SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
+    : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
 void SessionManager::DeleteSession(int session_id) {
     Session* session = _sessions[session_id];
@@ -29,9 +23,7 @@ void SessionManager::DeleteSession(int session_id) {
         spdlog::info(
             "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
         session->WaitForTaskCancellation();
-        if (_grpc_service) {
-            _grpc_service->RemoveSession(session);
-        }
+        session->CloseAllScriptingRequests();
         if (!session->DecreaseRefCount()) {
             delete session;
             _sessions.erase(session_id);
@@ -85,11 +77,7 @@ void SessionManager::OnConnect(WSType* ws) {
 
     // create a Session
     _sessions[session_id] = new Session(ws, loop, session_id, address, _settings.top_level_folder, _settings.starting_folder,
-        _file_list_handler, _settings.grpc_port, _settings.read_only_mode);
-
-    if (_grpc_service) {
-        _grpc_service->AddSession(_sessions[session_id]);
-    }
+        _file_list_handler, _settings.read_only_mode, _settings.enable_scripting);
 
     _sessions[session_id]->IncreaseRefCount();
 
@@ -555,6 +543,35 @@ void SessionManager::RunApp() {
                                      .drain = [=](WSType* ws) { OnDrain(ws); },
                                      .close = [=](WSType* ws, int code, std::string_view msg) { OnDisconnect(ws, code, msg); }})
         .run();
+}
+
+bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action,
+    std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
+    ScriptingSessionClosedCallback session_closed_callback) {
+    Session* session = _sessions[session_id];
+    if (!session) {
+        return false;
+    }
+
+    CARTA::ScriptingRequest message;
+    message.set_scripting_request_id(scripting_request_id);
+    message.set_target(target);
+    message.set_action(action);
+    message.set_parameters(parameters);
+    message.set_async(async);
+    message.set_return_path(return_path);
+
+    session->SendScriptingRequest(message, callback, session_closed_callback);
+    return true;
+}
+
+void SessionManager::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
+    Session* session = _sessions[session_id];
+    if (!session) {
+        return; // Session is gone; nothing to do
+    }
+
+    session->OnScriptingAbort(scripting_request_id);
 }
 
 std::string SessionManager::IPAsText(std::string_view binary) {

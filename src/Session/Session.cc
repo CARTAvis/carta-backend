@@ -98,8 +98,8 @@ bool Session::_exit_when_all_sessions_closed = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port,
-    bool read_only_mode)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
+    bool enable_scripting)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -107,8 +107,8 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _top_level_folder(top_level_folder),
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
-      _grpc_port(grpc_port),
       _read_only_mode(read_only_mode),
+      _enable_scripting(enable_scripting),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
@@ -391,9 +391,8 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     } else {
         feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
     }
-    if (_grpc_port >= 0) {
-        feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
-        ack_message.set_grpc_port(_grpc_port);
+    if (_enable_scripting) {
+        feature_flags |= CARTA::ServerFeatureFlags::SCRIPTING;
     }
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
@@ -2196,40 +2195,39 @@ void Session::CancelExistingAnimation() {
 }
 
 void Session::SendScriptingRequest(
-    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path) {
-    CARTA::ScriptingRequest message;
-    message.set_scripting_request_id(scripting_request_id);
-    message.set_target(target);
-    message.set_action(action);
-    message.set_parameters(parameters);
-    message.set_async(async);
-    message.set_return_path(return_path);
+    CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
+    int scripting_request_id(message.scripting_request_id());
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    _scripting_callbacks[scripting_request_id] = std::make_tuple(callback, session_closed_callback);
 }
 
 void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id) {
-    // Save response to scripting request
     int scripting_request_id(message.scripting_request_id());
+
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    _scripting_response[scripting_request_id] = message;
+    auto callback_iter = _scripting_callbacks.find(scripting_request_id);
+    if (callback_iter == _scripting_callbacks.end()) {
+        spdlog::warn("Could not find callback for scripting response with request ID {}.", scripting_request_id);
+    } else {
+        auto [callback, session_closed_callback] = callback_iter->second;
+        callback(message.success(), message.message(), message.response());
+        _scripting_callbacks.erase(scripting_request_id);
+    }
 }
 
-// TODO: return pointer to original response type and copy in grpc service
-bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply) {
+void Session::OnScriptingAbort(uint32_t scripting_request_id) {
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    auto scripting_response = _scripting_response.find(scripting_request_id);
-    if (scripting_response == _scripting_response.end()) {
-        return false;
-    } else {
-        auto msg = scripting_response->second;
-        reply->set_success(msg.success());
-        reply->set_message(msg.message());
-        reply->set_response(msg.response());
+    _scripting_callbacks.erase(scripting_request_id);
+}
 
-        _scripting_response.erase(scripting_request_id);
-
-        return true;
+void Session::CloseAllScriptingRequests() {
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    for (auto& [key, callbacks] : _scripting_callbacks) {
+        auto [callback, session_closed_callback] = callbacks;
+        session_closed_callback();
     }
+    _scripting_callbacks.clear();
 }
 
 void Session::StopImageFileList() {
