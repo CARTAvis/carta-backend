@@ -1754,11 +1754,14 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
     }
 
     bool success = false;
-    fitting_response.set_success(false);
-
     if (_image_fitter) {
         FillImageCache();
-        success = _image_fitter->FitImage(_image_cache.data(), _width, _height, fitting_request, fitting_response);
+        success = _image_fitter->FitImage(_image_cache.data(), _width, _height, fitting_request.initial_values());
+
+        fitting_response.set_success(success);
+        fitting_response.set_message(_image_fitter->GetMessage());
+        fitting_response.set_results(_image_fitter->GetResults());
+        fitting_response.set_log(_image_fitter->GetLog());
     }
 
     return success;

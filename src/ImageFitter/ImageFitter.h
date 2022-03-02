@@ -36,8 +36,10 @@ struct FitStatus {
 class ImageFitter {
 public:
     ImageFitter(std::string unit);
-    bool FitImage(
-        float* image, size_t width, size_t height, const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
+    bool FitImage(float* image, size_t width, size_t height, const google::protobuf::RepeatedPtrField<CARTA::GaussianComponent>& initial_values);
+    std::string GetMessage() { return _message; };
+    std::string GetResults() { return _results; };
+    std::string GetLog() { return _log; };
 
 private:
     FitData _fit_data;
@@ -47,12 +49,15 @@ private:
     gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
     FitStatus _fit_status;
+    std::string _message;
+    std::string _results;
+    std::string _log;
 
     void SetFitData(float* image, size_t width, size_t height);
-    void SetInitialValues(const CARTA::FittingRequest& fitting_request);
+    void SetInitialValues(const google::protobuf::RepeatedPtrField<CARTA::GaussianComponent>& initial_values);
     int SolveSystem();
-    std::string GetResults();
-    std::string GetLog();
+    void SetResults();
+    void SetLog();
 
     static double Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,
         const double theta, const double x, const double y);
