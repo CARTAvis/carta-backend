@@ -104,6 +104,7 @@ endif ()
 
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
+INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
@@ -131,6 +132,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     INCLUDE_DIRECTORIES(/usr/local/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
+    LINK_DIRECTORIES(/opt/homebrew/lib)
     LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
