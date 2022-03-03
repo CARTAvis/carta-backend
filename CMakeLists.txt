@@ -104,11 +104,11 @@ endif ()
 
 FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
 FIND_PACKAGE(Protobuf REQUIRED)
+INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
-ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 set(CARTA_CASACORE_INCLUDE_DIRS
@@ -132,31 +132,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     INCLUDE_DIRECTORIES(/usr/local/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
-    LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
+    LINK_DIRECTORIES(/usr/local/lib)
+    LINK_DIRECTORIES(/usr/local/opt)
+    LINK_DIRECTORIES(/opt/homebrew/lib)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-FIND_PACKAGE(gRPC QUIET)
-if (gRPC_FOUND)
-    set(LINK_LIBS
-            ${LINK_LIBS}
-            gRPC::grpc++
-            )
-    message(STATUS "gRPC found using FIND_PACKAGE")
-else ()
-    message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
-    FIND_PACKAGE(PkgConfig REQUIRED)
-    PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
-    if (GRPC_FOUND)
-        message(STATUS "gRPC found using pkg-config")
-        set(LINK_LIBS
-                ${LINK_LIBS}
-                grpc
-                grpc++
-                )
-    else ()
-        message(FATAL_ERROR "Could not import gRPC library")
-    endif ()
-endif ()
 
 if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
@@ -180,7 +159,6 @@ add_subdirectory(third-party/spdlog)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
-        carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         uSockets
         uuid
@@ -218,7 +196,7 @@ set(SOURCE_FILES
         src/FileList/FileListHandler.cc
         src/FileList/FitsHduList.cc
         src/Frame/Frame.cc
-        src/GrpcServer/CartaGrpcService.cc
+        src/HttpServer/HttpServer.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
         src/ImageData/CartaMiriadImage.cc
@@ -245,7 +223,6 @@ set(SOURCE_FILES
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc
-        src/SimpleFrontendServer/SimpleFrontendServer.cc
         src/SpectralLine/SpectralLineCrawler.cc
         src/Table/Columns.cc
         src/Table/Table.cc

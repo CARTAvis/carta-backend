@@ -94,6 +94,9 @@ public:
     virtual void SetStokesCrpix(float stokes_crpix);
     virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
+    std::unordered_map<CARTA::PolarizationType, int> GetStokesIndices() {
+        return _stokes_indices;
+    };
 
     // Modify time changed
     bool ImageUpdated();
