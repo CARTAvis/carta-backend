@@ -27,17 +27,18 @@ std::unique_ptr<BackendModel> BackendModel::GetDummyBackend() {
     std::string address;
     std::string top_level_folder("/");
     std::string starting_folder("data/images");
-    int grpc_port(-1);
     bool read_only_mode(false);
+    bool enable_scripting(false);
 
     return std::make_unique<BackendModel>(
-        nullptr, nullptr, session_id, address, top_level_folder, starting_folder, grpc_port, read_only_mode);
+        nullptr, nullptr, session_id, address, top_level_folder, starting_folder, read_only_mode, enable_scripting);
 }
 
 BackendModel::BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
-    std::string top_level_folder, std::string starting_folder, int grpc_port, bool read_only_mode) {
+    std::string top_level_folder, std::string starting_folder, bool read_only_mode, bool enable_scripting) {
     _file_list_handler = std::make_shared<FileListHandler>(top_level_folder, starting_folder);
-    _session = new TestSession(session_id, address, top_level_folder, starting_folder, _file_list_handler, grpc_port, read_only_mode);
+    _session =
+        new TestSession(session_id, address, top_level_folder, starting_folder, _file_list_handler, read_only_mode, enable_scripting);
 
     _session->IncreaseRefCount(); // increase the reference count to avoid being deleted by the OnMessageTask
 }
@@ -106,8 +107,7 @@ void BackendModel::Receive(CARTA::CloseFile message) {
 void BackendModel::Receive(CARTA::StartAnimation message) {
     carta::logger::LogReceivedEventType(CARTA::EventType::START_ANIMATION);
     _session->CancelExistingAnimation();
-    _session->BuildAnimationObject(message, DUMMY_REQUEST_ID);
-    OnMessageTask* tsk = new AnimationTask(_session);
+    OnMessageTask* tsk = new StartAnimationTask(_session, message, DUMMY_REQUEST_ID);
     ThreadManager::QueueTask(tsk);
 }
 
