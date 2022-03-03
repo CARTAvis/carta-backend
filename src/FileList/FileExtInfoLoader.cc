@@ -28,6 +28,7 @@
 #include "Util/Casacore.h"
 #include "Util/File.h"
 #include "Util/FileSystem.h"
+#include "Util/Image.h"
 
 using namespace carta;
 
@@ -812,6 +813,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
         AddBeamEntry(extended_info, beam_set);
     }
+
+    AddCoordRanges(extended_info, image->coordinates(), image->shape());
 }
 
 void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes) {
@@ -1071,7 +1074,7 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 
     if (!gaussian_beam.isNull()) {
         std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
-            gaussian_beam.getPA("deg").getValue());
+            gaussian_beam.getPA(casacore::Unit("deg")));
 
         auto entry = extended_info.add_computed_entries();
         entry->set_name(entry_name);
@@ -1170,6 +1173,109 @@ void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, 
 
     if (names.count(coord_name2)) {
         coord_name2 = names[coord_name2];
+    }
+}
+
+void FileExtInfoLoader::AddCoordRanges(
+    CARTA::FileInfoExtended& extended_info, const casacore::CoordinateSystem& coord_system, const casacore::IPosition& image_shape) {
+    if (image_shape.empty()) {
+        return;
+    }
+
+    if (coord_system.hasDirectionCoordinate()) {
+        auto direction_coord = coord_system.directionCoordinate();
+        if (direction_coord.referenceValue().size() == 2) {
+            casacore::Vector<int> direction_axes = coord_system.directionAxesNumbers();
+            casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
+            casacore::Vector<double> pixels(direction_axes.size(), 0);
+            casacore::Vector<double> world(direction_axes.size(), 0);
+            casacore::Vector<double> x_range_vec(2);
+            casacore::Vector<double> y_range_vec(2);
+            casacore::String units;
+
+            // Get start world coord
+            direction_coord.toWorld(world, pixels);
+            x_range_vec[0] = world[0];
+            std::string x_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
+            y_range_vec[0] = world[1];
+            std::string y_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
+
+            // Get end world coord
+            for (unsigned int i = 0; i < pixels.size(); ++i) {
+                pixels[i] = image_shape[direction_axes[i]] - 1;
+            }
+            direction_coord.toWorld(world, pixels);
+            x_range_vec[1] = world[0];
+            std::string x_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
+            y_range_vec[1] = world[1];
+            std::string y_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
+
+            // Set x and y coordinate names
+            if (axis_names(0) == "Right Ascension") {
+                axis_names(0) = "RA";
+            } else if (axis_names(0) == "Longitude") {
+                axis_names(0) = "LON";
+            }
+            if (axis_names(1) == "Declination") {
+                axis_names(1) = "DEC";
+            } else if (axis_names(1) == "Latitude") {
+                axis_names(1) = "LAT";
+            }
+
+            auto* x_entry = extended_info.add_computed_entries();
+            x_entry->set_name(fmt::format("{} range", axis_names(0)));
+            x_entry->set_value(fmt::format("[{}, {}]", x_start, x_end));
+            x_entry->set_entry_type(CARTA::EntryType::STRING);
+
+            auto* y_entry = extended_info.add_computed_entries();
+            y_entry->set_name(fmt::format("{} range", axis_names(1)));
+            y_entry->set_value(fmt::format("[{}, {}]", y_start, y_end));
+            y_entry->set_entry_type(CARTA::EntryType::STRING);
+        }
+    }
+
+    if (coord_system.hasSpectralAxis() && image_shape[coord_system.spectralAxisNumber()] > 1) {
+        auto spectral_coord = coord_system.spectralCoordinate();
+        casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
+        spectral_units(0) = spectral_units(0) == "Hz" ? "GHz" : spectral_units(0);
+        spectral_coord.setWorldAxisUnits(spectral_units);
+        std::string velocity_units = "km/s";
+        spectral_coord.setVelocity(velocity_units);
+        std::vector<double> frequencies(2);
+        std::vector<double> velocities(2);
+        double start_pixel = 0;
+        double end_pixel = image_shape[coord_system.spectralAxisNumber()] - 1;
+
+        if (spectral_coord.toWorld(frequencies[0], start_pixel) && spectral_coord.toWorld(frequencies[1], end_pixel)) {
+            auto* frequency_entry = extended_info.add_computed_entries();
+            frequency_entry->set_name("Frequency range");
+            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], spectral_units(0)));
+            frequency_entry->set_entry_type(CARTA::EntryType::STRING);
+        }
+
+        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel) &&
+            spectral_coord.pixelToVelocity(velocities[1], end_pixel)) {
+            auto* velocity_entry = extended_info.add_computed_entries();
+            velocity_entry->set_name("Velocity range");
+            velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities[0], velocities[1], velocity_units));
+            velocity_entry->set_entry_type(CARTA::EntryType::STRING);
+        }
+    }
+
+    if (coord_system.hasPolarizationAxis() && image_shape[coord_system.polarizationAxisNumber()] > 0) {
+        auto stokes_indices = _loader->GetStokesIndices();
+        std::string stokes;
+        for (auto stokes_index : stokes_indices) {
+            if (StokesTypesString.count(stokes_index.first)) {
+                stokes += StokesTypesString[stokes_index.first] + ", ";
+            }
+        }
+        stokes = stokes.size() > 2 ? stokes.substr(0, stokes.size() - 2) : stokes;
+
+        auto* stokes_entry = extended_info.add_computed_entries();
+        stokes_entry->set_name("Stokes coverage");
+        stokes_entry->set_value(fmt::format("[{}]", stokes));
+        stokes_entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
 
