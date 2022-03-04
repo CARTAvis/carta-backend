@@ -151,6 +151,12 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(LINK_LIBS ${LINK_LIBS} stdc++fs)
 endif ()
 
+include(FetchContent)
+FetchContent_Declare(GSL
+        GIT_REPOSITORY "https://github.com/microsoft/GSL"
+        GIT_TAG "v3.1.0")
+FetchContent_MakeAvailable(GSL)
+
 # Include uWebSockets headers and build the uSockets lib
 include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
@@ -181,7 +187,8 @@ set(LINK_LIBS
         casa_imageanalysis
         ${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
-        ${CMAKE_THREAD_LIBS_INIT})
+        ${CMAKE_THREAD_LIBS_INIT}
+        GSL)
 
 set(SOURCE_FILES
         ${SOURCE_FILES}

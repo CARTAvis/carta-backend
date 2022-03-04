@@ -41,7 +41,7 @@ BasicStats<T>::BasicStats()
       sumSq(0) {}
 
 template <typename T>
-BasicStatsCalculator<T>::BasicStatsCalculator(const std::vector<T>& data)
+BasicStatsCalculator<T>::BasicStatsCalculator(gsl::span<T const> data)
     : _min_val(std::numeric_limits<T>::max()),
       _max_val(std::numeric_limits<T>::lowest()),
       _sum(0),

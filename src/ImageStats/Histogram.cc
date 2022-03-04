@@ -15,7 +15,7 @@
 
 using namespace carta;
 
-Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data)
+Histogram::Histogram(int num_bins, float min_value, float max_value, gsl::span<float const> data)
     : _bin_width((max_value - min_value) / num_bins),
       _min_val(min_value),
       _max_val(max_value),
@@ -45,7 +45,7 @@ bool Histogram::Add(const Histogram& h) {
     return true;
 }
 
-void Histogram::Fill(const std::vector<float>& data) {
+void Histogram::Fill(gsl::span<float const> data) {
     std::vector<int64_t> temp_bins;
     const auto num_elements = data.size();
     const size_t num_bins = GetNbins();

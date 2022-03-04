@@ -13,15 +13,17 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 
+#include <gsl/gsl>
+
 #include <carta-protobuf/enums.pb.h>
 #include "BasicStatsCalculator.h"
 #include "Histogram.h"
 
 namespace carta {
 
-void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats);
+void CalcBasicStats(gsl::span<float const> data, BasicStats<float>& stats);
 
-Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data);
+Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, gsl::span<float const> data);
 
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);
