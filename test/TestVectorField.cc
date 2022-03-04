@@ -1528,8 +1528,8 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
 
     for (int compression_quality = 11; compression_quality < 22; compression_quality += 2) {
         auto tmp_errors = TestZFPCompression(image_opts, file_type, mip, (float)compression_quality, fractional, debiasing);
-        EXPECT_GT(errors.first, tmp_errors.first);
-        EXPECT_GT(errors.second, tmp_errors.second);
+        EXPECT_GE(errors.first, tmp_errors.first);
+        EXPECT_GE(errors.second, tmp_errors.second);
         errors = tmp_errors;
     }
 }
