@@ -994,13 +994,13 @@ bool RegionHandler::GetRegionHistogramData(
 
         // Calculate and cache stats
         if (!have_basic_stats) {
-            CalcBasicStats(data[stokes], stats);
+            CalcBasicStats(stats, data[stokes].data(), data[stokes].size());
             _histogram_cache[cache_id].SetBasicStats(stats);
             have_basic_stats = true;
         }
 
         // Calculate and cache histogram for number of bins
-        Histogram histo = CalcHistogram(num_bins, stats, data[stokes]);
+        Histogram histo = CalcHistogram(num_bins, stats, data[stokes].data(), data[stokes].size());
         _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage

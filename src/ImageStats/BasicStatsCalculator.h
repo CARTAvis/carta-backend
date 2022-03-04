@@ -9,6 +9,7 @@
 
 #include <algorithm>
 
+
 namespace carta {
 
 template <typename T>
@@ -32,10 +33,10 @@ class BasicStatsCalculator {
     T _min_val, _max_val;
     double _sum, _sum_squares;
     size_t _num_pixels;
-    const std::vector<T>& _data;
+    const float* _data;
 
 public:
-    BasicStatsCalculator(const std::vector<T>& data);
+    BasicStatsCalculator(const float* data, size_t data_size);
 
     void join(BasicStatsCalculator& other); // NOLINT
     void reduce(const size_t start, const size_t end);

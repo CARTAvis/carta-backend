@@ -170,7 +170,7 @@ public:
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
-    bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
+    bool GetSlicerData(const casacore::Slicer& slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
@@ -277,7 +277,9 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    std::vector<float> _image_cache; // image data for current z, stokes
+//    std::vector<float> _image_cache; // image data for current z, stokes
+    long long int _image_cache_size;
+    std::shared_ptr<float[]> _image_cache;
     bool _image_cache_valid;         // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex;   // allow concurrent reads but lock for write
     std::mutex _image_mutex;         // only one disk access at a time
