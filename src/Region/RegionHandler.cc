@@ -1728,6 +1728,12 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
 
         if (CheckLinearOffsets(box_centers, reference_csys, increment)) {
             size_t num_regions(box_centers.size());
+            size_t row_size = profiles.nrow() + num_regions;
+            if (iline == 1) {
+                // Update estimated number of profiles to actual number of rows for progress
+                num_profiles = row_size;
+            }
+
             float height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
 
             // Set box regions from centers, width x 1
@@ -1757,11 +1763,11 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
                     return false;
                 }
 
-                spdlog::debug("Line {} box region {} max num pixels={}", iline, iregion, num_pixels);
+                spdlog::debug("Line {} box region {} of {} max num pixels={}", iline, iregion, num_regions - 1, num_pixels);
 
                 if (iregion == 0) {
                     // add matrix rows, keeping previously set rows
-                    profiles.resize(casacore::IPosition(2, profiles.nrow() + num_regions, region_profile.size()), true);
+                    profiles.resize(casacore::IPosition(2, row_size, region_profile.size()), true);
                 }
 
                 profiles.row(matrix_row++) = region_profile;
@@ -1879,8 +1885,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     size_t num_lines(control_points.size() - 1);
     auto rotation = region_state.rotation;
 
-    // Estimated number of profiles for progress
-
     // Send progress updates (matrix_row / num_profiles) at time interval
     size_t matrix_row(0);
     size_t num_profiles = LinePixelLength(control_points); // estimate
@@ -1960,9 +1964,12 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
         }
 
         // Increase matrix size to fill in rows
-        auto new_nrow = profiles.nrow() + num_regions;
-        num_profiles = std::max(num_profiles, new_nrow);
-        profiles.resize(casacore::IPosition(2, new_nrow, _frames.at(file_id)->Depth()));
+        auto row_size = profiles.nrow() + num_regions;
+        profiles.resize(casacore::IPosition(2, row_size, _frames.at(file_id)->Depth()));
+        if (iline == 1) {
+            // Update estimated number of profiles to actual number of rows for progress
+            num_profiles = row_size;
+        }
 
         // Create polygons for box regions along line starting and ending at calculated points.
         // Starts at previous point (if any), ends at two points ahead (if any).
