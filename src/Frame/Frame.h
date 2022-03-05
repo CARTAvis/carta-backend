@@ -279,14 +279,13 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    //    std::vector<float> _image_cache; // image data for current z, stokes
-    long long int _image_cache_size;
-    std::shared_ptr<float[]> _image_cache;
-    bool _image_cache_valid;       // cached image data is valid for current z and stokes
-    queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
-    std::mutex _image_mutex;       // only one disk access at a time
-    bool _cache_loaded;            // channel cache is set
-    TileCache _tile_cache;         // cache for full-resolution image tiles
+    std::shared_ptr<float[]> _image_cache; // image data for current z, stokes
+    size_t _image_cache_size;              // size of image cache
+    bool _image_cache_valid;               // cached image data is valid for current z and stokes
+    queuing_rw_mutex _cache_mutex;         // allow concurrent reads but lock for write
+    std::mutex _image_mutex;               // only one disk access at a time
+    bool _cache_loaded;                    // channel cache is set
+    TileCache _tile_cache;                 // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 
