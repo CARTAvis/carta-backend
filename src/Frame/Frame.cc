@@ -608,8 +608,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_width = _width - (2 * kernel_width);
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(_image_cache.get(), dest_array.get(), source_width, source_height, dest_width, dest_height,
-            _contour_settings.smoothing_factor);
+        smooth_successful = GaussianSmooth(
+            _image_cache.get(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
