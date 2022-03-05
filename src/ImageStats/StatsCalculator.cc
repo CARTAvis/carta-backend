@@ -16,14 +16,14 @@
 
 namespace carta {
 
-void CalcBasicStats(BasicStats<float>& stats, const float *data, const size_t data_size) {
+void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t data_size) {
     // Calculate stats in BasicStats struct
     BasicStatsCalculator<float> mm(data, data_size);
     mm.reduce(0, data_size);
     stats = mm.GetStats();
 }
 
-Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const float *data, const size_t data_size) {
+Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const float* data, const size_t data_size) {
     if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data_size == 0) {
         // empty / NaN region
         return Histogram(1, 0, 0, data, data_size);

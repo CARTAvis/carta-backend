@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-
 namespace carta {
 
 template <typename T>
