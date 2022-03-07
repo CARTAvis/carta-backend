@@ -90,7 +90,7 @@ struct BeamTableInfo {
 
 class CompressedFits {
 public:
-    CompressedFits(const std::string& filename) : _filename(filename) {}
+    CompressedFits(const std::string& filename);
 
     // Headers for file info
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
@@ -99,6 +99,16 @@ public:
     // Beams for file info and opening image
     inline const casacore::ImageBeamSet& GetBeamSet() {
         return _beam_set;
+    }
+
+    casacore::Matrix<casacore::Double> GetMatrixForm() {
+        return _xform;
+    }
+    void SetShape(casacore::IPosition shape) {
+        _shape = shape;
+    }
+    casacore::IPosition& GetShape() {
+        return _shape;
     }
 
     // File decompression
@@ -124,6 +134,8 @@ private:
     std::string _filename;
     std::string _unzip_filename;
     casacore::ImageBeamSet _beam_set;
+    casacore::Matrix<casacore::Double> _xform;
+    casacore::IPosition _shape;
 };
 
 } // namespace carta

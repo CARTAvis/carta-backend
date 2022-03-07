@@ -22,7 +22,6 @@
 
 #include "../ImageData/CartaFitsImage.h"
 #include "../ImageData/CartaHdf5Image.h"
-#include "../ImageData/CompressedFits.h"
 #include "FileList/FitsHduList.h"
 #include "Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -48,10 +47,10 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
         for (auto& hdu_info : hdu_info_map) {
             std::vector<int> render_axes = {0, 1}; // default
-            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, render_axes);
+            AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, render_axes, &cfits);
 
             // Use headers in FileInfoExtended to create computed entries
-            AddComputedEntriesFromHeaders(hdu_info.second, render_axes);
+            AddComputedEntriesFromHeaders(hdu_info.second, render_axes, &cfits);
 
             const casacore::ImageBeamSet beam_set = cfits.GetBeamSet();
             if (!beam_set.empty()) {
@@ -562,8 +561,8 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
 
 // ***** Computed entries *****
 
-void FileExtInfoLoader::AddInitialComputedEntries(
-    const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::vector<int>& render_axes) {
+void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info,
+    const std::string& filename, const std::vector<int>& render_axes, CompressedFits* compressed_fits) {
     // Add computed entries for filename, hdu, shape, and axes
     // Set name and HDU
     fs::path filepath(filename);
@@ -623,6 +622,9 @@ void FileExtInfoLoader::AddInitialComputedEntries(
     }
 
     AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
+    if (compressed_fits) {
+        compressed_fits->SetShape(shape);
+    }
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,
@@ -817,7 +819,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     AddCoordRanges(extended_info, image->coordinates(), image->shape());
 }
 
-void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes) {
+void FileExtInfoLoader::AddComputedEntriesFromHeaders(
+    CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, CompressedFits* compressed_fits) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
     // For images with missing headers or headers which casacore/wcslib cannot process.
     // Axes are 1-based for header names (ctype, cunit, etc.), 0-based for display axes
@@ -916,7 +919,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         }
 
         // Celestial frame
-        if (need_frame && ((entry_name.find("EQUINOX") == 0) || (entry_name.find("EPOCH") == 0))) {
+        if (need_frame && ((entry_name.find("EQUINOX") == 0) || (entry_name.find("TELEQUIN") == 0) || (entry_name.find("EPOCH") == 0))) {
             need_frame = false;
             frame = entry.value();
             double numval = entry.numeric_value();
@@ -1057,6 +1060,28 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             entry->set_value("UNKNOWN");
         }
         entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (compressed_fits) {
+        casacore::CoordinateSystem coordsys;
+        auto shape = compressed_fits->GetShape();
+
+        casacore::MDirection::Types frame_type;
+        if (casacore::MDirection::getType(frame_type, frame) || casacore::MDirection::getType(frame_type, radesys)) {
+            auto xform = compressed_fits->GetMatrixForm();
+            auto proj_type = casacore::Projection::type(projection);
+            auto to_rad = casacore::C::pi / 180.0;
+
+            // Make a direction coordinate and add it to the coordinate system
+            casacore::DirectionCoordinate dir_coord(
+                frame_type, proj_type, crval1 * to_rad, crval2 * to_rad, cdelt1 * to_rad, cdelt2 * to_rad, xform, crpix1 - 1, crpix2 - 1);
+            casacore::Vector<casacore::String> units(2);
+            units = "rad";
+            dir_coord.setWorldAxisUnits(units);
+            coordsys.addCoordinate(dir_coord);
+        }
+
+        AddCoordRanges(extended_info, coordsys, shape);
     }
 }
 
