@@ -147,7 +147,7 @@ TEST_F(HistogramTest, TestMultithreadingPerformance) {
         v = float_random(mt);
     }
 
-    Timer t;
+    carta::Timer t;
     carta::ThreadManager::SetThreadLimit(1);
 
     t.Start("single_threaded");
