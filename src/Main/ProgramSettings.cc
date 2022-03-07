@@ -313,7 +313,9 @@ global configuration files, respectively.
     log_performance = result["log_performance"].as<bool>();
     log_protocol_messages = result["log_protocol_messages"].as<bool>();
 
-    no_http = result["no_http"].as<bool>();
+    no_http = result["no_http"].as<bool>(); // deprecated
+    no_database = result["no_database"].as<bool>();
+    no_frontend = result["no_frontend"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
     read_only_mode = result["read_only_mode"].as<bool>();
