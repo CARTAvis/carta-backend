@@ -111,10 +111,15 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+if (NOT CARTA_CASACORE_ROOT)
+    set(CARTA_CASACORE_ROOT /opt/carta-casacore)
+endif()
+
 set(CARTA_CASACORE_INCLUDE_DIRS
-    /opt/carta-casacore/include
-    /opt/carta-casacore/include/casacore
-    /opt/carta-casacore/include/casacode)
+    ${CARTA_CASACORE_ROOT}/include
+    ${CARTA_CASACORE_ROOT}/include/casacore
+    ${CARTA_CASACORE_ROOT}/include/casacode)
+
 option(DevSuppressExternalWarnings "Suppress external warnings (developer use only)" OFF)
 if (DevSuppressExternalWarnings)
     message(STATUS "disabling warnings from carta-casacore")
@@ -122,7 +127,7 @@ if (DevSuppressExternalWarnings)
 else()
     INCLUDE_DIRECTORIES(${CARTA_CASACORE_INCLUDE_DIRS})
 endif()
-LINK_DIRECTORIES(/opt/carta-casacore/lib)
+LINK_DIRECTORIES(${CARTA_CASACORE_ROOT}/lib)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
