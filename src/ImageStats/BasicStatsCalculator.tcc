@@ -53,14 +53,10 @@ BasicStatsCalculator<T>::BasicStatsCalculator(const T* data, size_t data_size)
       _data_size(data_size) {}
 
 template <typename T>
-void BasicStatsCalculator<T>::reduce(const size_t start, const size_t end) {
+void BasicStatsCalculator<T>::reduce() {
     size_t i;
-    if (start == end || end > _data_size) {
-        spdlog::debug("BasicStatsCalculator::reduce incorrect configuration: start={}, end={}, data_size={}", start, end, _data_size);
-        return;
-    }
 #pragma omp parallel for private(i) shared(_data) reduction(min: _min_val) reduction(max:_max_val) reduction(+:_num_pixels) reduction(+:_sum) reduction(+:_sum_squares)
-    for (i = start; i < end; i++) {
+    for (i = 0; i < _data_size; i++) {
         T val = _data[i];
         if (std::isfinite(val)) {
             if (val < _min_val) {

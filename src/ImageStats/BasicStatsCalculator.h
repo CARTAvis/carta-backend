@@ -39,7 +39,7 @@ public:
     BasicStatsCalculator(const T* data, size_t data_size);
 
     void join(BasicStatsCalculator& other); // NOLINT
-    void reduce(const size_t start, const size_t end);
+    void reduce();
 
     BasicStats<T> GetStats() const;
 };

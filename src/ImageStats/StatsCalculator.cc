@@ -19,7 +19,7 @@ namespace carta {
 void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t data_size) {
     // Calculate stats in BasicStats struct
     BasicStatsCalculator<float> mm(data, data_size);
-    mm.reduce(0, data_size);
+    mm.reduce();
     stats = mm.GetStats();
 }
 
