@@ -32,10 +32,11 @@ class BasicStatsCalculator {
     T _min_val, _max_val;
     double _sum, _sum_squares;
     size_t _num_pixels;
-    const float* _data;
+    const T* _data;
+    size_t _data_size;
 
 public:
-    BasicStatsCalculator(const float* data, size_t data_size);
+    BasicStatsCalculator(const T* data, size_t data_size);
 
     void join(BasicStatsCalculator& other); // NOLINT
     void reduce(const size_t start, const size_t end);
