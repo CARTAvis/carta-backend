@@ -104,7 +104,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DEnableAvx=On"
+                                sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON"
                                 sh "make -j 8"
                                 stash includes: "test/**/*", name: "macos11-unit-tests"
                                 stash includes: "carta_backend", name: "macos11-backend"
@@ -130,7 +130,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DCMAKE_CXX_STANDARD_LIBRARIES=-L/opt/homebrew/lib -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl"
+                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON"
                                 sh "make -j 8"
                                 stash includes: "test/**/*", name: "macos12-unit-tests"
                                 stash includes: "carta_backend", name: "macos12-backend"
