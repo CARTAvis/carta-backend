@@ -33,5 +33,8 @@ On macOS systems the following warning appears always:
 ```
 carta_backend_tests(27465,0x112872600) malloc: nano zone abandoned due to inability to preallocate reserved vm space.
 ```
-It seems to be harmless, and is explained here: https://stackoverflow.com/a/70209891/2201117.
+It seems to be harmless, and is explained here: https://stackoverflow.com/a/70209891/2201117. One way to suppress the message is running with the `MallocNanoZone` environment variable set to zero:
 
+```
+MallocNanoZone=0 ./carta_backend_tests
+```
