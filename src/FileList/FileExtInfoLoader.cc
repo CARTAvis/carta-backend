@@ -850,7 +850,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
     // Quit looking for key when have needed values
     bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
-    bool calc_spec_range(false);
+    bool calc_spec_range(false), calc_stokes_range(false);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto entry = extended_info.header_entries(i);
@@ -876,8 +876,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
-        if ((entry_name.find("CTYPE" + suffix3) == 0) && (entry.value() == "FREQ")) {
+        if (!suffix3.empty() && (entry_name.find("CTYPE" + suffix3) == 0) && (entry.value() == "FREQ")) {
             calc_spec_range = true;
+        }
+        if (!suffix4.empty() && (entry_name.find("CTYPE" + suffix4) == 0)) {
+            calc_stokes_range = true;
         }
 
         // reference pixels
@@ -892,8 +895,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
-        if (entry_name.find("CRPIX" + suffix3) == 0) {
+        if (calc_spec_range && entry_name.find("CRPIX" + suffix3) == 0) {
             crpix3 = entry.numeric_value() - 1;
+        }
+        if (calc_stokes_range && entry_name.find("CRPIX" + suffix4) == 0) {
+            crpix4 = entry.numeric_value();
         }
 
         // reference values
@@ -908,8 +914,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
-        if (entry_name.find("CRVAL" + suffix3) == 0) {
+        if (calc_spec_range && entry_name.find("CRVAL" + suffix3) == 0) {
             crval3 = entry.numeric_value();
+        }
+        if (calc_stokes_range && entry_name.find("CRVAL" + suffix4) == 0) {
+            crval4 = entry.numeric_value();
         }
 
         // coordinate units
@@ -932,9 +941,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
                 if (cunit2.startsWith("DEG") || cunit2.startsWith("Deg")) { // Degrees, DEGREES nonstandard FITS values
                     cunit2 = "deg";
                 }
-            } else if (entry_name.find("CUNIT" + suffix3) == 0) {
-                cunit3 = entry.value();
             }
+        }
+
+        if (calc_spec_range && entry_name.find("CUNIT" + suffix3) == 0) {
+            cunit3 = entry.value();
         }
 
         // pixel increment
@@ -949,8 +960,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
-        if (entry_name.find("CDELT" + suffix3) == 0) {
+        if (calc_spec_range && entry_name.find("CDELT" + suffix3) == 0) {
             cdelt3 = entry.numeric_value();
+        }
+        if (calc_stokes_range && entry_name.find("CDELT" + suffix4) == 0) {
+            cdelt4 = entry.numeric_value();
         }
 
         // Celestial frame
@@ -1104,6 +1118,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
     if (compressed_fits) {
         casacore::CoordinateSystem coordsys;
+        auto shape = compressed_fits->GetShape();
 
         // Make a direction coordinate and add it to the coordinate system
         casacore::MDirection::Types frame_type;
@@ -1134,7 +1149,21 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             coordsys.addCoordinate(spec_coord);
         }
 
-        auto shape = compressed_fits->GetShape();
+        // Make a stokes coordinate and add it to the coordinate system if any
+        if (calc_stokes_range) {
+            int stokes_axis = std::stoi(suffix4) - 1;
+            int stokes_size = shape[stokes_axis];
+            casacore::Vector<casacore::Int> stokes_types(stokes_size);
+            if (crpix4 != 1) {
+                crval4 -= cdelt4 * (crpix4 - 1);
+            }
+            for (int i = 0; i < shape[stokes_axis]; ++i) {
+                stokes_types[i] = crval4 + cdelt4 * i;
+            }
+            casacore::StokesCoordinate stokes_coord(stokes_types);
+            coordsys.addCoordinate(stokes_coord);
+        }
+
         AddCoordRanges(extended_info, coordsys, shape);
     }
 }
@@ -1342,12 +1371,11 @@ void FileExtInfoLoader::AddCoordRanges(
     }
 
     if (coord_system.hasPolarizationAxis() && image_shape[coord_system.polarizationAxisNumber()] > 0) {
-        auto stokes_indices = _loader->GetStokesIndices();
+        auto stokes_coord = coord_system.stokesCoordinate();
         std::string stokes;
-        for (auto stokes_index : stokes_indices) {
-            if (StokesTypesString.count(stokes_index.first)) {
-                stokes += StokesTypesString[stokes_index.first] + ", ";
-            }
+        auto stokes_vec = stokes_coord.stokesStrings();
+        for (int i = 0; i < stokes_vec.size(); ++i) {
+            stokes += stokes_vec[i] + ", ";
         }
         stokes = stokes.size() > 2 ? stokes.substr(0, stokes.size() - 2) : stokes;
 
