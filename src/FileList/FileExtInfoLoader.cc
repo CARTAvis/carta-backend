@@ -841,11 +841,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     }
 
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
-    casacore::String cunit3, cunit4;
+    casacore::String ctype3, cunit3, cunit4;
     double min_double(std::numeric_limits<double>::min());
     double crval1(min_double), crval2(min_double), crpix1(min_double), crpix2(min_double), cdelt1(min_double), cdelt2(min_double);
     double crval3(min_double), crval4(min_double), crpix3(min_double), crpix4(min_double), cdelt3(min_double), cdelt4(min_double);
-    double rest_freq(min_double);
+    double rest_freq(0);
     int velref(std::numeric_limits<int>::min());
 
     // Quit looking for key when have needed values
@@ -876,7 +876,8 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
-        if (!suffix3.empty() && (entry_name.find("CTYPE" + suffix3) == 0) && (entry.value() == "FREQ")) {
+        if (!suffix3.empty() && (entry_name.find("CTYPE" + suffix3) == 0)) {
+            ctype3 = entry.value();
             calc_spec_range = true;
         }
         if (!suffix4.empty() && (entry_name.find("CTYPE" + suffix4) == 0)) {
@@ -1137,15 +1138,17 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         // Make a spectral coordinate and add it to the coordinate system if any
         casacore::MFrequency::Types spec_type;
         if (calc_spec_range && casacore::MFrequency::getType(spec_type, specsys)) {
-            casacore::SpectralCoordinate spec_coord(spec_type, crval3, cdelt3, crpix3);
+            if (ctype3 == "VRAD") {
+                crval3 = rest_freq * (1 - crval3 / casacore::C::c);
+                cdelt3 = -rest_freq * (cdelt3 / casacore::C::c);
+            } else if (ctype3 == "VOPT") {
+                crval3 = rest_freq / (1 + crval3 / casacore::C::c);
+                cdelt3 = rest_freq / (1 + cdelt3 / casacore::C::c);
+            }
+            casacore::SpectralCoordinate spec_coord(spec_type, crval3, cdelt3, crpix3, rest_freq);
             casacore::Vector<casacore::String> units(1);
             units = cunit3;
             spec_coord.setWorldAxisUnits(units);
-            if (rest_freq > min_double) {
-                casacore::Vector<casacore::Double> rest_freqs(1);
-                rest_freqs = rest_freq;
-                spec_coord.setRestFrequencies(rest_freqs);
-            }
             coordsys.addCoordinate(spec_coord);
         }
 
