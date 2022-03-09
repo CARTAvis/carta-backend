@@ -110,6 +110,18 @@ public:
     casacore::IPosition& GetShape() {
         return _shape;
     }
+    void SetSpecSuffix(int spec_axis) {
+        _spec_suffix = std::to_string(spec_axis + 1);
+    }
+    void SetStokesSuffix(int stokes_axis) {
+        _stokes_suffix = std::to_string(stokes_axis + 1);
+    }
+    std::string GetSpecSuffix() {
+        return _spec_suffix;
+    }
+    std::string GetStokesSuffix() {
+        return _stokes_suffix;
+    }
 
     // File decompression
     unsigned long long GetDecompressSize();
@@ -136,6 +148,8 @@ private:
     casacore::ImageBeamSet _beam_set;
     casacore::Matrix<casacore::Double> _xform;
     casacore::IPosition _shape;
+    std::string _spec_suffix;
+    std::string _stokes_suffix;
 };
 
 } // namespace carta

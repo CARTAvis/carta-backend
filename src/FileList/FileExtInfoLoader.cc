@@ -624,6 +624,12 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
+        if (depth_axis > -1) {
+            compressed_fits->SetSpecSuffix(depth_axis);
+        }
+        if (stokes_axis > -1) {
+            compressed_fits->SetStokesSuffix(stokes_axis);
+        }
     }
 }
 
@@ -827,13 +833,24 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     casacore::String suffix1(std::to_string(display_axes[0] + 1));
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
+    // Set spectral and stokes suffixes
+    casacore::String suffix3, suffix4;
+    if (compressed_fits) {
+        suffix3 = compressed_fits->GetSpecSuffix();
+        suffix4 = compressed_fits->GetStokesSuffix();
+    }
+
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
+    casacore::String cunit3, cunit4;
     double min_double(std::numeric_limits<double>::min());
     double crval1(min_double), crval2(min_double), crpix1(min_double), crpix2(min_double), cdelt1(min_double), cdelt2(min_double);
+    double crval3(min_double), crval4(min_double), crpix3(min_double), crpix4(min_double), cdelt3(min_double), cdelt4(min_double);
+    double rest_freq(min_double);
     int velref(std::numeric_limits<int>::min());
 
     // Quit looking for key when have needed values
     bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
+    bool calc_spec_range(false);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto entry = extended_info.header_entries(i);
@@ -859,6 +876,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
+        if ((entry_name.find("CTYPE" + suffix3) == 0) && (entry.value() == "FREQ")) {
+            calc_spec_range = true;
+        }
+
         // reference pixels
         if (need_crpix && (entry_name.find("CRPIX") == 0)) {
             if (entry_name.find("CRPIX" + suffix1) == 0) {
@@ -871,6 +892,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             }
         }
 
+        if (entry_name.find("CRPIX" + suffix3) == 0) {
+            crpix3 = entry.numeric_value() - 1;
+        }
+
         // reference values
         if (need_crval && (entry_name.find("CRVAL") == 0)) {
             if (entry_name.find("CRVAL" + suffix1) == 0) {
@@ -881,6 +906,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             if ((crval1 != min_double) && (crval2 != min_double)) {
                 need_crval = false;
             }
+        }
+
+        if (entry_name.find("CRVAL" + suffix3) == 0) {
+            crval3 = entry.numeric_value();
         }
 
         // coordinate units
@@ -903,6 +932,8 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
                 if (cunit2.startsWith("DEG") || cunit2.startsWith("Deg")) { // Degrees, DEGREES nonstandard FITS values
                     cunit2 = "deg";
                 }
+            } else if (entry_name.find("CUNIT" + suffix3) == 0) {
+                cunit3 = entry.value();
             }
         }
 
@@ -916,6 +947,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             if ((cdelt1 != min_double) && (cdelt2 != min_double)) {
                 need_cdelt = false;
             }
+        }
+
+        if (entry_name.find("CDELT" + suffix3) == 0) {
+            cdelt3 = entry.numeric_value();
         }
 
         // Celestial frame
@@ -949,6 +984,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         // Bunit
         if (entry_name.find("BUNIT") == 0) {
             bunit = entry.value();
+        }
+
+        // Restfrq
+        if (entry_name.find("RESTFRQ") == 0) {
+            rest_freq = entry.numeric_value();
         }
     }
 
@@ -1064,15 +1104,13 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
     if (compressed_fits) {
         casacore::CoordinateSystem coordsys;
-        auto shape = compressed_fits->GetShape();
 
+        // Make a direction coordinate and add it to the coordinate system
         casacore::MDirection::Types frame_type;
         if (casacore::MDirection::getType(frame_type, frame) || casacore::MDirection::getType(frame_type, radesys)) {
             auto xform = compressed_fits->GetMatrixForm();
             auto proj_type = casacore::Projection::type(projection);
             auto to_rad = casacore::C::pi / 180.0;
-
-            // Make a direction coordinate and add it to the coordinate system
             casacore::DirectionCoordinate dir_coord(
                 frame_type, proj_type, crval1 * to_rad, crval2 * to_rad, cdelt1 * to_rad, cdelt2 * to_rad, xform, crpix1 - 1, crpix2 - 1);
             casacore::Vector<casacore::String> units(2);
@@ -1081,6 +1119,22 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             coordsys.addCoordinate(dir_coord);
         }
 
+        // Make a spectral coordinate and add it to the coordinate system if any
+        casacore::MFrequency::Types spec_type;
+        if (calc_spec_range && casacore::MFrequency::getType(spec_type, specsys)) {
+            casacore::SpectralCoordinate spec_coord(spec_type, crval3, cdelt3, crpix3);
+            casacore::Vector<casacore::String> units(1);
+            units = cunit3;
+            spec_coord.setWorldAxisUnits(units);
+            if (rest_freq > min_double) {
+                casacore::Vector<casacore::Double> rest_freqs(1);
+                rest_freqs = rest_freq;
+                spec_coord.setRestFrequencies(rest_freqs);
+            }
+            coordsys.addCoordinate(spec_coord);
+        }
+
+        auto shape = compressed_fits->GetShape();
         AddCoordRanges(extended_info, coordsys, shape);
     }
 }
