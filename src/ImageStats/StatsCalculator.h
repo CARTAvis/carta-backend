@@ -19,9 +19,9 @@
 
 namespace carta {
 
-void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats);
+void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t data_size);
 
-Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data);
+Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const float* data, const size_t data_size);
 
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);
