@@ -10,7 +10,8 @@ void setBuildStatus(String message, String state) {
 pipeline {
     agent none
     options {
-        preserveStashes() 
+        preserveStashes()
+        timeout(time: 2, unit: 'HOURS') 
     }
     stages {
         stage('Build') {
@@ -256,6 +257,9 @@ pipeline {
                     }   
                 }
                 stage('4 macOS 11') {
+                    options {
+                        timeout(time: 5, unit: "MINUTES")
+                    }
                     agent {
                         label "macos11-agent"
                     }
@@ -272,6 +276,9 @@ pipeline {
                     }
                 }
                 stage('5 macOS 12') {
+                    options {
+                        timeout(time: 5, unit: "MINUTES")
+                    }
                     agent {
                         label "macos12-agent"
                     }
@@ -401,7 +408,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 file_browser()
                             }
@@ -414,7 +421,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 animator()
                             }
@@ -427,7 +434,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_statistics()
                             }
@@ -440,7 +447,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_manipulation()
                             }
@@ -453,9 +460,22 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 cube_histogram()
+                            }
+                        }
+                    }
+                    stage('pv_generator') {
+                        agent {
+                            label "${PLATFORM}-agent"
+                        }
+                        steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                unstash "${PLATFORM}-backend"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                unstash "${PLATFORM}-ICD"
+                                pv_generator()
                             }
                         }
                     }
@@ -466,7 +486,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 raster_tiles()
                             }
@@ -479,7 +499,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 catalog()
                             }
@@ -492,7 +512,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 moment()
                             }
@@ -505,7 +525,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 resume()
                             }
@@ -518,7 +538,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 match()
                             }
@@ -531,7 +551,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
-                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth true --no_http true --verbosity=5 &"
+                                sh "./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 close_file()
                             }
@@ -549,7 +569,7 @@ def unit_tests_macos11() {
             ret = false
             retry(3) {
                 if (ret) {
-                    sleep(time:10,unit:"SECONDS")
+                    sleep(time:60,unit:"SECONDS")
                     sh "cat /root/.carta/log/carta.log"
                     echo "Unit test failure. Trying again"
                 } else {
@@ -567,7 +587,7 @@ def unit_tests_macos12() {
             ret = false
             retry(3) {
                 if (ret) {
-                    sleep(time:10,unit:"SECONDS")
+                    sleep(time:60,unit:"SECONDS")
                     sh "cat /root/.carta/log/carta.log"
                     echo "Unit test failure. Trying again"
                 } else {
@@ -833,6 +853,39 @@ def cube_histogram() {
                 }
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 1 of 1"
+            }
+        }
+    }
+}
+
+def pv_generator() {
+    script {
+        dir ('carta-backend-ICD-test') {
+            sh "npm install && ./protobuf/build_proto.sh"
+            ret = false
+            retry(3) {
+                if (ret) {
+                    sleep(time:30,unit:"SECONDS")
+                    sh "cat /root/.carta/log/carta.log"
+                    echo "Trying again"
+                } else {
+                    ret = true
+                }
+                sh "pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_CANCEL.test.ts # test 1 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_CASA.test.ts # test 2 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_FITS.test.ts  # test 3 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_HDF5_COMPARED_FITS.test.ts  # test 4 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_MATCH_SPATIAL.test.ts  # test 5 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_NaN.test.ts  # test 6 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_WIDE.test.ts  # test 7 of 7"                
+                sh "sleep 3 && pgrep carta_backend"
             }
         }
     }
