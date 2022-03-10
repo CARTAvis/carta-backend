@@ -21,7 +21,7 @@ ImageFitter::ImageFitter(std::string unit) {
 }
 
 bool ImageFitter::FitImage(
-    float* image, size_t width, size_t height, const google::protobuf::RepeatedPtrField<CARTA::GaussianComponent>& initial_values) {
+    float* image, size_t width, size_t height, const std::vector<CARTA::GaussianComponent>& initial_values) {
     bool success = false;
     _message = "";
     _results = "";
@@ -33,7 +33,7 @@ bool ImageFitter::FitImage(
     int status = SolveSystem();
 
     if (status) {
-        _message = fmt::format("Image fitting failed: {}.", gsl_strerror(status));
+        _message = gsl_strerror(status);
     } else {
         success = true;
         spdlog::info("Writing fitting results and log.");
@@ -74,7 +74,7 @@ void ImageFitter::SetFitData(float* image, size_t width, size_t height) {
     _fdf.n = n;
 }
 
-void ImageFitter::SetInitialValues(const google::protobuf::RepeatedPtrField<CARTA::GaussianComponent>& initial_values) {
+void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values) {
     _num_components = initial_values.size();
 
     size_t p = _num_components * 6;
