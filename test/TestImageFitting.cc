@@ -18,7 +18,7 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    float* GetImageCacheData() { return _image_cache.data(); };
+    float* GetImageCacheData() { return _image_cache.get(); };
     size_t GetWidth() { return _width; };
     size_t GetHeight() { return _height; };
     FRIEND_TEST(ImageFittingTest, OneComponentFitting);
