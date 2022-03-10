@@ -18,14 +18,19 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    float* GetImageCacheData() { return _image_cache.get(); };
-    size_t GetWidth() { return _width; };
-    size_t GetHeight() { return _height; };
+    float* GetImageCacheData() {
+        return _image_cache.get();
+    };
+    size_t GetWidth() {
+        return _width;
+    };
+    size_t GetHeight() {
+        return _height;
+    };
     FRIEND_TEST(ImageFittingTest, OneComponentFitting);
     FRIEND_TEST(ImageFittingTest, ThreeComponentFitting);
 };
 
-// Allows testing of protected methods in Frame without polluting the original class
 class ImageFittingTest : public ::testing::Test {
 public:
     void SetInitialValues(std::vector<float> gaussian_model) {
@@ -49,7 +54,8 @@ public:
             gaussian_model_string.append(std::to_string(gaussian_model[i]));
         }
 
-        std::string file_path = ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
+        std::string file_path =
+            ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 

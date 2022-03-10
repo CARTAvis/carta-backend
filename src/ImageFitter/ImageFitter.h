@@ -37,9 +37,15 @@ class ImageFitter {
 public:
     ImageFitter(std::string unit);
     bool FitImage(float* image, size_t width, size_t height, const std::vector<CARTA::GaussianComponent>& initial_values);
-    std::string GetMessage() { return _message; };
-    std::string GetResults() { return _results; };
-    std::string GetLog() { return _log; };
+    std::string GetMessage() {
+        return _message;
+    };
+    std::string GetResults() {
+        return _results;
+    };
+    std::string GetLog() {
+        return _log;
+    };
 
 private:
     FitData _fit_data;

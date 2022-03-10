@@ -20,8 +20,7 @@ ImageFitter::ImageFitter(std::string unit) {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(
-    float* image, size_t width, size_t height, const std::vector<CARTA::GaussianComponent>& initial_values) {
+bool ImageFitter::FitImage(float* image, size_t width, size_t height, const std::vector<CARTA::GaussianComponent>& initial_values) {
     bool success = false;
     _message = "";
     _results = "";
