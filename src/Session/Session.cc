@@ -778,7 +778,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
             SendLogEvent(err_message, {"region"}, CARTA::ErrorSeverity::DEBUG);
         }
 
-        // Update the spatial profile data if it is a point region
+        // Update the spatial profile data if it is a point or line region
         if (_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) {
             SendSpatialProfileDataByRegionId(region_id);
         }
@@ -917,6 +917,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         auto region_id = message.region_id();
         std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
             message.spatial_profiles().begin(), message.spatial_profiles().end()};
+
         if (region_id == CURSOR_REGION_ID) {
             _frames.at(file_id)->SetSpatialRequirements(profiles);
             SendSpatialProfileData(file_id, region_id);
@@ -924,7 +925,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
             _region_handler->SetSpatialRequirements(region_id, file_id, _frames.at(file_id), profiles);
             SendSpatialProfileData(file_id, region_id);
         } else {
-            string error = fmt::format("Spatial requirements not valid for non-cursor or non-point region ", region_id);
+            string error = fmt::format("Spatial requirements failed for region {}: invalid region type", region_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
         }
     } else {
@@ -1576,12 +1577,12 @@ void Session::SendSpatialProfileDataByFileId(int file_id) {
     // Update spatial profile data for the cursor
     SendSpatialProfileData(file_id, CURSOR_REGION_ID);
 
-    // Update spatial profile data for point regions
+    // Update spatial profile data for point and line regions
     if (_region_handler) {
         // Get region ids with respect to the given file id
-        auto point_region_ids = _region_handler->GetPointRegionIds(file_id);
-        for (auto point_region_id : point_region_ids) {
-            SendSpatialProfileData(file_id, point_region_id);
+        auto region_ids = _region_handler->GetSpatialReqRegionsForFile(file_id);
+        for (auto region_id : region_ids) {
+            SendSpatialProfileData(file_id, region_id);
         }
     }
 }
@@ -1590,9 +1591,9 @@ void Session::SendSpatialProfileDataByRegionId(int region_id) {
     // Update spatial profile data for point regions
     if (_region_handler) {
         // Get file ids with respect to the region id (if a region projects on multiple files)
-        auto projected_file_ids = _region_handler->GetProjectedFileIds(region_id);
-        for (auto projected_file_id : projected_file_ids) {
-            SendSpatialProfileData(projected_file_id, region_id);
+        auto file_ids = _region_handler->GetSpatialReqFilesForRegion(region_id);
+        for (auto file_id : file_ids) {
+            SendSpatialProfileData(file_id, region_id);
         }
     }
 }
