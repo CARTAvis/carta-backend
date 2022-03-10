@@ -20,7 +20,7 @@
 using namespace carta;
 
 CompressedFits::CompressedFits(const std::string& filename) : _filename(filename) {
-    // Initialize linear transformation matrix between the pixel and world axes
+    // Initialize linear transformation matrix for the direction coordinate
     _xform.resize(2, 2);
     _xform = 0.0;
     _xform.diagonal() = 1.0;
@@ -144,14 +144,11 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                     if (found != casacore::String::npos) {
                         if (keyword.at(found - 1) == '1' && keyword.at(keyword.length() - 1) == '1') {
                             _xform(0, 0) = casacore::String::toDouble(value);
-                        }
-                        if (keyword.at(found - 1) == '1' && keyword.at(keyword.length() - 1) == '2') {
+                        } else if (keyword.at(found - 1) == '1' && keyword.at(keyword.length() - 1) == '2') {
                             _xform(0, 1) = casacore::String::toDouble(value);
-                        }
-                        if (keyword.at(found - 1) == '2' && keyword.at(keyword.length() - 1) == '1') {
+                        } else if (keyword.at(found - 1) == '2' && keyword.at(keyword.length() - 1) == '1') {
                             _xform(1, 0) = casacore::String::toDouble(value);
-                        }
-                        if (keyword.at(found - 1) == '2' && keyword.at(keyword.length() - 1) == '2') {
+                        } else if (keyword.at(found - 1) == '2' && keyword.at(keyword.length() - 1) == '2') {
                             _xform(1, 1) = casacore::String::toDouble(value);
                         }
                     }

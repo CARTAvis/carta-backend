@@ -146,10 +146,10 @@ private:
     std::string _filename;
     std::string _unzip_filename;
     casacore::ImageBeamSet _beam_set;
-    casacore::Matrix<casacore::Double> _xform;
-    casacore::IPosition _shape;
-    std::string _spec_suffix;
-    std::string _stokes_suffix;
+    casacore::Matrix<casacore::Double> _xform; // Linear transform matrix for the direction coordinate
+    casacore::IPosition _shape;                // Image shape
+    std::string _spec_suffix;                  // Spectral suffix from the header
+    std::string _stokes_suffix;                // Stokes suffix from the header
 };
 
 } // namespace carta

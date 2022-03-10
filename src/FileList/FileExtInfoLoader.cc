@@ -1138,17 +1138,19 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         // Make a spectral coordinate and add it to the coordinate system if any
         casacore::MFrequency::Types spec_type;
         if (calc_spec_range && casacore::MFrequency::getType(spec_type, specsys)) {
-            if (ctype3 == "VRAD") {
+            if (ctype3 == "VRAD") { // For radio velocity
                 crval3 = rest_freq * (1 - crval3 / casacore::C::c);
                 cdelt3 = -rest_freq * (cdelt3 / casacore::C::c);
-            } else if (ctype3 == "VOPT") {
+            } else if (ctype3 == "VOPT") { // For optical velocity
                 crval3 = rest_freq / (1 + crval3 / casacore::C::c);
                 cdelt3 = rest_freq / (1 + cdelt3 / casacore::C::c);
             }
             casacore::SpectralCoordinate spec_coord(spec_type, crval3, cdelt3, crpix3, rest_freq);
-            casacore::Vector<casacore::String> units(1);
-            units = cunit3;
-            spec_coord.setWorldAxisUnits(units);
+            if (!cunit3.empty()) {
+                casacore::Vector<casacore::String> units(1);
+                units = cunit3;
+                spec_coord.setWorldAxisUnits(units);
+            }
             coordsys.addCoordinate(spec_coord);
         }
 
@@ -1157,7 +1159,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             int stokes_axis = std::stoi(suffix4) - 1;
             int stokes_size = shape[stokes_axis];
             casacore::Vector<casacore::Int> stokes_types(stokes_size);
-            if (crpix4 != 1) {
+            if (crpix4 != 1) { // Get the stokes type for the first pixel
                 crval4 -= cdelt4 * (crpix4 - 1);
             }
             for (int i = 0; i < shape[stokes_axis]; ++i) {
