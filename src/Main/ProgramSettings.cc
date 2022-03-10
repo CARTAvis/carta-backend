@@ -57,6 +57,12 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
         SetSettingsFromJSON(settings);
     }
+
+    // Apply deprecated no_http flag
+    if (no_http) {
+        no_frontend = true;
+        no_database = true;
+    }
 }
 
 json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
@@ -74,6 +80,13 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
         warning_msgs.push_back(fmt::format("Error parsing config file {}.", json_file_path));
         warning_msgs.push_back(err.what());
     }
+
+    for (const auto& [name, msg] : deprecated_options) {
+        if (j.contains(name)) {
+            AddDeprecationWarning(name, json_file_path);
+        }
+    }
+
     for (const auto& [key, elem] : int_keys_map) {
         if (j.contains(key) && !j[key].is_number_integer()) {
             auto msg = fmt::format(
@@ -185,12 +198,12 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
         ("log_performance", "enable performance debug logs", cxxopts::value<bool>())
         ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
-        ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
+        ("no_frontend", "disable built-in HTTP frontend interface", cxxopts::value<bool>())
+        ("no_database", "disable built-in HTTP database interface", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("browser", "custom browser command", cxxopts::value<string>(), "<browser>")
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
         ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<std::vector<int>>(), "<port>")
-        ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
@@ -198,15 +211,17 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
         ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("read_only_mode", "disable write requests", cxxopts::value<bool>())
+        ("enable_scripting", "enable HTTP scripting interface", cxxopts::value<bool>())
         ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
 
     options.add_options("Deprecated and debug")
-        ("debug_no_auth", "accept all incoming WebSocket and gRPC connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
-        ("threads", "[deprecated] no longer supported", cxxopts::value<int>(), "<threads>")
+        ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
+        ("threads", "[deprecated] manually set number of event processing threads (no longer supported)", cxxopts::value<int>(), "<threads>")
         ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<string>(), "<dir>")
-        ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>");
+        ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>")
+        ("no_http", "[deprecated] disable built-in HTTP frontend and database interfaces (use 'no_frontend' and/or 'no_database' instead)", cxxopts::value<bool>());
     // clang-format on
 
     options.positional_help("<file or folder to open>");
@@ -224,37 +239,64 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
     std::string extra = fmt::format(R"(
 By default the CARTA backend uses the current directory as the starting data 
 folder, and uses the root of the filesystem (/) as the top-level data folder. If 
-a custom top-level folder is set, the backend will be restricted from accessing 
-files outside this directory.
+a custom top-level folder is set with 'top_level_folder', the backend will be 
+restricted from accessing files outside this directory. Positional parameters 
+may be used to set a different starting directory or to open files on startup.
 
-Frontend files are served from '{}' (relative to the 
-location of the backend executable). By default the backend listens for HTTP and 
-WebSocket connections on all available interfaces, and automatically selects the 
-first available port starting from {}.  On startup the backend prints out a URL 
-which can be used to launch the frontend, and tries to open this URL in the 
-default browser.
+A built-in HTTP server is enabled by default. It serves the CARTA frontend and 
+provides an interface to the CARTA database. These features can be disabled with
+'no_frontend' and 'no_database', for example if the CARTA backend is being 
+invoked by the CARTA controller, which manages access to the frontend and 
+database independently. The HTTP server also provides a scripting interface, but
+this must be enabled explicitly with 'enable_scripting'.
 
-The gRPC service is disabled unless a gRPC port is set. By default the number of 
-OpenMP threads is automatically set to the detected number of logical cores.
+Frontend files are served from '{}' (relative to the location of the backend 
+executable). A custom frontend location may be specified with 'frontend_folder'. 
+By default the backend listens for HTTP and WebSocket connections on all 
+available interfaces, and automatically selects the first available port 
+starting from {}. 'host' may be used to restrict the backend to a specific 
+interface. 'port' may be used to set a specific port or to provide a range of 
+allowed ports.
 
-Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
-in the user's home directory. Possible log levels are:{}
-
-Performance and protocol message logging is disabled by default, but can be 
-enabled with flags. The verbosity takes precedence: the additional log messages 
-will only be visible if the level is set to 5 (debug). Performance logs are 
-written to a separate log file, '{}/log/performance.log'.
-
-Options are provided to shut the backend down automatically if it is idle (if no 
-clients are connected), and to kill frontend sessions that are idle (no longer 
-sending messages to the backend).
-
-Disabling the browser takes precedence over a custom browser command. The custom 
+On startup the backend prints out a URL which can be used to launch the 
+frontend, and tries to open this URL in the default browser. It's possible to 
+disable this attempt completely with 'no_browser', or to provide a custom 
+browser command with 'browser'. 'no_browser' takes precedence. The custom 
 browser command may contain the placeholder CARTA_URL, which will be replaced by 
 the frontend URL. If the placeholder is omitted, the URL will be appended to the 
 end.
+
+By default the number of OpenMP threads is automatically set to the detected 
+number of logical cores. A fixed number may be set with 'omp_threads'.
+
+Logs are written both to the terminal and to a log file, '{}/log/carta.log' 
+in the user's home directory. Logging to the file can be disabled with 'no_log'. 
+The log level is set with 'verbosity'. Possible log levels are:{}
+
+Performance and protocol message logging is disabled by default, but can be 
+enabled with 'log_performance' and 'log_protocol_messages'. 'verbosity' takes 
+precedence: the additional log messages will only be visible if the level is set
+to 5 (debug). Performance logs are written to a separate log file, 
+'{}/log/performance.log'.
+
+The 'exit_timeout' and 'initial_timeout' options are provided to shut the 
+backend down automatically if it is idle (if no clients are connected). 
+'idle_timeout' allows the backend to kill frontend sessions that are idle (no 
+longer sending messages to the backend).
+    
+Enabling 'read_only_mode' prevents the backend from writing data (for example, 
+saving regions or generated images).
+    
+'no_user_config' and 'no_system_config' may be used to ignore the user and 
+global configuration files, respectively.
 )",
         CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
+
+    for (const auto& [name, msg] : deprecated_options) {
+        if (result.count(name)) {
+            AddDeprecationWarning(name, "commandline parameters");
+        }
+    }
 
     if (result.count("version")) {
         std::cout << VERSION_ID << std::endl;
@@ -271,10 +313,13 @@ end.
     log_performance = result["log_performance"].as<bool>();
     log_protocol_messages = result["log_protocol_messages"].as<bool>();
 
-    no_http = result["no_http"].as<bool>();
+    no_http = result["no_http"].as<bool>(); // deprecated
+    no_database = result["no_database"].as<bool>();
+    no_frontend = result["no_frontend"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
     read_only_mode = result["read_only_mode"].as<bool>();
+    enable_scripting = result["enable_scripting"].as<bool>();
 
     no_user_config = result.count("no_user_config") != 0;
     no_system_config = result.count("no_system_config") != 0;
@@ -286,7 +331,6 @@ end.
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
     applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
-    applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
     applyOptionalArgument(wait_time, "exit_timeout", result);
@@ -360,6 +404,11 @@ end.
             command_line_settings[key] = result[key].as<std::vector<int>>();
         }
     }
+}
+
+void ProgramSettings::AddDeprecationWarning(const std::string& option, std::string where) {
+    auto message = deprecated_options.at(option);
+    warning_msgs.push_back(fmt::format("Option {} found in {} is deprecated. {}", option, where, message));
 }
 
 bool ProgramSettings::operator!=(const ProgramSettings& rhs) const {

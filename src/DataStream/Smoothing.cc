@@ -126,7 +126,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         return false;
     }
 
-    vector<float> kernel(mask_size);
+    std::vector<float> kernel(mask_size);
     MakeKernel(kernel, sigma);
 
     double target_pixels = (SMOOTHING_TEMP_BUFFER_SIZE_MB * 1e6) / sizeof(float);
@@ -138,7 +138,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
 
     int64_t line_offset = 0;
     auto t_start = std::chrono::high_resolution_clock::now();
-    unique_ptr<float> temp_array(new float[dest_width * buffer_height]);
+    std::unique_ptr<float[]> temp_array(new float[dest_width * buffer_height]);
     auto source_ptr = src_data;
     auto dest_ptr = dest_data;
     const auto temp_ptr = temp_array.get();

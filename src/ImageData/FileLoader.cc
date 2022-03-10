@@ -413,7 +413,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
             carta_beam.set_stokes(-1);
             carta_beam.set_major_axis(gaussian_beam.getMajor("arcsec"));
             carta_beam.set_minor_axis(gaussian_beam.getMinor("arcsec"));
-            carta_beam.set_pa(gaussian_beam.getPA("deg").getValue());
+            carta_beam.set_pa(gaussian_beam.getPA(casacore::Unit("deg")));
             beams.push_back(carta_beam);
         } else {
             casacore::ImageBeamSet beam_set = image_info.getBeamSet();
@@ -426,7 +426,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
                     carta_beam.set_stokes(stokes);
                     carta_beam.set_major_axis(gaussian_beam.getMajor("arcsec"));
                     carta_beam.set_minor_axis(gaussian_beam.getMinor("arcsec"));
-                    carta_beam.set_pa(gaussian_beam.getPA("deg").getValue());
+                    carta_beam.set_pa(gaussian_beam.getPA(casacore::Unit("deg")));
                     beams.push_back(carta_beam);
                 }
             }

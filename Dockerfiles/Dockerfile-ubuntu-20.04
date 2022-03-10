@@ -7,9 +7,9 @@ RUN \
   DEBIAN_FRONTEND=noninteractive \
   apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex gcc g++ \
     gdb gfortran git git-lfs libgmock-dev googletest libblas-dev libcfitsio-dev libcurl4-gnutls-dev \
-    libgrpc-dev libgrpc++-dev libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
+    libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libprotobuf-dev libpugixml-dev libreadline-dev libssl-dev libstarlink-ast-dev \
-    libtool libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler-grpc \
+    libtool libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler \
     python3-numpy python3-astropy software-properties-common unzip wcslib-dev wget uuid-dev
 
 # Get carta dependencies carta-casacore, fits2idia, and zfp from cartavis-team PPA and casacore-data from KERN
@@ -21,8 +21,6 @@ RUN \
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
-# Do the same with the gRPC service port
-EXPOSE 50051
 
 ENV HOME /root
 WORKDIR /root
