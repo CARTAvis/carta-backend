@@ -20,7 +20,7 @@ class SessionManager {
 public:
     using WSType = uWS::WebSocket<false, true, PerSocketData>;
     SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler>);
-    void DeleteSession(int session_id);
+    void DeleteSession(uint32_t session_id);
     void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context);
     // Called on connection. Creates session objects and assigns UUID to it
     void OnConnect(WSType* ws);

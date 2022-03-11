@@ -18,7 +18,7 @@ namespace carta {
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
-void SessionManager::DeleteSession(int session_id) {
+void SessionManager::DeleteSession(uint32_t session_id) {
     Session* session = _sessions[session_id];
     if (session) {
         spdlog::info(
