@@ -43,8 +43,8 @@ public:
         }
         _session = nullptr;
     }
-    static void SetSessionManager(shared_ptr<SessionManager>& sm) {
-        _session_manager = sm;
+    static void SetSessionManager(shared_ptr<SessionManager>& session_manager) {
+        _session_manager = session_manager;
     }
     virtual OnMessageTask* execute() = 0;
 };
