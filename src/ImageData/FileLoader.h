@@ -27,10 +27,11 @@ public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
     using IPos = casacore::IPosition;
 
-    FileLoader(const std::string& filename, bool is_gz = false);
+    // directory only for ExprLoader, is_gz only for FitsLoader
+    FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false);
     virtual ~FileLoader() = default;
 
-    static FileLoader* GetLoader(const std::string& filename);
+    static FileLoader* GetLoader(const std::string& filename, const std::string& directory = "");
     // Access an image from the memory, not from the disk
     static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
@@ -101,12 +102,16 @@ public:
     // Modify time changed
     bool ImageUpdated();
 
+    // Handle images created from LEL expression
+    virtual bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message);
+
 protected:
-    // Full name and hdu of the image file
-    std::string _filename;
+    // Full name and characteristics of the image file
+    std::string _filename, _directory;
     std::string _hdu;
     bool _is_gz;
     unsigned int _modify_time;
+
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
     // Save image properties; only reopen for data or beams
