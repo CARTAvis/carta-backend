@@ -1865,6 +1865,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
                 // Rectangle control points: center, width (user-set width), height (1 pixel)
                 std::vector<CARTA::Point> control_points;
                 control_points.push_back(box_centers[iregion]);
+                spdlog::debug("Box center {} = [{}, {}]", iregion, box_centers[iregion].x(), box_centers[iregion].y());
                 CARTA::Point point;
                 point.set_x(width);
                 point.set_y(height);
@@ -1942,11 +1943,15 @@ bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_cent
     std::lock_guard<std::mutex> lock(_pix_mvdir_mutex);
 
     // Convert all center points to world, check angular separation between centers
-    casacore::Vector<casacore::Double> center_point1({box_centers[0].x(), box_centers[0].y()});
+    casacore::Vector<casacore::Double> center_point1(2);
+    center_point1[0] = box_centers[0].x();
+    center_point1[1] = box_centers[0].y();
 
     for (size_t i = 0; i < num_centers - 1; ++i) {
         // Get separation of this center and next center as MVDirection
-        casacore::Vector<casacore::Double> center_point2({box_centers[i + 1].x(), box_centers[i + 1].y()});
+        casacore::Vector<casacore::Double> center_point2(2);
+        center_point2[0] = box_centers[i + 1].x();
+        center_point2[1] = box_centers[i + 1].y();
         bool check_separation(true);
         double center_separation(0.0);
 
@@ -2012,7 +2017,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     casacore::Quantity cdelt2(inc2, cunit2);
     increment = cdelt2.get("arcsec").getValue();
     double angular_width = width * increment;
-    spdlog::debug("Increment={} arcsec, width={} arcsec", increment, angular_width);
 
     auto direction_coord = reference_csys->directionCoordinate();
     double tolerance = GetSeparationTolerance(reference_csys);
@@ -2021,8 +2025,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
 
     for (size_t iline = num_lines; iline > 0; iline--) {
         // Convert pixel coordinates to MVDirection to get angular separation of entire line
-        casacore::Vector<double> endpoint0({control_points[iline - 1].x(), control_points[iline - 1].y()});
-        casacore::Vector<double> endpoint1({control_points[iline].x(), control_points[iline].y()});
+        casacore::Vector<double> endpoint0(2), endpoint1(2);
+        endpoint0[0] = control_points[iline - 1].x();
+        endpoint0[1] = control_points[iline - 1].y();
+        endpoint1[0] = control_points[iline].x();
+        endpoint1[1] = control_points[iline].y();
         casacore::MVDirection mvdir0, mvdir1;
 
         // Lock pixel to MVDirection conversion; cannot multithread DirectionCoordinate::toWorld
