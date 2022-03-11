@@ -17,11 +17,15 @@
 
 #include "AnimationObject.h"
 #include "Session.h"
+#include "SessionManager.h"
 #include "Util/Message.h"
 
 namespace carta {
 
 class OnMessageTask {
+private:
+    static std::shared_ptr<SessionManager> _session_manager;
+
 protected:
     Session* _session;
 
@@ -31,9 +35,13 @@ public:
     }
     virtual ~OnMessageTask() {
         if (!_session->DecreaseRefCount()) {
-            delete _session;
+            spdlog::info("({}) Remove Session {} in ~OMT", fmt::ptr(_session), _session->GetId());
+            _session_manager->DeleteSession(_session->GetId());
         }
         _session = nullptr;
+    }
+    static void SetSessionManager(shared_ptr<SessionManager>& sm) {
+        _session_manager = sm;
     }
     virtual OnMessageTask* execute() = 0;
 };
