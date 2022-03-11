@@ -11,6 +11,8 @@
 
 using namespace carta;
 
+std::shared_ptr<SessionManager> OnMessageTask::_session_manager;
+
 OnMessageTask* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
