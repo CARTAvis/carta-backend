@@ -4,11 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "SessionManager.h"
-#include "ThreadingManager/ThreadingManager.h"
+#include <sys/time.h>
 
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
+#include "SessionManager.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/Message.h"
 #include "Util/Token.h"
 
@@ -57,9 +58,9 @@ void SessionManager::OnUpgrade(
         return;
     }
 
-    _session_number++;
-    // protect against overflow
-    _session_number = max(_session_number, 1u);
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    _session_number = (((uint32_t)tv.tv_sec) << 16) + ((uint32_t)tv.tv_usec);
 
     http_response->template upgrade<PerSocketData>({_session_number, address}, //
         http_request->getHeader("sec-websocket-key"),                          //
