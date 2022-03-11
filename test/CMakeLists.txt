@@ -40,6 +40,7 @@ set(TEST_SOURCES
         BackendModel.cc
         TestBlockSmooth.cc
         TestContour.cc
+        TestExprImage.cc
         TestFileInfo.cc
         TestFileList.cc
         TestFitsTable.cc

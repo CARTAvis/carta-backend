@@ -172,8 +172,8 @@ public:
         int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region);
     casacore::IPosition GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region);
     // Returns data vector
-    bool GetRegionData(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, std::vector<float>& data);
-    bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, std::vector<float>& data);
+    bool GetRegionData(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region, std::vector<float>& data);
+    bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region,
         const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
@@ -281,12 +281,14 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    std::vector<float> _image_cache; // image data for current z, stokes
-    bool _image_cache_valid;         // cached image data is valid for current z and stokes
-    queuing_rw_mutex _cache_mutex;   // allow concurrent reads but lock for write
-    std::mutex _image_mutex;         // only one disk access at a time
-    bool _cache_loaded;              // channel cache is set
-    TileCache _tile_cache;           // cache for full-resolution image tiles
+    //    std::vector<float> _image_cache; // image data for current z, stokes
+    long long int _image_cache_size;
+    std::shared_ptr<float[]> _image_cache;
+    bool _image_cache_valid;       // cached image data is valid for current z and stokes
+    queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+    std::mutex _image_mutex;       // only one disk access at a time
+    bool _cache_loaded;            // channel cache is set
+    TileCache _tile_cache;         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 

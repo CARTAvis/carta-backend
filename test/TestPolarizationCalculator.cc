@@ -51,21 +51,35 @@ public:
 
             // Set stokes to be calculated
             std::string message;
+            std::vector<float> data_vec;
             for (int channel = 0; channel < spectral_axis_size; ++channel) {
                 frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PTOTAL, frame->_image_cache);
+                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
+                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PTOTAL, data_vec);
 
                 frame->SetImageChannels(channel, COMPUTE_STOKES_PFTOTAL, message);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PFTOTAL, frame->_image_cache);
+                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
+                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PFTOTAL, data_vec);
 
                 frame->SetImageChannels(channel, COMPUTE_STOKES_PLINEAR, message);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PLINEAR, frame->_image_cache);
+                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
+                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PLINEAR, data_vec);
 
                 frame->SetImageChannels(channel, COMPUTE_STOKES_PFLINEAR, message);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PFLINEAR, frame->_image_cache);
+                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
+                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PFLINEAR, data_vec);
 
                 frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, frame->_image_cache);
+                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
+                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, data_vec);
+            }
+        }
+
+        static void GetDataVector(std::vector<float>& data_vec, float* data, size_t data_size) {
+            data_vec.resize(data_size);
+            for (int i = 0; i < data_size; ++i) {
+                float val = data[i];
+                data_vec[i] = val;
             }
         }
     };

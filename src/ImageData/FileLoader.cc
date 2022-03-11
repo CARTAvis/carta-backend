@@ -26,8 +26,11 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    if (IsCompressedFits(filename)) {
+FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
+    if (!directory.empty()) {
+        // filename is LEL expression for image(s) in directory
+        return new ExprLoader(filename, directory);
+    } else if (IsCompressedFits(filename)) {
         return new FitsLoader(filename, true);
     }
 
@@ -67,10 +70,12 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
-FileLoader::FileLoader(const std::string& filename, bool is_gz)
-    : _filename(filename), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
-    // Set initial modify time
-    ImageUpdated();
+FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
+    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
+    // Set initial modify time if filename is not LEL expression for file in directory
+    if (directory.empty()) {
+        ImageUpdated();
+    }
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
@@ -86,14 +91,20 @@ typename FileLoader::ImageRef FileLoader::GetImage() {
 }
 
 void FileLoader::CloseImageIfUpdated() {
-    // Close image if updated when only the loader owns it unless decompressed
-    if (!_is_gz && _image.unique() && ImageUpdated()) {
+    // Close image if updated when only the loader owns
+    if (_image.unique() && ImageUpdated()) {
         _image->tempClose();
     }
 }
 
 bool FileLoader::ImageUpdated() {
     bool changed(false);
+
+    // Do not close compressed image or run getstat on LEL ImageExpr (sets directory)
+    if (_is_gz || !_directory.empty()) {
+        return changed;
+    }
+
     casacore::File ccfile(_filename);
     auto updated_time = ccfile.modifyTime();
 
@@ -319,10 +330,16 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
             data.resize(slicer.length());
         }
 
-        if (image->imageType() == "CartaFitsImage") {
-            // Read subset with cfitsio
-            bool ok = image->doGetSlice(data, slicer);
-            return ok;
+        auto image_type = image->imageType();
+        if (image_type == "CartaFitsImage") {
+            // Use cfitsio for slice
+            return image->doGetSlice(data, slicer);
+        } else if (image_type == "ImageExpr") {
+            // Use ImageExpr for slice
+            casacore::Array<float> slice_data;
+            image->doGetSlice(slice_data, slicer);
+            data = slice_data; // copy from reference
+            return true;
         }
 
         // Get data slice with mask applied.
@@ -927,4 +944,10 @@ carta::CasaLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stoke
         _computed_stokes_source = stokes_source;
         return _computed_stokes_image;
     }
+}
+
+bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+    // Override in ExprLoader
+    message = "Cannot save image type from loader.";
+    return false;
 }
