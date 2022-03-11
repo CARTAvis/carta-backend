@@ -55,9 +55,9 @@ public:
         int y_min = bounds.y_min();
         int y_max = bounds.y_max() - 1;
 
-        std::vector<float> tile_data;
         casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
-        if (!GetSlicerData(tile_section, tile_data)) {
+        std::vector<float> tile_data(tile_section.length().product());
+        if (!GetSlicerData(tile_section, tile_data.data())) {
             return false;
         }
 
@@ -241,8 +241,8 @@ public:
         // Get full 2D stokes data
         int channel = frame->CurrentZ();
         casacore::Slicer section = frame->GetImageSlicer(AxisRange(channel), stokes);
-        std::vector<float> image_data;
-        if (!frame->GetSlicerData(section, image_data)) {
+        std::vector<float> image_data(section.length().product());
+        if (!frame->GetSlicerData(section, image_data.data())) {
             return false;
         }
         EXPECT_EQ(image_data.size(), image_width * image_height);
@@ -267,8 +267,8 @@ public:
             casacore::Slicer tile_section =
                 frame->GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
 
-            std::vector<float> tile_data;
-            if (!frame->GetSlicerData(tile_section, tile_data)) {
+            std::vector<float> tile_data(tile_section.length().product());
+            if (!frame->GetSlicerData(tile_section, tile_data.data())) {
                 return false;
             }
 
@@ -313,8 +313,8 @@ public:
         }
 
         casacore::Slicer section = frame->GetImageSlicer(AxisRange(frame->CurrentZ()), stokes);
-        std::vector<float> image_data;
-        if (!frame->GetSlicerData(section, image_data)) {
+        std::vector<float> image_data(section.length().product());
+        if (!frame->GetSlicerData(section, image_data.data())) {
             return false;
         }
 
@@ -398,12 +398,12 @@ public:
             casacore::Slicer tile_section_u =
                 frame->GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_u);
 
-            std::vector<float> tile_data_i;
-            std::vector<float> tile_data_q;
-            std::vector<float> tile_data_u;
+            std::vector<float> tile_data_i(tile_section_i.length().product());
+            std::vector<float> tile_data_q(tile_section_q.length().product());
+            std::vector<float> tile_data_u(tile_section_u.length().product());
 
-            if (!frame->GetSlicerData(tile_section_i, tile_data_i) || !frame->GetSlicerData(tile_section_q, tile_data_q) ||
-                !frame->GetSlicerData(tile_section_u, tile_data_u)) {
+            if (!frame->GetSlicerData(tile_section_i, tile_data_i.data()) || !frame->GetSlicerData(tile_section_q, tile_data_q.data()) ||
+                !frame->GetSlicerData(tile_section_u, tile_data_u.data())) {
                 return false;
             }
 
@@ -657,12 +657,13 @@ public:
         casacore::Slicer stokes_section_u =
             frame->GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_u);
 
-        std::vector<float> stokes_data_i;
-        std::vector<float> stokes_data_q;
-        std::vector<float> stokes_data_u;
+        std::vector<float> stokes_data_i(stokes_section_i.length().product());
+        std::vector<float> stokes_data_q(stokes_section_q.length().product());
+        std::vector<float> stokes_data_u(stokes_section_u.length().product());
 
-        if (!frame->GetSlicerData(stokes_section_i, stokes_data_i) || !frame->GetSlicerData(stokes_section_q, stokes_data_q) ||
-            !frame->GetSlicerData(stokes_section_u, stokes_data_u)) {
+        if (!frame->GetSlicerData(stokes_section_i, stokes_data_i.data()) ||
+            !frame->GetSlicerData(stokes_section_q, stokes_data_q.data()) ||
+            !frame->GetSlicerData(stokes_section_u, stokes_data_u.data())) {
             return false;
         }
 

@@ -2416,7 +2416,8 @@ bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int&
         int y_max = bounds.y_max() - 1;
 
         casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
-        if (!GetSlicerData(tile_section, tile_data)) {
+        tile_data.resize(tile_section.length().product());
+        if (!GetSlicerData(tile_section, tile_data.data())) {
             return false;
         }
     }
