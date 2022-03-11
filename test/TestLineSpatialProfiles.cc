@@ -73,11 +73,12 @@ public:
 TEST_F(LineSpatialProfileTest, FitsLineProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
     std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
-    int width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", 0, 0, 0, width)};
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
+    int start(0), end(0), mip(0), width(3);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
 
+    std::vector<CARTA::SpatialProfileData> spatial_profiles;
     bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+
     ASSERT_TRUE(ok);
     ASSERT_EQ(spatial_profiles.size(), 1);
     ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
@@ -86,11 +87,12 @@ TEST_F(LineSpatialProfileTest, FitsLineProfile) {
 TEST_F(LineSpatialProfileTest, Hdf5LineProfile) {
     std::string image_path = FileFinder::Hdf5ImagePath("noise_10px_10px.hdf5");
     std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
-    int width(3);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", 0, 0, 0, width)};
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
+    int start(0), end(0), mip(0), width(3);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
 
+    std::vector<CARTA::SpatialProfileData> spatial_profiles;
     bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+
     ASSERT_TRUE(ok);
     ASSERT_EQ(spatial_profiles.size(), 1);
     ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
@@ -99,11 +101,12 @@ TEST_F(LineSpatialProfileTest, Hdf5LineProfile) {
 TEST_F(LineSpatialProfileTest, FitsHorizontalCutProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
     std::vector<float> endpoints = {9.0, 5.0, 1.0, 5.0}; // Set line region at y=5
-    int width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", 0, 0, 0, width)};
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
+    int start(0), end(0), mip(0), width(1);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
 
+    std::vector<CARTA::SpatialProfileData> spatial_profiles;
     bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+
     ASSERT_TRUE(ok);
     ASSERT_EQ(spatial_profiles.size(), 1);
     ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
@@ -124,11 +127,12 @@ TEST_F(LineSpatialProfileTest, FitsHorizontalCutProfile) {
 TEST_F(LineSpatialProfileTest, FitsVerticalCutProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
     std::vector<float> endpoints = {5.0, 9.0, 5.0, 1.0}; // Set line region at x=5
-    int width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("y", 0, 0, 0, width)};
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
+    int start(0), end(0), mip(0), width(1);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("y", start, end, mip, width)};
 
+    std::vector<CARTA::SpatialProfileData> spatial_profiles;
     bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+
     ASSERT_TRUE(ok);
     ASSERT_EQ(spatial_profiles.size(), 1);
     ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
@@ -149,8 +153,8 @@ TEST_F(LineSpatialProfileTest, FitsVerticalCutProfile) {
 TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
     std::vector<float> endpoints = {9.0, 5.0, 9.0, 1.0, 1.0, 1.0};
-    int width(1);
-    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", 0, 0, 0, width)};
+    int start(0), end(0), mip(0), width(1);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
     std::vector<CARTA::SpatialProfileData> spatial_profiles;
 
     bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
