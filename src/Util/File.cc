@@ -38,7 +38,7 @@ int GetNumItems(const std::string& path) {
     try {
         int counter = 0;
         auto it = fs::directory_iterator(path);
-        for (const auto f : it) {
+        for (const auto& f : it) {
             counter++;
         }
         return counter;
