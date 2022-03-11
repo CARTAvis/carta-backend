@@ -1865,7 +1865,6 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
                 // Rectangle control points: center, width (user-set width), height (1 pixel)
                 std::vector<CARTA::Point> control_points;
                 control_points.push_back(box_centers[iregion]);
-                spdlog::debug("Box center {} = [{}, {}]", iregion, box_centers[iregion].x(), box_centers[iregion].y());
                 CARTA::Point point;
                 point.set_x(width);
                 point.set_y(height);
