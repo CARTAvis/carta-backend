@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
 
         // Session manager
         session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler);
+        carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
         if (!settings.no_frontend || !settings.no_database || settings.enable_scripting) {
