@@ -288,9 +288,6 @@ protected:
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
-    void StartAnimationThread() {
-        // Not sure if needed... XXX
-    }
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
