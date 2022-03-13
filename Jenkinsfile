@@ -156,7 +156,7 @@ pipeline {
                             sh "cat /etc/redhat-release"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "source /opt/rh/devtoolset-8/enable && cmake .. -Dtest=on"
+                                sh "source /opt/rh/devtoolset-8/enable && cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "source /opt/rh/devtoolset-8/enable && make -j 16"
                                 stash includes: "test/**/*", name: "rhel7-unit-tests"
                                 stash includes: "carta_backend", name: "rhel7-backend"
@@ -182,7 +182,7 @@ pipeline {
                             sh "cat /etc/redhat-release"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on"
+                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
                                 stash includes: "test/**/*", name: "rhel8-unit-tests"
                                 stash includes: "carta_backend", name: "rhel8-backend"
