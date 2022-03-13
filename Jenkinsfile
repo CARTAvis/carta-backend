@@ -26,7 +26,7 @@ pipeline {
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
+                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
                                 stash includes: "test/**/*", name: "bionic-unit-tests"
                                 stash includes: "carta_backend", name: "bionic-backend"
@@ -52,7 +52,7 @@ pipeline {
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
+                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
                                 stash includes: "test/**/*", name: "focal-unit-tests"
                                 stash includes: "carta_backend", name: "focal-backend"
@@ -78,7 +78,7 @@ pipeline {
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
+                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
                                 stash includes: "test/**/*", name: "jammy-unit-tests"
                                 stash includes: "carta_backend", name: "jammy-backend"
@@ -104,7 +104,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
+                                sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 8"
                                 stash includes: "test/**/*", name: "macos11-unit-tests"
                                 stash includes: "carta_backend", name: "macos11-backend"
@@ -130,7 +130,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
+                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 8"
                                 stash includes: "test/**/*", name: "macos12-unit-tests"
                                 stash includes: "carta_backend", name: "macos12-backend"
