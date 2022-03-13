@@ -26,7 +26,7 @@ pipeline {
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on"
+                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
                                 sh "make -j 16"
                                 stash includes: "test/**/*", name: "bionic-unit-tests"
                                 stash includes: "carta_backend", name: "bionic-backend"
@@ -52,7 +52,7 @@ pipeline {
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage'"
+                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
                                 sh "make -j 16"
                                 stash includes: "test/**/*", name: "focal-unit-tests"
                                 stash includes: "carta_backend", name: "focal-backend"
@@ -68,9 +68,9 @@ pipeline {
                         }
                     }
                 }
-                stage('3 Ubuntu 21.10') {
+                stage('3 Ubuntu 22.04') {
                     agent {
-                        label "hirsute-agent"
+                        label "jammy-agent"
                     }       
                     steps { 
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -78,10 +78,10 @@ pipeline {
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
-                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage'"
+                                sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
                                 sh "make -j 16"
-                                stash includes: "test/**/*", name: "hirsute-unit-tests"
-                                stash includes: "carta_backend", name: "hirsute-backend"
+                                stash includes: "test/**/*", name: "jammy-unit-tests"
+                                stash includes: "carta_backend", name: "jammy-backend"
                             }
                         }
                     }
@@ -104,7 +104,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON"
+                                sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
                                 sh "make -j 8"
                                 stash includes: "test/**/*", name: "macos11-unit-tests"
                                 stash includes: "carta_backend", name: "macos11-backend"
@@ -130,7 +130,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON"
+                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g -fsanitize=address -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" "
                                 sh "make -j 8"
                                 stash includes: "test/**/*", name: "macos12-unit-tests"
                                 stash includes: "carta_backend", name: "macos12-backend"
@@ -210,7 +210,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "bionic-unit-tests"
                             dir ('test') {
-                                sh "./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml"
                             }
                         }
                     }
@@ -228,7 +228,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "focal-unit-tests"
                             dir ('test') {
-                                sh "./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml"
                             }
                         }
                     }
@@ -238,21 +238,21 @@ pipeline {
                         }   
                     }   
                 }
-                stage('3 Ubuntu 21.10') {
+                stage('3 Ubuntu 22.04') {
                     agent {
-                        label "hirsute-agent"
+                        label "jammy-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "hirsute-unit-tests"
+                            unstash "jammy-unit-tests"
                             dir ('test') {
-                                sh "./carta_backend_tests --gtest_output=xml:ubuntu_hirsute_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'test/ubuntu_hirsute_test_detail.xml'
+                            junit 'test/ubuntu_jammy_test_detail.xml'
                         }
                     }   
                 }
@@ -302,7 +302,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel7-unit-tests"
                             dir ('test') {
-                                sh "./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml"
                             }
                         }
                     }
@@ -320,7 +320,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel8-unit-tests"
                             dir ('test') {
-                                sh "./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml"
                             }
                         }
                     }
@@ -350,12 +350,12 @@ pipeline {
                         prepare_focal_ICD()
                     }
                 }
-                stage('3 Ubuntu 21.10') {
+                stage('3 Ubuntu 22.04') {
                     agent {
-                        label "hirsute-agent"
+                        label "jammy-agent"
                     }
                     steps {
-                        prepare_hirsute_ICD()
+                        prepare_jammy_ICD()
                     }
                 }
                 stage('4 macOS 11') {
@@ -397,7 +397,7 @@ pipeline {
                 axes {
                     axis {
                         name 'PLATFORM'
-                        values 'bionic', 'focal', 'hirsute', 'rhel7', 'rhel8', 'macos11', 'macos12'
+                        values 'bionic', 'focal', 'jammy', 'rhel7', 'rhel8', 'macos11', 'macos12'
                     }
                 }
                 stages {
@@ -575,7 +575,7 @@ def unit_tests_macos11() {
                 } else {
                     ret = true
                 }
-                sh "./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
+                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
             }
         }
     }
@@ -593,7 +593,7 @@ def unit_tests_macos12() {
                 } else {
                     ret = true
                 }
-                sh "./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
+                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
             }
         }
     }
@@ -637,7 +637,7 @@ def prepare_bionic_ICD() {
     }
 }
 
-def prepare_hirsute_ICD() {
+def prepare_jammy_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git"
         dir ('carta-backend-ICD-test') {
@@ -652,7 +652,7 @@ def prepare_hirsute_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
-        stash includes: "carta-backend-ICD-test/**/*", name: "hirsute-ICD"
+        stash includes: "carta-backend-ICD-test/**/*", name: "jammy-ICD"
     }
 }
 
