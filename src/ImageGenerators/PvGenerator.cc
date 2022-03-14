@@ -120,6 +120,8 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
     // Remove second linear axis
     csys.removeWorldAxis(1, 0.0);
 
+    csys.setObsInfo(input_csys.obsInfo());
+
     return csys;
 }
 
