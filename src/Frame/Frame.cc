@@ -1807,13 +1807,21 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    // Modify image to export
-    auto image_shape = ImageShape();
+    // Try to save file from loader (for entire LEL image in CASA format only)
+    if (!region && _loader->SaveFile(output_file_type, output_filename.string(), message)) {
+        save_file_ack.set_success(true);
+        return;
+    }
 
-    casacore::ImageInterface<float>* image;
+    // Begin with entire image
+    auto image_shape = ImageShape();
+    casacore::ImageInterface<float>* image = _loader->GetImage().get();
+
+    // Modify image to export
     casacore::SubImage<float> sub_image;
     casacore::LCRegion* image_region;
     casacore::IPosition region_shape;
+
     if (region) {
         image_region = GetImageRegion(file_id, region);
         region_shape = image_region->shape();
@@ -1827,7 +1835,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
-            // If apply region
             if (region) {
                 auto latt_region_holder = LattRegionHolder(image_region);
                 auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);

@@ -33,7 +33,7 @@ private:
     void RemoveHistoryBeam(unsigned int hdu_num);
 };
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, is_gz) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file

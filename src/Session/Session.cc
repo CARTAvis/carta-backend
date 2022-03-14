@@ -48,7 +48,7 @@ using namespace carta;
 
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
-std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
+std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
 
     // We have a cached loader, but the file has changed
@@ -62,7 +62,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
         // Create the loader -- don't block while doing this
         std::shared_ptr<FileLoader> loader_ptr;
         guard.unlock();
-        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename));
+        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename, directory));
         guard.lock();
 
         // Check if the loader was added in the meantime
@@ -86,7 +86,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
     return _map[filename];
 }
 
-void LoaderCache::Remove(std::string filename) {
+void LoaderCache::Remove(const std::string& filename) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
     _map.erase(filename);
     _queue.remove(filename);
@@ -463,69 +463,87 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     const auto& filename(message.file());
     std::string hdu(message.hdu());
     auto file_id(message.file_id());
+    bool is_lel_expr(message.lel_expr());
 
     // response message:
     CARTA::OpenFileAck ack;
-    ack.set_file_id(file_id);
-    string err_message;
-    std::string fullname;
     bool success(false);
+    string err_message;
 
-    // Set _loader and get file info
-    CARTA::FileInfo file_info;
-    CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
+    if (is_lel_expr) {
+        // filename field is LEL expression
+        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
+        auto loader = _loaders.Get(filename, dir_path);
 
-    if (info_loaded) {
-        // Get or create loader for frame
-        auto loader = _loaders.Get(fullname);
+        try {
+            loader->OpenFile(hdu);
 
-        // create Frame for image
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
+            auto image = loader->GetImage();
+            success = OnOpenFile(file_id, filename, image, &ack);
+        } catch (const casacore::AipsError& err) {
+            success = false;
+            err_message = err.getMesg();
+        }
+    } else {
+        ack.set_file_id(file_id);
+        std::string fullname;
 
-        // query loader for mipmap dataset
-        bool has_mipmaps(loader->HasMip(2));
+        // Set _loader and get file info
+        CARTA::FileInfo file_info;
+        CARTA::FileInfoExtended file_info_extended;
+        bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
 
-        // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
-        _loaders.Remove(fullname);
+        if (info_loaded) {
+            // Get or create loader for frame
+            auto loader = _loaders.Get(fullname);
 
-        if (frame->IsValid()) {
-            // Check if the old _frames[file_id] object exists. If so, delete it.
-            if (_frames.count(file_id) > 0) {
-                DeleteFrame(file_id);
-            }
-            std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
-            _frames[file_id] = move(frame);
-            lock.unlock();
+            // create Frame for image
+            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
 
-            // copy file info, extended file info
-            CARTA::FileInfo response_file_info = CARTA::FileInfo();
-            response_file_info.set_name(file_info.name());
-            response_file_info.set_type(file_info.type());
-            response_file_info.set_size(file_info.size());
-            response_file_info.add_hdu_list(hdu); // loaded hdu only
-            *ack.mutable_file_info() = response_file_info;
-            *ack.mutable_file_info_extended() = file_info_extended;
-            uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+            // query loader for mipmap dataset
+            bool has_mipmaps(loader->HasMip(2));
 
-            // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
-            if (file_info.type() == CARTA::FileType::HDF5) {
-                feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
-                feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
-                feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
-                if (has_mipmaps) {
-                    feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+            // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
+            _loaders.Remove(fullname);
+
+            if (frame->IsValid()) {
+                // Check if the old _frames[file_id] object exists. If so, delete it.
+                if (_frames.count(file_id) > 0) {
+                    DeleteFrame(file_id);
                 }
-            }
+                std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
+                _frames[file_id] = move(frame);
+                lock.unlock();
 
-            ack.set_file_feature_flags(feature_flags);
-            std::vector<CARTA::Beam> beams;
-            if (_frames.at(file_id)->GetBeams(beams)) {
-                *ack.mutable_beam_table() = {beams.begin(), beams.end()};
+                // copy file info, extended file info
+                CARTA::FileInfo response_file_info = CARTA::FileInfo();
+                response_file_info.set_name(file_info.name());
+                response_file_info.set_type(file_info.type());
+                response_file_info.set_size(file_info.size());
+                response_file_info.add_hdu_list(hdu); // loaded hdu only
+                *ack.mutable_file_info() = response_file_info;
+                *ack.mutable_file_info_extended() = file_info_extended;
+                uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+
+                // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
+                if (file_info.type() == CARTA::FileType::HDF5) {
+                    feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
+                    feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
+                    feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
+                    if (has_mipmaps) {
+                        feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+                    }
+                }
+
+                ack.set_file_feature_flags(feature_flags);
+                std::vector<CARTA::Beam> beams;
+                if (_frames.at(file_id)->GetBeams(beams)) {
+                    *ack.mutable_beam_table() = {beams.begin(), beams.end()};
+                }
+                success = true;
+            } else {
+                err_message = frame->GetErrorMessage();
             }
-            success = true;
-        } else {
-            err_message = frame->GetErrorMessage();
         }
     }
 
