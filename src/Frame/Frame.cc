@@ -1792,13 +1792,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    // Modify image to export
+    // Begin with entire image
     auto image_shape = ImageShape();
+    casacore::ImageInterface<float>* image = _loader->GetImage().get();
 
-    casacore::ImageInterface<float>* image;
+    // Modify image to export
     casacore::SubImage<float> sub_image;
     casacore::LCRegion* image_region;
     casacore::IPosition region_shape;
+
     if (region) {
         image_region = GetImageRegion(file_id, region);
         region_shape = image_region->shape();
@@ -1812,7 +1814,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
-            // If apply region
             if (region) {
                 auto latt_region_holder = LattRegionHolder(image_region);
                 auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);

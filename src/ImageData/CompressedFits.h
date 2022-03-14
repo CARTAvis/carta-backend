@@ -90,7 +90,7 @@ struct BeamTableInfo {
 
 class CompressedFits {
 public:
-    CompressedFits(const std::string& filename) : _filename(filename) {}
+    CompressedFits(const std::string& filename);
 
     // Headers for file info
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
@@ -99,6 +99,28 @@ public:
     // Beams for file info and opening image
     inline const casacore::ImageBeamSet& GetBeamSet() {
         return _beam_set;
+    }
+
+    casacore::Matrix<casacore::Double> GetMatrixForm() {
+        return _xform;
+    }
+    void SetShape(casacore::IPosition shape) {
+        _shape = shape;
+    }
+    casacore::IPosition& GetShape() {
+        return _shape;
+    }
+    void SetSpecSuffix(int spec_axis) {
+        _spec_suffix = std::to_string(spec_axis + 1);
+    }
+    void SetStokesSuffix(int stokes_axis) {
+        _stokes_suffix = std::to_string(stokes_axis + 1);
+    }
+    std::string GetSpecSuffix() {
+        return _spec_suffix;
+    }
+    std::string GetStokesSuffix() {
+        return _stokes_suffix;
     }
 
     // File decompression
@@ -124,6 +146,10 @@ private:
     std::string _filename;
     std::string _unzip_filename;
     casacore::ImageBeamSet _beam_set;
+    casacore::Matrix<casacore::Double> _xform; // Linear transform matrix for the direction coordinate
+    casacore::IPosition _shape;                // Image shape
+    std::string _spec_suffix;                  // Spectral suffix from the header
+    std::string _stokes_suffix;                // Stokes suffix from the header
 };
 
 } // namespace carta
