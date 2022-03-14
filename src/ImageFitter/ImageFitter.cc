@@ -4,7 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#define FWHM_TO_SIGMA 0.5 / sqrt(2 * log(2))
+#define DEG_TO_RAD M_PI / 180.0
+
 #include "ImageFitter.h"
+
+#include <omp.h>
 
 using namespace carta;
 
@@ -81,7 +86,7 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
     _fit_errors = gsl_vector_alloc(p);
     for (size_t i = 0; i < _num_components; i++) {
         CARTA::GaussianComponent component(initial_values[i]);
-        gsl_vector_set(_fit_params, i * 6 + 0, component.center_x());
+        gsl_vector_set(_fit_params, i * 6, component.center_x());
         gsl_vector_set(_fit_params, i * 6 + 1, component.center_y());
         gsl_vector_set(_fit_params, i * 6 + 2, component.amp());
         gsl_vector_set(_fit_params, i * 6 + 3, component.fwhm_x());
@@ -132,8 +137,8 @@ void ImageFitter::SetResults() {
     _results = "";
     for (size_t i = 0; i < _num_components; i++) {
         _results += fmt::format("Component #{}:\n", i + 1);
-        _results += fmt::format(
-            "Center X  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 0), gsl_vector_get(_fit_errors, i * 6 + 0));
+        _results +=
+            fmt::format("Center X  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6), gsl_vector_get(_fit_errors, i * 6));
         _results += fmt::format(
             "Center Y  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1), gsl_vector_get(_fit_errors, i * 6 + 1));
         _results += fmt::format("Amplitude = {:6f} +/- {:6f} ({})\n", gsl_vector_get(_fit_params, i * 6 + 2),
@@ -165,9 +170,9 @@ void ImageFitter::SetLog() {
 
 double ImageFitter::Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,
     const double theta, const double x, const double y) {
-    const double sq_std_x = pow(fwhm_x, 2) / 8 / log(2);
-    const double sq_std_y = pow(fwhm_y, 2) / 8 / log(2);
-    const double theta_radian = theta * M_PI / 180.0; // counterclockwise rotation
+    const double sq_std_x = pow(fwhm_x * FWHM_TO_SIGMA, 2);
+    const double sq_std_y = pow(fwhm_y * FWHM_TO_SIGMA, 2);
+    const double theta_radian = theta * DEG_TO_RAD; // counterclockwise rotation
     const double a = pow(cos(theta_radian), 2) / (2 * sq_std_x) + pow(sin(theta_radian), 2) / (2 * sq_std_y);
     const double b = sin(2 * theta_radian) / (4 * sq_std_x) - sin(2 * theta_radian) / (4 * sq_std_y);
     const double c = pow(sin(theta_radian), 2) / (2 * sq_std_x) + pow(cos(theta_radian), 2) / (2 * sq_std_y);
@@ -177,19 +182,20 @@ double ImageFitter::Gaussian(const double center_x, const double center_y, const
 int ImageFitter::FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f) {
     struct FitData* d = (struct FitData*)fit_data;
 
+#pragma omp parallel for
     for (size_t i = 0; i < d->n; i++) {
         float x = d->x[i];
         float y = d->y[i];
         float data_i = d->data[i];
         float data = 0;
 
-        for (size_t k = 0; k < fit_params->size / 6; k++) {
-            const double center_x = gsl_vector_get(fit_params, k * 6 + 0);
-            const double center_y = gsl_vector_get(fit_params, k * 6 + 1);
-            const double amp = gsl_vector_get(fit_params, k * 6 + 2);
-            const double fwhm_x = gsl_vector_get(fit_params, k * 6 + 3);
-            const double fwhm_y = gsl_vector_get(fit_params, k * 6 + 4);
-            const double pa = gsl_vector_get(fit_params, k * 6 + 5);
+        for (size_t k = 0; k < fit_params->size; k += 6) {
+            const double center_x = gsl_vector_get(fit_params, k);
+            const double center_y = gsl_vector_get(fit_params, k + 1);
+            const double amp = gsl_vector_get(fit_params, k + 2);
+            const double fwhm_x = gsl_vector_get(fit_params, k + 3);
+            const double fwhm_y = gsl_vector_get(fit_params, k + 4);
+            const double pa = gsl_vector_get(fit_params, k + 5);
             data += Gaussian(center_x, center_y, amp, fwhm_x, fwhm_y, pa, x, y);
         }
 
@@ -205,14 +211,12 @@ void ImageFitter::Callback(const size_t iter, void* params, const gsl_multifit_n
     double avratio = gsl_multifit_nlinear_avratio(w);
     double rcond;
 
-    (void)params; /* not used */
-
     /* compute reciprocal condition number of J(x) */
     gsl_multifit_nlinear_rcond(&rcond, w);
 
     spdlog::debug("iter {}, |a|/|v| = {:.4f} cond(J) = {:8.4f}, |f(x)| = {:.4f}", iter, avratio, 1.0 / rcond, gsl_blas_dnrm2(f));
     for (int k = 0; k < x->size / 6; ++k) {
-        spdlog::debug("component {}: ({:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f})", k + 1, gsl_vector_get(x, k * 6 + 0),
+        spdlog::debug("component {}: ({:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f}, {:.12f})", k + 1, gsl_vector_get(x, k * 6),
             gsl_vector_get(x, k * 6 + 1), gsl_vector_get(x, k * 6 + 2), gsl_vector_get(x, k * 6 + 3), gsl_vector_get(x, k * 6 + 4),
             gsl_vector_get(x, k * 6 + 5));
     }
