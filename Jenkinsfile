@@ -111,7 +111,7 @@ pipeline {
                     }
                     post {
                         always {
-                            junit 'test/ubuntu_test_detail.xml'
+                            junit 'build/test/ubuntu_test_detail.xml'
                         }
                         success {
                             setBuildStatus("build succeeded", "SUCCESS");
@@ -134,7 +134,7 @@ pipeline {
                     }
                     post {
                         always {
-                            junit 'test/macos_test_detail.xml'
+                            junit 'build/test/macos_test_detail.xml'
                         }
                         success {
                             setBuildStatus("build succeeded", "SUCCESS");
@@ -157,7 +157,7 @@ pipeline {
                     }
                     post {
                         always {
-                            junit 'test/almalinux_test_detail.xml'
+                            junit 'build/test/almalinux_test_detail.xml'
                         }
                         success {
                             setBuildStatus("build succeeded", "SUCCESS");
