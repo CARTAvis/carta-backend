@@ -104,8 +104,10 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
 
     // Delete the Session
-    _sessions[session_id]->DecreaseRefCount();
-    DeleteSession(session_id);
+    if (_sessions.count(session_id) > 0) {
+        _sessions[session_id]->DecreaseRefCount();
+        DeleteSession(session_id);
+    }
 
     // Close the websockets
     ws->close();
