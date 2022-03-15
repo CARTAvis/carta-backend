@@ -7,6 +7,7 @@
 #include "Session.h"
 
 #include <signal.h>
+#include <sys/time.h>
 #include <algorithm>
 #include <chrono>
 #include <limits>
@@ -163,7 +164,12 @@ Session::~Session() {
             sigemptyset(&sig_handler.sa_mask);
             sig_handler.sa_flags = 0;
             sigaction(SIGALRM, &sig_handler, nullptr);
-            alarm(1);
+            struct itimerval itimer;
+            itimer.it_interval.tv_sec = 0;
+            itimer.it_interval.tv_usec = 0;
+            itimer.it_value.tv_sec = 0;
+            itimer.it_value.tv_usec = 5;
+            setitimer(ITIMER_REAL, &itimer, nullptr);
         }
     }
     logger::FlushLogFile();
