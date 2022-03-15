@@ -106,7 +106,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             dir ('build/test') {
                                 sh "echo 'leak:*casacore*' >> ../../debug/asan/myasan-leaks.supp && echo 'leak:*casa*' >> ../../debug/asan/myasan-leaks.supp && echo 'leak:*libcurl*' >> ../../debug/asan/myasan-leaks.supp && echo 'leak:*libwcs*' >> ../../debug/asan/myasan-leaks.supp"
-                                sh "ASAN_OPTIONS=suppressions=../../debug/asan/myasan.supp LSAN_OPTIONS=suppressions=../../debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer LSAN_OPTIONS=detect_leaks=0 ./carta_backend_tests --gtest_output=xml:ubuntu_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=../../debug/asan/myasan.supp LSAN_OPTIONS=suppressions=../../debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
@@ -153,7 +153,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             dir ('build/test') {
                                 sh "echo 'leak:*casacore*' >> ../../debug/asan/myasan-leaks.supp && echo 'leak:*casa*' >> ../../debug/asan/myasan-leaks.supp && echo 'leak:*libcurl*' >> ../../debug/asan/myasan-leaks.supp && echo 'leak:*libwcs*' >> ../../debug/asan/myasan-leaks.supp"
-                                sh "ASAN_OPTIONS=suppressions=../../debug/asan/myasan.supp LSAN_OPTIONS=suppressions=../../debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer LSAN_OPTIONS=detect_leaks=0 ./carta_backend_tests --gtest_output=xml:almalinux_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=../../debug/asan/myasan.supp LSAN_OPTIONS=suppressions=../../debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:almalinux_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
