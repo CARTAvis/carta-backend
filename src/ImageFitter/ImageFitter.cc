@@ -141,8 +141,8 @@ void ImageFitter::SetResults() {
             fmt::format("Center X  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6), gsl_vector_get(_fit_errors, i * 6));
         _results += fmt::format(
             "Center Y  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1), gsl_vector_get(_fit_errors, i * 6 + 1));
-        _results += fmt::format("Amplitude = {:6f} +/- {:6f} ({})\n", gsl_vector_get(_fit_params, i * 6 + 2),
-            gsl_vector_get(_fit_errors, i * 6 + 2), _image_unit);
+        _results += fmt::format("Amplitude = {:6f} +/- {:6f}{}\n", gsl_vector_get(_fit_params, i * 6 + 2),
+            gsl_vector_get(_fit_errors, i * 6 + 2), _image_unit.size() > 0 ? fmt::format(" ({})", _image_unit) : "");
         _results += fmt::format(
             "FWHM X    = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 3), gsl_vector_get(_fit_errors, i * 6 + 3));
         _results += fmt::format(
