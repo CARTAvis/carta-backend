@@ -4,8 +4,6 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <sys/time.h>
-
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SessionManager.h"
@@ -58,10 +56,12 @@ void SessionManager::OnUpgrade(
         return;
     }
 
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    _session_number = (((uint32_t)tv.tv_sec) << 16) + ((uint32_t)tv.tv_usec);
-
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::microseconds>(now);
+    auto epoch = now_ms.time_since_epoch();
+    auto value = std::chrono::duration_cast<std::chrono::microseconds>(epoch);
+    _session_number = value.count();
+    
     http_response->template upgrade<PerSocketData>({_session_number, address}, //
         http_request->getHeader("sec-websocket-key"),                          //
         http_request->getHeader("sec-websocket-protocol"),                     //
