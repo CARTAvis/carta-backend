@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include "SessionManager.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
-#include "SessionManager.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/Message.h"
 #include "Util/Token.h"
@@ -61,7 +61,7 @@ void SessionManager::OnUpgrade(
     auto epoch = now_ms.time_since_epoch();
     auto value = std::chrono::duration_cast<std::chrono::microseconds>(epoch);
     _session_number = value.count();
-    
+
     http_response->template upgrade<PerSocketData>({_session_number, address}, //
         http_request->getHeader("sec-websocket-key"),                          //
         http_request->getHeader("sec-websocket-protocol"),                     //
