@@ -29,7 +29,6 @@ pipeline {
                                 sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 32"
                                 sh "./carta_backend --version"
-                                stash includes: "test/**/*", name: "ubuntu-unit-tests"
                             }
                         }
                     }
@@ -57,7 +56,6 @@ pipeline {
                                 sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 8"
                                 sh "./carta_backend --version"
-                                stash includes: "test/**/*", name: "macos-unit-tests"
                             }
                         }
                     }
@@ -84,7 +82,6 @@ pipeline {
                                 sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 32"
                                 sh "./carta_backend --version"
-                                stash includes: "test/**/*", name: "almalinux-unit-tests"
                             }
                         }
                     }
@@ -107,8 +104,7 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "ubuntu-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer LSAN_OPTIONS=detect_leaks=0 ./carta_backend_tests --gtest_output=xml:ubuntu_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
@@ -131,8 +127,7 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "macos-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp,detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
@@ -155,8 +150,7 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "almalinux-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer LSAN_OPTIONS=detect_leaks=0 ./carta_backend_tests --gtest_output=xml:almalinux_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
