@@ -1300,28 +1300,45 @@ void FileExtInfoLoader::AddCoordRanges(
         if (direction_coord.referenceValue().size() == 2) {
             casacore::Vector<int> direction_axes = coord_system.directionAxesNumbers();
             casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
-            casacore::Vector<double> pixels(direction_axes.size(), 0);
-            casacore::Vector<double> world(direction_axes.size(), 0);
-            casacore::Vector<double> x_range_vec(2);
-            casacore::Vector<double> y_range_vec(2);
+            casacore::Vector<double> pixels(2, 0);
+            casacore::Vector<double> world(2, 0);
             casacore::String units;
+            double x_min(std::numeric_limits<double>::max()), x_max(std::numeric_limits<double>::lowest());
+            double y_min(std::numeric_limits<double>::max()), y_max(std::numeric_limits<double>::lowest());
+
+            auto get_xy_minmax = [&](double pixel_x, double pixel_y) {
+                pixels[0] = pixel_x;
+                pixels[1] = pixel_y;
+                direction_coord.toWorld(world, pixels);
+
+                if (world[0] < x_min) {
+                    x_min = world[0];
+                }
+                if (world[0] > x_max) {
+                    x_max = world[0];
+                }
+                if (world[1] < y_min) {
+                    y_min = world[1];
+                }
+                if (world[1] > y_max) {
+                    y_max = world[1];
+                }
+            };
+
+            double x_max_pixel = image_shape[direction_axes[0]] - 1;
+            double y_max_pixel = image_shape[direction_axes[1]] - 1;
+            get_xy_minmax(0, 0);
+            get_xy_minmax(x_max_pixel, y_max_pixel);
+            get_xy_minmax(0, y_max_pixel);
+            get_xy_minmax(x_max_pixel, 0);
 
             // Get start world coord
-            direction_coord.toWorld(world, pixels);
-            x_range_vec[0] = world[0];
-            std::string x_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
-            y_range_vec[0] = world[1];
-            std::string y_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
+            std::string x_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, x_min, 0, true, true);
+            std::string y_start = direction_coord.format(units, casacore::Coordinate::DEFAULT, y_min, 1, true, true);
 
             // Get end world coord
-            for (unsigned int i = 0; i < pixels.size(); ++i) {
-                pixels[i] = image_shape[direction_axes[i]] - 1;
-            }
-            direction_coord.toWorld(world, pixels);
-            x_range_vec[1] = world[0];
-            std::string x_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[0], 0, true, true);
-            y_range_vec[1] = world[1];
-            std::string y_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, world[1], 1, true, true);
+            std::string x_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, x_max, 0, true, true);
+            std::string y_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, y_max, 1, true, true);
 
             // Set x and y coordinate names
             if (axis_names(0) == "Right Ascension") {
