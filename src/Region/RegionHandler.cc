@@ -44,7 +44,7 @@ int RegionHandler::GetNextRegionId() {
     return max_id + 1;
 }
 
-bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
+bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys) {
     // Set region params for region id; if id < 0, create new id
     // CoordinateSystem will be owned by Region
     bool valid_region(false);
@@ -112,9 +112,7 @@ bool RegionHandler::RegionSet(int region_id) {
 void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
-
-    // Importer must delete csys pointer
-    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
+    auto csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> importer;
     switch (region_file_type) {
@@ -205,13 +203,10 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
-
-    // Exporter must delete csys pointer
-    casacore::CoordinateSystem* output_csys = frame->CoordinateSystem();
+    auto output_csys = frame->CoordinateSystem();
 
     if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
-        delete output_csys;
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
         return;
@@ -251,7 +246,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             } else {
                 try {
                     // Use Record containing pixel coords of region converted to output image
-                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, *output_csys, output_shape);
+                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, output_csys, output_shape);
                     if (!region_record.empty()) {
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
                     }
@@ -1609,8 +1604,8 @@ void RegionHandler::SetLineRotation(RegionState& region_state) {
 }
 
 bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-    casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
-    double& increment, bool& cancelled) {
+    std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
+    casacore::Matrix<float>& profiles, double& increment, bool& cancelled) {
     // Calculate mean spectral profiles for box regions along line with fixed pixel spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the box centers in arcsec, and whether profiles were cancelled.
     // Returns false if profiles cancelled or linear pixel centers are tabular in world coordinates.
@@ -1729,7 +1724,8 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     return (progress == 1.0) && !allEQ(profiles, NAN);
 }
 
-bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment) {
+bool RegionHandler::CheckLinearOffsets(
+    const std::vector<CARTA::Point>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment) {
     // Check whether separation between box centers is linear.
     auto direction_coord = csys->directionCoordinate();
 
@@ -1787,7 +1783,7 @@ bool RegionHandler::CheckLinearOffsets(const std::vector<CARTA::Point>& box_cent
     return true;
 }
 
-double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
+double RegionHandler::GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys) {
     // Return 1% of CDELT2 in arcsec
     auto cdelt = csys->increment();
     auto cunit = csys->worldAxisUnits();
@@ -1796,8 +1792,8 @@ double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
 }
 
 bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-    casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
-    double& increment, bool& cancelled, std::string& message) {
+    std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
+    casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message) {
     // Calculate mean spectral profiles for polygon regions along line with fixed angular spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the regions in arcsec, and whether profiles were cancelled.
     // Returns false if profiles cancelled or failed, with an error message.
@@ -2074,7 +2070,7 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
 }
 
 casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
-    int file_id, RegionState& region_state, casacore::CoordinateSystem* reference_csys, bool per_z, double& num_pixels) {
+    int file_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys, bool per_z, double& num_pixels) {
     // Create temporary region with RegionState and CoordinateSystem
     // Return stats/spectral profile (depending on per_z) for given file_id image, and number of pixels in the region.
     auto depth = _frames.at(file_id)->Depth();
@@ -2095,8 +2091,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
     }
 
     int region_id(TEMP_REGION_ID);
-    casacore::CoordinateSystem* region_csys = static_cast<casacore::CoordinateSystem*>(reference_csys->clone());
-    SetRegion(region_id, region_state, region_csys);
+    SetRegion(region_id, region_state, reference_csys);
 
     if (!RegionSet(region_id)) {
         return profile;

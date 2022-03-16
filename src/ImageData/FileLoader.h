@@ -52,8 +52,8 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
-    bool GetShape(IPos& shape);
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
+    IPos GetShape();
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
@@ -75,10 +75,9 @@ public:
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
     // Check if one can apply swizzled data under such image format and region condition
-    virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
-    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
-        float& progress);
+    virtual bool UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex);
+    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
+        std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(
@@ -116,13 +115,13 @@ protected:
 
     // Save image properties; only reopen for data or beams
     // Axes, dimension values
-    casacore::IPosition _image_shape;
+    IPos _image_shape;
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
     std::vector<int> _render_axes;
     // Coordinate system
-    casacore::CoordinateSystem _coord_sys;
+    std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     // Pixel mask
     bool _has_pixel_mask;
 

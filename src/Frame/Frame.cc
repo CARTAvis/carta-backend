@@ -129,16 +129,12 @@ std::string Frame::GetFileName() {
     return filename;
 }
 
-casacore::CoordinateSystem* Frame::CoordinateSystem() {
-    // Returns pointer to CoordinateSystem clone; caller must delete
-    casacore::CoordinateSystem* csys(nullptr);
+std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem() {
     if (IsValid()) {
-        std::lock_guard<std::mutex> guard(_image_mutex);
-        casacore::CoordinateSystem image_csys;
-        _loader->GetCoordinateSystem(image_csys);
-        csys = static_cast<casacore::CoordinateSystem*>(image_csys.clone());
+        return _loader->GetCoordinateSystem();
     }
-    return csys;
+
+    return std::make_unique<casacore::CoordinateSystem>();
 }
 
 casacore::IPosition Frame::ImageShape() {
@@ -1578,9 +1574,7 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
-    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(), report_error);
-    delete coord_sys;
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, CoordinateSystem(), ImageShape(), report_error);
     return image_region;
 }
 
@@ -1602,9 +1596,8 @@ bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, ca
 
 casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
     // Returns image shape with a region applied
-    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape());
-    delete coord_sys;
+    auto coord_sys = CoordinateSystem();
+    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys.get(), ImageShape());
     return lattice_region.shape();
 }
 

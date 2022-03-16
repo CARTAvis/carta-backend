@@ -135,22 +135,12 @@ bool FileLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-bool FileLoader::GetShape(IPos& shape) {
-    if (_image_shape.empty()) {
-        return false;
-    }
-
-    shape = _image_shape;
-    return true;
+casacore::IPosition FileLoader::GetShape() {
+    return _image_shape;
 }
 
-bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_coord_sys.nCoordinates() == 0) {
-        return false;
-    }
-
-    coord_sys = _coord_sys;
-    return true;
+std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
+    return _coord_sys;
 }
 
 bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
@@ -174,7 +164,7 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
         return false;
     }
 
-    if (_coord_sys.nPixelAxes() != _num_dims) {
+    if (_coord_sys->nPixelAxes() != _num_dims) {
         message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
         return false;
     }
@@ -186,8 +176,8 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis
     _image_plane_size = _width * _height;
 
     // Spectral and stokes axis
-    spectral_axis = _coord_sys.spectralAxisNumber();
-    stokes_axis = _coord_sys.polarizationAxisNumber();
+    spectral_axis = _coord_sys->spectralAxisNumber();
+    stokes_axis = _coord_sys->polarizationAxisNumber();
 
     // 2D image
     if (_num_dims == 2) {
@@ -274,19 +264,19 @@ std::vector<int> FileLoader::GetRenderAxes() {
 
     if (_image_shape.size() > 2) {
         // Normally, use direction axes
-        if (_coord_sys.hasDirectionCoordinate()) {
-            casacore::Vector<casacore::Int> dir_axes = _coord_sys.directionAxesNumbers();
+        if (_coord_sys->hasDirectionCoordinate()) {
+            casacore::Vector<casacore::Int> dir_axes = _coord_sys->directionAxesNumbers();
             axes[0] = dir_axes[0];
             axes[1] = dir_axes[1];
-        } else if (_coord_sys.hasLinearCoordinate()) {
+        } else if (_coord_sys->hasLinearCoordinate()) {
             // Check for PV image: [Linear, Spectral] axes
             // Returns -1 if no spectral axis
-            int spectral_axis = _coord_sys.spectralAxisNumber();
+            int spectral_axis = _coord_sys->spectralAxisNumber();
 
             if (spectral_axis >= 0) {
                 // Find valid (not -1) linear axes
                 std::vector<int> valid_axes;
-                casacore::Vector<casacore::Int> lin_axes = _coord_sys.linearAxesNumbers();
+                casacore::Vector<casacore::Int> lin_axes = _coord_sys->linearAxesNumbers();
                 for (auto axis : lin_axes) {
                     if (axis >= 0) {
                         valid_axes.push_back(axis);
@@ -361,8 +351,8 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
                 masked_data.putStorage(pMaskedData, del_data_ptr);
             }
 
-            casacore::IPosition cursor_shape(lattice_iter.cursorShape());
-            casacore::IPosition cursor_position(lattice_iter.position());
+            IPos cursor_shape(lattice_iter.cursorShape());
+            IPos cursor_position(lattice_iter.position());
             casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
             data(cursor_slicer) = cursor_data;
         }
@@ -455,7 +445,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     return success;
 }
 
-const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
+const casacore::IPosition FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
 
@@ -820,13 +810,13 @@ bool FileLoader::GetCursorSpectralData(
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
+bool FileLoader::UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) {
     // Must be implemented in subclasses; should call before GetRegionSpectralData
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
+    std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }
@@ -865,11 +855,11 @@ double FileLoader::CalculateBeamArea() {
 
     CloseImageIfUpdated();
 
-    if (!info.hasSingleBeam() || !_coord_sys.hasDirectionCoordinate()) {
+    if (!info.hasSingleBeam() || !_coord_sys->hasDirectionCoordinate()) {
         return NAN;
     }
 
-    return info.getBeamAreaInPixels(-1, -1, _coord_sys.directionCoordinate());
+    return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());
 }
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
