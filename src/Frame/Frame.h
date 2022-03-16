@@ -95,7 +95,7 @@ public:
     // Get the full name of image file
     std::string GetFileName();
 
-    // Returns unique pointer to CoordinateSystem clone
+    // Returns shared ptr to CoordinateSystem
     std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem();
 
     // Image/Frame info

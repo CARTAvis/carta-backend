@@ -134,7 +134,7 @@ std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem() {
         return _loader->GetCoordinateSystem();
     }
 
-    return std::make_unique<casacore::CoordinateSystem>();
+    return std::make_shared<casacore::CoordinateSystem>();
 }
 
 casacore::IPosition Frame::ImageShape() {
