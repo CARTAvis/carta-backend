@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 
+// wrapper for curl_easy_escape function that handles cleaning up char ptrs properly
+std::string SafeStringEscape(const std::string& input);
+
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
 

@@ -371,6 +371,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
         if (session_id != _id) {
             spdlog::info("({}) Session setting id to {} (was {}) on resume", fmt::ptr(this), session_id, _id);
             _id = session_id;
+            spdlog::info("({}) Session setting id to {}", fmt::ptr(this), session_id);
             status = fmt::format("Start a new backend and assign it with session id {}", session_id);
         } else {
             status = fmt::format("Network reconnected with session id {}", session_id);
