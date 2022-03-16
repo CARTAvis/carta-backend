@@ -25,8 +25,11 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    if (IsCompressedFits(filename)) {
+FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
+    if (!directory.empty()) {
+        // filename is LEL expression for image(s) in directory
+        return new ExprLoader(filename, directory);
+    } else if (IsCompressedFits(filename)) {
         return new FitsLoader(filename, true);
     }
 
@@ -66,10 +69,12 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
-FileLoader::FileLoader(const std::string& filename, bool is_gz)
-    : _filename(filename), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
-    // Set initial modify time
-    ImageUpdated();
+FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
+    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
+    // Set initial modify time if filename is not LEL expression for file in directory
+    if (directory.empty()) {
+        ImageUpdated();
+    }
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
@@ -85,14 +90,20 @@ typename FileLoader::ImageRef FileLoader::GetImage() {
 }
 
 void FileLoader::CloseImageIfUpdated() {
-    // Close image if updated when only the loader owns it unless decompressed
-    if (!_is_gz && _image.unique() && ImageUpdated()) {
+    // Close image if updated when only the loader owns
+    if (_image.unique() && ImageUpdated()) {
         _image->tempClose();
     }
 }
 
 bool FileLoader::ImageUpdated() {
     bool changed(false);
+
+    // Do not close compressed image or run getstat on LEL ImageExpr (sets directory)
+    if (_is_gz || !_directory.empty()) {
+        return changed;
+    }
+
     casacore::File ccfile(_filename);
     auto updated_time = ccfile.modifyTime();
 
@@ -307,10 +318,16 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             data.resize(slicer.length());
         }
 
-        if (image->imageType() == "CartaFitsImage") {
-            // Read subset with cfitsio
-            bool ok = image->doGetSlice(data, slicer);
-            return ok;
+        auto image_type = image->imageType();
+        if (image_type == "CartaFitsImage") {
+            // Use cfitsio for slice
+            return image->doGetSlice(data, slicer);
+        } else if (image_type == "ImageExpr") {
+            // Use ImageExpr for slice
+            casacore::Array<float> slice_data;
+            image->doGetSlice(slice_data, slicer);
+            data = slice_data; // copy from reference
+            return true;
         }
 
         // Get data slice with mask applied.
@@ -413,7 +430,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
             carta_beam.set_stokes(-1);
             carta_beam.set_major_axis(gaussian_beam.getMajor("arcsec"));
             carta_beam.set_minor_axis(gaussian_beam.getMinor("arcsec"));
-            carta_beam.set_pa(gaussian_beam.getPA("deg").getValue());
+            carta_beam.set_pa(gaussian_beam.getPA(casacore::Unit("deg")));
             beams.push_back(carta_beam);
         } else {
             casacore::ImageBeamSet beam_set = image_info.getBeamSet();
@@ -426,7 +443,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
                     carta_beam.set_stokes(stokes);
                     carta_beam.set_major_axis(gaussian_beam.getMajor("arcsec"));
                     carta_beam.set_minor_axis(gaussian_beam.getMinor("arcsec"));
-                    carta_beam.set_pa(gaussian_beam.getPA("deg").getValue());
+                    carta_beam.set_pa(gaussian_beam.getPA(casacore::Unit("deg")));
                     beams.push_back(carta_beam);
                 }
             }
@@ -873,4 +890,10 @@ void FileLoader::SetStokesCrpix(float stokes_crpix) {
 
 void FileLoader::SetStokesCdelt(int stokes_cdelt) {
     _stokes_cdelt = stokes_cdelt;
+}
+
+bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+    // Override in ExprLoader
+    message = "Cannot save image type from loader.";
+    return false;
 }

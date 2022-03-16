@@ -128,6 +128,16 @@ public:
                 CheckHeaderEntry(computed_entries, "Jy/beam", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "Pixel increment") {
                 CheckHeaderEntry(computed_entries, "-0.4\", 0.4\"", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "RA range") {
+                CheckHeaderEntry(computed_entries, "[18:20:25.888, 18:20:25.749]", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "DEC range") {
+                CheckHeaderEntry(computed_entries, "[-16.13.36.797, -16.13.34.797]", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Frequency range") {
+                CheckHeaderEntry(computed_entries, "[86.7504, 86.7494] (GHz)", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Velocity range") {
+                CheckHeaderEntry(computed_entries, "[13.3760, 16.7520] (km/s)", CARTA::EntryType::STRING);
+            } else if (computed_entries.name() == "Stokes coverage") {
+                CheckHeaderEntry(computed_entries, "[I]", CARTA::EntryType::STRING);
             }
         }
     }
