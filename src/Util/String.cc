@@ -52,6 +52,8 @@ bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
 }
 
 std::string SafeStringEscape(const std::string& input) {
+    // This is needed to ensure we don't mix malloc/free with new/delete
+    // Reference: https://chromium.googlesource.com/chromium/src/base/+/9b9882fcdabd89115c828acb27020ede8cefee0d/memory/scoped_ptr.h#171
     struct free_deleter {
         void operator()(void* p) {
             free(p);
