@@ -951,7 +951,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
             _region_handler->SetSpatialRequirements(region_id, file_id, _frames.at(file_id), profiles);
             SendSpatialProfileData(file_id, region_id);
         } else {
-            string error = fmt::format("Spatial requirements failed for region {}: invalid region type", region_id);
+            string error = fmt::format("Spatial requirements failed for region {}: invalid region id or type", region_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
         }
     } else {
