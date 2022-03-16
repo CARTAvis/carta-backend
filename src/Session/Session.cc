@@ -7,6 +7,7 @@
 #include "Session.h"
 
 #include <signal.h>
+#include <sys/time.h>
 #include <algorithm>
 #include <chrono>
 #include <limits>
@@ -92,7 +93,7 @@ void LoaderCache::Remove(const std::string& filename) {
     _queue.remove(filename);
 }
 
-int Session::_num_sessions = 0;
+volatile int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 std::thread* Session::_animation_thread = nullptr;
@@ -121,7 +122,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
     _connected = true;
     ++_num_sessions;
     UpdateLastMessageTimestamp();
-    spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
+    spdlog::info("{} ::Session ({}:{})", fmt::ptr(this), _id, _num_sessions);
 }
 
 static int __exit_backend_timer = 0;
@@ -147,23 +148,28 @@ void ExitNoSessions(int s) {
 
 Session::~Session() {
     --_num_sessions;
-    spdlog::debug("{} ~Session {}", fmt::ptr(this), _num_sessions);
+    spdlog::debug("{} ~Session : num sessions = {}", fmt::ptr(this), _num_sessions);
     if (!_num_sessions) {
         spdlog::info("No remaining sessions.");
         if (_exit_when_all_sessions_closed) {
             if (_exit_after_num_seconds == 0) {
-                spdlog::info("Exiting due to no sessions remaining");
-                ThreadManager::ExitEventHandlingThreads();
+                spdlog::debug("Exiting due to no sessions remaining");
                 logger::FlushLogFile();
-                exit(0);
+                __exit_backend_timer = 1;
+            } else {
+                __exit_backend_timer = _exit_after_num_seconds;
             }
-            __exit_backend_timer = _exit_after_num_seconds;
             struct sigaction sig_handler;
             sig_handler.sa_handler = ExitNoSessions;
             sigemptyset(&sig_handler.sa_mask);
             sig_handler.sa_flags = 0;
             sigaction(SIGALRM, &sig_handler, nullptr);
-            alarm(1);
+            struct itimerval itimer;
+            itimer.it_interval.tv_sec = 0;
+            itimer.it_interval.tv_usec = 0;
+            itimer.it_value.tv_sec = 0;
+            itimer.it_value.tv_usec = 5;
+            setitimer(ITIMER_REAL, &itimer, nullptr);
         }
     }
     logger::FlushLogFile();
@@ -364,6 +370,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
         type = CARTA::SessionType::RESUMED;
         if (session_id != _id) {
             _id = session_id;
+            spdlog::info("({}) Session setting id to {}", fmt::ptr(this), session_id);
             status = fmt::format("Start a new backend and assign it with session id {}", session_id);
         } else {
             status = fmt::format("Network reconnected with session id {}", session_id);
@@ -1083,7 +1090,7 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message,
 
 void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
     bool success(true);
-    spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
+    spdlog::info("Session {} [{}] Resumed.", GetId(), GetAddress());
 
     // Error messages
     std::string err_message;
