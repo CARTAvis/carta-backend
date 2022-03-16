@@ -517,6 +517,8 @@ public:
         }
 
         EXPECT_EQ(_message_count, 1);
+
+        _dummy_backend->WaitForJobFinished();
     }
 };
 

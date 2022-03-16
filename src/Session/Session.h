@@ -288,9 +288,6 @@ protected:
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
-    void StartAnimationThread() {
-        // Not sure if needed... XXX
-    }
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
@@ -346,7 +343,7 @@ protected:
     std::atomic<int> _ref_count;
     int _animation_id;
     bool _connected;
-    static int _num_sessions;
+    static volatile int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
     static std::thread* _animation_thread;
