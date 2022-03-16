@@ -6,6 +6,8 @@
 
 #include "String.h"
 
+#include <curl/curl.h>
+#include <memory>
 #include <sstream>
 
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
@@ -47,4 +49,15 @@ bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
     }
 
     return d == 0;
+}
+
+std::string SafeStringEscape(const std::string& input) {
+    struct free_deleter {
+        void operator()(void* p) {
+            free(p);
+        }
+    };
+
+    std::unique_ptr<char, free_deleter> escaped_string(curl_easy_escape(nullptr, input.c_str(), 0));
+    return std::string(escaped_string.get());
 }
