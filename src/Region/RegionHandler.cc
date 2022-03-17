@@ -1630,9 +1630,12 @@ bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vect
             profile.clear();
             profile = line_profile.tovector();
 
+            int x(0), y(0), start(0), end(profile.size() - 1), mip(0);
+            float value(0.0);
+
             // Add spatial profile to vector
             CARTA::SpatialProfileData spatial_data =
-                Message::SpatialProfileData(file_id, region_id, 0, 0, channel, stokes_index, 0.0, 0, 0, profile, coordinate, 0);
+                Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value, start, end, profile, coordinate, mip);
             spatial_data_vec.push_back(spatial_data);
         } else {
             if (cancelled) {
