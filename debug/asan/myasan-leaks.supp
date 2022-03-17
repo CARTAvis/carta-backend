@@ -1,0 +1,4 @@
+leak:*casacore*
+leak:*casa*
+leak:*libwcs*
+leak:*libcurl*
