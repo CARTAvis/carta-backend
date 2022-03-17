@@ -133,22 +133,22 @@ private:
     bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, std::function<void(float)>& progress_callback,
         double& increment, casacore::Matrix<float>& profiles, bool& cancelled, std::string& message);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state, int stokes_index);
-    float GetLineRotation(std::vector<CARTA::Point>& end_points);
-    bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
+    float GetLineRotation(const PointXy& endpoint0, const PointXy& endpoint1);
+    size_t PolylinePixelLength(const std::vector<CARTA::Point>& control_points);
+    bool GetFixedPixelRegionProfiles(size_t num_profiles, int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
         double& increment, bool& cancelled);
-    size_t LinePixelLength(const std::vector<CARTA::Point>& control_points);
-    bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
+    bool CheckLinearOffsets(const std::vector<PointXy>& box_centers, casacore::CoordinateSystem* csys, double& increment);
+    double GetPointSeparation(const PointXy& point1, const PointXy& point2, const DirectionCoordinate& direction_coord);
     double GetSeparationTolerance(casacore::CoordinateSystem* csys);
-    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
+    bool GetFixedAngularRegionProfiles(size_t num_profiles, int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
         double& increment, bool& cancelled, std::string& message);
     bool SetPointInRange(float max_point, float& point);
-    casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
-        const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
-    RegionState GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,
-        const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int pixel_width, double angular_width,
-        float height_angle, double tolerance);
+    std::vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord, const PointXy& start_point,
+        const PointXy& end_point, double target_separation, double tolerance);
+    RegionState GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id, const std::vector<double>& box_start,
+        const std::vector<double>& box_end, int pixel_width, double angular_width, float line_rotation, double tolerance);
     casacore::Vector<float> GetTemporaryRegionProfile(int region_idx, int file_id, RegionState& region_state,
         casacore::CoordinateSystem* csys, bool per_z, int stokes_index, double& num_pixels);
 
