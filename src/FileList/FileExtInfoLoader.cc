@@ -1124,7 +1124,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         // Make a direction coordinate and add it to the coordinate system
         casacore::MDirection::Types frame_type;
         if (casacore::MDirection::getType(frame_type, frame) || casacore::MDirection::getType(frame_type, radesys)) {
-            auto xform = compressed_fits->GetMatrixForm();
+            auto xform = compressed_fits->GetTransformMatrix();
             auto proj_type = casacore::Projection::type(projection);
             auto to_rad = casacore::C::pi / 180.0;
             casacore::DirectionCoordinate dir_coord(
