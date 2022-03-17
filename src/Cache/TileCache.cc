@@ -28,7 +28,7 @@ TilePtr TileCache::Peek(Key key) {
     }
 }
 
-TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader<float>> loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     bool valid(1);
 
@@ -78,7 +78,7 @@ TileCache::Key TileCache::ChunkKey(Key tile_key) {
     return Key((tile_key.x / CHUNK_SIZE) * CHUNK_SIZE, (tile_key.y / CHUNK_SIZE) * CHUNK_SIZE);
 }
 
-bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader<float>> loader, std::mutex& image_mutex) {
     // load a chunk from the file
     int data_width;
     int data_height;

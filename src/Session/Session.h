@@ -72,12 +72,12 @@ struct PerSocketData {
 class LoaderCache {
 public:
     LoaderCache(int capacity);
-    std::shared_ptr<FileLoader> Get(const std::string& filename, const std::string& directory = "");
+    std::shared_ptr<FileLoader<float>> Get(const std::string& filename, const std::string& directory = "");
     void Remove(const std::string& filename);
 
 private:
     int _capacity;
-    std::unordered_map<std::string, std::shared_ptr<FileLoader>> _map;
+    std::unordered_map<std::string, std::shared_ptr<FileLoader<float>>> _map;
     std::list<std::string> _queue;
     std::mutex _loader_cache_mutex;
 };
@@ -264,7 +264,7 @@ protected:
 
     // File info for open generated image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-        const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader);
+        const std::string& filename, std::string& message, std::shared_ptr<FileLoader<float>>& image_loader);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);

@@ -31,7 +31,7 @@
 
 using namespace carta;
 
-FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<FileLoader> loader) : _loader(loader) {}
+FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<FileLoader<float>> loader) : _loader(loader) {}
 
 bool FileExtInfoLoader::FillFitsFileInfoMap(
     std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message) {

@@ -19,7 +19,8 @@
 
 namespace carta {
 
-class FitsLoader : public FileLoader {
+template <typename T>
+class FitsLoader : public FileLoader<T> {
 public:
     FitsLoader(const std::string& filename, bool is_gz = false);
     ~FitsLoader();
@@ -33,9 +34,11 @@ private:
     void RemoveHistoryBeam(unsigned int hdu_num);
 };
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
+template <typename T>
+FitsLoader<T>::FitsLoader(const std::string& filename, bool is_gz) : FileLoader<float>(filename, "", is_gz) {}
 
-FitsLoader::~FitsLoader() {
+template <typename T>
+FitsLoader<T>::~FitsLoader() {
     // Remove decompressed fits.gz file
     auto unzip_path = fs::path(_unzip_file);
     std::error_code error_code;
@@ -44,18 +47,19 @@ FitsLoader::~FitsLoader() {
     }
 }
 
-void FitsLoader::OpenFile(const std::string& hdu) {
+template <typename T>
+void FitsLoader<T>::OpenFile(const std::string& hdu) {
     // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 
-    if (!_image || (hdu_num != _hdu_num)) {
+    if (!this->_image || (hdu_num != _hdu_num)) {
         bool gz_mem_ok(true);
 
-        if (_is_gz) {
+        if (this->_is_gz) {
             // Determine whether to load into memory or decompress on disk.
             // Do not check memory if for headers only.
             // Error if failure reading naxis/bitpix headers.
-            CompressedFits fits_gz(_filename);
+            CompressedFits fits_gz(this->_filename);
             auto required_mem_kB = fits_gz.GetDecompressSize();
 
             if (required_mem_kB == 0) {
@@ -78,25 +82,25 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         bool use_casacore_fits(true);
 
         try {
-            if (_is_gz) {
+            if (this->_is_gz) {
                 if (gz_mem_ok) {
                     // Use cfitsio to access data in CartaFitsImage.
                     // casacore throws exception "No data in the zeroth or first extension"
                     use_casacore_fits = false;
-                    _image.reset(new CartaFitsImage(_filename, hdu_num));
+                    this->_image.reset(new CartaFitsImage(this->_filename, hdu_num));
                 } else {
                     // use casacore for unzipped FITS file
-                    _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
+                    this->_image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
                 }
             } else {
-                _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+                this->_image.reset(new casacore::FITSImage(this->_filename, 0, hdu_num));
                 RemoveHistoryBeam(hdu_num);
             }
         } catch (const casacore::AipsError& err) {
             if (use_casacore_fits) {
                 // casacore::FITSImage failed, try CartaFitsImage
                 try {
-                    _image.reset(new CartaFitsImage(_filename, hdu_num));
+                    this->_image.reset(new CartaFitsImage(this->_filename, hdu_num));
                 } catch (const casacore::AipsError& err) {
                     spdlog::error(err.getMesg());
                 }
@@ -105,23 +109,24 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             }
         }
 
-        if (!_image) {
+        if (!this->_image) {
             throw(casacore::AipsError("Error loading FITS image."));
         }
 
-        _hdu = hdu;
+        this->_hdu = hdu;
         _hdu_num = hdu_num;
 
-        _image_shape = _image->shape();
-        _num_dims = _image_shape.size();
-        _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = _image->coordinates();
+        this->_image_shape = this->_image->shape();
+        this->_num_dims = this->_image_shape.size();
+        this->_has_pixel_mask = this->_image->hasPixelMask();
+        this->_coord_sys = this->_image->coordinates();
     }
 }
 
-void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
+template <typename T>
+void FitsLoader<T>::RemoveHistoryBeam(unsigned int hdu_num) {
     // Remove beam not in header entries
-    auto image_info = _image->imageInfo();
+    auto image_info = this->_image->imageInfo();
     if (image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam()) {
         // Check if beam headers exist
         fitsfile* fptr;
@@ -129,7 +134,7 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
         int* hdutype(nullptr);
 
         // Open file and move to hdu
-        fits_open_file(&fptr, _filename.c_str(), 0, &status);
+        fits_open_file(&fptr, this->_filename.c_str(), 0, &status);
         fits_movabs_hdu(fptr, hdu, hdutype, &status);
 
         // Read headers
@@ -155,7 +160,7 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
         if (!(bmaj_found && bmin_found && bpa_found)) {
             // Beam headers missing, remove from image info
             image_info.removeRestoringBeam();
-            _image->setImageInfo(image_info);
+            this->_image->setImageInfo(image_info);
         }
     }
 }

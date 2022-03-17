@@ -15,28 +15,31 @@
 
 namespace carta {
 
-class ConcatLoader : public FileLoader {
+template <typename T>
+class ConcatLoader : public FileLoader<T> {
 public:
     ConcatLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-ConcatLoader::ConcatLoader(const std::string& filename) : FileLoader(filename) {}
+template <typename T>
+ConcatLoader<T>::ConcatLoader(const std::string& filename) : FileLoader<float>(filename) {}
 
-void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
-    if (!_image) {
+template <typename T>
+void ConcatLoader<T>::OpenFile(const std::string& /*hdu*/) {
+    if (!this->_image) {
         casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(this->GetFileName() + "/imageconcat.json");
-        _image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));
+        this->_image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));
 
-        if (!_image) {
+        if (!this->_image) {
             throw(casacore::AipsError("Error opening image"));
         }
 
-        _image_shape = _image->shape();
-        _num_dims = _image_shape.size();
-        _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = _image->coordinates();
+        this->_image_shape = this->_image->shape();
+        this->_num_dims = this->_image_shape.size();
+        this->_has_pixel_mask = this->_image->hasPixelMask();
+        this->_coord_sys = this->_image->coordinates();
     }
 }
 

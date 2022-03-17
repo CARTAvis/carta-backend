@@ -13,15 +13,14 @@
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
-#include "Frame/Frame.h"
-
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
 
 namespace carta {
 
-class Hdf5Loader : public FileLoader {
+template <typename T>
+class Hdf5Loader : public FileLoader<T> {
 public:
     Hdf5Loader(const std::string& filename);
 
@@ -32,9 +31,10 @@ public:
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
 
-    bool UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) override;
-    bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
-        std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
+    bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
+    bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
+        float& progress) override;
     bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
     bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes,
@@ -55,12 +55,12 @@ private:
     std::string DataSetToString(FileInfo::Data ds) const;
     bool HasData(std::string ds_name) const;
 
-    template <typename T>
-    const IPos GetStatsDataShapeTyped(FileInfo::Data ds);
+    template <typename S>
+    const casacore::IPosition GetStatsDataShapeTyped(FileInfo::Data ds);
     template <typename S, typename D>
     casacore::ArrayBase* GetStatsDataTyped(FileInfo::Data ds);
 
-    const IPos GetStatsDataShape(FileInfo::Data ds) override;
+    const casacore::IPosition GetStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
     casacore::Lattice<float>* LoadSwizzledData();

@@ -20,7 +20,8 @@
 
 namespace carta {
 
-class ExprLoader : public FileLoader {
+template <typename T>
+class ExprLoader : public FileLoader<T> {
 public:
     ExprLoader(const std::string& filename, const std::string& directory = "");
 
@@ -28,43 +29,46 @@ public:
     bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) override;
 };
 
-ExprLoader::ExprLoader(const std::string& filename, const std::string& directory) : FileLoader(filename, directory) {}
+template <typename T>
+ExprLoader<T>::ExprLoader(const std::string& filename, const std::string& directory) : FileLoader<float>(filename, directory) {}
 
-void ExprLoader::OpenFile(const std::string& /*hdu*/) {
-    if (!_image) {
-        if (!_directory.empty()) {
+template <typename T>
+void ExprLoader<T>::OpenFile(const std::string& /*hdu*/) {
+    if (!this->_image) {
+        if (!this->_directory.empty()) {
             // create image from LEL expression stored in _filename
-            casacore::String expr(_filename);
+            casacore::String expr(this->_filename);
 
             // Open HDF5 with CartaHdf5Image
             CartaHdf5Image::RegisterOpenFunction();
 
-            casacore::LatticeExprNode expr_node = casacore::LatticeExprNode(casacore::ImageExprParse::command(expr, _directory));
-            _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(expr_node), expr));
+            casacore::LatticeExprNode expr_node = casacore::LatticeExprNode(casacore::ImageExprParse::command(expr, this->_directory));
+            this->_image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(expr_node), expr));
         } else {
             // load LEL image from disk
-            fs::path file_path(_filename);
+            fs::path file_path(this->_filename);
             std::string directory = file_path.parent_path().string();
-            casacore::JsonKVMap jmap = casacore::JsonParser::parseFile(_filename + "/imageexpr.json");
+            casacore::JsonKVMap jmap = casacore::JsonParser::parseFile(this->_filename + "/imageexpr.json");
             casacore::String expr = jmap.get("ImageExpr").getString();
             casacore::PtrBlock<const casacore::ImageRegion*> regions;
             casacore::LatticeExprNode node =
                 casacore::ImageExprParse::command(expr, casacore::Block<casacore::LatticeExprNode>(), regions, directory);
-            _image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(node), expr, _filename, jmap));
+            this->_image.reset(new casacore::ImageExpr<float>(casacore::LatticeExpr<float>(node), expr, this->_filename, jmap));
         }
 
-        if (!_image) {
+        if (!this->_image) {
             throw(casacore::AipsError("Error opening image."));
         }
 
-        _image_shape = _image->shape();
-        _num_dims = _image_shape.size();
-        _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = _image->coordinates();
+        this->_image_shape = this->_image->shape();
+        this->_num_dims = this->_image_shape.size();
+        this->_has_pixel_mask = this->_image->hasPixelMask();
+        this->_coord_sys = this->_image->coordinates();
     }
 }
 
-bool ExprLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+template <typename T>
+bool ExprLoader<T>::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
     // Save image to disk if CASA file type requested and image was created from LEL expression
     bool success(false);
 
@@ -73,11 +77,11 @@ bool ExprLoader::SaveFile(const CARTA::FileType type, const std::string& output_
         return success;
     }
 
-    if (!_image) {
+    if (!this->_image) {
         OpenFile("");
     }
 
-    casacore::ImageExpr<float>* im = dynamic_cast<casacore::ImageExpr<float>*>(_image.get());
+    casacore::ImageExpr<float>* im = dynamic_cast<casacore::ImageExpr<float>*>(this->_image.get());
     try {
         im->save(output_filename);
         success = true;

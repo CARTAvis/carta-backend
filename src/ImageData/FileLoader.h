@@ -22,18 +22,19 @@ namespace carta {
 
 class Frame;
 
+template <typename T>
 class FileLoader {
 public:
-    using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
+    using ImageRef = std::shared_ptr<casacore::ImageInterface<T>>;
     using IPos = casacore::IPosition;
 
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false);
     virtual ~FileLoader() = default;
 
-    static FileLoader* GetLoader(const std::string& filename, const std::string& directory = "");
+    static FileLoader<T>* GetLoader(const std::string& filename, const std::string& directory = "");
     // Access an image from the memory, not from the disk
-    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
+    static FileLoader<T>* GetLoader(ImageRef image);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
@@ -155,5 +156,7 @@ protected:
 };
 
 } // namespace carta
+
+#include "FileLoader.tcc"
 
 #endif // CARTA_BACKEND_IMAGEDATA_FILELOADER_H_

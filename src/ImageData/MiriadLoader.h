@@ -14,7 +14,8 @@
 
 namespace carta {
 
-class MiriadLoader : public FileLoader {
+template <typename T>
+class MiriadLoader : public FileLoader<T> {
 public:
     MiriadLoader(const std::string& file);
 
@@ -23,14 +24,16 @@ public:
     void OpenFile(const std::string& hdu) override;
 };
 
-MiriadLoader::MiriadLoader(const std::string& filename) : FileLoader(filename) {}
+template <typename T>
+MiriadLoader<T>::MiriadLoader(const std::string& filename) : FileLoader<T>(filename) {}
 
-bool MiriadLoader::CanOpenFile(std::string& error) {
+template <typename T>
+bool MiriadLoader<T>::CanOpenFile(std::string& error) {
     // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.
     // If the following checks pass, it should be safe to open the MiriadImage.
     bool miriad_ok(true);
     int t_handle, i_handle, io_stat, num_dim;
-    hopen_c(&t_handle, _filename.c_str(), "old", &io_stat);
+    hopen_c(&t_handle, this->_filename.c_str(), "old", &io_stat);
     if (io_stat != 0) {
         error = "Could not open MIRIAD file";
         miriad_ok = false;
@@ -52,18 +55,19 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
     return miriad_ok;
 }
 
-void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
-    if (!_image) {
-        _image.reset(new CartaMiriadImage(_filename));
+template <typename T>
+void MiriadLoader<T>::OpenFile(const std::string& /*hdu*/) {
+    if (!this->_image) {
+        this->_image.reset(new CartaMiriadImage(this->_filename));
 
-        if (!_image) {
+        if (!this->_image) {
             throw(casacore::AipsError("Error opening image"));
         }
 
-        _image_shape = _image->shape();
-        _num_dims = _image_shape.size();
-        _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = _image->coordinates();
+        this->_image_shape = this->_image->shape();
+        this->_num_dims = this->_image_shape.size();
+        this->_has_pixel_mask = this->_image->hasPixelMask();
+        this->_coord_sys = this->_image->coordinates();
     }
 }
 

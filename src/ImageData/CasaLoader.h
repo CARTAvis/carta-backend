@@ -13,27 +13,30 @@
 
 namespace carta {
 
-class CasaLoader : public FileLoader {
+template <typename T>
+class CasaLoader : public FileLoader<T> {
 public:
     CasaLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
+template <typename T>
+CasaLoader<T>::CasaLoader(const std::string& filename) : FileLoader<float>(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
-    if (!_image) {
-        _image.reset(new casacore::PagedImage<float>(_filename));
+template <typename T>
+void CasaLoader<T>::OpenFile(const std::string& /*hdu*/) {
+    if (!this->_image) {
+        this->_image.reset(new casacore::PagedImage<float>(this->_filename));
 
-        if (!_image) {
+        if (!this->_image) {
             throw(casacore::AipsError("Error opening image"));
         }
 
-        _image_shape = _image->shape();
-        _num_dims = _image_shape.size();
-        _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = _image->coordinates();
+        this->_image_shape = this->_image->shape();
+        this->_num_dims = this->_image_shape.size();
+        this->_has_pixel_mask = this->_image->hasPixelMask();
+        this->_coord_sys = this->_image->coordinates();
     }
 }
 

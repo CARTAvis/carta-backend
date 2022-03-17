@@ -86,7 +86,7 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
 
 class Frame {
 public:
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader<float>> loader, const std::string& hdu, int default_z = DEFAULT_Z);
     ~Frame(){};
 
     bool IsValid();
@@ -259,7 +259,7 @@ protected:
     volatile bool _connected = true;
 
     // Image loader for image type
-    std::shared_ptr<FileLoader> _loader;
+    std::shared_ptr<FileLoader<float>> _loader;
 
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;

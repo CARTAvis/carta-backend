@@ -25,7 +25,7 @@ namespace carta {
 
 class FileExtInfoLoader {
 public:
-    FileExtInfoLoader(std::shared_ptr<FileLoader> loader);
+    FileExtInfoLoader(std::shared_ptr<FileLoader<float>> loader);
 
     // Fill extended file info for all FITS image hdus
     bool FillFitsFileInfoMap(
@@ -68,7 +68,7 @@ private:
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
         std::string& projection);
 
-    std::shared_ptr<FileLoader> _loader;
+    std::shared_ptr<FileLoader<float>> _loader;
     CARTA::FileType _type;
 };
 

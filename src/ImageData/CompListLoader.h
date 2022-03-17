@@ -15,27 +15,30 @@
 
 namespace carta {
 
-class CompListLoader : public FileLoader {
+template <typename T>
+class CompListLoader : public FileLoader<T> {
 public:
     CompListLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filename) {}
+template <typename T>
+CompListLoader<T>::CompListLoader(const std::string& filename) : FileLoader<float>(filename) {}
 
-void CompListLoader::OpenFile(const std::string& /*hdu*/) {
-    if (!_image) {
-        _image.reset(new casa::ComponentListImage(_filename));
+template <typename T>
+void CompListLoader<T>::OpenFile(const std::string& /*hdu*/) {
+    if (!this->_image) {
+        this->_image.reset(new casa::ComponentListImage(this->_filename));
 
-        if (!_image) {
+        if (!this->_image) {
             throw(casacore::AipsError("Error opening image"));
         }
 
-        _image_shape = _image->shape();
-        _num_dims = _image_shape.size();
-        _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = _image->coordinates();
+        this->_image_shape = this->_image->shape();
+        this->_num_dims = this->_image_shape.size();
+        this->_has_pixel_mask = this->_image->hasPixelMask();
+        this->_coord_sys = this->_image->coordinates();
     }
 }
 

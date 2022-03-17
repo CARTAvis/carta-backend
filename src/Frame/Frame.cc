@@ -30,7 +30,7 @@ static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader<float>> loader, const std::string& hdu, int default_z)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),

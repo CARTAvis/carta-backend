@@ -48,7 +48,7 @@ using namespace carta;
 
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
-std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {
+std::shared_ptr<FileLoader<float>> LoaderCache::Get(const std::string& filename, const std::string& directory) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
 
     // We have a cached loader, but the file has changed
@@ -60,9 +60,9 @@ std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const 
     // We don't have a cached loader
     if (_map.find(filename) == _map.end()) {
         // Create the loader -- don't block while doing this
-        std::shared_ptr<FileLoader> loader_ptr;
+        std::shared_ptr<FileLoader<float>> loader_ptr;
         guard.unlock();
-        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename, directory));
+        loader_ptr = std::shared_ptr<FileLoader<float>>(FileLoader<float>::GetLoader(filename, directory));
         guard.lock();
 
         // Check if the loader was added in the meantime
@@ -308,12 +308,12 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-    const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader) {
+    const std::string& filename, std::string& message, std::shared_ptr<FileLoader<float>>& image_loader) {
     // Fill FileInfoExtended for given image; no hdu
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
+        image_loader = std::shared_ptr<FileLoader<float>>(FileLoader<float>::GetLoader(image));
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
@@ -570,7 +570,7 @@ bool Session::OnOpenFile(
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;
-    std::shared_ptr<FileLoader> image_loader;
+    std::shared_ptr<FileLoader<float>> image_loader;
 
     CARTA::FileInfoExtended file_info_extended;
     bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, image_loader);

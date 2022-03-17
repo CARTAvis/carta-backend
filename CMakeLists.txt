@@ -209,7 +209,6 @@ set(SOURCE_FILES
         src/ImageData/FileInfo.cc
         src/ImageData/FileLoader.cc
         src/ImageData/Hdf5Attributes.cc
-        src/ImageData/Hdf5Loader.cc
         src/ImageData/StokesFilesConnector.cc
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc

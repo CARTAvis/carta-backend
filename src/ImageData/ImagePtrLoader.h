@@ -11,23 +11,25 @@
 
 namespace carta {
 
-class ImagePtrLoader : public FileLoader {
+template <typename T>
+class ImagePtrLoader : public FileLoader<float> {
 public:
     ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) : FileLoader("") {
-    _image = image;
-
-    _image_shape = _image->shape();
-    _num_dims = _image_shape.size();
-    _has_pixel_mask = _image->hasPixelMask();
-    _coord_sys = _image->coordinates();
+template <typename T>
+ImagePtrLoader<T>::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) : FileLoader<float>("") {
+    this->_image = image;
+    this->_image_shape = this->_image->shape();
+    this->_num_dims = this->_image_shape.size();
+    this->_has_pixel_mask = this->_image->hasPixelMask();
+    this->_coord_sys = this->_image->coordinates();
 }
 
-void ImagePtrLoader::OpenFile(const std::string& /*hdu*/) {}
+template <typename T>
+void ImagePtrLoader<T>::OpenFile(const std::string& /*hdu*/) {}
 
 } // namespace carta
 
