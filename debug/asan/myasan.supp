@@ -1,0 +1,3 @@
+interceptor_via_lib:*casa*
+interceptor_via_lib:libcasa*
+interceptor_via_lib:libcasa_casa*

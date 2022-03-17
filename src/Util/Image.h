@@ -138,12 +138,6 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
     {"Plinear", CARTA::PolarizationType::Plinear}, {"PFtotal", CARTA::PolarizationType::PFtotal},
     {"PFlinear", CARTA::PolarizationType::PFlinear}, {"Pangle", CARTA::PolarizationType::Pangle}};
 
-static std::unordered_map<CARTA::PolarizationType, std::string> StokesTypesString{{CARTA::PolarizationType::I, "I"},
-    {CARTA::PolarizationType::Q, "Q"}, {CARTA::PolarizationType::U, "U"}, {CARTA::PolarizationType::V, "V"},
-    {CARTA::PolarizationType::RR, "RR"}, {CARTA::PolarizationType::LL, "LL"}, {CARTA::PolarizationType::RL, "RL"},
-    {CARTA::PolarizationType::LR, "LR"}, {CARTA::PolarizationType::XX, "XX"}, {CARTA::PolarizationType::YY, "YY"},
-    {CARTA::PolarizationType::XY, "XY"}, {CARTA::PolarizationType::YX, "YX"}};
-
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 bool ComputeStokes(int stokes);

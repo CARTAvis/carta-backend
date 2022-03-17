@@ -381,7 +381,7 @@ bool Frame::FillImageCache() {
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), _stokes_index).second;
     _image_cache_size = section.length().product();
-    _image_cache = std::shared_ptr<float[]>(new float[_image_cache_size]);
+    _image_cache = std::make_unique<float[]>(_image_cache_size);
     std::pair<StokesSource, casacore::Slicer> stokes_src_vs_section = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     if (!GetSlicerData(stokes_src_vs_section, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
@@ -1849,13 +1849,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    // Modify image to export
+    // Begin with entire image
     auto image_shape = ImageShape();
+    casacore::ImageInterface<float>* image = _loader->GetImage().get();
 
-    casacore::ImageInterface<float>* image;
+    // Modify image to export
     casacore::SubImage<float> sub_image;
     casacore::LCRegion* image_region;
     casacore::IPosition region_shape;
+
     if (region) {
         image_region = GetImageRegion(file_id, region);
         region_shape = image_region->shape();
@@ -1870,7 +1872,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
-            // If apply region
             if (region) {
                 auto latt_region_holder = LattRegionHolder(image_region);
                 auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);
