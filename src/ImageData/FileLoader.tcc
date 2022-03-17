@@ -50,9 +50,7 @@ FileLoader<T>* FileLoader<T>::GetLoader(const std::string& filename, const std::
         case casacore::ImageOpener::NEWSTAR:
             break;
         case casacore::ImageOpener::HDF5:
-            break;
-            // TODO: why don't you work???
-            //            return new Hdf5Loader(filename);
+            return new Hdf5Loader<T>(filename);
         case casacore::ImageOpener::IMAGECONCAT:
             return new ConcatLoader<T>(filename);
         case casacore::ImageOpener::IMAGEEXPR:
