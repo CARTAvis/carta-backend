@@ -1627,7 +1627,6 @@ bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vect
             if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
                 continue;
             }
-
             profile.clear();
             profile = line_profile.tovector();
 
@@ -1852,10 +1851,10 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
         if (CheckLinearOffsets(box_centers, reference_csys, increment)) {
             // Get profiles for each line segment; progress is iregion/num_regions
             size_t num_regions(box_centers.size());
-            if (trim_line) {
-                num_regions--;
-            }
             size_t profiles_size = profiles.nrow() + num_regions;
+            if (trim_line) {
+                profiles_size--;
+            }
 
             if (iline == 1) { // Update num_profiles to correct final number
                 num_profiles = profiles_size;
@@ -1872,6 +1871,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
                 }
 
                 if (trim_line && (iregion == 0)) { // skip first region
+                    spdlog::debug("Line {} box region {} trimmed", iline, iregion);
                     continue;
                 }
 
@@ -1893,7 +1893,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
                 spdlog::debug("Line {} box region {} of {}: max num pixels={}", iline, iregion, num_regions - 1, num_pixels);
 
                 if (profiles.nrow() < profiles_size) {
-                    profiles.resize(casacore::IPosition(2, profiles_size, region_profile.size()));
+                    profiles.resize(casacore::IPosition(2, profiles_size, region_profile.size()), true);
                 }
 
                 profiles.row(profile_row++) = region_profile;

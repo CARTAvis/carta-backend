@@ -150,7 +150,6 @@ TEST_F(LineSpatialProfileTest, FitsVerticalCutProfile) {
     CmpVectors(profile_data, image_data);
 }
 
-/*
 TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
     std::vector<float> endpoints = {9.0, 5.0, 9.0, 1.0, 1.0, 1.0};
@@ -181,4 +180,3 @@ TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     // Profile data width=1 of polyline is same as slices
     CmpVectors(profile_data, image_data);
 }
-*/
