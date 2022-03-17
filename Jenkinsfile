@@ -210,7 +210,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "bionic-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
@@ -228,7 +228,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "focal-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
@@ -246,7 +246,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "jammy-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
@@ -302,7 +302,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel7-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
@@ -320,7 +320,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel8-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
@@ -575,7 +575,7 @@ def unit_tests_macos11() {
                 } else {
                     ret = true
                 }
-                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
+                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
             }
         }
     }
@@ -593,7 +593,7 @@ def unit_tests_macos12() {
                 } else {
                     ret = true
                 }
-                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
+                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
             }
         }
     }
@@ -852,7 +852,7 @@ def cube_histogram() {
                     ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 1 of 1"
+                echo "Skipping PER_CUBE_HISTOGRAM_HDF5.test.ts test"
             }
         }
     }
