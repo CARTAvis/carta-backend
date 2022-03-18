@@ -10,6 +10,7 @@
 #define CARTA_BACKEND__SESSION_H_
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <map>
@@ -66,6 +67,39 @@ typedef std::function<void()> ScriptingSessionClosedCallback;
 struct PerSocketData {
     uint32_t session_id;
     string address;
+};
+
+struct RequestedFileInfo {
+    string directory;
+    string file;
+    string hdu;
+    std::chrono::time_point<std::chrono::high_resolution_clock> request_time;
+    std::mutex requested_file_info_mutex;
+
+    void set(string& requested_directory, string& requested_file, string& requested_hdu) {
+        std::lock_guard<std::mutex> guard(requested_file_info_mutex);
+        directory = requested_directory;
+        file = requested_file;
+        hdu = requested_hdu;
+        request_time = std::chrono::high_resolution_clock::now();
+    }
+
+    bool duplicate_request(string& requested_directory, string& requested_file, string& requested_hdu) {
+        std::lock_guard<std::mutex> guard(requested_file_info_mutex);
+        // Not duplicate request if different file
+        if ((requested_directory != directory) || (requested_file != file) || (requested_hdu != hdu)) {
+            return false;
+        }
+
+        // Same file, check elapsed time: not duplicate request after 1 minute
+        auto new_request_time = std::chrono::high_resolution_clock::now();
+        auto dt_request_time = std::chrono::duration_cast<std::chrono::milliseconds>(new_request_time - request_time).count();
+        if (dt_request_time > 60000) {
+            return false;
+        }
+
+        return true;
+    }
 };
 
 // Cache of loaders for reading images from disk.
@@ -302,6 +336,7 @@ protected:
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
+    RequestedFileInfo _requested_file_info;
 
     // Loader cache
     LoaderCache _loaders;

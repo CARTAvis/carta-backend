@@ -9,7 +9,6 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <algorithm>
-#include <chrono>
 #include <limits>
 #include <memory>
 #include <thread>
@@ -421,24 +420,35 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
 }
 
 void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id) {
+    auto directory = request.directory();
+    auto file = request.file();
+    auto hdu = request.hdu();
     CARTA::FileInfoResponse response;
-    auto& file_info = *response.mutable_file_info();
-    std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
     string message;
-    bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
 
-    if (success) {
-        // add extended info map to message
-        *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+    if (!_requested_file_info.duplicate_request(directory, file, hdu)) {
+        spdlog::debug("Responding to FileInfoRequest for {}/{} hdu {}.", directory, file, hdu);
+        _requested_file_info.set(directory, file, hdu);
+
+        auto& file_info = *response.mutable_file_info();
+        std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+        bool success = FillExtendedFileInfo(extended_info_map, file_info, directory, file, hdu, message);
+
+        if (success) {
+            // add extended info map to message
+            *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+        } else {
+            // log error
+            spdlog::error(message);
+        }
+
+        // complete response message
+        response.set_success(success);
+        response.set_message(message);
+        SendEvent(CARTA::EventType::FILE_INFO_RESPONSE, request_id, response);
     } else {
-        // log error
-        spdlog::error(message);
+        spdlog::debug("Ignoring duplicate FileInfoRequest for {}/{} hdu {}.", directory, file, hdu);
     }
-
-    // complete response message
-    response.set_success(success);
-    response.set_message(message);
-    SendEvent(CARTA::EventType::FILE_INFO_RESPONSE, request_id, response);
 }
 
 void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
