@@ -424,7 +424,6 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto file = request.file();
     auto hdu = request.hdu();
     CARTA::FileInfoResponse response;
-    string message;
 
     if (!_requested_file_info.duplicate_request(directory, file, hdu)) {
         spdlog::debug("Responding to FileInfoRequest for {}/{} hdu {}.", directory, file, hdu);
@@ -432,6 +431,7 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 
         auto& file_info = *response.mutable_file_info();
         std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+        string message;
         bool success = FillExtendedFileInfo(extended_info_map, file_info, directory, file, hdu, message);
 
         if (success) {
