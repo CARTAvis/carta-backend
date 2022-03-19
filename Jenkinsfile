@@ -320,7 +320,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel8-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails:MomentTest.CheckConsistencyForBeamConvolutions"
                             }
                         }
                     }
