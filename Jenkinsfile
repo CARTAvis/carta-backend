@@ -28,7 +28,6 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
-                                stash includes: "test/**/*", name: "bionic-unit-tests"
                                 stash includes: "carta_backend", name: "bionic-backend"
                             }
                         }
@@ -54,7 +53,6 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
-                                stash includes: "test/**/*", name: "focal-unit-tests"
                                 stash includes: "carta_backend", name: "focal-backend"
                             }
                         }
@@ -80,7 +78,6 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
-                                stash includes: "test/**/*", name: "jammy-unit-tests"
                                 stash includes: "carta_backend", name: "jammy-backend"
                             }
                         }
@@ -106,7 +103,6 @@ pipeline {
                                 sh "rm -rf *"
                                 sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 8"
-                                stash includes: "test/**/*", name: "macos11-unit-tests"
                                 stash includes: "carta_backend", name: "macos11-backend"
                             }
                         }
@@ -132,7 +128,6 @@ pipeline {
                                 sh "rm -rf *"
                                 sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 8"
-                                stash includes: "test/**/*", name: "macos12-unit-tests"
                                 stash includes: "carta_backend", name: "macos12-backend"
                             }
                         }
@@ -158,7 +153,6 @@ pipeline {
                             dir ('build') {
                                 sh "source /opt/rh/devtoolset-8/enable && cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "source /opt/rh/devtoolset-8/enable && make -j 16"
-                                stash includes: "test/**/*", name: "rhel7-unit-tests"
                                 stash includes: "carta_backend", name: "rhel7-backend"
                             }
                         }
@@ -184,7 +178,6 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
-                                stash includes: "test/**/*", name: "rhel8-unit-tests"
                                 stash includes: "carta_backend", name: "rhel8-backend"
                             }
                         }
@@ -208,15 +201,14 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "bionic-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'test/ubuntu_bionic_test_detail.xml'
+                            junit 'build/test/ubuntu_bionic_test_detail.xml'
                         }
                     }
                 }
@@ -226,15 +218,14 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "focal-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'test/ubuntu_focal_test_detail.xml'
+                            junit 'build/test/ubuntu_focal_test_detail.xml'
                         }   
                     }   
                 }
@@ -244,15 +235,14 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "jammy-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'test/ubuntu_jammy_test_detail.xml'
+                            junit 'build/test/ubuntu_jammy_test_detail.xml'
                         }
                     }   
                 }
@@ -265,13 +255,12 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "macos11-unit-tests"
                             unit_tests_macos11()
                         }
                     }
                     post {
                         always {
-                            junit 'test/macos11_test_detail.xml'
+                            junit 'build/test/macos11_test_detail.xml'
                         }
                     }
                 }
@@ -284,13 +273,12 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "macos12-unit-tests"
                             unit_tests_macos12()
                         }
                     }
                     post {
                         always {
-                            junit 'test/macos12_test_detail.xml'
+                            junit 'build/test/macos12_test_detail.xml'
                         }
                     } 
                 }
@@ -300,15 +288,14 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "rhel7-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'test/rhel7_test_detail.xml'
+                            junit 'build/test/rhel7_test_detail.xml'
                         }
                     }
                 }
@@ -318,15 +305,14 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "rhel8-unit-tests"
-                            dir ('test') {
+                            dir ('build/test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails:MomentTest.CheckConsistencyForBeamConvolutions"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'test/rhel8_test_detail.xml'
+                            junit 'build/test/rhel8_test_detail.xml'
                         }
                     }
                 }
@@ -408,6 +394,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 file_browser()
@@ -421,6 +408,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 animator()
@@ -434,6 +422,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_statistics()
@@ -447,6 +436,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_manipulation()
@@ -460,6 +450,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 cube_histogram()
@@ -473,6 +464,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 pv_generator()
@@ -486,6 +478,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 raster_tiles()
@@ -499,6 +492,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 catalog()
@@ -512,6 +506,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 moment()
@@ -525,6 +520,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 resume()
@@ -538,6 +534,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 match()
@@ -551,6 +548,7 @@ pipeline {
                         steps {
                             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 unstash "${PLATFORM}-backend"
+                                sh "rm /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 close_file()
@@ -570,7 +568,6 @@ def unit_tests_macos11() {
             retry(3) {
                 if (ret) {
                     sleep(time:60,unit:"SECONDS")
-                    sh "cat /root/.carta/log/carta.log"
                     echo "Unit test failure. Trying again"
                 } else {
                     ret = true
@@ -583,12 +580,11 @@ def unit_tests_macos11() {
 
 def unit_tests_macos12() {
     script {
-        dir ('test') {
+        dir ('build/test') {
             ret = false
             retry(3) {
                 if (ret) {
                     sleep(time:60,unit:"SECONDS")
-                    sh "cat /root/.carta/log/carta.log"
                     echo "Unit test failure. Trying again"
                 } else {
                     ret = true
