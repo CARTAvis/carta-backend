@@ -573,7 +573,7 @@ pipeline {
 
 def unit_tests_macos11() {
     script {
-        dir ('test') {
+        dir ('build/test') {
             ret = false
             retry(3) {
                 if (ret) {
@@ -582,9 +582,7 @@ def unit_tests_macos11() {
                 } else {
                     ret = true
                 }
-                dir ('build/test') {
-                    sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
-               }
+                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
             }
         }
     }
@@ -592,7 +590,7 @@ def unit_tests_macos11() {
 
 def unit_tests_macos12() {
     script {
-        dir ('test') {
+        dir ('build/test') {
             ret = false
             retry(3) {
                 if (ret) {
@@ -601,9 +599,7 @@ def unit_tests_macos12() {
                 } else {
                     ret = true
                 }
-                dir ('build/test') {
-                    sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
-                }
+                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
             }
         }
     }
