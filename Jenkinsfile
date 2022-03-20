@@ -254,41 +254,51 @@ pipeline {
                         }
                     }   
                 }
-                stage('4 macOS 11') {
-                    options {
-                        timeout(time: 5, unit: "MINUTES")
-                    }
+                stage('macOS 11') {
                     agent {
                         label "macos11-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unit_tests_macos11()
+                            dir ('build/test') {
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                            }
                         }
                     }
                     post {
                         always {
-                            junit '${WORKSPACE}/build/test/macos11_test_detail.xml'
+                            junit 'build/test/macos11_test_detail.xml'
                         }
+                        success {
+                            setBuildStatus("build succeeded", "SUCCESS");
+                        }
+                        failure {
+                            setBuildStatus("build failed", "FAILURE");
+                        }   
                     }
                 }
-                stage('5 macOS 12') {
-                    options {
-                        timeout(time: 5, unit: "MINUTES")
-                    }
+                stage('macOS 12') {
                     agent {
                         label "macos12-agent"
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unit_tests_macos12()
+                            dir ('build/test') {
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                            }
                         }
                     }
                     post {
                         always {
-                            junit '${WORKSPACE}/build/test/macos12_test_detail.xml'
+                            junit 'build/test/macos12_test_detail.xml'
                         }
-                    } 
+                        success {
+                            setBuildStatus("build succeeded", "SUCCESS");
+                        }
+                        failure {
+                            setBuildStatus("build failed", "FAILURE");
+                        }   
+                    }
                 }
                 stage('6 RHEL7') {
                     agent {
@@ -570,41 +580,6 @@ pipeline {
         }
     }
 }
-
-def unit_tests_macos11() {
-    script {
-        dir ('build/test') {
-            ret = false
-            retry(3) {
-                if (ret) {
-                    sleep(time:60,unit:"SECONDS")
-                    echo "Unit test failure. Trying again"
-                } else {
-                    ret = true
-                }
-                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
-            }
-        }
-    }
-}
-
-def unit_tests_macos12() {
-    script {
-        dir ('build/test') {
-            ret = false
-            retry(3) {
-                if (ret) {
-                    sleep(time:60,unit:"SECONDS")
-                    echo "Unit test failure. Trying again"
-                } else {
-                    ret = true
-                }
-                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
-            }
-        }
-    }
-}
-
 def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git"
