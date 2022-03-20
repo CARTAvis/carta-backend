@@ -28,6 +28,7 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
+                                stash includes: "test/**/*", name: "bionic-unit-tests"
                                 stash includes: "carta_backend", name: "bionic-backend"
                             }
                         }
@@ -53,6 +54,7 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
+                                stash includes: "test/**/*", name: "focal-unit-tests"
                                 stash includes: "carta_backend", name: "focal-backend"
                             }
                         }
@@ -78,6 +80,7 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
+                                stash includes: "test/**/*", name: "jammy-unit-tests"
                                 stash includes: "carta_backend", name: "jammy-backend"
                             }
                         }
@@ -153,6 +156,7 @@ pipeline {
                             dir ('build') {
                                 sh "source /opt/rh/devtoolset-8/enable && cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "source /opt/rh/devtoolset-8/enable && make -j 16"
+                                stash includes: "test/**/*", name: "rhel7-unit-tests"
                                 stash includes: "carta_backend", name: "rhel7-backend"
                             }
                         }
@@ -178,6 +182,7 @@ pipeline {
                             dir ('build') {
                                 sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 16"
+                                stash includes: "test/**/*", name: "rhel8-unit-tests"
                                 stash includes: "carta_backend", name: "rhel8-backend"
                             }
                         }
@@ -201,14 +206,15 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            dir ('build/test') {
+                            unstash "bionic-unit-tests"
+                            dir ('test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'build/test/ubuntu_bionic_test_detail.xml'
+                            junit 'test/ubuntu_bionic_test_detail.xml'
                         }
                     }
                 }
@@ -218,14 +224,15 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            dir ('build/test') {
+                            unstash "focal-unit-tests"
+                            dir ('test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'build/test/ubuntu_focal_test_detail.xml'
+                            junit 'test/ubuntu_focal_test_detail.xml'
                         }   
                     }   
                 }
@@ -235,14 +242,15 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            dir ('build/test') {
+                            unstash "jammy-unit-tests"
+                            dir ('test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'build/test/ubuntu_jammy_test_detail.xml'
+                            junit 'test/ubuntu_jammy_test_detail.xml'
                         }
                     }   
                 }
@@ -260,7 +268,7 @@ pipeline {
                     }
                     post {
                         always {
-                            junit 'build/test/macos11_test_detail.xml'
+                            junit '${WORKSPACE}/build/test/macos11_test_detail.xml'
                         }
                     }
                 }
@@ -278,7 +286,7 @@ pipeline {
                     }
                     post {
                         always {
-                            junit 'build/test/macos12_test_detail.xml'
+                            junit '${WORKSPACE}/build/test/macos12_test_detail.xml'
                         }
                     } 
                 }
@@ -288,14 +296,15 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            dir ('build/test') {
+                            unstash "rhel7-unit-tests"
+                            dir ('test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'build/test/rhel7_test_detail.xml'
+                            junit 'test/rhel7_test_detail.xml'
                         }
                     }
                 }
@@ -305,14 +314,15 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            dir ('build/test') {
+                            unstash "rhel8-unit-tests"
+                            dir ('test') {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails:MomentTest.CheckConsistencyForBeamConvolutions"
                             }
                         }
                     }
                     post {
                         always {
-                            junit 'build/test/rhel8_test_detail.xml'
+                            junit 'test/rhel8_test_detail.xml'
                         }
                     }
                 }
@@ -572,7 +582,9 @@ def unit_tests_macos11() {
                 } else {
                     ret = true
                 }
-                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                dir ('build/test') {
+                    sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+               }
             }
         }
     }
@@ -580,7 +592,7 @@ def unit_tests_macos11() {
 
 def unit_tests_macos12() {
     script {
-        dir ('build/test') {
+        dir ('test') {
             ret = false
             retry(3) {
                 if (ret) {
@@ -589,7 +601,9 @@ def unit_tests_macos12() {
                 } else {
                     ret = true
                 }
-                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                dir ('build/test') {
+                    sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                }
             }
         }
     }
