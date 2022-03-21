@@ -20,10 +20,9 @@
 namespace carta {
 
 struct FitData {
-    std::vector<float> x;
-    std::vector<float> y;
-    std::vector<float> data;
-    size_t n;
+    float* data;
+    size_t width;
+    size_t n; // number of pixels excluding nan pixels
 };
 
 struct FitStatus {
@@ -35,8 +34,8 @@ struct FitStatus {
 
 class ImageFitter {
 public:
-    ImageFitter(std::string unit);
-    bool FitImage(float* image, size_t width, size_t height, const std::vector<CARTA::GaussianComponent>& initial_values);
+    ImageFitter(float* image, size_t width, size_t height, std::string unit);
+    bool FitImage(const std::vector<CARTA::GaussianComponent>& initial_values);
     std::string GetMessage() {
         return _message;
     };
@@ -59,7 +58,7 @@ private:
     std::string _results;
     std::string _log;
 
-    void SetFitData(float* image, size_t width, size_t height);
+    void CalculateNanNum();
     void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values);
     int SolveSystem();
     void SetResults();
