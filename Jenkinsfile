@@ -1,5 +1,4 @@
 void setBuildStatus(String message, String state) {
-:set syntax=groovyvoid setBuildStatus(String message, String state) {
   step([
       $class: "GitHubCommitStatusSetter",
       reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/CARTAvis/carta-backend"],
