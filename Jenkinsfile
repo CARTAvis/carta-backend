@@ -708,6 +708,7 @@ def prepare_macos12_ICD() {
                 sh "perl -p -i -e 's/serverURL/serverURL1/' config.json"
                 sh "perl -p -i -e 's/serverURL10/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
+            }
         }
         stash includes: "carta-backend-ICD-test/**/*", name: "macos12-ICD"
     }
