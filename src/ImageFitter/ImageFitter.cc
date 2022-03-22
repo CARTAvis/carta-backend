@@ -40,9 +40,13 @@ bool ImageFitter::FitImage(const std::vector<CARTA::GaussianComponent>& initial_
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n, _num_components);
     int status = SolveSystem();
 
-    if (status) {
+    if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
+        _message = "fit did not converge";
+    } else if (status) {
         _message = gsl_strerror(status);
-    } else {
+    }
+
+    if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
         success = true;
         spdlog::info("Writing fitting results and log.");
         SetResults();
@@ -84,7 +88,6 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
 int ImageFitter::SolveSystem() {
     gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
     const gsl_multifit_nlinear_type* T = gsl_multifit_nlinear_trust;
-    const size_t max_iter = 200;
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
@@ -98,14 +101,15 @@ int ImageFitter::SolveSystem() {
 
     gsl_multifit_nlinear_init(_fit_params, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
-    int status = gsl_multifit_nlinear_driver(max_iter, xtol, gtol, ftol, print_iter ? Callback : nullptr, nullptr, &_fit_status.info, work);
+    int status =
+        gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, print_iter ? Callback : nullptr, nullptr, &_fit_status.info, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq);
     gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
     gsl_vector_memcpy(_fit_params, y);
 
     gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
     gsl_multifit_nlinear_covar(jac, 0.0, covar);
-    const double c = GSL_MAX_DBL(1, sqrt(_fit_status.chisq / (_fit_data.n - p)));
+    const double c = sqrt(_fit_status.chisq / (_fit_data.n - p));
     for (size_t i = 0; i < p; i++) {
         gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
     }
@@ -139,13 +143,27 @@ void ImageFitter::SetResults() {
 }
 
 void ImageFitter::SetLog() {
+    std::string info;
+    switch (_fit_status.info) {
+        case 1:
+            info = "small step size";
+            break;
+        case 2:
+            info = "small gradient";
+            break;
+        case 0:
+        default:
+            info = "exceeded max number of iterations";
+            break;
+    }
+
     _log = "";
     _log += fmt::format("Gaussian fitting with {} component(s)\n", _num_components);
     _log += fmt::format("summary from method '{}':\n", _fit_status.method);
     _log += fmt::format("number of iterations = {}\n", _fit_status.num_iter);
     _log += fmt::format("function evaluations = {}\n", _fdf.nevalf);
     _log += fmt::format("Jacobian evaluations = {}\n", _fdf.nevaldf);
-    _log += fmt::format("reason for stopping  = {}\n", (_fit_status.info == 1) ? "small step size" : "small gradient");
+    _log += fmt::format("reason for stopping  = {}\n", info);
     _log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_fit_status.chisq0));
     _log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_fit_status.chisq));
     _log += fmt::format("initial cost         = {:.12e}\n", _fit_status.chisq0);

@@ -57,6 +57,7 @@ private:
     std::string _message;
     std::string _results;
     std::string _log;
+    const size_t _max_iter = 200;
 
     void CalculateNanNum();
     void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values);
