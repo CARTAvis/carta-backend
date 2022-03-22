@@ -1,3 +1,4 @@
+void setBuildStatus(String message, String state) {
 :set syntax=groovyvoid setBuildStatus(String message, String state) {
   step([
       $class: "GitHubCommitStatusSetter",
