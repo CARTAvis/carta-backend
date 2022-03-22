@@ -1,4 +1,4 @@
-void setBuildStatus(String message, String state) {
+:set syntax=groovyvoid setBuildStatus(String message, String state) {
   step([
       $class: "GitHubCommitStatusSetter",
       reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/CARTAvis/carta-backend"],
@@ -685,7 +685,11 @@ def prepare_macos11_ICD() {
             dir ('protobuf') {
                 sh "./build_proto.sh"
             }
-            sh "cp ../../config.json src/test/config.json"
+            dir ('src/test') {
+                sh "perl -p -i -e 's/serverURL/serverURL1/' config.json"
+                sh "perl -p -i -e 's/serverURL10/serverURL/' config.json"
+                sh "perl -p -i -e 's/3002/3112/' config.json"
+            }
         }
         stash includes: "carta-backend-ICD-test/**/*", name: "macos11-ICD"
     }
@@ -700,7 +704,10 @@ def prepare_macos12_ICD() {
             dir ('protobuf') {
                 sh "./build_proto.sh"
             }
-            sh "cp ../../config.json src/test/config.json"
+            dir ('src/test') {
+                sh "perl -p -i -e 's/serverURL/serverURL1/' config.json"
+                sh "perl -p -i -e 's/serverURL10/serverURL/' config.json"
+                sh "perl -p -i -e 's/3002/3112/' config.json"
         }
         stash includes: "carta-backend-ICD-test/**/*", name: "macos12-ICD"
     }
@@ -797,6 +804,8 @@ def region_manipulation() {
                 } else {
                     ret = true
                 }
+                echo "Temporarily skipping tests"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_EXPORT.test.ts"
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 1 of 8"
                 sh "sleep 3 && pgrep carta_backend"
@@ -832,8 +841,17 @@ def cube_histogram() {
                 } else {
                     ret = true
                 }
+                echo "Temporarily skipping tests"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM.test.ts"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts"
                 sh "pgrep carta_backend"
-                echo "Skipping PER_CUBE_HISTOGRAM_HDF5.test.ts test"
+                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
+                sh "pgrep carta_backend"
             }
         }
     }
@@ -933,13 +951,13 @@ def moment() {
                 sh "sleep 3 && pgrep carta_backend"
                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 2 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 3 of 6"
+                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 3 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 4 of 6"
+                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 4 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 5 of 6"
+                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 5 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 6 of 6"
+                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 6 of 6"
                 sh "pgrep carta_backend"
             }
         }
