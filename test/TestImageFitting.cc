@@ -97,7 +97,7 @@ TEST_F(ImageFittingTest, OneComponentFitting) {
 
     std::vector<float> bad_inital = {1, 64, 64, 20, 0, 0, 45};
     SetInitialValues(bad_inital);
-    FitImage(gaussian_model, "exceeded max number of iterations");
+    FitImage(gaussian_model, "fit did not converge");
 }
 
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
@@ -107,5 +107,5 @@ TEST_F(ImageFittingTest, ThreeComponentFitting) {
 
     std::vector<float> bad_inital = {3, 64, 64, 20, 20, 10, 120, 64, 64, 20, 20, 10, 120, 96, 96, 20, 0, 0, 120};
     SetInitialValues(bad_inital);
-    FitImage(gaussian_model, "exceeded max number of iterations");
+    FitImage(gaussian_model, "fit did not converge");
 }
