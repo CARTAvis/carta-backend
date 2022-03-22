@@ -805,8 +805,9 @@ def region_manipulation() {
                 } else {
                     ret = true
                 }
-                echo "Temporarily skipping tests"
+                echo "*** Temporarily skipping tests *** Related to carta-backend issue #1066 "
                 sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_EXPORT.test.ts"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts"
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 1 of 8"
                 sh "sleep 3 && pgrep carta_backend"
@@ -842,7 +843,7 @@ def cube_histogram() {
                 } else {
                     ret = true
                 }
-                echo "Temporarily skipping tests"
+                echo "*** Temporarily skipping tests *** Related to carta-backend issue #1050"
                 sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM.test.ts"
                 sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts"
                 sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts"
@@ -947,6 +948,10 @@ def moment() {
                 } else {
                     ret = true
                 }
+                echo "*** Temporarily skipping tests *** Related to carta-backend issue #1070"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/MOMENTS_GENERATOR_CASA.test.ts"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/MOMENTS_GENERATOR_FITS.test.ts"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/MOMENTS_GENERATOR_HDF5.test.ts"
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 1 of 6"
                 sh "sleep 3 && pgrep carta_backend"
