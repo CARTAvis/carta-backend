@@ -200,6 +200,7 @@ set(SOURCE_FILES
         src/FileList/FileInfoLoader.cc
         src/FileList/FileListHandler.cc
         src/FileList/FitsHduList.cc
+        src/Frame/ContourSettings.cc
         src/Frame/Frame.cc
         src/HttpServer/HttpServer.cc
         src/ImageData/CartaFitsImage.cc

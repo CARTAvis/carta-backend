@@ -27,6 +27,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "Frame/ContourSettings.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
@@ -570,6 +571,7 @@ bool Session::OnOpenFile(
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;
+
     std::shared_ptr<FileLoader<float>> image_loader;
 
     CARTA::FileInfoExtended file_info_extended;
