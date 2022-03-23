@@ -5,10 +5,9 @@
 */
 
 #include "SessionManager.h"
-#include "ThreadingManager/ThreadingManager.h"
-
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
+#include "ThreadingManager/ThreadingManager.h"
 #include "Util/Message.h"
 #include "Util/Token.h"
 
@@ -17,18 +16,24 @@ namespace carta {
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
-void SessionManager::DeleteSession(int session_id) {
+void SessionManager::DeleteSession(uint32_t session_id) {
     Session* session = _sessions[session_id];
     if (session) {
         spdlog::info(
-            "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
+            "Session {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
         session->WaitForTaskCancellation();
         session->CloseAllScriptingRequests();
-        if (!session->DecreaseRefCount()) {
+
+        if (!session->GetRefCount()) {
+            spdlog::info("Sessions in Session Map :");
+            for (const std::pair<uint32_t, Session*>& ssp : _sessions) {
+                Session* ss = ssp.second;
+                spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
+            }
             delete session;
             _sessions.erase(session_id);
         } else {
-            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->GetRefCount());
+            spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session_id, session->GetRefCount());
         }
     } else {
         spdlog::warn("Could not delete session {}: not found!", session_id);
@@ -51,9 +56,11 @@ void SessionManager::OnUpgrade(
         return;
     }
 
-    _session_number++;
-    // protect against overflow
-    _session_number = max(_session_number, 1u);
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::microseconds>(now);
+    auto epoch = now_ms.time_since_epoch();
+    auto value = std::chrono::duration_cast<std::chrono::microseconds>(epoch);
+    _session_number = value.count();
 
     http_response->template upgrade<PerSocketData>({_session_number, address}, //
         http_request->getHeader("sec-websocket-key"),                          //
@@ -97,7 +104,10 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
 
     // Delete the Session
-    DeleteSession(session_id);
+    if (_sessions.count(session_id) > 0) {
+        _sessions[session_id]->DecreaseRefCount();
+        DeleteSession(session_id);
+    }
 
     // Close the websockets
     ws->close();
@@ -134,6 +144,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             logger::LogReceivedEventType(event_type);
 
             auto event_type_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+
             bool message_parsed(false);
             OnMessageTask* tsk = nullptr;
 
@@ -148,6 +159,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 }
                 case CARTA::EventType::RESUME_SESSION: {
                     CARTA::ResumeSession message;
+                    spdlog::debug("({})({}) resuming session", fmt::ptr(session), session->GetId());
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnResumeSession(message, head.request_id);
                         message_parsed = true;
