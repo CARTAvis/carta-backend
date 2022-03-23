@@ -1133,7 +1133,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 #endif
 #else
             std::shared_ptr<float[]> data(new float[N]); // zero initialization
-            if (GetSlicerData(section, data.get()))
+            if (GetSlicerData(section, data.get())) {
 #endif
                 cursor_value = data[0];
             }
@@ -1513,7 +1513,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 #endif
 #else
                     std::shared_ptr<float[]> buffer(new float[N]);
-                    if (!GetSlicerData(slicer, buffer.get()))
+                    if (!GetSlicerData(slicer, buffer.get())) {
 #endif
                         return false;
                     }
