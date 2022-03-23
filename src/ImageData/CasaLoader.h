@@ -22,12 +22,12 @@ public:
 };
 
 template <typename T>
-CasaLoader<T>::CasaLoader(const std::string& filename) : FileLoader<float>(filename) {}
+CasaLoader<T>::CasaLoader(const std::string& filename) : FileLoader<T>(filename) {}
 
 template <typename T>
 void CasaLoader<T>::OpenFile(const std::string& /*hdu*/) {
     if (!this->_image) {
-        this->_image.reset(new casacore::PagedImage<float>(this->_filename));
+        this->_image.reset(new casacore::PagedImage<T>(this->_filename));
 
         if (!this->_image) {
             throw(casacore::AipsError("Error opening image"));
