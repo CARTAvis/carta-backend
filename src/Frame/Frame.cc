@@ -1124,13 +1124,16 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = section.length().product();
 #ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+    #if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
             std::vector<float> data(N);
             if (GetSlicerData(section, data.data())) {
-#else
+    #else
             std::shared_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(section, data.get())) {
-#endif
+    #endif
+#else
+            std::shared_ptr<float[]> data(new float[N]); // zero initialization
+            if (GetSlicerData(section, data.get())) 
 #endif
                 cursor_value = data[0];
             }
@@ -1501,13 +1504,16 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
 #ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+    #if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
                     std::vector<float> buffer(N);
                     if (!GetSlicerData(slicer, buffer.data())) {
-#else
+    #else
                     std::shared_ptr<float[]> buffer(new float[N]);
                     if (!GetSlicerData(slicer, buffer.get())) {
-#endif
+    #endif
+#else
+                    std::shared_ptr<float[]> buffer(new float[N]);
+                    if (!GetSlicerData(slicer, buffer.get())) 
 #endif
                         return false;
                     }
