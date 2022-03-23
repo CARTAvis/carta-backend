@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <vector>
 #include <thread>
+#include <vector>
 
 #include <curl/curl.h>
 #include <signal.h>
