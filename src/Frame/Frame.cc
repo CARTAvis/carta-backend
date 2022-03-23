@@ -1507,19 +1507,26 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 #if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
                     std::vector<float> buffer(N);
                     if (!GetSlicerData(slicer, buffer.data())) {
-#else
-                    std::shared_ptr<float[]> buffer(new float[N]);
-                    if (!GetSlicerData(slicer, buffer.get())) {
-#endif
-#else
-                    std::shared_ptr<float[]> buffer(new float[N]);
-                    if (!GetSlicerData(slicer, buffer.get())) {
-#endif
                         return false;
                     }
-
+                    // copy buffer to spectral_data
+                    memcpy(&spectral_data[start(_z_axis)], buffer.data(), nz * sizeof(float));
+#else
+                    std::shared_ptr<float[]> buffer(new float[N]);
+                    if (!GetSlicerData(slicer, buffer.get())) {
+                        return false;
+                    }
                     // copy buffer to spectral_data
                     memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
+#endif
+#else
+                    std::shared_ptr<float[]> buffer(new float[N]);
+                    if (!GetSlicerData(slicer, buffer.get())) {
+                        return false;
+                    }
+                    // copy buffer to spectral_data
+                    memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
+#endif
 
                     // update start z and determine progress
                     start(_z_axis) += nz;
