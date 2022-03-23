@@ -26,6 +26,10 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <Availability.h>
+#endif
+
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
@@ -1119,8 +1123,15 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         } else {
             casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = section.length().product();
+#ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+            std::vector<float> data(N);
+            if (GetSlicerData(section, data.data())) {
+#else
             std::shared_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(section, data.get())) {
+#endif
+#endif
                 cursor_value = data[0];
             }
         }
@@ -1489,8 +1500,15 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     count(_z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
+#ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+                    std::vector<float> buffer(N);
+                    if (!GetSlicerData(slicer, buffer.data())) {
+#else
                     std::shared_ptr<float[]> buffer(new float[N]);
                     if (!GetSlicerData(slicer, buffer.get())) {
+#endif
+#endif
                         return false;
                     }
 
