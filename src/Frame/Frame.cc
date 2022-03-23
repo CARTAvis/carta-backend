@@ -1124,7 +1124,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = section.length().product();
 #if defined(__APPLE__) && defined(__MACH__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
             std::vector<float> data(N);
             if (GetSlicerData(section, data.data())) {
 #else
@@ -1504,7 +1504,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
 #if defined(__APPLE__) && defined(__MACH__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
                     std::vector<float> buffer(N);
                     if (!GetSlicerData(slicer, buffer.data())) {
 #else
