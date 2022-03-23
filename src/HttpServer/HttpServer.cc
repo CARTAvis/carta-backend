@@ -10,10 +10,9 @@
 #include <regex>
 #include <vector>
 
-#include <curl/curl.h>
-
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
+#include "Util/String.h"
 #include "Util/Token.h"
 
 using json = nlohmann::json;
@@ -505,7 +504,7 @@ std::string HttpServer::GetFileUrlString(std::vector<std::string> files) {
     if (files.empty()) {
         return std::string();
     } else if (files.size() == 1) {
-        return fmt::format("file={}", curl_easy_escape(nullptr, files[0].c_str(), 0));
+        return fmt::format("file={}", SafeStringEscape(files[0]));
     } else {
         bool in_common_folder = true;
         fs::path common_folder;
@@ -522,7 +521,7 @@ std::string HttpServer::GetFileUrlString(std::vector<std::string> files) {
         }
 
         if (in_common_folder) {
-            url_string += fmt::format("folder={}&", curl_easy_escape(nullptr, common_folder.c_str(), 0));
+            url_string += fmt::format("folder={}&", SafeStringEscape(common_folder));
             // Trim folder from path string
             for (auto& file : files) {
                 fs::path p(file);
@@ -533,7 +532,7 @@ std::string HttpServer::GetFileUrlString(std::vector<std::string> files) {
         int num_files = files.size();
         url_string += "files=";
         for (int i = 0; i < num_files; i++) {
-            url_string += curl_easy_escape(nullptr, files[i].c_str(), 0);
+            url_string += SafeStringEscape(files[i]);
             if (i != num_files - 1) {
                 url_string += ",";
             }
