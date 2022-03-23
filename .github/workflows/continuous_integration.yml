@@ -1,8 +1,5 @@
 name: ci
-on:
-  push:
-    branches:
-      - '**'
+on: push
 jobs:
   format-check:
     runs-on: ubuntu-latest
