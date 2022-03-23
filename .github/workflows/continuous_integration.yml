@@ -1,0 +1,16 @@
+name: ci
+on:
+  push:
+    branches:
+      - '**'
+jobs:
+  format check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+      - run: sudo apt-get -y install clang-format
+      - run: ./scripts/style.py all check
+
