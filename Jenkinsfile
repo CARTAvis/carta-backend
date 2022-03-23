@@ -808,6 +808,7 @@ def region_manipulation() {
                 echo "*** Temporarily skipping tests *** Related to carta-backend issue #1066 "
                 sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_EXPORT.test.ts"
                 sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts"
+                sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_IMPORT_EXPORT.test.ts"
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 1 of 8"
                 sh "sleep 3 && pgrep carta_backend"
