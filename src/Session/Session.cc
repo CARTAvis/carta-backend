@@ -2136,8 +2136,8 @@ bool Session::ExecuteAnimationFrame() {
                 _animation_object->_next_frame = tmp_frame;
             }
         } else { // going backwards;
-            tmp_frame.set_channel(curr_frame.channel() - _animation_object->_delta_frame.channel());
-            tmp_frame.set_stokes(curr_frame.stokes() - _animation_object->_delta_frame.stokes());
+            tmp_frame.set_channel(curr_frame.channel() - delta_frame.channel());
+            tmp_frame.set_stokes(curr_frame.stokes() - delta_frame.stokes());
 
             if ((tmp_frame.channel() < _animation_object->_first_frame.channel()) ||
                 (tmp_frame.stokes() < _animation_object->_first_frame.stokes())) {
@@ -2186,7 +2186,7 @@ int Session::CalculateAnimationFlowWindow() {
         if (_animation_object->_delta_frame.channel()) {
             gap = (_animation_object->_last_flow_frame).channel() - _animation_object->_current_frame.channel();
         } else {
-            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_delta_frame.stokes();
+            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_current_frame.stokes();
         }
     }
 
