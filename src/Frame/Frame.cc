@@ -30,6 +30,14 @@
 #include <Availability.h>
 #endif
 
+#if defined(__APPLE__) && defined(__MACH__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
+// nothing to define here
+#else
+#define HAS_SHARED_PTR_ARRAY
+#endif
+#endif
+
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
@@ -1123,17 +1131,12 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         } else {
             casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = section.length().product();
-#if defined(__APPLE__) && defined(__MACH__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
+#ifdef HAS_SHARED_PTR_ARRAY
+            std::shared_ptr<float[]> data(new float[N]); // zero initialization
+            if (GetSlicerData(section, data.get())) {
+#else
             std::vector<float> data(N);
             if (GetSlicerData(section, data.data())) {
-#else
-            std::shared_ptr<float[]> data(new float[N]); // zero initialization
-            if (GetSlicerData(section, data.get())) {
-#endif
-#else
-            std::shared_ptr<float[]> data(new float[N]); // zero initialization
-            if (GetSlicerData(section, data.get())) {
 #endif
                 cursor_value = data[0];
             }
@@ -1503,29 +1506,20 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     count(_z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
-#if defined(__APPLE__) && defined(__MACH__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
+#ifdef HAS_SHARED_PTR_ARRAY
+                    std::shared_ptr<float[]> buffer(new float[N]);
+                    if (!GetSlicerData(slicer, buffer.get())) {
+                        return false;
+                    }
+                    // copy buffer to spectral_data
+                    memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
+#else
                     std::vector<float> buffer(N);
                     if (!GetSlicerData(slicer, buffer.data())) {
                         return false;
                     }
                     // copy buffer to spectral_data
                     memcpy(&spectral_data[start(_z_axis)], buffer.data(), nz * sizeof(float));
-#else
-                    std::shared_ptr<float[]> buffer(new float[N]);
-                    if (!GetSlicerData(slicer, buffer.get())) {
-                        return false;
-                    }
-                    // copy buffer to spectral_data
-                    memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
-#endif
-#else
-                    std::shared_ptr<float[]> buffer(new float[N]);
-                    if (!GetSlicerData(slicer, buffer.get())) {
-                        return false;
-                    }
-                    // copy buffer to spectral_data
-                    memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
 #endif
 
                     // update start z and determine progress
