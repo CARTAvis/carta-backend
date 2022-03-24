@@ -64,8 +64,8 @@ public:
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
         std::unique_ptr<carta::ImageFitter> image_fitter(
-            new carta::ImageFitter(frame->GetImageCacheData(), frame->GetWidth(), frame->GetHeight(), ""));
-        bool success = image_fitter->FitImage(_initial_values);
+            new carta::ImageFitter(frame->GetWidth(), frame->GetHeight(), ""));
+        bool success = image_fitter->FitImage(frame->GetImageCacheData(), _initial_values);
         std::string results = image_fitter->GetResults();
 
         if (failed_message.length() == 0) {

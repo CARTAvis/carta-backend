@@ -34,8 +34,8 @@ struct FitStatus {
 
 class ImageFitter {
 public:
-    ImageFitter(float* image, size_t width, size_t height, std::string unit);
-    bool FitImage(const std::vector<CARTA::GaussianComponent>& initial_values);
+    ImageFitter(size_t width, size_t height, std::string unit);
+    bool FitImage(float* image, const std::vector<CARTA::GaussianComponent>& initial_values);
     std::string GetMessage() {
         return _message;
     };
