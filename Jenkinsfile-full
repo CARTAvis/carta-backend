@@ -13,6 +13,9 @@ pipeline {
         preserveStashes()
         timeout(time: 2, unit: 'HOURS') 
     }
+    triggers {
+        cron('0 8 * * *')
+    }
     stages {
         stage('Build') {
             parallel {
