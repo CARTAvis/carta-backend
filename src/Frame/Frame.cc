@@ -26,16 +26,10 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
-#if defined(__APPLE__) && defined(__MACH__)
-#include <Availability.h>
-#endif
-
-#if defined(__APPLE__) && defined(__MACH__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < 110000
-// nothing to define here
+#if defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && defined(__clang_major__) && (__clang_major__ < 12)
+// shared_ptr_array not supported in apple clang < 12
 #else
 #define HAS_SHARED_PTR_ARRAY
-#endif
 #endif
 
 static const int HIGH_COMPRESSION_QUALITY(32);
