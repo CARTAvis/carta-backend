@@ -75,11 +75,11 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
     _fit_errors = gsl_vector_alloc(p);
     for (size_t i = 0; i < _num_components; i++) {
         CARTA::GaussianComponent component(initial_values[i]);
-        gsl_vector_set(_fit_params, i * 6, component.center_x());
-        gsl_vector_set(_fit_params, i * 6 + 1, component.center_y());
+        gsl_vector_set(_fit_params, i * 6, component.center().x());
+        gsl_vector_set(_fit_params, i * 6 + 1, component.center().y());
         gsl_vector_set(_fit_params, i * 6 + 2, component.amp());
-        gsl_vector_set(_fit_params, i * 6 + 3, component.fwhm_x());
-        gsl_vector_set(_fit_params, i * 6 + 4, component.fwhm_y());
+        gsl_vector_set(_fit_params, i * 6 + 3, component.fwhm().x());
+        gsl_vector_set(_fit_params, i * 6 + 4, component.fwhm().y());
         gsl_vector_set(_fit_params, i * 6 + 5, component.pa());
     }
     _fdf.p = p;
