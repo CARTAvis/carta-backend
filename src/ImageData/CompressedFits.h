@@ -101,9 +101,8 @@ public:
         return _beam_set;
     }
 
-    casacore::Matrix<casacore::Double> GetMatrixForm() {
-        return _xform;
-    }
+    casacore::Matrix<casacore::Double> GetTransformMatrix();
+
     void SetShape(casacore::IPosition shape) {
         _shape = shape;
     }
@@ -142,6 +141,8 @@ private:
     bool IsBeamTable(const std::string& fits_block, BeamTableInfo& beam_table_info);
     void SetBeam(BeamInfo& beam_info);
     void ReadBeamsTable(gzFile zip_file, BeamTableInfo& beam_table_info);
+
+    void SetDefaultTransformMatrix();
 
     std::string _filename;
     std::string _unzip_filename;
