@@ -26,11 +26,6 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
-#if defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && defined(__clang_major__) && (__clang_major__ < 12)
-// shared_ptr_array not supported in apple clang < 12
-#else
-#define HAS_SHARED_PTR_ARRAY
-#endif
 
 static const int HIGH_COMPRESSION_QUALITY(32);
 
@@ -1125,13 +1120,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         } else {
             casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = section.length().product();
-#ifdef HAS_SHARED_PTR_ARRAY
-            std::shared_ptr<float[]> data(new float[N]); // zero initialization
+            std::unique_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(section, data.get())) {
-#else
-            std::vector<float> data(N);
-            if (GetSlicerData(section, data.data())) {
-#endif
                 cursor_value = data[0];
             }
         }
@@ -1500,22 +1490,12 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     count(_z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
-#ifdef HAS_SHARED_PTR_ARRAY
-                    std::shared_ptr<float[]> buffer(new float[N]);
+                    std::unique_ptr<float[]> buffer(new float[N]);
                     if (!GetSlicerData(slicer, buffer.get())) {
                         return false;
                     }
                     // copy buffer to spectral_data
                     memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
-#else
-                    std::vector<float> buffer(N);
-                    if (!GetSlicerData(slicer, buffer.data())) {
-                        return false;
-                    }
-                    // copy buffer to spectral_data
-                    memcpy(&spectral_data[start(_z_axis)], buffer.data(), nz * sizeof(float));
-#endif
-
                     // update start z and determine progress
                     start(_z_axis) += nz;
                     progress = (float)start(_z_axis) / profile_size;
