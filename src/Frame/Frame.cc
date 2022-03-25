@@ -26,7 +26,6 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 
-
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
