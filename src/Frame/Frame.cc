@@ -1119,7 +1119,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         } else {
             casacore::Slicer section = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = section.length().product();
-            std::shared_ptr<float[]> data(new float[N]); // zero initialization
+            std::unique_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(section, data.get())) {
                 cursor_value = data[0];
             }
@@ -1489,14 +1489,12 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     count(_z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
-                    std::shared_ptr<float[]> buffer(new float[N]);
+                    std::unique_ptr<float[]> buffer(new float[N]);
                     if (!GetSlicerData(slicer, buffer.get())) {
                         return false;
                     }
-
                     // copy buffer to spectral_data
                     memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
-
                     // update start z and determine progress
                     start(_z_axis) += nz;
                     progress = (float)start(_z_axis) / profile_size;
