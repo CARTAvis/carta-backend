@@ -1537,10 +1537,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (!GetSlicerData(stokes_src_vs_slicer, buffer.get())) {
                         return false;
                     }
-
                     // copy buffer to spectral_data
                     memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
-
                     // update start z and determine progress
                     start(_z_axis) += nz;
                     progress = (float)start(_z_axis) / profile_size;

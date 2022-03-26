@@ -129,7 +129,7 @@ public:
             } else if (computed_entries.name() == "Pixel increment") {
                 CheckHeaderEntry(computed_entries, "-0.4\", 0.4\"", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "RA range") {
-                CheckHeaderEntry(computed_entries, "[18:20:25.888, 18:20:25.749]", CARTA::EntryType::STRING);
+                CheckHeaderEntry(computed_entries, "[18:20:25.749, 18:20:25.888]", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "DEC range") {
                 CheckHeaderEntry(computed_entries, "[-16.13.36.797, -16.13.34.797]", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "Frequency range") {
