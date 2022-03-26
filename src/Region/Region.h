@@ -125,7 +125,7 @@ public:
     void WaitForTaskCancellation();
 
     // Converted region as approximate LCPolygon and its mask
-    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys,
+    std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys,
         const casacore::IPosition& image_shape, bool report_error = true);
     casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
@@ -158,8 +158,8 @@ private:
     // Reference region as approximate polygon converted to image coordinates; used for data streams
     bool UseApproximatePolygon(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     std::vector<CARTA::Point> GetRectangleMidpoints();
-    casacore::LCRegion* GetCachedPolygonRegion(int file_id);
-    casacore::LCRegion* GetAppliedPolygonRegion(
+    std::shared_ptr<casacore::LCRegion> GetCachedPolygonRegion(int file_id);
+    std::shared_ptr<casacore::LCRegion> GetAppliedPolygonRegion(
         int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape);
     std::vector<CARTA::Point> GetReferencePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
@@ -169,8 +169,8 @@ private:
         casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
     // Region applied to any image; used for export
-    casacore::LCRegion* GetCachedLCRegion(int file_id);
-    casacore::LCRegion* GetConvertedLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
+    std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id);
+    std::shared_ptr<casacore::LCRegion> GetConvertedLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
         const casacore::IPosition& output_shape, bool report_error = true);
 
     // Control points converted to pixel coords in output image, returned in LCRegion Record format for export

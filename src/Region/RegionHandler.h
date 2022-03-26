@@ -113,9 +113,9 @@ private:
 
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
-    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id, bool report_error = true);
+    std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(int region_id, int file_id, bool report_error = true);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
-        casacore::LCRegion* region_2D = nullptr);
+        std::shared_ptr<casacore::LCRegion> region_2D);
 
     // Fill data stream messages
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,

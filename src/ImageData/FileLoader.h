@@ -25,7 +25,6 @@ class Frame;
 class FileLoader {
 public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
-    using IPos = casacore::IPosition;
 
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false);
@@ -52,9 +51,9 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
-    IPos GetShape();
+    casacore::IPosition GetShape();
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
-    bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
+    bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
@@ -75,9 +74,10 @@ public:
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
     // Check if one can apply swizzled data under such image format and region condition
-    virtual bool UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex);
-    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
-        std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+    virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
+    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
+        float& progress);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(
@@ -115,7 +115,7 @@ protected:
 
     // Save image properties; only reopen for data or beams
     // Axes, dimension values
-    IPos _image_shape;
+    casacore::IPosition _image_shape;
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
@@ -136,7 +136,7 @@ protected:
     int _stokes_cdelt;
 
     // Return the shape of the specified stats dataset
-    virtual const IPos GetStatsDataShape(FileInfo::Data ds);
+    virtual const casacore::IPosition GetStatsDataShape(FileInfo::Data ds);
 
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
     virtual casacore::ArrayBase* GetStatsData(FileInfo::Data ds);

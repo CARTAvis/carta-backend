@@ -70,7 +70,7 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
 }
 
 FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
-    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
+    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
     // Set initial modify time if filename is not LEL expression for file in directory
     if (directory.empty()) {
         ImageUpdated();
@@ -143,7 +143,7 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
     return _coord_sys;
 }
 
-bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
+bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
     // Return image shape and axes for image. Spectral axis may or may not be z axis.
     // All parameters are return values.
     spectral_axis = -1;
@@ -351,8 +351,8 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
                 masked_data.putStorage(pMaskedData, del_data_ptr);
             }
 
-            IPos cursor_shape(lattice_iter.cursorShape());
-            IPos cursor_position(lattice_iter.position());
+            casacore::IPosition cursor_shape(lattice_iter.cursorShape());
+            casacore::IPosition cursor_position(lattice_iter.position());
             casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
             data(cursor_slicer) = cursor_data;
         }
@@ -455,11 +455,11 @@ casacore::ArrayBase* FileLoader::GetStatsData(FileInfo::Data ds) {
 
 void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
     if (HasData(ds)) {
-        const IPos& stat_dims = GetStatsDataShape(ds);
+        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(IPos(1, _depth))) ||
-            (_num_dims == 4 && stat_dims.isEqual(IPos(2, _depth, _num_stokes)))) {
+        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(casacore::IPosition(1, _depth))) ||
+            (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(2, _depth, _num_stokes)))) {
             auto data = GetStatsData(ds);
 
             switch (ds) {
@@ -521,12 +521,13 @@ void FileLoader::LoadStats2DHist() {
     FileInfo::Data ds = FileInfo::Data::STATS_2D_HIST;
 
     if (HasData(ds)) {
-        const IPos& stat_dims = GetStatsDataShape(ds);
+        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
         size_t num_bins = stat_dims[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _depth))) ||
-            (_num_dims == 4 && stat_dims.isEqual(IPos(3, num_bins, _depth, _num_stokes)))) {
+        if ((_num_dims == 2 && stat_dims.isEqual(casacore::IPosition(1, num_bins))) ||
+            (_num_dims == 3 && stat_dims.isEqual(casacore::IPosition(2, num_bins, _depth))) ||
+            (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(3, num_bins, _depth, _num_stokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 
@@ -551,15 +552,15 @@ void FileLoader::LoadStats2DPercent() {
     FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
     if (HasData(dsp) && HasData(dsr)) {
-        const IPos& dims_vals = GetStatsDataShape(dsp);
-        const IPos& dims_ranks = GetStatsDataShape(dsr);
+        const casacore::IPosition& dims_vals = GetStatsDataShape(dsp);
+        const casacore::IPosition& dims_ranks = GetStatsDataShape(dsr);
 
         size_t num_ranks = dims_ranks[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && dims_vals.isEqual(IPos(1, num_ranks))) ||
-            (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _depth))) ||
-            (_num_dims == 4 && dims_vals.isEqual(IPos(3, num_ranks, _depth, _num_stokes)))) {
+        if ((_num_dims == 2 && dims_vals.isEqual(casacore::IPosition(1, num_ranks))) ||
+            (_num_dims == 3 && dims_vals.isEqual(casacore::IPosition(2, num_ranks, _depth))) ||
+            (_num_dims == 4 && dims_vals.isEqual(casacore::IPosition(3, num_ranks, _depth, _num_stokes)))) {
             auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
             auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
@@ -585,10 +586,10 @@ void FileLoader::LoadStats2DPercent() {
 
 void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
     if (HasData(ds)) {
-        const IPos& stat_dims = GetStatsDataShape(ds);
+        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && stat_dims.size() == 0) || (_num_dims == 4 && stat_dims.isEqual(IPos(1, _num_stokes)))) {
+        if ((_num_dims == 3 && stat_dims.size() == 0) || (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(1, _num_stokes)))) {
             auto data = GetStatsData(ds);
 
             switch (ds) {
@@ -640,12 +641,12 @@ void FileLoader::LoadStats3DHist() {
     FileInfo::Data ds = FileInfo::Data::STATS_3D_HIST;
 
     if (HasData(ds)) {
-        const IPos& stat_dims = GetStatsDataShape(ds);
+        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
         size_t num_bins = stat_dims[0];
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && stat_dims.isEqual(IPos(1, num_bins))) ||
-            (_num_dims == 4 && stat_dims.isEqual(IPos(2, num_bins, _num_stokes)))) {
+        if ((_num_dims == 3 && stat_dims.isEqual(casacore::IPosition(1, num_bins))) ||
+            (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(2, num_bins, _num_stokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 
@@ -668,13 +669,14 @@ void FileLoader::LoadStats3DPercent() {
     FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
     if (HasData(dsp) && HasData(dsr)) {
-        const IPos& dims_vals = GetStatsDataShape(dsp);
-        const IPos& dims_ranks = GetStatsDataShape(dsr);
+        const casacore::IPosition& dims_vals = GetStatsDataShape(dsp);
+        const casacore::IPosition& dims_ranks = GetStatsDataShape(dsr);
 
         size_t nranks = dims_ranks[0];
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && dims_vals.isEqual(IPos(1, nranks))) || (_num_dims == 4 && dims_vals.isEqual(IPos(2, nranks, _num_stokes)))) {
+        if ((_num_dims == 3 && dims_vals.isEqual(casacore::IPosition(1, nranks))) ||
+            (_num_dims == 4 && dims_vals.isEqual(casacore::IPosition(2, nranks, _num_stokes)))) {
             auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
             auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
@@ -810,13 +812,13 @@ bool FileLoader::GetCursorSpectralData(
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) {
+bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
     // Must be implemented in subclasses; should call before GetRegionSpectralData
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
-    std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }
