@@ -65,8 +65,6 @@ private:
     void SetResults();
     void SetLog();
 
-    static double Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,
-        const double theta, const double x, const double y);
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);
     static void ErrorHandler(const char* reason, const char* file, int line, int gsl_errno);

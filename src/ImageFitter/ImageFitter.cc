@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#define FWHM_TO_SIGMA 0.5 / sqrt(2 * log(2))
+#define SQ_FWHM_TO_SIGMA 1 / 8 / log(2)
 #define DEG_TO_RAD M_PI / 180.0
 
 #include "ImageFitter.h"
@@ -171,40 +171,39 @@ void ImageFitter::SetLog() {
     _log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
 }
 
-double ImageFitter::Gaussian(const double center_x, const double center_y, const double amp, const double fwhm_x, const double fwhm_y,
-    const double theta, const double x, const double y) {
-    const double sq_std_x = pow(fwhm_x * FWHM_TO_SIGMA, 2);
-    const double sq_std_y = pow(fwhm_y * FWHM_TO_SIGMA, 2);
-    const double theta_radian = theta * DEG_TO_RAD; // counterclockwise rotation
-    const double a = pow(cos(theta_radian), 2) / (2 * sq_std_x) + pow(sin(theta_radian), 2) / (2 * sq_std_y);
-    const double b = sin(2 * theta_radian) / (4 * sq_std_x) - sin(2 * theta_radian) / (4 * sq_std_y);
-    const double c = pow(sin(theta_radian), 2) / (2 * sq_std_x) + pow(cos(theta_radian), 2) / (2 * sq_std_y);
-    return amp * exp(-(a * pow((x - center_x), 2) + 2 * b * (x - center_x) * (y - center_y) + c * pow((y - center_y), 2)));
-}
-
 int ImageFitter::FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f) {
     struct FitData* d = (struct FitData*)fit_data;
 
-#pragma omp parallel for
-    for (size_t i = 0; i < d->n; i++) {
-        float data_i = d->data[i];
-        if (!isnan(data_i)) {
-            int x = i % d->width;
-            int y = i / d->width;
-            float data = 0;
+    for (size_t k = 0; k < fit_params->size; k += 6) {
+        const double center_x = gsl_vector_get(fit_params, k);
+        const double center_y = gsl_vector_get(fit_params, k + 1);
+        const double amp = gsl_vector_get(fit_params, k + 2);
+        const double fwhm_x = gsl_vector_get(fit_params, k + 3);
+        const double fwhm_y = gsl_vector_get(fit_params, k + 4);
+        const double pa = gsl_vector_get(fit_params, k + 5);
 
-            for (size_t k = 0; k < fit_params->size; k += 6) {
-                const double center_x = gsl_vector_get(fit_params, k);
-                const double center_y = gsl_vector_get(fit_params, k + 1);
-                const double amp = gsl_vector_get(fit_params, k + 2);
-                const double fwhm_x = gsl_vector_get(fit_params, k + 3);
-                const double fwhm_y = gsl_vector_get(fit_params, k + 4);
-                const double pa = gsl_vector_get(fit_params, k + 5);
-                data += Gaussian(center_x, center_y, amp, fwhm_x, fwhm_y, pa, x, y);
+        const double dbl_sq_std_x = 2 * fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA;
+        const double dbl_sq_std_y = 2 * fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA;
+        const double theta_radian = pa * DEG_TO_RAD; // counterclockwise rotation
+        const double a = cos(theta_radian) * cos(theta_radian) / dbl_sq_std_x + sin(theta_radian) * sin(theta_radian) / dbl_sq_std_y;
+        const double dbl_b = 2 * (sin(2 * theta_radian) / (2 * dbl_sq_std_x) - sin(2 * theta_radian) / (2 * dbl_sq_std_y));
+        const double c = sin(theta_radian) * sin(theta_radian) / dbl_sq_std_x + cos(theta_radian) * cos(theta_radian) / dbl_sq_std_y;
+
+#pragma omp parallel for
+        for (size_t i = 0; i < d->n; i++) {
+            float data_i = d->data[i];
+            if (!isnan(data_i)) {
+                double dx = i % d->width - center_x;
+                double dy = i / d->width - center_y;
+                float data = amp * exp(-(a * dx * dx + dbl_b * dx * dy + c * dy * dy));
+                if (k == 0) {
+                    gsl_vector_set(f, i, data_i - data);
+                } else {
+                    gsl_vector_set(f, i, gsl_vector_get(f, i) - data);
+                }
+            } else {
+                gsl_vector_set(f, i, 0);
             }
-            gsl_vector_set(f, i, data_i - data);
-        } else {
-            gsl_vector_set(f, i, 0);
         }
     }
 
