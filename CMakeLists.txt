@@ -225,6 +225,7 @@ set(SOURCE_FILES
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
         src/Session/CursorSettings.cc
+        src/Session/LoaderCache.cc
         src/Session/OnMessageTask.cc
         src/Session/Session.cc
         src/Session/SessionManager.cc

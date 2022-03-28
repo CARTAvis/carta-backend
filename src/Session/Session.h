@@ -49,10 +49,10 @@
 #include "Frame/Frame.h"
 #include "ImageData/StokesFilesConnector.h"
 #include "Region/RegionHandler.h"
+#include "Session/LoaderCache.h"
 #include "SessionContext.h"
-#include "ThreadingManager/Concurrency.h"
-
 #include "Table/TableController.h"
+#include "ThreadingManager/Concurrency.h"
 
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
@@ -66,20 +66,6 @@ typedef std::function<void()> ScriptingSessionClosedCallback;
 struct PerSocketData {
     uint32_t session_id;
     string address;
-};
-
-// Cache of loaders for reading images from disk.
-class LoaderCache {
-public:
-    LoaderCache(int capacity);
-    std::shared_ptr<FileLoader<float>> Get(const std::string& filename, const std::string& directory = "");
-    void Remove(const std::string& filename);
-
-private:
-    int _capacity;
-    std::unordered_map<std::string, std::shared_ptr<FileLoader<float>>> _map;
-    std::list<std::string> _queue;
-    std::mutex _loader_cache_mutex;
 };
 
 class Session {
