@@ -59,10 +59,10 @@ private:
     template <typename T>
     const casacore::IPosition GetStatsDataShapeTyped(FileInfo::Data ds);
     template <typename S, typename D>
-    casacore::ArrayBase* GetStatsDataTyped(FileInfo::Data ds);
+    std::unique_ptr<casacore::ArrayBase> GetStatsDataTyped(FileInfo::Data ds);
 
     const casacore::IPosition GetStatsDataShape(FileInfo::Data ds) override;
-    casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
+    std::unique_ptr<casacore::ArrayBase> GetStatsData(FileInfo::Data ds) override;
 
     casacore::Lattice<float>* LoadSwizzledData();
     casacore::Lattice<float>* LoadMipMapData(int mip);

@@ -186,7 +186,7 @@ const casacore::IPosition Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
 // same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this
 // complicated templating, at least for now.
-casacore::ArrayBase* Hdf5Loader::GetStatsData(FileInfo::Data ds) {
+std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsData(FileInfo::Data ds) {
     auto image = GetImage();
     if (!image) {
         throw casacore::HDF5Error("Cannot get dataset " + DataSetToString(ds) + " from invalid image.");

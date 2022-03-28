@@ -139,7 +139,7 @@ protected:
     virtual const casacore::IPosition GetStatsDataShape(FileInfo::Data ds);
 
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
-    virtual casacore::ArrayBase* GetStatsData(FileInfo::Data ds);
+    virtual std::unique_ptr<casacore::ArrayBase> GetStatsData(FileInfo::Data ds);
 
     // Functions for loading individual types of statistics
     virtual void LoadStats2DBasic(FileInfo::Data ds);
