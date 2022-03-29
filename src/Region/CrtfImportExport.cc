@@ -30,8 +30,8 @@
 
 using namespace carta;
 
-CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis,
-    int file_id, const std::string& file, bool file_is_filename)
+CrtfImportExport::CrtfImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape,
+    int stokes_axis, int file_id, const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _stokes_axis(stokes_axis) {
     // Import regions from CRTF region file
     // Set delimiters for parsing file lines
@@ -88,14 +88,11 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
     }
 }
 
-CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis)
+CrtfImportExport::CrtfImportExport(
+    std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis)
     : RegionImportExport(image_coord_sys, image_shape), _stokes_axis(stokes_axis) {
     // Export regions; will add each region to RegionTextList
     _region_list = casa::RegionTextList(*image_coord_sys, image_shape);
-}
-
-CrtfImportExport::~CrtfImportExport() {
-    delete _coord_sys;
 }
 
 // Public: for exporting regions
