@@ -21,7 +21,7 @@ using ::testing::Pointwise;
 class PvGeneratorTest : public ::testing::Test, public ImageGenerator {
 public:
     static void SetPvCut(carta::RegionHandler& region_handler, int file_id, int& region_id, std::vector<float>& endpoints,
-        std::shared_ptr<casacore::CoordinateSystem> csys) {
+        casacore::CoordinateSystem* csys) {
         // Define RegionState for line region
         std::vector<CARTA::Point> control_points;
         CARTA::Point point;
@@ -49,7 +49,7 @@ TEST_F(PvGeneratorTest, FitsPvImage) {
     carta::RegionHandler region_handler;
 
     // Image coordinate system
-    auto csys = frame->CoordinateSystem();
+    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
     int image_spectral_axis = csys->spectralAxisNumber();
     auto image_spectral_name = csys->worldAxisNames()(image_spectral_axis);
     auto image_axis_increment = csys->increment();
@@ -118,7 +118,7 @@ TEST_F(PvGeneratorTest, FitsPvImageHorizontalCut) {
     carta::RegionHandler region_handler;
 
     // Image coordinate system
-    auto csys = frame->CoordinateSystem();
+    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
     int image_spectral_axis = csys->spectralAxisNumber();
     auto image_spectral_name = csys->worldAxisNames()(image_spectral_axis);
     auto image_axis_increment = csys->increment();
@@ -194,7 +194,7 @@ TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
     carta::RegionHandler region_handler;
 
     // Image coordinate system
-    auto csys = frame->CoordinateSystem();
+    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
     int image_spectral_axis = csys->spectralAxisNumber();
     auto image_spectral_name = csys->worldAxisNames()(image_spectral_axis);
     auto image_axis_increment = csys->increment();
@@ -273,7 +273,7 @@ TEST_F(PvGeneratorTest, TestNoSpectralAxis) {
     // Set line region [0, 0] to [9, 9]
     int file_id(0), region_id(-1);
     std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
-    auto csys = frame->CoordinateSystem();
+    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
     SetPvCut(region_handler, file_id, region_id, endpoints, csys);
 
     // Request PV image

@@ -45,9 +45,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _num_stokes(1),
       _image_cache_valid(false),
       _moment_generator(nullptr) {
-    // Initialize for operator==
-    _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
-
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         spdlog::error("Session {}: {}", session_id, _open_image_error);
@@ -132,12 +129,16 @@ std::string Frame::GetFileName() {
     return filename;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem() {
+casacore::CoordinateSystem* Frame::CoordinateSystem() {
+    // Returns pointer to CoordinateSystem clone; caller must delete
+    casacore::CoordinateSystem* csys(nullptr);
     if (IsValid()) {
-        return _loader->GetCoordinateSystem();
+        std::lock_guard<std::mutex> guard(_image_mutex);
+        casacore::CoordinateSystem image_csys;
+        _loader->GetCoordinateSystem(image_csys);
+        csys = static_cast<casacore::CoordinateSystem*>(image_csys.clone());
     }
-
-    return std::make_shared<casacore::CoordinateSystem>();
+    return csys;
 }
 
 casacore::IPosition Frame::ImageShape() {
@@ -1572,10 +1573,13 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // ****************************************************
 // Region/Slicer Support (Frame manages image mutex)
 
-std::shared_ptr<casacore::LCRegion> Frame::GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error) {
+casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
-    return region->GetImageRegion(file_id, CoordinateSystem(), ImageShape(), report_error);
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape(), report_error);
+    delete coord_sys;
+    return image_region;
 }
 
 bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region) {
@@ -1596,8 +1600,9 @@ bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, ca
 
 casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
     // Returns image shape with a region applied
-    auto coord_sys = CoordinateSystem();
-    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys.get(), ImageShape());
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
+    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape());
+    delete coord_sys;
     return lattice_region.shape();
 }
 
@@ -1791,7 +1796,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     // Modify image to export
     casacore::SubImage<float> sub_image;
-    std::shared_ptr<casacore::LCRegion> image_region;
+    casacore::LCRegion* image_region;
     casacore::IPosition region_shape;
 
     if (region) {
@@ -1801,14 +1806,14 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     if (image_shape.size() == 2) {
         if (region) {
-            _loader->GetSubImage(LattRegionHolder(image_region.get()), sub_image);
+            _loader->GetSubImage(LattRegionHolder(image_region), sub_image);
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
             if (region) {
-                auto latt_region_holder = LattRegionHolder(image_region.get());
+                auto latt_region_holder = LattRegionHolder(image_region);
                 auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);
                 _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
             } else {
@@ -2049,7 +2054,7 @@ casacore::Slicer Frame::GetExportImageSlicer(const CARTA::SaveFile& save_file_ms
 //   If dimension of region does not match the source image, will modify latt_region_holder.
 // Return casacore::Slicer(start, end, stride) for apply subImage()
 casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
-    casacore::IPosition region_shape, std::shared_ptr<casacore::LCRegion> image_region, casacore::LattRegionHolder& latt_region_holder) {
+    casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder) {
     auto channels = std::vector<int>();
     auto stokes = std::vector<int>();
     ValidateChannelStokes(channels, stokes, save_file_msg);

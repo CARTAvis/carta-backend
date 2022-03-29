@@ -70,7 +70,7 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
 }
 
 FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
-    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
+    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false) {
     // Set initial modify time if filename is not LEL expression for file in directory
     if (directory.empty()) {
         ImageUpdated();
@@ -135,15 +135,25 @@ bool FileLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-casacore::IPosition FileLoader::GetShape() {
-    return _image_shape;
+bool FileLoader::GetShape(IPos& shape) {
+    if (_image_shape.empty()) {
+        return false;
+    }
+
+    shape = _image_shape;
+    return true;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
-    return _coord_sys;
+bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    if (_coord_sys.nCoordinates() == 0) {
+        return false;
+    }
+
+    coord_sys = _coord_sys;
+    return true;
 }
 
-bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
+bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
     // Return image shape and axes for image. Spectral axis may or may not be z axis.
     // All parameters are return values.
     spectral_axis = -1;
@@ -164,7 +174,7 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_ax
         return false;
     }
 
-    if (_coord_sys->nPixelAxes() != _num_dims) {
+    if (_coord_sys.nPixelAxes() != _num_dims) {
         message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
         return false;
     }
@@ -176,8 +186,8 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_ax
     _image_plane_size = _width * _height;
 
     // Spectral and stokes axis
-    spectral_axis = _coord_sys->spectralAxisNumber();
-    stokes_axis = _coord_sys->polarizationAxisNumber();
+    spectral_axis = _coord_sys.spectralAxisNumber();
+    stokes_axis = _coord_sys.polarizationAxisNumber();
 
     // 2D image
     if (_num_dims == 2) {
@@ -264,19 +274,19 @@ std::vector<int> FileLoader::GetRenderAxes() {
 
     if (_image_shape.size() > 2) {
         // Normally, use direction axes
-        if (_coord_sys->hasDirectionCoordinate()) {
-            casacore::Vector<casacore::Int> dir_axes = _coord_sys->directionAxesNumbers();
+        if (_coord_sys.hasDirectionCoordinate()) {
+            casacore::Vector<casacore::Int> dir_axes = _coord_sys.directionAxesNumbers();
             axes[0] = dir_axes[0];
             axes[1] = dir_axes[1];
-        } else if (_coord_sys->hasLinearCoordinate()) {
+        } else if (_coord_sys.hasLinearCoordinate()) {
             // Check for PV image: [Linear, Spectral] axes
             // Returns -1 if no spectral axis
-            int spectral_axis = _coord_sys->spectralAxisNumber();
+            int spectral_axis = _coord_sys.spectralAxisNumber();
 
             if (spectral_axis >= 0) {
                 // Find valid (not -1) linear axes
                 std::vector<int> valid_axes;
-                casacore::Vector<casacore::Int> lin_axes = _coord_sys->linearAxesNumbers();
+                casacore::Vector<casacore::Int> lin_axes = _coord_sys.linearAxesNumbers();
                 for (auto axis : lin_axes) {
                     if (axis >= 0) {
                         valid_axes.push_back(axis);
@@ -445,26 +455,26 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     return success;
 }
 
-const casacore::IPosition FileLoader::GetStatsDataShape(FileInfo::Data ds) {
+const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
 
-std::unique_ptr<casacore::ArrayBase> FileLoader::GetStatsData(FileInfo::Data ds) {
+casacore::ArrayBase* FileLoader::GetStatsData(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsData not implemented in this loader");
 }
 
 void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
     if (HasData(ds)) {
-        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
+        const IPos& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(casacore::IPosition(1, _depth))) ||
-            (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(2, _depth, _num_stokes)))) {
+        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(IPos(1, _depth))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(2, _depth, _num_stokes)))) {
             auto data = GetStatsData(ds);
 
             switch (ds) {
                 case FileInfo::Data::STATS_2D_MAX: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t z = 0; z < _depth; z++) {
                             _z_stats[s][z].basic_stats[CARTA::StatsType::Max] = *it++;
@@ -473,7 +483,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     break;
                 }
                 case FileInfo::Data::STATS_2D_MIN: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t z = 0; z < _depth; z++) {
                             _z_stats[s][z].basic_stats[CARTA::StatsType::Min] = *it++;
@@ -482,7 +492,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     break;
                 }
                 case FileInfo::Data::STATS_2D_SUM: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t z = 0; z < _depth; z++) {
                             _z_stats[s][z].basic_stats[CARTA::StatsType::Sum] = *it++;
@@ -491,7 +501,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     break;
                 }
                 case FileInfo::Data::STATS_2D_SUMSQ: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t z = 0; z < _depth; z++) {
                             _z_stats[s][z].basic_stats[CARTA::StatsType::SumSq] = *it++;
@@ -500,7 +510,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     break;
                 }
                 case FileInfo::Data::STATS_2D_NANS: {
-                    auto it = static_cast<casacore::Array<casacore::Int64>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t z = 0; z < _depth; z++) {
                             _z_stats[s][z].basic_stats[CARTA::StatsType::NanCount] = *it++;
@@ -511,6 +521,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                 default:
                     break;
             }
+
+            delete data;
         }
     }
 }
@@ -519,16 +531,14 @@ void FileLoader::LoadStats2DHist() {
     FileInfo::Data ds = FileInfo::Data::STATS_2D_HIST;
 
     if (HasData(ds)) {
-        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
+        const IPos& stat_dims = GetStatsDataShape(ds);
         size_t num_bins = stat_dims[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.isEqual(casacore::IPosition(1, num_bins))) ||
-            (_num_dims == 3 && stat_dims.isEqual(casacore::IPosition(2, num_bins, _depth))) ||
-            (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(3, num_bins, _depth, _num_stokes)))) {
-            auto data = GetStatsData(ds);
-            auto stats_data = static_cast<casacore::Array<casacore::Int64>*>(data.get());
-            auto it = stats_data->begin();
+        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _depth))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(3, num_bins, _depth, _num_stokes)))) {
+            auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
+            auto it = data->begin();
 
             for (size_t s = 0; s < _num_stokes; s++) {
                 for (size_t z = 0; z < _depth; z++) {
@@ -538,6 +548,8 @@ void FileLoader::LoadStats2DHist() {
                     }
                 }
             }
+
+            delete data;
         }
     }
 }
@@ -549,19 +561,17 @@ void FileLoader::LoadStats2DPercent() {
     FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
     if (HasData(dsp) && HasData(dsr)) {
-        const casacore::IPosition& dims_vals = GetStatsDataShape(dsp);
-        const casacore::IPosition& dims_ranks = GetStatsDataShape(dsr);
+        const IPos& dims_vals = GetStatsDataShape(dsp);
+        const IPos& dims_ranks = GetStatsDataShape(dsr);
 
         size_t num_ranks = dims_ranks[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && dims_vals.isEqual(casacore::IPosition(1, num_ranks))) ||
-            (_num_dims == 3 && dims_vals.isEqual(casacore::IPosition(2, num_ranks, _depth))) ||
-            (_num_dims == 4 && dims_vals.isEqual(casacore::IPosition(3, num_ranks, _depth, _num_stokes)))) {
-            auto ranks_data = GetStatsData(dsr);
-            auto ranks = static_cast<casacore::Array<casacore::Float>*>(ranks_data.get());
-            auto stats_data = GetStatsData(dsp);
-            auto data = static_cast<casacore::Array<casacore::Float>*>(stats_data.get());
+        if ((_num_dims == 2 && dims_vals.isEqual(IPos(1, num_ranks))) ||
+            (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _depth))) ||
+            (_num_dims == 4 && dims_vals.isEqual(IPos(3, num_ranks, _depth, _num_stokes)))) {
+            auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
+            auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
             auto it = data->begin();
             auto itr = ranks->begin();
@@ -576,49 +586,52 @@ void FileLoader::LoadStats2DPercent() {
                     }
                 }
             }
+
+            delete ranks;
+            delete data;
         }
     }
 }
 
 void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
     if (HasData(ds)) {
-        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
+        const IPos& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && stat_dims.size() == 0) || (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(1, _num_stokes)))) {
+        if ((_num_dims == 3 && stat_dims.size() == 0) || (_num_dims == 4 && stat_dims.isEqual(IPos(1, _num_stokes)))) {
             auto data = GetStatsData(ds);
 
             switch (ds) {
                 case FileInfo::Data::STATS_3D_MAX: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         _cube_stats[s].basic_stats[CARTA::StatsType::Max] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_MIN: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         _cube_stats[s].basic_stats[CARTA::StatsType::Min] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_SUM: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         _cube_stats[s].basic_stats[CARTA::StatsType::Sum] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_SUMSQ: {
-                    auto it = static_cast<casacore::Array<casacore::Float>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         _cube_stats[s].basic_stats[CARTA::StatsType::SumSq] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_NANS: {
-                    auto it = static_cast<casacore::Array<casacore::Int64>*>(data.get())->begin();
+                    auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         _cube_stats[s].basic_stats[CARTA::StatsType::NanCount] = *it++;
                     }
@@ -627,6 +640,8 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                 default:
                     break;
             }
+
+            delete data;
         }
     }
 }
@@ -635,14 +650,13 @@ void FileLoader::LoadStats3DHist() {
     FileInfo::Data ds = FileInfo::Data::STATS_3D_HIST;
 
     if (HasData(ds)) {
-        const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
+        const IPos& stat_dims = GetStatsDataShape(ds);
         size_t num_bins = stat_dims[0];
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && stat_dims.isEqual(casacore::IPosition(1, num_bins))) ||
-            (_num_dims == 4 && stat_dims.isEqual(casacore::IPosition(2, num_bins, _num_stokes)))) {
-            auto stats_data = GetStatsData(ds);
-            auto data = static_cast<casacore::Array<casacore::Int64>*>(stats_data.get());
+        if ((_num_dims == 3 && stat_dims.isEqual(IPos(1, num_bins))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(2, num_bins, _num_stokes)))) {
+            auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 
             for (size_t s = 0; s < _num_stokes; s++) {
@@ -651,6 +665,8 @@ void FileLoader::LoadStats3DHist() {
                     _cube_stats[s].histogram_bins[b] = *it++;
                 }
             }
+
+            delete data;
         }
     }
 }
@@ -662,18 +678,15 @@ void FileLoader::LoadStats3DPercent() {
     FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
     if (HasData(dsp) && HasData(dsr)) {
-        const casacore::IPosition& dims_vals = GetStatsDataShape(dsp);
-        const casacore::IPosition& dims_ranks = GetStatsDataShape(dsr);
+        const IPos& dims_vals = GetStatsDataShape(dsp);
+        const IPos& dims_ranks = GetStatsDataShape(dsr);
 
         size_t nranks = dims_ranks[0];
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && dims_vals.isEqual(casacore::IPosition(1, nranks))) ||
-            (_num_dims == 4 && dims_vals.isEqual(casacore::IPosition(2, nranks, _num_stokes)))) {
-            auto ranks_data = GetStatsData(dsr);
-            auto ranks = static_cast<casacore::Array<casacore::Float>*>(ranks_data.get());
-            auto stats_data = GetStatsData(dsp);
-            auto data = static_cast<casacore::Array<casacore::Float>*>(stats_data.get());
+        if ((_num_dims == 3 && dims_vals.isEqual(IPos(1, nranks))) || (_num_dims == 4 && dims_vals.isEqual(IPos(2, nranks, _num_stokes)))) {
+            auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
+            auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
             auto it = data->begin();
             auto itr = ranks->begin();
@@ -686,6 +699,9 @@ void FileLoader::LoadStats3DPercent() {
                     _cube_stats[s].percentile_ranks[r] = *itr++;
                 }
             }
+
+            delete ranks;
+            delete data;
         }
     }
 }
@@ -849,11 +865,11 @@ double FileLoader::CalculateBeamArea() {
 
     CloseImageIfUpdated();
 
-    if (!info.hasSingleBeam() || !_coord_sys->hasDirectionCoordinate()) {
+    if (!info.hasSingleBeam() || !_coord_sys.hasDirectionCoordinate()) {
         return NAN;
     }
 
-    return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());
+    return info.getBeamAreaInPixels(-1, -1, _coord_sys.directionCoordinate());
 }
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {

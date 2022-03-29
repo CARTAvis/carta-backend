@@ -95,8 +95,8 @@ public:
     // Get the full name of image file
     std::string GetFileName();
 
-    // Returns shared ptr to CoordinateSystem
-    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem();
+    // Returns pointer to CoordinateSystem clone; caller must delete
+    casacore::CoordinateSystem* CoordinateSystem();
 
     // Image/Frame info
     casacore::IPosition ImageShape();
@@ -165,7 +165,7 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error = true);
+    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
@@ -239,7 +239,7 @@ protected:
     void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
-        casacore::IPosition region_shape, std::shared_ptr<casacore::LCRegion> image_region, casacore::LattRegionHolder& latt_region_holder);
+        casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
 
     void InitImageHistogramConfigs();
 

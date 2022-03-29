@@ -20,8 +20,8 @@
 
 using namespace carta;
 
-Ds9ImportExport::Ds9ImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape,
-    int file_id, const std::string& file, bool file_is_filename)
+Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _file_ref_frame("physical"), _pixel_coord(true) {
     // Import regions in DS9 format
     SetParserDelim(" ,()#");
@@ -29,8 +29,7 @@ Ds9ImportExport::Ds9ImportExport(std::shared_ptr<casacore::CoordinateSystem> ima
     ProcessFileLines(lines);
 }
 
-Ds9ImportExport::Ds9ImportExport(
-    std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
+Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
     : RegionImportExport(image_coord_sys, image_shape), _pixel_coord(pixel_coord) {
     // Export regions to DS9 format
     // Set coordinate system for file header
@@ -56,6 +55,10 @@ Ds9ImportExport::Ds9ImportExport(
     }
 
     AddHeader();
+}
+
+Ds9ImportExport::~Ds9ImportExport() {
+    delete _coord_sys;
 }
 
 void Ds9ImportExport::InitGlobalProperties() {

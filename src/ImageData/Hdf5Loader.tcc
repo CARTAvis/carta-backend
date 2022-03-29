@@ -27,10 +27,10 @@ struct EnumClassHash {
 };
 
 template <typename T>
-const casacore::IPosition Hdf5Loader::GetStatsDataShapeTyped(FileInfo::Data ds) {
+const Hdf5Loader::IPos Hdf5Loader::GetStatsDataShapeTyped(FileInfo::Data ds) {
     auto image = GetImage();
     if (!image) {
-        return casacore::IPosition();
+        return IPos();
     }
 
     CartaHdf5Image* hdf5_image = dynamic_cast<CartaHdf5Image*>(image.get());
@@ -40,8 +40,8 @@ const casacore::IPosition Hdf5Loader::GetStatsDataShapeTyped(FileInfo::Data ds) 
 
 // TODO: We need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly.
 template <typename S, typename D>
-std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsDataTyped(FileInfo::Data ds) {
-    std::unique_ptr<casacore::ArrayBase> data(new casacore::Array<D>());
+casacore::ArrayBase* Hdf5Loader::GetStatsDataTyped(FileInfo::Data ds) {
+    casacore::ArrayBase* data = new casacore::Array<D>();
 
     auto image = GetImage();
     if (!image) {
@@ -56,11 +56,11 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsDataTyped(FileInfo::Dat
         D value;
         casacore::HDF5DataType data_type((D*)0);
         H5Dread(data_set.getHid(), data_type.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-        data.reset(new casacore::Array<D>(casacore::IPosition(1, 1), value));
-        return data;
+        casacore::ArrayBase* scalar = new casacore::Array<D>(IPos(1, 1), value);
+        return scalar;
     }
 
-    data_set.get(casacore::Slicer(casacore::IPosition(data_set.shape().size(), 0), data_set.shape()), *data.get());
+    data_set.get(casacore::Slicer(IPos(data_set.shape().size(), 0), data_set.shape()), *data);
     return data;
 }
 
