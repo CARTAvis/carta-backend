@@ -16,13 +16,8 @@
 
 #include "App.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
 #include <filesystem>
 namespace fs = std::filesystem;
-#endif
 
 fs::path TestRoot();
 fs::path UserDirectory();
