@@ -117,11 +117,10 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     std::unique_ptr<RegionImportExport> importer;
     switch (region_file_type) {
         case CARTA::FileType::CRTF:
-            importer = std::unique_ptr<RegionImportExport>(
-                new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
+            importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
             break;
         case CARTA::FileType::DS9_REG:
-            importer = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
+            importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
             break;
         default:
             break;

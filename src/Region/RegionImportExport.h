@@ -29,6 +29,8 @@ public:
     // Export constructor
     RegionImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape);
 
+    virtual ~RegionImportExport() = default;
+
     // Retrieve imported regions as RegionState vector
     std::vector<RegionProperties> GetImportedRegions(std::string& error);
 
