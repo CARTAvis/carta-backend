@@ -19,15 +19,19 @@ namespace carta {
 
 class Ds9ImportExport : public RegionImportExport {
 public:
+    Ds9ImportExport() {}
+
     // Import constructor
     // Parse input file and convert region parameters to RegionProperties for given image
     // file_is_filename : indicates whether file parameter contains file name or file contents.
-    Ds9ImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
 
     // Export constructor
     // Each export region will be converted to a string in DS9 format and added to string vector
-    Ds9ImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
+    Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
+
+    ~Ds9ImportExport() override;
 
     // Export regions
     // RegionState control points for pixel coords in reference image

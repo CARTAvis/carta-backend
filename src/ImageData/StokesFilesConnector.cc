@@ -47,34 +47,44 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
 
     if (stokes_axis < 0) { // create a stokes coordinate and add it to the coordinate system
         std::unordered_map<CARTA::PolarizationType, std::shared_ptr<casacore::ExtendImage<float>>> extended_images;
-        std::unordered_map<CARTA::PolarizationType, std::shared_ptr<casacore::CoordinateSystem>> coord_sys;
+        std::unordered_map<CARTA::PolarizationType, casacore::CoordinateSystem> coord_sys;
         CARTA::PolarizationType carta_stokes_type;
 
         // modify the coordinate system and add a stokes coordinate
         for (auto& loader : _loaders) {
             carta_stokes_type = loader.first;
-            std::shared_ptr<casacore::CoordinateSystem> tmp_coord_sys = loader.second->GetCoordinateSystem();
+            casacore::CoordinateSystem tmp_coord_sys;
 
-            casacore::Vector<casacore::Int> vec(1);
-            casacore::Stokes::StokesTypes stokes_type;
+            if (loader.second->GetCoordinateSystem(tmp_coord_sys)) {
+                casacore::Vector<casacore::Int> vec(1);
+                casacore::Stokes::StokesTypes stokes_type;
 
-            if (GetCasaStokesType(carta_stokes_type, stokes_type)) {
-                vec(0) = stokes_type;                         // set stokes type
-                casacore::StokesCoordinate stokes_coord(vec); // set stokes coordinate
-                tmp_coord_sys->addCoordinate(stokes_coord);   // add stokes coordinate to the coordinate system
-                coord_sys[carta_stokes_type] = tmp_coord_sys; // fill the new coordinate system map
+                if (GetCasaStokesType(carta_stokes_type, stokes_type)) {
+                    vec(0) = stokes_type;                         // set stokes type
+                    casacore::StokesCoordinate stokes_coord(vec); // set stokes coordinate
+                    tmp_coord_sys.addCoordinate(stokes_coord);    // add stokes coordinate to the coordinate system
+                    coord_sys[carta_stokes_type] = tmp_coord_sys; // fill the new coordinate system map
+                } else {
+                    return fail_exit("Failed to set the stokes coordinate system!");
+                }
             } else {
-                return fail_exit("Failed to set the stokes coordinate system!");
+                return fail_exit("Failed to get the coordinate system!");
             }
         }
 
         // extend the image shapes
         auto& sample_loader = _loaders[carta_stokes_type];
-        casacore::IPosition old_image_shape = sample_loader->GetShape();
-        casacore::IPosition new_image_shape(old_image_shape.size() + 1);
-        new_image_shape = 1;
-        for (int i = 0; i < old_image_shape.size(); ++i) {
-            new_image_shape(i) = old_image_shape(i);
+        casacore::IPosition old_image_shape;
+        casacore::IPosition new_image_shape;
+
+        if (sample_loader->GetShape(old_image_shape)) {
+            new_image_shape.resize(old_image_shape.size() + 1);
+            new_image_shape = 1;
+            for (int i = 0; i < old_image_shape.size(); ++i) {
+                new_image_shape(i) = old_image_shape(i);
+            }
+        } else {
+            return fail_exit("Failed to extend the image shape!");
         }
 
         // modify the original image and extend the image coordinate system with a stokes coordinate
@@ -83,14 +93,14 @@ bool StokesFilesConnector::DoConcat(const CARTA::ConcatStokesFiles& message, CAR
             auto image = loader.second->GetImage();
             try {
                 extended_images[stokes_type] =
-                    std::make_shared<casacore::ExtendImage<float>>(*(image.get()), new_image_shape, *coord_sys[stokes_type]);
+                    std::make_shared<casacore::ExtendImage<float>>(*(image.get()), new_image_shape, coord_sys[stokes_type]);
             } catch (const casacore::AipsError& error) {
                 return fail_exit(fmt::format("Failed to extend the image: {}", error.getMesg()));
             }
         }
 
         // get stokes axis
-        stokes_axis = coord_sys[carta_stokes_type]->polarizationAxisNumber();
+        stokes_axis = coord_sys[carta_stokes_type].polarizationAxisNumber();
 
         // concatenate images along the stokes axis
         concatenated_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);

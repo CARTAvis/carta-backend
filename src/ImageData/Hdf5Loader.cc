@@ -29,7 +29,7 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
         _image_shape = _image->shape();
         _num_dims = _image_shape.size();
         _has_pixel_mask = _image->hasPixelMask();
-        _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+        _coord_sys = _image->coordinates();
 
         // Load swizzled image lattice
         if (HasData(FileInfo::Data::SWIZZLED)) {
@@ -156,10 +156,10 @@ bool Hdf5Loader::HasMip(int mip) const {
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
 // same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this
 // complicated templating, at least for now.
-const casacore::IPosition Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
+const Hdf5Loader::IPos Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
     auto image = GetImage();
     if (!image) {
-        return casacore::IPosition();
+        return IPos();
     }
 
     CartaHdf5Image* hdf5_image = dynamic_cast<CartaHdf5Image*>(image.get());
@@ -186,7 +186,7 @@ const casacore::IPosition Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
 // same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this
 // complicated templating, at least for now.
-std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsData(FileInfo::Data ds) {
+casacore::ArrayBase* Hdf5Loader::GetStatsData(FileInfo::Data ds) {
     auto image = GetImage();
     if (!image) {
         throw casacore::HDF5Error("Cannot get dataset " + DataSetToString(ds) + " from invalid image.");
@@ -222,10 +222,9 @@ bool Hdf5Loader::GetCursorSpectralData(
     if (has_swizzled) {
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(
-                casacore::IPosition(4, 0, cursor_y, cursor_x, stokes), casacore::IPosition(4, _depth, count_y, count_x, 1));
+            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _depth, count_y, count_x, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(casacore::IPosition(3, 0, cursor_y, cursor_x), casacore::IPosition(3, _depth, count_y, count_x));
+            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _depth, count_y, count_x));
         }
 
         data.resize(_depth * count_y * count_x);
@@ -241,7 +240,7 @@ bool Hdf5Loader::GetCursorSpectralData(
     return data_ok;
 }
 
-bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
+bool Hdf5Loader::UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) {
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
     ulock.unlock();
@@ -262,8 +261,8 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
+    std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete
@@ -278,7 +277,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     // Check if region stats calculated
     auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
-    casacore::IPosition mask_shape(mask.shape());
+    IPos mask_shape(mask.shape());
     if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) &&
         _region_stats[region_stats_id].IsCompleted()) {
         results = _region_stats[region_stats_id].stats;
@@ -382,7 +381,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
         for (size_t y = 0; y < height; y++) {
             // skip all Z values for masked pixels
-            if (!mask.getAt(casacore::IPosition(2, x, y))) {
+            if (!mask.getAt(IPos(2, x, y))) {
                 continue;
             }
 
@@ -445,11 +444,11 @@ bool Hdf5Loader::GetDownsampledRasterData(
 
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(casacore::IPosition(4, xmin, ymin, z, stokes), casacore::IPosition(4, w, h, 1, 1));
+        slicer = casacore::Slicer(IPos(4, xmin, ymin, z, stokes), IPos(4, w, h, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(casacore::IPosition(3, xmin, ymin, z), casacore::IPosition(3, w, h, 1));
+        slicer = casacore::Slicer(IPos(3, xmin, ymin, z), IPos(3, w, h, 1));
     } else if (_num_dims == 2) {
-        slicer = casacore::Slicer(casacore::IPosition(2, xmin, ymin), casacore::IPosition(2, w, h));
+        slicer = casacore::Slicer(IPos(2, xmin, ymin), IPos(2, w, h));
     } else {
         return false;
     }
@@ -477,11 +476,11 @@ bool Hdf5Loader::GetChunk(
 
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(casacore::IPosition(4, min_x, min_y, z, stokes), casacore::IPosition(4, data_width, data_height, 1, 1));
+        slicer = casacore::Slicer(IPos(4, min_x, min_y, z, stokes), IPos(4, data_width, data_height, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(casacore::IPosition(3, min_x, min_y, z), casacore::IPosition(3, data_width, data_height, 1));
+        slicer = casacore::Slicer(IPos(3, min_x, min_y, z), IPos(3, data_width, data_height, 1));
     } else if (_num_dims == 2) {
-        slicer = casacore::Slicer(casacore::IPosition(2, min_x, min_y), casacore::IPosition(2, data_width, data_height));
+        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, data_width, data_height));
     }
 
     data.resize(data_width * data_height);
