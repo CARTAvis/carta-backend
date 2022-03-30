@@ -1789,10 +1789,10 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
 
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    // Get box centers along line; start at end of (poly)line and work toward beginning
-    for (size_t iline = num_lines; iline > 0; iline--) {
-        PointXy endpoint0(control_points[iline - 1].x(), control_points[iline - 1].y());
-        PointXy endpoint1(control_points[iline].x(), control_points[iline].y());
+    if (num_lines = 1) {
+        // Get box centers along line; start at end of line and work toward beginning
+        PointXy endpoint0(control_points[0].x(), control_points[0].y());
+        PointXy endpoint1(control_points[1].x(), control_points[1].y());
 
         // Center point of line segment
         auto center_x = (endpoint0.x + endpoint1.x) / 2;
@@ -1854,14 +1854,6 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
         if (CheckLinearOffsets(box_centers, reference_csys, increment)) {
             // Get profiles for each line segment; progress is iregion/num_regions
             size_t num_regions(box_centers.size());
-            size_t profiles_size = profiles.nrow() + num_regions;
-            if (trim_line) {
-                profiles_size--;
-            }
-
-            if (iline == 1) { // Update num_profiles to correct final number
-                num_profiles = profiles_size;
-            }
 
             // Overlap regions if not vertical or horizontal line
             float height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
@@ -1871,11 +1863,6 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
                 if (per_z && _stop_pv[file_id]) {
                     cancelled = true;
                     return false;
-                }
-
-                if (trim_line && (iregion == 0)) { // skip first region
-                    spdlog::debug("Line {} box region {} trimmed", iline, iregion);
-                    continue;
                 }
 
                 // Set temporary region state
@@ -1893,14 +1880,14 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile =
                     GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-                spdlog::debug("Line {} box region {} of {}: max num pixels={}", iline, iregion, num_regions - 1, num_pixels);
+                spdlog::debug("Box region {} of {}: max num pixels={}", iregion + 1, num_regions, num_pixels);
 
-                if (profiles.nrow() < profiles_size) {
-                    profiles.resize(casacore::IPosition(2, profiles_size, region_profile.size()), true);
+                if (profiles.empty()) {
+                    profiles.resize(casacore::IPosition(2, num_regions, region_profile.size()));
                 }
 
-                profiles.row(profile_row++) = region_profile;
-                progress = float(profile_row + 1) / float(num_profiles);
+                profiles.row(iregion) = region_profile;
+                progress = float(iregion + 1) / float(num_regions);
 
                 if (per_z) {
                     // Update progress if time interval elapsed
@@ -1917,7 +1904,14 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
             spdlog::debug("Fixed pixel offsets not linear");
             profiles.resize();
             return false;
-        } // Profiles for line segment complete
+        }
+    } else {
+        spdlog::debug("Fixed pixel offsets for polyline not complete");
+        profiles.resize();
+        return false;
+
+        /*
+        bool trim_line(false);
 
         // Check whether to trim next line's starting point
         if (iline > 1) {
@@ -1928,6 +1922,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id
                 trim_line = false;
             }
         }
+        */
     }
 
     if (per_z) {
@@ -2029,7 +2024,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_
     // Returns false if profiles cancelled or failed, with an error message.
     auto control_points = region_state.control_points;
     size_t num_lines(control_points.size() - 1);
-    bool trim_line(false);
 
     // Target increment is CDELT2, target width is width * CDELT2
     auto inc2 = reference_csys->increment()(1);
@@ -2042,14 +2036,13 @@ bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_
     double tolerance = GetSeparationTolerance(reference_csys);
 
     // Send progress updates (matrix_row / num_profiles) at time interval
-    size_t matrix_row(0);
     float progress(0.0);
     auto t_start = std::chrono::high_resolution_clock::now();
 
     // Get profiles for each line segment; start at end of (poly)line and work toward beginning
-    for (size_t iline = num_lines; iline > 0; iline--) {
-        PointXy endpoint0(control_points[iline - 1].x(), control_points[iline - 1].y());
-        PointXy endpoint1(control_points[iline].x(), control_points[iline].y());
+    if (num_lines == 1) {
+        PointXy endpoint0(control_points[0].x(), control_points[0].y());
+        PointXy endpoint1(control_points[1].x(), control_points[1].y());
 
         // Number of region profiles determined by increments in line length
         double line_separation(0.0);
@@ -2064,7 +2057,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_
         int num_offsets = lround(line_separation / increment) / 2;
         int num_regions = num_offsets * 2;
 
-        // Center (pixel) point of line segment
+        // Center point (pixel coords) of line segment
         std::vector<double> line_center;
         line_center.push_back((endpoint0.x + endpoint1.x) / 2);
         line_center.push_back((endpoint0.y + endpoint1.y) / 2);
@@ -2115,17 +2108,12 @@ bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_
         // Finished with points along line: unlock mutex
         ulock.unlock();
 
-        // Increase matrix size to fill in rows; ncol = nchan (PV data) or 1 (spatial profile)
-        auto row_size = profiles.nrow() + line_points.size() - 1;
+        // Set matrix size to fill in rows; ncol = image depth (PV data) or 1 (spatial profile)
+        auto row_size = line_points.size() - 1;
         if (per_z) {
             profiles.resize(casacore::IPosition(2, row_size, _frames.at(file_id)->Depth()));
         } else {
             profiles.resize(casacore::IPosition(2, row_size, 1));
-        }
-
-        if (iline == 1) {
-            // Update estimated number of profiles to actual number of rows for progress
-            num_profiles = row_size;
         }
 
         // Rotation of line segment for temporary region state
@@ -2149,7 +2137,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_
 
             if (region_start.empty() || region_end.empty()) {
                 // Likely part of line off image
-                profiles.row(matrix_row++) = NAN;
+                profiles.row(iregion) = NAN;
             } else {
                 // Set temporary region for reference image and get profile for requested file_id
                 RegionState temp_region_state = GetTemporaryRegionState(
@@ -2164,22 +2152,24 @@ bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_
                     return false;
                 }
 
-                profiles.row(matrix_row++) = region_profile;
+                profiles.row(iregion) = region_profile;
             }
 
             // Update progress if time interval elapsed
             auto t_end = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-            progress = float(matrix_row) / float(num_profiles);
+            progress = float(iregion + 1) / float(num_regions);
 
             if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress == 1.0)) {
                 t_start = t_end;
                 progress_callback(progress);
             }
         }
-
-        // TODO: check whether to trim next line
-    }
+    } else {
+        spdlog::debug("Fixed angular offsets for polyline not complete");
+        profiles.resize();
+        return false;
+    } 
 
     if (per_z) {
         cancelled = _stop_pv[file_id];
