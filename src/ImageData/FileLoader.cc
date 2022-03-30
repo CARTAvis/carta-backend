@@ -832,7 +832,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 }
 
 FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
-    if (current_stokes < _num_stokes) {
+    if (current_stokes < _num_stokes) { // Note: loader cache does not support the computed stokes
         return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
     }
     return _empty_stats;
