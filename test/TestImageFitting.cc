@@ -55,7 +55,7 @@ public:
         std::string gaussian_model_string = std::to_string(gaussian_model[0]);
         for (size_t i = 1; i < gaussian_model.size(); i++) {
             gaussian_model_string.append(" ");
-            gaussian_model_string.append(std::to_string(gaussian_model[i]));
+            gaussian_model_string.append(i % 6 == 0 ? std::to_string(gaussian_model[i] - 90.0) : std::to_string(gaussian_model[i]));
         }
 
         std::string file_path =
@@ -94,21 +94,21 @@ private:
 };
 
 TEST_F(ImageFittingTest, OneComponentFitting) {
-    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 45};
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     SetInitialValues(gaussian_model);
     FitImage(gaussian_model, "");
 
-    std::vector<float> bad_inital = {1, 64, 64, 20, 0, 0, 45};
+    std::vector<float> bad_inital = {1, 64, 64, 20, 0, 0, 135};
     SetInitialValues(bad_inital);
     FitImage(gaussian_model, "fit did not converge");
 }
 
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
-    std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 120, 32, 32, 20, 20, 10, 120, 96, 96, 20, 20, 10, 120};
+    std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 210, 32, 32, 20, 20, 10, 210, 96, 96, 20, 20, 10, 210};
     SetInitialValues(gaussian_model);
     FitImage(gaussian_model, "");
 
-    std::vector<float> bad_inital = {3, 64, 64, 20, 20, 10, 120, 64, 64, 20, 20, 10, 120, 96, 96, 20, 0, 0, 120};
+    std::vector<float> bad_inital = {3, 64, 64, 20, 20, 10, 210, 64, 64, 20, 20, 10, 210, 96, 96, 20, 0, 0, 210};
     SetInitialValues(bad_inital);
     FitImage(gaussian_model, "fit did not converge");
 }

@@ -168,6 +168,7 @@ void ImageFitter::SetLog() {
     _log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_fit_status.chisq));
     _log += fmt::format("initial cost         = {:.12e}\n", _fit_status.chisq0);
     _log += fmt::format("final cost           = {:.12e}\n", _fit_status.chisq);
+    _log += fmt::format("residual variance    = {:.12e}\n", _fit_status.chisq / (_fit_data.n - _fdf.p));
     _log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
 }
 
@@ -184,7 +185,7 @@ int ImageFitter::FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector*
 
         const double dbl_sq_std_x = 2 * fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA;
         const double dbl_sq_std_y = 2 * fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA;
-        const double theta_radian = pa * DEG_TO_RAD; // counterclockwise rotation
+        const double theta_radian = (pa - 90.0) * DEG_TO_RAD; // counterclockwise rotation
         const double a = cos(theta_radian) * cos(theta_radian) / dbl_sq_std_x + sin(theta_radian) * sin(theta_radian) / dbl_sq_std_y;
         const double dbl_b = 2 * (sin(2 * theta_radian) / (2 * dbl_sq_std_x) - sin(2 * theta_radian) / (2 * dbl_sq_std_y));
         const double c = sin(theta_radian) * sin(theta_radian) / dbl_sq_std_x + cos(theta_radian) * cos(theta_radian) / dbl_sq_std_y;
