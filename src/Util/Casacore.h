@@ -9,7 +9,10 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
+#include <casacore/images/Images/PagedImage.h>
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
+
+#include <casacore/casa/Utilities/DataType.h>
 
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 bool IsSubdirectory(std::string folder, std::string top_folder);
@@ -18,6 +21,10 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
 // Determine image type from filename
 inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
     return casacore::ImageOpener::imageType(filename);
+}
+
+inline casacore::DataType CasacorePixelType(const std::string &filename) {
+    return casacore::imagePixelType(filename);
 }
 
 void GetSpectralCoordPreferences(

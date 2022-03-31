@@ -10,6 +10,7 @@ namespace carta {
 // instantiate the template
 template class FileLoader<float>;
 // template class FileLoader<casacore::Complex>; // TODO: check the type for complex images later
+
 template class CasaLoader<float>;
 template class CompListLoader<float>;
 template class ConcatLoader<float>;
