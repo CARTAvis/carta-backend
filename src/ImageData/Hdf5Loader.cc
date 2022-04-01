@@ -220,14 +220,15 @@ bool Hdf5Loader::GetCursorSpectralData(
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
     ulock.unlock();
     if (has_swizzled) {
+        size_t depth(_coord_axes.depth);
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _depth, count_y, count_x, 1));
+            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, depth, count_y, count_x, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _depth, count_y, count_x));
+            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, depth, count_y, count_x));
         }
 
-        data.resize(_depth * count_y * count_x);
+        data.resize(depth * count_y * count_x);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         std::lock_guard<std::mutex> lguard(image_mutex);
         try {
@@ -250,7 +251,7 @@ bool Hdf5Loader::UseRegionSpectralData(const IPos& region_shape, std::mutex& ima
 
     int width = region_shape(0);
     int height = region_shape(1);
-    int depth = _depth;
+    int depth = _coord_axes.depth;
 
     // Using the normal dataset may be faster if the region is wider than it is deep.
     // This is an initial estimate; we need to examine casacore's algorithm in more detail.
@@ -287,7 +288,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     int width = mask_shape(0);
     int height = mask_shape(1);
-    int depth = _depth;
+    int depth = _coord_axes.depth;
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
@@ -471,8 +472,8 @@ bool Hdf5Loader::GetChunk(
     std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
     bool data_ok(false);
 
-    data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
-    data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
+    data_width = std::min(CHUNK_SIZE, (int)_coord_axes.width - min_x);
+    data_height = std::min(CHUNK_SIZE, (int)_coord_axes.height - min_y);
 
     casacore::Slicer slicer;
     if (_num_dims == 4) {
