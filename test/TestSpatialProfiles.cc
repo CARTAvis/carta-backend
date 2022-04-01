@@ -4,7 +4,6 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
 #include "CommonTestUtilities.h"
@@ -13,9 +12,6 @@
 #include "src/Frame/Frame.h"
 
 using namespace carta;
-
-using ::testing::FloatNear;
-using ::testing::Pointwise;
 
 static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 

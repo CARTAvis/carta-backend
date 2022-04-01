@@ -91,19 +91,7 @@ public:
         GetImageData(image1, data1);
         GetImageData(image2, data2);
         
-        std::cerr << "DATA 1: ";
-        for (int i = 0; i < data1.size(); i++) {
-            std::cerr << data1[i] << ", ";
-        }
-        std::cerr << endl;
-        
-        std::cerr << "DATA 2: ";
-        for (int j = 0; j < data2.size(); j++) {
-            std::cerr << data2[j] << ", ";
-        }
-        std::cerr << endl;
-        
-//         CmpVectors(data1, data2);        
+        CmpVectors(data1, data2);        
     }
 
     // TODO this is temporary
