@@ -579,7 +579,7 @@ bool Session::OnOpenFile(
 
     if (info_loaded) {
         // Create Frame for image
-        auto loader = _loaders.Get(name);
+        auto loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
         auto frame = std::make_unique<Frame>(_id, loader, "");
 
         if (frame->IsValid()) {
