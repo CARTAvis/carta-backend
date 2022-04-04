@@ -188,7 +188,7 @@ bool FileLoader::GetCoordinateAxes(CoordinateAxes& coord_axes, std::string& mess
         double stokes_crpix = _coord_sys.referencePixel()(stokes_axis);
 
         for (int i = 0; i < image_axes.num_stokes; ++i) {
-            int stokes_fits_value = stokes_crval + (i + 1 - stokes_crpix) * stokes_cdelt;
+            int stokes_fits_value = stokes_crval + (i - stokes_crpix) * stokes_cdelt;
             int stokes_value;
             if (FileInfo::ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
                 _stokes_indices[GetStokesType(stokes_value)] = i;
