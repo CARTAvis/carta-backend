@@ -308,7 +308,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-    const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader) {
+    const std::string& filename, std::string& message) {
     // Fill FileInfoExtended for given image; no hdu
     bool file_info_ok(false);
 
@@ -572,15 +572,15 @@ bool Session::OnOpenFile(
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;
-    std::shared_ptr<FileLoader> image_loader;
 
     CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, image_loader);
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message);
     bool success(false);
 
     if (info_loaded) {
         // Create Frame for image
-        auto frame = std::make_unique<Frame>(_id, image_loader, "");
+        auto loader = _loaders.Get(name);
+        auto frame = std::make_unique<Frame>(_id, loader, "");
 
         if (frame->IsValid()) {
             if (_frames.count(file_id) > 0) {
