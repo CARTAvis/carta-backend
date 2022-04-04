@@ -1478,8 +1478,6 @@ casacore::TempImage<float>* FileExtInfoLoader::ConvertImageToFloat(casacore::Lat
     switch (image_in->dataType()) {
         case casacore::TpFloat: {
             casacore::ImageInterface<float>* basic_image = dynamic_cast<casacore::ImageInterface<float>*>(image_in);
-            std::cerr << "LatticeBase shape=" << image_in->shape() << " ImageInterface shape=" << basic_image->shape() << std::endl;
-            std::cerr << "CoordSys nPixelAxes=" << basic_image->coordinates().nPixelAxes() << std::endl;
             image_out = new casacore::TempImage<float>(tiled_shape, basic_image->coordinates());
             image_out->setUnits(basic_image->units());
             image_out->setMiscInfo(basic_image->miscInfo());
