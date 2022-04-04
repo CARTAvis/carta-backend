@@ -180,11 +180,15 @@ bool FileLoader::GetCoordinateAxes(CoordinateAxes& coord_axes, std::string& mess
     _coord_axes = image_axes; // save in loader
     _image_plane_size = image_axes.width * image_axes.height;
 
-    // TODO: not saved by FileExtInfoLoader!
     // save stokes types with respect to the stokes index
-    if (_stokes_cdelt != 0) {
+    auto stokes_axis = image_axes.stokes_axis;
+    if (stokes_axis >= 0) {
+        double stokes_cdelt = _coord_sys.increment()(stokes_axis);
+        double stokes_crval = _coord_sys.referenceValue()(stokes_axis);
+        double stokes_crpix = _coord_sys.referencePixel()(stokes_axis);
+
         for (int i = 0; i < image_axes.num_stokes; ++i) {
-            int stokes_fits_value = _stokes_crval + (i + 1 - _stokes_crpix) * _stokes_cdelt;
+            int stokes_fits_value = stokes_crval + (i + 1 - stokes_crpix) * stokes_cdelt;
             int stokes_value;
             if (FileInfo::ConvertFitsStokesValue(stokes_fits_value, stokes_value)) {
                 _stokes_indices[GetStokesType(stokes_value)] = i;
@@ -770,18 +774,6 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
         return true;
     }
     return false;
-}
-
-void FileLoader::SetStokesCrval(float stokes_crval) {
-    _stokes_crval = stokes_crval;
-}
-
-void FileLoader::SetStokesCrpix(float stokes_crpix) {
-    _stokes_crpix = stokes_crpix;
-}
-
-void FileLoader::SetStokesCdelt(int stokes_cdelt) {
-    _stokes_cdelt = stokes_cdelt;
 }
 
 bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
