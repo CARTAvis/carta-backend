@@ -24,13 +24,12 @@ namespace carta {
 
 class RegionImportExport {
 public:
-    RegionImportExport() {}
-    virtual ~RegionImportExport() {}
-
     // Import constructor: file_id to add to RegionState
-    RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id);
+    RegionImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int file_id);
     // Export constructor
-    RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape);
+    RegionImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape);
+
+    virtual ~RegionImportExport() = default;
 
     // Retrieve imported regions as RegionState vector
     std::vector<RegionProperties> GetImportedRegions(std::string& error);
@@ -71,7 +70,7 @@ protected:
     std::string FormatColor(const std::string& color);
 
     // Image info to which region is applied
-    casacore::CoordinateSystem* _coord_sys;
+    std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     casacore::IPosition _image_shape;
 
     // For import

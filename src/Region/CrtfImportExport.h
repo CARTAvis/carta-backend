@@ -22,20 +22,16 @@ namespace carta {
 
 class CrtfImportExport : public RegionImportExport {
 public:
-    CrtfImportExport() {}
-
     // Import constructor
     // Use casa::RegionTextList to create casa::Annotation AnnRegions for RegionState parameters
     // file_is_filename : indicates whether file parameter contains file name or file contents.
-    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis, int file_id,
-        const std::string& file, bool file_is_filename);
+    CrtfImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis,
+        int file_id, const std::string& file, bool file_is_filename);
 
     // Export constructor
     // Creates casa::RegionTextList to which casa::AnnRegion/AnnSymbol regions are added with AddExportRegion.
     // ExportRegions prints these regions to a file or vector of strings.
-    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis);
-
-    ~CrtfImportExport() override;
+    CrtfImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis);
 
     // Export regions
     // Export using RegionState pixel control points
