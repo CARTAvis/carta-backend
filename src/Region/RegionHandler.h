@@ -135,13 +135,13 @@ private:
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state, int stokes_index);
     float GetLineRotation(const PointXy& endpoint0, const PointXy& endpoint1);
     size_t PolylinePixelLength(const std::vector<CARTA::Point>& control_points);
-    bool GetFixedPixelRegionProfiles(size_t num_profiles, int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
+    bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
         casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
     bool CheckLinearOffsets(const std::vector<PointXy>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
     double GetPointSeparation(const PointXy& point1, const PointXy& point2, const DirectionCoordinate& direction_coord);
     double GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys);
-    bool GetFixedAngularRegionProfiles(size_t num_profiles, int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
+    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
         casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message);
     bool SetPointInRange(float max_point, float& point);

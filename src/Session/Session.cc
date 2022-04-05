@@ -947,8 +947,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         if (region_id == CURSOR_REGION_ID) {
             _frames.at(file_id)->SetSpatialRequirements(profiles);
             SendSpatialProfileData(file_id, region_id);
-        } else if (_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) {
-            _region_handler->SetSpatialRequirements(region_id, file_id, _frames.at(file_id), profiles);
+        } else if (_region_handler->SetSpatialRequirements(region_id, file_id, _frames.at(file_id), profiles)) {
             SendSpatialProfileData(file_id, region_id);
         } else {
             string error = fmt::format("Spatial requirements failed for region {}: invalid region id or type", region_id);
