@@ -21,7 +21,7 @@ using ::testing::Pointwise;
 class LineSpatialProfileTest : public ::testing::Test {
 public:
     static bool SetLineRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& endpoints,
-        casacore::CoordinateSystem* csys) {
+        std::shared_ptr<casacore::CoordinateSystem> csys) {
         std::vector<CARTA::Point> control_points;
         for (auto i = 0; i < endpoints.size(); i += 2) {
             CARTA::Point point;
@@ -45,7 +45,7 @@ public:
 
         // Set line region
         int file_id(0), region_id(-1);
-        casacore::CoordinateSystem* csys(frame->CoordinateSystem());
+        auto csys = frame->CoordinateSystem();
         if (!SetLineRegion(region_handler, file_id, region_id, endpoints, csys)) {
             return false;
         }

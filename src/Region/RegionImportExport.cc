@@ -16,12 +16,13 @@
 
 using namespace carta;
 
-RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id)
+RegionImportExport::RegionImportExport(
+    std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int file_id)
     : _coord_sys(image_coord_sys), _image_shape(image_shape), _file_id(file_id) {
     // Constructor for import. Use GetImportedRegions to retrieve regions.
 }
 
-RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape)
+RegionImportExport::RegionImportExport(std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape)
     : _coord_sys(image_coord_sys), _image_shape(image_shape) {
     // Constructor for export. Use AddExportRegion to add regions, then ExportRegions to finalize
 }

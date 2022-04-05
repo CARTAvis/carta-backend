@@ -49,7 +49,7 @@ int RegionHandler::GetNextRegionId() {
     return max_id + 1;
 }
 
-bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
+bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys) {
     // Set region params for region id; if id < 0, create new id
     // CoordinateSystem will be owned by Region
     bool valid_region(false);
@@ -120,18 +120,15 @@ bool RegionHandler::RegionSet(int region_id) {
 void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
-
-    // Importer must delete csys pointer
-    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
+    auto csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> importer;
     switch (region_file_type) {
         case CARTA::FileType::CRTF:
-            importer = std::unique_ptr<RegionImportExport>(
-                new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
+            importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
             break;
         case CARTA::FileType::DS9_REG:
-            importer = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
+            importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
             break;
         default:
             break;
@@ -213,13 +210,10 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
-
-    // Exporter must delete csys pointer
-    casacore::CoordinateSystem* output_csys = frame->CoordinateSystem();
+    auto output_csys = frame->CoordinateSystem();
 
     if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
         // Export fails, cannot convert to world coordinates
-        delete output_csys;
         export_ack.set_success(false);
         export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
         return;
@@ -259,7 +253,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             } else {
                 try {
                     // Use Record containing pixel coords of region converted to output image
-                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, *output_csys, output_shape);
+                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, output_csys, output_shape);
                     if (!region_record.empty()) {
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
                     }
@@ -759,7 +753,7 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
-casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id, bool report_error) {
+std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(int region_id, int file_id, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -773,15 +767,15 @@ casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id,
     return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), report_error);
 }
 
-bool RegionHandler::ApplyRegionToFile(
-    int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region, casacore::LCRegion* region_2D) {
+bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
+    std::shared_ptr<casacore::LCRegion> region_2D) {
     // Returns 3D image region for region applied to image and extended by z-range and stokes index
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
 
     try {
-        casacore::LCRegion* applied_region = region_2D;
+        auto applied_region = region_2D;
         if (!applied_region) {
             applied_region = ApplyRegionToFile(region_id, file_id);
         }
@@ -831,11 +825,12 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     GeneratorProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<GeneratedImage>& collapse_results) {
     casacore::ImageRegion image_region;
+    std::shared_ptr<casacore::LCRegion> lc_region;
     int z_min(moment_request.spectral_range().min());
     int z_max(moment_request.spectral_range().max());
 
     // Do calculations
-    if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
+    if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region, lc_region)) {
         frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
     }
     return !collapse_results.empty();
@@ -1018,7 +1013,8 @@ bool RegionHandler::GetRegionHistogramData(
     bool have_basic_stats(false);
 
     // Reuse the image region for each histogram
-    casacore::ImageRegion region;
+    casacore::ImageRegion image_region;
+    std::shared_ptr<casacore::LCRegion> lc_region;
 
     // Reuse data with respect to stokes and stats for each histogram; results depend on num_bins
     std::unordered_map<int, std::vector<float>> data;
@@ -1044,7 +1040,7 @@ bool RegionHandler::GetRegionHistogramData(
         histogram_message.set_stokes(stokes);
 
         // Get image region
-        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
+        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, image_region, lc_region)) {
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
@@ -1055,7 +1051,7 @@ bool RegionHandler::GetRegionHistogramData(
         // number of bins may be set or calculated
         int num_bins(hist_config.num_bins);
         if (num_bins == AUTO_BIN_SIZE) {
-            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(region);
+            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(image_region);
             num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
         }
 
@@ -1081,7 +1077,7 @@ bool RegionHandler::GetRegionHistogramData(
         // Calculate stats and/or histograms, not in cache
         // Get data in region
         if (!data.count(stokes)) {
-            if (!_frames.at(file_id)->GetRegionData(region, data[stokes])) {
+            if (!_frames.at(file_id)->GetRegionData(image_region, data[stokes])) {
                 spdlog::error("Failed to get data in the region!");
                 return false;
             }
@@ -1239,8 +1235,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get 2D region to check if inside image
-    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id, report_error);
-    if (!lcregion) {
+    auto lc_region = ApplyRegionToFile(region_id, file_id, report_error);
+    if (!lc_region) {
         progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
         return true;
@@ -1250,10 +1246,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     RegionState initial_region_state = _regions.at(region_id)->GetRegionState();
 
     // Use loader swizzled data for efficiency
-    if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
+    if (_frames.at(file_id)->UseLoaderSpectralData(lc_region->shape())) {
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
-            casacore::IPosition origin = lcregion->boundingBox().start();
+            casacore::IPosition origin = lc_region->boundingBox().start();
             CARTA::Point point;
             point.set_x(origin(0));
             point.set_y(origin(1));
@@ -1270,7 +1266,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
 
         // Get 2D origin and 2D mask for Hdf5Loader
-        casacore::IPosition origin = lcregion->boundingBox().start();
+        casacore::IPosition origin = lc_region->boundingBox().start();
         casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1)); // keep first two axes only
 
         // Get mask; LCRegion for file id is cached
@@ -1356,7 +1352,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         // Get 3D region for z range and stokes_index
         AxisRange z_range(start_z, end_z);
         casacore::ImageRegion image_region;
-        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, image_region, lcregion)) {
+        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, image_region, lc_region)) {
             return false;
         }
 
@@ -1528,8 +1524,9 @@ bool RegionHandler::GetRegionStatsData(
 
     // Get region
     AxisRange z_range(z);
-    casacore::ImageRegion region;
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, region)) {
+    casacore::ImageRegion image_region;
+    std::shared_ptr<casacore::LCRegion> lc_region;
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, image_region, lc_region)) {
         // region outside image: NaN results
         std::map<CARTA::StatsType, double> stats_results;
         for (const auto& carta_stat : required_stats) {
@@ -1548,7 +1545,7 @@ bool RegionHandler::GetRegionStatsData(
     // calculate stats
     bool per_z(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
-    if (_frames.at(file_id)->GetRegionStats(region, required_stats, per_z, stats_map)) {
+    if (_frames.at(file_id)->GetRegionStats(image_region, required_stats, per_z, stats_map)) {
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_results;
         for (auto& value : stats_map) {
@@ -1579,7 +1576,7 @@ bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vect
     // Cursor/point spatial profile
     if (IsPointRegion(region_id)) {
         // Map a region (region_id) to an image (file_id)
-        casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+        auto lcregion = ApplyRegionToFile(region_id, file_id);
         if (!lcregion) {
             return false;
         }
@@ -1772,7 +1769,7 @@ float RegionHandler::GetLineRotation(const PointXy& endpoint0, const PointXy& en
 }
 
 bool RegionHandler::GetFixedPixelRegionProfiles(size_t num_profiles, int file_id, int width, bool per_z, int stokes_index,
-    RegionState& region_state, casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback,
+    RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
     casacore::Matrix<float>& profiles, double& increment, bool& cancelled) {
     // Calculate mean spectral profiles for box regions along line with fixed pixel spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the box centers in arcsec, and whether profiles were cancelled.
@@ -1947,7 +1944,8 @@ size_t RegionHandler::PolylinePixelLength(const std::vector<CARTA::Point>& contr
     return num_pixels;
 }
 
-bool RegionHandler::CheckLinearOffsets(const std::vector<PointXy>& box_centers, casacore::CoordinateSystem* csys, double& increment) {
+bool RegionHandler::CheckLinearOffsets(
+    const std::vector<PointXy>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment) {
     // Check whether separation between box centers is linear.
     auto direction_coord(csys->directionCoordinate());
 
@@ -2008,7 +2006,7 @@ double RegionHandler::GetPointSeparation(const PointXy& point1, const PointXy& p
     return separation;
 }
 
-double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
+double RegionHandler::GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys) {
     // Return 1% of CDELT2 in arcsec
     auto cdelt = csys->increment();
     auto cunit = csys->worldAxisUnits();
@@ -2017,7 +2015,7 @@ double RegionHandler::GetSeparationTolerance(casacore::CoordinateSystem* csys) {
 }
 
 bool RegionHandler::GetFixedAngularRegionProfiles(size_t num_profiles, int file_id, int width, bool per_z, int stokes_index,
-    RegionState& region_state, casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback,
+    RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
     casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message) {
     // Calculate mean spectral profiles for polygon regions along line with fixed angular spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the regions in arcsec, and whether profiles were cancelled.
@@ -2304,7 +2302,7 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
 }
 
 casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx, int file_id, RegionState& region_state,
-    casacore::CoordinateSystem* reference_csys, bool per_z, int stokes_index, double& num_pixels) {
+    std::shared_ptr<casacore::CoordinateSystem> reference_csys, bool per_z, int stokes_index, double& num_pixels) {
     // Create temporary region with RegionState and CoordinateSystem
     // Return stats/spectral profile (depending on per_z) for given file_id image, and number of pixels in the region.
     auto depth = _frames.at(file_id)->Depth();
@@ -2329,8 +2327,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         region_id -= region_idx;
     }
 
-    casacore::CoordinateSystem* region_csys = static_cast<casacore::CoordinateSystem*>(reference_csys->clone());
-    SetRegion(region_id, region_state, region_csys);
+    SetRegion(region_id, region_state, reference_csys);
 
     if (!RegionSet(region_id)) {
         return profile;
