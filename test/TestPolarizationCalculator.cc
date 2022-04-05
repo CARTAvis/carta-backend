@@ -374,7 +374,7 @@ public:
         frame->SetImageChannels(current_channel, current_stokes, message);
 
         // Get the coordinate through the Frame
-        casacore::CoordinateSystem* csys = frame->CoordinateSystem();
+        auto csys = frame->CoordinateSystem();
 
         // Create a region handler
         auto region_handler = std::make_unique<carta::RegionHandler>();
@@ -469,7 +469,7 @@ public:
         frame->SetImageChannels(current_channel, current_stokes, message);
 
         // Get the coordinate through the Frame
-        casacore::CoordinateSystem* csys = frame->CoordinateSystem();
+        auto csys = frame->CoordinateSystem();
 
         // Create a region handler
         auto region_handler = std::make_unique<carta::RegionHandler>();

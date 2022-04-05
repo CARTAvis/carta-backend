@@ -46,7 +46,7 @@ public:
     RegionHandler() = default;
 
     // Regions
-    bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
+    bool SetRegion(int& region_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
     std::shared_ptr<Region> GetRegion(int region_id);
@@ -113,10 +113,10 @@ private:
 
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
-    casacore::LCRegion* ApplyRegionToFile(
+    std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
         int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
-        std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, casacore::LCRegion* region_2D = nullptr);
+        std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region, std::shared_ptr<casacore::LCRegion> region_2D);
 
     // Fill data stream messages
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
@@ -133,13 +133,14 @@ private:
         double& increment, casacore::Matrix<float>& profiles, bool& cancelled, std::string& message);
     void SetLineRotation(RegionState& region_state);
     bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-        casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
-        double& increment, bool& cancelled);
-    bool CheckLinearOffsets(const std::vector<CARTA::Point>& box_centers, casacore::CoordinateSystem* csys, double& increment);
-    double GetSeparationTolerance(casacore::CoordinateSystem* csys);
+        std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
+        casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
+    bool CheckLinearOffsets(
+        const std::vector<CARTA::Point>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
+    double GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys);
     bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-        casacore::CoordinateSystem* reference_csys, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
-        double& increment, bool& cancelled, std::string& message);
+        std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
+        casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message);
     bool SetPointInRange(float max_point, float& point);
     casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
         const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
@@ -147,7 +148,7 @@ private:
         const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int pixel_width, double angular_width,
         float height_angle, double tolerance);
     casacore::Vector<float> GetTemporaryRegionProfile(
-        int file_id, RegionState& region_state, casacore::CoordinateSystem* csys, bool per_z, double& num_pixels);
+        int file_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, double& num_pixels);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
