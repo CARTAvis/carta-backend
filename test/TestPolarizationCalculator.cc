@@ -122,7 +122,7 @@ public:
                     auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                     EXPECT_FLOAT_EQ(data[i], fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
                     EXPECT_FLOAT_EQ(data[i], polarized_angle);
                 }
             }
@@ -168,7 +168,7 @@ public:
                     auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                     profile_x.push_back(fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
                     profile_x.push_back(polarized_angle);
                 } else if (stokes == 0) {
                     profile_x.push_back(data_i[i]);
@@ -200,7 +200,7 @@ public:
                     auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                     profile_y.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                    auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                    auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
                     profile_y.push_back(polarized_angle);
                 } else if (stokes == 0) {
                     profile_y.push_back(data_i[i]);
@@ -257,7 +257,7 @@ public:
                 auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                 profile.push_back(fractional_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                auto polarized_angle = atan2(data_u[i], data_q[i]) / 2;
+                auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
                 profile.push_back(polarized_angle);
             } else if (stokes == 0) {
                 profile.push_back(data_i[i]);

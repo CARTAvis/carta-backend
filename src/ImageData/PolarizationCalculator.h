@@ -30,7 +30,7 @@ public:
     std::shared_ptr<casacore::ImageInterface<float>> ComputeTotalFractionalPolarizedIntensity();
     std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedIntensity();
     std::shared_ptr<casacore::ImageInterface<float>> ComputeFractionalPolarizedIntensity();
-    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle(bool radians = true);
+    std::shared_ptr<casacore::ImageInterface<float>> ComputePolarizedAngle(bool radians = false);
 
 private:
     // Make a casacore::SubImage from the construction image for the specified pixel along the specified pixel axis
