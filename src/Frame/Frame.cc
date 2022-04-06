@@ -2239,15 +2239,20 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             auto& tile = tiles[i];
             auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
+            // Get down sampled 2D pixel data
+            std::vector<float> down_sampled_data;
+            int down_sampled_width, down_sampled_height;
+            if (!GetDownSampledRasterData(down_sampled_data, down_sampled_width, down_sampled_height, channel, -1, bounds, mip)) {
+                return false;
+            }
             if (calculate_stokes_angle) {
-                // Get down sampled 2D pixel data
-                std::vector<float> down_sampled_data;
-                int down_sampled_width, down_sampled_height;
-                if (!GetDownSampledRasterData(down_sampled_data, down_sampled_width, down_sampled_height, channel, -1, bounds, mip)) {
-                    return false;
-                }
                 // Fill PA tiles protobuf data
                 FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
+                    down_sampled_data, compression_type, compression_quality);
+            }
+            if (calculate_stokes_intensity) {
+                // Fill PI tiles protobuf data
+                FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
                     down_sampled_data, compression_type, compression_quality);
             }
 

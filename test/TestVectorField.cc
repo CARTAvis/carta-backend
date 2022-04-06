@@ -1294,8 +1294,8 @@ public:
         CheckProgresses(progresses);
     }
 
-    static void TestImageWithNoStokesAxis(
-        std::string image_shape, std::string image_opts, const CARTA::FileType& file_type, int mip, int stokes_angle = 0) {
+    static void TestImageWithNoStokesAxis(std::string image_shape, std::string image_opts, const CARTA::FileType& file_type, int mip,
+        int stokes_intensity, int stokes_angle) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
@@ -1333,8 +1333,8 @@ public:
         dummy_backend->ClearMessagesQueue();
 
         // Set the protobuf message
-        auto set_vector_field_params =
-            Message::SetVectorOverlayParameters(0, mip, false, false, 0, 0, 0, -1, stokes_angle, CARTA::CompressionType::NONE, 0);
+        auto set_vector_field_params = Message::SetVectorOverlayParameters(
+            0, mip, false, false, 0, 0, 0, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         dummy_backend->Receive(set_vector_field_params);
 
@@ -1342,6 +1342,7 @@ public:
 
         // Set results data
         std::pair<std::vector<char>, bool> message_pair;
+        std::vector<float> pi(down_sampled_width * down_sampled_height);
         std::vector<float> pa2(down_sampled_width * down_sampled_height);
         std::vector<double> progresses;
 
@@ -1351,11 +1352,21 @@ public:
 
             if (event_type == CARTA::EventType::VECTOR_OVERLAY_TILE_DATA) {
                 auto response = Message::DecodeMessage<CARTA::VectorOverlayTileData>(message);
-                EXPECT_EQ(response.angle_tiles_size(), 1);
-                if (response.angle_tiles_size()) {
-                    // Fill PA values
-                    auto tile_pa = response.angle_tiles(0);
-                    GetTileData(tile_pa, down_sampled_width, pa2);
+                if (stokes_intensity > -1) {
+                    EXPECT_EQ(response.intensity_tiles_size(), 1);
+                    if (response.intensity_tiles_size()) {
+                        // Fill PI values
+                        auto tile_pi = response.intensity_tiles(0);
+                        GetTileData(tile_pi, down_sampled_width, pi);
+                    }
+                }
+                if (stokes_angle > -1) {
+                    EXPECT_EQ(response.angle_tiles_size(), 1);
+                    if (response.angle_tiles_size()) {
+                        // Fill PA values
+                        auto tile_pa = response.angle_tiles(0);
+                        GetTileData(tile_pa, down_sampled_width, pa2);
+                    }
                 }
 
                 // Record progress
@@ -1365,9 +1376,19 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            CmpVectors(pa, pa2, 1e-6);
+            if (stokes_intensity > -1) {
+                CmpVectors(pa, pi, 1e-6);
+            }
+            if (stokes_angle > -1) {
+                CmpVectors(pa, pa2, 1e-6);
+            }
         } else {
-            CmpVectors(pa, pa2);
+            if (stokes_intensity > -1) {
+                CmpVectors(pa, pi);
+            }
+            if (stokes_angle > -1) {
+                CmpVectors(pa, pa2);
+            }
         }
         CheckProgresses(progresses);
     }
@@ -1538,8 +1559,12 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     CARTA::FileType file_type = CARTA::FileType::FITS;
     int mip = 4;
-    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip);
-    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, -1, 0);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, -1, 0);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
 }
 
 TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
