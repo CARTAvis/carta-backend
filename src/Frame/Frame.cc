@@ -1667,10 +1667,11 @@ bool Frame::GetRegionData(const std::pair<StokesSource, casacore::LattRegionHold
         casacore::IPosition start(subimage_shape.size(), 0);
         casacore::IPosition count(subimage_shape);
         casacore::Slicer slicer(start, count); // entire subimage
+        bool is_computed_stokes(!stokes_src_vs_region.first.UseDefaultImage());
 
         // Get image data
         std::unique_lock<std::mutex> ulock(_image_mutex);
-        if (_loader->GetFileName().empty()) { // For the image in memory
+        if (_loader->GetFileName().empty() || is_computed_stokes) { // For the image in memory
             casacore::Array<float> tmp;
             sub_image.doGetSlice(tmp, slicer);
             data = tmp.tovector();
