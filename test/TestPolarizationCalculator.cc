@@ -113,13 +113,14 @@ public:
                     auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
                     EXPECT_FLOAT_EQ(data[i], total_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
-                    auto total_fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                    auto total_fractional_polarized_intensity =
+                        100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
                     EXPECT_FLOAT_EQ(data[i], total_fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PLINEAR) {
                     auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
                     EXPECT_FLOAT_EQ(data[i], polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    auto fractional_polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                     EXPECT_FLOAT_EQ(data[i], fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
                     auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
@@ -159,13 +160,14 @@ public:
                     auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
                     profile_x.push_back(total_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
-                    auto total_fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                    auto total_fractional_polarized_intensity =
+                        100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
                     profile_x.push_back(total_fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PLINEAR) {
                     auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
                     profile_x.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    auto fractional_polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                     profile_x.push_back(fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
                     auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
@@ -191,13 +193,14 @@ public:
                     auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
                     profile_y.push_back(total_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
-                    auto total_fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                    auto total_fractional_polarized_intensity =
+                        100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
                     profile_y.push_back(total_fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PLINEAR) {
                     auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
                     profile_y.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    auto polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                     profile_y.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
                     auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
@@ -248,13 +251,14 @@ public:
                 auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
                 profile.push_back(total_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
-                auto total_fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                auto total_fractional_polarized_intensity =
+                    100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
                 profile.push_back(total_fractional_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PLINEAR) {
                 auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
                 profile.push_back(polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                auto fractional_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                auto fractional_polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
                 profile.push_back(fractional_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PANGLE) {
                 auto polarized_angle = (180.0 / C::pi) * atan2(data_u[i], data_q[i]) / 2;
