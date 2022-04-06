@@ -789,14 +789,14 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     bool success(false);
 
     if (_frames.count(file_id)) { // reference Frame for Region exists
-        casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
-
-        if (!_region_handler) { // created on demand only
+        if (!_region_handler) {
+            // created on demand only
             _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
         RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
+        auto csys = _frames.at(file_id)->CoordinateSystem();
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
@@ -2162,8 +2162,8 @@ bool Session::ExecuteAnimationFrame() {
                 _animation_object->_next_frame = tmp_frame;
             }
         } else { // going backwards;
-            tmp_frame.set_channel(curr_frame.channel() - _animation_object->_delta_frame.channel());
-            tmp_frame.set_stokes(curr_frame.stokes() - _animation_object->_delta_frame.stokes());
+            tmp_frame.set_channel(curr_frame.channel() - delta_frame.channel());
+            tmp_frame.set_stokes(curr_frame.stokes() - delta_frame.stokes());
 
             if ((tmp_frame.channel() < _animation_object->_first_frame.channel()) ||
                 (tmp_frame.stokes() < _animation_object->_first_frame.stokes())) {
@@ -2212,7 +2212,7 @@ int Session::CalculateAnimationFlowWindow() {
         if (_animation_object->_delta_frame.channel()) {
             gap = (_animation_object->_last_flow_frame).channel() - _animation_object->_current_frame.channel();
         } else {
-            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_delta_frame.stokes();
+            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_current_frame.stokes();
         }
     }
 
