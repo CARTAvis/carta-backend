@@ -45,7 +45,6 @@ public:
         }
     }
 
-    // TODO this can probably be replaced by one of the existing test utilities
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
         // Get spectral and stokes indices
         casacore::CoordinateSystem coord_sys = image->coordinates();
@@ -90,17 +89,18 @@ public:
         std::vector<float> data2;
         GetImageData(image1, data1);
         GetImageData(image2, data2);
-        
-        CmpVectors(data1, data2);        
+
+        CmpVectors(data1, data2);
     }
 
     // TODO this is temporary
     // TODO it needs to be moved to an external utility tool so that this test does not depend on CASA
-    static void SaveCasaMoments(std::string image_name, int moments_axis, casacore::Vector<casacore::Int> moments, casacore::Vector<float> include_pix, casacore::Vector<float> exclude_pix, casacore::Bool do_temp, casacore::Bool remove_axis) {
+    static void SaveCasaMoments(std::string image_name, int moments_axis, casacore::Vector<casacore::Int> moments,
+        casacore::Vector<float> include_pix, casacore::Vector<float> exclude_pix, casacore::Bool do_temp, casacore::Bool remove_axis) {
         std::string file_path = FitsImagePath(image_name);
         std::shared_ptr<casacore::ImageInterface<float>> image;
         OpenImage(image, file_path);
-        
+
         // create casa moments generator
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
         casacore::LogIO casa_os(casa_log);
@@ -111,23 +111,24 @@ public:
         casa_image_moments.setMomentAxis(moments_axis);
         casa_image_moments.setInExCludeRange(include_pix, exclude_pix);
         auto casa_results = casa_image_moments.createMoments(do_temp, "casa_image_moments", remove_axis);
-        
+
         // dummy frame for saving images
         std::unique_ptr<TestFrame> frame(new TestFrame(0, nullptr, "0"));
 
         for (int i = 0; i < casa_results.size(); ++i) {
             auto casa_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(casa_results[i]);
             std::string base_filename = fs::path(image_name).stem().string();
-            auto output_filename = TestRoot() / "data" / "images" / "fits" / fmt::format("{}_moment_{}.fits", base_filename, i);
+            auto output_filename = TestRoot() / "data" / "images" / "fits" / fmt::format("{}_moment_{}_casa.fits", base_filename, i);
             frame->SaveImage(*casa_moment_image, output_filename);
         }
     }
-    
-    static void CheckCartaMoments(std::string image_name, int moments_axis, casacore::Vector<casacore::Int> moments, casacore::Vector<float> include_pix, casacore::Vector<float> exclude_pix, casacore::Bool do_temp, casacore::Bool remove_axis) {
+
+    static void CheckCartaMoments(std::string image_name, int moments_axis, casacore::Vector<casacore::Int> moments,
+        casacore::Vector<float> include_pix, casacore::Vector<float> exclude_pix, casacore::Bool do_temp, casacore::Bool remove_axis) {
         std::string file_path = FitsImagePath(image_name);
         std::shared_ptr<casacore::ImageInterface<float>> image;
         OpenImage(image, file_path);
-        
+
         casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
         casacore::LogIO carta_os(carta_log);
         carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr, true);
@@ -139,13 +140,20 @@ public:
 
         EXPECT_EQ(carta_results.size(), moments.size());
 
+        // dummy frame for saving images
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, nullptr, "0"));
+
         for (int i = 0; i < carta_results.size(); ++i) {
             std::string base_filename = fs::path(image_name).stem().string();
-            std::string casa_moment_image_path = FitsImagePath(fmt::format("{}_moment_{}.fits", base_filename, i));
+            std::string casa_moment_image_path = FitsImagePath(fmt::format("{}_moment_{}_casa.fits", base_filename, i));
             std::shared_ptr<casacore::ImageInterface<float>> casa_moment_image;
             OpenImage(casa_moment_image, casa_moment_image_path);
-            
+
             auto carta_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(carta_results[i]);
+            auto output_filename = TestRoot() / "data" / "images" / "fits" / fmt::format("{}_moment_{}_carta.fits", base_filename, i);
+            frame->SaveImage(*carta_moment_image, output_filename);
+
+            OpenImage(carta_moment_image, output_filename);
 
             EXPECT_EQ(casa_moment_image->shape().size(), carta_moment_image->shape().size());
             CompareImageData(casa_moment_image, carta_moment_image);
@@ -167,12 +175,12 @@ TEST_F(MomentTest, CheckConsistency) {
     moments[9] = 10;  // MAXIMUM_COORDINATE
     moments[10] = 11; // MINIMUM
     moments[11] = 12; // MINIMUM_COORDINATE
-    
+
     casacore::Vector<float> include_pix;
     casacore::Vector<float> exclude_pix;
     casacore::Bool do_temp(true);
     casacore::Bool remove_axis(false);
-    
+
     SaveCasaMoments("M17_SWex_unittest.fits", 2, moments, include_pix, exclude_pix, do_temp, remove_axis);
     CheckCartaMoments("M17_SWex_unittest.fits", 2, moments, include_pix, exclude_pix, do_temp, remove_axis);
 }
@@ -191,12 +199,12 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
     moments[9] = 10;  // MAXIMUM_COORDINATE
     moments[10] = 11; // MINIMUM
     moments[11] = 12; // MINIMUM_COORDINATE
-    
+
     casacore::Vector<float> include_pix;
     casacore::Vector<float> exclude_pix;
     casacore::Bool do_temp(true);
     casacore::Bool remove_axis(false);
-    
+
     SaveCasaMoments("small_perplanebeam.fits", 2, moments, include_pix, exclude_pix, do_temp, remove_axis);
     CheckCartaMoments("small_perplanebeam.fits", 2, moments, include_pix, exclude_pix, do_temp, remove_axis);
 }
