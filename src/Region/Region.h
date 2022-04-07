@@ -43,7 +43,7 @@ struct RegionState {
     float rotation;
 
     RegionState() : reference_file_id(-1), type(CARTA::RegionType::POINT), rotation(0) {}
-    RegionState(int ref_file_id_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_)
+    RegionState(int ref_file_id_, CARTA::RegionType type_, const std::vector<CARTA::Point>& control_points_, float rotation_)
         : reference_file_id(ref_file_id_), type(type_), control_points(control_points_), rotation(rotation_) {}
 
     void operator=(const RegionState& other) {
@@ -96,15 +96,18 @@ public:
 
     // state accessors
     inline RegionState GetRegionState() {
-        return _region_state;
+        std::unique_lock<std::mutex> ulock(_region_state_mutex);
+        RegionState region_state = _region_state;
+        return region_state;
     }
 
     inline int GetReferenceFileId() {
-        return _region_state.reference_file_id;
+        return GetRegionState().reference_file_id;
     }
 
     inline bool IsRotbox() {
-        return ((_region_state.type == CARTA::RegionType::RECTANGLE) && (_region_state.rotation != 0.0));
+        RegionState rs = GetRegionState();
+        return ((rs.type == CARTA::RegionType::RECTANGLE) && (rs.rotation != 0.0));
     }
 
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
@@ -112,7 +115,7 @@ public:
     }
 
     inline bool IsAnnotation() {
-        CARTA::RegionType type = _region_state.type;
+        CARTA::RegionType type = GetRegionState().type;
         return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
     }
 
@@ -202,6 +205,7 @@ private:
     // Reference region cache
     std::mutex _region_mutex; // creation of casacore regions is not threadsafe
     std::mutex _region_approx_mutex;
+    std::mutex _region_state_mutex;
 
     // Use a shared lock for long time calculations, use an exclusive lock for the object destruction
     mutable std::shared_mutex _active_task_mutex;
