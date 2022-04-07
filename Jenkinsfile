@@ -174,7 +174,7 @@ pipeline {
                 label "ubuntu2004-agent"
             }
             steps {
-                sh "gcovr -f src/ --xml -j 8 -o coverage.xml"
+                sh "gcovr -f src/ --xml-pretty -o coverage.xml"
             }
             post {
                 success {
