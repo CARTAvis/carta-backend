@@ -769,7 +769,7 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(int region_
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
     std::shared_ptr<casacore::LCRegion> region_2D) {
-    // Returns 3D image region for region applied to image and extended by z-range and stokes index
+    // Returns 3D ImageRegion for region applied to image and extended by z-range and stokes index
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
@@ -1955,7 +1955,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
 
             // Check whether to trim next line's starting point
             if (iline > 1) {
-                double separation = GetPointSeparation(box_centers.back(), endpoint0, reference_csys->directionCoordinate());
+                double separation = GetPointSeparation(box_centers.back(), endpoint0, reference_csys);
                 if (separation < (0.5 * increment)) {
                     trim_line = true;
                 } else {
@@ -1990,14 +1990,12 @@ size_t RegionHandler::PolylinePixelLength(const std::vector<CARTA::Point>& contr
 }
 
 bool RegionHandler::CheckLinearOffsets(
-    const std::vector<PointXy>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment) {
+    const std::vector<PointXy>& box_centers, std::shared_ptr<casacore::CoordinateSystem> coord_sys, double& increment) {
     // Check whether separation between box centers is linear.
-    auto direction_coord(csys->directionCoordinate());
-
     size_t num_centers(box_centers.size()), num_separation(0);
     double min_separation(0.0), max_separation(0.0);
     double total_separation(0.0);
-    double tolerance = GetSeparationTolerance(csys);
+    double tolerance = GetSeparationTolerance(coord_sys);
 
     // Lock pixel to MVDirection conversion; cannot multithread DirectionCoordinate::toWorld
     std::lock_guard<std::mutex> lock(_pix_mvdir_mutex);
@@ -2008,7 +2006,7 @@ bool RegionHandler::CheckLinearOffsets(
         bool check_separation(true); // unless there is an exception
 
         try {
-            center_separation = GetPointSeparation(box_centers[i], box_centers[i + 1], direction_coord);
+            center_separation = GetPointSeparation(box_centers[i], box_centers[i + 1], coord_sys);
         } catch (casacore::AipsError& err) { // wcslib conversion error
             check_separation = false;
         }
@@ -2035,17 +2033,17 @@ bool RegionHandler::CheckLinearOffsets(
     return true;
 }
 
-double RegionHandler::GetPointSeparation(const PointXy& point1, const PointXy& point2, const DirectionCoordinate& direction_coord) {
-    // Returns angular separation in arcsec
+double RegionHandler::GetPointSeparation(const PointXy& point1, const PointXy& point2, std::shared_ptr<CoordinateSystem> coord_sys) {
+    // Returns angular separation in arcsec.
+    // Should lock _pix_mvdir_mutex for MVDirection conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     casacore::Vector<casacore::Double> v1(2), v2(2);
     v1[0] = point1.x;
     v1[1] = point1.y;
     v2[0] = point2.x;
     v2[1] = point2.y;
 
-    // Lock pixel to MVDirection conversion; cannot multithread DirectionCoordinate::toWorld
-    casacore::MVDirection mvdir1 = direction_coord.toWorld(v1);
-    casacore::MVDirection mvdir2 = direction_coord.toWorld(v2);
+    casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(v1);
+    casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(v2);
     double separation = mvdir1.separation(mvdir2, "arcsec").getValue();
 
     return separation;
@@ -2075,7 +2073,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     increment = cdelt2.get("arcsec").getValue();
     double angular_width = width * increment;
 
-    auto direction_coord(reference_csys->directionCoordinate());
     double tolerance = GetSeparationTolerance(reference_csys);
 
     float progress(0.0);
@@ -2090,7 +2087,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
         double line_separation(0.0);
         std::unique_lock<std::mutex> ulock(_pix_mvdir_mutex);
         try {
-            line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys->directionCoordinate());
+            line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys);
         } catch (casacore::AipsError& err) { // wcslib - invalid pixel coordinates
             ulock.unlock();
             message = "Conversion of line endpoints to world coordinates failed.";
@@ -2129,8 +2126,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             // Find ends of box regions, at increment from start of box in positive offset direction
             if (!no_pos_start) {
                 PointXy start_point(pos_box_start[0], pos_box_start[1]);
-                std::vector<double> pos_box_end =
-                    FindPointAtTargetSeparation(direction_coord, start_point, endpoint0, increment, tolerance);
+                std::vector<double> pos_box_end = FindPointAtTargetSeparation(reference_csys, start_point, endpoint0, increment, tolerance);
 
                 line_points[num_offsets + offset] = pos_box_end;
                 pos_box_start = pos_box_end; // end of this box is start of next box
@@ -2139,8 +2135,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             // Find ends of box regions, at increment from start of box in negative offset direction
             if (!no_neg_start) {
                 PointXy start_point(neg_box_start[0], neg_box_start[1]);
-                std::vector<double> neg_box_end =
-                    FindPointAtTargetSeparation(direction_coord, start_point, endpoint1, increment, tolerance);
+                std::vector<double> neg_box_end = FindPointAtTargetSeparation(reference_csys, start_point, endpoint1, increment, tolerance);
 
                 line_points[num_offsets - offset] = neg_box_end;
                 neg_box_start = neg_box_end; // end of this box is start of next box
@@ -2183,7 +2178,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             } else {
                 // Set temporary region for reference image and get profile for requested file_id
                 RegionState temp_region_state = GetTemporaryRegionState(
-                    direction_coord, region_state.reference_file_id, region_start, region_end, width, angular_width, rotation, tolerance);
+                    reference_csys, region_state.reference_file_id, region_start, region_end, width, angular_width, rotation, tolerance);
 
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile =
@@ -2235,7 +2230,7 @@ bool RegionHandler::SetPointInRange(float max_point, float& point) {
     return point_set;
 }
 
-std::vector<double> RegionHandler::FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
+std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
     const PointXy& start_point, const PointXy& end_point, double target_separation, double tolerance) {
     // Find point on line described by start and end points which is at target separation in arcsec (within tolerance) of start point.
     // Return point [x, y] in pixel coordinates.  Vector is empty if DirectionCoordinate conversion fails.
@@ -2243,7 +2238,7 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(const casacore::D
 
     // Do binary search of line, finding midpoints until target separation is reached.
     // Check endpoint separation
-    auto separation = GetPointSeparation(start_point, end_point, direction_coord);
+    auto separation = GetPointSeparation(start_point, end_point, coord_sys);
     if (separation < target_separation) {
         // Line is shorter than target separation
         return target_point;
@@ -2274,7 +2269,7 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(const casacore::D
         }
 
         // Get separation between start point and new endpoint
-        separation = GetPointSeparation(start_point, end1, direction_coord);
+        separation = GetPointSeparation(start_point, end1, coord_sys);
         delta = separation - target_separation;
     }
 
@@ -2286,7 +2281,7 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(const casacore::D
     return target_point;
 }
 
-RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,
+RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::CoordinateSystem> coord_sys, int file_id,
     const std::vector<double>& box_start, const std::vector<double>& box_end, int pixel_width, double angular_width, float line_rotation,
     double tolerance) {
     // Return RegionState for polygon region describing a box with given start and end (pixel coords) on line with rotation.
@@ -2307,14 +2302,20 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
 
     // Endpoint in positive direction 3 pixels out from box start
     PointXy target_endpoint(start_point.x - (pixel_width * cos_x), start_point.y - (pixel_width * sin_x));
-    std::vector<double> corner = FindPointAtTargetSeparation(direction_coord, start_point, target_endpoint, half_width, tolerance);
+    std::vector<double> corner = FindPointAtTargetSeparation(coord_sys, start_point, target_endpoint, half_width, tolerance);
+    if (corner.empty()) {
+        return RegionState();
+    }
     point.set_x(corner[0]);
     point.set_y(corner[1]);
     control_points[0] = point;
 
-    // Endpoint in negative direction 3 pixels out from box start
-    target_endpoint = PointXy(start_point.x + (pixel_width * cos_x), start_point.y + (pixel_width * sin_x));
-    corner = FindPointAtTargetSeparation(direction_coord, start_point, target_endpoint, half_width, tolerance);
+    // Endpoint in negative direction width*2 pixels out from box start
+    target_endpoint = PointXy(start_point.x + (pixel_width * 2 * cos_x), start_point.y + (pixel_width * 2 * sin_x));
+    corner = FindPointAtTargetSeparation(coord_sys, start_point, target_endpoint, half_width, tolerance);
+    if (corner.empty()) {
+        return RegionState();
+    }
     point.set_x(corner[0]);
     point.set_y(corner[1]);
     control_points[3] = point;
@@ -2322,14 +2323,20 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
     // Find box corners from box end
     // Endpoint in positive direction 3 pixels out from box end
     target_endpoint = PointXy(end_point.x - (pixel_width * cos_x), end_point.y - (pixel_width * sin_x));
-    corner = FindPointAtTargetSeparation(direction_coord, end_point, target_endpoint, half_width, tolerance);
+    corner = FindPointAtTargetSeparation(coord_sys, end_point, target_endpoint, half_width, tolerance);
+    if (corner.empty()) {
+        return RegionState();
+    }
     point.set_x(corner[0]);
     point.set_y(corner[1]);
     control_points[1] = point;
 
     // Endpoint in negative direction 3 pixels out from box end
     target_endpoint = PointXy(end_point.x + (pixel_width * cos_x), end_point.y + (pixel_width * sin_x));
-    corner = FindPointAtTargetSeparation(direction_coord, end_point, target_endpoint, half_width, tolerance);
+    corner = FindPointAtTargetSeparation(coord_sys, end_point, target_endpoint, half_width, tolerance);
+    if (corner.empty()) {
+        return RegionState();
+    }
     point.set_x(corner[0]);
     point.set_y(corner[1]);
     control_points[2] = point;
@@ -2337,11 +2344,6 @@ RegionState RegionHandler::GetTemporaryRegionState(casacore::DirectionCoordinate
     // Set polygon RegionState
     float polygon_rotation(0.0);
     RegionState region_state = RegionState(file_id, CARTA::RegionType::POLYGON, control_points, polygon_rotation);
-
-    spdlog::debug("Angular box region corners: polygon[[{}pix, {}pix], [{}pix, {}pix], [{}pix, {}pix], [{}pix, {}pix]]",
-        control_points[0].x(), control_points[0].y(), control_points[1].x(), control_points[1].y(), control_points[2].x(),
-        control_points[2].y(), control_points[3].x(), control_points[3].y());
-
     return region_state;
 }
 
@@ -2377,10 +2379,9 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         return profile;
     }
 
-    std::vector<CARTA::StatsType> required_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::Mean};
-
     if (per_z) {
         // Temp region spectral requirements
+        std::vector<CARTA::StatsType> required_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::Mean};
         ConfigId config_id(file_id, region_id);
         std::string coordinate("z"); // current stokes
         SpectralConfig spectral_config(coordinate, required_stats);
@@ -2412,16 +2413,20 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
                 }
             });
     } else {
-        CARTA::RegionStatsData stats_message;
-
-        if (GetRegionStatsData(region_id, file_id, stokes_index, required_stats, stats_message)) {
-            auto statistics = stats_message.statistics();
-            for (auto& statistics_value : statistics) {
-                if (statistics_value.stats_type() == CARTA::StatsType::NumPixels) {
-                    num_pixels = statistics_value.value();
-                } else if (statistics_value.stats_type() == CARTA::StatsType::Mean) {
-                    profile[0] = statistics_value.value();
-                }
+        // Use BasicStats to get num_pixels and mean for current channel and stokes
+        // Get region
+        AxisRange z_range(_frames.at(file_id)->CurrentZ());
+        casacore::ImageRegion image_region;
+        std::shared_ptr<casacore::LCRegion> lc_region;
+        if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, image_region, lc_region)) {
+            // Get region data
+            std::vector<float> region_data;
+            if (_frames.at(file_id)->GetRegionData(image_region, region_data)) {
+                // Get BasicStats
+                BasicStats<float> basic_stats;
+                CalcBasicStats(basic_stats, region_data.data(), region_data.size());
+                num_pixels = basic_stats.num_pixels;
+                profile[0] = basic_stats.mean;
             }
         }
     }
