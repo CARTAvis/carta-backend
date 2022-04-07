@@ -63,34 +63,29 @@ public:
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
-        std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter(frame->GetWidth(), frame->GetHeight(), ""));
-        bool success = image_fitter->FitImage(frame->GetImageCacheData(), _initial_values);
-        std::string results = image_fitter->GetResults();
+        CARTA::FittingResponse fitting_response;
+        std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter(frame->GetWidth(), frame->GetHeight()));
+        bool success = image_fitter->FitImage(frame->GetImageCacheData(), _initial_values, fitting_response);
 
         if (failed_message.length() == 0) {
             EXPECT_EQ(success, True);
             for (size_t i = 0; i < gaussian_model[0]; i++) {
-                std::string result = results.substr(results.find(fmt::format("Component #{}", i + 1)));
-                EXPECT_EQ(GetFitParamFromResults(result, "Center X  = "), gaussian_model[6 * i + 1]);
-                EXPECT_EQ(GetFitParamFromResults(result, "Center Y  = "), gaussian_model[6 * i + 2]);
-                EXPECT_EQ(GetFitParamFromResults(result, "Amplitude = "), gaussian_model[6 * i + 3]);
-                EXPECT_EQ(GetFitParamFromResults(result, "FWHM X    = "), gaussian_model[6 * i + 4]);
-                EXPECT_EQ(GetFitParamFromResults(result, "FWHM Y    = "), gaussian_model[6 * i + 5]);
-                EXPECT_EQ(GetFitParamFromResults(result, "P.A.      = "), gaussian_model[6 * i + 6]);
+                CARTA::GaussianComponent component = fitting_response.result_values(i);
+                EXPECT_EQ(std::round(component.center().x()), gaussian_model[6 * i + 1]);
+                EXPECT_EQ(std::round(component.center().y()), gaussian_model[6 * i + 2]);
+                EXPECT_EQ(std::round(component.amp()), gaussian_model[6 * i + 3]);
+                EXPECT_EQ(std::round(component.fwhm().x()), gaussian_model[6 * i + 4]);
+                EXPECT_EQ(std::round(component.fwhm().y()), gaussian_model[6 * i + 5]);
+                EXPECT_EQ(std::round(component.pa()), gaussian_model[6 * i + 6]);
             }
         } else {
             EXPECT_EQ(success, False);
-            EXPECT_EQ(image_fitter->GetMessage(), failed_message);
+            EXPECT_EQ(fitting_response.message(), failed_message);
         }
     }
 
 private:
     std::vector<CARTA::GaussianComponent> _initial_values;
-
-    float GetFitParamFromResults(std::string results, std::string param) {
-        std::string tmp = results.substr(results.find(param) + 12);
-        return std::round(std::stof(tmp.substr(0, tmp.find(" +/-"))));
-    }
 };
 
 TEST_F(ImageFittingTest, OneComponentFitting) {

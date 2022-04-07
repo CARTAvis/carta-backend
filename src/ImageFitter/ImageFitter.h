@@ -34,40 +34,28 @@ struct FitStatus {
 
 class ImageFitter {
 public:
-    ImageFitter(size_t width, size_t height, std::string unit);
-    bool FitImage(float* image, const std::vector<CARTA::GaussianComponent>& initial_values);
-    std::string GetMessage() {
-        return _message;
-    };
-    std::string GetResults() {
-        return _results;
-    };
-    std::string GetLog() {
-        return _log;
-    };
+    ImageFitter(size_t width, size_t height);
+    bool FitImage(float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response);
 
 private:
     FitData _fit_data;
-    std::string _image_unit;
     size_t _num_components;
-    gsl_vector* _fit_params;
+    gsl_vector* _fit_values;
     gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
     FitStatus _fit_status;
-    std::string _message;
-    std::string _results;
-    std::string _log;
     const size_t _max_iter = 200;
 
     void CalculateNanNum();
     void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values);
     int SolveSystem();
     void SetResults();
-    void SetLog();
+    std::string GetLog();
 
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);
     static void ErrorHandler(const char* reason, const char* file, int line, int gsl_errno);
+    static CARTA::GaussianComponent GetGaussianComponent(gsl_vector* value_vector, size_t index);
 };
 
 } // namespace carta

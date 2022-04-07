@@ -1752,7 +1752,7 @@ void Frame::StopMomentCalc() {
 
 bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
     if (!_image_fitter) {
-        _image_fitter = std::make_unique<ImageFitter>(_width, _height, GetImage()->units().getName());
+        _image_fitter = std::make_unique<ImageFitter>(_width, _height);
     }
 
     bool success = false;
@@ -1760,12 +1760,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
         FillImageCache();
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
-        success = _image_fitter->FitImage(_image_cache.get(), initial_values);
-
-        fitting_response.set_success(success);
-        fitting_response.set_message(_image_fitter->GetMessage());
-        fitting_response.set_results(_image_fitter->GetResults());
-        fitting_response.set_log(_image_fitter->GetLog());
+        success = _image_fitter->FitImage(_image_cache.get(), initial_values, fitting_response);
     }
 
     return success;

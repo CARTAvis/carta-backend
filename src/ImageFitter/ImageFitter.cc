@@ -13,10 +13,9 @@
 
 using namespace carta;
 
-ImageFitter::ImageFitter(size_t width, size_t height, std::string unit) {
+ImageFitter::ImageFitter(size_t width, size_t height) {
     _fit_data.width = width;
     _fit_data.n = width * height;
-    _image_unit = unit;
 
     _fdf.f = FuncF;
     _fdf.df = nullptr; // internally computed using finite difference approximations of f when set to NULL
@@ -28,11 +27,9 @@ ImageFitter::ImageFitter(size_t width, size_t height, std::string unit) {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(float* image, const std::vector<CARTA::GaussianComponent>& initial_values) {
+bool ImageFitter::FitImage(
+    float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response) {
     bool success = false;
-    _message = "";
-    _results = "";
-    _log = "";
     _fit_data.data = image;
     CalculateNanNum();
     SetInitialValues(initial_values);
@@ -41,19 +38,25 @@ bool ImageFitter::FitImage(float* image, const std::vector<CARTA::GaussianCompon
     int status = SolveSystem();
 
     if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
-        _message = "fit did not converge";
+        fitting_response.set_message("fit did not converge");
     } else if (status) {
-        _message = gsl_strerror(status);
+        fitting_response.set_message(gsl_strerror(status));
     }
 
     if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
         success = true;
         spdlog::info("Writing fitting results and log.");
-        SetResults();
-        SetLog();
+        for (size_t i = 0; i < _num_components; i++) {
+            fitting_response.add_result_values();
+            *fitting_response.mutable_result_values(i) = GetGaussianComponent(_fit_values, i);
+            fitting_response.add_result_errors();
+            *fitting_response.mutable_result_errors(i) = GetGaussianComponent(_fit_errors, i);
+        }
+        fitting_response.set_log(GetLog());
     }
+    fitting_response.set_success(success);
 
-    gsl_vector_free(_fit_params);
+    gsl_vector_free(_fit_values);
     gsl_vector_free(_fit_errors);
     return success;
 }
@@ -71,16 +74,16 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
     _num_components = initial_values.size();
 
     size_t p = _num_components * 6;
-    _fit_params = gsl_vector_alloc(p);
+    _fit_values = gsl_vector_alloc(p);
     _fit_errors = gsl_vector_alloc(p);
     for (size_t i = 0; i < _num_components; i++) {
         CARTA::GaussianComponent component(initial_values[i]);
-        gsl_vector_set(_fit_params, i * 6, component.center().x());
-        gsl_vector_set(_fit_params, i * 6 + 1, component.center().y());
-        gsl_vector_set(_fit_params, i * 6 + 2, component.amp());
-        gsl_vector_set(_fit_params, i * 6 + 3, component.fwhm().x());
-        gsl_vector_set(_fit_params, i * 6 + 4, component.fwhm().y());
-        gsl_vector_set(_fit_params, i * 6 + 5, component.pa());
+        gsl_vector_set(_fit_values, i * 6, component.center().x());
+        gsl_vector_set(_fit_values, i * 6 + 1, component.center().y());
+        gsl_vector_set(_fit_values, i * 6 + 2, component.amp());
+        gsl_vector_set(_fit_values, i * 6 + 3, component.fwhm().x());
+        gsl_vector_set(_fit_values, i * 6 + 4, component.fwhm().y());
+        gsl_vector_set(_fit_values, i * 6 + 5, component.pa());
     }
     _fdf.p = p;
 }
@@ -99,13 +102,13 @@ int ImageFitter::SolveSystem() {
     gsl_vector* y = gsl_multifit_nlinear_position(work);
     gsl_matrix* covar = gsl_matrix_alloc(p, p);
 
-    gsl_multifit_nlinear_init(_fit_params, &_fdf, work);
+    gsl_multifit_nlinear_init(_fit_values, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
     int status =
         gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, print_iter ? Callback : nullptr, nullptr, &_fit_status.info, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq);
     gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
-    gsl_vector_memcpy(_fit_params, y);
+    gsl_vector_memcpy(_fit_values, y);
 
     gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
     gsl_multifit_nlinear_covar(jac, 0.0, covar);
@@ -122,27 +125,7 @@ int ImageFitter::SolveSystem() {
     return status;
 }
 
-void ImageFitter::SetResults() {
-    _results = "";
-    for (size_t i = 0; i < _num_components; i++) {
-        _results += fmt::format("Component #{}:\n", i + 1);
-        _results +=
-            fmt::format("Center X  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6), gsl_vector_get(_fit_errors, i * 6));
-        _results += fmt::format(
-            "Center Y  = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 1), gsl_vector_get(_fit_errors, i * 6 + 1));
-        _results += fmt::format("Amplitude = {:6f} +/- {:6f}{}\n", gsl_vector_get(_fit_params, i * 6 + 2),
-            gsl_vector_get(_fit_errors, i * 6 + 2), _image_unit.size() > 0 ? fmt::format(" ({})", _image_unit) : "");
-        _results += fmt::format(
-            "FWHM X    = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 3), gsl_vector_get(_fit_errors, i * 6 + 3));
-        _results += fmt::format(
-            "FWHM Y    = {:6f} +/- {:6f} (px)\n", gsl_vector_get(_fit_params, i * 6 + 4), gsl_vector_get(_fit_errors, i * 6 + 4));
-        _results += fmt::format(
-            "P.A.      = {:6f} +/- {:6f} (deg)\n", gsl_vector_get(_fit_params, i * 6 + 5), gsl_vector_get(_fit_errors, i * 6 + 5));
-        _results += "\n";
-    }
-}
-
-void ImageFitter::SetLog() {
+std::string ImageFitter::GetLog() {
     std::string info;
     switch (_fit_status.info) {
         case 1:
@@ -157,31 +140,32 @@ void ImageFitter::SetLog() {
             break;
     }
 
-    _log = "";
-    _log += fmt::format("Gaussian fitting with {} component(s)\n", _num_components);
-    _log += fmt::format("summary from method '{}':\n", _fit_status.method);
-    _log += fmt::format("number of iterations = {}\n", _fit_status.num_iter);
-    _log += fmt::format("function evaluations = {}\n", _fdf.nevalf);
-    _log += fmt::format("Jacobian evaluations = {}\n", _fdf.nevaldf);
-    _log += fmt::format("reason for stopping  = {}\n", info);
-    _log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_fit_status.chisq0));
-    _log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_fit_status.chisq));
-    _log += fmt::format("initial cost         = {:.12e}\n", _fit_status.chisq0);
-    _log += fmt::format("final cost           = {:.12e}\n", _fit_status.chisq);
-    _log += fmt::format("residual variance    = {:.12e}\n", _fit_status.chisq / (_fit_data.n - _fdf.p));
-    _log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
+    std::string log = fmt::format("Gaussian fitting with {} component(s)\n", _num_components);
+    log += fmt::format("summary from method '{}':\n", _fit_status.method);
+    log += fmt::format("number of iterations = {}\n", _fit_status.num_iter);
+    log += fmt::format("function evaluations = {}\n", _fdf.nevalf);
+    log += fmt::format("Jacobian evaluations = {}\n", _fdf.nevaldf);
+    log += fmt::format("reason for stopping  = {}\n", info);
+    log += fmt::format("initial |f(x)|       = {:.12e}\n", sqrt(_fit_status.chisq0));
+    log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_fit_status.chisq));
+    log += fmt::format("initial cost         = {:.12e}\n", _fit_status.chisq0);
+    log += fmt::format("final cost           = {:.12e}\n", _fit_status.chisq);
+    log += fmt::format("residual variance    = {:.12e}\n", _fit_status.chisq / (_fit_data.n - _fdf.p));
+    log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
+
+    return log;
 }
 
-int ImageFitter::FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f) {
+int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector* f) {
     struct FitData* d = (struct FitData*)fit_data;
 
-    for (size_t k = 0; k < fit_params->size; k += 6) {
-        const double center_x = gsl_vector_get(fit_params, k);
-        const double center_y = gsl_vector_get(fit_params, k + 1);
-        const double amp = gsl_vector_get(fit_params, k + 2);
-        const double fwhm_x = gsl_vector_get(fit_params, k + 3);
-        const double fwhm_y = gsl_vector_get(fit_params, k + 4);
-        const double pa = gsl_vector_get(fit_params, k + 5);
+    for (size_t k = 0; k < fit_values->size; k += 6) {
+        const double center_x = gsl_vector_get(fit_values, k);
+        const double center_y = gsl_vector_get(fit_values, k + 1);
+        const double amp = gsl_vector_get(fit_values, k + 2);
+        const double fwhm_x = gsl_vector_get(fit_values, k + 3);
+        const double fwhm_y = gsl_vector_get(fit_values, k + 4);
+        const double pa = gsl_vector_get(fit_values, k + 5);
 
         const double dbl_sq_std_x = 2 * fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA;
         const double dbl_sq_std_y = 2 * fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA;
@@ -228,4 +212,19 @@ void ImageFitter::Callback(const size_t iter, void* params, const gsl_multifit_n
 
 void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, int gsl_errno) {
     spdlog::error("gsl error: {} line{}: {}", file, line, reason);
+}
+
+CARTA::GaussianComponent ImageFitter::GetGaussianComponent(gsl_vector* value_vector, size_t index) {
+    CARTA::GaussianComponent component;
+    CARTA::Point center;
+    center.set_x(gsl_vector_get(value_vector, index * 6));
+    center.set_y(gsl_vector_get(value_vector, index * 6 + 1));
+    *component.mutable_center() = center;
+    component.set_amp(gsl_vector_get(value_vector, index * 6 + 2));
+    CARTA::Point fwhm;
+    fwhm.set_x(gsl_vector_get(value_vector, index * 6 + 3));
+    fwhm.set_y(gsl_vector_get(value_vector, index * 6 + 4));
+    *component.mutable_fwhm() = fwhm;
+    component.set_pa(gsl_vector_get(value_vector, index * 6 + 5));
+    return component;
 }
