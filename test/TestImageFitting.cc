@@ -37,12 +37,12 @@ public:
         _initial_values = {};
         for (size_t i = 0; i < gaussian_model[0]; i++) {
             CARTA::GaussianComponent component;
-            CARTA::Point center;
+            CARTA::DoublePoint center;
             center.set_x(gaussian_model[6 * i + 1]);
             center.set_y(gaussian_model[6 * i + 2]);
             *component.mutable_center() = center;
             component.set_amp(gaussian_model[6 * i + 3]);
-            CARTA::Point fwhm;
+            CARTA::DoublePoint fwhm;
             fwhm.set_x(gaussian_model[6 * i + 4]);
             fwhm.set_y(gaussian_model[6 * i + 5]);
             *component.mutable_fwhm() = fwhm;
