@@ -169,5 +169,22 @@ pipeline {
                 }
             }
         }
+        stage{'Code coverage report'} {
+            agent {
+                label "ubuntu2004-agent"
+            }
+            steps {
+                sh "gcovr -f src/ --xml -j 8 -o coverage.xml"
+            }
+            post {
+                success {
+                    script {
+                        if (env.CHANGE_ID) {
+                            publishCoverageGithub(filepath:'coverage.xml', coverageXmlType: 'cobertura', comparisonOption: [ value: 'optionFixedCoverage' ], coverageRateType: 'Line')
+                        }
+                    }
+                }
+            }
+        }
     }
 }
