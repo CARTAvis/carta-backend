@@ -169,7 +169,7 @@ pipeline {
                 }
             }
         }
-        stage{'Code coverage report'} {
+        stage('Code coverage report') {
             agent {
                 label "ubuntu2004-agent"
             }
