@@ -26,7 +26,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
+                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer --coverage' -DCMAKE_C_FLAGS='--coverage' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 32"
                                 sh "./carta_backend --version"
                             }
