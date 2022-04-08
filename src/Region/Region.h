@@ -96,7 +96,7 @@ public:
 
     // state accessors
     inline RegionState GetRegionState() {
-        std::unique_lock<std::mutex> ulock(_region_state_mutex);
+        std::lock_guard<std::mutex> guard(_region_state_mutex);
         RegionState region_state = _region_state;
         return region_state;
     }

@@ -49,7 +49,7 @@ bool Region::UpdateRegion(const RegionState& new_state) {
         }
 
         // set new region state
-        std::unique_lock<std::mutex> ulock(_region_state_mutex);
+        std::lock_guard<std::mutex> guard(_region_state_mutex);
         _region_state = new_state;
     } else { // keep existing state
         _region_changed = false;
