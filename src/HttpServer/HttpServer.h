@@ -4,14 +4,16 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
-#define CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
+#ifndef CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
+#define CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
 
+#include <chrono>
 #include <string>
 
 #include <uWebSockets/App.h>
 #include <nlohmann/json.hpp>
 
+#include "Session/SessionManager.h"
 #include "Util/FileSystem.h"
 
 namespace carta {
@@ -29,15 +31,19 @@ namespace carta {
 
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;
+typedef std::function<bool(int&, uint32_t&, std::string&, std::string&, std::string&, bool&, std::string&, ScriptingResponseCallback,
+    ScriptingSessionClosedCallback)>
+    ScriptingRequestHandler;
 
-class SimpleFrontendServer {
+class HttpServer {
 public:
-    SimpleFrontendServer(fs::path root_folder, fs::path user_directory, std::string auth_token, bool read_only_mode);
+    HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
+        bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false);
     bool CanServeFrontend() {
         return _frontend_found;
     }
 
-    void RegisterRoutes(uWS::App& app);
+    void RegisterRoutes();
     static std::string GetFileUrlString(std::vector<std::string> files);
 
 protected:
@@ -47,6 +53,11 @@ protected:
     nlohmann::json GetExistingObjects(const std::string& object_type);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
+    std::string_view SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
+        ScriptingSessionClosedCallback session_closed_callback, ScriptingRequestHandler request_handler);
+    std::string_view OnScriptingResponse(
+        std::string& response_buffer, const bool& success, const std::string& message, const std::string& response);
+    void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);
@@ -65,13 +76,20 @@ private:
     void HandleGetObjects(const std::string& object_type, Res* res, Req* req);
     void HandleSetObject(const std::string& object_type, Res* res, Req* req);
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);
+    void HandleScriptingAction(Res* res, Req* req);
+    void Forbidden(Res* res, Req* req);
 
     fs::path _http_root_folder;
     fs::path _config_folder;
     bool _frontend_found;
     std::string _auth_token;
     bool _read_only_mode;
+    bool _enable_frontend;
+    bool _enable_database;
+    bool _enable_scripting;
+    std::shared_ptr<SessionManager> _session_manager;
+    static uint32_t _scripting_request_id;
 };
 
 } // namespace carta
-#endif // CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
+#endif // CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_

@@ -10,7 +10,6 @@
 #include <uWebSockets/App.h>
 #include <vector>
 
-#include "GrpcServer/CartaGrpcService.h"
 #include "Main/ProgramSettings.h"
 #include "Session.h"
 
@@ -20,9 +19,8 @@ namespace carta {
 class SessionManager {
 public:
     using WSType = uWS::WebSocket<false, true, PerSocketData>;
-    SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler>,
-        std::shared_ptr<CartaGrpcService> grpc_service);
-    void DeleteSession(int session_id);
+    SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler>);
+    void DeleteSession(uint32_t session_id);
     void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context);
     // Called on connection. Creates session objects and assigns UUID to it
     void OnConnect(WSType* ws);
@@ -34,6 +32,10 @@ public:
     void Listen(std::string host, std::vector<int> ports, int default_port, int& port);
     uWS::App& App();
     void RunApp();
+    bool SendScriptingRequest(int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action,
+        std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
+        ScriptingSessionClosedCallback session_closed_callback);
+    void OnScriptingAbort(int session_id, uint32_t scripting_request_id);
 
 private:
     // Sessions map
@@ -45,7 +47,6 @@ private:
     ProgramSettings& _settings;
     std::string _auth_token;
     std::shared_ptr<FileListHandler> _file_list_handler;
-    std::shared_ptr<CartaGrpcService> _grpc_service;
 
     std::string IPAsText(std::string_view binary);
 };

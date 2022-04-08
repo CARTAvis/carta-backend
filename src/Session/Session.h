@@ -43,8 +43,6 @@
 #include <carta-protobuf/stop_pv_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
-#include <carta-scripting-grpc/carta_service.grpc.pb.h>
-
 #include "AnimationObject.h"
 #include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
@@ -62,6 +60,9 @@
 
 namespace carta {
 
+typedef std::function<void(const bool&, const std::string&, const std::string&)> ScriptingResponseCallback;
+typedef std::function<void()> ScriptingSessionClosedCallback;
+
 struct PerSocketData {
     uint32_t session_id;
     string address;
@@ -71,8 +72,8 @@ struct PerSocketData {
 class LoaderCache {
 public:
     LoaderCache(int capacity);
-    std::shared_ptr<FileLoader> Get(std::string filename);
-    void Remove(std::string filename);
+    std::shared_ptr<FileLoader> Get(const std::string& filename, const std::string& directory = "");
+    void Remove(const std::string& filename);
 
 private:
     int _capacity;
@@ -84,7 +85,8 @@ private:
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port = -1, bool read_only_mode = false);
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false,
+        bool enable_scripting = false);
     ~Session();
 
     // CARTA ICD
@@ -230,9 +232,10 @@ public:
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(
-        uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path);
+        CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
-    bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
+    void OnScriptingAbort(uint32_t scripting_request_id);
+    void CloseAllScriptingRequests();
 
     void StopImageFileList();
     void StopCatalogFileList();
@@ -259,7 +262,7 @@ protected:
     bool FillFileInfo(
         CARTA::FileInfo& file_info, const std::string& folder, const std::string& filename, std::string& fullname, std::string& message);
 
-    // File info for open moments image (not disk image)
+    // File info for open generated image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
         const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader);
 
@@ -285,9 +288,6 @@ protected:
     void SendFileEvent(
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
-    void StartAnimationThread() {
-        // Not sure if needed... XXX
-    }
 
     // uWebSockets
     uWS::WebSocket<false, true, PerSocketData>* _socket;
@@ -297,8 +297,8 @@ protected:
     std::string _address;
     std::string _top_level_folder;
     std::string _starting_folder;
-    int _grpc_port;
     bool _read_only_mode;
+    bool _enable_scripting;
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
@@ -317,7 +317,7 @@ protected:
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
-    mutable bool _animation_active;
+    volatile bool _animation_active;
 
     // Individual stokes files connector
     std::unique_ptr<StokesFilesConnector> _stokes_files_connector;
@@ -343,13 +343,13 @@ protected:
     std::atomic<int> _ref_count;
     int _animation_id;
     bool _connected;
-    static int _num_sessions;
+    static volatile int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
     static std::thread* _animation_thread;
 
-    // Scripting responses from the client
-    std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
+    // Callbacks for scripting responses from the frontend
+    std::unordered_map<int, std::tuple<ScriptingResponseCallback, ScriptingSessionClosedCallback>> _scripting_callbacks;
     std::mutex _scripting_mutex;
 
     // Timestamp for the last protobuf message

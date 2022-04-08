@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_SIMPLEFRONTENDSERVER_MIMETYPES_H_
-#define CARTA_BACKEND_SRC_SIMPLEFRONTENDSERVER_MIMETYPES_H_
+#ifndef CARTA_BACKEND_SRC_HTTPSERVER_MIMETYPES_H_
+#define CARTA_BACKEND_SRC_HTTPSERVER_MIMETYPES_H_
 
 #include <string>
 #include <unordered_map>
@@ -16,4 +16,4 @@ const static std::unordered_map<std::string, std::string> MimeTypes = {{".css", 
     {".svg", "image/svg+xml"}, {".woff", "font/woff"}, {".woff2", "font/woff2"}, {".wasm", "application/wasm"}};
 } // namespace carta
 
-#endif // CARTA_BACKEND_SRC_SIMPLEFRONTENDSERVER_MIMETYPES_H_
+#endif // CARTA_BACKEND_SRC_HTTPSERVER_MIMETYPES_H_

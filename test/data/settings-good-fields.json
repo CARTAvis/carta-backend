@@ -5,11 +5,11 @@
     "no_browser": true,
     "host": "helloworld",
     "port": [1234],
-    "grpc_port": 5678,
     "omp_threads": 10,
     "top_level_folder": "/tmp",
     "frontend_folder": "/var",
     "exit_timeout": 10,
     "initial_timeout": 11,
-    "read_only_mode": true
+    "read_only_mode": true,
+    "enable_scripting": true
 }

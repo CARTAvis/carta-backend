@@ -11,11 +11,10 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
-#include "GrpcServer/CartaGrpcService.h"
+#include "HttpServer/HttpServer.h"
 #include "Logger/Logger.h"
 #include "ProgramSettings.h"
 #include "Session/SessionManager.h"
-#include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
@@ -25,8 +24,7 @@
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
     std::shared_ptr<FileListHandler> file_list_handler;
-    std::unique_ptr<SimpleFrontendServer> http_server;
-    std::shared_ptr<GrpcManager> grpc_manager;
+    std::unique_ptr<HttpServer> http_server;
     std::shared_ptr<SessionManager> session_manager;
 
     try {
@@ -95,67 +93,36 @@ int main(int argc, char* argv[]) {
         // One FileListHandler works for all sessions.
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
 
-        // Start gRPC server for scripting client.
-        if (settings.grpc_port >= 0) {
-            std::string grpc_token = "";
-            bool fixed_grpc_token(false);
-
-            if (!settings.debug_no_auth) {
-                auto env_entry = getenv("CARTA_GRPC_TOKEN");
-
-                if (env_entry) {
-                    grpc_token = env_entry;
-                    fixed_grpc_token = true;
-                } else {
-                    grpc_token = NewAuthToken();
-                }
-            }
-
-            grpc_manager = std::make_shared<GrpcManager>(settings.grpc_port, grpc_token);
-
-            if (grpc_manager->Listening()) {
-                spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", settings.grpc_port);
-                if (!fixed_grpc_token && !settings.debug_no_auth) {
-                    spdlog::info("CARTA gRPC token: {}", grpc_token);
-                }
-            } else {
-                spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", settings.grpc_port);
-                carta::logger::FlushLogFile();
-                return 1;
-            }
-        } else {
-            grpc_manager = std::make_shared<GrpcManager>(); // dummy manager
-        }
-
         // Init curl
         curl_global_init(CURL_GLOBAL_ALL);
 
         // Session manager
-        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler, grpc_manager->Service());
+        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler);
+        carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
-        if (!settings.no_http) {
+        if (!settings.no_frontend || !settings.no_database || settings.enable_scripting) {
             fs::path frontend_path;
 
-            if (!settings.frontend_folder.empty()) {
-                frontend_path = settings.frontend_folder;
-            } else if (have_executable_path) {
-                fs::path executable_parent = fs::path(executable_path).parent_path();
-                frontend_path = executable_parent / CARTA_DEFAULT_FRONTEND_FOLDER;
-            } else {
-                spdlog::warn(
-                    "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
-                    "frontend_folder argument.");
+            if (!settings.no_frontend) {
+                if (!settings.frontend_folder.empty()) {
+                    frontend_path = settings.frontend_folder;
+                } else if (have_executable_path) {
+                    fs::path executable_parent = fs::path(executable_path).parent_path();
+                    frontend_path = executable_parent / CARTA_DEFAULT_FRONTEND_FOLDER;
+                } else {
+                    spdlog::warn(
+                        "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
+                        "frontend_folder argument.");
+                }
             }
 
-            if (!frontend_path.empty()) {
-                http_server =
-                    std::make_unique<SimpleFrontendServer>(frontend_path, settings.user_directory, auth_token, settings.read_only_mode);
-                if (http_server->CanServeFrontend()) {
-                    http_server->RegisterRoutes(session_manager->App());
-                } else {
-                    spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
-                }
+            http_server = std::make_unique<HttpServer>(session_manager, frontend_path, settings.user_directory, auth_token,
+                settings.read_only_mode, !settings.no_frontend, !settings.no_database, settings.enable_scripting);
+            http_server->RegisterRoutes();
+
+            if (!settings.no_frontend && !http_server->CanServeFrontend()) {
+                spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
             }
         }
 
@@ -171,7 +138,8 @@ int main(int argc, char* argv[]) {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
             spdlog::info(start_info);
-            if (http_server && http_server->CanServeFrontend()) {
+
+            if (http_server) {
                 string default_host_string = settings.host;
                 if (default_host_string.empty() || default_host_string == "0.0.0.0") {
                     auto server_ip_entry = getenv("SERVER_IP");
@@ -181,28 +149,44 @@ int main(int argc, char* argv[]) {
                         default_host_string = "localhost";
                     }
                 }
-                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
-                string query_url;
-                if (!auth_token.empty()) {
-                    query_url += fmt::format("/?token={}", auth_token);
-                }
 
-                auto file_query_url = SimpleFrontendServer::GetFileUrlString(settings.files);
-                if (!file_query_url.empty()) {
-                    query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
-                }
+                string base_url = fmt::format("http://{}:{}", default_host_string, port);
 
-                if (!query_url.empty()) {
-                    frontend_url += query_url;
-                }
+                if (!settings.no_frontend && http_server->CanServeFrontend()) {
+                    string frontend_url = base_url;
 
-                if (!settings.no_browser) {
-                    WebBrowser wb(frontend_url, settings.browser);
-                    if (!wb.Status()) {
-                        spdlog::warn(wb.Error());
+                    string query_url;
+                    if (!auth_token.empty()) {
+                        query_url += fmt::format("/?token={}", auth_token);
                     }
+
+                    auto file_query_url = HttpServer::GetFileUrlString(settings.files);
+                    if (!file_query_url.empty()) {
+                        query_url += (query_url.empty() ? "/?" : "&") + file_query_url;
+                    }
+
+                    if (!query_url.empty()) {
+                        frontend_url += query_url;
+                    }
+
+                    if (!settings.no_browser) {
+                        WebBrowser wb(frontend_url, settings.browser);
+                        if (!wb.Status()) {
+                            spdlog::warn(wb.Error());
+                        }
+                    }
+                    spdlog::info("CARTA is accessible at {}", frontend_url);
                 }
-                spdlog::info("CARTA is accessible at {}", frontend_url);
+
+                if (!settings.no_database) {
+                    string database_url = base_url + "/api/database/...";
+                    spdlog::debug("The CARTA database API is accessible at {}", database_url);
+                }
+
+                if (settings.enable_scripting) {
+                    string scripting_url = base_url + "/api/scripting/action";
+                    spdlog::debug("To use the CARTA scripting interface, send POST requests to {}", scripting_url);
+                }
             }
 
             session_manager->RunApp();

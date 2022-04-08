@@ -1,14 +1,13 @@
-FROM centos:8.4.2105
+FROM almalinux:latest
 
 # Install the required packages
 RUN \
   dnf -y install epel-release && \
   dnf -y install 'dnf-command(config-manager)' && \
   dnf -y config-manager --set-enabled powertools && \
-  dnf -y install centos-release-openstack-victoria && \
   dnf -y update && \
   dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
-         gcc-c++ grpc-devel grpc-plugins git git-lfs gsl-devel hdf5-devel lapack-devel \ 
+         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel \
          libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
          python36 python3-pip pugixml-devel readline-devel subversion \
          wcslib-devel wget zlib-devel libuuid-devel zfp-devel && \
@@ -22,8 +21,6 @@ RUN \
 # Forward port so that the webapp can properly access it
 # from outside of the container
 EXPOSE 3002
-# Do the same with the gRPC service port
-EXPOSE 50051
 
 ENV HOME /root
 WORKDIR /root

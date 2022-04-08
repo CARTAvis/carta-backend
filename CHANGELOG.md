@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Removed the dependency on Intel TBB library by replacing the TBB mutexes with ones based on standard c++ ones.
 * Replaced shared image loader pointer in the session class with a cache for multiple loaders, to avoid concurrency bugs when loading multiple images simultaneously.
+* Removed gRPC service and moved scripting interface to HTTP server.
 	
 ### Added
 * Added ability to guess file type by extension, rather than content ([#1](https://github.com/CARTAvis/carta/issues/1)).

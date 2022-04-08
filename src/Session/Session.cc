@@ -7,6 +7,7 @@
 #include "Session.h"
 
 #include <signal.h>
+#include <sys/time.h>
 #include <algorithm>
 #include <chrono>
 #include <limits>
@@ -48,7 +49,7 @@ using namespace carta;
 
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
-std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
+std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
 
     // We have a cached loader, but the file has changed
@@ -62,7 +63,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
         // Create the loader -- don't block while doing this
         std::shared_ptr<FileLoader> loader_ptr;
         guard.unlock();
-        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename));
+        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename, directory));
         guard.lock();
 
         // Check if the loader was added in the meantime
@@ -86,20 +87,20 @@ std::shared_ptr<FileLoader> LoaderCache::Get(std::string filename) {
     return _map[filename];
 }
 
-void LoaderCache::Remove(std::string filename) {
+void LoaderCache::Remove(const std::string& filename) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
     _map.erase(filename);
     _queue.remove(filename);
 }
 
-int Session::_num_sessions = 0;
+volatile int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int grpc_port,
-    bool read_only_mode)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
+    bool enable_scripting)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -107,8 +108,8 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _top_level_folder(top_level_folder),
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
-      _grpc_port(grpc_port),
       _read_only_mode(read_only_mode),
+      _enable_scripting(enable_scripting),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
@@ -121,7 +122,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
     _connected = true;
     ++_num_sessions;
     UpdateLastMessageTimestamp();
-    spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
+    spdlog::info("{} ::Session ({}:{})", fmt::ptr(this), _id, _num_sessions);
 }
 
 static int __exit_backend_timer = 0;
@@ -147,23 +148,28 @@ void ExitNoSessions(int s) {
 
 Session::~Session() {
     --_num_sessions;
-    spdlog::debug("{} ~Session {}", fmt::ptr(this), _num_sessions);
+    spdlog::debug("{} ~Session : num sessions = {}", fmt::ptr(this), _num_sessions);
     if (!_num_sessions) {
         spdlog::info("No remaining sessions.");
         if (_exit_when_all_sessions_closed) {
             if (_exit_after_num_seconds == 0) {
-                spdlog::info("Exiting due to no sessions remaining");
-                ThreadManager::ExitEventHandlingThreads();
+                spdlog::debug("Exiting due to no sessions remaining");
                 logger::FlushLogFile();
-                exit(0);
+                __exit_backend_timer = 1;
+            } else {
+                __exit_backend_timer = _exit_after_num_seconds;
             }
-            __exit_backend_timer = _exit_after_num_seconds;
             struct sigaction sig_handler;
             sig_handler.sa_handler = ExitNoSessions;
             sigemptyset(&sig_handler.sa_mask);
             sig_handler.sa_flags = 0;
             sigaction(SIGALRM, &sig_handler, nullptr);
-            alarm(1);
+            struct itimerval itimer;
+            itimer.it_interval.tv_sec = 0;
+            itimer.it_interval.tv_usec = 0;
+            itimer.it_value.tv_sec = 0;
+            itimer.it_value.tv_usec = 5;
+            setitimer(ITIMER_REAL, &itimer, nullptr);
         }
     }
     logger::FlushLogFile();
@@ -363,7 +369,9 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     } else {
         type = CARTA::SessionType::RESUMED;
         if (session_id != _id) {
+            spdlog::info("({}) Session setting id to {} (was {}) on resume", fmt::ptr(this), session_id, _id);
             _id = session_id;
+            spdlog::info("({}) Session setting id to {}", fmt::ptr(this), session_id);
             status = fmt::format("Start a new backend and assign it with session id {}", session_id);
         } else {
             status = fmt::format("Network reconnected with session id {}", session_id);
@@ -391,9 +399,8 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     } else {
         feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
     }
-    if (_grpc_port >= 0) {
-        feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
-        ack_message.set_grpc_port(_grpc_port);
+    if (_enable_scripting) {
+        feature_flags |= CARTA::ServerFeatureFlags::SCRIPTING;
     }
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
@@ -464,69 +471,87 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     const auto& filename(message.file());
     std::string hdu(message.hdu());
     auto file_id(message.file_id());
+    bool is_lel_expr(message.lel_expr());
 
     // response message:
     CARTA::OpenFileAck ack;
-    ack.set_file_id(file_id);
-    string err_message;
-    std::string fullname;
     bool success(false);
+    string err_message;
 
-    // Set _loader and get file info
-    CARTA::FileInfo file_info;
-    CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
+    if (is_lel_expr) {
+        // filename field is LEL expression
+        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
+        auto loader = _loaders.Get(filename, dir_path);
 
-    if (info_loaded) {
-        // Get or create loader for frame
-        auto loader = _loaders.Get(fullname);
+        try {
+            loader->OpenFile(hdu);
 
-        // create Frame for image
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
+            auto image = loader->GetImage();
+            success = OnOpenFile(file_id, filename, image, &ack);
+        } catch (const casacore::AipsError& err) {
+            success = false;
+            err_message = err.getMesg();
+        }
+    } else {
+        ack.set_file_id(file_id);
+        std::string fullname;
 
-        // query loader for mipmap dataset
-        bool has_mipmaps(loader->HasMip(2));
+        // Set _loader and get file info
+        CARTA::FileInfo file_info;
+        CARTA::FileInfoExtended file_info_extended;
+        bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
 
-        // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
-        _loaders.Remove(fullname);
+        if (info_loaded) {
+            // Get or create loader for frame
+            auto loader = _loaders.Get(fullname);
 
-        if (frame->IsValid()) {
-            // Check if the old _frames[file_id] object exists. If so, delete it.
-            if (_frames.count(file_id) > 0) {
-                DeleteFrame(file_id);
-            }
-            std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
-            _frames[file_id] = move(frame);
-            lock.unlock();
+            // create Frame for image
+            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
 
-            // copy file info, extended file info
-            CARTA::FileInfo response_file_info = CARTA::FileInfo();
-            response_file_info.set_name(file_info.name());
-            response_file_info.set_type(file_info.type());
-            response_file_info.set_size(file_info.size());
-            response_file_info.add_hdu_list(hdu); // loaded hdu only
-            *ack.mutable_file_info() = response_file_info;
-            *ack.mutable_file_info_extended() = file_info_extended;
-            uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+            // query loader for mipmap dataset
+            bool has_mipmaps(loader->HasMip(2));
 
-            // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
-            if (file_info.type() == CARTA::FileType::HDF5) {
-                feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
-                feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
-                feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
-                if (has_mipmaps) {
-                    feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+            // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
+            _loaders.Remove(fullname);
+
+            if (frame->IsValid()) {
+                // Check if the old _frames[file_id] object exists. If so, delete it.
+                if (_frames.count(file_id) > 0) {
+                    DeleteFrame(file_id);
                 }
-            }
+                std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
+                _frames[file_id] = move(frame);
+                lock.unlock();
 
-            ack.set_file_feature_flags(feature_flags);
-            std::vector<CARTA::Beam> beams;
-            if (_frames.at(file_id)->GetBeams(beams)) {
-                *ack.mutable_beam_table() = {beams.begin(), beams.end()};
+                // copy file info, extended file info
+                CARTA::FileInfo response_file_info = CARTA::FileInfo();
+                response_file_info.set_name(file_info.name());
+                response_file_info.set_type(file_info.type());
+                response_file_info.set_size(file_info.size());
+                response_file_info.add_hdu_list(hdu); // loaded hdu only
+                *ack.mutable_file_info() = response_file_info;
+                *ack.mutable_file_info_extended() = file_info_extended;
+                uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+
+                // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
+                if (file_info.type() == CARTA::FileType::HDF5) {
+                    feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
+                    feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
+                    feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
+                    if (has_mipmaps) {
+                        feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+                    }
+                }
+
+                ack.set_file_feature_flags(feature_flags);
+                std::vector<CARTA::Beam> beams;
+                if (_frames.at(file_id)->GetBeams(beams)) {
+                    *ack.mutable_beam_table() = {beams.begin(), beams.end()};
+                }
+                success = true;
+            } else {
+                err_message = frame->GetErrorMessage();
             }
-            success = true;
-        } else {
-            err_message = frame->GetErrorMessage();
         }
     }
 
@@ -762,14 +787,14 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     bool success(false);
 
     if (_frames.count(file_id)) { // reference Frame for Region exists
-        casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
-
-        if (!_region_handler) { // created on demand only
+        if (!_region_handler) {
+            // created on demand only
             _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
         RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
+        auto csys = _frames.at(file_id)->CoordinateSystem();
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
@@ -1066,7 +1091,7 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message,
 
 void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
     bool success(true);
-    spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
+    spdlog::info("Session {} [{}] Resumed.", GetId(), GetAddress());
 
     // Error messages
     std::string err_message;
@@ -2090,8 +2115,8 @@ bool Session::ExecuteAnimationFrame() {
                 _animation_object->_next_frame = tmp_frame;
             }
         } else { // going backwards;
-            tmp_frame.set_channel(curr_frame.channel() - _animation_object->_delta_frame.channel());
-            tmp_frame.set_stokes(curr_frame.stokes() - _animation_object->_delta_frame.stokes());
+            tmp_frame.set_channel(curr_frame.channel() - delta_frame.channel());
+            tmp_frame.set_stokes(curr_frame.stokes() - delta_frame.stokes());
 
             if ((tmp_frame.channel() < _animation_object->_first_frame.channel()) ||
                 (tmp_frame.stokes() < _animation_object->_first_frame.stokes())) {
@@ -2140,7 +2165,7 @@ int Session::CalculateAnimationFlowWindow() {
         if (_animation_object->_delta_frame.channel()) {
             gap = (_animation_object->_last_flow_frame).channel() - _animation_object->_current_frame.channel();
         } else {
-            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_delta_frame.stokes();
+            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_current_frame.stokes();
         }
     }
 
@@ -2178,40 +2203,39 @@ void Session::CancelExistingAnimation() {
 }
 
 void Session::SendScriptingRequest(
-    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async, std::string return_path) {
-    CARTA::ScriptingRequest message;
-    message.set_scripting_request_id(scripting_request_id);
-    message.set_target(target);
-    message.set_action(action);
-    message.set_parameters(parameters);
-    message.set_async(async);
-    message.set_return_path(return_path);
+    CARTA::ScriptingRequest& message, ScriptingResponseCallback callback, ScriptingSessionClosedCallback session_closed_callback) {
+    int scripting_request_id(message.scripting_request_id());
     SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    _scripting_callbacks[scripting_request_id] = std::make_tuple(callback, session_closed_callback);
 }
 
 void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id) {
-    // Save response to scripting request
     int scripting_request_id(message.scripting_request_id());
+
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    _scripting_response[scripting_request_id] = message;
+    auto callback_iter = _scripting_callbacks.find(scripting_request_id);
+    if (callback_iter == _scripting_callbacks.end()) {
+        spdlog::warn("Could not find callback for scripting response with request ID {}.", scripting_request_id);
+    } else {
+        auto [callback, session_closed_callback] = callback_iter->second;
+        callback(message.success(), message.message(), message.response());
+        _scripting_callbacks.erase(scripting_request_id);
+    }
 }
 
-// TODO: return pointer to original response type and copy in grpc service
-bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply) {
+void Session::OnScriptingAbort(uint32_t scripting_request_id) {
     std::unique_lock<std::mutex> lock(_scripting_mutex);
-    auto scripting_response = _scripting_response.find(scripting_request_id);
-    if (scripting_response == _scripting_response.end()) {
-        return false;
-    } else {
-        auto msg = scripting_response->second;
-        reply->set_success(msg.success());
-        reply->set_message(msg.message());
-        reply->set_response(msg.response());
+    _scripting_callbacks.erase(scripting_request_id);
+}
 
-        _scripting_response.erase(scripting_request_id);
-
-        return true;
+void Session::CloseAllScriptingRequests() {
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    for (auto& [key, callbacks] : _scripting_callbacks) {
+        auto [callback, session_closed_callback] = callbacks;
+        session_closed_callback();
     }
+    _scripting_callbacks.clear();
 }
 
 void Session::StopImageFileList() {

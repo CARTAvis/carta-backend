@@ -19,12 +19,12 @@ class Histogram {
     float _bin_center;                // bin center
     std::vector<int> _histogram_bins; // histogram bin counts
 
-    void Fill(const std::vector<float>&);
+    void Fill(const float* data, const size_t data_size);
     static bool ConsistencyCheck(const Histogram&, const Histogram&);
 
 public:
     Histogram() = default; // required to create empty histograms used in references
-    Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
+    Histogram(int num_bins, float min_value, float max_value, const float* data, const size_t data_size);
 
     Histogram(const Histogram& h);
 

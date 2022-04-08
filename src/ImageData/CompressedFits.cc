@@ -19,6 +19,11 @@
 
 using namespace carta;
 
+CompressedFits::CompressedFits(const std::string& filename) : _filename(filename) {
+    // Initialize linear transformation matrix for the direction coordinate
+    SetDefaultTransformMatrix();
+}
+
 bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map) {
     // Read compressed file headers to fill map
     auto zip_file = OpenGzFile();
@@ -129,6 +134,22 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                     beam_info.bmin = value + beam_unit;
                 } else if (keyword == "BPA") {
                     beam_info.bpa = value + beam_unit;
+                }
+
+                // Set linear transformation matrix between the pixel and world axes
+                if (keyword.startsWith("PC") || keyword.startsWith("CD")) {
+                    auto found = keyword.find("_");
+                    if (found != casacore::String::npos) {
+                        if (keyword.at(found - 1) == '1' && keyword.at(keyword.length() - 1) == '1') {
+                            _xform(0, 0) = casacore::String::toDouble(value);
+                        } else if (keyword.at(found - 1) == '1' && keyword.at(keyword.length() - 1) == '2') {
+                            _xform(1, 0) = casacore::String::toDouble(value);
+                        } else if (keyword.at(found - 1) == '2' && keyword.at(keyword.length() - 1) == '1') {
+                            _xform(0, 1) = casacore::String::toDouble(value);
+                        } else if (keyword.at(found - 1) == '2' && keyword.at(keyword.length() - 1) == '2') {
+                            _xform(1, 1) = casacore::String::toDouble(value);
+                        }
+                    }
                 }
             } else {
                 // END of header
@@ -738,4 +759,19 @@ void CompressedFits::SetDecompressFilename() {
     tmp_path /= zip_path.filename().stem();
 
     _unzip_filename = tmp_path.string();
+}
+
+casacore::Matrix<casacore::Double> CompressedFits::GetTransformMatrix() {
+    // Check the validity of transform matrix
+    double det2 = _xform(0, 0) * _xform(1, 1) - _xform(1, 0) * _xform(0, 1);
+    if (det2 < 0 || std::fabs(std::sqrt(det2) - 1.0) > 1e-3) {
+        SetDefaultTransformMatrix();
+    }
+    return _xform;
+}
+
+void CompressedFits::SetDefaultTransformMatrix() {
+    _xform.resize(2, 2);
+    _xform = 0.0;
+    _xform.diagonal() = 1.0;
 }

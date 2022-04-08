@@ -95,8 +95,8 @@ public:
     // Get the full name of image file
     std::string GetFileName();
 
-    // Returns pointer to CoordinateSystem clone; caller must delete
-    casacore::CoordinateSystem* CoordinateSystem();
+    // Returns shared ptr to CoordinateSystem
+    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem();
 
     // Image/Frame info
     casacore::IPosition ImageShape();
@@ -165,12 +165,12 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
-    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error = true);
+    std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<Region> region, bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
-    bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
+    bool GetSlicerData(const casacore::Slicer& slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const casacore::LattRegionHolder& region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
@@ -239,7 +239,7 @@ protected:
     void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
-        casacore::IPosition region_shape, casacore::LCRegion* image_region, casacore::LattRegionHolder& latt_region_holder);
+        casacore::IPosition region_shape, std::shared_ptr<casacore::LCRegion> image_region, casacore::LattRegionHolder& latt_region_holder);
 
     void InitImageHistogramConfigs();
 
@@ -277,12 +277,14 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    std::vector<float> _image_cache; // image data for current z, stokes
-    bool _image_cache_valid;         // cached image data is valid for current z and stokes
-    queuing_rw_mutex _cache_mutex;   // allow concurrent reads but lock for write
-    std::mutex _image_mutex;         // only one disk access at a time
-    bool _cache_loaded;              // channel cache is set
-    TileCache _tile_cache;           // cache for full-resolution image tiles
+    //    std::vector<float> _image_cache; // image data for current z, stokes
+    long long int _image_cache_size;
+    std::unique_ptr<float[]> _image_cache;
+    bool _image_cache_valid;       // cached image data is valid for current z and stokes
+    queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+    std::mutex _image_mutex;       // only one disk access at a time
+    bool _cache_loaded;            // channel cache is set
+    TileCache _tile_cache;         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 
