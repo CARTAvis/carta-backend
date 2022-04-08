@@ -46,16 +46,17 @@ function autoupdate {
     $WGET $MEASURES_DATA_URL && $TAR_CMD -C $CASA_DATA_USER_DIR && $CLEAN_UP
     check_cmd_status # check if status code is zero and exit if not
 
-    echo "$(date +%Y-%m-%d)" > $CASA_DATA_USER_DIR/last_update
+    echo "$(date)" > $CASA_DATA_USER_DIR/last_update
     sleep 0.6 # let the progress bar update end
 }
 
 function datediff {
-    # this part needs improvement, it fails for changing years
-    # better: https://stackoverflow.com/questions/4946785/how-to-find-the-difference-in-days-between-two-dates
-    PREV=$(cat $CASA_DATA_USER_DIR/last_update)
-    TODAY=$(date +%Y-%m-%d)
-    DIFF=$((PREV-TODAY))
+    # date -j -f "%a %b %d %T %Z %Y" "`date`" "+%s" gives the number of seconds since the epoch
+    # LAST_UPDATE_DATE=$(cat $CASA_DATA_USER_DIR/last_update)
+    let LAST=$(date -j -f "%a %b %d %T %Z %Y" "`cat $CASA_DATA_USER_DIR/last_update`" "+%s")
+    let TODAY=$(date -j -f "%a %b %d %T %Z %Y" "`date`" "+%s")
+    let DIFF=TODAY-LAST
+    let DIFF=DIFF/86400
     echo $DIFF
 }
 
@@ -109,9 +110,8 @@ function autoupdate_if_needed {
     fi
 }
 
-
 # Logic starts here
-# Check JSON for backend.json settings
+# Check JSON for preferences.json settings
 check_json_settings
 echo "AUTOUPDATE ENABLED = $AUTOUPDATE_ENABLED"
 echo "UPDATE INTERVAL = $UPDATE_INTERVAL"
