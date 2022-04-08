@@ -183,6 +183,9 @@ private:
 
     // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
     std::mutex _pix_mvdir_mutex;
+
+    // Prevent crash during line profiles
+    std::mutex _line_profile_mutex;
 };
 
 } // namespace carta

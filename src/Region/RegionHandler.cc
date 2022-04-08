@@ -2368,6 +2368,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         region_id -= region_idx;
     }
 
+    std::lock_guard<std::mutex> guard(_line_profile_mutex);
     SetRegion(region_id, region_state, reference_csys);
 
     if (!RegionSet(region_id)) {
