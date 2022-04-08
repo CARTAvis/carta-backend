@@ -150,6 +150,17 @@ private:
     casacore::Vector<float> GetTemporaryRegionProfile(
         int file_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, double& num_pixels);
 
+    // Get computed stokes profiles for a region
+    using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
+    void GetStokesPtotal(
+        const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal);
+    void GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
+        const ProfilesMap& profiles_v, ProfilesMap& profiles_pftotal);
+    void GetStokesPlinear(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_plinear);
+    void GetStokesPflinear(
+        const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear);
+    void GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle);
+
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
 

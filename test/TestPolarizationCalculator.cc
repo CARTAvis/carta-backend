@@ -5,6 +5,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <math.h>
 
 #include "CommonTestUtilities.h"
 #include "Frame/Frame.h"
@@ -518,61 +519,61 @@ public:
         std::vector<float> spectral_profile_data_float_1(spectral_profile_data_double.begin(), spectral_profile_data_double.end());
 
         // get spectral profile in another way
-        carta::PolarizationCalculator polarization_calculator(image);
-        std::shared_ptr<casacore::ImageInterface<float>> resulting_image;
-        int fiddled_stokes_index(0);
-        int stokes;
+        int stokes(-1);
 
         if (stokes_config_z == "z") {
-            resulting_image = image;
             stokes = current_stokes;
         } else if (stokes_config_z == "Iz") {
-            resulting_image = image;
             stokes = 0;
         } else if (stokes_config_z == "Qz") {
-            resulting_image = image;
             stokes = 1;
         } else if (stokes_config_z == "Uz") {
-            resulting_image = image;
             stokes = 2;
         } else if (stokes_config_z == "Vz") {
-            resulting_image = image;
             stokes = 3;
-        } else if (stokes_config_z == "Ptotalz") {
-            resulting_image = polarization_calculator.ComputeTotalPolarizedIntensity();
-            stokes = fiddled_stokes_index;
-        } else if (stokes_config_z == "PFtotalz") {
-            resulting_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
-            stokes = fiddled_stokes_index;
-        } else if (stokes_config_z == "Plinearz") {
-            resulting_image = polarization_calculator.ComputePolarizedIntensity();
-            stokes = fiddled_stokes_index;
-        } else if (stokes_config_z == "PFlinearz") {
-            resulting_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
-            stokes = fiddled_stokes_index;
-        } else if (stokes_config_z == "Panglez") {
-            resulting_image = polarization_calculator.ComputePolarizedAngle();
-            stokes = fiddled_stokes_index;
-        } else {
-            spdlog::error("Unknown stokes coordinate config: {}", stokes_config_z);
         }
 
         int z_size = image->shape()[2];
         std::vector<double> spectral_profile_data_double_2;
 
         for (int channel = 0; channel < z_size; ++channel) {
-            std::vector<float> tmp_data;
-            GetImageData(tmp_data, resulting_image, stokes, AxisRange(channel));
-            double tmp_sum(0);
-            double tmp_count(0);
-            for (int i = 0; i < tmp_data.size(); ++i) {
-                if (!isnan(tmp_data[i])) {
-                    tmp_sum += tmp_data[i];
-                    ++tmp_count;
+            if (stokes > -1) {
+                // For regular stokes types
+                std::vector<float> tmp_data;
+                GetImageData(tmp_data, image, stokes, AxisRange(channel));
+                double tmp_sum(0);
+                double tmp_count(0);
+                for (int i = 0; i < tmp_data.size(); ++i) {
+                    if (!isnan(tmp_data[i])) {
+                        tmp_sum += tmp_data[i];
+                        ++tmp_count;
+                    }
                 }
+                double mean = tmp_sum / tmp_count;
+                // Fill results
+                spectral_profile_data_double_2.push_back(mean);
+            } else {
+                // For computed stokes types
+                double i = GetMeanOfStokesChannel(image, 0, channel);
+                double q = GetMeanOfStokesChannel(image, 1, channel);
+                double u = GetMeanOfStokesChannel(image, 2, channel);
+                double v = GetMeanOfStokesChannel(image, 3, channel);
+                double result = std::numeric_limits<double>::quiet_NaN();
+
+                if (stokes_config_z == "Ptotalz") {
+                    result = sqrt(pow(q, 2) + pow(u, 2) + pow(v, 2));
+                } else if (stokes_config_z == "PFtotalz") {
+                    result = 100.0 * sqrt(pow(q, 2) + pow(u, 2) + pow(v, 2)) / i;
+                } else if (stokes_config_z == "Plinearz") {
+                    result = sqrt(pow(q, 2) + pow(u, 2));
+                } else if (stokes_config_z == "PFlinearz") {
+                    result = 100.0 * sqrt(pow(q, 2) + pow(u, 2)) / i;
+                } else if (stokes_config_z == "Panglez") {
+                    result = (180.0 / C::pi) * atan2(u, q) / 2;
+                }
+                // Fill results
+                spectral_profile_data_double_2.push_back(result);
             }
-            double mean = tmp_sum / tmp_count;
-            spectral_profile_data_double_2.push_back(mean);
         }
 
         // convert the double type vector to the float type vector
@@ -580,6 +581,20 @@ public:
 
         // check the consistency of two ways
         CmpVectors(spectral_profile_data_float_1, spectral_profile_data_float_2);
+    }
+
+    static double GetMeanOfStokesChannel(std::shared_ptr<casacore::ImageInterface<float>> image, int stokes, int channel) {
+        std::vector<float> tmp_data;
+        GetImageData(tmp_data, image, stokes, AxisRange(channel));
+        double tmp_sum(0);
+        double tmp_count(0);
+        for (int i = 0; i < tmp_data.size(); ++i) {
+            if (!isnan(tmp_data[i])) {
+                tmp_sum += tmp_data[i];
+                ++tmp_count;
+            }
+        }
+        return tmp_sum / tmp_count;
     }
 
     static void CalculateCubeHistogram(
