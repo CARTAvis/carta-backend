@@ -1710,7 +1710,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
         return false;
     }
 
-    if (CancelLineProfiles(region_id, file_id, region_state, stokes_index)) {
+    if (CancelLineProfiles(region_id, file_id, region_state)) {
         cancelled = true;
         return false;
     }
@@ -1724,7 +1724,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
     }
 
     // Check for cancel again
-    if (cancelled || CancelLineProfiles(region_id, file_id, region_state, stokes_index)) {
+    if (cancelled || CancelLineProfiles(region_id, file_id, region_state)) {
         cancelled = true;
         return false;
     }
@@ -1739,7 +1739,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
     return profiles_complete;
 }
 
-bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state, int stokes_index) {
+bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
     // Cancel if region or frame is closing
     if (!RegionFileIdsValid(region_id, file_id)) {
         return true;
@@ -1747,11 +1747,6 @@ bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& 
 
     // Cancel if region changed
     if (_regions.at(region_id)->GetRegionState() != region_state) {
-        return true;
-    }
-
-    // Cancel if stokes changed
-    if (stokes_index != _frames.at(file_id)->CurrentStokes()) {
         return true;
     }
 

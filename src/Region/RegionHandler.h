@@ -132,7 +132,7 @@ private:
     // Used for pv generator and spatial profiles.
     bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, std::function<void(float)>& progress_callback,
         double& increment, casacore::Matrix<float>& profiles, bool& cancelled, std::string& message);
-    bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state, int stokes_index);
+    bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const PointXy& endpoint0, const PointXy& endpoint1);
     size_t PolylinePixelLength(const std::vector<CARTA::Point>& control_points);
     bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, int stokes_index, RegionState& region_state,
