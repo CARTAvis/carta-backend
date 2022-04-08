@@ -781,14 +781,14 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     bool success(false);
 
     if (_frames.count(file_id)) { // reference Frame for Region exists
-        casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
-
-        if (!_region_handler) { // created on demand only
+        if (!_region_handler) {
+            // created on demand only
             _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
         RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
+        auto csys = _frames.at(file_id)->CoordinateSystem();
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 

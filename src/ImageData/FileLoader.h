@@ -26,7 +26,6 @@ class Frame;
 class FileLoader {
 public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
-    using IPos = casacore::IPosition;
 
     // directory only for ExprLoader, is_gz only for FitsLoader
     FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false);
@@ -53,8 +52,8 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
-    bool GetShape(IPos& shape);
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
+    casacore::IPosition GetShape();
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
     bool GetCoordinateAxes(CoordinateAxes& coord_axes, std::string& message);
 
     // Slice image data (with mask applied)
@@ -112,7 +111,7 @@ protected:
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
     // Image properties; only reopen image for data or beams
-    casacore::CoordinateSystem _coord_sys;
+    std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     casacore::IPosition _image_shape;
     CoordinateAxes _coord_axes;
     size_t _num_dims, _image_plane_size;
@@ -126,10 +125,10 @@ protected:
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
 
     // Return the shape of the specified stats dataset
-    virtual const IPos GetStatsDataShape(FileInfo::Data ds);
+    virtual const casacore::IPosition GetStatsDataShape(FileInfo::Data ds);
 
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
-    virtual casacore::ArrayBase* GetStatsData(FileInfo::Data ds);
+    virtual std::unique_ptr<casacore::ArrayBase> GetStatsData(FileInfo::Data ds);
 
     // Functions for loading individual types of statistics
     virtual void LoadStats2DBasic(FileInfo::Data ds);
