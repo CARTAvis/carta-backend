@@ -11,4 +11,6 @@ if [ ! -z $FIRST_IP ]; then
     export SERVER_IP=$FIRST_IP
 fi
 
+casa_data_autoupdate
+
 carta_backend "$@"

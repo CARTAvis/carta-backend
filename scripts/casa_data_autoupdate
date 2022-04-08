@@ -3,7 +3,7 @@
 UPDATE_INTERVAL=7
 AUTOUPDATE_ENABLED="false"
 CASA_DATA_USER_DIR="$HOME/.carta/data"
-
+CASARC_FILE="$HOME/.carta/casarc"
 
 function check_json_settings {
     # False JSON parsing
@@ -32,25 +32,18 @@ function check_cmd_status {
 }
 
 function autoupdate {
-    SVN="svn"
-    SVN_CMD="export --quiet --force"
+    WGET="wget"
+    MEASURES_DATA_URL="ftp://ftp.astron.nl/outgoing/Measures/WSRT_Measures.ztar -P /tmp"
+    TAR_CMD="tar -xzf /tmp/WSRT_Measures.ztar"
+    CLEAN_UP="rm /tmp/WSRT_Measures.ztar"
 
-    if ! [ -x "$(command -v $SVN)" ]
+    if ! [ -x "$(command -v $WGET)" ]
     then
         echo "ERROR: $SVN command not found" >&2
         exit 1
     fi
 
-    $SVN $SVN_CMD https://svn.cv.nrao.edu/svn/casa-data/distro/ephemerides/ $CASA_DATA_USER_DIR/ephemerides
-    check_cmd_status # check if status code is zero and exit if not
-
-    $SVN $SVN_CMD https://svn.cv.nrao.edu/svn/casa-data/distro/geodetic/ $CASA_DATA_USER_DIR/geodetic
-    check_cmd_status # check if status code is zero and exit if not
-
-    rm -r $CASA_DATA_USER_DIR/ephemerides/splatalogue.db
-    check_cmd_status # check if status code is zero and exit if not
-
-    rm -r $CASA_DATA_USER_DIR/ephemerides/SplatDefault.tbl
+    $WGET $MEASURES_DATA_URL && $TAR_CMD -C $CASA_DATA_USER_DIR && $CLEAN_UP
     check_cmd_status # check if status code is zero and exit if not
 
     echo "$(date +%Y-%m-%d)" > $CASA_DATA_USER_DIR/last_update
@@ -86,6 +79,10 @@ function launch_auto_update {
 function autoupdate_if_needed {
     if [ $AUTOUPDATE_ENABLED == "true" ]
     then
+        if [ ! -f $CASARC_FILE ]
+        then
+            echo "measures.observatory.directory: ~/.carta/data/geodetic" > $CASARC_FILE
+        fi
         if [ ! -d $CASA_DATA_USER_DIR ]
         then
             mkCASA_DATA_USER_DIR -p $CASA_DATA_USER_DIR # will make a CASA_DATA_USER_DIRectory if it doesn't exist
