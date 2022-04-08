@@ -1154,23 +1154,67 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     RegionState initial_region_state = _regions.at(region_id)->GetRegionState();
 
     // Use loader swizzled data for efficiency
-    if (_frames.at(file_id)->UseLoaderSpectralData(lc_region->shape()) && !ComputeStokes(stokes_index)) {
+    if (_frames.at(file_id)->UseLoaderSpectralData(lc_region->shape())) {
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
             casacore::IPosition origin = lc_region->boundingBox().start();
             CARTA::Point point;
             point.set_x(origin(0));
             point.set_y(origin(1));
-            std::vector<float> profile;
-            bool ok = _frames.at(file_id)->GetLoaderPointSpectralData(profile, stokes_index, point);
-            if (ok) {
+
+            auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string coordinate) {
+                int tmp_stokes;
+                std::vector<float> tmp_profile;
+                if (!_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) ||
+                    !_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, tmp_stokes, point)) {
+                    return false;
+                }
                 // Set results; there is only one required stat for point
-                std::vector<double> data(profile.begin(), profile.end());
-                results[required_stats[0]] = data;
-                progress = 1.0;
-                partial_results_callback(results, progress);
+                std::vector<double> tmp_data(tmp_profile.begin(), tmp_profile.end());
+                tmp_results[required_stats[0]] = tmp_data;
+                return true;
+            };
+
+            // For computed stokes
+            ProfilesMap profile_i, profile_q, profile_u, profile_v;
+            if (stokes_index == COMPUTE_STOKES_PTOTAL) {
+                if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") || !get_profiles_data(profile_v, "Vz")) {
+                    return false;
+                }
+                GetStokesPtotal(profile_q, profile_u, profile_v, results);
+            } else if (stokes_index == COMPUTE_STOKES_PFTOTAL) {
+                if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") ||
+                    !get_profiles_data(profile_v, "Vz")) {
+                    return false;
+                }
+                GetStokesPftotal(profile_i, profile_q, profile_u, profile_v, results);
+            } else if (stokes_index == COMPUTE_STOKES_PLINEAR) {
+                if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+                    return false;
+                }
+                GetStokesPlinear(profile_q, profile_u, results);
+            } else if (stokes_index == COMPUTE_STOKES_PFLINEAR) {
+                if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+                    return false;
+                }
+                GetStokesPflinear(profile_i, profile_q, profile_u, results);
+            } else if (stokes_index == COMPUTE_STOKES_PANGLE) {
+                if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+                    return false;
+                }
+                GetStokesPangle(profile_q, profile_u, results);
+            } else {
+                // For regular stokes I, Q, U, or V
+                std::vector<float> tmp_profile;
+                if (!_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, stokes_index, point)) {
+                    return false;
+                }
+                std::vector<double> tmp_data(tmp_profile.begin(), tmp_profile.end());
+                results[required_stats[0]] = tmp_data;
             }
-            return ok;
+
+            partial_results_callback(results, 1.0);
+            return true;
         }
 
         // Get 2D origin and 2D mask for Hdf5Loader
@@ -1203,29 +1247,67 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
 
                 // Get partial profile
-                std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
-                if (_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
-                    // get the time elapse for this step
-                    auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
+                auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string coordinate) {
+                    int tmp_stokes;
+                    return (_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) &&
+                            _frames.at(file_id)->GetLoaderSpectralData(region_id, tmp_stokes, mask, xy_origin, tmp_results, progress));
+                };
 
-                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
-                        // Copy partial profile to results
-                        for (const auto& profile : partial_profiles) {
-                            auto stats_type = profile.first;
-                            if (results.count(stats_type)) {
-                                results[stats_type] = profile.second;
-                            }
-                        }
-
-                        // restart timer
-                        t_latest = t_end;
-
-                        // send partial result
-                        partial_results_callback(results, progress);
+                // For computed stokes
+                ProfilesMap partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles_v, partial_profiles;
+                if (stokes_index == COMPUTE_STOKES_PTOTAL) {
+                    if (!get_profiles_data(partial_profiles_q, "Qz") || !get_profiles_data(partial_profiles_u, "Uz") ||
+                        !get_profiles_data(partial_profiles_v, "Vz")) {
+                        return false;
                     }
+                    GetStokesPtotal(partial_profiles_q, partial_profiles_u, partial_profiles_v, partial_profiles);
+                } else if (stokes_index == COMPUTE_STOKES_PFTOTAL) {
+                    if (!get_profiles_data(partial_profiles_i, "Iz") || !get_profiles_data(partial_profiles_q, "Qz") ||
+                        !get_profiles_data(partial_profiles_u, "Uz") || !get_profiles_data(partial_profiles_v, "Vz")) {
+                        return false;
+                    }
+                    GetStokesPftotal(partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles_v, partial_profiles);
+                } else if (stokes_index == COMPUTE_STOKES_PLINEAR) {
+                    if (!get_profiles_data(partial_profiles_q, "Qz") || !get_profiles_data(partial_profiles_u, "Uz")) {
+                        return false;
+                    }
+                    GetStokesPlinear(partial_profiles_q, partial_profiles_u, partial_profiles);
+                } else if (stokes_index == COMPUTE_STOKES_PFLINEAR) {
+                    if (!get_profiles_data(partial_profiles_i, "Iz") || !get_profiles_data(partial_profiles_q, "Qz") ||
+                        !get_profiles_data(partial_profiles_u, "Uz")) {
+                        return false;
+                    }
+                    GetStokesPflinear(partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles);
+                } else if (stokes_index == COMPUTE_STOKES_PANGLE) {
+                    if (!get_profiles_data(partial_profiles_q, "Qz") || !get_profiles_data(partial_profiles_u, "Uz")) {
+                        return false;
+                    }
+                    GetStokesPangle(partial_profiles_q, partial_profiles_u, partial_profiles);
                 } else {
-                    return false;
+                    // For regular stokes I, Q, U, or V
+                    if (!_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
+                        return false;
+                    }
+                }
+
+                // get the time elapse for this step
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
+
+                if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
+                    // Copy partial profile to results
+                    for (const auto& profile : partial_profiles) {
+                        auto stats_type = profile.first;
+                        if (results.count(stats_type)) {
+                            results[stats_type] = profile.second;
+                        }
+                    }
+
+                    // restart timer
+                    t_latest = t_end;
+
+                    // send partial result
+                    partial_results_callback(results, progress);
                 }
             }
 
@@ -1264,70 +1346,52 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         // Get 3D region for z range and stokes_index
         AxisRange z_range(start_z, end_z);
 
-        auto get_partial_profiles = [&](std::map<CARTA::StatsType, std::vector<double>>& partial_profiles, int stokes) {
+        auto get_partial_profiles = [&](ProfilesMap& tmp_partial_profiles, std::string coordinate) {
+            int tmp_stokes;
             std::pair<StokesSource, casacore::ImageRegion> stokes_src_vs_region;
-            if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_src_vs_region, lc_region)) {
-                return false;
-            }
-            // Get per-z stats data for region for all stats (for cache)
-            bool per_z(true);
-            return _frames.at(file_id)->GetRegionStats(stokes_src_vs_region, _spectral_stats, per_z, partial_profiles);
+            bool per_z(true); // Get per-z stats data for region for all stats (for cache)
+            return (_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) &&
+                    ApplyRegionToFile(region_id, file_id, z_range, tmp_stokes, stokes_src_vs_region, lc_region) &&
+                    _frames.at(file_id)->GetRegionStats(stokes_src_vs_region, _spectral_stats, per_z, tmp_partial_profiles));
         };
 
         // For computed stokes
-        int stokes_i, stokes_q, stokes_u, stokes_v;
-        ProfilesMap partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles_v;
-
-        ProfilesMap partial_profiles; // Final results
-
+        ProfilesMap partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles_v, partial_profiles;
         if (stokes_index == COMPUTE_STOKES_PTOTAL) {
-            if (!_frames.at(file_id)->GetStokesTypeIndex("Qz", stokes_q) || !_frames.at(file_id)->GetStokesTypeIndex("Uz", stokes_u) ||
-                !_frames.at(file_id)->GetStokesTypeIndex("Vz", stokes_v)) {
-                return false;
-            }
-            if (!get_partial_profiles(partial_profiles_q, stokes_q) || !get_partial_profiles(partial_profiles_u, stokes_u) ||
-                !get_partial_profiles(partial_profiles_v, stokes_v)) {
+            if (!get_partial_profiles(partial_profiles_q, "Qz") || !get_partial_profiles(partial_profiles_u, "Uz") ||
+                !get_partial_profiles(partial_profiles_v, "Vz")) {
                 return false;
             }
             GetStokesPtotal(partial_profiles_q, partial_profiles_u, partial_profiles_v, partial_profiles);
         } else if (stokes_index == COMPUTE_STOKES_PFTOTAL) {
-            if (!_frames.at(file_id)->GetStokesTypeIndex("Iz", stokes_i) || !_frames.at(file_id)->GetStokesTypeIndex("Qz", stokes_q) ||
-                !_frames.at(file_id)->GetStokesTypeIndex("Uz", stokes_u) || !_frames.at(file_id)->GetStokesTypeIndex("Vz", stokes_v)) {
-                return false;
-            }
-            if (!get_partial_profiles(partial_profiles_i, stokes_i) || !get_partial_profiles(partial_profiles_q, stokes_q) ||
-                !get_partial_profiles(partial_profiles_u, stokes_u) || !get_partial_profiles(partial_profiles_v, stokes_v)) {
+            if (!get_partial_profiles(partial_profiles_i, "Iz") || !get_partial_profiles(partial_profiles_q, "Qz") ||
+                !get_partial_profiles(partial_profiles_u, "Uz") || !get_partial_profiles(partial_profiles_v, "Vz")) {
                 return false;
             }
             GetStokesPftotal(partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles_v, partial_profiles);
         } else if (stokes_index == COMPUTE_STOKES_PLINEAR) {
-            if (!_frames.at(file_id)->GetStokesTypeIndex("Qz", stokes_q) || !_frames.at(file_id)->GetStokesTypeIndex("Uz", stokes_u)) {
-                return false;
-            }
-            if (!get_partial_profiles(partial_profiles_q, stokes_q) || !get_partial_profiles(partial_profiles_u, stokes_u)) {
+            if (!get_partial_profiles(partial_profiles_q, "Qz") || !get_partial_profiles(partial_profiles_u, "Uz")) {
                 return false;
             }
             GetStokesPlinear(partial_profiles_q, partial_profiles_u, partial_profiles);
         } else if (stokes_index == COMPUTE_STOKES_PFLINEAR) {
-            if (!_frames.at(file_id)->GetStokesTypeIndex("Iz", stokes_i) || !_frames.at(file_id)->GetStokesTypeIndex("Qz", stokes_q) ||
-                !_frames.at(file_id)->GetStokesTypeIndex("Uz", stokes_u)) {
-                return false;
-            }
-            if (!get_partial_profiles(partial_profiles_i, stokes_i) || !get_partial_profiles(partial_profiles_q, stokes_q) ||
-                !get_partial_profiles(partial_profiles_u, stokes_u)) {
+            if (!get_partial_profiles(partial_profiles_i, "Iz") || !get_partial_profiles(partial_profiles_q, "Qz") ||
+                !get_partial_profiles(partial_profiles_u, "Uz")) {
                 return false;
             }
             GetStokesPflinear(partial_profiles_i, partial_profiles_q, partial_profiles_u, partial_profiles);
         } else if (stokes_index == COMPUTE_STOKES_PANGLE) {
-            if (!_frames.at(file_id)->GetStokesTypeIndex("Qz", stokes_q) || !_frames.at(file_id)->GetStokesTypeIndex("Uz", stokes_u)) {
-                return false;
-            }
-            if (!get_partial_profiles(partial_profiles_q, stokes_q) || !get_partial_profiles(partial_profiles_u, stokes_u)) {
+            if (!get_partial_profiles(partial_profiles_q, "Qz") || !get_partial_profiles(partial_profiles_u, "Uz")) {
                 return false;
             }
             GetStokesPangle(partial_profiles_q, partial_profiles_u, partial_profiles);
-        } else { // For stokes I, Q, U, or V
-            if (!get_partial_profiles(partial_profiles, stokes_index)) {
+        } else {
+            // For regular stokes I, Q, U, or V
+            std::pair<StokesSource, casacore::ImageRegion> stokes_src_vs_region;
+            bool per_z(true); // Get per-z stats data for region for all stats (for cache)
+
+            if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, stokes_src_vs_region, lc_region) ||
+                !_frames.at(file_id)->GetRegionStats(stokes_src_vs_region, _spectral_stats, per_z, partial_profiles)) {
                 return false;
             }
         }
