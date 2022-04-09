@@ -1331,7 +1331,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
-    if (ComputeStokes(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
+    if (ComputedStokes(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
         lc_region = nullptr;
     }
 

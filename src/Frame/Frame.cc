@@ -299,7 +299,7 @@ bool Frame::CheckZ(int z) {
 }
 
 bool Frame::CheckStokes(int stokes) {
-    return (((stokes >= 0) && (stokes < NumStokes())) || ComputeStokes(stokes));
+    return (((stokes >= 0) && (stokes < NumStokes())) || ComputedStokes(stokes));
 }
 
 bool Frame::ZStokesChanged(int z, int stokes) {
@@ -335,7 +335,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 // invalidate the image cache
                 InvalidateImageCache();
 
-                if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
+                if (!(_loader->UseTileCache() && _loader->HasMip(2)) || ComputedStokes(_stokes_index)) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
                 } else {
@@ -577,7 +577,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     std::vector<float> tile_data;
     bool loaded_data(0);
 
-    if (mip > 1 && !ComputeStokes(_stokes_index)) {
+    if (mip > 1 && !ComputedStokes(_stokes_index)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (!_image_cache_valid && _loader->UseTileCache()) {
@@ -1192,7 +1192,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             bool have_profile(false);
             bool downsample(mip >= 2);
 
-            if (downsample && _loader->HasMip(2) && !ComputeStokes(stokes)) { // Use a mipmap dataset to return downsampled data
+            if (downsample && _loader->HasMip(2) && !ComputedStokes(stokes)) { // Use a mipmap dataset to return downsampled data
                 while (!_loader->HasMip(mip)) {
                     mip /= 2;
                 }
@@ -1486,8 +1486,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
             std::vector<float> spectral_data;
             int xy_count(1);
-            if (!ComputeStokes(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
-                                              (start_cursor.y + 0.5), xy_count, _image_mutex)) {
+            if (!ComputedStokes(stokes) && _loader->GetCursorSpectralData(spectral_data, stokes, (start_cursor.x + 0.5), xy_count,
+                                               (start_cursor.y + 0.5), xy_count, _image_mutex)) {
                 // Use loader data
                 spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                 cb(profile_message);
@@ -2179,7 +2179,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
             CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
             if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
                 stokes_ok = true;
-            } else if (ComputeStokes(stokes_string)) {
+            } else if (ComputedStokes(stokes_string)) {
                 stokes_index = StokesStringTypes.at(stokes_string);
                 stokes_ok = true;
             } else {

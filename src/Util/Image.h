@@ -140,8 +140,8 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
-bool ComputeStokes(int stokes);
-bool ComputeStokes(const std::string& stokes_type);
+bool ComputedStokes(int stokes);
+bool ComputedStokes(const std::string& stokes_type);
 
 struct StokesSource {
     int stokes;
@@ -157,7 +157,7 @@ struct StokesSource {
         : stokes(stokes_), z_range(z_range_), x_range(x_range_), y_range(y_range_) {}
 
     bool UseDefaultImage() const {
-        return !ComputeStokes(stokes);
+        return !ComputedStokes(stokes);
     }
     bool operator==(const StokesSource& rhs) const {
         if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
