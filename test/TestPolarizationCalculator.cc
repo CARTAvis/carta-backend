@@ -353,25 +353,32 @@ public:
     }
 
     static void TestPointRegionProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
-        std::string stokes_config_y, std::string stokes_config_z) {
-        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        std::string stokes_config_y, std::string stokes_config_z, CARTA::FileType file_type = CARTA::FileType::HDF5) {
+        auto ref_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
+        std::string exp_file_path;
+        if (file_type == CARTA::FileType::HDF5) {
+            exp_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        } else {
+            exp_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        }
+
+        // Open a reference image
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        if (!OpenImage(image, fits_file_path)) {
-            spdlog::error("Can not open file: {}", fits_file_path);
+        if (!OpenImage(image, ref_file_path)) {
+            spdlog::error("Can not open file: {}", ref_file_path);
             return;
         }
 
         // Open a sample image through the Frame
-        if (!fs::exists(hdf5_file_path)) {
-            spdlog::error("File {} does not exist.", hdf5_file_path);
+        if (!fs::exists(exp_file_path)) {
+            spdlog::error("File {} does not exist.", exp_file_path);
             return;
         }
 
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<Frame>(file_id, loaders.Get(hdf5_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(exp_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
@@ -447,26 +454,33 @@ public:
         CmpVectors(spectral_profile_data_1, spectral_profile_data_2);
     }
 
-    static void TestRectangleRegionProfiles(int current_channel, int current_stokes, const std::string& stokes_config_z) {
-        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+    static void TestRectangleRegionProfiles(
+        int current_channel, int current_stokes, const std::string& stokes_config_z, CARTA::FileType file_type = CARTA::FileType::HDF5) {
+        auto ref_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+
+        std::string exp_file_path;
+        if (file_type == CARTA::FileType::HDF5) {
+            exp_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        } else {
+            exp_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        }
 
         // Open a reference image
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        if (!OpenImage(image, fits_file_path)) {
-            spdlog::error("Can not open file: {}", fits_file_path);
+        if (!OpenImage(image, ref_file_path)) {
+            spdlog::error("Can not open file: {}", ref_file_path);
             return;
         }
 
         // Open a sample image through the Frame
-        if (!fs::exists(hdf5_file_path)) {
-            spdlog::error("File {} does not exist.", hdf5_file_path);
+        if (!fs::exists(exp_file_path)) {
+            spdlog::error("File {} does not exist.", exp_file_path);
             return;
         }
 
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<Frame>(file_id, loaders.Get(hdf5_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(exp_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
