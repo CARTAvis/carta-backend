@@ -1718,7 +1718,7 @@ bool Frame::GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stoke
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region,
+bool Frame::GetRegionStats(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region,
     const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;

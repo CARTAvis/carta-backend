@@ -175,7 +175,7 @@ public:
     bool GetRegionData(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region, std::vector<float>& data);
     bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const std::pair<StokesSource, casacore::ImageRegion>& stokes_src_vs_region,
+    bool GetRegionStats(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region,
         const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer,
         std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
