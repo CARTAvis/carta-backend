@@ -49,23 +49,23 @@ public:
     ImageRef GetImage();
 
     // Return the opened casacore image or computed stokes image
-    ImageRef GetStokesImage(const StokesSource& stokes_source);
+    ImageRef GetStokesImage(const StokesSrc& stokes_src);
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
-    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSrc& stokes_src = StokesSrc());
     bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer);
+    bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSrc, casacore::Slicer>& stokes_slicer);
 
     // SubImage
-    bool GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_src_vs_slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_src_vs_region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const std::pair<StokesSrc, casacore::Slicer>& stokes_slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const std::pair<StokesSrc, casacore::LattRegionHolder>& stokes_region, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
@@ -119,7 +119,7 @@ protected:
 
     // Computed stokes image
     std::shared_ptr<casacore::ImageInterface<float>> _computed_stokes_image;
-    StokesSource _computed_stokes_source;
+    StokesSrc _stokes_src;
 
     // Save image properties; only reopen for data or beams
     // Axes, dimension values

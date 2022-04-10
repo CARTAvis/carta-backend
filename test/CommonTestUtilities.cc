@@ -7,6 +7,8 @@
 #include <functional>
 #include <stdexcept>
 
+#include <casacore/images/Images/FITSImage.h>
+#include <casacore/images/Images/PagedImage.h>
 #include <casacore/images/Images/SubImage.h>
 #include <lattices/Lattices/MaskedLatticeIterator.h>
 

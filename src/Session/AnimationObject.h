@@ -49,7 +49,7 @@ class AnimationObject {
     volatile int _file_open;
     volatile bool _waiting_flow_event;
     SessionContext _context;
-    std::vector<int> _stokes_indices;
+    std::vector<int> _stokes_indices; // stokes index order in the animation
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,

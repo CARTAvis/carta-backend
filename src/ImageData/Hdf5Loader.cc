@@ -475,8 +475,8 @@ bool Hdf5Loader::GetChunk(
     data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
     data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
 
-    StokesSource stokes_source(stokes, AxisRange(z), AxisRange(min_x, min_x + data_width - 1), AxisRange(min_y, min_y + data_height - 1));
-    if (!stokes_source.UseDefaultImage()) { // reset the start position of the slicer as 0 for the computed stokes image
+    StokesSrc stokes_src(stokes, AxisRange(z), AxisRange(min_x, min_x + data_width - 1), AxisRange(min_y, min_y + data_height - 1));
+    if (!stokes_src.OriginalImage()) { // Reset the start position of the slicer as 0 for the computed stokes image
         stokes = 0;
         z = 0;
         min_x = 0;
@@ -497,7 +497,7 @@ bool Hdf5Loader::GetChunk(
 
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        GetSlice(tmp, std::make_pair(stokes_source, slicer));
+        GetSlice(tmp, std::make_pair(stokes_src, slicer));
         data_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;

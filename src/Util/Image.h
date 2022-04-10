@@ -143,29 +143,34 @@ CARTA::PolarizationType GetStokesType(int stokes_value);
 bool ComputedStokes(int stokes);
 bool ComputedStokes(const std::string& stokes_type);
 
-struct StokesSource {
+// The struct StokesSrc is used to tell the file loader to get the original image interface, or get the computed stokes image interface.
+// The x, y, and z ranges from the StokesSrc indicate the range of image data to be calculated (for the new stokes type image).
+// We usually don't want to calculate the whole image data, because it spends a lot of time.
+// StokesSrc will bind casacore::Slicer or casacore::ImageRegion, because the coordinate of a computed stokes image is different from
+// the original image coordinate.
+struct StokesSrc {
     int stokes;
     AxisRange z_range;
     AxisRange x_range;
     AxisRange y_range;
 
-    StokesSource() : stokes(-1), z_range(AxisRange(ALL_Z)), x_range(AxisRange(ALL_X)), y_range(AxisRange(ALL_Y)) {}
+    StokesSrc() : stokes(-1), z_range(AxisRange(ALL_Z)), x_range(AxisRange(ALL_X)), y_range(AxisRange(ALL_Y)) {}
 
-    StokesSource(int stokes_, AxisRange z_range_) : stokes(stokes_), z_range(z_range_), x_range(ALL_X), y_range(ALL_Y) {}
+    StokesSrc(int stokes_, AxisRange z_range_) : stokes(stokes_), z_range(z_range_), x_range(ALL_X), y_range(ALL_Y) {}
 
-    StokesSource(int stokes_, AxisRange z_range_, AxisRange x_range_, AxisRange y_range_)
+    StokesSrc(int stokes_, AxisRange z_range_, AxisRange x_range_, AxisRange y_range_)
         : stokes(stokes_), z_range(z_range_), x_range(x_range_), y_range(y_range_) {}
 
-    bool UseDefaultImage() const {
+    bool OriginalImage() const {
         return !ComputedStokes(stokes);
     }
-    bool operator==(const StokesSource& rhs) const {
+    bool operator==(const StokesSrc& rhs) const {
         if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
             return false;
         }
         return true;
     }
-    bool operator!=(const StokesSource& rhs) const {
+    bool operator!=(const StokesSrc& rhs) const {
         if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
             return true;
         }

@@ -703,46 +703,46 @@ public:
 };
 
 TEST_F(PolarizationCalculatorTest, TestStokesSource) {
-    StokesSource stokes_source_1(0, AxisRange(0));
-    StokesSource stokes_source_2(1, AxisRange(0));
-    StokesSource stokes_source_3(0, AxisRange(1));
-    StokesSource stokes_source_4(0, AxisRange(0));
+    StokesSrc stokes_src_1(0, AxisRange(0));
+    StokesSrc stokes_src_2(1, AxisRange(0));
+    StokesSrc stokes_src_3(0, AxisRange(1));
+    StokesSrc stokes_src_4(0, AxisRange(0));
 
-    StokesSource stokes_source_5(0, AxisRange(0, 10));
-    StokesSource stokes_source_6(0, AxisRange(0, 10));
-    StokesSource stokes_source_7(1, AxisRange(0, 10));
-    StokesSource stokes_source_8(1, AxisRange(0, 5));
+    StokesSrc stokes_src_5(0, AxisRange(0, 10));
+    StokesSrc stokes_src_6(0, AxisRange(0, 10));
+    StokesSrc stokes_src_7(1, AxisRange(0, 10));
+    StokesSrc stokes_src_8(1, AxisRange(0, 5));
 
-    EXPECT_TRUE(stokes_source_1 != stokes_source_2);
-    EXPECT_TRUE(stokes_source_1 != stokes_source_3);
-    EXPECT_TRUE(stokes_source_1 == stokes_source_4);
+    EXPECT_TRUE(stokes_src_1 != stokes_src_2);
+    EXPECT_TRUE(stokes_src_1 != stokes_src_3);
+    EXPECT_TRUE(stokes_src_1 == stokes_src_4);
 
-    EXPECT_TRUE(stokes_source_1 != stokes_source_5);
-    EXPECT_TRUE(stokes_source_5 == stokes_source_6);
-    EXPECT_TRUE(stokes_source_6 != stokes_source_7);
-    EXPECT_TRUE(stokes_source_7 != stokes_source_8);
+    EXPECT_TRUE(stokes_src_1 != stokes_src_5);
+    EXPECT_TRUE(stokes_src_5 == stokes_src_6);
+    EXPECT_TRUE(stokes_src_6 != stokes_src_7);
+    EXPECT_TRUE(stokes_src_7 != stokes_src_8);
 
-    StokesSource stokes_source_9 = stokes_source_8;
+    StokesSrc stokes_src_9 = stokes_src_8;
 
-    EXPECT_TRUE(stokes_source_9 == stokes_source_8);
-    EXPECT_TRUE(stokes_source_9 != stokes_source_7);
+    EXPECT_TRUE(stokes_src_9 == stokes_src_8);
+    EXPECT_TRUE(stokes_src_9 != stokes_src_7);
 
-    StokesSource stokes_source_10 = StokesSource();
-    StokesSource stokes_source_11 = stokes_source_10;
+    StokesSrc stokes_src_10 = StokesSrc();
+    StokesSrc stokes_src_11 = stokes_src_10;
 
-    EXPECT_TRUE(stokes_source_10.UseDefaultImage());
-    EXPECT_TRUE(stokes_source_10 != stokes_source_1);
-    EXPECT_TRUE(stokes_source_10 == stokes_source_11);
+    EXPECT_TRUE(stokes_src_10.OriginalImage());
+    EXPECT_TRUE(stokes_src_10 != stokes_src_1);
+    EXPECT_TRUE(stokes_src_10 == stokes_src_11);
 
-    StokesSource stokes_source_12(0, AxisRange(0), AxisRange(0), AxisRange(0));
-    StokesSource stokes_source_13(1, AxisRange(0), AxisRange(1), AxisRange(0));
-    StokesSource stokes_source_14(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
-    StokesSource stokes_source_15(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
+    StokesSrc stokes_src_12(0, AxisRange(0), AxisRange(0), AxisRange(0));
+    StokesSrc stokes_src_13(1, AxisRange(0), AxisRange(1), AxisRange(0));
+    StokesSrc stokes_src_14(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
+    StokesSrc stokes_src_15(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
 
-    EXPECT_TRUE(stokes_source_12 != stokes_source_13);
-    EXPECT_TRUE(stokes_source_12 != stokes_source_14);
-    EXPECT_TRUE(stokes_source_13 != stokes_source_14);
-    EXPECT_TRUE(stokes_source_14 == stokes_source_15);
+    EXPECT_TRUE(stokes_src_12 != stokes_src_13);
+    EXPECT_TRUE(stokes_src_12 != stokes_src_14);
+    EXPECT_TRUE(stokes_src_13 != stokes_src_14);
+    EXPECT_TRUE(stokes_src_14 == stokes_src_15);
 }
 
 TEST_F(PolarizationCalculatorTest, TestFrameImageCache) {
