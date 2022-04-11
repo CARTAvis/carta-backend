@@ -256,6 +256,7 @@ bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const st
                 image_ok = true;
                 break;
             default:
+                spdlog::error("Unsupported file type: {}", image_types);
                 break;
         }
     } catch (const casacore::AipsError& x) {
@@ -340,32 +341,24 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
 
     for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
         casacore::Array<float> cursor_data = lattice_iter.cursor();
-
         if (image->isMasked()) {
-            casacore::Array<float> masked_data(cursor_data); // reference the same storage
+            casacore::Array<float> masked_data(cursor_data);
             const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
-
-            // Apply cursor mask to cursor data: set masked values to NaN. booleans are used to delete copy of data if necessary
             bool del_mask_ptr;
             const bool* cursor_mask_ptr = cursor_mask.getStorage(del_mask_ptr);
-
             bool del_data_ptr;
             float* masked_data_ptr = masked_data.getStorage(del_data_ptr);
-
             for (size_t i = 0; i < cursor_data.nelements(); ++i) {
                 if (!cursor_mask_ptr[i]) {
                     masked_data_ptr[i] = NAN;
                 }
             }
-
-            // free storage for cursor arrays
             cursor_mask.freeStorage(cursor_mask_ptr, del_mask_ptr);
             masked_data.putStorage(masked_data_ptr, del_data_ptr);
         }
-
         casacore::IPosition cursor_shape(lattice_iter.cursorShape());
         casacore::IPosition cursor_position(lattice_iter.position());
-        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
+        casacore::Slicer cursor_slicer(cursor_position, cursor_shape);
         tmp(cursor_slicer) = cursor_data;
     }
 }
