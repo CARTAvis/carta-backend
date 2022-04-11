@@ -35,14 +35,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _valid(true),
       _loader(loader),
       _tile_cache(0),
-      _x_axis(0),
-      _y_axis(1),
-      _z_axis(-1),
-      _stokes_axis(-1),
       _z_index(default_z),
       _stokes_index(DEFAULT_STOKES),
-      _depth(1),
-      _num_stokes(1),
       _image_cache_valid(false),
       _moment_generator(nullptr) {
     // Initialize for operator==
@@ -66,22 +60,12 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _z_axis, _stokes_axis, log_message)) {
+    if (!_loader->GetCoordinateAxes(_coord_axes, log_message)) {
         _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
-
-    // Determine which axes are rendered, e.g. for pV images
-    std::vector<int> render_axes = _loader->GetRenderAxes();
-    _x_axis = render_axes[0];
-    _y_axis = render_axes[1];
-
-    _width = _image_shape(_x_axis);
-    _height = _image_shape(_y_axis);
-    _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
-    _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
@@ -92,10 +76,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // reset the tile cache if the loader will use it
     if (_loader->UseTileCache()) {
-        int tiles_x = (_width - 1) / TILE_SIZE + 1;
-        int tiles_y = (_height - 1) / TILE_SIZE + 1;
+        int tiles_x = (_coord_axes.width - 1) / TILE_SIZE + 1;
+        int tiles_y = (_coord_axes.height - 1) / TILE_SIZE + 1;
         int tile_cache_capacity = std::min(MAX_TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
-        _tile_cache.Reset(_z_index, _stokes_index, tile_cache_capacity);
+        _tile_cache.Reset(_coord_axes.z_axis, _stokes_index, tile_cache_capacity);
     }
 
     // set default histogram requirements
@@ -143,17 +127,17 @@ std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem() {
 casacore::IPosition Frame::ImageShape() {
     casacore::IPosition ipos;
     if (IsValid()) {
-        ipos = _image_shape;
+        ipos = _coord_axes.image_shape;
     }
     return ipos;
 }
 
 size_t Frame::Depth() {
-    return _depth;
+    return _coord_axes.depth;
 }
 
 size_t Frame::NumStokes() {
-    return _num_stokes;
+    return _coord_axes.num_stokes;
 }
 
 int Frame::CurrentZ() {
@@ -165,11 +149,11 @@ int Frame::CurrentStokes() {
 }
 
 int Frame::SpectralAxis() {
-    return _spectral_axis;
+    return _coord_axes.spectral_axis;
 }
 
 int Frame::StokesAxis() {
-    return _stokes_axis;
+    return _coord_axes.stokes_axis;
 }
 
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
@@ -191,13 +175,14 @@ casacore::Slicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
 casacore::Slicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
     // Slicer to apply z range and stokes to image shape
     // Start with entire image
-    casacore::IPosition start(_image_shape.size());
+    casacore::IPosition start(_coord_axes.image_shape.size());
     start = 0;
-    casacore::IPosition end(_image_shape);
+    casacore::IPosition end(_coord_axes.image_shape);
     end -= 1; // last position, not length
 
     // Slice x axis
-    if (_x_axis >= 0) {
+    int x_axis(_coord_axes.xy_axes[0]);
+    if (x_axis >= 0) {
         int start_x(x_range.from), end_x(x_range.to);
 
         // Normalize x constants
@@ -205,15 +190,16 @@ casacore::Slicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange
             start_x = 0;
         }
         if (end_x == ALL_X) {
-            end_x = _width - 1;
+            end_x = _coord_axes.width - 1;
         }
 
-        start(_x_axis) = start_x;
-        end(_x_axis) = end_x;
+        start(x_axis) = start_x;
+        end(x_axis) = end_x;
     }
 
     // Slice y axis
-    if (_y_axis >= 0) {
+    int y_axis(_coord_axes.xy_axes[1]);
+    if (y_axis >= 0) {
         int start_y(y_range.from), end_y(y_range.to);
 
         // Normalize y constants
@@ -221,15 +207,16 @@ casacore::Slicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange
             start_y = 0;
         }
         if (end_y == ALL_Y) {
-            end_y = _height - 1;
+            end_y = _coord_axes.height - 1;
         }
 
-        start(_y_axis) = start_y;
-        end(_y_axis) = end_y;
+        start(y_axis) = start_y;
+        end(y_axis) = end_y;
     }
 
     // Slice z axis
-    if (_z_axis >= 0) {
+    int z_axis(_coord_axes.z_axis);
+    if (z_axis >= 0) {
         int start_z(z_range.from), end_z(z_range.to);
 
         // Normalize z constants
@@ -244,17 +231,18 @@ casacore::Slicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange
             end_z = CurrentZ();
         }
 
-        start(_z_axis) = start_z;
-        end(_z_axis) = end_z;
+        start(z_axis) = start_z;
+        end(z_axis) = end_z;
     }
 
     // Slice stokes axis
-    if (_stokes_axis >= 0) {
+    int stokes_axis(_coord_axes.stokes_axis);
+    if (stokes_axis >= 0) {
         // Normalize stokes constant
         stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
 
-        start(_stokes_axis) = stokes;
-        end(_stokes_axis) = stokes;
+        start(stokes_axis) = stokes;
+        end(stokes_axis) = stokes;
     }
 
     // slicer for image data
@@ -353,8 +341,8 @@ bool Frame::FillImageCache() {
     auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
     auto dt_set_image_cache =
         std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt_set_image_cache * 1e-3,
-        (float)(_width * _height) / dt_set_image_cache);
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _coord_axes.width, _coord_axes.height,
+        dt_set_image_cache * 1e-3, (float)(_coord_axes.width * _coord_axes.height) / dt_set_image_cache);
 
     _image_cache_valid = true;
     return true;
@@ -391,7 +379,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if ((req_height < 0) || (req_width < 0)) {
         return false;
     }
-    if ((_height < (y + req_height)) || (_width < (x + req_width))) {
+    if ((_coord_axes.height < (y + req_height)) || (_coord_axes.width < (x + req_width))) {
         return false;
     }
     // check mip; cannot divide by zero
@@ -403,8 +391,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t num_rows_region = std::ceil((float)req_height / mip);
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
-    int num_image_columns = _width;
-    int num_image_rows = _height;
+    int num_image_columns = _coord_axes.width;
+    int num_image_rows = _coord_axes.height;
 
     // read lock imageCache
     bool write_lock(false);
@@ -525,15 +513,15 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 }
 
 bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height) {
-    int mip = Tile::LayerToMip(tile.layer, _width, _height, TILE_SIZE, TILE_SIZE);
+    int mip = Tile::LayerToMip(tile.layer, _coord_axes.width, _coord_axes.height, TILE_SIZE, TILE_SIZE);
     int tile_size_original = TILE_SIZE * mip;
 
     // crop to image size
     CARTA::ImageBounds bounds;
     bounds.set_x_min(std::max(0, tile.x * tile_size_original));
-    bounds.set_x_max(std::min((int)_width, (tile.x + 1) * tile_size_original));
+    bounds.set_x_max(std::min((int)_coord_axes.width, (tile.x + 1) * tile_size_original));
     bounds.set_y_min(std::max(0, tile.y * tile_size_original));
-    bounds.set_y_max(std::min((int)_height, (tile.y + 1) * tile_size_original));
+    bounds.set_y_max(std::min((int)_coord_axes.height, (tile.y + 1) * tile_size_original));
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();
@@ -593,18 +581,18 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_cache.get(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-            _contour_settings.chunk_size, partial_contour_callback);
+        TraceContours(_image_cache.get(), _coord_axes.width, _coord_axes.height, scale, offset, _contour_settings.levels, vertex_data,
+            index_data, _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
         int mask_size = (_contour_settings.smoothing_factor - 1) * 2 + 1;
         int64_t kernel_width = (mask_size - 1) / 2;
 
-        int64_t source_width = _width;
-        int64_t source_height = _height;
-        int64_t dest_width = _width - (2 * kernel_width);
-        int64_t dest_height = _height - (2 * kernel_width);
+        int64_t source_width = _coord_axes.width;
+        int64_t source_height = _coord_axes.height;
+        int64_t dest_width = _coord_axes.width - (2 * kernel_width);
+        int64_t dest_height = _coord_axes.height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
         smooth_successful = GaussianSmooth(
             _image_cache.get(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
@@ -622,8 +610,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         CARTA::ImageBounds image_bounds;
         image_bounds.set_x_min(0);
         image_bounds.set_y_min(0);
-        image_bounds.set_x_max(_width);
-        image_bounds.set_y_max(_height);
+        image_bounds.set_x_max(_coord_axes.width);
+        image_bounds.set_y_max(_coord_axes.height);
 
         std::vector<float> dest_vector;
         smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
@@ -756,7 +744,7 @@ bool Frame::FillRegionHistogramData(
 }
 
 int Frame::AutoBinSize() {
-    return int(std::max(sqrt(_width * _height), 2.0));
+    return int(std::max(sqrt(_coord_axes.width * _coord_axes.height), 2.0));
 }
 
 bool Frame::FillHistogramFromCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram) {
@@ -1046,7 +1034,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     // Send even if no requirements, to update value of data at cursor/point region
 
     // frontend does not set cursor/point region outside of image, but just in case:
-    if (!point.InImage(_width, _height)) {
+    if (!point.InImage(_coord_axes.width, _coord_axes.height)) {
         return false;
     }
 
@@ -1068,13 +1056,13 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (_image_cache_valid) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        cursor_value_with_current_stokes = _image_cache[(y * _width) + x];
+        cursor_value_with_current_stokes = _image_cache[(y * _coord_axes.width) + x];
         cache_lock.release();
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
         auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
-        auto tile_width = tile_size(tile_x, _width);
+        auto tile_width = tile_size(tile_x, _coord_axes.width);
         cursor_value_with_current_stokes = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
     }
 
@@ -1143,7 +1131,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
             int mip(config.mip());
 
             if (!end) {
-                end = config.coordinate().back() == 'x' ? _width : _height;
+                end = config.coordinate().back() == 'x' ? _coord_axes.width : _coord_axes.height;
             }
 
             int requested_start(start);
@@ -1188,7 +1176,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     // These values will be used to fetch the data to decimate
                     start = decimated_start * mip;
                     end = decimated_end * mip;
-                    end = config.coordinate().back() == 'x' ? std::min(end, _width) : std::min(end, _height);
+                    end = config.coordinate().back() == 'x' ? std::min(end, _coord_axes.width) : std::min(end, _coord_axes.height);
                 }
 
                 if (is_current_stokes) {
@@ -1206,8 +1194,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                                     return have_profile;
                                 }
                                 auto tile = _tile_cache.Get(key, _loader, _image_mutex);
-                                auto tile_width = tile_size(tile_x, _width);
-                                auto tile_height = tile_size(tile_y, _height);
+                                auto tile_width = tile_size(tile_x, _coord_axes.width);
+                                auto tile_height = tile_size(tile_y, _coord_axes.height);
 
                                 // copy contiguous row
                                 auto y_offset = tile->begin() + tile_width * (y - tile_y);
@@ -1230,8 +1218,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                                     return have_profile;
                                 }
                                 auto tile = _tile_cache.Get(key, _loader, _image_mutex);
-                                auto tile_width = tile_size(tile_x, _width);
-                                auto tile_height = tile_size(tile_y, _height);
+                                auto tile_width = tile_size(tile_x, _coord_axes.width);
+                                auto tile_height = tile_size(tile_y, _coord_axes.height);
 
                                 // copy non-contiguous column
 
@@ -1249,7 +1237,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                         profile.reserve(end - start);
 
                         if (config.coordinate().back() == 'x') {
-                            auto x_start = y * _width;
+                            auto x_start = y * _coord_axes.width;
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = x_start + j;
@@ -1259,7 +1247,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                auto idx = (j * _width) + x;
+                                auto idx = (j * _coord_axes.width) + x;
                                 profile.push_back(_image_cache[idx]);
                             }
                             cache_lock.release();
@@ -1397,7 +1385,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     }
 
     // No z axis
-    if (_z_axis < 0) {
+    if (_coord_axes.z_axis < 0) {
         return false;
     }
 
@@ -1442,7 +1430,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         spectral_profile->set_stats_type(config.all_stats[0]);
 
         // Send spectral profile data if cursor inside image
-        if (start_cursor.InImage(_width, _height)) {
+        if (start_cursor.InImage(_coord_axes.width, _coord_axes.height)) {
             int stokes;
             if (!GetStokesTypeIndex(coordinate, stokes)) {
                 continue;
@@ -1458,16 +1446,17 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             } else {
                 // Send image slices
                 // Set up slicer
+                int z_axis(_coord_axes.z_axis);
                 int x_index, y_index;
                 start_cursor.ToIndex(x_index, y_index);
-                casacore::IPosition start(_image_shape.size());
+                casacore::IPosition start(_coord_axes.image_shape.size());
                 start(0) = x_index;
                 start(1) = y_index;
-                start(_z_axis) = 0;
-                if (_stokes_axis >= 0) {
-                    start(_stokes_axis) = stokes;
+                start(z_axis) = 0;
+                if (_coord_axes.stokes_axis >= 0) {
+                    start(_coord_axes.stokes_axis) = stokes;
                 }
-                casacore::IPosition count(_image_shape.size(), 1); // will adjust count for z axis
+                casacore::IPosition count(_coord_axes.image_shape.size(), 1); // will adjust count for z axis
 
                 // Send incremental spectral profile when reach delta z or delta time
                 size_t delta_z = INIT_DELTA_Z;                         // the increment of channels for each slice (to be adjusted)
@@ -1484,8 +1473,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     auto t_start_slice = std::chrono::high_resolution_clock::now();
 
                     // Slice image to get next delta_z (not to exceed depth in image)
-                    size_t nz = (start(_z_axis) + delta_z < profile_size ? delta_z : profile_size - start(_z_axis));
-                    count(_z_axis) = nz;
+                    size_t nz = (start(z_axis) + delta_z < profile_size ? delta_z : profile_size - start(z_axis));
+                    count(_coord_axes.z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
                     std::unique_ptr<float[]> buffer(new float[N]);
@@ -1493,10 +1482,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         return false;
                     }
                     // copy buffer to spectral_data
-                    memcpy(&spectral_data[start(_z_axis)], buffer.get(), nz * sizeof(float));
+                    memcpy(&spectral_data[start(z_axis)], buffer.get(), nz * sizeof(float));
                     // update start z and determine progress
-                    start(_z_axis) += nz;
-                    progress = (float)start(_z_axis) / profile_size;
+                    start(z_axis) += nz;
+                    progress = (float)start(z_axis) / profile_size;
 
                     // get the time elapse for this slice
                     auto t_end_slice = std::chrono::high_resolution_clock::now();
@@ -1731,8 +1720,8 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
 
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
-        _moment_generator->CalculateMoments(
-            file_id, image_region, _z_axis, _stokes_axis, progress_callback, moment_request, moment_response, collapse_results);
+        _moment_generator->CalculateMoments(file_id, image_region, _coord_axes.z_axis, _coord_axes.stokes_axis, progress_callback,
+            moment_request, moment_response, collapse_results);
         ulock.unlock();
     }
 
@@ -1929,7 +1918,7 @@ bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs
     bool optical_velocity;
     bool prefer_wavelength;
     bool air_wavelength;
-    GetSpectralCoordPreferences(&image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
+    GetSpectralCoordSettings(&image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
 
     casacore::String error_string;
     casacore::String origin_string;
@@ -1960,7 +1949,7 @@ void Frame::ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& 
     auto image_shape = ImageShape();
 
     // Default for channels
-    int channels_max = _z_axis > -1 ? image_shape[_z_axis] : 1;
+    int channels_max = _coord_axes.z_axis > -1 ? image_shape[_coord_axes.z_axis] : 1;
     int channels_start = 0;
     int channels_stride = 1;
     int channels_end = channels_max - 1;
@@ -1972,7 +1961,7 @@ void Frame::ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& 
     }
 
     // Default for stokes
-    int stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
+    int stokes_max = _coord_axes.stokes_axis > -1 ? image_shape[_coord_axes.stokes_axis] : 1;
     int stokes_start = 0;
     int stokes_stride = 1;
     int stokes_end = stokes_max - 1;
@@ -2008,7 +1997,7 @@ casacore::Slicer Frame::GetExportImageSlicer(const CARTA::SaveFile& save_file_ms
     switch (image_shape.size()) {
         // 3 dimensional cube image
         case 3:
-            if (_z_axis == 2) {
+            if (_coord_axes.z_axis == 2) {
                 // Channels present
                 start = casacore::IPosition(3, 0, 0, channels[0]);
                 end = casacore::IPosition(3, image_shape[0] - 1, image_shape[1] - 1, channels[1]);
@@ -2022,7 +2011,7 @@ casacore::Slicer Frame::GetExportImageSlicer(const CARTA::SaveFile& save_file_ms
             break;
         // 4 dimensional cube image
         case 4:
-            if (_z_axis == 2) {
+            if (_coord_axes.z_axis == 2) {
                 // Channels present before stokes
                 start = casacore::IPosition(4, 0, 0, channels[0], stokes[0]);
                 end = casacore::IPosition(4, image_shape[0] - 1, image_shape[1] - 1, channels[1], stokes[1]);
@@ -2060,7 +2049,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
     switch (image_shape.size()) {
         // 3 dimensional cube image
         case 3:
-            if (_z_axis == 2) {
+            if (_coord_axes.z_axis == 2) {
                 // Channels present
                 start = casacore::IPosition(3, 0, 0, channels[0]);
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, channels[1]);
@@ -2086,7 +2075,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
             break;
         // 4 dimensional cube image
         case 4:
-            if (_z_axis == 2) {
+            if (_coord_axes.z_axis == 2) {
                 // Channels present before stokes
                 start = casacore::IPosition(4, 0, 0, channels[0], stokes[0]);
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, channels[1], stokes[1]);

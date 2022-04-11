@@ -264,7 +264,7 @@ protected:
 
     // File info for open generated image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-        const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader);
+        const std::string& filename, std::string& message);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);

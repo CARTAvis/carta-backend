@@ -15,6 +15,7 @@
 #include <casacore/coordinates/Coordinates/FITSCoordinateUtil.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
+#include <casacore/images/Images/ImageOpener.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/Stokes.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
@@ -63,6 +64,14 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
 CartaFitsImage::~CartaFitsImage() {
     CloseFile();
     delete _pixel_mask;
+}
+
+casacore::LatticeBase* CartaFitsImage::OpenCartaFitsImage(const casacore::String& name, const casacore::MaskSpecifier& spec) {
+    return new CartaFitsImage(name, 0);
+}
+
+void CartaFitsImage::RegisterOpenFunction() {
+    casacore::ImageOpener::registerOpenImageFunction(casacore::ImageOpener::FITS, &OpenCartaFitsImage);
 }
 
 // Image interface

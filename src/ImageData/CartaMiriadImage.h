@@ -23,6 +23,12 @@ public:
     CartaMiriadImage(const CartaMiriadImage& other);
     ~CartaMiriadImage();
 
+    // Function to open a CARTA MIRIAD image
+    static casacore::LatticeBase* OpenCartaMiriadImage(const casacore::String& name, const casacore::MaskSpecifier& spec);
+
+    // Register the open function in casacore::ImageOpener
+    static void RegisterOpenFunction();
+
     inline casacore::SpectralCoordinate::SpecType NativeType() {
         return _native_type;
     }

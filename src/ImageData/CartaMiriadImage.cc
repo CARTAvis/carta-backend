@@ -9,6 +9,7 @@
 #include "CartaMiriadImage.h"
 
 #include <casacore/casa/OS/Path.h>
+#include <casacore/images/Images/ImageOpener.h>
 #include <casacore/mirlib/maxdimc.h>
 #include <casacore/mirlib/miriad.h>
 
@@ -37,6 +38,14 @@ CartaMiriadImage::~CartaMiriadImage() {
     if (_pixel_mask != nullptr) {
         delete _pixel_mask;
     }
+}
+
+casacore::LatticeBase* CartaMiriadImage::OpenCartaMiriadImage(const casacore::String& name, const casacore::MaskSpecifier& spec) {
+    return new CartaMiriadImage(name, spec);
+}
+
+void CartaMiriadImage::RegisterOpenFunction() {
+    casacore::ImageOpener::registerOpenImageFunction(casacore::ImageOpener::MIRIAD, &OpenCartaMiriadImage);
 }
 
 void CartaMiriadImage::SetUp() {

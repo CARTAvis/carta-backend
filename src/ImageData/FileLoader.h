@@ -17,6 +17,7 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "ImageData/FileInfo.h"
+#include "Util/Casacore.h"
 
 namespace carta {
 
@@ -53,8 +54,7 @@ public:
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
-    bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
-    std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
+    bool GetCoordinateAxes(CoordinateAxes& coord_axes, std::string& message);
 
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
@@ -90,9 +90,6 @@ public:
     std::string GetFileName();
 
     // Handle stokes type index
-    virtual void SetStokesCrval(float stokes_crval);
-    virtual void SetStokesCrpix(float stokes_crpix);
-    virtual void SetStokesCdelt(int stokes_cdelt);
     virtual bool GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index);
     std::unordered_map<CARTA::PolarizationType, int> GetStokesIndices() {
         return _stokes_indices;
@@ -113,16 +110,11 @@ protected:
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
-    // Save image properties; only reopen for data or beams
-    // Axes, dimension values
-    casacore::IPosition _image_shape;
-    size_t _num_dims, _image_plane_size;
-    size_t _width, _height, _depth, _num_stokes;
-    int _z_axis, _stokes_axis;
-    std::vector<int> _render_axes;
-    // Coordinate system
+    // Image properties; only reopen image for data or beams
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
-    // Pixel mask
+    casacore::IPosition _image_shape;
+    CoordinateAxes _coord_axes;
+    size_t _num_dims, _image_plane_size;
     bool _has_pixel_mask;
 
     // Storage for z-plane and cube statistics
@@ -131,9 +123,6 @@ protected:
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;
-    float _stokes_crval;
-    float _stokes_crpix;
-    int _stokes_cdelt;
 
     // Return the shape of the specified stats dataset
     virtual const casacore::IPosition GetStatsDataShape(FileInfo::Data ds);
