@@ -2187,7 +2187,7 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
 bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback) {
     int mip = _vector_field_settings.smoothing_factor;
     bool fractional = _vector_field_settings.fractional;
-    double threshold = _vector_field_settings.threshold;
+    float threshold = (float)_vector_field_settings.threshold;
     CARTA::CompressionType compression_type = _vector_field_settings.compression_type;
     float compression_quality = _vector_field_settings.compression_quality;
 
@@ -2237,6 +2237,14 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             int down_sampled_width, down_sampled_height;
             if (!GetDownSampledRasterData(down_sampled_data, down_sampled_width, down_sampled_height, channel, -1, bounds, mip)) {
                 return false;
+            }
+            // Apply a threshold cut
+            if (!std::isnan(threshold)) {
+                for (auto& value : down_sampled_data) {
+                    if (!std::isnan(value) && (value <= threshold)) {
+                        value = std::numeric_limits<float>::quiet_NaN();
+                    }
+                }
             }
             if (calculate_stokes_angle) {
                 // Fill PA tiles protobuf data
@@ -2292,7 +2300,11 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
                 if (fractional) {
                     return result;
                 } else {
-                    if (result > threshold) {
+                    if (!std::isnan(threshold)) {
+                        if (result > threshold) {
+                            return result;
+                        }
+                    } else {
                         return result;
                     }
                 }
@@ -2303,7 +2315,11 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         auto calc_fpi = [&](float i, float pi) {
             if (!std::isnan(i) && !isnan(pi)) {
                 float result = (pi / i);
-                if (result > threshold) {
+                if (!std::isnan(threshold)) {
+                    if (result > threshold) {
+                        return result;
+                    }
+                } else {
                     return result;
                 }
             }

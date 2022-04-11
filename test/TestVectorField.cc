@@ -1295,7 +1295,7 @@ public:
     }
 
     static void TestImageWithNoStokesAxis(std::string image_shape, std::string image_opts, const CARTA::FileType& file_type, int mip,
-        int stokes_intensity, int stokes_angle) {
+        int stokes_intensity, int stokes_angle, double threshold = std::numeric_limits<double>::quiet_NaN()) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
@@ -1310,8 +1310,24 @@ public:
         int channel = 0;
         int down_sampled_width;
         int down_sampled_height;
-        std::vector<float> pa;
-        GetDownSampledPixels(file_path_string, file_type, channel, mip, down_sampled_width, down_sampled_height, pa);
+        std::vector<float> pixels;
+        GetDownSampledPixels(file_path_string, file_type, channel, mip, down_sampled_width, down_sampled_height, pixels);
+
+        // Apply a threshold cut
+        if (!std::isnan(threshold)) {
+            for (auto& pixel : pixels) {
+                if (!std::isnan(pixel) && (pixel <= threshold)) {
+                    pixel = std::numeric_limits<float>::quiet_NaN();
+                }
+            }
+        }
+
+        // Check the threshold cut results
+        for (auto pixel : pixels) {
+            if (!std::isnan(pixel) && !std::isnan(threshold)) {
+                EXPECT_GT(pixel, threshold);
+            }
+        }
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with by the Session
@@ -1334,7 +1350,7 @@ public:
 
         // Set the protobuf message
         auto set_vector_field_params = Message::SetVectorOverlayParameters(
-            0, mip, false, false, 0, 0, 0, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, false, false, 0, 0, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         dummy_backend->Receive(set_vector_field_params);
 
@@ -1377,17 +1393,17 @@ public:
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
             if (stokes_intensity > -1) {
-                CmpVectors(pa, pi, 1e-6);
+                CmpVectors(pixels, pi, 1e-6);
             }
             if (stokes_angle > -1) {
-                CmpVectors(pa, pa2, 1e-6);
+                CmpVectors(pixels, pa2, 1e-6);
             }
         } else {
             if (stokes_intensity > -1) {
-                CmpVectors(pa, pi);
+                CmpVectors(pixels, pi);
             }
             if (stokes_angle > -1) {
-                CmpVectors(pa, pa2);
+                CmpVectors(pixels, pa2);
             }
         }
         CheckProgresses(progresses);
@@ -1559,12 +1575,20 @@ TEST_F(VectorFieldTest, TestZFPCompression) {
 TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     CARTA::FileType file_type = CARTA::FileType::FITS;
     int mip = 4;
+    double threshold = 0.0;
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, -1, 0);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, -1, 0);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
+
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, -1, 0, threshold);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, -1, threshold);
+    TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, 0, threshold);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, -1, 0, threshold);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, -1, threshold);
+    TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, 0, threshold);
 }
 
 TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
