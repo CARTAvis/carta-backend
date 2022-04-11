@@ -496,6 +496,18 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
 
         if (info_loaded) {
+            // Check for complex image - open with LEL expression for amplitude instead
+            for (int i = 0; i < file_info_extended.computed_entries_size(); ++i) {
+                if ((file_info_extended.computed_entries(i).name() == "Data type") &&
+                    (file_info_extended.computed_entries(i).value() == "Complex")) {
+                    // User opened complex image from command line or with double-click
+                    std::string expression = "AMPLITUDE(" + filename + ")";
+                    bool is_lel_expr(true);
+                    auto open_file_message = Message::OpenFile(directory, expression, hdu, file_id, message.render_mode(), is_lel_expr);
+                    return OnOpenFile(open_file_message, request_id, silent);
+                }
+            }
+
             // Get or create loader for frame
             auto loader = _loaders.Get(fullname);
 

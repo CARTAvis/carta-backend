@@ -7,7 +7,7 @@
 #include "Message.h"
 #include <chrono>
 
-CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
+CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, const std::string& api_key, uint32_t client_feature_flags) {
     CARTA::RegisterViewer register_viewer;
     register_viewer.set_session_id(session_id);
     register_viewer.set_api_key(api_key);
@@ -21,14 +21,15 @@ CARTA::CloseFile Message::CloseFile(int32_t file_id) {
     return close_file;
 }
 
-CARTA::OpenFile Message::OpenFile(
-    std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
+CARTA::OpenFile Message::OpenFile(const std::string& directory, const std::string& file, const std::string& hdu, int32_t file_id,
+    CARTA::RenderMode render_mode, bool lel_expr) {
     CARTA::OpenFile open_file;
     open_file.set_directory(directory);
     open_file.set_file(file);
     open_file.set_hdu(hdu);
     open_file.set_file_id(file_id);
     open_file.set_render_mode(render_mode);
+    open_file.set_lel_expr(lel_expr);
     return open_file;
 }
 
@@ -98,9 +99,7 @@ CARTA::AddRequiredTiles Message::AddRequiredTiles(
     add_required_tiles.set_file_id(file_id);
     add_required_tiles.set_compression_type(compression_type);
     add_required_tiles.set_compression_quality(compression_quality);
-    for (int i = 0; i < tiles.size(); ++i) {
-        add_required_tiles.add_tiles(tiles[i]);
-    }
+    *add_required_tiles.mutable_tiles() = {tiles.begin(), tiles.end()};
     return add_required_tiles;
 }
 
@@ -112,22 +111,18 @@ CARTA::Point Message::Point(int x, int y) {
 }
 
 CARTA::SetRegion Message::SetRegion(
-    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
+    int32_t file_id, int32_t region_id, CARTA::RegionType region_type, const std::vector<CARTA::Point>& control_points, float rotation) {
     CARTA::SetRegion set_region;
     set_region.set_file_id(file_id);
     set_region.set_region_id(region_id);
     auto* region_info = set_region.mutable_region_info();
     region_info->set_region_type(region_type);
     region_info->set_rotation(rotation);
-    for (auto control_point : control_points) {
-        auto* point = region_info->add_control_points();
-        point->set_x(control_point.x());
-        point->set_y(control_point.y());
-    }
+    *region_info->mutable_control_points() = {control_points.begin(), control_points.end()};
     return set_region;
 }
 
-CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
+CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate) {
     CARTA::SetStatsRequirements set_stats_requirements;
     set_stats_requirements.set_file_id(file_id);
     set_stats_requirements.set_region_id(region_id);
@@ -146,7 +141,7 @@ CARTA::SetStatsRequirements Message::SetStatsRequirements(int32_t file_id, int32
     return set_stats_requirements;
 }
 
-CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate) {
+CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate) {
     CARTA::SetSpectralRequirements set_spectral_requirements;
     set_spectral_requirements.set_file_id(file_id);
     set_spectral_requirements.set_region_id(region_id);
@@ -165,9 +160,10 @@ CARTA::SetSpectralRequirements Message::SetSpectralRequirements(int32_t file_id,
     return set_spectral_requirements;
 }
 
-CARTA::StartAnimation Message::StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
-    std::pair<int32_t, int32_t> start_frame, std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame,
-    CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate) {
+CARTA::StartAnimation Message::StartAnimation(int32_t file_id, const std::pair<int32_t, int32_t>& first_frame,
+    const std::pair<int32_t, int32_t>& start_frame, const std::pair<int32_t, int32_t>& last_frame,
+    const std::pair<int32_t, int32_t>& delta_frame, CARTA::CompressionType compression_type, float compression_quality,
+    const std::vector<float>& tiles, int32_t frame_rate) {
     CARTA::StartAnimation start_animation;
     auto* mutable_first_frame = start_animation.mutable_first_frame();
     mutable_first_frame->set_channel(first_frame.first);
@@ -189,17 +185,14 @@ CARTA::StartAnimation Message::StartAnimation(int32_t file_id, std::pair<int32_t
     mutable_required_tiles->set_file_id(file_id);
     mutable_required_tiles->set_compression_type(compression_type);
     mutable_required_tiles->set_compression_quality(compression_quality);
-
-    for (int i = 0; i < tiles.size(); ++i) {
-        mutable_required_tiles->add_tiles(tiles[i]);
-    }
+    *mutable_required_tiles->mutable_tiles() = {tiles.begin(), tiles.end()};
 
     start_animation.set_frame_rate(frame_rate);
 
     return start_animation;
 }
 
-CARTA::AnimationFlowControl Message::AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame) {
+CARTA::AnimationFlowControl Message::AnimationFlowControl(int32_t file_id, const std::pair<int32_t, int32_t>& received_frame) {
     CARTA::AnimationFlowControl animation_flow_control;
     animation_flow_control.set_file_id(file_id);
     auto* mutable_received_frame = animation_flow_control.mutable_received_frame();
@@ -213,7 +206,7 @@ CARTA::AnimationFlowControl Message::AnimationFlowControl(int32_t file_id, std::
     return animation_flow_control;
 }
 
-CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame) {
+CARTA::StopAnimation Message::StopAnimation(int32_t file_id, const std::pair<int32_t, int32_t>& end_frame) {
     CARTA::StopAnimation stop_animation;
     stop_animation.set_file_id(file_id);
     auto* mutable_end_frame = stop_animation.mutable_end_frame();
@@ -223,7 +216,7 @@ CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, 
     return stop_animation;
 }
 
-CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(std::string coordinate, int start, int end, int mip) {
+CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(const std::string& coordinate, int start, int end, int mip) {
     CARTA::SetSpatialRequirements_SpatialConfig spatial_config;
     spatial_config.set_coordinate(coordinate);
     spatial_config.set_start(start);
@@ -247,7 +240,7 @@ CARTA::FloatBounds Message::FloatBounds(float min, float max) {
 }
 
 CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
-    CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range) {
+    CARTA::MomentMask moment_mask, const CARTA::IntBounds& spectral_range, const CARTA::FloatBounds& pixel_range) {
     CARTA::MomentRequest moment_request;
     moment_request.set_file_id(file_id);
     moment_request.set_region_id(region_id);
@@ -275,8 +268,8 @@ CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id,
     return moment_request;
 }
 
-CARTA::ImageProperties Message::ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
-    CARTA::RenderMode render_mode, int32_t channel, int32_t stokes) {
+CARTA::ImageProperties Message::ImageProperties(const std::string& directory, const std::string& file, const std::string& hdu,
+    int32_t file_id, CARTA::RenderMode render_mode, int32_t channel, int32_t stokes) {
     CARTA::ImageProperties image_properties;
     image_properties.set_directory(directory);
     image_properties.set_file(file);
@@ -288,7 +281,7 @@ CARTA::ImageProperties Message::ImageProperties(std::string directory, std::stri
     return image_properties;
 }
 
-CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> images) {
+CARTA::ResumeSession Message::ResumeSession(const std::vector<CARTA::ImageProperties>& images) {
     CARTA::ResumeSession resume_session;
     for (auto image : images) {
         auto* tmp_image = resume_session.add_images();
@@ -345,7 +338,7 @@ CARTA::EventType Message::EventType(std::vector<char>& message) {
 }
 
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
-    std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
+    const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats,
     std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
     profile_message.set_file_id(file_id);

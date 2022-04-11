@@ -44,10 +44,10 @@ class Message {
 
 public:
     // Request messages
-    static CARTA::RegisterViewer RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags);
+    static CARTA::RegisterViewer RegisterViewer(uint32_t session_id, const std::string& api_key, uint32_t client_feature_flags);
     static CARTA::CloseFile CloseFile(int32_t file_id);
-    static CARTA::OpenFile OpenFile(
-        std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode);
+    static CARTA::OpenFile OpenFile(const std::string& directory, const std::string& file, const std::string& hdu, int32_t file_id,
+        CARTA::RenderMode render_mode, bool lel_expr = false);
     static CARTA::SetImageChannels SetImageChannels(
         int32_t file_id, int32_t channel, int32_t stokes, CARTA::CompressionType compression_type, float compression_quality);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
@@ -59,22 +59,24 @@ public:
         int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
     static CARTA::Point Point(int x, int y);
     static CARTA::SetRegion SetRegion(
-        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
-    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
-    static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, std::string coordinate);
-    static CARTA::StartAnimation StartAnimation(int32_t file_id, std::pair<int32_t, int32_t> first_frame,
-        std::pair<int32_t, int32_t> start_frame, std::pair<int32_t, int32_t> last_frame, std::pair<int32_t, int32_t> delta_frame,
-        CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles, int32_t frame_rate = 5);
-    static CARTA::AnimationFlowControl AnimationFlowControl(int32_t file_id, std::pair<int32_t, int32_t> received_frame);
-    static CARTA::StopAnimation StopAnimation(int32_t file_id, std::pair<int32_t, int32_t> end_frame);
-    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(std::string coordinate, int start = 0, int end = 0, int mip = 0);
+        int32_t file_id, int32_t region_id, CARTA::RegionType region_type, const std::vector<CARTA::Point>& control_points, float rotation);
+    static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate);
+    static CARTA::SetSpectralRequirements SetSpectralRequirements(int32_t file_id, int32_t region_id, const std::string& coordinate);
+    static CARTA::StartAnimation StartAnimation(int32_t file_id, const std::pair<int32_t, int32_t>& first_frame,
+        const std::pair<int32_t, int32_t>& start_frame, const std::pair<int32_t, int32_t>& last_frame,
+        const std::pair<int32_t, int32_t>& delta_frame, CARTA::CompressionType compression_type, float compression_quality,
+        const std::vector<float>& tiles, int32_t frame_rate = 5);
+    static CARTA::AnimationFlowControl AnimationFlowControl(int32_t file_id, const std::pair<int32_t, int32_t>& received_frame);
+    static CARTA::StopAnimation StopAnimation(int32_t file_id, const std::pair<int32_t, int32_t>& end_frame);
+    static CARTA::SetSpatialRequirements_SpatialConfig SpatialConfig(
+        const std::string& coordinate, int start = 0, int end = 0, int mip = 0);
     static CARTA::IntBounds IntBounds(int min, int max);
     static CARTA::FloatBounds FloatBounds(float min, float max);
     static CARTA::MomentRequest MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
-        CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range);
-    static CARTA::ImageProperties ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
-        CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
-    static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
+        CARTA::MomentMask moment_mask, const CARTA::IntBounds& spectral_range, const CARTA::FloatBounds& pixel_range);
+    static CARTA::ImageProperties ImageProperties(const std::string& directory, const std::string& file, const std::string& hdu,
+        int32_t file_id, CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
+    static CARTA::ResumeSession ResumeSession(const std::vector<CARTA::ImageProperties>& images);
     static CARTA::FileListRequest FileListRequest(const std::string& directory);
     static CARTA::FileInfoRequest FileInfoRequest(const std::string& directory, const std::string& file, const std::string& hdu = "");
     static CARTA::SetContourParameters SetContourParameters(int file_id, int ref_file_id, int x_min, int x_max, int y_min, int y_max,
@@ -83,7 +85,7 @@ public:
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
-        std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
+        const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats,
         std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
 
     // Decode messages
