@@ -115,7 +115,7 @@ casacore::String GetResolvedFilename(const string& root_dir, const string& direc
     return resolved_filename;
 }
 
-void GetSpectralCoordSettings(
+void GetSpectralCoordPreferences(
     casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength) {
     prefer_velocity = optical_velocity = prefer_wavelength = air_wavelength = false;
     casacore::CoordinateSystem coord_sys(image->coordinates());
@@ -169,92 +169,4 @@ std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
 
 std::string FormatQuantity(const casacore::Quantity& quantity) {
     return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
-}
-
-CoordinateAxes FindCoordinateAxes(const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape) {
-    std::vector<int> xy_axes = GetRenderAxes(coord_sys, image_shape);
-    int spectral_axis(coord_sys.spectralAxisNumber());
-    int stokes_axis(coord_sys.polarizationAxisNumber());
-    int z_axis(-1);
-
-    bool no_spectral(spectral_axis < 0), no_stokes(stokes_axis < 0);
-    size_t num_axes(image_shape.size());
-
-    if (no_spectral && no_stokes && (num_axes > 2)) {
-        // Cope with incomplete/invalid headers for 3D, 4D images
-        if ((no_spectral && no_stokes) && (num_axes == 3)) {
-            // assume third is spectral with no stokes
-            spectral_axis = 2;
-        }
-
-        if ((no_spectral || no_stokes) && (num_axes == 4)) {
-            if (no_spectral && !no_stokes) { // stokes is known
-                spectral_axis = (stokes_axis == 3 ? 2 : 3);
-            } else if (!no_spectral && no_stokes) { // spectral is known
-                stokes_axis = (spectral_axis == 3 ? 2 : 3);
-            } else { // neither is known
-                // guess by shape (max 4 stokes)
-                if (image_shape(2) > 4) {
-                    spectral_axis = 2;
-                    stokes_axis = 3;
-                } else if (image_shape(3) > 4) {
-                    spectral_axis = 3;
-                    stokes_axis = 2;
-                }
-
-                if ((spectral_axis < 0) && (stokes_axis < 0)) {
-                    // could not guess, assume [spectral, stokes]
-                    spectral_axis = 2;
-                    stokes_axis = 3;
-                }
-            }
-        }
-    }
-
-    // Set z axis: depth axis that is not stokes
-    for (size_t i = 0; i < num_axes; ++i) {
-        if ((i != xy_axes[0]) && (i != xy_axes[1]) && (i != stokes_axis)) {
-            z_axis = i;
-            break;
-        }
-    }
-
-    return CoordinateAxes(image_shape, xy_axes, z_axis, spectral_axis, stokes_axis);
-}
-
-std::vector<int> GetRenderAxes(const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape) {
-    // Determine which axes will be rendered
-    std::vector<int> axes = {0, 1};
-
-    if (image_shape.size() > 2) {
-        // Normally, use direction axes
-        if (coord_sys.hasDirectionCoordinate()) {
-            casacore::Vector<casacore::Int> dir_axes = coord_sys.directionAxesNumbers();
-            axes[0] = dir_axes[0];
-            axes[1] = dir_axes[1];
-        } else if (coord_sys.hasLinearCoordinate()) {
-            // Check for PV image: [Linear, Spectral] axes
-            // Returns -1 if no spectral axis
-            int spectral_axis = coord_sys.spectralAxisNumber();
-
-            if (spectral_axis >= 0) {
-                // Find valid (not -1) linear axes
-                std::vector<int> valid_axes;
-                casacore::Vector<casacore::Int> lin_axes = coord_sys.linearAxesNumbers();
-                for (auto axis : lin_axes) {
-                    if (axis >= 0) {
-                        valid_axes.push_back(axis);
-                    }
-                }
-
-                // One linear + spectral axis = pV image
-                if (valid_axes.size() == 1) {
-                    valid_axes.push_back(spectral_axis);
-                    axes = valid_axes;
-                }
-            }
-        }
-    }
-
-    return axes;
 }

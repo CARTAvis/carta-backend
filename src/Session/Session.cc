@@ -226,13 +226,19 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
         }
 
         // FileInfoExtended
+        auto loader = _loaders.Get(fullname);
+        if (!loader) {
+            message = "Unsupported format.";
+            return file_info_ok;
+        }
+        FileExtInfoLoader ext_info_loader(loader);
+
         std::string requested_hdu(hdu);
         if (requested_hdu.empty() && (file_info.hdu_list_size() > 0)) {
             // Use first hdu
             requested_hdu = file_info.hdu_list(0);
         }
 
-        FileExtInfoLoader ext_info_loader;
         if (!requested_hdu.empty() || (file_info.type() != CARTA::FileType::FITS)) {
             // Get extended file info for requested hdu or images without hdus
             CARTA::FileInfoExtended file_info_ext;
@@ -268,6 +274,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             message = "Unsupported format.";
             return file_info_ok;
         }
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(loader);
 
         // Discern hdu for extended file info
         if (hdu.empty()) {
@@ -298,7 +305,6 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             }
         }
 
-        FileExtInfoLoader ext_info_loader;
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
@@ -308,14 +314,14 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
-    const std::string& filename, std::string& message) {
+    const std::string& filename, std::string& message, std::shared_ptr<FileLoader>& image_loader) {
     // Fill FileInfoExtended for given image; no hdu
     bool file_info_ok(false);
 
     try {
-        FileExtInfoLoader ext_info_loader;
-        std::string hdu;
-        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, image.get(), hdu, message);
+        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
+        FileExtInfoLoader ext_info_loader(image_loader);
+        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
     }
@@ -572,15 +578,15 @@ bool Session::OnOpenFile(
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
     string err_message;
+    std::shared_ptr<FileLoader> image_loader;
 
     CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message);
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, image_loader);
     bool success(false);
 
     if (info_loaded) {
         // Create Frame for image
-        auto loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
-        auto frame = std::make_unique<Frame>(_id, loader, "");
+        auto frame = std::make_unique<Frame>(_id, image_loader, "");
 
         if (frame->IsValid()) {
             if (_frames.count(file_id) > 0) {
