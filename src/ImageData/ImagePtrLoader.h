@@ -25,6 +25,7 @@ ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> 
     _num_dims = _image_shape.size();
     _has_pixel_mask = _image->hasPixelMask();
     _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+    _data_type = _image->dataType();
 }
 
 void ImagePtrLoader::OpenFile(const std::string& /*hdu*/) {}

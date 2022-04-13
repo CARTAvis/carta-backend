@@ -81,9 +81,17 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-typename FileLoader::ImageRef FileLoader::GetImage() {
+typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
+    }
+
+    if (check_data_type && _image && (_image->imageType() == "TempImage")) {
+        if ((_data_type == casacore::TpComplex) || (_data_type == casacore::TpDComplex)) {
+            throw(casacore::AipsError("Use LEL expression to open images with complex data."));
+        } else {
+            throw(casacore::AipsError("Image data type not supported."));
+        }
     }
 
     return _image;
@@ -133,6 +141,10 @@ bool FileLoader::HasData(FileInfo::Data dl) const {
     }
 
     return false;
+}
+
+casacore::DataType FileLoader::GetDataType() {
+    return _data_type;
 }
 
 casacore::IPosition FileLoader::GetShape() {
