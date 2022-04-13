@@ -107,7 +107,7 @@ pipeline {
                             sh "git submodule update --init --recursive"
                             dir ('build') {
                                 sh "rm -rf *"
-                                sh "cmake .. -Dtest=on -DEnableAvx=On -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
+                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
                                 sh "make -j 8"
                                 stash includes: "carta_backend", name: "macos11-backend"
                             }
@@ -211,7 +211,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "bionic-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml"
                             }
                         }
                     }
@@ -229,7 +229,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "focal-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_focal_test_detail.xml"
                             }
                         }
                     }
@@ -247,7 +247,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "jammy-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_jammy_test_detail.xml"
                             }
                         }
                     }
@@ -264,7 +264,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             dir ('build/test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos11_test_detail.xml"
                             }
                         }
                     }
@@ -287,7 +287,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             dir ('build/test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
                             }
                         }
                     }
@@ -311,7 +311,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel7-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel7_test_detail.xml"
                             }
                         }
                     }
@@ -329,7 +329,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             unstash "rhel8-unit-tests"
                             dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-ImageExprTest.ImageExprFails:MomentTest.CheckConsistencyForBeamConvolutions"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml"
                             }
                         }
                     }
@@ -808,10 +808,6 @@ def region_manipulation() {
                 } else {
                     ret = true
                 }
-                echo "*** Temporarily skipping tests *** Related to carta-backend issue #1066 "
-                sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_EXPORT.test.ts"
-                sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts"
-                sh "perl -p -i -e 's/describe/describe.skip/' src/test/DS9_REGION_IMPORT_EXPORT.test.ts"
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 1 of 8"
                 sh "sleep 3 && pgrep carta_backend"
@@ -847,10 +843,6 @@ def cube_histogram() {
                 } else {
                     ret = true
                 }
-                echo "*** Temporarily skipping tests *** Related to carta-backend issue #1050"
-                sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM.test.ts"
-                sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts"
-                sh "perl -p -i -e 's/describe/describe.skip/' src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts"
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
                 sh "sleep 3 && pgrep carta_backend"
