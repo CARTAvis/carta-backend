@@ -1772,7 +1772,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
     float progress(0.0);
 
     if (num_lines == 1) {
-        // Get box centers along line; start at end of line and work toward beginning
+        // Get box centers along line; start at line center and add offsets
         PointXy endpoint0(control_points[0].x(), control_points[0].y());
         PointXy endpoint1(control_points[1].x(), control_points[1].y());
 
@@ -1804,18 +1804,18 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
         PointXy point(center_x, center_y);
         box_centers[center_idx] = point;
 
-        // Set pixels in pos and neg direction from center out
-        for (int ipixel = 1; ipixel <= num_offsets; ++ipixel) {
+        // Set box centers in pos and neg direction from line center out
+        for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
             // Positive offset toward endpoint0
-            auto idx = center_idx + ipixel;
-            auto x = center_x + (ipixel * cos_x);
-            auto y = center_y + (ipixel * sin_x);
+            auto idx = center_idx + ioffset;
+            auto x = center_x + (ioffset * cos_x);
+            auto y = center_y + (ioffset * sin_x);
             box_centers[idx] = PointXy(x, y);
 
             // Negative offset toward endpoint1
-            idx = center_idx - ipixel;
-            x = center_x - (ipixel * cos_x);
-            y = center_y - (ipixel * sin_x);
+            idx = center_idx - ioffset;
+            x = center_x - (ioffset * cos_x);
+            y = center_y - (ioffset * sin_x);
             box_centers[idx] = PointXy(x, y);
         }
 
@@ -1857,7 +1857,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
             double num_pixels(0.0);
             casacore::Vector<float> region_profile =
                 GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-            spdlog::debug("Box region {} max num pixels={}", iregion, num_pixels);
+            spdlog::debug("Line box region {} max num pixels={}", iregion, num_pixels);
 
             if (profiles.empty()) {
                 profiles.resize(casacore::IPosition(2, num_regions, region_profile.size()));
@@ -1878,7 +1878,6 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
             }
         }
     } else {
-        // Currently for line spatial profiles only; per_z is false
         bool trim_line(false); // Whether to skip first region after vertex
         int profile_row(0);
 
@@ -1904,9 +1903,9 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
             std::vector<PointXy> box_centers;
             box_centers.push_back(endpoint1);
 
-            for (int ipixel = 1; ipixel < num_regions; ++ipixel) {
-                auto x = endpoint1.x + (ipixel * cos_x);
-                auto y = endpoint1.y + (ipixel * sin_x);
+            for (int iregion = 1; iregion < num_regions; ++iregion) {
+                auto x = endpoint1.x + (iregion * cos_x);
+                auto y = endpoint1.y + (iregion * sin_x);
                 box_centers.push_back(PointXy(x, y));
             }
 
@@ -1916,7 +1915,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
                 return false;
             }
 
-            for (size_t iregion = 0; iregion < num_regions; ++iregion) {
+            for (int iregion = 0; iregion < num_regions; ++iregion) {
                 if (iregion == 0) {
                     // Add rows for this line's region profiles
                     auto num_line_profiles = trim_line ? num_regions - 1 : num_regions;
@@ -1929,7 +1928,6 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int width, bool per
                 }
 
                 // Set box region
-                spdlog::debug("Polyline line {} box region {} [{}, {}]", iline, iregion, box_centers[iregion].x, box_centers[iregion].y);
                 std::vector<CARTA::Point> control_points;
                 CARTA::Point point;
                 point.set_x(box_centers[iregion].x);
@@ -2030,7 +2028,7 @@ bool RegionHandler::CheckLinearOffsets(
 
 double RegionHandler::GetPointSeparation(const PointXy& point1, const PointXy& point2, std::shared_ptr<CoordinateSystem> coord_sys) {
     // Returns angular separation in arcsec.
-    // Should lock _pix_mvdir_mutex for MVDirection conversion before calling this; cannot multithread DirectionCoordinate::toWorld
+    // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     casacore::Vector<casacore::Double> v1(2), v2(2);
     v1[0] = point1.x;
     v1[1] = point1.y;
@@ -2073,82 +2071,84 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     float progress(0.0);
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    // Get profiles for each line segment; start at end of (poly)line and work toward beginning
     if (num_lines == 1) {
+        // Use pixel center of line and keep it centered
         PointXy endpoint0(control_points[0].x(), control_points[0].y());
         PointXy endpoint1(control_points[1].x(), control_points[1].y());
 
-        // Number of region profiles determined by increments in line length
-        double line_separation(0.0);
-        std::unique_lock<std::mutex> ulock(_pix_mvdir_mutex);
-        try {
-            line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys);
-        } catch (casacore::AipsError& err) { // wcslib - invalid pixel coordinates
-            ulock.unlock();
-            message = "Conversion of line endpoints to world coordinates failed.";
-            return false;
-        }
-        int num_offsets = lround(line_separation / increment) / 2;
-        int num_regions = num_offsets * 2;
-
-        // Center point (pixel coords) of line segment
+        // Center point (pixel coords) of line segment as vector
         std::vector<double> line_center;
         line_center.push_back((endpoint0.x + endpoint1.x) / 2);
         line_center.push_back((endpoint0.y + endpoint1.y) / 2);
 
-        // Generate points along line for start and end of each box
+        // Number of region profiles determined by increments in line length.
+        double line_separation0(0.0), line_separation1(0.0);
+        std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
+        try {
+            PointXy center_point(line_center[0], line_center[1]);
+            line_separation0 = GetPointSeparation(endpoint0, center_point, reference_csys);
+            line_separation1 = GetPointSeparation(endpoint1, center_point, reference_csys);
+        } catch (casacore::AipsError& err) { // probably wcslib - invalid pixel coordinates
+            message = "Conversion of line endpoints to world coordinates failed.";
+            return false;
+        }
+
+        // Use shorter angular length (center to endpoint); trim longer "half" from pixel center
+        auto line_separation = min(line_separation0, line_separation1) * 2.0;
+        int num_offsets = lround(line_separation / increment) / 2;
+        int num_regions = num_offsets * 2;
+
+        // Use vector instead of PointXy for "no point" when reach end of line
         std::vector<std::vector<double>> line_points(num_regions + 1);
         line_points[num_offsets] = line_center;
 
-        // Start at center and add points in each offset direction; empty vector when too close to end of line
+        // Generate points along line for start and end of each box
+        // Start at center and add points in each offset direction
         std::vector<double> pos_box_start({line_center[0], line_center[1]}), neg_box_start({line_center[0], line_center[1]});
 
         // Get points along line from center out with increment spacing to set regions
-        for (int offset = 1; offset <= num_offsets; ++offset) {
+        for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
             // Check PV generator cancellation
             if (per_z && _stop_pv[file_id]) {
                 cancelled = true;
                 return false;
             }
 
-            bool no_pos_start(pos_box_start.empty()), no_neg_start(neg_box_start.empty());
-
-            if (per_z && (no_pos_start || no_neg_start)) {
-                // Keep center of line in center of PV image
+            // Find ends of box regions, at increment from start of box in positive offset direction.
+            // Each box height (box_start to box_end) is variable to be fixed angular spacing.
+            // Note: mvdir_lock is still locked while finding these points
+            PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
+            std::vector<double> pos_box_end = FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
+            if (pos_box_end.empty()) {
                 break;
             }
+            line_points[num_offsets + ioffset] = pos_box_end;
+            pos_box_start = pos_box_end; // end of this box is start of next box
 
-            // Find ends of box regions, at increment from start of box in positive offset direction
-            if (!no_pos_start) {
-                PointXy start_point(pos_box_start[0], pos_box_start[1]);
-                std::vector<double> pos_box_end = FindPointAtTargetSeparation(reference_csys, start_point, endpoint0, increment, tolerance);
-
-                line_points[num_offsets + offset] = pos_box_end;
-                pos_box_start = pos_box_end; // end of this box is start of next box
+            // Find ends of box regions, at increment from start of box in negative offset direction.
+            PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
+            std::vector<double> neg_box_end = FindPointAtTargetSeparation(reference_csys, neg_start_point, endpoint1, increment, tolerance);
+            if (neg_box_end.empty()) {
+                // Delete pos_box_end to keep number of offsets equal
+                line_points[num_offsets + ioffset].clear();
+                break;
             }
-
-            // Find ends of box regions, at increment from start of box in negative offset direction
-            if (!no_neg_start) {
-                PointXy start_point(neg_box_start[0], neg_box_start[1]);
-                std::vector<double> neg_box_end = FindPointAtTargetSeparation(reference_csys, start_point, endpoint1, increment, tolerance);
-
-                line_points[num_offsets - offset] = neg_box_end;
-                neg_box_start = neg_box_end; // end of this box is start of next box
-            }
+            line_points[num_offsets - ioffset] = neg_box_end;
+            neg_box_start = neg_box_end; // end of this box is start of next box
         }
 
         // Finished with points along line: unlock mutex
-        ulock.unlock();
+        mvdir_lock.unlock();
 
         // Set matrix size to fill in rows; ncol = image depth (PV data) or 1 (spatial profile)
-        auto row_size = line_points.size() - 1;
+        num_regions = line_points.size() - 1;
         if (per_z) {
-            profiles.resize(casacore::IPosition(2, row_size, _frames.at(file_id)->Depth()));
+            profiles.resize(casacore::IPosition(2, num_regions, _frames.at(file_id)->Depth()));
         } else {
-            profiles.resize(casacore::IPosition(2, row_size, 1));
+            profiles.resize(casacore::IPosition(2, num_regions, 1));
         }
 
-        // Rotation of line segment for temporary region state
+        // Rotation of line for temporary region state
         float rotation = GetLineRotation(endpoint0, endpoint1);
 
         // Create polygons for box regions along line starting and ending at calculated points.
@@ -2162,7 +2162,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
                 return false;
             }
 
-            // Set index for start and end of region, 3 boxes wide except at ends
+            // Set index for start and end of region to overlap regions: 3 boxes wide except at ends
             start_idx = (iregion == 0 ? iregion : iregion - 1);
             end_idx = (iregion == (num_regions - 1) ? iregion + 1 : iregion + 2);
             std::vector<double> region_start(line_points[start_idx]), region_end(line_points[end_idx]);
@@ -2172,35 +2172,134 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
                 profiles.row(iregion) = NAN;
             } else {
                 // Set temporary region for reference image and get profile for requested file_id
+                // pix_mvdir_mutex is not needed, locked in function while determining polygon corners
                 RegionState temp_region_state = GetTemporaryRegionState(
                     reference_csys, region_state.reference_file_id, region_start, region_end, width, angular_width, rotation, tolerance);
 
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile =
                     GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-
-                if (!num_pixels && per_z && _stop_pv[file_id]) {
-                    cancelled = true;
-                    return false;
-                }
+                spdlog::debug("Line box region {} max num pixels={}", iregion, num_pixels);
 
                 profiles.row(iregion) = region_profile;
             }
 
-            // Update progress if time interval elapsed
-            auto t_end = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
             progress = float(iregion + 1) / float(num_regions);
 
-            if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress == 1.0)) {
-                t_start = t_end;
-                progress_callback(progress);
+            if (per_z) {
+                // Update progress if time interval elapsed
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+
+                if ((dt > LINE_PROFILE_PROGRESS_INTERVAL) || (progress == 1.0)) {
+                    t_start = t_end;
+                    progress_callback(progress);
+                }
             }
         }
     } else {
-        spdlog::debug("Fixed angular offsets for polyline not complete");
-        profiles.resize();
-        return false;
+        // Polyline profiles, for spatial profile only
+        bool trim_line(false); // Whether to skip first region after vertex
+        int profile_row(0);
+
+        // Start at (poly)line end (negative offset) and go to beginning (positive offset)
+        for (size_t iline = num_lines; iline > 0; iline--) {
+            PointXy endpoint0(control_points[iline - 1].x(), control_points[iline - 1].y());
+            PointXy endpoint1(control_points[iline].x(), control_points[iline].y());
+
+            // Rotation of line segment
+            float rotation = GetLineRotation(endpoint0, endpoint1);
+            // Apply rotation to get next pixel
+            float cos_x = cos(rotation * M_PI / 180.0f);
+            float sin_x = sin(rotation * M_PI / 180.0f);
+
+            // Number of regions in segment is (angular length / increment)
+            double line_separation(0.0);
+            std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
+            try {
+                line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys);
+            } catch (casacore::AipsError& err) { // probably wcslib - invalid pixel coordinates
+                message = "Conversion of line endpoints to world coordinates failed.";
+                return false;
+            }
+            int num_regions = lround(line_separation / increment);
+
+            // Use vector instead of PointXy for "no point" when reach end of line
+            std::vector<std::vector<double>> line_points;
+
+            // Start at line segment end (endpoint1)
+            std::vector<double> line_point = {endpoint1.x, endpoint1.y};
+            line_points.push_back(line_point);
+
+            for (int iregion = 1; iregion < num_regions + 1; ++iregion) {
+                // Find next point (next box end) along line at target separation; mvdir_lock is still locked
+                std::vector<double> last_point = line_points.back();
+                PointXy last_point_xy(last_point[0], last_point[1]);
+                std::vector<double> next_point =
+                    FindPointAtTargetSeparation(reference_csys, last_point_xy, endpoint0, increment, tolerance);
+
+                if (next_point.empty()) {
+                    break;
+                } else {
+                    line_points.push_back(next_point);
+                }
+            }
+            mvdir_lock.unlock();
+
+            num_regions = line_points.size() - 1;
+            int start_idx, end_idx; // points for start and end of overlapping box regions
+
+            for (int iregion = 0; iregion < num_regions; ++iregion) {
+                if (iregion == 0) {
+                    // Add rows for this line's region profiles
+                    auto num_line_profiles = trim_line ? num_regions - 1 : num_regions;
+                    profiles.resize(casacore::IPosition(2, profiles.nrow() + num_line_profiles, 1), true);
+
+                    if (trim_line) {
+                        spdlog::debug("Polyline line {} box region {} trimmed", iline, iregion);
+                        continue;
+                    }
+                }
+
+                // Set index for start and end of region to overlap regions: 3 boxes wide except at ends
+                start_idx = (iregion == 0 ? iregion : iregion - 1);
+                end_idx = (iregion == (num_regions - 1) ? iregion + 1 : iregion + 2);
+                std::vector<double> region_start(line_points[start_idx]), region_end(line_points[end_idx]);
+
+                if (region_start.empty() || region_end.empty()) {
+                    // Likely part of line off image
+                    spdlog::debug("Set row {} of {}", profile_row, profiles.nrow() - 1);
+                    profiles.row(profile_row++) = NAN;
+                } else {
+                    // Set temporary region for reference image and get profile for requested file_id
+                    // pix_mvdir_mutex is not needed, locked in function while determining polygon corners
+                    RegionState temp_region_state = GetTemporaryRegionState(reference_csys, region_state.reference_file_id, region_start,
+                        region_end, width, angular_width, rotation, tolerance);
+
+                    double num_pixels(0.0);
+                    casacore::Vector<float> region_profile =
+                        GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
+                    spdlog::debug("Polyline line {} box region {} max num pixels={}", iline, iregion, num_pixels);
+
+                    profiles.row(profile_row++) = region_profile;
+                }
+            } // Done with regions along line segment
+
+            // Check whether to trim next line's starting point
+            if (iline > 1) {
+                mvdir_lock.lock();
+                PointXy last_point_xy(line_points.back()[0], line_points.back()[1]);
+                double separation = GetPointSeparation(last_point_xy, endpoint0, reference_csys);
+                mvdir_lock.unlock();
+                if (separation < (0.5 * increment)) {
+                    trim_line = true;
+                } else {
+                    trim_line = false;
+                }
+            }
+        } // Done with lines
+
+        progress = 1.0;
     }
 
     if (per_z) {
@@ -2229,6 +2328,7 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<c
     const PointXy& start_point, const PointXy& end_point, double target_separation, double tolerance) {
     // Find point on line described by start and end points which is at target separation in arcsec (within tolerance) of start point.
     // Return point [x, y] in pixel coordinates.  Vector is empty if DirectionCoordinate conversion fails.
+    // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     std::vector<double> target_point;
 
     // Do binary search of line, finding midpoints until target separation is reached.
@@ -2284,8 +2384,10 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     // Polygon control points are corners of this box.
     // Used for widefield images with nonlinear spacing, where pixel center is not angular center so cannot use rectangle definition.
     double half_width = angular_width / 2.0;
-    float cos_x = cos(line_rotation * M_PI / 180.0f);
-    float sin_x = sin(line_rotation * M_PI / 180.0f);
+
+    // Perpendicular to line
+    float cos_x = cos((line_rotation + 90.0) * M_PI / 180.0f);
+    float sin_x = sin((line_rotation + 90.0) * M_PI / 180.0f);
 
     // Control points for polygon region state
     std::vector<CARTA::Point> control_points(4);
@@ -2295,6 +2397,7 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     PointXy start_point(box_start[0], box_start[1]);
     PointXy end_point(box_end[0], box_end[1]);
 
+    std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
     // Endpoint in positive direction 3 pixels out from box start
     PointXy target_endpoint(start_point.x - (pixel_width * cos_x), start_point.y - (pixel_width * sin_x));
     std::vector<double> corner = FindPointAtTargetSeparation(coord_sys, start_point, target_endpoint, half_width, tolerance);
@@ -2335,8 +2438,14 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     point.set_x(corner[0]);
     point.set_y(corner[1]);
     control_points[2] = point;
+    mvdir_lock.unlock();
 
     // Set polygon RegionState
+    /*
+    spdlog::debug("Box region corners=[{}, {}], [{}, {}], [{}, {}], [{}, {}]", control_points[0].x(), control_points[0].y(),
+        control_points[1].x(), control_points[1].y(), control_points[2].x(), control_points[2].y(), control_points[3].x(),
+        control_points[3].y());
+    */
     float polygon_rotation(0.0);
     RegionState region_state = RegionState(file_id, CARTA::RegionType::POLYGON, control_points, polygon_rotation);
     return region_state;
