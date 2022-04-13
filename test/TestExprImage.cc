@@ -117,6 +117,10 @@ TEST_F(ImageExprTest, FitsImageExprTimesTwo) {
     GenerateImageExprTimesTwo("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
 }
 
+TEST_F(ImageExprTest, Hdf5ImageExprTimesTwo) {
+    GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5);
+}
+
 TEST_F(ImageExprTest, FitsImageExprSave) {
     SaveImageExpr("noise_10px_10px.fits", "0", CARTA::FileType::FITS);
 }
@@ -124,9 +128,6 @@ TEST_F(ImageExprTest, FitsImageExprSave) {
 TEST_F(ImageExprTest, ImageExprFails) {
     // Forms invalid expression
     ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.fits", "", CARTA::FileType::FITS, true), casacore::AipsError);
-
-    // HDF5 not supported
-    ASSERT_THROW(GenerateImageExprTimesTwo("noise_10px_10px.hdf5", "", CARTA::FileType::HDF5), casacore::AipsError);
 }
 
 TEST_F(ImageExprTest, ImageExprTwoDirs) {

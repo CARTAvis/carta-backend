@@ -20,13 +20,12 @@
 #include <carta-protobuf/file_info.pb.h>
 #include "ImageData/CompressedFits.h"
 #include "ImageData/FileLoader.h"
-#include "Util/Casacore.h"
 
 namespace carta {
 
 class FileExtInfoLoader {
 public:
-    FileExtInfoLoader() = default;
+    FileExtInfoLoader(std::shared_ptr<FileLoader> loader);
 
     // Fill extended file info for all FITS image hdus
     bool FillFitsFileInfoMap(
@@ -35,27 +34,24 @@ public:
     // Fill extended file info for specified hdu
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
 
-    // Fill extended file info for given image
-    bool FillFileExtInfo(
-        CARTA::FileInfoExtended& extended_info, casacore::LatticeBase* image, const std::string& hdu, std::string& message);
-
 private:
+    bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
     void StripHduName(std::string& hdu); // remove extension name
 
     // Header entries
-    casacore::Vector<casacore::String> FitsHeaderStrings(casacore::String& name, unsigned int hdu); // cfitio for FITS
-    casacore::TempImage<float>* ConvertImageToFloat(casacore::LatticeBase* image);                  // for ImageHeaderToFITS
+    casacore::Vector<casacore::String> FitsHeaderStrings(casacore::String& name, unsigned int hdu);
     void AddEntriesFromHeaderStrings(
         const casacore::Vector<casacore::String>& headers, const std::string& hdu, CARTA::FileInfoExtended& extended_info);
     void ConvertHeaderValueToNumeric(const casacore::String& name, casacore::String& value, CARTA::HeaderEntry* entry);
     void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info);
 
     // Computed entries
-    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const CoordinateAxes& coord_axes);
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
+        int stokes_axis, const std::vector<int>& render_axes);
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
         const std::vector<int>& render_axes, CompressedFits* compressed_fits = nullptr);
-    void AddComputedEntriesFromImage(
-        CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, const std::vector<int>& display_axes);
+    void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
+        const std::vector<int>& display_axes, bool use_image_for_entries);
     void AddComputedEntriesFromHeaders(
         CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, CompressedFits* compressed_fits = nullptr);
     void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set);
@@ -72,6 +68,7 @@ private:
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
         std::string& projection);
 
+    std::shared_ptr<FileLoader> _loader;
     CARTA::FileType _type;
 };
 

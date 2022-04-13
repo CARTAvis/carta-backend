@@ -29,12 +29,6 @@ public:
     CartaFitsImage(const CartaFitsImage& other);
     ~CartaFitsImage() override;
 
-    // Function to open a CARTA FITS image
-    static casacore::LatticeBase* OpenCartaFitsImage(const casacore::String& name, const casacore::MaskSpecifier& spec);
-
-    // Register the open function in casacore::ImageOpener
-    static void RegisterOpenFunction();
-
     // implement casacore ImageInterface
     casacore::String imageType() const override;
     casacore::String name(bool stripPath = false) const override;
