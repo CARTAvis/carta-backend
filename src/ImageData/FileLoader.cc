@@ -87,10 +87,10 @@ typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     }
 
     if (check_data_type && _image && (_image->imageType() == "TempImage")) {
-        if ((_data_type == casacore::TpComplex) || (_data_type == casacore::TpDComplex)) {
+        if (IsComplexDataType()) {
             throw(casacore::AipsError("Use LEL expression to open images with complex data."));
         } else {
-            throw(casacore::AipsError("Image data type not supported."));
+            throw(casacore::AipsError("Data type not supported."));
         }
     }
 
@@ -145,6 +145,10 @@ bool FileLoader::HasData(FileInfo::Data dl) const {
 
 casacore::DataType FileLoader::GetDataType() {
     return _data_type;
+}
+
+bool FileLoader::IsComplexDataType() {
+    return (_data_type == casacore::DataType::TpComplex) || (_data_type == casacore::DataType::TpDComplex);
 }
 
 casacore::IPosition FileLoader::GetShape() {

@@ -48,6 +48,7 @@ public:
     // Return the opened casacore image or its class name
     ImageRef GetImage(bool check_data_type = true);
     casacore::DataType GetDataType();
+    bool IsComplexDataType();
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
