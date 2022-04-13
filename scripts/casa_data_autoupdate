@@ -33,18 +33,28 @@ function check_cmd_status {
 
 function autoupdate {
     WGET="wget"
-    MEASURES_DATA_URL="ftp://ftp.astron.nl/outgoing/Measures/WSRT_Measures.ztar -P /tmp"
+    CURL="curl"
+    MEASURES_DATA_URL="ftp://ftp.astron.nl/outgoing/Measures/WSRT_Measures.ztar"
     TAR_CMD="tar -xzf /tmp/WSRT_Measures.ztar"
     CLEAN_UP="rm /tmp/WSRT_Measures.ztar"
 
-    if ! [ -x "$(command -v $WGET)" ]
-    then
-        echo "ERROR: $SVN command not found" >&2
-        exit 1
+    if [ -x "$(command -v $WGET)" ];
+    then	    
+        $WGET $MEASURES_DATA_URL -P /tmp && $TAR_CMD -C $CASA_DATA_USER_DIR && $CLEAN_UP
+        check_cmd_status # check if status code is zero and exit if not
+    else
+        echo "ERROR: $WGET command not found" >&2
+        echo "Trying curl"
+        
+	if [ -x "$(command -v curl)" ];
+	then
+            $CURL $MEASURES_DATA_URL --output /tmp/WSRT_Measures.ztar && $TAR_CMD -C $CASA_DATA_USER_DIR && $CLEAN_UP
+            check_cmd_status # check if status code is zero and exit if not
+        else
+            echo 'Error: curl is not installed.' >&2
+            exit 1
+        fi
     fi
-
-    $WGET $MEASURES_DATA_URL && $TAR_CMD -C $CASA_DATA_USER_DIR && $CLEAN_UP
-    check_cmd_status # check if status code is zero and exit if not
 
     echo "$(date)" > $CASA_DATA_USER_DIR/last_update
     sleep 0.6 # let the progress bar update end
