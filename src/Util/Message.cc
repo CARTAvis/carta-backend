@@ -22,13 +22,14 @@ CARTA::CloseFile Message::CloseFile(int32_t file_id) {
 }
 
 CARTA::OpenFile Message::OpenFile(
-    std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
+    std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode, bool lel_expr) {
     CARTA::OpenFile open_file;
     open_file.set_directory(directory);
     open_file.set_file(file);
     open_file.set_hdu(hdu);
     open_file.set_file_id(file_id);
     open_file.set_render_mode(render_mode);
+    open_file.set_lel_expr(lel_expr);
     return open_file;
 }
 
