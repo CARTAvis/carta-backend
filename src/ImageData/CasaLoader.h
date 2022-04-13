@@ -39,6 +39,7 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
                 auto lattice = casacore::ImageOpener::openImage(_filename);
                 _image.reset(ConvertImageToFloat(lattice));
                 _data_type = lattice->dataType();
+                delete lattice;
                 converted = true;
             }
         }
