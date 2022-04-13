@@ -46,12 +46,13 @@ function autoupdate {
         echo "ERROR: $WGET command not found" >&2
         echo "Trying curl"
         
-	if [ -x "$(command -v curl)" ];
+	if [ -x "$(command -v $CURL)" ];
 	then
             $CURL $MEASURES_DATA_URL --output /tmp/WSRT_Measures.ztar && $TAR_CMD -C $CASA_DATA_USER_DIR && $CLEAN_UP
             check_cmd_status # check if status code is zero and exit if not
         else
-            echo 'Error: curl is not installed.' >&2
+            echo "ERROR: $CURL is not installed." >&2
+	    echo "ERROR: Please install $WGET or $CURL." >&2
             exit 1
         fi
     fi
