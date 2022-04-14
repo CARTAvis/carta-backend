@@ -2212,7 +2212,7 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     auto* tile_pi = response.add_intensity_tiles();
     auto* tile_pa = response.add_angle_tiles();
 
-    if ((stokes_intensity < 0) && (stokes_angle < 0)) { // clear the overlay requirements
+    if ((stokes_intensity < 0) && (stokes_angle < 0)) { // Clear the overlay requirements
         _vector_field_settings.ClearSettings();
         response.set_progress(1.0);
         partial_vector_field_callback(response);
@@ -2227,6 +2227,16 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
     // Prevent deleting the Frame while the loop is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
+
+    auto apply_threshold_on_data = [&](std::vector<float>& tmp_data) {
+        if (!std::isnan(threshold)) {
+            for (auto& value : tmp_data) {
+                if (!std::isnan(value) && (value <= threshold)) {
+                    value = std::numeric_limits<float>::quiet_NaN();
+                }
+            }
+        }
+    };
 
     // Consider the case if an image has no stokes axis
     if (_stokes_axis < 0) {
@@ -2243,13 +2253,8 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
                 return false;
             }
             // Apply a threshold cut
-            if (!std::isnan(threshold)) {
-                for (auto& value : down_sampled_data) {
-                    if (!std::isnan(value) && (value <= threshold)) {
-                        value = std::numeric_limits<float>::quiet_NaN();
-                    }
-                }
-            }
+            apply_threshold_on_data(down_sampled_data);
+
             if (stokes_angle > -1) {
                 // Fill PA tiles protobuf data
                 FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
@@ -2273,11 +2278,15 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
     // Get Stokes I, Q, and U indices
     int stokes_i, stokes_q, stokes_u;
-    if (fractional && !GetStokesTypeIndex("Ix", stokes_i)) {
-        return false;
-    }
-    if (!GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
-        return false;
+    if ((stokes_intensity == 1) || (stokes_angle == 1)) {
+        // Calculate FPI requires stokes I data
+        if (fractional && !GetStokesTypeIndex("Ix", stokes_i)) {
+            return false;
+        }
+        // Calculate PI or PA require stokes Q and U data
+        if (!GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
+            return false;
+        }
     }
 
     // Get image tiles data
@@ -2286,15 +2295,28 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
         // Get down sampled raster tile data
-        std::vector<float> down_sampled_i, down_sampled_q, down_sampled_u;
+        std::vector<float> down_sampled_i, down_sampled_q, down_sampled_u, down_sampled_data;
         int down_sampled_width, down_sampled_height;
-        if (fractional &&
-            !GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
-            return false;
-        }
-        if (!GetDownSampledRasterData(down_sampled_q, down_sampled_width, down_sampled_height, channel, stokes_q, bounds, mip) ||
-            !GetDownSampledRasterData(down_sampled_u, down_sampled_width, down_sampled_height, channel, stokes_u, bounds, mip)) {
-            return false;
+
+        if ((stokes_intensity == 1) || (stokes_angle == 1)) {
+            // Calculate FPI requires stokes I data
+            if (fractional &&
+                !GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
+                return false;
+            }
+            // Calculate PI or PA require stokes Q and U data
+            if (!GetDownSampledRasterData(down_sampled_q, down_sampled_width, down_sampled_height, channel, stokes_q, bounds, mip) ||
+                !GetDownSampledRasterData(down_sampled_u, down_sampled_width, down_sampled_height, channel, stokes_u, bounds, mip)) {
+                return false;
+            }
+        } else if ((stokes_intensity == 0) || (stokes_angle == 0)) {
+            // Calculate the current stokes as polarized intensity or polarized angle
+            if (!GetDownSampledRasterData(
+                    down_sampled_data, down_sampled_width, down_sampled_height, channel, CURRENT_STOKES, bounds, mip)) {
+                return false;
+            }
+            // Apply a threshold cut
+            apply_threshold_on_data(down_sampled_data);
         }
 
         // Calculate PI, FPI, and PA
@@ -2344,12 +2366,12 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             return pa;
         };
 
-        // Set results data
+        // Set results data: polarized intensity (pi) and polarized angle (pa)
         std::vector<float> pi, pa;
-        if (stokes_intensity == 1) {
+        if (stokes_intensity > -1) {
             pi.resize(down_sampled_width * down_sampled_height);
         }
-        if (stokes_angle == 1) {
+        if (stokes_angle > -1) {
             pa.resize(down_sampled_width * down_sampled_height);
         }
 
@@ -2368,19 +2390,29 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         }
 
         // Set NaN for PA if PI/FPI is NaN
-        if ((stokes_intensity == 1) && stokes_angle == 1) {
+        if ((stokes_intensity == 1) && (stokes_angle == 1)) {
             std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
         }
 
-        // Fill PI tiles protobuf data
+        // Fill polarized intensity tiles protobuf data
         if (stokes_intensity == 1) {
+            // PI as polarized intensity
             FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
+                compression_type, compression_quality);
+        } else if (stokes_intensity == 0) {
+            // Current stokes data as polarized intensity
+            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
                 compression_type, compression_quality);
         }
 
-        // Fill PA tiles protobuf data
+        // Fill polarized angle tiles protobuf data
         if (stokes_angle == 1) {
+            // PA as polarized angle
             FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
+                compression_type, compression_quality);
+        } else if (stokes_angle == 0) {
+            // Current stokes data as polarized angle
+            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
                 compression_type, compression_quality);
         }
 

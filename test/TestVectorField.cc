@@ -990,7 +990,7 @@ public:
         std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
     }
 
-    static void GetDownSampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip,
+    static void GetDownSampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
         int& down_sampled_width, int& down_sampled_height, std::vector<float>& pa) {
         // Create the image reader
         std::shared_ptr<DataReader> reader = nullptr;
@@ -1000,7 +1000,7 @@ public:
             reader.reset(new FitsDataReader(file_path));
         }
 
-        std::vector<float> image_data = reader->ReadXY(channel, -1);
+        std::vector<float> image_data = reader->ReadXY(channel, stokes);
 
         // Block averaging, get down sampled data
         int image_width = reader->Width();
@@ -1305,10 +1305,11 @@ public:
         // Calculate the vector field with the whole 2D image data
 
         int channel = 0;
+        int stokes = 0;
         int down_sampled_width;
         int down_sampled_height;
         std::vector<float> pixels;
-        GetDownSampledPixels(file_path_string, file_type, channel, mip, down_sampled_width, down_sampled_height, pixels);
+        GetDownSampledPixels(file_path_string, file_type, channel, stokes, mip, down_sampled_width, down_sampled_height, pixels);
 
         // Apply a threshold cut
         if (!std::isnan(threshold)) {
@@ -1573,6 +1574,9 @@ TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     CARTA::FileType file_type = CARTA::FileType::FITS;
     int mip = 4;
     double threshold = 0.0;
+    TestImageWithNoStokesAxis("1110 1110 25 4", IMAGE_OPTS_NAN, file_type, mip, -1, 0);
+    TestImageWithNoStokesAxis("1110 1110 25 4", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
+    TestImageWithNoStokesAxis("1110 1110 25 4", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, -1, 0);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
@@ -1580,6 +1584,9 @@ TEST_F(VectorFieldTest, TestImageWithNoStokesAxis) {
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, -1);
     TestImageWithNoStokesAxis("1110 1110", IMAGE_OPTS_NAN, file_type, mip, 0, 0);
 
+    TestImageWithNoStokesAxis("1110 1110 25 4", IMAGE_OPTS_NAN, file_type, mip, -1, 0, threshold);
+    TestImageWithNoStokesAxis("1110 1110 25 4", IMAGE_OPTS_NAN, file_type, mip, 0, -1, threshold);
+    TestImageWithNoStokesAxis("1110 1110 25 4", IMAGE_OPTS_NAN, file_type, mip, 0, 0, threshold);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, -1, 0, threshold);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, -1, threshold);
     TestImageWithNoStokesAxis("1110 1110 25", IMAGE_OPTS_NAN, file_type, mip, 0, 0, threshold);
