@@ -1832,6 +1832,19 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
+    double rest_freq(save_file_msg.rest_freq());
+    if (!std::isnan(rest_freq)) {
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        casacore::String errorMsg("");
+        bool success = coord_sys.setRestFrequency(errorMsg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
+        if (success) {
+            success = image->setCoordinateInfo(coord_sys);
+        }
+        if (!success) {
+            spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", errorMsg);
+        }
+    }
+    
     // Export image data to file
     try {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
