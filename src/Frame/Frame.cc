@@ -2190,18 +2190,14 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     float threshold = (float)_vector_field_settings.threshold;
     CARTA::CompressionType compression_type = _vector_field_settings.compression_type;
     float compression_quality = _vector_field_settings.compression_quality;
-
+    int stokes_intensity = _vector_field_settings.stokes_intensity;
+    int stokes_angle = _vector_field_settings.stokes_angle;
     double q_error = _vector_field_settings.q_error;
     double u_error = _vector_field_settings.u_error;
     bool debiasing = _vector_field_settings.debiasing;
     if (!debiasing) {
         q_error = u_error = 0;
     }
-
-    int stokes_intensity = _vector_field_settings.stokes_intensity;
-    int stokes_angle = _vector_field_settings.stokes_angle;
-    bool calculate_stokes_intensity(stokes_intensity >= 0);
-    bool calculate_stokes_angle(stokes_angle >= 0);
 
     // Get current channel
     int channel = CurrentZ();
@@ -2350,15 +2346,15 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
         // Set results data
         std::vector<float> pi, pa;
-        if (calculate_stokes_intensity) {
+        if (stokes_intensity == 1) {
             pi.resize(down_sampled_width * down_sampled_height);
         }
-        if (calculate_stokes_angle) {
+        if (stokes_angle == 1) {
             pa.resize(down_sampled_width * down_sampled_height);
         }
 
         // Calculate PI
-        if (calculate_stokes_intensity) {
+        if (stokes_intensity == 1) {
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
             // Calculate FPI
             if (fractional) {
@@ -2367,23 +2363,23 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         }
 
         // Calculate PA
-        if (calculate_stokes_angle) {
+        if (stokes_angle == 1) {
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
         }
 
         // Set NaN for PA if PI/FPI is NaN
-        if (calculate_stokes_intensity && calculate_stokes_angle) {
+        if ((stokes_intensity == 1) && stokes_angle == 1) {
             std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
         }
 
         // Fill PI tiles protobuf data
-        if (calculate_stokes_intensity) {
+        if (stokes_intensity == 1) {
             FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
                 compression_type, compression_quality);
         }
 
         // Fill PA tiles protobuf data
-        if (calculate_stokes_angle) {
+        if (stokes_angle == 1) {
             FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
                 compression_type, compression_quality);
         }

@@ -616,8 +616,8 @@ public:
     }
 
     static bool TestVectorFieldCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
-        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
-        int stokes_angle = 0) {
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
+        int stokes_angle = 1) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
@@ -820,8 +820,8 @@ public:
     }
 
     static void TestVectorFieldCalc2(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
-        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
-        int stokes_angle = 0) {
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
+        int stokes_angle = 1) {
         // Create the sample image
         std::string file_path;
         if (file_type == CARTA::FileType::HDF5) {
@@ -1014,8 +1014,8 @@ public:
     }
 
     static void TestStokesIntensityOrAngleSettings(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
-        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
-        int stokes_angle = 0) {
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
+        int stokes_angle = 1) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
@@ -1064,8 +1064,8 @@ public:
 
     static std::pair<float, float> TestZFPCompression(std::string image_opts, const CARTA::FileType& file_type, int mip,
         float comprerssion_quality, bool fractional, bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0) {
-        int stokes_intensity = 0;
-        int stokes_angle = 0;
+        int stokes_intensity = 1;
+        int stokes_angle = 1;
 
         // Create the sample image
         std::string file_path_string;
@@ -1200,8 +1200,8 @@ public:
     }
 
     static void TestSessionVectorFieldCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
-        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 0,
-        int stokes_angle = 0) {
+        bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
+        int stokes_angle = 1) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
