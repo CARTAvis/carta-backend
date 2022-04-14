@@ -2082,6 +2082,9 @@ void Session::ExecuteAnimationFrameInner() {
                     // Send contour data if required
                     SendContourData(active_file_id);
 
+                    // Send vector field data if required
+                    SendVectorFieldData(active_file_id);
+
                     // Send tile data
                     OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
 
