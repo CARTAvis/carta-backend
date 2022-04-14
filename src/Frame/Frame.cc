@@ -1844,7 +1844,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", errorMsg);
         }
     }
-    
+
     // Export image data to file
     try {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
