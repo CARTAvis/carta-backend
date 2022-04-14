@@ -2216,6 +2216,13 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     auto* tile_pi = response.add_intensity_tiles();
     auto* tile_pa = response.add_angle_tiles();
 
+    if ((stokes_intensity < 0) && (stokes_angle < 0)) { // clear the overlay requirements
+        _vector_field_settings.ClearSettings();
+        response.set_progress(1.0);
+        partial_vector_field_callback(response);
+        return true;
+    }
+
     // Get tiles
     std::vector<Tile> tiles;
     int image_width = Width();
@@ -2235,7 +2242,8 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             // Get down sampled 2D pixel data
             std::vector<float> down_sampled_data;
             int down_sampled_width, down_sampled_height;
-            if (!GetDownSampledRasterData(down_sampled_data, down_sampled_width, down_sampled_height, channel, -1, bounds, mip)) {
+            if (!GetDownSampledRasterData(
+                    down_sampled_data, down_sampled_width, down_sampled_height, channel, CURRENT_STOKES, bounds, mip)) {
                 return false;
             }
             // Apply a threshold cut
@@ -2246,12 +2254,12 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
                     }
                 }
             }
-            if (calculate_stokes_angle) {
+            if (stokes_angle > -1) {
                 // Fill PA tiles protobuf data
                 FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
                     down_sampled_data, compression_type, compression_quality);
             }
-            if (calculate_stokes_intensity) {
+            if (stokes_intensity > -1) {
                 // Fill PI tiles protobuf data
                 FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
                     down_sampled_data, compression_type, compression_quality);

@@ -152,6 +152,19 @@ struct VectorFieldSettings {
     bool operator!=(const VectorFieldSettings& rhs) const {
         return !(*this == rhs);
     }
+
+    void ClearSettings() {
+        smoothing_factor = 0;
+        fractional = false;
+        threshold = std::numeric_limits<double>::quiet_NaN();
+        debiasing = false;
+        q_error = 0;
+        u_error = 0;
+        stokes_intensity = -1;
+        stokes_angle = -1;
+        compression_type = CARTA::CompressionType::NONE;
+        compression_quality = 0;
+    }
 };
 
 // Polarization vector field callback (intensity_tile, angle_tile, progress)

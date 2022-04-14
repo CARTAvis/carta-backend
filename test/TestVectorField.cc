@@ -1024,9 +1024,6 @@ public:
             file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
         }
 
-        bool calculate_stokes_intensity(stokes_intensity >= 0);
-        bool calculate_stokes_angle(stokes_angle >= 0);
-
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
         std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
@@ -1043,13 +1040,13 @@ public:
 
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& response) {
-            if (calculate_stokes_intensity) {
+            if (stokes_intensity > -1) {
                 EXPECT_GE(response.intensity_tiles_size(), 1);
             } else {
                 EXPECT_EQ(response.intensity_tiles_size(), 1);
             }
 
-            if (calculate_stokes_angle) {
+            if (stokes_angle > -1) {
                 EXPECT_GE(response.angle_tiles_size(), 1);
             } else {
                 EXPECT_EQ(response.angle_tiles_size(), 1);
