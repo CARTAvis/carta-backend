@@ -62,13 +62,14 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
 casacore::TempImage<float>* CasaLoader::ConvertImageToFloat(casacore::LatticeBase* lattice) {
     // Create a TempImage with no data
     if (!lattice) {
+        // Not supported by ImageOpener
         throw(casacore::AipsError("Image data type not supported."));
     }
 
     casacore::TempImage<float>* float_image(nullptr);
 
     switch (lattice->dataType()) {
-        case casacore::TpBool: { // not supported by ImageOpener
+        case casacore::TpBool: { // Not supported by ImageOpener
             casacore::PagedImage<bool>* bool_image = dynamic_cast<casacore::PagedImage<bool>*>(lattice);
             float_image = new casacore::TempImage<float>(bool_image->shape(), bool_image->coordinates());
             float_image->setUnits(bool_image->units());
@@ -76,7 +77,7 @@ casacore::TempImage<float>* CasaLoader::ConvertImageToFloat(casacore::LatticeBas
             float_image->setImageInfo(bool_image->imageInfo());
             break;
         }
-        case casacore::TpInt: { // not supported by ImageOpener
+        case casacore::TpInt: { // Not supported by ImageOpener
             casacore::PagedImage<int>* int_image = dynamic_cast<casacore::PagedImage<int>*>(lattice);
             float_image = new casacore::TempImage<float>(int_image->shape(), int_image->coordinates());
             float_image->setUnits(int_image->units());

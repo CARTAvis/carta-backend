@@ -86,9 +86,10 @@ typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
         OpenFile(_hdu);
     }
 
-    if (check_data_type && _image && (_image->imageType() == "TempImage")) {
+    if (_image && check_data_type && (_data_type != _image->dataType()) && (_image->imageType() == "TempImage")) {
+        // Check for CasaLoader workaround for non-float data; does not copy data into new image (for file list only)
         if (IsComplexDataType()) {
-            throw(casacore::AipsError("Use LEL expression to open images with complex data."));
+            throw(casacore::AipsError("Use image arithmetic to open images with complex data."));
         } else {
             throw(casacore::AipsError("Data type not supported."));
         }
