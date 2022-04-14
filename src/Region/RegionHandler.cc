@@ -2071,7 +2071,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     float progress(0.0);
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    if (num_lines == 1) {
+    if ((num_lines == 1) && per_z) {
         // Use pixel center of line and keep it centered
         PointXy endpoint0(control_points[0].x(), control_points[0].y());
         PointXy endpoint1(control_points[1].x(), control_points[1].y());
