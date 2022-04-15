@@ -163,20 +163,6 @@ void PolarizationCalculator::SetImageStokesInfo(casacore::ImageInterface<float>&
     image.setImageInfo(info);
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::PrepareOutputImage(const casacore::ImageInterface<float>& image) {
-    string empty_out_name;
-    casacore::Record empty_record;
-    casacore::String empty_mask;
-    bool drop_deg(false);
-    bool overwrite(false);
-    bool list(false);
-    bool extend_mask(false);
-    bool attach_mask(false);
-    auto out_image = casa::SubImageFactory<float>::createImage(
-        image, empty_out_name, empty_record, empty_mask, drop_deg, overwrite, list, extend_mask, attach_mask);
-    return out_image;
-}
-
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeTotalPolarizedIntensity() {
     if ((!_image_valid)) {
         return nullptr;
@@ -192,12 +178,12 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
 
     auto node = MakeTotalPolarizedIntensityNode();
     casacore::LatticeExpr<float> lattice_expr(node);
-    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("TotalPolarizedIntensity"));
-    image_expr.setUnits(_image->units());
-    SetImageStokesInfo(image_expr, Q);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::Ptotal);
+    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Ptotal"));
+    image_expr->setUnits(_image->units());
+    SetImageStokesInfo(*image_expr, Q);
+    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::Ptotal);
 
-    return PrepareOutputImage(image_expr);
+    return image_expr;
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeTotalFractionalPolarizedIntensity() {
@@ -216,12 +202,12 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
 
     auto node = 100.0 * MakeTotalPolarizedIntensityNode() / (*_stokes_image[I]);
     casacore::LatticeExpr<float> lattice_expr(node);
-    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("TotalFractionalPolarizedIntensity"));
-    image_expr.setUnits(casacore::Unit("%"));
-    SetImageStokesInfo(image_expr, I);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::PFtotal);
+    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("PFtotal"));
+    image_expr->setUnits(casacore::Unit("%"));
+    SetImageStokesInfo(*image_expr, I);
+    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::PFtotal);
 
-    return PrepareOutputImage(image_expr);
+    return image_expr;
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedIntensity() {
@@ -238,12 +224,12 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
 
     auto node = MakePolarizedIntensityNode();
     casacore::LatticeExpr<float> lattice_expr(node);
-    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyPolarizedIntensity"));
-    image_expr.setUnits(_image->units());
-    SetImageStokesInfo(image_expr, Q);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::Plinear);
+    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Plinear"));
+    image_expr->setUnits(_image->units());
+    SetImageStokesInfo(*image_expr, Q);
+    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::Plinear);
 
-    return PrepareOutputImage(image_expr);
+    return image_expr;
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputeFractionalPolarizedIntensity() {
@@ -261,12 +247,12 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
 
     auto node = 100.0 * MakePolarizedIntensityNode() / (*_stokes_image[I]);
     casacore::LatticeExpr<float> lattice_expr(node);
-    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyFractionalPolarizedIntensity"));
-    image_expr.setUnits(casacore::Unit("%"));
-    SetImageStokesInfo(image_expr, I);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::PFlinear);
+    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("PFlinear"));
+    image_expr->setUnits(casacore::Unit("%"));
+    SetImageStokesInfo(*image_expr, I);
+    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::PFlinear);
 
-    return PrepareOutputImage(image_expr);
+    return image_expr;
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::ComputePolarizedAngle(bool radians) {
@@ -285,17 +271,17 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
     float factor = radians ? C::pi / 180.0 : 1.0;
     casacore::LatticeExprNode node(factor * casacore::pa(*u, *q));
     casacore::LatticeExpr<float> lattice_expr(node);
-    casacore::ImageExpr<float> image_expr(lattice_expr, casacore::String("LinearlyPolarizedPositionAngle"));
+    auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Pangle"));
 
-    image_expr.setUnits(casacore::Unit(radians ? "rad" : "deg"));
+    image_expr->setUnits(casacore::Unit(radians ? "rad" : "deg"));
     casacore::ImageInfo image_info = _image->imageInfo();
     if (image_info.hasMultipleBeams()) {
         // Since these beams can vary with stokes/polarization, they will not be copied to the output image
         image_info.removeRestoringBeam();
     }
 
-    image_expr.setImageInfo(image_info);
-    FiddleStokesCoordinate(image_expr, casacore::Stokes::StokesTypes::Pangle);
+    image_expr->setImageInfo(image_info);
+    FiddleStokesCoordinate(*image_expr, casacore::Stokes::StokesTypes::Pangle);
 
-    return PrepareOutputImage(image_expr);
+    return image_expr;
 }
