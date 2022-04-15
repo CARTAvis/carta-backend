@@ -1779,10 +1779,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
+    double rest_freq(save_file_msg.rest_freq());
+    bool change_rest_freq = !std::isnan(rest_freq);
+
     // Try to save file from loader (for entire LEL image in CASA format only)
-    if (!region && _loader->SaveFile(output_file_type, output_filename.string(), message)) {
-        save_file_ack.set_success(true);
-        return;
+    if (!region && !change_rest_freq) {
+        if (_loader->SaveFile(output_file_type, output_filename.string(), message)) {
+            save_file_ack.set_success(true);
+            return;
+        }
     }
 
     // Begin with entire image
@@ -1832,8 +1837,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
-    double rest_freq(save_file_msg.rest_freq());
-    if (!std::isnan(rest_freq)) {
+    if (change_rest_freq) {
         casacore::CoordinateSystem coord_sys = image->coordinates();
         casacore::String errorMsg("");
         bool success = coord_sys.setRestFrequency(errorMsg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
