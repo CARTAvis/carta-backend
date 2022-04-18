@@ -469,9 +469,9 @@ public:
 
             auto calc_pa = [&](float q, float u) {
                 if (!std::isnan(q) && !isnan(u)) {
-                    return atan2(u, q) / 2;
+                    return (180.0 / casacore::C::pi) * atan2(u, q) / 2;
                 }
-                return std::numeric_limits<float>::quiet_NaN();
+                return std::numeric_limits<double>::quiet_NaN();
             };
 
             auto reset_pa = [&](float pi, float pa) {
@@ -510,7 +510,7 @@ public:
                     expected_pi = sqrt(pow(down_sampled_q[j], 2) + pow(down_sampled_u[j], 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
                 }
 
-                float expected_pa = atan2(down_sampled_u[j], down_sampled_q[j]) / 2; // j.e., 0.5 * tan^-1 (U∕Q)
+                float expected_pa = (180.0 / casacore::C::pi) * atan2(down_sampled_u[j], down_sampled_q[j]) / 2; // j.e., 0.5 * tan^-1 (U∕Q)
 
                 expected_pi = (expected_pi > threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
                 expected_pa = (expected_pi > threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
@@ -715,9 +715,9 @@ public:
 
         auto calc_pa = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
-                return atan2(u, q) / 2;
+                return (180.0 / casacore::C::pi) * atan2(u, q) / 2;
             }
-            return std::numeric_limits<float>::quiet_NaN();
+            return std::numeric_limits<double>::quiet_NaN();
         };
 
         auto reset_pa = [&](float pi, float pa) {
@@ -887,7 +887,7 @@ public:
         if (file_type == CARTA::FileType::HDF5) {
             RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
             CmpVectors(pi, pi2, 1e-5);
-            CmpVectors(pa, pa2, 1e-5);
+            CmpVectors(pa, pa2, 1e-4);
         } else {
             CmpVectors(pi, pi2);
             CmpVectors(pa, pa2);
@@ -960,9 +960,9 @@ public:
 
         auto calc_pa = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
-                return atan2(u, q) / 2;
+                return (180.0 / casacore::C::pi) * atan2(u, q) / 2;
             }
-            return std::numeric_limits<float>::quiet_NaN();
+            return std::numeric_limits<double>::quiet_NaN();
         };
 
         auto reset_pa = [&](float pi, float pa) {
@@ -1283,7 +1283,7 @@ public:
         if (file_type == CARTA::FileType::HDF5) {
             RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
             CmpVectors(pi, pi2, 1e-5);
-            CmpVectors(pa, pa2, 1e-5);
+            CmpVectors(pa, pa2, 1e-4);
         } else {
             CmpVectors(pi, pi2);
             CmpVectors(pa, pa2);

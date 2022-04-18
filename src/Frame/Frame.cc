@@ -2354,9 +2354,9 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
         auto calc_pa = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
-                return atan2(u, q) / 2;
+                return (180.0 / casacore::C::pi) * atan2(u, q) / 2;
             }
-            return std::numeric_limits<float>::quiet_NaN();
+            return std::numeric_limits<double>::quiet_NaN();
         };
 
         auto reset_pa = [&](float pi, float pa) {
