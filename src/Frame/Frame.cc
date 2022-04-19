@@ -374,10 +374,9 @@ bool Frame::FillImageCache() {
     }
 
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
-    casacore::Slicer section = GetImageSlicer(AxisRange(_z_index), _stokes_index).second;
-    _image_cache_size = section.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
     std::pair<StokesSrc, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
+    _image_cache_size = stokes_slicer.second.length().product();
+    _image_cache = std::make_unique<float[]>(_image_cache_size);
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
