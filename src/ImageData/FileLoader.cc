@@ -886,7 +886,7 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
     return false;
 }
 
-carta::CasaLoader::ImageRef FileLoader::GetStokesImage(const StokesSrc& stokes_src) {
+typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSrc& stokes_src) {
     if (stokes_src.OriginalImage()) {
         return GetImage();
     }
