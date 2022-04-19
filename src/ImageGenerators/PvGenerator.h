@@ -22,16 +22,15 @@ public:
     PvGenerator(int file_id, const std::string& filename);
 
     bool GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
-        double offset_increment, int stokes, GeneratedImage& pv_image, std::string& message);
+        const casacore::Quantity& offset_increment, int stokes, GeneratedImage& pv_image, std::string& message);
 
 private:
     std::string GetPvFilename(const std::string& filename);
 
     bool SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes,
-        double offset_increment, std::string& message);
-    casacore::CoordinateSystem GetPvCoordinateSystem(
-        const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape, int stokes, double offset_increment);
-    casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
+        const casacore::Quantity& offset_increment, std::string& message);
+    casacore::CoordinateSystem GetPvCoordinateSystem(const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape,
+        int stokes, const casacore::Quantity& offset_increment);
     GeneratedImage GetGeneratedImage();
 
     // GeneratedImage parameters
