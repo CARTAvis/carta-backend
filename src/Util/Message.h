@@ -47,7 +47,7 @@ public:
     static CARTA::RegisterViewer RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags);
     static CARTA::CloseFile CloseFile(int32_t file_id);
     static CARTA::OpenFile OpenFile(
-        std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode);
+        std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode, bool lel_expr = false);
     static CARTA::SetImageChannels SetImageChannels(
         int32_t file_id, int32_t channel, int32_t stokes, CARTA::CompressionType compression_type, float compression_quality);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);

@@ -254,6 +254,9 @@ casacore::Vector<casacore::String> CartaHdf5Image::FitsHeaderStrings() {
     return _fits_header_strings;
 }
 
+casacore::DataType CartaHdf5Image::internalDataType() {
+    return _lattice.dataType();
+}
 casacore::uInt CartaHdf5Image::advisedMaxPixels() const {
     return _lattice.advisedMaxPixels();
 }

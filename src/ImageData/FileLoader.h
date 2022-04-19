@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 
+#include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/SubImage.h>
 
@@ -45,7 +46,9 @@ public:
     void CloseImageIfUpdated();
 
     // Return the opened casacore image or its class name
-    ImageRef GetImage();
+    ImageRef GetImage(bool check_data_type = true);
+    casacore::DataType GetDataType();
+    bool IsComplexDataType();
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
@@ -113,17 +116,15 @@ protected:
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
-    // Save image properties; only reopen for data or beams
-    // Axes, dimension values
+    // Save image properties
     casacore::IPosition _image_shape;
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
     std::vector<int> _render_axes;
-    // Coordinate system
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
-    // Pixel mask
     bool _has_pixel_mask;
+    casacore::DataType _data_type;
 
     // Storage for z-plane and cube statistics
     std::vector<std::vector<FileInfo::ImageStats>> _z_stats;

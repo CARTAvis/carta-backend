@@ -65,6 +65,8 @@ public:
 
     casacore::Vector<casacore::String> FitsHeaderStrings();
 
+    casacore::DataType internalDataType();
+
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
     inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
