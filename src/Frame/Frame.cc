@@ -1839,13 +1839,13 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     if (change_rest_freq) {
         casacore::CoordinateSystem coord_sys = image->coordinates();
-        casacore::String errorMsg("");
-        bool success = coord_sys.setRestFrequency(errorMsg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
+        casacore::String error_msg("");
+        bool success = coord_sys.setRestFrequency(error_msg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
         if (success) {
             success = image->setCoordinateInfo(coord_sys);
         }
         if (!success) {
-            spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", errorMsg);
+            spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", error_msg);
         }
     }
 
