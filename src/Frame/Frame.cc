@@ -44,8 +44,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
-      _moment_generator(nullptr),
-      _stokes_src(StokesSrc()) {
+      _moment_generator(nullptr) {
     // Initialize for operator==
     _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
 
@@ -1763,17 +1762,7 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
     const std::pair<StokesSrc, casacore::ImageRegion>& stokes_region, const CARTA::MomentRequest& moment_request,
     CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
-
-    if (!_moment_generator) {
-        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), _loader->GetStokesImage(stokes_region.first));
-        _stokes_src = stokes_region.first;
-    }
-
-    if (_stokes_src != stokes_region.first) {
-        _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.first)));
-        _stokes_src = stokes_region.first;
-    }
-
+    _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.first)));
     _loader->CloseImageIfUpdated();
 
     if (_moment_generator) {

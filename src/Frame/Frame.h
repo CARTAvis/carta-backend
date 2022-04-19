@@ -310,7 +310,6 @@ protected:
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
-    StokesSrc _stokes_src;
 };
 
 } // namespace carta
