@@ -82,9 +82,18 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-typename FileLoader::ImageRef FileLoader::GetImage() {
+typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
+    }
+
+    if (_image && check_data_type && (_data_type != _image->dataType()) && (_image->imageType() == "TempImage")) {
+        // Check for CasaLoader workaround for non-float data; does not copy data into new image (for file list only)
+        if (IsComplexDataType()) {
+            throw(casacore::AipsError("Use image arithmetic to open images with complex data."));
+        } else {
+            throw(casacore::AipsError("Data type not supported."));
+        }
     }
 
     return _image;
@@ -134,6 +143,14 @@ bool FileLoader::HasData(FileInfo::Data dl) const {
     }
 
     return false;
+}
+
+casacore::DataType FileLoader::GetDataType() {
+    return _data_type;
+}
+
+bool FileLoader::IsComplexDataType() {
+    return (_data_type == casacore::DataType::TpComplex) || (_data_type == casacore::DataType::TpDComplex);
 }
 
 casacore::IPosition FileLoader::GetShape() {

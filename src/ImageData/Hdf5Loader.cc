@@ -30,6 +30,7 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
         _num_dims = _image_shape.size();
         _has_pixel_mask = _image->hasPixelMask();
         _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+        _data_type = hdf5_image->internalDataType();
 
         // Load swizzled image lattice
         if (HasData(FileInfo::Data::SWIZZLED)) {
