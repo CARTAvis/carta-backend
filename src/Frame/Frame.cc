@@ -2316,7 +2316,7 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         int down_sampled_width, down_sampled_height;
 
         if ((stokes_intensity == 1) || (stokes_angle == 1)) {
-            // Calculate FPI requires stokes I data
+            // Calculate fractional PI requires stokes I data
             if (fractional &&
                 !GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
                 return false;
@@ -2326,7 +2326,9 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
                 !GetDownSampledRasterData(down_sampled_u, down_sampled_width, down_sampled_height, channel, stokes_u, bounds, mip)) {
                 return false;
             }
-        } else if ((stokes_intensity == 0) || (stokes_angle == 0)) {
+        }
+
+        if ((stokes_intensity == 0) || (stokes_angle == 0)) {
             // Calculate the current stokes as polarized intensity or polarized angle
             if (!GetDownSampledRasterData(
                     down_sampled_data, down_sampled_width, down_sampled_height, channel, CURRENT_STOKES, bounds, mip)) {
@@ -2336,7 +2338,7 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             apply_threshold_on_data(down_sampled_data);
         }
 
-        // Calculate PI, FPI, and PA
+        // Lambda functions for calculating PI, fractional PI, or PA
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
                 float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
@@ -2372,52 +2374,42 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             return pa;
         };
 
-        // Set results data: polarized intensity (pi) and polarized angle (pa)
+        // Calculate polarized intensity (pi) or polarized angle (pa) if required
         std::vector<float> pi, pa;
-        if (stokes_intensity > -1) {
+        bool calculate_pi((stokes_intensity == 1) || !std::isnan(threshold));
+        bool calculate_pa(stokes_angle == 1);
+        if (calculate_pi) {
             pi.resize(down_sampled_width * down_sampled_height);
-        }
-        if (stokes_angle > -1) {
-            pa.resize(down_sampled_width * down_sampled_height);
-        }
-
-        // Calculate PI
-        if (stokes_intensity == 1) {
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
-            // Calculate FPI
-            if (fractional) {
+            if (fractional) { // Calculate fractional PI
                 std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
             }
         }
 
-        // Calculate PA
-        if (stokes_angle == 1) {
+        if (calculate_pa) {
+            pa.resize(down_sampled_width * down_sampled_height);
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
         }
 
-        // Set NaN for PA if PI/FPI is NaN
-        if ((stokes_intensity == 1) && (stokes_angle == 1)) {
+        // Set NAN for PA if PI or fractional PI is NAN
+        if (calculate_pi && calculate_pa) {
             std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
         }
 
         // Fill polarized intensity tiles protobuf data
-        if (stokes_intensity == 1) {
-            // PI as polarized intensity
+        if (stokes_intensity == 1) { // Send PI as polarized intensity
             FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
                 compression_type, compression_quality);
-        } else if (stokes_intensity == 0) {
-            // Current stokes data as polarized intensity
+        } else if (stokes_intensity == 0) { // Send current stokes data as polarized intensity
             FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
                 compression_type, compression_quality);
         }
 
         // Fill polarized angle tiles protobuf data
-        if (stokes_angle == 1) {
-            // PA as polarized angle
+        if (stokes_angle == 1) { // Send PA as polarized angle
             FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
                 compression_type, compression_quality);
-        } else if (stokes_angle == 0) {
-            // Current stokes data as polarized angle
+        } else if (stokes_angle == 0) { // Send current stokes data as polarized angle
             FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
                 compression_type, compression_quality);
         }
