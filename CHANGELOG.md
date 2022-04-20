@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Added support for vector field (polarization intensity/angle) calculations ([#1002](https://github.com/CARTAvis/carta-backend/issues/1002)).
 * Added data type to file info and open complex image with amplitude expression ([#520](https://github.com/CARTAvis/carta-backend/issues/520)).
+* Added ability to set a custom rest frequency for saving subimages. ([#918](https://github.com/CARTAvis/carta-backend/issues/918)).
 
 ## [3.0.0-beta.2]
 
