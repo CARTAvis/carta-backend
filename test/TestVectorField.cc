@@ -446,12 +446,12 @@ public:
             auto calc_pi = [&](float q, float u) {
                 if (!std::isnan(q) && !isnan(u)) {
                     float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                    if (fractional) {
-                        return result;
-                    } else {
-                        if (result > threshold) {
+                    if (!std::isnan(threshold)) {
+                        if (result >= threshold) {
                             return result;
                         }
+                    } else {
+                        return result;
                     }
                 }
                 return std::numeric_limits<float>::quiet_NaN();
@@ -459,10 +459,7 @@ public:
 
             auto calc_fpi = [&](float i, float pi) {
                 if (!std::isnan(i) && !isnan(pi)) {
-                    float result = (pi / i);
-                    if (result > threshold) {
-                        return result;
-                    }
+                    return (pi / i);
                 }
                 return std::numeric_limits<float>::quiet_NaN();
             };
@@ -512,8 +509,8 @@ public:
 
                 float expected_pa = (float)(180.0 / casacore::C::pi) * atan2(down_sampled_u[j], down_sampled_q[j]) / 2;
 
-                expected_pi = (expected_pi > threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
-                expected_pa = (expected_pi > threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
+                expected_pi = (expected_pi >= threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
+                expected_pa = (expected_pi >= threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
 
                 if (!std::isnan(pi[j]) || !std::isnan(expected_pi)) {
                     EXPECT_FLOAT_EQ(pi[j], expected_pi);
@@ -692,12 +689,12 @@ public:
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
                 float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (fractional) {
-                    return result;
-                } else {
-                    if (result > threshold) {
+                if (!std::isnan(threshold)) {
+                    if (result >= threshold) {
                         return result;
                     }
+                } else {
+                    return result;
                 }
             }
             return std::numeric_limits<float>::quiet_NaN();
@@ -705,10 +702,7 @@ public:
 
         auto calc_fpi = [&](float i, float pi) {
             if (!std::isnan(i) && !isnan(pi)) {
-                float result = (pi / i);
-                if (result > threshold) {
-                    return result;
-                }
+                return (pi / i);
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
@@ -937,12 +931,12 @@ public:
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
                 float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (fractional) {
-                    return result;
-                } else {
-                    if (result > threshold) {
+                if (!std::isnan(threshold)) {
+                    if (result >= threshold) {
                         return result;
                     }
+                } else {
+                    return result;
                 }
             }
             return std::numeric_limits<float>::quiet_NaN();
@@ -950,10 +944,7 @@ public:
 
         auto calc_fpi = [&](float i, float pi) {
             if (!std::isnan(i) && !isnan(pi)) {
-                float result = (pi / i);
-                if (result > threshold) {
-                    return result;
-                }
+                return (pi / i);
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
@@ -1314,7 +1305,7 @@ public:
         // Apply a threshold cut
         if (!std::isnan(threshold)) {
             for (auto& pixel : pixels) {
-                if (!std::isnan(pixel) && (pixel <= threshold)) {
+                if (!std::isnan(pixel) && (pixel < threshold)) {
                     pixel = std::numeric_limits<float>::quiet_NaN();
                 }
             }
@@ -1323,7 +1314,7 @@ public:
         // Check the threshold cut results
         for (auto pixel : pixels) {
             if (!std::isnan(pixel) && !std::isnan(threshold)) {
-                EXPECT_GT(pixel, threshold);
+                EXPECT_GE(pixel, threshold);
             }
         }
 
