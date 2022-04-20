@@ -13,6 +13,7 @@
 #include <string>
 
 #include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/casa/Utilities/DataType.h>
 #include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/images/Images/ImageInterface.h>
@@ -46,6 +47,7 @@ private:
     void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info);
 
     // Computed entries
+    void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type);
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
         int stokes_axis, const std::vector<int>& render_axes);
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
