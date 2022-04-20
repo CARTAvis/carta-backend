@@ -88,7 +88,8 @@ public:
         std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
         std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
     static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
-        int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip);
+        int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
+        CARTA::ProfileAxisType axis_type, std::vector<float>& axis_values, std::string& unit);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

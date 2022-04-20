@@ -371,7 +371,8 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
 }
 
 CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
-    int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip) {
+    int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
+    CARTA::ProfileAxisType axis_type, std::vector<float>& axis_values, std::string& unit) {
     CARTA::SpatialProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -386,6 +387,10 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
     spatial_profile->set_coordinate(coordinate);
     spatial_profile->set_mip(mip);
+    auto profile_axis = spatial_profile->mutable_line_axis();
+    profile_axis->set_axis_type(axis_type);
+    profile_axis->set_raw_values_fp32(axis_values.data(), axis_values.size() * sizeof(float));
+    profile_axis->set_unit(unit);
     return profile_message;
 }
 
