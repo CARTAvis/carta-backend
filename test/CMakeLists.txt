@@ -49,7 +49,7 @@ set(TEST_SOURCES
         TestHdf5Image.cc
         TestHistogram.cc
         TestIcd.cc
-        TestImageFitting
+        TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc
