@@ -505,6 +505,16 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             // Get or create loader for frame
             auto loader = _loaders.Get(fullname);
 
+            // Open complex image with LEL amplitude instead
+            if (loader->IsComplexDataType()) {
+                _loaders.Remove(filename);
+
+                std::string expression = "AMPLITUDE(" + filename + ")";
+                bool is_lel_expr(true);
+                auto open_file_message = Message::OpenFile(directory, expression, hdu, file_id, message.render_mode(), is_lel_expr);
+                return OnOpenFile(open_file_message, request_id, silent);
+            }
+
             // create Frame for image
             auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
 

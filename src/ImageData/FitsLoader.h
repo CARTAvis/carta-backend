@@ -96,6 +96,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             if (use_casacore_fits) {
                 // casacore::FITSImage failed, try CartaFitsImage
                 try {
+                    use_casacore_fits = false;
                     _image.reset(new CartaFitsImage(_filename, hdu_num));
                 } catch (const casacore::AipsError& err) {
                     spdlog::error(err.getMesg());
@@ -116,6 +117,14 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         _num_dims = _image_shape.size();
         _has_pixel_mask = _image->hasPixelMask();
         _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+
+        if (use_casacore_fits) {
+            casacore::FITSImage* fits_image = dynamic_cast<casacore::FITSImage*>(_image.get());
+            _data_type = fits_image->internalDataType();
+        } else {
+            CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(_image.get());
+            _data_type = fits_image->internalDataType();
+        }
     }
 }
 
