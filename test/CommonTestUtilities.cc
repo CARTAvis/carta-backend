@@ -243,13 +243,6 @@ void CartaEnvironment::TearDown() {
 
 void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
     EXPECT_THAT(data1, Pointwise(NanSensitiveFloatNear(1e-5), data2));
-
-    //     EXPECT_EQ(data1.size(), data2.size());
-    //     if (data1.size() == data2.size()) {
-    //         for (int i = 0; i < data1.size(); ++i) {
-    //             CmpValues(data1[i], data2[i], abs_err);
-    //         }
-    //     }
 }
 
 void CmpValues(float data1, float data2, float abs_err) {

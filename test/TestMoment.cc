@@ -93,8 +93,7 @@ public:
         CmpVectors(data1, data2);
     }
 
-    // TODO this is temporary
-    // TODO it needs to be moved to an external utility tool so that this test does not depend on CASA
+    // TODO when we switch to our own moments implementation, this will be moved to an external utility so that we can eliminate our dependency on imageanalysis
     static void SaveCasaMoments(std::string image_name, int moments_axis, casacore::Vector<casacore::Int> moments,
         casacore::Vector<float> include_pix, casacore::Vector<float> exclude_pix, casacore::Bool do_temp, casacore::Bool remove_axis) {
         std::string file_path = FitsImagePath(image_name);
@@ -150,7 +149,7 @@ public:
             OpenImage(casa_moment_image, casa_moment_image_path);
 
             auto carta_moment_image = dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(carta_results[i]);
-            auto output_filename = TestRoot() / "data" / "images" / "fits" / fmt::format("{}_moment_{}_carta.fits", base_filename, i);
+            auto output_filename = TestRoot() / "data" / "images" / "generated" / fmt::format("{}_moment_{}_carta.fits", base_filename, i);
             frame->SaveImage(*carta_moment_image, output_filename);
 
             OpenImage(carta_moment_image, output_filename);
