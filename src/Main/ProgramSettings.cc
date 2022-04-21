@@ -58,6 +58,9 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         SetSettingsFromJSON(settings);
     }
 
+    // Push files after all settings are applied
+    PushFilePathsToFiles();
+
     // Apply deprecated no_http flag
     if (no_http) {
         no_frontend = true;
@@ -342,7 +345,6 @@ global configuration files, respectively.
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
-    std::vector<fs::path> file_paths;
 
     for (const auto& arg : positional_arguments) {
         fs::path p(arg);
@@ -372,14 +374,6 @@ global configuration files, respectively.
             file_paths.clear();
         }
     }
-    if (file_paths.size()) {
-        // Calculate paths relative to top level folder
-        auto top_level_path = fs::absolute(top_level_folder).lexically_normal();
-        for (const auto& p : file_paths) {
-            auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
-            files.push_back(relative_path.string());
-        }
-    }
 
     // produce JSON for overridding system and user configuration;
     // Options here need to match all options available for system and user settings
@@ -402,6 +396,17 @@ global configuration files, respectively.
     for (const auto& [key, elem] : vector_int_keys_map) {
         if (result.count(key)) {
             command_line_settings[key] = result[key].as<std::vector<int>>();
+        }
+    }
+}
+
+void ProgramSettings::PushFilePathsToFiles() {
+    if (file_paths.size()) {
+        // Calculate paths relative to top level folder
+        auto top_level_path = fs::absolute(top_level_folder).lexically_normal();
+        for (const auto& p : file_paths) {
+            auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
+            files.push_back(relative_path.string());
         }
     }
 }

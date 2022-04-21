@@ -40,6 +40,7 @@ struct ProgramSettings {
     std::string starting_folder = ".";
     std::string host = "0.0.0.0";
     std::vector<std::string> files;
+    std::vector<fs::path> file_paths;
     std::string frontend_folder;
     bool no_http = false; // Deprecated
     bool no_frontend = false;
@@ -115,6 +116,7 @@ struct ProgramSettings {
     void AddDeprecationWarning(const std::string& option, std::string where);
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
+    void PushFilePathsToFiles();
 
     // TODO: this is outdated. It's used by the equality operator, which is used by a test.
     auto GetTuple() const {
