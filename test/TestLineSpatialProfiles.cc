@@ -37,8 +37,7 @@ public:
     }
 
     static bool GetLineProfiles(const std::string& image_path, const std::vector<float>& endpoints,
-        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_reqs,
-        std::vector<CARTA::SpatialProfileData>& spatial_profiles) {
+        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_reqs, CARTA::SpatialProfileData& spatial_profile) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
@@ -55,7 +54,8 @@ public:
             return false;
         }
 
-        return region_handler.FillSpatialProfileData(file_id, region_id, spatial_profiles);
+        return region_handler.FillLineSpatialProfileData(
+            file_id, region_id, [&](CARTA::SpatialProfileData profile_data) { spatial_profile = profile_data; });
     }
 
     static std::vector<float> ProfileValues(CARTA::SpatialProfile& profile) {
@@ -76,12 +76,11 @@ TEST_F(LineSpatialProfileTest, FitsLineProfile) {
     int start(0), end(0), mip(0), width(3);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
 
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
-    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+    CARTA::SpatialProfileData spatial_profile;
+    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile);
 
     ASSERT_TRUE(ok);
-    ASSERT_EQ(spatial_profiles.size(), 1);
-    ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
+    ASSERT_EQ(spatial_profile.profiles_size(), 1);
 }
 
 TEST_F(LineSpatialProfileTest, Hdf5LineProfile) {
@@ -90,12 +89,11 @@ TEST_F(LineSpatialProfileTest, Hdf5LineProfile) {
     int start(0), end(0), mip(0), width(3);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
 
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
-    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+    CARTA::SpatialProfileData spatial_profile;
+    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile);
 
     ASSERT_TRUE(ok);
-    ASSERT_EQ(spatial_profiles.size(), 1);
-    ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
+    ASSERT_EQ(spatial_profile.profiles_size(), 1);
 }
 
 TEST_F(LineSpatialProfileTest, FitsHorizontalCutProfile) {
@@ -104,15 +102,14 @@ TEST_F(LineSpatialProfileTest, FitsHorizontalCutProfile) {
     int start(0), end(0), mip(0), width(1);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
 
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
-    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+    CARTA::SpatialProfileData spatial_profile;
+    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile);
 
     ASSERT_TRUE(ok);
-    ASSERT_EQ(spatial_profiles.size(), 1);
-    ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
+    ASSERT_EQ(spatial_profile.profiles_size(), 1);
 
     // Profile data
-    auto profile = spatial_profiles[0].profiles(0);
+    auto profile = spatial_profile.profiles(0);
     std::vector<float> profile_data = ProfileValues(profile);
     EXPECT_EQ(profile_data.size(), 9);
 
@@ -130,15 +127,14 @@ TEST_F(LineSpatialProfileTest, FitsVerticalCutProfile) {
     int start(0), end(0), mip(0), width(1);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("y", start, end, mip, width)};
 
-    std::vector<CARTA::SpatialProfileData> spatial_profiles;
-    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+    CARTA::SpatialProfileData spatial_profile;
+    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile);
 
     ASSERT_TRUE(ok);
-    ASSERT_EQ(spatial_profiles.size(), 1);
-    ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
+    ASSERT_EQ(spatial_profile.profiles_size(), 1);
 
     // Profile data
-    auto profile = spatial_profiles[0].profiles(0);
+    auto profile = spatial_profile.profiles(0);
     std::vector<float> profile_data = ProfileValues(profile);
     EXPECT_EQ(profile_data.size(), 9);
 
@@ -157,13 +153,13 @@ TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
     std::vector<CARTA::SpatialProfileData> spatial_profiles;
 
-    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profiles);
+    CARTA::SpatialProfileData spatial_profile;
+    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile);
     ASSERT_TRUE(ok);
-    ASSERT_EQ(spatial_profiles.size(), 1);
-    ASSERT_EQ(spatial_profiles[0].profiles_size(), 1);
+    ASSERT_EQ(spatial_profile.profiles_size(), 1);
 
     // Profile data
-    auto profile = spatial_profiles[0].profiles(0);
+    auto profile = spatial_profile.profiles(0);
     std::vector<float> profile_data = ProfileValues(profile);
     EXPECT_EQ(profile_data.size(), 13);
 

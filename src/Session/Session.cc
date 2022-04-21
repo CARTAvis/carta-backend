@@ -1581,19 +1581,29 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
         }
     };
 
-    if ((region_id == CURSOR_REGION_ID) && _frames.count(file_id)) {
-        // Cursor spatial profile
-        if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_data_vec)) {
-            send_results(file_id, region_id, spatial_profile_data_vec);
-        }
-    } else if ((_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) && _frames.count(file_id)) {
-        // Point/line region spatial profile
-        if (_region_handler->FillSpatialProfileData(file_id, region_id, spatial_profile_data_vec)) {
-            send_results(file_id, region_id, spatial_profile_data_vec);
+    if (_frames.find(file_id) != _frames.end()) {
+        if (region_id == CURSOR_REGION_ID) {
+            // Cursor spatial profile
+            if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_data_vec)) {
+                send_results(file_id, region_id, spatial_profile_data_vec);
+            }
+        } else if (_region_handler->IsPointRegion(region_id)) {
+            if (_region_handler->FillPointSpatialProfileData(file_id, region_id, spatial_profile_data_vec)) {
+                send_results(file_id, region_id, spatial_profile_data_vec);
+            }
+        } else if (_region_handler->IsLineRegion(region_id)) {
+            data_sent = _region_handler->FillLineSpatialProfileData(file_id, region_id, [&](CARTA::SpatialProfileData profile_data) {
+                if (profile_data.profiles_size() > 0) {
+                    SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, profile_data);
+                }
+            });
+        } else {
+            string error = fmt::format("Spatial profiles not valid for region {} type", region_id);
+            SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
-        string error = fmt::format("Spatial profiles not valid for region {} type", region_id);
-        SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
     }
     return data_sent;
 }

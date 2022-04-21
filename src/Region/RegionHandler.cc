@@ -383,7 +383,7 @@ bool RegionHandler::SetSpatialRequirements(int region_id, int file_id, std::shar
     return true;
 }
 
-bool RegionHandler::HasSpatialRequirements(int region_id, int file_id, std::string& coordinate, int width) {
+bool RegionHandler::HasSpatialRequirements(int region_id, int file_id, const std::string& coordinate, int width) {
     // Search _spatial_req for given file, region, stokes, and width.
     // Used to check for cancellation.
     ConfigId config_id(file_id, region_id);
@@ -499,7 +499,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
 }
 
 bool RegionHandler::HasSpectralRequirements(
-    int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats) {
+    int region_id, int file_id, const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats) {
     // Search _spectral_req for given file, region, and stokes; check if _any_ requested stats still valid.
     // Used to check for cancellation.
     ConfigId config_id(file_id, region_id);
@@ -889,7 +889,8 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
             PvGenerator pv_generator(file_id, input_filename);
 
             auto input_image = frame->GetImage();
-            pv_success = pv_generator.GetPvImage(input_image, pv_data, increment, stokes_index, pv_image, message);
+            casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(0));
+            pv_success = pv_generator.GetPvImage(input_image, pv_data, pv_increment, stokes_index, pv_image, message);
 
             frame->CloseCachedImage(input_filename);
         }
@@ -1567,32 +1568,50 @@ bool RegionHandler::GetRegionStatsData(
     return false;
 }
 
-bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
+    // Cursor/point spatial profiles
     ConfigId config_id(file_id, region_id);
     if (!_regions.count(region_id) || !_frames.count(file_id) || !_spatial_req.count(config_id)) {
         return false;
     }
 
-    // Cursor/point spatial profile
-    if (IsPointRegion(region_id)) {
-        // Map a region (region_id) to an image (file_id)
-        auto lcregion = ApplyRegionToFile(region_id, file_id);
-        if (!lcregion) {
-            return false;
-        }
-
-        casacore::IPosition origin = lcregion->boundingBox().start();
-        PointXy point(origin(0), origin(1));
-
-        return _frames.at(file_id)->FillSpatialProfileData(point, _spatial_req.at(config_id), spatial_data_vec);
+    if (!IsPointRegion(region_id)) {
+        return false;
     }
 
-    // Line spatial profiles - one per requested stokes
+    // Map a region (region_id) to an image (file_id)
+    auto lcregion = ApplyRegionToFile(region_id, file_id);
+    if (!lcregion) {
+        return false;
+    }
+
+    // Get point region
+    casacore::IPosition origin = lcregion->boundingBox().start();
+    PointXy point(origin(0), origin(1));
+
+    // Get profile for point region
+    return _frames.at(file_id)->FillSpatialProfileData(point, _spatial_req.at(config_id), spatial_data_vec);
+}
+
+bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb) {
+    // Line spatial profiles.  Use callback to return each profile individually.
+    ConfigId config_id(file_id, region_id);
+    if (!_regions.count(region_id) || !_frames.count(file_id) || !_spatial_req.count(config_id)) {
+        return false;
+    }
+
     std::unique_lock<std::mutex> ulock(_spatial_mutex);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> line_spatial_configs = _spatial_req.at(config_id);
     ulock.unlock();
 
     int channel = _frames.at(file_id)->CurrentZ();
+    int x(0), y(0), start(0), end(0), mip(0);
+    float value(0.0);
+    bool profile_ok(false);
+
+    auto region_type = _regions[region_id]->GetRegionState().type; // line or polyline
+    CARTA::ProfileAxisType axis_type =
+        (region_type == CARTA::RegionType::LINE ? CARTA::ProfileAxisType::Offset : CARTA::ProfileAxisType::Distance);
 
     for (auto& config : line_spatial_configs) {
         std::string coordinate(config.coordinate());
@@ -1611,40 +1630,52 @@ bool RegionHandler::FillSpatialProfileData(int file_id, int region_id, std::vect
             continue;
         }
 
-        bool per_z(false), cancelled(false);
-        double increment;
-        casacore::Matrix<float> line_profile;
-        std::string message;
-        GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for spatial profile
-        std::vector<float> profile;
+        profile_ok =
+            GetLineSpatialData(file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float> profile, double increment) {
+                auto profile_size = profile.size();
+                end = profile_size - 1;
+                float crpix = floor(profile_size / 2);
 
-        spdlog::debug("Get line profiles for coordinate {}", coordinate);
-        if (GetLineProfiles(
-                file_id, region_id, width, per_z, stokes_index, progress_callback, increment, line_profile, cancelled, message)) {
-            // Check for cancel
-            if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
-                continue;
-            }
-            profile.clear();
-            profile = line_profile.tovector();
+                auto adjusted_increment = AdjustIncrementUnit(increment, profile_size);
+                float cdelt = adjusted_increment.getValue();
+                float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
+                std::string unit = adjusted_increment.getUnit();
 
-            int x(0), y(0), start(0), end(profile.size() - 1), mip(0);
-            float value(0.0);
+                CARTA::SpatialProfileData profile_message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index,
+                    value, start, end, profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
+                cb(profile_message);
+            });
+    }
 
-            // Add spatial profile to vector
-            CARTA::SpatialProfileData spatial_data =
-                Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value, start, end, profile, coordinate, mip);
-            spatial_data_vec.push_back(spatial_data);
+    return profile_ok;
+}
+
+bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
+    const std::function<void(std::vector<float>, double)>& spatial_profile_callback) {
+    bool per_z(false), cancelled(false);
+    GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for spatial profile
+    double increment(0.0);
+    casacore::Matrix<float> line_profile;
+    std::string message;
+
+    if (GetLineProfiles(file_id, region_id, width, per_z, stokes_index, progress_callback, increment, line_profile, cancelled, message)) {
+        // Check for cancel
+        if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
+            return false;
+        }
+
+        auto profile = line_profile.tovector();
+        spatial_profile_callback(profile, increment);
+        return true;
+    } else {
+        if (cancelled) {
+            spdlog::info("Line region {} spatial profile {} was cancelled.", region_id, coordinate);
         } else {
-            if (cancelled) {
-                spdlog::info("Line region {} spatial profile {} was cancelled.", region_id, coordinate);
-            } else {
-                spdlog::error("Line region {} spatial profile {} failed: {}", region_id, coordinate, message);
-            }
+            spdlog::error("Line region {} spatial profile {} failed: {}", region_id, coordinate, message);
         }
     }
 
-    return !spatial_data_vec.empty();
+    return false;
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
@@ -1995,17 +2026,10 @@ bool RegionHandler::CheckLinearOffsets(
 
     // Check angular separation between centers
     for (size_t i = 0; i < num_centers - 1; ++i) {
-        double center_separation(0.0);
-        bool check_separation(true); // unless there is an exception
-
-        try {
-            center_separation = GetPointSeparation(box_centers[i], box_centers[i + 1], coord_sys);
-        } catch (casacore::AipsError& err) { // wcslib conversion error
-            check_separation = false;
-        }
+        double center_separation = GetPointSeparation(box_centers[i], box_centers[i + 1], coord_sys);
 
         // Check separation
-        if (check_separation) {
+        if (center_separation > 0) {
             if (i == 0) {
                 min_separation = max_separation = center_separation;
             } else {
@@ -2029,15 +2053,20 @@ bool RegionHandler::CheckLinearOffsets(
 double RegionHandler::GetPointSeparation(const PointXy& point1, const PointXy& point2, std::shared_ptr<CoordinateSystem> coord_sys) {
     // Returns angular separation in arcsec.
     // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
+    double separation(0.0);
     casacore::Vector<casacore::Double> v1(2), v2(2);
     v1[0] = point1.x;
     v1[1] = point1.y;
     v2[0] = point2.x;
     v2[1] = point2.y;
 
-    casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(v1);
-    casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(v2);
-    double separation = mvdir1.separation(mvdir2, "arcsec").getValue();
+    try {
+        casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(v1);
+        casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(v2);
+        separation = mvdir1.separation(mvdir2, "arcsec").getValue();
+    } catch (casacore::AipsError& err) {
+        // invalid pixel coordinates - outside image
+    }
 
     return separation;
 }
@@ -2071,7 +2100,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     float progress(0.0);
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    if ((num_lines == 1) && per_z) {
+    if (num_lines == 1) {
         // Use pixel center of line and keep it centered
         PointXy endpoint0(control_points[0].x(), control_points[0].y());
         PointXy endpoint1(control_points[1].x(), control_points[1].y());
@@ -2080,31 +2109,33 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
         std::vector<double> line_center;
         line_center.push_back((endpoint0.x + endpoint1.x) / 2);
         line_center.push_back((endpoint0.y + endpoint1.y) / 2);
+        PointXy center_point(line_center[0], line_center[1]); // for point separation
 
         // Number of region profiles determined by increments in line length.
-        double line_separation0(0.0), line_separation1(0.0);
         std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-        try {
-            PointXy center_point(line_center[0], line_center[1]);
-            line_separation0 = GetPointSeparation(endpoint0, center_point, reference_csys);
-            line_separation1 = GetPointSeparation(endpoint1, center_point, reference_csys);
-        } catch (casacore::AipsError& err) { // probably wcslib - invalid pixel coordinates
+        double line_separation0 = GetPointSeparation(endpoint0, center_point, reference_csys);
+        double line_separation1 = GetPointSeparation(endpoint1, center_point, reference_csys);
+
+        // Use shorter angular length (center to endpoint); trim longer "half" from pixel center
+        auto line_separation = min(line_separation0, line_separation1) * 2.0;
+        if (line_separation == 0.0) {
             message = "Conversion of line endpoints to world coordinates failed.";
             return false;
         }
 
-        // Use shorter angular length (center to endpoint); trim longer "half" from pixel center
-        auto line_separation = min(line_separation0, line_separation1) * 2.0;
-        int num_offsets = lround(line_separation / increment) / 2;
-        int num_regions = num_offsets * 2;
-
-        // Use vector instead of PointXy for "no point" when reach end of line
+        auto num_increments = line_separation / increment;
+        int num_offsets = lround((num_increments - 1.0) / 2.0);
+        int num_regions = (num_offsets * 2) + 1;
         std::vector<std::vector<double>> line_points(num_regions + 1);
-        line_points[num_offsets] = line_center;
 
         // Generate points along line for start and end of each box
         // Start at center and add points in each offset direction
-        std::vector<double> pos_box_start({line_center[0], line_center[1]}), neg_box_start({line_center[0], line_center[1]});
+        std::vector<double> center = FindPointAtTargetSeparation(reference_csys, center_point, endpoint0, (increment / 2.0), tolerance);
+        line_points[num_offsets] = center;
+
+        // Copy center
+        std::vector<double> pos_box_start({center[0], center[1]});
+        std::vector<double> neg_box_start({center[0], center[1]});
 
         // Get points along line from center out with increment spacing to set regions
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
@@ -2117,31 +2148,35 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             // Find ends of box regions, at increment from start of box in positive offset direction.
             // Each box height (box_start to box_end) is variable to be fixed angular spacing.
             // Note: mvdir_lock is still locked while finding these points
-            PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
-            std::vector<double> pos_box_end = FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
-            if (pos_box_end.empty()) {
-                break;
+            if (!pos_box_start.empty()) {
+                PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
+                std::vector<double> pos_box_end =
+                    FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
+                line_points[num_offsets + ioffset] = pos_box_end;
+                pos_box_start = pos_box_end; // end of this box is start of next box
+
+                if ((ioffset == num_offsets) && !pos_box_start.empty()) {
+                    // complete last region
+                    pos_start_point = PointXy(pos_box_start[0], pos_box_start[1]);
+                    pos_box_end = FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
+                    line_points[num_offsets + ioffset + 1] = pos_box_end;
+                }
             }
-            line_points[num_offsets + ioffset] = pos_box_end;
-            pos_box_start = pos_box_end; // end of this box is start of next box
 
             // Find ends of box regions, at increment from start of box in negative offset direction.
-            PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
-            std::vector<double> neg_box_end = FindPointAtTargetSeparation(reference_csys, neg_start_point, endpoint1, increment, tolerance);
-            if (neg_box_end.empty()) {
-                // Delete pos_box_end to keep number of offsets equal
-                line_points[num_offsets + ioffset].clear();
-                break;
+            if (!neg_box_start.empty()) {
+                PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
+                std::vector<double> neg_box_end =
+                    FindPointAtTargetSeparation(reference_csys, neg_start_point, endpoint1, increment, tolerance);
+                line_points[num_offsets - ioffset] = neg_box_end;
+                neg_box_start = neg_box_end; // end of this box is start of next box
             }
-            line_points[num_offsets - ioffset] = neg_box_end;
-            neg_box_start = neg_box_end; // end of this box is start of next box
         }
 
         // Finished with points along line: unlock mutex
         mvdir_lock.unlock();
 
         // Set matrix size to fill in rows; ncol = image depth (PV data) or 1 (spatial profile)
-        num_regions = line_points.size() - 1;
         if (per_z) {
             profiles.resize(casacore::IPosition(2, num_regions, _frames.at(file_id)->Depth()));
         } else {
@@ -2214,17 +2249,16 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
             float sin_x = sin(rotation * M_PI / 180.0f);
 
             // Number of regions in segment is (angular length / increment)
-            double line_separation(0.0);
             std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-            try {
-                line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys);
-            } catch (casacore::AipsError& err) { // probably wcslib - invalid pixel coordinates
+            double line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys);
+
+            if (line_separation == 0.0) {
                 message = "Conversion of line endpoints to world coordinates failed.";
                 return false;
             }
-            int num_regions = lround(line_separation / increment);
 
             // Use vector instead of PointXy for "no point" when reach end of line
+            int num_regions = lround(line_separation / increment);
             std::vector<std::vector<double>> line_points;
 
             // Start at line segment end (endpoint1)
@@ -2309,19 +2343,19 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int width, bool p
     return (progress == 1.0) && !allEQ(profiles, NAN);
 }
 
-bool RegionHandler::SetPointInRange(float max_point, float& point) {
-    // Sets point in range 0 to max_size; returns whether point was changed
-    bool point_set(false);
-
-    if (point < 0.0) {
-        point = 0.0;
-        point_set = true;
-    } else if (point > max_point) {
-        point = max_point;
-        point_set = true;
+void RegionHandler::SetPointInRange(PointXy& point, const casacore::IPosition& shape) {
+    // Sets point in range 0 to shape
+    if (point.x < 0.0) {
+        point.x = 0.0;
+    } else if (point.x > shape(0)) {
+        point.x = shape(0);
     }
 
-    return point_set;
+    if (point.y < 0.0) {
+        point.y = 0.0;
+    } else if (point.y > shape(1)) {
+        point.y = shape(1);
+    }
 }
 
 std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
@@ -2540,6 +2574,30 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
     RemoveRegion(region_id);
 
     return profile;
+}
+
+casacore::Quantity RegionHandler::AdjustIncrementUnit(double offset_increment, size_t num_offsets) {
+    // Given offset increment in arcsec, adjust to:
+    // - milliarcsec if length < 2 milliarcsec
+    // - arcsec if 2 milliarcsec <= length < 2 arcmin
+    // - arcminute if 2 arcmin <= length < 2 deg
+    // - deg if 2 deg <= length
+    // Returns increment as a Quantity with value and unit
+    casacore::Quantity increment(offset_increment, "arcsec");
+
+    auto offset_length = offset_increment * num_offsets;
+
+    if ((offset_length * 1.0e3) < 2.0) {
+        increment = increment.get("marcsec");
+    } else if ((offset_length / 60.0) >= 2.0) {
+        if ((offset_length / 3600.0) < 2.0) {
+            increment = increment.get("arcmin");
+        } else {
+            increment = increment.get("deg");
+        }
+    }
+
+    return increment;
 }
 
 } // namespace carta
