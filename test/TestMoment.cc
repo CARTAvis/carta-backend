@@ -93,7 +93,8 @@ public:
         CmpVectors(data1, data2);
     }
 
-    // TODO when we switch to our own moments implementation, this will be moved to an external utility so that we can eliminate our dependency on imageanalysis
+    // TODO when we switch to our own moments implementation, this will be moved to an external utility so that we can eliminate our
+    // dependency on imageanalysis
     static void SaveCasaMoments(std::string image_name, int moments_axis, casacore::Vector<casacore::Int> moments,
         casacore::Vector<float> include_pix, casacore::Vector<float> exclude_pix, casacore::Bool do_temp, casacore::Bool remove_axis) {
         std::string file_path = FitsImagePath(image_name);
