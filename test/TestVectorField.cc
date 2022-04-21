@@ -446,11 +446,10 @@ public:
             auto calc_pi = [&](float q, float u) {
                 if (!std::isnan(q) && !isnan(u)) {
                     float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                    if (!std::isnan(threshold)) {
-                        if (result >= threshold) {
-                            return result;
-                        }
-                    } else {
+                    if (fractional || std::isnan(threshold)) {
+                        return result;
+                    }
+                    if (!std::isnan(threshold) && (result >= threshold)) {
                         return result;
                     }
                 }
@@ -459,7 +458,14 @@ public:
 
             auto calc_fpi = [&](float i, float pi) {
                 if (!std::isnan(i) && !isnan(pi)) {
-                    return (pi / i);
+                    float result = (pi / i);
+                    if (!std::isnan(threshold)) {
+                        if (100.0 * result >= threshold) { // The threshold cut for fractional PI is in the unit of %
+                            return result;
+                        }
+                    } else {
+                        return result;
+                    }
                 }
                 return std::numeric_limits<float>::quiet_NaN();
             };
@@ -689,11 +695,10 @@ public:
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
                 float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (!std::isnan(threshold)) {
-                    if (result >= threshold) {
-                        return result;
-                    }
-                } else {
+                if (fractional || std::isnan(threshold)) {
+                    return result;
+                }
+                if (!std::isnan(threshold) && (result >= threshold)) {
                     return result;
                 }
             }
@@ -702,7 +707,14 @@ public:
 
         auto calc_fpi = [&](float i, float pi) {
             if (!std::isnan(i) && !isnan(pi)) {
-                return (pi / i);
+                float result = (pi / i);
+                if (!std::isnan(threshold)) {
+                    if (100.0 * result >= threshold) { // The threshold cut for fractional PI is in the unit of %
+                        return result;
+                    }
+                } else {
+                    return result;
+                }
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
@@ -931,11 +943,10 @@ public:
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
                 float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (!std::isnan(threshold)) {
-                    if (result >= threshold) {
-                        return result;
-                    }
-                } else {
+                if (fractional || std::isnan(threshold)) {
+                    return result;
+                }
+                if (!std::isnan(threshold) && (result >= threshold)) {
                     return result;
                 }
             }
@@ -944,7 +955,14 @@ public:
 
         auto calc_fpi = [&](float i, float pi) {
             if (!std::isnan(i) && !isnan(pi)) {
-                return (pi / i);
+                float result = (pi / i);
+                if (!std::isnan(threshold)) {
+                    if (100.0 * result >= threshold) { // The threshold cut for fractional PI is in the unit of %
+                        return result;
+                    }
+                } else {
+                    return result;
+                }
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
