@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
-#define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
+#ifndef CARTA_BACKEND_SRC_MAIN_PROGRAMSETTINGS_H_
+#define CARTA_BACKEND_SRC_MAIN_PROGRAMSETTINGS_H_
 
 #include <iostream>
 #include <string>
@@ -113,10 +113,11 @@ struct ProgramSettings {
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
     void ApplyCommandLineSettings(int argc, char** argv);
+    void ApplyJSONSettings();
     void AddDeprecationWarning(const std::string& option, std::string where);
     nlohmann::json JSONSettingsFromFile(const std::string& fsp);
     void SetSettingsFromJSON(const nlohmann::json& j);
-    void PushFilePathsToFiles();
+    void PushFilePaths();
 
     // TODO: this is outdated. It's used by the equality operator, which is used by a test.
     auto GetTuple() const {
@@ -137,4 +138,4 @@ struct ProgramSettings {
     }
 };
 } // namespace carta
-#endif // CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
+#endif // CARTA_BACKEND_SRC_MAIN_PROGRAMSETTINGS_H_

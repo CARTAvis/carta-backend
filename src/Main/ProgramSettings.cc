@@ -32,34 +32,9 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         debug_msgs.push_back("Using command-line settings");
     }
     ApplyCommandLineSettings(argc, argv);
-
-    user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
-    const fs::path user_settings_path = user_directory / "backend.json";
-    const fs::path system_settings_path = "/etc/carta/backend.json";
-
-    json settings;
-    std::error_code error_code;
-
-    if (!no_system_config && fs::exists(system_settings_path, error_code)) {
-        settings = JSONSettingsFromFile(system_settings_path.string());
-        system_settings_json_exists = true;
-        debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
-    }
-
-    if (!no_user_config && fs::exists(user_settings_path, error_code)) {
-        auto user_settings = JSONSettingsFromFile(user_settings_path.string());
-        user_settings_json_exists = true;
-        debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
-        settings.merge_patch(user_settings); // user on top of system
-    }
-
-    if (system_settings_json_exists || user_settings_json_exists) {
-        settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
-        SetSettingsFromJSON(settings);
-    }
-
+    ApplyJSONSettings();
     // Push files after all settings are applied
-    PushFilePathsToFiles();
+    PushFilePaths();
 
     // Apply deprecated no_http flag
     if (no_http) {
@@ -400,7 +375,34 @@ global configuration files, respectively.
     }
 }
 
-void ProgramSettings::PushFilePathsToFiles() {
+void ProgramSettings::ApplyJSONSettings() {
+    user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+    const fs::path user_settings_path = user_directory / "backend.json";
+    const fs::path system_settings_path = "/etc/carta/backend.json";
+
+    json settings;
+    std::error_code error_code;
+
+    if (!no_system_config && fs::exists(system_settings_path, error_code)) {
+        settings = JSONSettingsFromFile(system_settings_path.string());
+        system_settings_json_exists = true;
+        debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
+    }
+
+    if (!no_user_config && fs::exists(user_settings_path, error_code)) {
+        auto user_settings = JSONSettingsFromFile(user_settings_path.string());
+        user_settings_json_exists = true;
+        debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
+        settings.merge_patch(user_settings); // user on top of system
+    }
+
+    if (system_settings_json_exists || user_settings_json_exists) {
+        settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
+        SetSettingsFromJSON(settings);
+    }
+}
+
+void ProgramSettings::PushFilePaths() {
     if (file_paths.size()) {
         // Calculate paths relative to top level folder
         auto top_level_path = fs::absolute(top_level_folder).lexically_normal();
