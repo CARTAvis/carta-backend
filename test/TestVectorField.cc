@@ -460,7 +460,7 @@ public:
                 if (!std::isnan(i) && !isnan(pi)) {
                     float result = (pi / i);
                     if (!std::isnan(threshold)) {
-                        if (100.0 * result >= threshold) { // The threshold cut for fractional PI is in the unit of %
+                        if (100.0 * result <= threshold) { // The threshold cut for fractional PI is in the unit of %
                             return result;
                         }
                     } else {
@@ -709,7 +709,7 @@ public:
             if (!std::isnan(i) && !isnan(pi)) {
                 float result = (pi / i);
                 if (!std::isnan(threshold)) {
-                    if (100.0 * result >= threshold) { // The threshold cut for fractional PI is in the unit of %
+                    if (100.0 * result <= threshold) { // The threshold cut for fractional PI is in the unit of %
                         return result;
                     }
                 } else {
@@ -957,7 +957,7 @@ public:
             if (!std::isnan(i) && !isnan(pi)) {
                 float result = (pi / i);
                 if (!std::isnan(threshold)) {
-                    if (100.0 * result >= threshold) { // The threshold cut for fractional PI is in the unit of %
+                    if (100.0 * result <= threshold) { // The threshold cut for fractional PI is in the unit of %
                         return result;
                     }
                 } else {
