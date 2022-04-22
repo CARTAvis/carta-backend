@@ -1825,8 +1825,12 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
             if (send_image_histogram) {
                 SendRegionHistogramData(file_id, IMAGE_REGION_ID);
             }
+
             SendRegionStatsData(file_id, IMAGE_REGION_ID);
-            SendSpatialProfileDataByFileId(file_id);
+
+            if (z_changed) { // requirements sent for stokes change
+                SendSpatialProfileDataByFileId(file_id);
+            }
         }
     }
 }
