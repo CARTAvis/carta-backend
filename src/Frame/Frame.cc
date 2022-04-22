@@ -2486,8 +2486,8 @@ void Frame::GetTiles(int image_width, int image_height, int mip, std::vector<car
     int32_t tile_layer = carta::Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
     tiles.resize(num_tile_rows * num_tile_columns);
 
-    for (int i = 0; i < num_tile_columns; ++i) {
-        for (int j = 0; j < num_tile_rows; ++j) {
+    for (int j = 0; j < num_tile_rows; ++j) {
+        for (int i = 0; i < num_tile_columns; ++i) {
             tiles[j * num_tile_columns + i].x = i;
             tiles[j * num_tile_columns + i].y = j;
             tiles[j * num_tile_columns + i].layer = tile_layer;
