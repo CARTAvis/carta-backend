@@ -236,7 +236,7 @@ public:
         std::vector<Tile> tiles;
         int image_width = frame->Width();
         int image_height = frame->Height();
-        GetTiles(image_width, image_height, mip, tiles);
+        Frame::GetTiles(image_width, image_height, mip, tiles);
 
         // Get full 2D stokes data
         int channel = frame->CurrentZ();
@@ -363,7 +363,7 @@ public:
         std::vector<Tile> tiles;
         int image_width = frame->Width();
         int image_height = frame->Height();
-        GetTiles(image_width, image_height, mip, tiles);
+        Frame::GetTiles(image_width, image_height, mip, tiles);
 
         EXPECT_GT(tiles.size(), 0);
 
@@ -590,7 +590,7 @@ public:
 
     static void TestRasterTilesGeneration(int image_width, int image_height, int mip) {
         std::vector<Tile> tiles;
-        GetTiles(image_width, image_height, mip, tiles);
+        Frame::GetTiles(image_width, image_height, mip, tiles);
 
         // Check the coverage of tiles on the image area
         std::vector<int> image_mask(image_width * image_height, 0);

@@ -132,7 +132,6 @@ CARTA::PolarizationType GetStokesType(int stokes_value);
 // Polarization vector field callback (intensity_tile, angle_tile, progress)
 using VectorFieldCallback = const std::function<void(CARTA::VectorOverlayTileData&)>;
 
-void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_

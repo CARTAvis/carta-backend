@@ -217,6 +217,8 @@ public:
     bool GetDownSampledRasterData(std::vector<float>& data, int& down_sampled_width, int& down_sampled_height, int z, int stokes,
         CARTA::ImageBounds& bounds, int mip);
 
+    static void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+
 protected:
     // Validate z and stokes index values
     bool CheckZ(int z);
