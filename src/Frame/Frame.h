@@ -44,6 +44,7 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
+#include "VectorFieldSettings.h"
 
 namespace carta {
 
