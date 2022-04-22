@@ -109,7 +109,5 @@ void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, 
 void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
     std::map<CARTA::StatsType, double>& stats_value_map);
-void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
-    std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 
 #endif // CARTA_BACKEND__UTIL_MESSAGE_H_

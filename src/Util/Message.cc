@@ -426,28 +426,3 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
         stats_value->set_value(value);
     }
 }
-
-void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
-    std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality) {
-    if (tile) {
-        tile->set_x(x);
-        tile->set_y(y);
-        tile->set_layer(layer);
-        tile->set_mip(mip);
-        tile->set_width(tile_width);
-        tile->set_height(tile_height);
-        if (compression_type == CARTA::CompressionType::ZFP) {
-            // Get and fill the NaN data
-            auto nan_encodings = carta::GetNanEncodingsBlock(array, 0, tile_width, tile_height);
-            tile->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
-            // Compress and fill the data
-            std::vector<char> compression_buffer;
-            size_t compressed_size;
-            int precision = lround(compression_quality);
-            carta::Compress(array, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
-            tile->set_image_data(compression_buffer.data(), compressed_size);
-        } else {
-            tile->set_image_data(array.data(), sizeof(float) * array.size());
-        }
-    }
-}

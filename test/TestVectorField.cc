@@ -522,11 +522,11 @@ public:
 
             // Fill tiles protobuf data
             auto& tile_pi = tiles_data_pi[i];
-            FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
+            Frame::FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
                 CARTA::CompressionType::NONE, 0);
 
             auto& tile_pa = tiles_data_pa[i];
-            FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
+            Frame::FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
                 CARTA::CompressionType::NONE, 0);
         }
 

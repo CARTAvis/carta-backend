@@ -218,6 +218,8 @@ public:
         CARTA::ImageBounds& bounds, int mip);
 
     static void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+    static void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
+        int32_t tile_height, std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 
 protected:
     // Validate z and stokes index values
