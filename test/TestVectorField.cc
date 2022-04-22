@@ -12,6 +12,7 @@
 #include "DataStream/Smoothing.h"
 #include "Frame/Frame.h"
 #include "Session/Session.h"
+#include "Util/Message.h"
 
 static const std::string IMAGE_SHAPE = "1110 1110 25 4";
 static const std::string IMAGE_OPTS = "-s 0";
@@ -743,7 +744,7 @@ public:
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
-            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
         frame->SetVectorOverlayParameters(message);
@@ -844,7 +845,7 @@ public:
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
-            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
         frame->SetVectorOverlayParameters(message);
@@ -1021,7 +1022,7 @@ public:
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
-            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
         frame->SetVectorOverlayParameters(message);
@@ -1072,7 +1073,7 @@ public:
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
-            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         // Set vector field parameters
         frame->SetVectorOverlayParameters(message);
@@ -1111,7 +1112,7 @@ public:
         // Compress the vector field data with ZFP
 
         // Set the protobuf message
-        auto message2 = Message::SetVectorOverlayParameters(0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity,
+        auto message2 = Message::SetVectorOverlayParameters(0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity,
             stokes_angle, CARTA::CompressionType::ZFP, comprerssion_quality);
 
         // Set vector field parameters
@@ -1233,7 +1234,7 @@ public:
 
         // Set the protobuf message
         auto set_vector_field_params = Message::SetVectorOverlayParameters(
-            0, mip, fractional, debiasing, q_error, u_error, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         dummy_backend->Receive(set_vector_field_params);
 
@@ -1339,7 +1340,7 @@ public:
 
         // Set the protobuf message
         auto set_vector_field_params = Message::SetVectorOverlayParameters(
-            0, mip, false, false, 0, 0, threshold, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
+            0, mip, false, threshold, false, 0, 0, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
 
         dummy_backend->Receive(set_vector_field_params);
 
@@ -1489,18 +1490,32 @@ TEST_F(VectorFieldTest, TestTileCalc) {
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldSettings) {
-    VectorFieldSettings settings{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings1{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings2{4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings3{2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings4{2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings5{2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings6{2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings7{2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings8{2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings9{2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1};
-    VectorFieldSettings settings10{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1};
-    VectorFieldSettings settings11{2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2};
+    auto msg = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg1 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg2 = Message::SetVectorOverlayParameters(0, 4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg3 = Message::SetVectorOverlayParameters(0, 2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg4 = Message::SetVectorOverlayParameters(0, 2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg5 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg6 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg7 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg8 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1);
+    auto msg9 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1);
+    auto msg10 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1);
+    auto msg11 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2);
+
+    VectorFieldSettings settings(msg);
+    VectorFieldSettings settings1(msg1);
+    VectorFieldSettings settings2(msg2);
+    VectorFieldSettings settings3(msg3);
+    VectorFieldSettings settings4(msg4);
+    VectorFieldSettings settings5(msg5);
+    VectorFieldSettings settings6(msg6);
+    VectorFieldSettings settings7(msg7);
+    VectorFieldSettings settings8(msg8);
+    VectorFieldSettings settings9(msg9);
+    VectorFieldSettings settings10(msg10);
+    VectorFieldSettings settings11(msg11);
+
     EXPECT_TRUE(settings == settings1);
     EXPECT_TRUE(settings != settings2);
     EXPECT_TRUE(settings != settings3);

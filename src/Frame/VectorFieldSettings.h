@@ -10,9 +10,10 @@
 #include <cmath>
 
 #include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/vector_overlay.pb.h>
 
 struct VectorFieldSettings {
-    int smoothing_factor = 0; // Initialize as 0 which represents the empty setting
+    int smoothing_factor;
     bool fractional;
     double threshold;
     bool debiasing;
@@ -22,6 +23,23 @@ struct VectorFieldSettings {
     int stokes_angle;
     CARTA::CompressionType compression_type;
     float compression_quality;
+
+    VectorFieldSettings() {
+        ClearSettings();
+    }
+
+    VectorFieldSettings(const CARTA::SetVectorOverlayParameters& message) {
+        smoothing_factor = (int)message.smoothing_factor();
+        fractional = message.fractional();
+        threshold = message.threshold();
+        debiasing = message.debiasing();
+        q_error = message.q_error();
+        u_error = message.u_error();
+        stokes_intensity = message.stokes_intensity();
+        stokes_angle = message.stokes_angle();
+        compression_type = message.compression_type();
+        compression_quality = message.compression_quality();
+    }
 
     // Equality operator for checking if vector field settings have changed
     bool operator==(const VectorFieldSettings& rhs) const {

@@ -342,8 +342,8 @@ CARTA::SetContourParameters Message::SetContourParameters(int file_id, int ref_f
     return message;
 }
 
-CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(int file_id, int mip, bool fractional, bool debiasing, double q_error,
-    double u_error, double threshold, int stokes_intensity, int stokes_angle, const CARTA::CompressionType& compression_type,
+CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(int file_id, int mip, bool fractional, double threshold,
+    bool debiasing, double q_error, double u_error, int stokes_intensity, int stokes_angle, const CARTA::CompressionType& compression_type,
     float compression_quality) {
     CARTA::SetVectorOverlayParameters message;
     message.set_file_id(file_id);

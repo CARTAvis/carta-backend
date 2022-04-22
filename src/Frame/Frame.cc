@@ -2190,10 +2190,7 @@ void Frame::CloseCachedImage(const std::string& file) {
 }
 
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    VectorFieldSettings new_settings = {(int)message.smoothing_factor(), message.fractional(), message.threshold(), message.debiasing(),
-        message.q_error(), message.u_error(), message.stokes_intensity(), message.stokes_angle(), message.compression_type(),
-        message.compression_quality()};
-
+    VectorFieldSettings new_settings(message);
     if (_vector_field_settings != new_settings) {
         _vector_field_settings = new_settings;
         return true;

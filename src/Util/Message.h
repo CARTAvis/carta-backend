@@ -82,8 +82,8 @@ public:
     static CARTA::SetContourParameters SetContourParameters(int file_id, int ref_file_id, int x_min, int x_max, int y_min, int y_max,
         const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int smoothing_factor, int decimation_factor,
         int compression_level, int contour_chunk_size);
-    static CARTA::SetVectorOverlayParameters SetVectorOverlayParameters(int file_id, int mip, bool fractional, bool debiasing,
-        double q_error, double u_error, double threshold, int stokes_intensity, int stokes_angle,
+    static CARTA::SetVectorOverlayParameters SetVectorOverlayParameters(int file_id, int mip, bool fractional, double threshold,
+        bool debiasing, double q_error, double u_error, int stokes_intensity, int stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
 
     // Response messages
