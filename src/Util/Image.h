@@ -129,7 +129,4 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 
-// Polarization vector field callback (intensity_tile, angle_tile, progress)
-using VectorFieldCallback = const std::function<void(CARTA::VectorOverlayTileData&)>;
-
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_
