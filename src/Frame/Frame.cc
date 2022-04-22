@@ -2253,7 +2253,7 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
     };
 
     // Consider the case if an image has no stokes axis
-    if (_stokes_axis < 0) {
+    if (StokesAxis() < 0) {
         // Get image tiles data
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
@@ -2518,6 +2518,16 @@ void Frame::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t la
             tile->set_image_data(array.data(), sizeof(float) * array.size());
         }
     }
+}
+
+CARTA::ImageBounds Frame::GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip) {
+    int tile_size_original = TILE_SIZE * mip;
+    CARTA::ImageBounds bounds;
+    bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), image_width));
+    bounds.set_x_max(std::min(image_width, (tile.x + 1) * tile_size_original));
+    bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), image_height));
+    bounds.set_y_max(std::min(image_height, (tile.y + 1) * tile_size_original));
+    return bounds;
 }
 
 } // namespace carta

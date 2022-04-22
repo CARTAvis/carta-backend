@@ -21,13 +21,3 @@ CARTA::PolarizationType GetStokesType(int stokes_value) {
     }
     return stokes_type;
 }
-
-CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip) {
-    int tile_size_original = TILE_SIZE * mip;
-    CARTA::ImageBounds bounds;
-    bounds.set_x_min(std::min(std::max(0, tile.x * tile_size_original), image_width));
-    bounds.set_x_max(std::min(image_width, (tile.x + 1) * tile_size_original));
-    bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), image_height));
-    bounds.set_y_max(std::min(image_height, (tile.y + 1) * tile_size_original));
-    return bounds;
-}

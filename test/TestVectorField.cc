@@ -252,7 +252,7 @@ public:
         int count = 0;
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
-            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
+            auto bounds = Frame::GetImageBounds(tile, image_width, image_height, mip);
 
             // Get the tile data
             int tile_original_width = bounds.x_max() - bounds.x_min();
@@ -377,7 +377,7 @@ public:
         // Get tiles data
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
-            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
+            auto bounds = Frame::GetImageBounds(tile, image_width, image_height, mip);
 
             // Don't get the tile data with zero area
             int tile_original_width = bounds.x_max() - bounds.x_min();
@@ -592,7 +592,7 @@ public:
         int count = 0;
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
-            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
+            auto bounds = Frame::GetImageBounds(tile, image_width, image_height, mip);
             for (int x = bounds.x_min(); x < bounds.x_max(); ++x) {
                 for (int y = bounds.y_min(); y < bounds.y_max(); ++y) {
                     image_mask[y * image_width + x] = 1;
