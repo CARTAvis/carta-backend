@@ -446,14 +446,7 @@ public:
             // Calculate PI, FPI, and PA
             auto calc_pi = [&](float q, float u) {
                 if (!std::isnan(q) && !isnan(u)) {
-                    float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                    if (!std::isnan(threshold)) {
-                        if (result >= threshold) {
-                            return result;
-                        }
-                    } else {
-                        return result;
-                    }
+                    return (float)sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
                 }
                 return std::numeric_limits<float>::quiet_NaN();
             };
@@ -472,11 +465,11 @@ public:
                 return std::numeric_limits<float>::quiet_NaN();
             };
 
-            auto reset_pa = [&](float pi, float pa) {
-                if (std::isnan(pi)) {
+            auto set_nan_to_result = [&](float i, float result) {
+                if (std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) {
                     return std::numeric_limits<float>::quiet_NaN();
                 }
-                return pa;
+                return result;
             };
 
             // Set PI/PA results
@@ -495,8 +488,9 @@ public:
             // Calculate PA
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
 
-            // Set NaN for PA if PI/FPI is NaN
-            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+            // Set NaN for PI and PA if stokes I is NaN or below the threshold
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
 
             // Check calculation results
             for (int j = 0; j < down_sampled_area; ++j) {
@@ -510,8 +504,8 @@ public:
 
                 float expected_pa = (float)(180.0 / casacore::C::pi) * atan2(down_sampled_u[j], down_sampled_q[j]) / 2;
 
-                expected_pi = (expected_pi >= threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
-                expected_pa = (expected_pi >= threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
+                expected_pi = (down_sampled_i[j] >= threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
+                expected_pa = (down_sampled_i[j] >= threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
 
                 if (!std::isnan(pi[j]) || !std::isnan(expected_pi)) {
                     EXPECT_FLOAT_EQ(pi[j], expected_pi);
@@ -689,14 +683,7 @@ public:
         // Calculate PI, FPI, and PA
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
-                float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (!std::isnan(threshold)) {
-                    if (result >= threshold) {
-                        return result;
-                    }
-                } else {
-                    return result;
-                }
+                return (float)sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
@@ -715,11 +702,11 @@ public:
             return std::numeric_limits<float>::quiet_NaN();
         };
 
-        auto reset_pa = [&](float pi, float pa) {
-            if (std::isnan(pi)) {
+        auto set_nan_to_result = [&](float i, float result) {
+            if (std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) {
                 return std::numeric_limits<float>::quiet_NaN();
             }
-            return pa;
+            return result;
         };
 
         // Set PI/PA results
@@ -736,8 +723,9 @@ public:
         // Calculate PA
         std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
 
-        // Set NaN for PA if PI/FPI is NaN
-        std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+        // Set NaN for PI and PA if stokes I is NaN or below the threshold
+        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with the new Frame function
@@ -931,14 +919,7 @@ public:
         // Calculate PI, FPI, and PA
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
-                float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (!std::isnan(threshold)) {
-                    if (result >= threshold) {
-                        return result;
-                    }
-                } else {
-                    return result;
-                }
+                return (float)sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
@@ -957,11 +938,11 @@ public:
             return std::numeric_limits<float>::quiet_NaN();
         };
 
-        auto reset_pa = [&](float pi, float pa) {
-            if (std::isnan(pi)) {
+        auto set_nan_to_result = [&](float i, float result) {
+            if (std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) {
                 return std::numeric_limits<float>::quiet_NaN();
             }
-            return pa;
+            return result;
         };
 
         // Set PI/PA results
@@ -978,8 +959,9 @@ public:
         // Calculate PA
         std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
 
-        // Set NaN for PA if PI/FPI is NaN
-        std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+        // Set NaN for PI and PA if stokes I is NaN or below the threshold
+        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
     }
 
     static void GetDownSampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
@@ -1275,7 +1257,7 @@ public:
         if (file_type == CARTA::FileType::HDF5) {
             RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
             CmpVectors(pi, pi2, 1e-5);
-            CmpVectors(pa, pa2, 1e-4);
+            CmpVectors(pa, pa2, 1e-3);
         } else {
             CmpVectors(pi, pi2);
             CmpVectors(pa, pa2);

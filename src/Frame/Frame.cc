@@ -2292,12 +2292,17 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
 
     // Get Stokes I, Q, and U indices
     int stokes_i, stokes_q, stokes_u;
-    if ((stokes_intensity == 1) || (stokes_angle == 1)) {
-        // Calculate FPI requires stokes I data
-        if (fractional && !GetStokesTypeIndex("Ix", stokes_i)) {
-            return false;
-        }
-        // Calculate PI or PA require stokes Q and U data
+    bool require_stokes_i(fractional || !std::isnan(threshold));
+    bool calculate_pi(stokes_intensity == 1), calculate_pa(stokes_angle == 1);
+    bool current_stokes_as_pi(stokes_intensity == 0), current_stokes_as_pa(stokes_angle == 0);
+
+    // Calculating fractional PI or applying threshold require stokes I
+    if (require_stokes_i && !GetStokesTypeIndex("Ix", stokes_i)) {
+        return false;
+    }
+
+    // Calculating PI or PA require stokes Q and U data
+    if (calculate_pi || calculate_pa) {
         if (!GetStokesTypeIndex("Qx", stokes_q) || !GetStokesTypeIndex("Ux", stokes_u)) {
             return false;
         }
@@ -2312,21 +2317,22 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
         std::vector<float> down_sampled_i, down_sampled_q, down_sampled_u, down_sampled_data;
         int down_sampled_width, down_sampled_height;
 
-        if ((stokes_intensity == 1) || (stokes_angle == 1)) {
-            // Calculate fractional PI requires stokes I data
-            if (fractional &&
-                !GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
-                return false;
-            }
-            // Calculate PI or PA require stokes Q and U data
+        // Calculating fractional PI or applying threshold require stokes I
+        if (require_stokes_i &&
+            !GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
+            return false;
+        }
+
+        // Calculating PI or PA require stokes Q and U data
+        if (calculate_pi || calculate_pa) {
             if (!GetDownSampledRasterData(down_sampled_q, down_sampled_width, down_sampled_height, channel, stokes_q, bounds, mip) ||
                 !GetDownSampledRasterData(down_sampled_u, down_sampled_width, down_sampled_height, channel, stokes_u, bounds, mip)) {
                 return false;
             }
         }
 
-        if ((stokes_intensity == 0) || (stokes_angle == 0)) {
-            // Calculate the current stokes as polarized intensity or polarized angle
+        // Calculate the current stokes as polarized intensity or polarized angle
+        if (current_stokes_as_pi || current_stokes_as_pa) {
             if (!GetDownSampledRasterData(
                     down_sampled_data, down_sampled_width, down_sampled_height, channel, CURRENT_STOKES, bounds, mip)) {
                 return false;
@@ -2335,17 +2341,10 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             apply_threshold_on_data(down_sampled_data);
         }
 
-        // Lambda functions for calculating PI, fractional PI, or PA
+        // Lambda functions for calculating PI, fractional PI, and PA
         auto calc_pi = [&](float q, float u) {
             if (!std::isnan(q) && !isnan(u)) {
-                float result = sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-                if (!std::isnan(threshold)) {
-                    if (result >= threshold) {
-                        return result;
-                    }
-                } else {
-                    return result;
-                }
+                return (float)sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
             }
             return std::numeric_limits<float>::quiet_NaN();
         };
@@ -2364,17 +2363,16 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             return std::numeric_limits<float>::quiet_NaN();
         };
 
-        auto reset_pa = [&](float pi, float pa) {
-            if (std::isnan(pi)) {
+        auto set_nan_to_result = [&](float i, float result) {
+            if (std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) {
                 return std::numeric_limits<float>::quiet_NaN();
             }
-            return pa;
+            return result;
         };
 
         // Calculate polarized intensity (pi) or polarized angle (pa) if required
         std::vector<float> pi, pa;
-        bool calculate_pi((stokes_intensity == 1) || !std::isnan(threshold));
-        bool calculate_pa(stokes_angle == 1);
+
         if (calculate_pi) {
             pi.resize(down_sampled_width * down_sampled_height);
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
@@ -2388,25 +2386,32 @@ bool Frame::VectorFieldImage(VectorFieldCallback& partial_vector_field_callback)
             std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
         }
 
-        // Set NAN for PA if PI or fractional PI is NAN
-        if (calculate_pi && calculate_pa) {
-            std::transform(pi.begin(), pi.end(), pa.begin(), pa.begin(), reset_pa);
+        // Set NAN for PI/FPI if stokes I is NAN or below the threshold
+        if (calculate_pi && require_stokes_i) {
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+        }
+
+        // Set NAN for PA if stokes I is NAN or below the threshold
+        if (calculate_pa && require_stokes_i) {
+            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
         }
 
         // Fill polarized intensity tiles protobuf data
-        if (stokes_intensity == 1) { // Send PI as polarized intensity
+        if (calculate_pi) { // Send PI as polarized intensity
             FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
                 compression_type, compression_quality);
-        } else if (stokes_intensity == 0) { // Send current stokes data as polarized intensity
+        }
+        if (current_stokes_as_pi) { // Send current stokes data as polarized intensity
             FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
                 compression_type, compression_quality);
         }
 
         // Fill polarized angle tiles protobuf data
-        if (stokes_angle == 1) { // Send PA as polarized angle
+        if (calculate_pa) { // Send PA as polarized angle
             FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
                 compression_type, compression_quality);
-        } else if (stokes_angle == 0) { // Send current stokes data as polarized angle
+        }
+        if (current_stokes_as_pa) { // Send current stokes data as polarized angle
             FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
                 compression_type, compression_quality);
         }
