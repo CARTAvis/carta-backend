@@ -87,8 +87,6 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
-using VectorFieldCallback = const std::function<void(CARTA::VectorOverlayTileData&)>;
-
 class Frame {
 public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
@@ -215,14 +213,11 @@ public:
     inline VectorFieldSettings& GetVectorFieldParameters() {
         return _vector_field_settings;
     };
-    bool VectorFieldImage(VectorFieldCallback& partial_vector_field_callback);
+    inline void ClearVectorFieldParameters() {
+        _vector_field_settings.ClearSettings();
+    };
     bool GetDownSampledRasterData(std::vector<float>& data, int& down_sampled_width, int& down_sampled_height, int z, int stokes,
         CARTA::ImageBounds& bounds, int mip);
-
-    static void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
-    static void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
-        int32_t tile_height, std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
-    static CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 
 protected:
     // Validate z and stokes index values

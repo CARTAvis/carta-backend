@@ -11,6 +11,7 @@
 #include "DataStream/Compression.h"
 #include "DataStream/Smoothing.h"
 #include "Frame/Frame.h"
+#include "Frame/VectorFieldCalculator.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -237,7 +238,7 @@ public:
         std::vector<Tile> tiles;
         int image_width = frame->Width();
         int image_height = frame->Height();
-        Frame::GetTiles(image_width, image_height, mip, tiles);
+        GetTiles(image_width, image_height, mip, tiles);
 
         // Get full 2D stokes data
         int channel = frame->CurrentZ();
@@ -252,7 +253,7 @@ public:
         int count = 0;
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
-            auto bounds = Frame::GetImageBounds(tile, image_width, image_height, mip);
+            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
             // Get the tile data
             int tile_original_width = bounds.x_max() - bounds.x_min();
@@ -364,7 +365,7 @@ public:
         std::vector<Tile> tiles;
         int image_width = frame->Width();
         int image_height = frame->Height();
-        Frame::GetTiles(image_width, image_height, mip, tiles);
+        GetTiles(image_width, image_height, mip, tiles);
 
         EXPECT_GT(tiles.size(), 0);
 
@@ -377,7 +378,7 @@ public:
         // Get tiles data
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
-            auto bounds = Frame::GetImageBounds(tile, image_width, image_height, mip);
+            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
             // Don't get the tile data with zero area
             int tile_original_width = bounds.x_max() - bounds.x_min();
@@ -517,11 +518,11 @@ public:
 
             // Fill tiles protobuf data
             auto& tile_pi = tiles_data_pi[i];
-            Frame::FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
+            FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
                 CARTA::CompressionType::NONE, 0);
 
             auto& tile_pa = tiles_data_pa[i];
-            Frame::FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
+            FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
                 CARTA::CompressionType::NONE, 0);
         }
 
@@ -585,14 +586,14 @@ public:
 
     static void TestRasterTilesGeneration(int image_width, int image_height, int mip) {
         std::vector<Tile> tiles;
-        Frame::GetTiles(image_width, image_height, mip, tiles);
+        GetTiles(image_width, image_height, mip, tiles);
 
         // Check the coverage of tiles on the image area
         std::vector<int> image_mask(image_width * image_height, 0);
         int count = 0;
         for (int i = 0; i < tiles.size(); ++i) {
             auto& tile = tiles[i];
-            auto bounds = Frame::GetImageBounds(tile, image_width, image_height, mip);
+            auto bounds = GetImageBounds(tile, image_width, image_height, mip);
             for (int x = bounds.x_min(); x < bounds.x_max(); ++x) {
                 for (int y = bounds.y_min(); y < bounds.y_max(); ++y) {
                     image_mask[y * image_width + x] = 1;
@@ -620,7 +621,7 @@ public:
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
+        auto frame = std::make_shared<Frame>(0, loaders.Get(file_path_string), "0");
 
         // =======================================================================================================
         // Calculate the vector field with the whole 2D image data
@@ -763,7 +764,8 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        frame->VectorFieldImage(callback);
+        VectorFieldCalculator vector_field_calculator(frame);
+        vector_field_calculator.DoCalculations(callback);
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
@@ -829,7 +831,7 @@ public:
 
         // Open file with the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path), "0"));
+        auto frame = std::make_shared<Frame>(0, loaders.Get(file_path), "0");
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
@@ -864,7 +866,8 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        frame->VectorFieldImage(callback);
+        VectorFieldCalculator vector_field_calculator(frame);
+        vector_field_calculator.DoCalculations(callback);
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
@@ -1000,7 +1003,7 @@ public:
 
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
+        auto frame = std::make_shared<Frame>(0, loaders.Get(file_path_string), "0");
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
@@ -1031,7 +1034,8 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        frame->VectorFieldImage(callback);
+        VectorFieldCalculator vector_field_calculator(frame);
+        vector_field_calculator.DoCalculations(callback);
 
         CheckProgresses(progresses);
     }
@@ -1051,7 +1055,7 @@ public:
 
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(file_path_string), "0"));
+        auto frame = std::make_shared<Frame>(0, loaders.Get(file_path_string), "0");
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
@@ -1088,7 +1092,8 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        frame->VectorFieldImage(callback);
+        VectorFieldCalculator vector_field_calculator(frame);
+        vector_field_calculator.DoCalculations(callback);
 
         // =============================================================================
         // Compress the vector field data with ZFP
@@ -1122,7 +1127,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        frame->VectorFieldImage(callback2);
+        vector_field_calculator.DoCalculations(callback2);
 
         // Check the absolute mean of error
         float pi_abs_err_mean = 0;

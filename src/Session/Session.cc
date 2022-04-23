@@ -28,6 +28,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "Frame/VectorFieldCalculator.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
@@ -1897,7 +1898,8 @@ bool Session::SendVectorFieldData(int file_id) {
         };
 
         // Do PI/PA calculations
-        if (frame->VectorFieldImage(callback)) {
+        VectorFieldCalculator vector_field_calculator(frame);
+        if (vector_field_calculator.DoCalculations(callback)) {
             return true;
         }
         SendLogEvent("Error processing vector filed image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
