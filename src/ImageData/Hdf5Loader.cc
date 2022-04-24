@@ -476,7 +476,7 @@ bool Hdf5Loader::GetChunk(
     data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
     data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
 
-    StokesSrc stokes_src(stokes, AxisRange(z), AxisRange(min_x, min_x + data_width - 1), AxisRange(min_y, min_y + data_height - 1));
+    StokesSource stokes_src(stokes, AxisRange(z), AxisRange(min_x, min_x + data_width - 1), AxisRange(min_y, min_y + data_height - 1));
     if (!stokes_src.OriginalImage()) { // Reset the start position of the slicer as 0 for the computed stokes image
         stokes = 0;
         z = 0;

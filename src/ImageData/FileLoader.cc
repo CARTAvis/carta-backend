@@ -157,7 +157,7 @@ casacore::IPosition FileLoader::GetShape() {
     return _image_shape;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(const StokesSrc& stokes_src) {
+std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(const StokesSource& stokes_src) {
     if (stokes_src.OriginalImage()) {
         return _coord_sys;
     } else {
@@ -322,8 +322,8 @@ std::vector<int> FileLoader::GetRenderAxes() {
     return axes;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSrc, casacore::Slicer>& stokes_slicer) {
-    StokesSrc stokes_src = stokes_slicer.first;
+bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_slicer) {
+    StokesSource stokes_src = stokes_slicer.first;
     casacore::Slicer slicer = stokes_slicer.second;
     try {
         auto image = GetStokesImage(stokes_src); // Get the opened image or computed stokes image from the original one
@@ -392,8 +392,8 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSr
     }
 }
 
-bool FileLoader::GetSubImage(const std::pair<StokesSrc, casacore::Slicer>& stokes_slicer, casacore::SubImage<float>& sub_image) {
-    StokesSrc stokes_src = stokes_slicer.first;
+bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_src = stokes_slicer.first;
     casacore::Slicer slicer = stokes_slicer.second;
 
     // Get the opened casacore image or computed stokes image
@@ -407,8 +407,9 @@ bool FileLoader::GetSubImage(const std::pair<StokesSrc, casacore::Slicer>& stoke
     return true;
 }
 
-bool FileLoader::GetSubImage(const std::pair<StokesSrc, casacore::LattRegionHolder>& stokes_region, casacore::SubImage<float>& sub_image) {
-    StokesSrc stokes_src = stokes_region.first;
+bool FileLoader::GetSubImage(
+    const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_src = stokes_region.first;
     casacore::LattRegionHolder region = stokes_region.second;
 
     // Get the opened casacore image or computed stokes image
@@ -903,7 +904,7 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
     return false;
 }
 
-typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSrc& stokes_src) {
+typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_src) {
     if (stokes_src.OriginalImage()) {
         return GetImage();
     }

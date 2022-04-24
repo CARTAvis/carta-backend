@@ -347,7 +347,7 @@ bool Region::EllipsePointsToWorld(
 // Apply region to any image
 
 std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
-    const casacore::IPosition& output_shape, const StokesSrc& stokes_src, bool report_error) {
+    const casacore::IPosition& output_shape, const StokesSource& stokes_src, bool report_error) {
     // Apply region to non-reference image as converted polygon vertices
     // Will return nullptr if outside image or is not a closed LCRegion (line or polyline)
     std::shared_ptr<casacore::LCRegion> lc_region;
@@ -794,7 +794,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetCachedLCRegion(int file_id) {
 }
 
 std::shared_ptr<casacore::LCRegion> Region::GetConvertedLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
-    const casacore::IPosition& output_shape, const StokesSrc& stokes_src, bool report_error) {
+    const casacore::IPosition& output_shape, const StokesSource& stokes_src, bool report_error) {
     // Convert 2D reference WCRegion to LCRegion in output coord_sys and shape
     std::shared_ptr<casacore::LCRegion> lc_region;
     bool is_reference_image(file_id == _region_state.reference_file_id);

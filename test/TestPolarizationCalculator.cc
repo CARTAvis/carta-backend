@@ -706,15 +706,15 @@ public:
 };
 
 TEST_F(PolarizationCalculatorTest, TestStokesSource) {
-    StokesSrc stokes_src_1(0, AxisRange(0));
-    StokesSrc stokes_src_2(1, AxisRange(0));
-    StokesSrc stokes_src_3(0, AxisRange(1));
-    StokesSrc stokes_src_4(0, AxisRange(0));
+    StokesSource stokes_src_1(0, AxisRange(0));
+    StokesSource stokes_src_2(1, AxisRange(0));
+    StokesSource stokes_src_3(0, AxisRange(1));
+    StokesSource stokes_src_4(0, AxisRange(0));
 
-    StokesSrc stokes_src_5(0, AxisRange(0, 10));
-    StokesSrc stokes_src_6(0, AxisRange(0, 10));
-    StokesSrc stokes_src_7(1, AxisRange(0, 10));
-    StokesSrc stokes_src_8(1, AxisRange(0, 5));
+    StokesSource stokes_src_5(0, AxisRange(0, 10));
+    StokesSource stokes_src_6(0, AxisRange(0, 10));
+    StokesSource stokes_src_7(1, AxisRange(0, 10));
+    StokesSource stokes_src_8(1, AxisRange(0, 5));
 
     EXPECT_TRUE(stokes_src_1 != stokes_src_2);
     EXPECT_TRUE(stokes_src_1 != stokes_src_3);
@@ -725,22 +725,22 @@ TEST_F(PolarizationCalculatorTest, TestStokesSource) {
     EXPECT_TRUE(stokes_src_6 != stokes_src_7);
     EXPECT_TRUE(stokes_src_7 != stokes_src_8);
 
-    StokesSrc stokes_src_9 = stokes_src_8;
+    StokesSource stokes_src_9 = stokes_src_8;
 
     EXPECT_TRUE(stokes_src_9 == stokes_src_8);
     EXPECT_TRUE(stokes_src_9 != stokes_src_7);
 
-    StokesSrc stokes_src_10 = StokesSrc();
-    StokesSrc stokes_src_11 = stokes_src_10;
+    StokesSource stokes_src_10 = StokesSource();
+    StokesSource stokes_src_11 = stokes_src_10;
 
     EXPECT_TRUE(stokes_src_10.OriginalImage());
     EXPECT_TRUE(stokes_src_10 != stokes_src_1);
     EXPECT_TRUE(stokes_src_10 == stokes_src_11);
 
-    StokesSrc stokes_src_12(0, AxisRange(0), AxisRange(0), AxisRange(0));
-    StokesSrc stokes_src_13(1, AxisRange(0), AxisRange(1), AxisRange(0));
-    StokesSrc stokes_src_14(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
-    StokesSrc stokes_src_15(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
+    StokesSource stokes_src_12(0, AxisRange(0), AxisRange(0), AxisRange(0));
+    StokesSource stokes_src_13(1, AxisRange(0), AxisRange(1), AxisRange(0));
+    StokesSource stokes_src_14(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
+    StokesSource stokes_src_15(0, AxisRange(1), AxisRange(0, 1), AxisRange(0, 1));
 
     EXPECT_TRUE(stokes_src_12 != stokes_src_13);
     EXPECT_TRUE(stokes_src_12 != stokes_src_14);

@@ -132,14 +132,14 @@ std::string Frame::GetFileName() {
     return filename;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const StokesSrc& stokes_src) {
+std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const StokesSource& stokes_src) {
     if (IsValid()) {
         return _loader->GetCoordinateSystem(stokes_src);
     }
     return std::make_shared<casacore::CoordinateSystem>();
 }
 
-casacore::IPosition Frame::ImageShape(const StokesSrc& stokes_src) {
+casacore::IPosition Frame::ImageShape(const StokesSource& stokes_src) {
     casacore::IPosition ipos;
     if (stokes_src.OriginalImage() && IsValid()) {
         ipos = _image_shape;
@@ -190,14 +190,14 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     return beams_ok;
 }
 
-std::pair<StokesSrc, casacore::Slicer> Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
+std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
     return GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
 }
 
-std::pair<StokesSrc, casacore::Slicer> Frame::GetImageSlicer(
+std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
     const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
     // Set stokes source for the image loader
-    StokesSrc stokes_src(stokes, z_range, x_range, y_range);
+    StokesSource stokes_src(stokes, z_range, x_range, y_range);
 
     // Slicer to apply z range and stokes to image shape
     // Start with entire image
@@ -373,7 +373,7 @@ bool Frame::FillImageCache() {
     }
 
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
-    std::pair<StokesSrc, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
+    std::pair<StokesSource, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     _image_cache_size = stokes_slicer.second.length().product();
     _image_cache = std::make_unique<float[]>(_image_cache_size);
     if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
@@ -399,7 +399,7 @@ void Frame::InvalidateImageCache() {
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
     // fill matrix for given z and stokes
-    std::pair<StokesSrc, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
+    std::pair<StokesSource, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
     z_matrix.resize(stokes_slicer.second.length().product());
     GetSlicerData(stokes_slicer, z_matrix.data());
 }
@@ -1031,7 +1031,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         auto t_start_image_stats = std::chrono::high_resolution_clock::now();
 
         // Calculate stats map using slicer
-        std::pair<StokesSrc, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
+        std::pair<StokesSource, casacore::Slicer> stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
         std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
         if (GetSlicerStats(stokes_slicer, required_stats, per_z, stats_vector_map)) {
@@ -1147,7 +1147,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         if (is_current_stokes) {
             cursor_value = cursor_value_with_current_stokes;
         } else {
-            std::pair<StokesSrc, casacore::Slicer> stokes_slicer =
+            std::pair<StokesSource, casacore::Slicer> stokes_slicer =
                 GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = stokes_slicer.second.length().product();
             std::shared_ptr<float[]> data(new float[N]); // zero initialization
@@ -1302,7 +1302,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 } else { // When required stokes is not the current stokes or the stokes needs to be computed
                     profile.reserve(end - start);
 
-                    std::pair<StokesSrc, casacore::Slicer> stokes_slicer;
+                    std::pair<StokesSource, casacore::Slicer> stokes_slicer;
                     if (config.coordinate().back() == 'x') {
                         stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
                     } else if (config.coordinate().back() == 'y') {
@@ -1609,18 +1609,19 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // Region/Slicer Support (Frame manages image mutex)
 
 std::shared_ptr<casacore::LCRegion> Frame::GetImageRegion(
-    int file_id, std::shared_ptr<Region> region, const StokesSrc& stokes_src, bool report_error) {
+    int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_src, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
     return region->GetImageRegion(file_id, CoordinateSystem(stokes_src), ImageShape(stokes_src), stokes_src, report_error);
 }
 
-bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSrc, casacore::ImageRegion>& stokes_region) {
+bool Frame::GetImageRegion(
+    int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_region) {
     if (!CheckZ(z_range.from) || !CheckZ(z_range.to) || !CheckStokes(stokes)) {
         return false;
     }
     try {
-        std::pair<StokesSrc, casacore::Slicer> stokes_slicer = GetImageSlicer(z_range, stokes);
+        std::pair<StokesSource, casacore::Slicer> stokes_slicer = GetImageSlicer(z_range, stokes);
         stokes_region.first = stokes_slicer.first;
         casacore::LCSlicer lcslicer(stokes_slicer.second);
         casacore::ImageRegion this_region(lcslicer);
@@ -1632,14 +1633,14 @@ bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, st
     }
 }
 
-casacore::IPosition Frame::GetRegionShape(const std::pair<StokesSrc, casacore::LattRegionHolder>& stokes_region) {
+casacore::IPosition Frame::GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region) {
     // Returns image shape with a region applied
     auto coord_sys = CoordinateSystem(stokes_region.first);
     casacore::LatticeRegion lattice_region = stokes_region.second.toLatticeRegion(*coord_sys.get(), ImageShape(stokes_region.first));
     return lattice_region.shape();
 }
 
-bool Frame::GetRegionData(const std::pair<StokesSrc, casacore::LattRegionHolder>& stokes_region, std::vector<float>& data) {
+bool Frame::GetRegionData(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region, std::vector<float>& data) {
     // Get image data with a region applied
     auto t_start_get_subimage_data = std::chrono::high_resolution_clock::now();
     casacore::SubImage<float> sub_image;
@@ -1700,7 +1701,7 @@ bool Frame::GetRegionData(const std::pair<StokesSrc, casacore::LattRegionHolder>
     return false;
 }
 
-bool Frame::GetSlicerData(const std::pair<StokesSrc, casacore::Slicer>& stokes_slicer, float* data) {
+bool Frame::GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, float* data) {
     // Get image data with a slicer applied
     casacore::Array<float> tmp(stokes_slicer.second.length(), data, casacore::StorageInitPolicy::SHARE);
     std::unique_lock<std::mutex> ulock(_image_mutex);
@@ -1710,7 +1711,7 @@ bool Frame::GetSlicerData(const std::pair<StokesSrc, casacore::Slicer>& stokes_s
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const std::pair<StokesSrc, casacore::LattRegionHolder>& stokes_region,
+bool Frame::GetRegionStats(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region,
     const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
@@ -1727,7 +1728,7 @@ bool Frame::GetRegionStats(const std::pair<StokesSrc, casacore::LattRegionHolder
     return subimage_ok;
 }
 
-bool Frame::GetSlicerStats(const std::pair<StokesSrc, casacore::Slicer>& stokes_slicer, std::vector<CARTA::StatsType>& required_stats,
+bool Frame::GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, std::vector<CARTA::StatsType>& required_stats,
     bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
@@ -1759,7 +1760,7 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback,
-    const std::pair<StokesSrc, casacore::ImageRegion>& stokes_region, const CARTA::MomentRequest& moment_request,
+    const std::pair<StokesSource, casacore::ImageRegion>& stokes_region, const CARTA::MomentRequest& moment_request,
     CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results) {
     std::shared_lock lock(GetActiveTaskMutex());
     _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.first)));
@@ -1843,7 +1844,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     //// Todo: support saving computed stokes images
     if (image_shape.size() == 2) {
         if (region) {
-            _loader->GetSubImage(std::make_pair(StokesSrc(), LattRegionHolder(image_region.get())), sub_image);
+            _loader->GetSubImage(std::make_pair(StokesSource(), LattRegionHolder(image_region.get())), sub_image);
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }
@@ -1855,7 +1856,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
             } else {
                 auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
-                _loader->GetSubImage(std::make_pair(StokesSrc(), slice_sub_image), sub_image);
+                _loader->GetSubImage(std::make_pair(StokesSource(), slice_sub_image), sub_image);
             }
 
             // If keep degenerated axes

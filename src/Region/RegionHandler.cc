@@ -663,7 +663,7 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
 }
 
 std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
-    int region_id, int file_id, const StokesSrc& stokes_src, bool report_error) {
+    int region_id, int file_id, const StokesSource& stokes_src, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -678,14 +678,14 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
 }
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
-    std::pair<StokesSrc, casacore::ImageRegion>& stokes_region, std::shared_ptr<casacore::LCRegion> region_2D) {
+    std::pair<StokesSource, casacore::ImageRegion>& stokes_region, std::shared_ptr<casacore::LCRegion> region_2D) {
     // Returns 3D image region for region applied to image and extended by z-range and stokes index
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
 
     try {
-        StokesSrc stokes_src(stokes, z_range);
+        StokesSource stokes_src(stokes, z_range);
         stokes_region.first = stokes_src;
         auto applied_region = region_2D;
         if (!applied_region) {
@@ -733,7 +733,7 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<GeneratedImage>& collapse_results) {
-    std::pair<StokesSrc, casacore::ImageRegion> stokes_region;
+    std::pair<StokesSource, casacore::ImageRegion> stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
     int z_min(moment_request.spectral_range().min());
     int z_max(moment_request.spectral_range().max());
@@ -921,7 +921,7 @@ bool RegionHandler::GetRegionHistogramData(
     bool have_basic_stats(false);
 
     // Reuse the image region for each histogram
-    std::pair<StokesSrc, casacore::ImageRegion> stokes_region;
+    std::pair<StokesSource, casacore::ImageRegion> stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
 
     // Reuse data with respect to stokes and stats for each histogram; results depend on num_bins
@@ -1143,7 +1143,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get 2D region to check if inside image
-    auto lc_region = ApplyRegionToFile(region_id, file_id, StokesSrc(), report_error); // Apply region to the original image coordinate
+    auto lc_region = ApplyRegionToFile(region_id, file_id, StokesSource(), report_error); // Apply region to the original image coordinate
     if (!lc_region) {
         progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
@@ -1348,7 +1348,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
         auto get_partial_profiles = [&](ProfilesMap& tmp_partial_profiles, std::string coordinate) {
             int tmp_stokes;
-            std::pair<StokesSrc, casacore::ImageRegion> stokes_region;
+            std::pair<StokesSource, casacore::ImageRegion> stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
             return (_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) &&
                     ApplyRegionToFile(region_id, file_id, z_range, tmp_stokes, stokes_region, lc_region) &&
@@ -1387,7 +1387,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             GetStokesPangle(profiles_q, profiles_u, partial_profiles);
         } else {
             // For regular stokes I, Q, U, or V
-            std::pair<StokesSrc, casacore::ImageRegion> stokes_region;
+            std::pair<StokesSource, casacore::ImageRegion> stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
 
             if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, stokes_region, lc_region) ||
@@ -1557,7 +1557,7 @@ bool RegionHandler::GetRegionStatsData(
 
     // Get region
     AxisRange z_range(z);
-    std::pair<StokesSrc, casacore::ImageRegion> stokes_region;
+    std::pair<StokesSource, casacore::ImageRegion> stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
     if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
         // region outside image: NaN results
