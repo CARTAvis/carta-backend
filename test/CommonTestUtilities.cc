@@ -398,13 +398,24 @@ void CmpValues(float data1, float data2, float abs_err) {
     }
 }
 
-void CmpHistograms(const carta::Histogram& cube_histogram1, const carta::Histogram& cube_histogram2) {
-    auto hist1 = cube_histogram1.GetHistogramBins();
-    auto hist2 = cube_histogram2.GetHistogramBins();
-    EXPECT_EQ(hist1.size(), hist2.size());
-    if (hist1.size() == hist2.size()) {
-        for (int i = 0; i < hist1.size(); ++i) {
-            EXPECT_EQ(hist1[i], hist2[i]);
+bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2) {
+    if (hist1.GetNbins() != hist2.GetNbins()) {
+        return false;
+    }
+    if (fabs(hist1.GetMinVal() - hist2.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
+        return false;
+    }
+    if (fabs(hist1.GetMaxVal() - hist2.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
+        return false;
+    }
+
+    for (auto i = 0; i < hist1.GetNbins(); i++) {
+        auto bin_a = hist1.GetHistogramBins()[i];
+        auto bin_b = hist2.GetHistogramBins()[i];
+        if (bin_a != bin_b) {
+            return false;
         }
     }
+
+    return true;
 }

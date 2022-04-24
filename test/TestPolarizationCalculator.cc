@@ -701,7 +701,7 @@ public:
         int current_channel_2(1);
         CalculateCubeHistogram(frame_2, current_channel_2, fiddled_stokes, cube_histogram_2);
 
-        CmpHistograms(cube_histogram_1, cube_histogram_2);
+        EXPECT_TRUE(CmpHistograms(cube_histogram_1, cube_histogram_2));
     }
 };
 
