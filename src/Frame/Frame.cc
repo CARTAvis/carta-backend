@@ -2198,21 +2198,21 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
     return false;
 }
 
-bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int& down_sampled_width, int& down_sampled_height, int channel,
-    int stokes, CARTA::ImageBounds& bounds, int mip) {
+bool Frame::GetDownsampledRasterData(
+    std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip) {
     int tile_original_width = bounds.x_max() - bounds.x_min();
     int tile_original_height = bounds.y_max() - bounds.y_min();
     if (tile_original_width * tile_original_height == 0) {
         return false;
     }
 
-    down_sampled_width = std::ceil((float)tile_original_width / mip);
-    down_sampled_height = std::ceil((float)tile_original_height / mip);
+    downsampled_width = std::ceil((float)tile_original_width / mip);
+    downsampled_height = std::ceil((float)tile_original_height / mip);
     std::vector<float> tile_data;
     bool use_loader_downsampled_data(false);
 
     // Check does the (HDF5) loader has the right (mip) downsampled data
-    if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(down_sampled_data, channel, stokes, bounds, mip, _image_mutex)) {
+    if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
         return true;
     } else {
         // Check is there another downsampled data that we can use to downsample
@@ -2220,7 +2220,7 @@ bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int&
             if (mip % sub_mip == 0) {
                 int loader_mip = mip / sub_mip;
                 if (_loader->HasMip(loader_mip) &&
-                    _loader->GetDownsampledRasterData(tile_data, channel, stokes, bounds, loader_mip, _image_mutex)) {
+                    _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
                     use_loader_downsampled_data = true;
                     // Reset mip
                     mip = sub_mip;
@@ -2240,17 +2240,17 @@ bool Frame::GetDownSampledRasterData(std::vector<float>& down_sampled_data, int&
         int y_min = bounds.y_min();
         int y_max = bounds.y_max() - 1;
 
-        casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes);
+        casacore::Slicer tile_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(z), stokes);
         tile_data.resize(tile_section.length().product());
         if (!GetSlicerData(tile_section, tile_data.data())) {
             return false;
         }
     }
 
-    // Get down sampled raster tile data by block averaging
-    down_sampled_data.resize(down_sampled_height * down_sampled_width);
-    return BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
-        down_sampled_height, 0, 0, mip);
+    // Get downsampled raster tile data by block averaging
+    data.resize(downsampled_height * downsampled_width);
+    return BlockSmooth(
+        tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
 } // namespace carta

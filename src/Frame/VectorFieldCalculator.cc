@@ -77,25 +77,25 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
             auto& tile = tiles[i];
             auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
-            // Get down sampled 2D pixel data
-            std::vector<float> down_sampled_data;
-            int down_sampled_width, down_sampled_height;
-            if (!frame->GetDownSampledRasterData(
-                    down_sampled_data, down_sampled_width, down_sampled_height, channel, CURRENT_STOKES, bounds, mip)) {
+            // Get downsampled 2D pixel data
+            std::vector<float> downsampled_data;
+            int downsampled_width, downsampled_height;
+            if (!frame->GetDownsampledRasterData(
+                    downsampled_data, downsampled_width, downsampled_height, channel, CURRENT_STOKES, bounds, mip)) {
                 return false;
             }
             // Apply a threshold cut
-            apply_threshold_on_data(down_sampled_data);
+            apply_threshold_on_data(downsampled_data);
 
             if (stokes_angle > -1) {
                 // Fill PA tiles protobuf data
-                FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
-                    down_sampled_data, compression_type, compression_quality);
+                FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, downsampled_data,
+                    compression_type, compression_quality);
             }
             if (stokes_intensity > -1) {
                 // Fill PI tiles protobuf data
-                FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height,
-                    down_sampled_data, compression_type, compression_quality);
+                FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, downsampled_data,
+                    compression_type, compression_quality);
             }
 
             // Send partial results to the frontend
@@ -131,32 +131,32 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, image_width, image_height, mip);
 
-        // Get down sampled raster tile data
-        std::vector<float> down_sampled_i, down_sampled_q, down_sampled_u, down_sampled_data;
-        int down_sampled_width, down_sampled_height;
+        // Get downsampled raster tile data
+        std::vector<float> downsampled_i, downsampled_q, downsampled_u, downsampled_data;
+        int downsampled_width, downsampled_height;
 
         // Calculating fractional PI or applying threshold require stokes I
         if (require_stokes_i &&
-            !frame->GetDownSampledRasterData(down_sampled_i, down_sampled_width, down_sampled_height, channel, stokes_i, bounds, mip)) {
+            !frame->GetDownsampledRasterData(downsampled_i, downsampled_width, downsampled_height, channel, stokes_i, bounds, mip)) {
             return false;
         }
 
         // Calculating PI or PA require stokes Q and U data
         if (calculate_pi || calculate_pa) {
-            if (!frame->GetDownSampledRasterData(down_sampled_q, down_sampled_width, down_sampled_height, channel, stokes_q, bounds, mip) ||
-                !frame->GetDownSampledRasterData(down_sampled_u, down_sampled_width, down_sampled_height, channel, stokes_u, bounds, mip)) {
+            if (!frame->GetDownsampledRasterData(downsampled_q, downsampled_width, downsampled_height, channel, stokes_q, bounds, mip) ||
+                !frame->GetDownsampledRasterData(downsampled_u, downsampled_width, downsampled_height, channel, stokes_u, bounds, mip)) {
                 return false;
             }
         }
 
         // Calculate the current stokes as polarized intensity or polarized angle
         if (current_stokes_as_pi || current_stokes_as_pa) {
-            if (!frame->GetDownSampledRasterData(
-                    down_sampled_data, down_sampled_width, down_sampled_height, channel, CURRENT_STOKES, bounds, mip)) {
+            if (!frame->GetDownsampledRasterData(
+                    downsampled_data, downsampled_width, downsampled_height, channel, CURRENT_STOKES, bounds, mip)) {
                 return false;
             }
             // Apply a threshold cut
-            apply_threshold_on_data(down_sampled_data);
+            apply_threshold_on_data(downsampled_data);
         }
 
         // Lambda functions for calculating PI, fractional PI, and PA
@@ -192,45 +192,45 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
         std::vector<float> pi, pa;
 
         if (calculate_pi) {
-            pi.resize(down_sampled_width * down_sampled_height);
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+            pi.resize(downsampled_width * downsampled_height);
+            std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pi.begin(), calc_pi);
             if (fractional) { // Calculate fractional PI
-                std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+                std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
             }
         }
 
         if (calculate_pa) {
-            pa.resize(down_sampled_width * down_sampled_height);
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+            pa.resize(downsampled_width * downsampled_height);
+            std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pa.begin(), calc_pa);
         }
 
         // Set NAN for PI/FPI if stokes I is NAN or below the threshold
         if (calculate_pi && require_stokes_i) {
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
         }
 
         // Set NAN for PA if stokes I is NAN or below the threshold
         if (calculate_pa && require_stokes_i) {
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
         }
 
         // Fill polarized intensity tiles protobuf data
         if (calculate_pi) { // Send PI as polarized intensity
-            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
-                compression_type, compression_quality);
+            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, pi, compression_type,
+                compression_quality);
         }
         if (current_stokes_as_pi) { // Send current stokes data as polarized intensity
-            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
+            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, downsampled_data,
                 compression_type, compression_quality);
         }
 
         // Fill polarized angle tiles protobuf data
         if (calculate_pa) { // Send PA as polarized angle
-            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
-                compression_type, compression_quality);
+            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, pa, compression_type,
+                compression_quality);
         }
         if (current_stokes_as_pa) { // Send current stokes data as polarized angle
-            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, down_sampled_data,
+            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, downsampled_data,
                 compression_type, compression_quality);
         }
 

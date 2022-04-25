@@ -35,18 +35,18 @@ public:
         return results;
     }
 
-    bool GetLoaderDownSampledData(std::vector<float>& down_sampled_data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) {
+    bool GetLoaderDownsampledData(std::vector<float>& downsampled_data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) {
         if (!ImageBoundsValid(bounds)) {
             return false;
         }
-        if (!_loader->HasMip(mip) || !_loader->GetDownsampledRasterData(down_sampled_data, channel, stokes, bounds, mip, _image_mutex)) {
+        if (!_loader->HasMip(mip) || !_loader->GetDownsampledRasterData(downsampled_data, channel, stokes, bounds, mip, _image_mutex)) {
             return false;
         }
         return true;
     }
 
-    bool GetDownSampledData(std::vector<float>& down_sampled_data, int& down_sampled_width, int& down_sampled_height, int channel,
-        int stokes, CARTA::ImageBounds& bounds, int mip) {
+    bool GetDownsampledData(std::vector<float>& downsampled_data, int& downsampled_width, int& downsampled_height, int channel, int stokes,
+        CARTA::ImageBounds& bounds, int mip) {
         if (!ImageBoundsValid(bounds)) {
             return false;
         }
@@ -65,13 +65,13 @@ public:
 
         int tile_original_width = bounds.x_max() - bounds.x_min();
         int tile_original_height = bounds.y_max() - bounds.y_min();
-        down_sampled_width = std::ceil((float)tile_original_width / mip);
-        down_sampled_height = std::ceil((float)tile_original_height / mip);
+        downsampled_width = std::ceil((float)tile_original_width / mip);
+        downsampled_height = std::ceil((float)tile_original_height / mip);
 
-        // Get down sampled raster tile data by block averaging
-        down_sampled_data.resize(down_sampled_height * down_sampled_width);
-        return BlockSmooth(tile_data.data(), down_sampled_data.data(), tile_original_width, tile_original_height, down_sampled_width,
-            down_sampled_height, 0, 0, mip);
+        // Get downsampled raster tile data by block averaging
+        downsampled_data.resize(downsampled_height * downsampled_width);
+        return BlockSmooth(tile_data.data(), downsampled_data.data(), tile_original_width, tile_original_height, downsampled_width,
+            downsampled_height, 0, 0, mip);
     }
 
     bool ImageBoundsValid(const CARTA::ImageBounds& bounds) {
@@ -86,7 +86,7 @@ public:
 
 class VectorFieldTest : public ::testing::Test {
 public:
-    bool TestLoaderDownSampledData(
+    bool TestLoaderDownsampledData(
         std::string image_shape, std::string image_opts, std::string stokes_type, std::vector<int>& loader_mips) {
         // Create the sample image
         std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
@@ -107,8 +107,8 @@ public:
 
         int channel = frame->CurrentZ();
 
-        int down_sampled_width;
-        int down_sampled_height;
+        int downsampled_width;
+        int downsampled_height;
         CARTA::ImageBounds bounds;
         bounds.set_x_min(0);
         bounds.set_x_max(frame->Width());
@@ -117,25 +117,24 @@ public:
 
         for (auto loader_mip : loader_mips) {
             // Get (HDF5) loader downsampled data
-            std::vector<float> down_sampled_data1;
-            if (!frame->GetLoaderDownSampledData(down_sampled_data1, channel, stokes, bounds, loader_mip)) {
+            std::vector<float> downsampled_data1;
+            if (!frame->GetLoaderDownsampledData(downsampled_data1, channel, stokes, bounds, loader_mip)) {
                 return false;
             }
 
             // Get downsampled data from the full resolution raster data
-            std::vector<float> down_sampled_data2;
-            if (!frame->GetDownSampledData(
-                    down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, loader_mip)) {
+            std::vector<float> downsampled_data2;
+            if (!frame->GetDownsampledData(downsampled_data2, downsampled_width, downsampled_height, channel, stokes, bounds, loader_mip)) {
                 return false;
             }
 
             // Compare two downsampled data
-            CmpVectors(down_sampled_data1, down_sampled_data2, 1e-6);
+            CmpVectors(downsampled_data1, downsampled_data2, 1e-6);
         }
         return true;
     }
 
-    bool TestBlockSmoothDownSampledData(
+    bool TestBlockSmoothDownsampledData(
         std::string image_shape, std::string image_opts, std::string stokes_type, int mip, int loader_mip, float abs_error) {
         // Create the sample image
         std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
@@ -161,57 +160,57 @@ public:
         bounds.set_y_max(image_height);
 
         // Get (HDF5) loader downsampled data
-        std::vector<float> loader_down_sampled_data;
-        if (!frame->GetLoaderDownSampledData(loader_down_sampled_data, channel, stokes, bounds, loader_mip)) {
+        std::vector<float> loader_downsampled_data;
+        if (!frame->GetLoaderDownsampledData(loader_downsampled_data, channel, stokes, bounds, loader_mip)) {
             return false;
         }
 
-        // Get down sampled data from the smaller loader down sampled data
-        int down_sampled_width_1st = std::ceil((float)image_width / loader_mip);
-        int down_sampled_height_1st = std::ceil((float)image_height / loader_mip);
+        // Get downsampled data from the smaller loader downsampled data
+        int downsampled_width_1st = std::ceil((float)image_width / loader_mip);
+        int downsampled_height_1st = std::ceil((float)image_height / loader_mip);
         int mip_2nd = mip / loader_mip;
-        int down_sampled_width_2nd = std::ceil((float)down_sampled_width_1st / mip_2nd);
-        int down_sampled_height_2nd = std::ceil((float)down_sampled_height_1st / mip_2nd);
-        std::vector<float> down_sampled_data1(down_sampled_height_2nd * down_sampled_width_2nd);
-        if (!BlockSmooth(loader_down_sampled_data.data(), down_sampled_data1.data(), down_sampled_width_1st, down_sampled_height_1st,
-                down_sampled_width_2nd, down_sampled_height_2nd, 0, 0, mip_2nd)) {
+        int downsampled_width_2nd = std::ceil((float)downsampled_width_1st / mip_2nd);
+        int downsampled_height_2nd = std::ceil((float)downsampled_height_1st / mip_2nd);
+        std::vector<float> downsampled_data1(downsampled_height_2nd * downsampled_width_2nd);
+        if (!BlockSmooth(loader_downsampled_data.data(), downsampled_data1.data(), downsampled_width_1st, downsampled_height_1st,
+                downsampled_width_2nd, downsampled_height_2nd, 0, 0, mip_2nd)) {
             return false;
         }
 
         // Check does the function BlockSmooth work well
-        CheckDownSampledData(loader_down_sampled_data, down_sampled_data1, down_sampled_width_1st, down_sampled_height_1st,
-            down_sampled_width_2nd, down_sampled_height_2nd, mip_2nd);
+        CheckDownsampledData(loader_downsampled_data, downsampled_data1, downsampled_width_1st, downsampled_height_1st,
+            downsampled_width_2nd, downsampled_height_2nd, mip_2nd);
 
-        // Get down sampled data from the full resolution raster data
-        int down_sampled_width;
-        int down_sampled_height;
-        std::vector<float> down_sampled_data2;
-        if (!frame->GetDownSampledData(down_sampled_data2, down_sampled_width, down_sampled_height, channel, stokes, bounds, mip)) {
+        // Get downsampled data from the full resolution raster data
+        int downsampled_width;
+        int downsampled_height;
+        std::vector<float> downsampled_data2;
+        if (!frame->GetDownsampledData(downsampled_data2, downsampled_width, downsampled_height, channel, stokes, bounds, mip)) {
             return false;
         }
-        EXPECT_EQ(down_sampled_width, down_sampled_width_2nd);
-        EXPECT_EQ(down_sampled_height, down_sampled_height_2nd);
+        EXPECT_EQ(downsampled_width, downsampled_width_2nd);
+        EXPECT_EQ(downsampled_height, downsampled_height_2nd);
 
         if (image_width % loader_mip != 0) {
             // Remove the right edge pixels
-            for (int i = 0; i < down_sampled_data2.size(); ++i) {
-                if ((i + 1) % down_sampled_width == 0) {
-                    down_sampled_data1[i] = down_sampled_data2[i] = std::numeric_limits<float>::quiet_NaN();
+            for (int i = 0; i < downsampled_data2.size(); ++i) {
+                if ((i + 1) % downsampled_width == 0) {
+                    downsampled_data1[i] = downsampled_data2[i] = std::numeric_limits<float>::quiet_NaN();
                 }
             }
         }
 
         if (image_height % loader_mip != 0) {
             // Remove the bottom edge pixels
-            for (int i = 0; i < down_sampled_data2.size(); ++i) {
-                if (i / down_sampled_width == down_sampled_height - 1) {
-                    down_sampled_data1[i] = down_sampled_data2[i] = std::numeric_limits<float>::quiet_NaN();
+            for (int i = 0; i < downsampled_data2.size(); ++i) {
+                if (i / downsampled_width == downsampled_height - 1) {
+                    downsampled_data1[i] = downsampled_data2[i] = std::numeric_limits<float>::quiet_NaN();
                 }
             }
         }
 
-        // Compare two down sampled data
-        CmpVectors(down_sampled_data1, down_sampled_data2, abs_error);
+        // Compare two downsampled data
+        CmpVectors(downsampled_data1, downsampled_data2, abs_error);
         return true;
     }
 
@@ -325,14 +324,14 @@ public:
         int image_height = frame->Height();
 
         // Block averaging
-        int down_sampled_height = std::ceil((float)image_height / mip);
-        int down_sampled_width = std::ceil((float)image_width / mip);
-        std::vector<float> down_sampled_data(down_sampled_height * down_sampled_width);
+        int downsampled_height = std::ceil((float)image_height / mip);
+        int downsampled_width = std::ceil((float)image_width / mip);
+        std::vector<float> downsampled_data(downsampled_height * downsampled_width);
 
         BlockSmooth(
-            image_data.data(), down_sampled_data.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            image_data.data(), downsampled_data.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
 
-        CheckDownSampledData(image_data, down_sampled_data, image_width, image_height, down_sampled_width, down_sampled_height, mip);
+        CheckDownsampledData(image_data, downsampled_data, image_width, image_height, downsampled_width, downsampled_height, mip);
 
         return true;
     }
@@ -413,36 +412,36 @@ public:
             EXPECT_EQ(tile_data_q.size(), tile_original_width * tile_original_height);
             EXPECT_EQ(tile_data_u.size(), tile_original_width * tile_original_height);
 
-            // Block averaging, get down sampled data
-            int down_sampled_height = std::ceil((float)tile_original_height / mip);
-            int down_sampled_width = std::ceil((float)tile_original_width / mip);
-            int down_sampled_area = down_sampled_height * down_sampled_width;
+            // Block averaging, get downsampled data
+            int downsampled_height = std::ceil((float)tile_original_height / mip);
+            int downsampled_width = std::ceil((float)tile_original_width / mip);
+            int downsampled_area = downsampled_height * downsampled_width;
 
             if (mip > 1) {
-                EXPECT_GT(tile_original_width, down_sampled_width);
-                EXPECT_GT(tile_original_height, down_sampled_height);
+                EXPECT_GT(tile_original_width, downsampled_width);
+                EXPECT_GT(tile_original_height, downsampled_height);
             } else {
-                EXPECT_EQ(tile_original_width, down_sampled_width);
-                EXPECT_EQ(tile_original_height, down_sampled_height);
+                EXPECT_EQ(tile_original_width, downsampled_width);
+                EXPECT_EQ(tile_original_height, downsampled_height);
             }
 
-            std::vector<float> down_sampled_i(down_sampled_area);
-            std::vector<float> down_sampled_q(down_sampled_area);
-            std::vector<float> down_sampled_u(down_sampled_area);
+            std::vector<float> downsampled_i(downsampled_area);
+            std::vector<float> downsampled_q(downsampled_area);
+            std::vector<float> downsampled_u(downsampled_area);
 
-            BlockSmooth(tile_data_i.data(), down_sampled_i.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, 0, 0, mip);
-            BlockSmooth(tile_data_q.data(), down_sampled_q.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, 0, 0, mip);
-            BlockSmooth(tile_data_u.data(), down_sampled_u.data(), tile_original_width, tile_original_height, down_sampled_width,
-                down_sampled_height, 0, 0, mip);
+            BlockSmooth(tile_data_i.data(), downsampled_i.data(), tile_original_width, tile_original_height, downsampled_width,
+                downsampled_height, 0, 0, mip);
+            BlockSmooth(tile_data_q.data(), downsampled_q.data(), tile_original_width, tile_original_height, downsampled_width,
+                downsampled_height, 0, 0, mip);
+            BlockSmooth(tile_data_u.data(), downsampled_u.data(), tile_original_width, tile_original_height, downsampled_width,
+                downsampled_height, 0, 0, mip);
 
-            CheckDownSampledData(
-                tile_data_i, down_sampled_i, tile_original_width, tile_original_height, down_sampled_width, down_sampled_height, mip);
-            CheckDownSampledData(
-                tile_data_q, down_sampled_q, tile_original_width, tile_original_height, down_sampled_width, down_sampled_height, mip);
-            CheckDownSampledData(
-                tile_data_u, down_sampled_u, tile_original_width, tile_original_height, down_sampled_width, down_sampled_height, mip);
+            CheckDownsampledData(
+                tile_data_i, downsampled_i, tile_original_width, tile_original_height, downsampled_width, downsampled_height, mip);
+            CheckDownsampledData(
+                tile_data_q, downsampled_q, tile_original_width, tile_original_height, downsampled_width, downsampled_height, mip);
+            CheckDownsampledData(
+                tile_data_u, downsampled_u, tile_original_width, tile_original_height, downsampled_width, downsampled_height, mip);
 
             // Calculate PI, FPI, and PA
             auto calc_pi = [&](float q, float u) {
@@ -476,37 +475,37 @@ public:
             // Set PI/PA results
             auto& pi = pis[i];
             auto& pa = pas[i];
-            pi.resize(down_sampled_area);
-            pa.resize(down_sampled_area);
+            pi.resize(downsampled_area);
+            pa.resize(downsampled_area);
 
             // Calculate PI
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+            std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pi.begin(), calc_pi);
 
             if (fractional) { // Calculate FPI
-                std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+                std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
             }
 
             // Calculate PA
-            std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+            std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pa.begin(), calc_pa);
 
             // Set NaN for PI and PA if stokes I is NaN or below the threshold
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
 
             // Check calculation results
-            for (int j = 0; j < down_sampled_area; ++j) {
+            for (int j = 0; j < downsampled_area; ++j) {
                 float expected_pi;
                 if (fractional) {
-                    expected_pi = sqrt(pow(down_sampled_q[j], 2) + pow(down_sampled_u[j], 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0) /
-                                  down_sampled_i[j];
+                    expected_pi = sqrt(pow(downsampled_q[j], 2) + pow(downsampled_u[j], 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0) /
+                                  downsampled_i[j];
                 } else {
-                    expected_pi = sqrt(pow(down_sampled_q[j], 2) + pow(down_sampled_u[j], 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
+                    expected_pi = sqrt(pow(downsampled_q[j], 2) + pow(downsampled_u[j], 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
                 }
 
-                float expected_pa = (float)(180.0 / casacore::C::pi) * atan2(down_sampled_u[j], down_sampled_q[j]) / 2;
+                float expected_pa = (float)(180.0 / casacore::C::pi) * atan2(downsampled_u[j], downsampled_q[j]) / 2;
 
-                expected_pi = (down_sampled_i[j] >= threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
-                expected_pa = (down_sampled_i[j] >= threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
+                expected_pi = (downsampled_i[j] >= threshold) ? expected_pi : std::numeric_limits<float>::quiet_NaN();
+                expected_pa = (downsampled_i[j] >= threshold) ? expected_pa : std::numeric_limits<float>::quiet_NaN();
 
                 if (!std::isnan(pi[j]) || !std::isnan(expected_pi)) {
                     EXPECT_FLOAT_EQ(pi[j], expected_pi);
@@ -518,11 +517,11 @@ public:
 
             // Fill tiles protobuf data
             auto& tile_pi = tiles_data_pi[i];
-            FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pi,
+            FillTileData(&tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, pi,
                 CARTA::CompressionType::NONE, 0);
 
             auto& tile_pa = tiles_data_pa[i];
-            FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, down_sampled_width, down_sampled_height, pa,
+            FillTileData(&tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, downsampled_width, downsampled_height, pa,
                 CARTA::CompressionType::NONE, 0);
         }
 
@@ -547,7 +546,7 @@ public:
         return true;
     }
 
-    static void CheckDownSampledData(const std::vector<float>& src_data, const std::vector<float>& dest_data, int src_width, int src_height,
+    static void CheckDownsampledData(const std::vector<float>& src_data, const std::vector<float>& dest_data, int src_width, int src_height,
         int dest_width, int dest_height, int mip) {
         EXPECT_GE(src_data.size(), 0);
         EXPECT_GE(dest_data.size(), 0);
@@ -660,21 +659,21 @@ public:
             return false;
         }
 
-        // Block averaging, get down sampled data
-        int down_sampled_width = std::ceil((float)image_width / mip);
-        int down_sampled_height = std::ceil((float)image_height / mip);
-        int down_sampled_area = down_sampled_height * down_sampled_width;
+        // Block averaging, get downsampled data
+        int downsampled_width = std::ceil((float)image_width / mip);
+        int downsampled_height = std::ceil((float)image_height / mip);
+        int downsampled_area = downsampled_height * downsampled_width;
 
-        std::vector<float> down_sampled_i(down_sampled_area);
-        std::vector<float> down_sampled_q(down_sampled_area);
-        std::vector<float> down_sampled_u(down_sampled_area);
+        std::vector<float> downsampled_i(downsampled_area);
+        std::vector<float> downsampled_q(downsampled_area);
+        std::vector<float> downsampled_u(downsampled_area);
 
         BlockSmooth(
-            stokes_data_i.data(), down_sampled_i.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            stokes_data_i.data(), downsampled_i.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
         BlockSmooth(
-            stokes_data_q.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            stokes_data_q.data(), downsampled_q.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
         BlockSmooth(
-            stokes_data_u.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            stokes_data_u.data(), downsampled_u.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
 
         // Reset Q and U errors as 0 if debiasing is not used
         if (!debiasing) {
@@ -711,22 +710,22 @@ public:
         };
 
         // Set PI/PA results
-        std::vector<float> pi(down_sampled_area);
-        std::vector<float> pa(down_sampled_area);
+        std::vector<float> pi(downsampled_area);
+        std::vector<float> pa(downsampled_area);
 
         // Calculate PI
-        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+        std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pi.begin(), calc_pi);
 
         if (fractional) { // Calculate FPI
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
         }
 
         // Calculate PA
-        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+        std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pa.begin(), calc_pa);
 
         // Set NaN for PI and PA if stokes I is NaN or below the threshold
-        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
-        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
+        std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+        std::transform(downsampled_i.begin(), downsampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with the new Frame function
@@ -739,8 +738,8 @@ public:
         frame->SetVectorOverlayParameters(message);
 
         // Set results data
-        std::vector<float> pi2(down_sampled_area);
-        std::vector<float> pa2(down_sampled_area);
+        std::vector<float> pi2(downsampled_area);
+        std::vector<float> pa2(downsampled_area);
         std::vector<double> progresses;
 
         // Set callback function
@@ -749,14 +748,14 @@ public:
             if (response.intensity_tiles_size()) {
                 // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
-                GetTileData(tile_pi, down_sampled_width, pi2);
+                GetTileData(tile_pi, downsampled_width, pi2);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
-                GetTileData(tile_pa, down_sampled_width, pa2);
+                GetTileData(tile_pa, downsampled_width, pa2);
             }
 
             // Record progress
@@ -769,7 +768,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
+            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, downsampled_width, downsampled_height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-5);
         } else {
@@ -787,7 +786,7 @@ public:
         }
     }
 
-    static void GetTileData(const CARTA::TileData& tile, int down_sampled_width, std::vector<float>& array) {
+    static void GetTileData(const CARTA::TileData& tile, int downsampled_width, std::vector<float>& array) {
         int tile_x = tile.x();
         int tile_y = tile.y();
         int tile_width = tile.width();
@@ -800,7 +799,7 @@ public:
         for (int i = 0; i < val.size(); ++i) {
             int x = tile_x * TILE_SIZE + (i % tile_width);
             int y = tile_y * TILE_SIZE + (i / tile_width);
-            array[y * down_sampled_width + x] = val[i];
+            array[y * downsampled_width + x] = val[i];
         }
     }
 
@@ -819,12 +818,12 @@ public:
         // Calculate the vector field with the whole 2D image data
 
         int channel = 0;
-        int down_sampled_width;
-        int down_sampled_height;
+        int downsampled_width;
+        int downsampled_height;
         std::vector<float> pi;
         std::vector<float> pa;
-        CalcPiAndPa(file_path, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, down_sampled_width,
-            down_sampled_height, pi, pa);
+        CalcPiAndPa(file_path, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, downsampled_width,
+            downsampled_height, pi, pa);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with the new Frame function
@@ -841,8 +840,8 @@ public:
         frame->SetVectorOverlayParameters(message);
 
         // Set results data
-        std::vector<float> pi2(down_sampled_width * down_sampled_height);
-        std::vector<float> pa2(down_sampled_width * down_sampled_height);
+        std::vector<float> pi2(downsampled_width * downsampled_height);
+        std::vector<float> pa2(downsampled_width * downsampled_height);
         std::vector<double> progresses;
 
         // Set callback function
@@ -851,14 +850,14 @@ public:
             if (response.intensity_tiles_size()) {
                 // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
-                GetTileData(tile_pi, down_sampled_width, pi2);
+                GetTileData(tile_pi, downsampled_width, pi2);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
-                GetTileData(tile_pa, down_sampled_width, pa2);
+                GetTileData(tile_pa, downsampled_width, pa2);
             }
 
             // Record progress
@@ -871,7 +870,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
+            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, downsampled_width, downsampled_height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-4);
         } else {
@@ -882,7 +881,7 @@ public:
     }
 
     static void CalcPiAndPa(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip, bool debiasing,
-        bool fractional, double threshold, double q_error, double u_error, int& down_sampled_width, int& down_sampled_height,
+        bool fractional, double threshold, double q_error, double u_error, int& downsampled_width, int& downsampled_height,
         std::vector<float>& pi, std::vector<float>& pa) {
         // Create the image reader
         std::shared_ptr<DataReader> reader = nullptr;
@@ -896,23 +895,23 @@ public:
         std::vector<float> stokes_data_q = reader->ReadXY(channel, 1);
         std::vector<float> stokes_data_u = reader->ReadXY(channel, 2);
 
-        // Block averaging, get down sampled data
+        // Block averaging, get downsampled data
         int image_width = reader->Width();
         int image_height = reader->Height();
-        down_sampled_width = std::ceil((float)image_width / mip);
-        down_sampled_height = std::ceil((float)image_height / mip);
-        int down_sampled_area = down_sampled_height * down_sampled_width;
+        downsampled_width = std::ceil((float)image_width / mip);
+        downsampled_height = std::ceil((float)image_height / mip);
+        int downsampled_area = downsampled_height * downsampled_width;
 
-        std::vector<float> down_sampled_i(down_sampled_area);
-        std::vector<float> down_sampled_q(down_sampled_area);
-        std::vector<float> down_sampled_u(down_sampled_area);
+        std::vector<float> downsampled_i(downsampled_area);
+        std::vector<float> downsampled_q(downsampled_area);
+        std::vector<float> downsampled_u(downsampled_area);
 
         BlockSmooth(
-            stokes_data_i.data(), down_sampled_i.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            stokes_data_i.data(), downsampled_i.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
         BlockSmooth(
-            stokes_data_q.data(), down_sampled_q.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            stokes_data_q.data(), downsampled_q.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
         BlockSmooth(
-            stokes_data_u.data(), down_sampled_u.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+            stokes_data_u.data(), downsampled_u.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
 
         // Reset Q and U errors as 0 if debiasing is not used
         if (!debiasing) {
@@ -949,26 +948,26 @@ public:
         };
 
         // Set PI/PA results
-        pi.resize(down_sampled_area);
-        pa.resize(down_sampled_area);
+        pi.resize(downsampled_area);
+        pa.resize(downsampled_area);
 
         // Calculate PI
-        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pi.begin(), calc_pi);
+        std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pi.begin(), calc_pi);
 
         if (fractional) { // Calculate FPI
-            std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), calc_fpi);
         }
 
         // Calculate PA
-        std::transform(down_sampled_q.begin(), down_sampled_q.end(), down_sampled_u.begin(), pa.begin(), calc_pa);
+        std::transform(downsampled_q.begin(), downsampled_q.end(), downsampled_u.begin(), pa.begin(), calc_pa);
 
         // Set NaN for PI and PA if stokes I is NaN or below the threshold
-        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
-        std::transform(down_sampled_i.begin(), down_sampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
+        std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+        std::transform(downsampled_i.begin(), downsampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
     }
 
-    static void GetDownSampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
-        int& down_sampled_width, int& down_sampled_height, std::vector<float>& pa) {
+    static void GetDownsampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
+        int& downsampled_width, int& downsampled_height, std::vector<float>& pa) {
         // Create the image reader
         std::shared_ptr<DataReader> reader = nullptr;
         if (file_type == CARTA::FileType::HDF5) {
@@ -979,15 +978,15 @@ public:
 
         std::vector<float> image_data = reader->ReadXY(channel, stokes);
 
-        // Block averaging, get down sampled data
+        // Block averaging, get downsampled data
         int image_width = reader->Width();
         int image_height = reader->Height();
-        down_sampled_width = std::ceil((float)image_width / mip);
-        down_sampled_height = std::ceil((float)image_height / mip);
-        int down_sampled_area = down_sampled_height * down_sampled_width;
-        pa.resize(down_sampled_area);
+        downsampled_width = std::ceil((float)image_width / mip);
+        downsampled_height = std::ceil((float)image_height / mip);
+        int downsampled_area = downsampled_height * downsampled_width;
+        pa.resize(downsampled_area);
 
-        BlockSmooth(image_data.data(), pa.data(), image_width, image_height, down_sampled_width, down_sampled_height, 0, 0, mip);
+        BlockSmooth(image_data.data(), pa.data(), image_width, image_height, downsampled_width, downsampled_height, 0, 0, mip);
     }
 
     static void TestStokesIntensityOrAngleSettings(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
@@ -1067,12 +1066,12 @@ public:
         // Set results data
         int image_width = frame->Width();
         int image_height = frame->Height();
-        int down_sampled_width = std::ceil((float)image_width / mip);
-        int down_sampled_height = std::ceil((float)image_height / mip);
-        int down_sampled_area = down_sampled_height * down_sampled_width;
+        int downsampled_width = std::ceil((float)image_width / mip);
+        int downsampled_height = std::ceil((float)image_height / mip);
+        int downsampled_area = downsampled_height * downsampled_width;
 
-        std::vector<float> pi_no_compression(down_sampled_area);
-        std::vector<float> pa_no_compression(down_sampled_area);
+        std::vector<float> pi_no_compression(downsampled_area);
+        std::vector<float> pa_no_compression(downsampled_area);
 
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& response) {
@@ -1080,14 +1079,14 @@ public:
             if (response.intensity_tiles_size()) {
                 // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
-                GetTileData(tile_pi, down_sampled_width, pi_no_compression);
+                GetTileData(tile_pi, downsampled_width, pi_no_compression);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
-                GetTileData(tile_pa, down_sampled_width, pa_no_compression);
+                GetTileData(tile_pa, downsampled_width, pa_no_compression);
             }
         };
 
@@ -1106,8 +1105,8 @@ public:
         frame->SetVectorOverlayParameters(message2);
 
         // Set results data
-        std::vector<float> pi_compression(down_sampled_area);
-        std::vector<float> pa_compression(down_sampled_area);
+        std::vector<float> pi_compression(downsampled_area);
+        std::vector<float> pa_compression(downsampled_area);
 
         // Set callback function
         auto callback2 = [&](CARTA::VectorOverlayTileData& response) {
@@ -1115,14 +1114,14 @@ public:
             if (response.intensity_tiles_size()) {
                 // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
-                DecompressTileData(tile_pi, down_sampled_width, comprerssion_quality, pi_compression);
+                DecompressTileData(tile_pi, downsampled_width, comprerssion_quality, pi_compression);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
-                DecompressTileData(tile_pa, down_sampled_width, comprerssion_quality, pa_compression);
+                DecompressTileData(tile_pa, downsampled_width, comprerssion_quality, pa_compression);
             }
         };
 
@@ -1132,7 +1131,7 @@ public:
         // Check the absolute mean of error
         float pi_abs_err_mean = 0;
         int count_pi = 0;
-        for (int i = 0; i < down_sampled_area; ++i) {
+        for (int i = 0; i < downsampled_area; ++i) {
             if (!std::isnan(pi_no_compression[i]) && !std::isnan(pi_compression[i])) {
                 pi_abs_err_mean += fabs(pi_no_compression[i] - pi_compression[i]);
                 ++count_pi;
@@ -1143,7 +1142,7 @@ public:
 
         float pa_abs_err_mean = 0;
         int count_pa = 0;
-        for (int i = 0; i < down_sampled_area; ++i) {
+        for (int i = 0; i < downsampled_area; ++i) {
             if (!std::isnan(pa_no_compression[i]) && !std::isnan(pa_compression[i])) {
                 pa_abs_err_mean += fabs(pa_no_compression[i] - pa_compression[i]);
                 ++count_pa;
@@ -1158,7 +1157,7 @@ public:
     }
 
     static void DecompressTileData(
-        const CARTA::TileData& tile, int down_sampled_width, float comprerssion_quality, std::vector<float>& array) {
+        const CARTA::TileData& tile, int downsampled_width, float comprerssion_quality, std::vector<float>& array) {
         int tile_x = tile.x();
         int tile_y = tile.y();
         int tile_width = tile.width();
@@ -1174,7 +1173,7 @@ public:
         for (int i = 0; i < val.size(); ++i) {
             int x = tile_x * TILE_SIZE + (i % tile_width);
             int y = tile_y * TILE_SIZE + (i / tile_width);
-            array[y * down_sampled_width + x] = val[i];
+            array[y * downsampled_width + x] = val[i];
         }
     }
 
@@ -1193,12 +1192,12 @@ public:
         // Calculate the vector field with the whole 2D image data
 
         int channel = 0;
-        int down_sampled_width;
-        int down_sampled_height;
+        int downsampled_width;
+        int downsampled_height;
         std::vector<float> pi;
         std::vector<float> pa;
-        CalcPiAndPa(file_path_string, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, down_sampled_width,
-            down_sampled_height, pi, pa);
+        CalcPiAndPa(file_path_string, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, downsampled_width,
+            downsampled_height, pi, pa);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with by the Session
@@ -1229,8 +1228,8 @@ public:
 
         // Set results data
         std::pair<std::vector<char>, bool> message_pair;
-        std::vector<float> pi2(down_sampled_width * down_sampled_height);
-        std::vector<float> pa2(down_sampled_width * down_sampled_height);
+        std::vector<float> pi2(downsampled_width * downsampled_height);
+        std::vector<float> pa2(downsampled_width * downsampled_height);
         std::vector<double> progresses;
 
         while (dummy_backend->TryPopMessagesQueue(message_pair)) {
@@ -1243,14 +1242,14 @@ public:
                 if (response.intensity_tiles_size()) {
                     // Fill PI values
                     auto tile_pi = response.intensity_tiles(0);
-                    GetTileData(tile_pi, down_sampled_width, pi2);
+                    GetTileData(tile_pi, downsampled_width, pi2);
                 }
 
                 EXPECT_EQ(response.angle_tiles_size(), 1);
                 if (response.angle_tiles_size()) {
                     // Fill PA values
                     auto tile_pa = response.angle_tiles(0);
-                    GetTileData(tile_pa, down_sampled_width, pa2);
+                    GetTileData(tile_pa, downsampled_width, pa2);
                 }
 
                 // Record progress
@@ -1260,7 +1259,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, down_sampled_width, down_sampled_height);
+            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, downsampled_width, downsampled_height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-3);
         } else {
@@ -1285,10 +1284,10 @@ public:
 
         int channel = 0;
         int stokes = 0;
-        int down_sampled_width;
-        int down_sampled_height;
+        int downsampled_width;
+        int downsampled_height;
         std::vector<float> pixels;
-        GetDownSampledPixels(file_path_string, file_type, channel, stokes, mip, down_sampled_width, down_sampled_height, pixels);
+        GetDownsampledPixels(file_path_string, file_type, channel, stokes, mip, downsampled_width, downsampled_height, pixels);
 
         // Apply a threshold cut
         if (!std::isnan(threshold)) {
@@ -1335,8 +1334,8 @@ public:
 
         // Set results data
         std::pair<std::vector<char>, bool> message_pair;
-        std::vector<float> pi(down_sampled_width * down_sampled_height);
-        std::vector<float> pa2(down_sampled_width * down_sampled_height);
+        std::vector<float> pi(downsampled_width * downsampled_height);
+        std::vector<float> pa2(downsampled_width * downsampled_height);
         std::vector<double> progresses;
 
         while (dummy_backend->TryPopMessagesQueue(message_pair)) {
@@ -1350,7 +1349,7 @@ public:
                     if (response.intensity_tiles_size()) {
                         // Fill PI values
                         auto tile_pi = response.intensity_tiles(0);
-                        GetTileData(tile_pi, down_sampled_width, pi);
+                        GetTileData(tile_pi, downsampled_width, pi);
                     }
                 }
                 if (stokes_angle > -1) {
@@ -1358,7 +1357,7 @@ public:
                     if (response.angle_tiles_size()) {
                         // Fill PA values
                         auto tile_pa = response.angle_tiles(0);
-                        GetTileData(tile_pa, down_sampled_width, pa2);
+                        GetTileData(tile_pa, downsampled_width, pa2);
                     }
                 }
 
@@ -1387,23 +1386,23 @@ public:
     }
 
     static void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa,
-        std::vector<float>& pa2, int down_sampled_width, int down_sampled_height) {
-        // For HDF5 files, if its down sampled data is calculated from the smaller mip (down sampled) data,
+        std::vector<float>& pa2, int downsampled_width, int downsampled_height) {
+        // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data,
         // and the remainder of image width or height divided by this smaller mip is not 0.
-        // Then the error would happen on the right or bottom edge of down sampled pixels compared to that down sampled from the full
+        // Then the error would happen on the right or bottom edge of downsampled pixels compared to that downsampled from the full
         // resolution pixels. Because the "weight" of pixels for averaging in a mip X mip block are not equal.
         // In such case, we ignore the comparison of the data which on the right or bottom edge.
 
         // Remove the right edge data
         for (int i = 0; i < pi.size(); ++i) {
-            if ((i + 1) % down_sampled_width == 0) {
+            if ((i + 1) % downsampled_width == 0) {
                 pi[i] = pi2[i] = std::numeric_limits<float>::quiet_NaN();
                 pa[i] = pa2[i] = std::numeric_limits<float>::quiet_NaN();
             }
         }
         // Remove the bottom edge data
         for (int i = 0; i < pi.size(); ++i) {
-            if (i / down_sampled_width == down_sampled_height - 1) {
+            if (i / downsampled_width == downsampled_height - 1) {
                 pi[i] = pi2[i] = std::numeric_limits<float>::quiet_NaN();
                 pa[i] = pa2[i] = std::numeric_limits<float>::quiet_NaN();
             }
@@ -1600,7 +1599,7 @@ TEST_F(VectorFieldTest, TestSessionVectorFieldCalc) {
     TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
-TEST_F(VectorFieldTest, TestHdf5DownSampledData) {
+TEST_F(VectorFieldTest, TestHdf5DownsampledData) {
     std::string image_opts = IMAGE_OPTS;
     CARTA::FileType file_type = CARTA::FileType::HDF5;
     bool fractional = false;
@@ -1612,7 +1611,7 @@ TEST_F(VectorFieldTest, TestHdf5DownSampledData) {
     TestSessionVectorFieldCalc(image_opts, file_type, mip, fractional, debiasing, q_error, u_error, threshold);
 }
 
-TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
+TEST_F(VectorFieldTest, TestLoaderDownsampledData) {
     int image_width = 1110;
     int image_height = 1110;
     std::string image_shape = fmt::format("{} {} 25 4", image_width, image_height);
@@ -1621,11 +1620,11 @@ TEST_F(VectorFieldTest, TestLoaderDownSampledData) {
     int mip = 12;
     std::vector<int> loader_mips;
 
-    EXPECT_TRUE(TestLoaderDownSampledData(image_shape, image_opts, "Ix", loader_mips));
+    EXPECT_TRUE(TestLoaderDownsampledData(image_shape, image_opts, "Ix", loader_mips));
 
     for (auto loader_mip : loader_mips) {
         if (mip % loader_mip == 0) {
-            EXPECT_TRUE(TestBlockSmoothDownSampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
+            EXPECT_TRUE(TestBlockSmoothDownsampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
         }
     }
 }
