@@ -327,8 +327,7 @@ public:
         CmpSpatialProfiles(data_vec, data_profiles);
 
         // Set spectral configs for the cursor
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{
-            Message::SetSpectralRequirements_SpectralConfig(stokes_config_z)};
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
         frame->SetSpectralRequirements(CURSOR_REGION_ID, spectral_configs);
 
         // Get cursor spectral profile data from the Frame
@@ -428,8 +427,7 @@ public:
         CmpSpatialProfiles(spatial_profile_data_vec, data_profiles);
 
         // Set spectral configs for a point region
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{
-            Message::SetSpectralRequirements_SpectralConfig(stokes_config_z)};
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
         region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
 
         // Get cursor spectral profile data from the RegionHandler
@@ -515,8 +513,7 @@ public:
         EXPECT_TRUE(success);
 
         // Set spectral configs for a point region
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{
-            Message::SetSpectralRequirements_SpectralConfig(stokes_config_z)};
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
         region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
 
         // Get cursor spectral profile data from the RegionHandler
