@@ -1733,6 +1733,7 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(
             file_id, image_region, _z_axis, _stokes_axis, progress_callback, moment_request, moment_response, collapse_results);
+        _loader->AddHistory(moment_request);
         ulock.unlock();
     }
 

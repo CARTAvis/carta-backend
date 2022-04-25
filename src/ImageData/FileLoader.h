@@ -16,6 +16,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/moment_request.pb.h>
 
 #include "ImageData/FileInfo.h"
 
@@ -106,6 +107,8 @@ public:
 
     // Handle images created from LEL expression
     virtual bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message);
+
+    virtual bool AddHistory(const CARTA::MomentRequest& moment_request) const;
 
 protected:
     // Full name and characteristics of the image file

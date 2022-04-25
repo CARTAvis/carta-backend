@@ -25,6 +25,7 @@ public:
     ~FitsLoader();
 
     void OpenFile(const std::string& hdu) override;
+    bool AddHistory(const CARTA::MomentRequest& moment_request) const override;
 
 private:
     std::string _unzip_file;
@@ -167,6 +168,26 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
             _image->setImageInfo(image_info);
         }
     }
+}
+
+bool FitsLoader::AddHistory(const CARTA::MomentRequest& moment_request) const {
+    // Set history of moments requests
+    int z_min = moment_request.spectral_range().min();
+    int z_max = moment_request.spectral_range().max();
+    std::string history = "HISTORY moments spectral range [" + std::to_string(z_min) + ", " + std::to_string(z_max) + "]" + '\0';
+
+    fitsfile* fptr;
+    int status(0), hdu(_hdu_num + 1), hdutype;
+
+    // Open file and write moments requests history to the header
+    fits_open_file(&fptr, _filename.c_str(), READWRITE, &status);
+    fits_movabs_hdu(fptr, hdu, &hdutype, &status);
+    if (hdutype == IMAGE_HDU) {
+        fits_write_record(fptr, history.c_str(), &status);
+    }
+    fits_close_file(fptr, &status);
+
+    return (status == 0);
 }
 
 } // namespace carta
