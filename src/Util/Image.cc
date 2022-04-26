@@ -26,8 +26,3 @@ bool IsComputedStokes(int stokes) {
     return ((stokes == COMPUTE_STOKES_PTOTAL) || (stokes == COMPUTE_STOKES_PLINEAR) || (stokes == COMPUTE_STOKES_PFTOTAL) ||
             (stokes == COMPUTE_STOKES_PFLINEAR) || (stokes == COMPUTE_STOKES_PANGLE));
 }
-
-bool IsComputedStokes(const std::string& stokes_type) {
-    return ((stokes_type == "Ptotal") || (stokes_type == "Plinear") || (stokes_type == "PFtotal") || (stokes_type == "PFlinear") ||
-            (stokes_type == "Pangle"));
-}

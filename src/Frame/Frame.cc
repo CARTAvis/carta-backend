@@ -2179,7 +2179,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
             CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
             if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
                 stokes_ok = true;
-            } else if (IsComputedStokes(stokes_string)) {
+            } else if (IsComputedStokes(StokesValues[StokesStringTypes[stokes_string]])) {
                 stokes_index = StokesStringTypes.at(stokes_string);
                 stokes_ok = true;
             } else {

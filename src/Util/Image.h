@@ -33,11 +33,11 @@
 // stokes
 #define DEFAULT_STOKES 0
 #define CURRENT_STOKES -1
-#define COMPUTE_STOKES_PTOTAL 13   // Polarized intensity ((Q^2+U^2+V^2)^(1/2))
-#define COMPUTE_STOKES_PLINEAR 14  // Linearly Polarized intensity ((Q^2+U^2)^(1/2))
-#define COMPUTE_STOKES_PFTOTAL 15  // Polarization Fraction (Ptotal/I)
-#define COMPUTE_STOKES_PFLINEAR 16 // Linear Polarization Fraction (Plinear/I)
-#define COMPUTE_STOKES_PANGLE 17   // Linear Polarization Angle (0.5 arctan(U/Q)) (in radians)
+#define COMPUTE_STOKES_PTOTAL StokesValues[CARTA::PolarizationType::Ptotal]     // Polarized intensity ((Q^2+U^2+V^2)^(1/2))
+#define COMPUTE_STOKES_PLINEAR StokesValues[CARTA::PolarizationType::Plinear]   // Linearly Polarized intensity ((Q^2+U^2)^(1/2))
+#define COMPUTE_STOKES_PFTOTAL StokesValues[CARTA::PolarizationType::PFtotal]   // Polarization Fraction (Ptotal/I)
+#define COMPUTE_STOKES_PFLINEAR StokesValues[CARTA::PolarizationType::PFlinear] // Linear Polarization Fraction (Plinear/I)
+#define COMPUTE_STOKES_PANGLE StokesValues[CARTA::PolarizationType::Pangle]     // Linear Polarization Angle (0.5 arctan(U/Q)) (in radians)
 
 // raster image data
 #define TILE_SIZE 256
@@ -141,7 +141,6 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
 bool IsComputedStokes(int stokes);
-bool IsComputedStokes(const std::string& stokes_type);
 
 // The struct StokesSource is used to tell the file loader to get the original image interface, or get the computed stokes image interface.
 // The x, y, and z ranges from the StokesSource indicate the range of image data to be calculated (for the new stokes type image).
