@@ -132,19 +132,19 @@ std::string Frame::GetFileName() {
     return filename;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const StokesSource& stokes_src) {
+std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const StokesSource& stokes_source) {
     if (IsValid()) {
-        return _loader->GetCoordinateSystem(stokes_src);
+        return _loader->GetCoordinateSystem(stokes_source);
     }
     return std::make_shared<casacore::CoordinateSystem>();
 }
 
-casacore::IPosition Frame::ImageShape(const StokesSource& stokes_src) {
+casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     casacore::IPosition ipos;
-    if (stokes_src.OriginalImage() && IsValid()) {
+    if (stokes_source.OriginalImage() && IsValid()) {
         ipos = _image_shape;
     } else {
-        auto image = _loader->GetStokesImage(stokes_src);
+        auto image = _loader->GetStokesImage(stokes_source);
         if (image) {
             ipos = image->shape();
         } else {
@@ -197,7 +197,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(const AxisRange&
 std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
     const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
     // Set stokes source for the image loader
-    StokesSource stokes_src(stokes, z_range, x_range, y_range);
+    StokesSource stokes_source(stokes, z_range, x_range, y_range);
 
     // Slicer to apply z range and stokes to image shape
     // Start with entire image
@@ -218,7 +218,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_x = _width - 1;
         }
 
-        if (stokes_src.OriginalImage()) {
+        if (stokes_source.OriginalImage()) {
             start(_x_axis) = start_x;
             end(_x_axis) = end_x;
         } else { // Reset the slice cut for the computed stokes image
@@ -239,7 +239,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_y = _height - 1;
         }
 
-        if (stokes_src.OriginalImage()) {
+        if (stokes_source.OriginalImage()) {
             start(_y_axis) = start_y;
             end(_y_axis) = end_y;
         } else { // Reset the slice cut for the computed stokes image
@@ -264,7 +264,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_z = CurrentZ();
         }
 
-        if (stokes_src.OriginalImage()) {
+        if (stokes_source.OriginalImage()) {
             start(_z_axis) = start_z;
             end(_z_axis) = end_z;
         } else { // Reset the slice cut for the computed stokes image
@@ -278,7 +278,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
         // Normalize stokes constant
         stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
 
-        if (stokes_src.OriginalImage()) {
+        if (stokes_source.OriginalImage()) {
             start(_stokes_axis) = stokes;
             end(_stokes_axis) = stokes;
         } else {
@@ -290,7 +290,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
 
     // slicer for image data
     casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
-    return std::make_pair(stokes_src, section);
+    return std::make_pair(stokes_source, section);
 }
 
 bool Frame::CheckZ(int z) {
@@ -1609,10 +1609,10 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // Region/Slicer Support (Frame manages image mutex)
 
 std::shared_ptr<casacore::LCRegion> Frame::GetImageRegion(
-    int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_src, bool report_error) {
+    int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source, bool report_error) {
     // Return LCRegion formed by applying region params to image.
     // Returns nullptr if region outside image
-    return region->GetImageRegion(file_id, CoordinateSystem(stokes_src), ImageShape(stokes_src), stokes_src, report_error);
+    return region->GetImageRegion(file_id, CoordinateSystem(stokes_source), ImageShape(stokes_source), stokes_source, report_error);
 }
 
 bool Frame::GetImageRegion(

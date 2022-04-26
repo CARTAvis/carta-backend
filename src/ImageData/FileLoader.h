@@ -53,14 +53,14 @@ public:
     bool IsComplexDataType();
 
     // Return the opened casacore image or computed stokes image
-    ImageRef GetStokesImage(const StokesSource& stokes_src);
+    ImageRef GetStokesImage(const StokesSource& stokes_source);
 
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
-    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_src = StokesSource());
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
     bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
@@ -123,7 +123,7 @@ protected:
 
     // Computed stokes image
     std::shared_ptr<casacore::ImageInterface<float>> _computed_stokes_image;
-    StokesSource _stokes_src;
+    StokesSource _stokes_source;
 
     // Save image properties
     casacore::IPosition _image_shape;

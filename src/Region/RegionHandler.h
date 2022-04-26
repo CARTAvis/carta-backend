@@ -114,7 +114,7 @@ private:
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
     std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
-        int region_id, int file_id, const StokesSource& stokes_src = StokesSource(), bool report_error = true);
+        int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
         std::pair<StokesSource, casacore::ImageRegion>& stokes_region, std::shared_ptr<casacore::LCRegion> region_2D);
 

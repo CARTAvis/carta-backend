@@ -663,7 +663,7 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
 }
 
 std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
-    int region_id, int file_id, const StokesSource& stokes_src, bool report_error) {
+    int region_id, int file_id, const StokesSource& stokes_source, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -674,7 +674,7 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
         return nullptr;
     }
 
-    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), stokes_src, report_error);
+    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), stokes_source, report_error);
 }
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
@@ -685,17 +685,17 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
     }
 
     try {
-        StokesSource stokes_src(stokes, z_range);
-        stokes_region.first = stokes_src;
+        StokesSource stokes_source(stokes, z_range);
+        stokes_region.first = stokes_source;
         auto applied_region = region_2D;
         if (!applied_region) {
-            applied_region = ApplyRegionToFile(region_id, file_id, stokes_src);
+            applied_region = ApplyRegionToFile(region_id, file_id, stokes_source);
         }
         if (!applied_region) {
             return false;
         }
 
-        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape(stokes_src));
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape(stokes_source));
 
         // Create LCBox with z range and stokes using a slicer
         casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes).second;

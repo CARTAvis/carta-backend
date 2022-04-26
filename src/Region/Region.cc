@@ -347,7 +347,7 @@ bool Region::EllipsePointsToWorld(
 // Apply region to any image
 
 std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
-    const casacore::IPosition& output_shape, const StokesSource& stokes_src, bool report_error) {
+    const casacore::IPosition& output_shape, const StokesSource& stokes_source, bool report_error) {
     // Apply region to non-reference image as converted polygon vertices
     // Will return nullptr if outside image or is not a closed LCRegion (line or polyline)
     std::shared_ptr<casacore::LCRegion> lc_region;
@@ -357,20 +357,20 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
     std::lock_guard<std::mutex> guard(_region_approx_mutex);
     // The cache of lattice coordinate region is only for the original image (not computed stokes image). In order to avoid the ambiguity
-    if (stokes_src.OriginalImage()) {
+    if (stokes_source.OriginalImage()) {
         lc_region = GetCachedLCRegion(file_id);
     }
 
     if (!lc_region) {
         if (file_id == _region_state.reference_file_id) {
             // Convert reference WCRegion to LCRegion and cache it
-            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_src, report_error);
+            lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
         } else {
             bool use_polygon = UseApproximatePolygon(output_csys); // check region distortion
 
             if (!use_polygon) {
                 // No distortion, do direct region conversion if possible (unless outside image or rotbox)
-                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_src, report_error);
+                lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape, stokes_source, report_error);
             }
 
             if (lc_region) {
@@ -382,7 +382,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
                 // Cache converted polygon
                 // Only for the original image (not computed stokes image). In order to avoid the ambiguity
-                if (lc_region && stokes_src.OriginalImage()) {
+                if (lc_region && stokes_source.OriginalImage()) {
                     _polygon_regions[file_id] = lc_region;
                 }
             }
@@ -794,7 +794,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetCachedLCRegion(int file_id) {
 }
 
 std::shared_ptr<casacore::LCRegion> Region::GetConvertedLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
-    const casacore::IPosition& output_shape, const StokesSource& stokes_src, bool report_error) {
+    const casacore::IPosition& output_shape, const StokesSource& stokes_source, bool report_error) {
     // Convert 2D reference WCRegion to LCRegion in output coord_sys and shape
     std::shared_ptr<casacore::LCRegion> lc_region;
     bool is_reference_image(file_id == _region_state.reference_file_id);
@@ -828,7 +828,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetConvertedLCRegion(int file_id, st
     }
 
     // Cache the lattice coordinate region only for the original image (not computed stokes image). In order to avoid the ambiguity
-    if (lc_region && stokes_src.OriginalImage()) {
+    if (lc_region && stokes_source.OriginalImage()) {
         // Make a copy and cache LCRegion in map
         std::lock_guard<std::mutex> guard(_region_mutex);
         _applied_regions[file_id] = lc_region;

@@ -96,10 +96,10 @@ public:
     std::string GetFileName();
 
     // Returns shared ptr to CoordinateSystem
-    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(const StokesSource& stokes_src = StokesSource());
+    std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(const StokesSource& stokes_source = StokesSource());
 
     // Image/Frame info
-    casacore::IPosition ImageShape(const StokesSource& stokes_src = StokesSource());
+    casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
     size_t Depth();     // length of z axis
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
@@ -167,7 +167,7 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     std::shared_ptr<casacore::LCRegion> GetImageRegion(
-        int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_src = StokesSource(), bool report_error = true);
+        int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_region);
     casacore::IPosition GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region);
     // Returns data vector

@@ -128,7 +128,7 @@ public:
 
     // Converted region as approximate LCPolygon and its mask
     std::shared_ptr<casacore::LCRegion> GetImageRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys,
-        const casacore::IPosition& image_shape, const StokesSource& stokes_src = StokesSource(), bool report_error = true);
+        const casacore::IPosition& image_shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
     // Converted region in Record for export
@@ -173,7 +173,7 @@ private:
     // Region applied to any image; used for export
     std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id);
     std::shared_ptr<casacore::LCRegion> GetConvertedLCRegion(int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys,
-        const casacore::IPosition& output_shape, const StokesSource& stokes_src = StokesSource(), bool report_error = true);
+        const casacore::IPosition& output_shape, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
 
     // Control points converted to pixel coords in output image, returned in LCRegion Record format for export
     casacore::TableRecord GetRegionPointsRecord(
