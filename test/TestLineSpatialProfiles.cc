@@ -148,7 +148,7 @@ TEST_F(LineSpatialProfileTest, FitsVerticalCutProfile) {
 
 TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
-    std::vector<float> endpoints = {9.0, 5.0, 9.0, 1.0, 1.0, 1.0};
+    std::vector<float> endpoints = {1.0, 1.0, 9.0, 1.0, 9.0, 5.0};
     int start(0), end(0), mip(0), width(1);
     std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
     std::vector<CARTA::SpatialProfileData> spatial_profiles;
@@ -163,14 +163,14 @@ TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
     std::vector<float> profile_data = ProfileValues(profile);
     EXPECT_EQ(profile_data.size(), 13);
 
-    // Read image data slice for first channel; from end (line 1 end to start) to beginning (line 0 end to start
+    // Read image data slice for first channel
     FitsDataReader reader(image_path);
-    auto line1_data = reader.ReadRegion({1, 1, 0}, {10, 2, 1});
-    // Trim line 0: [9, 1] already covered by line 1
-    auto line0_data = reader.ReadRegion({9, 2, 0}, {10, 6, 1});
-    auto image_data = line1_data;
-    for (size_t i = 0; i < line0_data.size(); ++i) {
-        image_data.push_back(line0_data[i]);
+    auto line0_data = reader.ReadRegion({1, 1, 0}, {10, 2, 1});
+    // Trim line 1: [9, 1] already covered by line 0
+    auto line1_data = reader.ReadRegion({9, 2, 0}, {10, 6, 1});
+    auto image_data = line0_data;
+    for (size_t i = 0; i < line1_data.size(); ++i) {
+        image_data.push_back(line1_data[i]);
     }
 
     // Profile data width=1 of polyline is same as slices
