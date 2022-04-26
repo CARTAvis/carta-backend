@@ -1985,7 +1985,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
 
             // Check whether to trim next line's starting point
             if (iline > 1) {
-                double separation = GetPointSeparation(box_centers.back(), endpoint0, reference_csys);
+                double separation = GetPointSeparation(reference_csys, box_centers.back(), endpoint0);
                 if (separation < (0.5 * increment)) {
                     trim_line = true;
                 } else {
@@ -2038,7 +2038,7 @@ bool RegionHandler::CheckLinearOffsets(
 
     // Check angular separation between centers
     for (size_t i = 0; i < num_centers - 1; ++i) {
-        double center_separation = GetPointSeparation(box_centers[i], box_centers[i + 1], coord_sys);
+        double center_separation = GetPointSeparation(coord_sys, box_centers[i], box_centers[i + 1]);
 
         // Check separation
         if (center_separation > 0) {
@@ -2062,8 +2062,8 @@ bool RegionHandler::CheckLinearOffsets(
     return true;
 }
 
-double RegionHandler::GetPointSeparation(const PointXy& point1, const PointXy& point2, std::shared_ptr<CoordinateSystem> coord_sys) {
-    // Returns angular separation in arcsec.
+double RegionHandler::GetPointSeparation(std::shared_ptr<CoordinateSystem> coord_sys, const PointXy& point1, const PointXy& point2) {
+    // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
     // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     double separation(0.0);
     casacore::Vector<casacore::Double> v1(2), v2(2);
@@ -2107,6 +2107,8 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
     increment = cdelt2.get("arcsec").getValue();
     double angular_width = width * increment;
     casacore::IPosition image_shape = _frames.at(file_id)->ImageShape();
+    auto xrange(image_shape(0));
+    auto yrange(image_shape(1));
 
     double tolerance = GetSeparationTolerance(reference_csys);
 
@@ -2123,22 +2125,29 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         line_center.push_back((endpoint0.x + endpoint1.x) / 2);
         line_center.push_back((endpoint0.y + endpoint1.y) / 2);
         PointXy center_point(line_center[0], line_center[1]); // for point separation
-
-        // Rotation of line for temporary region state
-        float rotation = GetLineRotation(endpoint0, endpoint1);
-
-        // Length of line segments center to endpoint
-        std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-        double line_separation0 = GetPointSeparation(endpoint0, center_point, reference_csys);
-        double line_separation1 = GetPointSeparation(endpoint1, center_point, reference_csys);
-        if (!line_separation0 || !line_separation1) {
-            message = "Conversion of line endpoints to world coordinates failed.";
+        if (!center_point.InImage(image_shape(0), image_shape(1))) {
+            message = "Cannot create profile for line center outside image.";
             return false;
         }
 
-        // Number of region profiles determined by increments in line length.
+        // Move line endpoints in image if outside
+        float rotation = GetLineRotation(endpoint0, endpoint1);
+        double pos_length_outside(0.0), neg_length_outside(0.0), center_length_outside(0.0);
+        bool have_pos_offset = MoveEndpointInImage(reference_csys, image_shape, rotation, center_point, endpoint0, pos_length_outside);
+        bool have_neg_offset = MoveEndpointInImage(reference_csys, image_shape, rotation, center_point, endpoint1, neg_length_outside);
+
+        if (!have_pos_offset && !have_neg_offset) {
+            message = "Cannot create profile for line completely outside image.";
+            return false;
+        }
+
         // Use longer length from center to endpoint.
+        std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
+        double line_separation0 = GetPointSeparation(reference_csys, endpoint0, center_point) + pos_length_outside;
+        double line_separation1 = GetPointSeparation(reference_csys, endpoint1, center_point) + neg_length_outside;
         double line_separation = max(line_separation0, line_separation1) * 2.0;
+
+        // Number of region profiles determined by increments in line length.
         auto num_increments = line_separation / increment;
         int num_offsets = lround((num_increments - 1.0) / 2.0);
         int num_regions = (num_offsets * 2) + 1;
@@ -2164,7 +2173,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             // Find ends of box regions, at increment from start of box in positive offset direction.
             // Each box height (box_start to box_end) is variable to be fixed angular spacing.
             // Note: mvdir_lock is still locked while finding these points
-            if (!pos_box_start.empty()) {
+            if (have_pos_offset && !pos_box_start.empty()) {
                 PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
                 std::vector<double> pos_box_end =
                     FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
@@ -2180,7 +2189,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             }
 
             // Find ends of box regions, at increment from start of box in negative offset direction.
-            if (!neg_box_start.empty()) {
+            if (have_neg_offset && !neg_box_start.empty()) {
                 PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
                 std::vector<double> neg_box_end =
                     FindPointAtTargetSeparation(reference_csys, neg_start_point, endpoint1, increment, tolerance);
@@ -2263,7 +2272,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
             // Number of regions in segment is (angular length / increment)
             std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-            double line_separation = GetPointSeparation(endpoint0, endpoint1, reference_csys);
+            double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
 
             if (line_separation == 0.0) {
                 message = "Conversion of line endpoints to world coordinates failed.";
@@ -2336,7 +2345,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             if (iline > 1) {
                 mvdir_lock.lock();
                 PointXy last_point_xy(line_points.back()[0], line_points.back()[1]);
-                double separation = GetPointSeparation(last_point_xy, endpoint0, reference_csys);
+                double separation = GetPointSeparation(reference_csys, last_point_xy, endpoint0);
                 mvdir_lock.unlock();
                 if (separation < (0.5 * increment)) {
                     trim_line = true;
@@ -2356,6 +2365,69 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
     return (progress == 1.0) && !allEQ(profiles, NAN);
 }
 
+bool RegionHandler::MoveEndpointInImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& image_shape,
+    float rotation, const PointXy& center_point, PointXy& endpoint, double& length_outside_image) {
+    // Returns false if endpoint and center both outside image without crossing it, and length of segment outside image (arcsec).
+    // Else returns true, new endpoint, and length of segment outside (arcsec)
+    auto xrange(image_shape(0));
+    auto yrange(image_shape(1));
+    auto cx = center_point.x;
+    auto cy = center_point.y;
+    auto x = endpoint.x;
+    auto y = endpoint.y;
+
+    bool x_out_left(x < 0.0), x_out_right(x >= xrange), x_in(!x_out_left && !x_out_right);
+    bool y_out_bottom(y < 0.0), y_out_top(y >= yrange), y_in(!y_out_bottom && !y_out_top);
+
+    if (x_in && y_in) {
+        // Line segment completely inside, outside length is zero
+        length_outside_image = 0.0;
+        spdlog::debug("Endpoint in image, length outside={}", length_outside_image);
+        return true;
+    } else if ((x_out_left && (cx < 0.0)) || (x_out_right && (cx >= xrange)) || (y_out_bottom && (cy < 0.0)) ||
+               (y_out_top && (cy >= yrange))) {
+        // Line segment completely outside, return length
+        length_outside_image = GetWorldLengthOutsideImage(coord_sys, center_point, endpoint);
+        spdlog::debug("Cannot move endpoint [{}, {}] in image, length outside={}", x, y, length_outside_image);
+        return false;
+    }
+
+    float cos_x = cos(rotation * M_PI / 180.0f);
+    float sin_x = sin(rotation * M_PI / 180.0f);
+
+    // Line segment partially outside - move endpoint to edge of image
+    float new_x(0.0), new_y(0.0);
+    if (y_out_top || x_in) {
+        // Set y in range then get new x
+        if (y_out_top) {
+            new_y = yrange - 1;
+        }
+
+        float npix_out = (y - new_y) / sin_x;
+        new_x = x - (npix_out * cos_x);
+    } else {
+        // Set x in range then get new y
+        if (x_out_right) {
+            new_x = xrange - 1;
+        }
+        float npix_out = (x - new_x) / cos_x;
+        new_y = y - (npix_out * sin_x);
+    }
+
+    auto new_endpoint = PointXy(new_x, new_y);
+    length_outside_image = GetWorldLengthOutsideImage(coord_sys, new_endpoint, endpoint);
+    spdlog::debug("Moved endpoint [{},{}] to [{},{}], length out={}", x, y, new_x, new_y, length_outside_image);
+    endpoint = new_endpoint;
+    return true;
+}
+
+double RegionHandler::GetWorldLengthOutsideImage(
+    std::shared_ptr<casacore::CoordinateSystem> coord_sys, const PointXy& point1, const PointXy& point2) {
+    double xlength = coord_sys->toWorldLength(abs(point1.x - point2.x), 0).get("arcsec").getValue();
+    double ylength = coord_sys->toWorldLength(abs(point1.y - point2.y), 1).get("arcsec").getValue();
+    return sqrt((xlength * xlength) + (ylength * ylength));
+}
+
 std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
     const PointXy& start_point, const PointXy& end_point, double target_separation, double tolerance) {
     // Find point on line described by start and end points which is at target separation in arcsec (within tolerance) of start point.
@@ -2365,7 +2437,7 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<c
 
     // Do binary search of line, finding midpoints until target separation is reached.
     // Check endpoint separation
-    auto separation = GetPointSeparation(start_point, end_point, coord_sys);
+    auto separation = GetPointSeparation(coord_sys, start_point, end_point);
     if (separation < target_separation) {
         // Line is shorter than target separation
         return target_point;
@@ -2396,7 +2468,7 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<c
         }
 
         // Get separation between start point and new endpoint
-        separation = GetPointSeparation(start_point, end1, coord_sys);
+        separation = GetPointSeparation(coord_sys, start_point, end1);
         delta = separation - target_separation;
     }
 
