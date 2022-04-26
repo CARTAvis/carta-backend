@@ -25,6 +25,23 @@ namespace carta {
 
 class Frame;
 
+struct StokesSlicer {
+    StokesSource stokes_source;
+    casacore::Slicer slicer;
+
+    StokesSlicer() {}
+    StokesSlicer(StokesSource stokes_source_, casacore::Slicer slicer_) : stokes_source(stokes_source_), slicer(slicer_) {}
+};
+
+struct StokesRegion {
+    StokesSource stokes_source;
+    casacore::ImageRegion image_region;
+
+    StokesRegion() {}
+    StokesRegion(StokesSource stokes_source_, casacore::ImageRegion image_region_)
+        : stokes_source(stokes_source_), image_region(image_region_) {}
+};
+
 class FileLoader {
 public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
@@ -65,11 +82,11 @@ public:
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_slicer);
+    bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
 
     // SubImage
-    bool GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics

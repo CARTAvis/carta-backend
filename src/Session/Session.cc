@@ -1269,7 +1269,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             _region_handler->CalculateMoments(
                 file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
         } else {
-            std::pair<StokesSource, casacore::ImageRegion> stokes_region;
+            StokesRegion stokes_region;
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 

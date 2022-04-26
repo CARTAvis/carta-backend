@@ -109,9 +109,8 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
-    std::pair<StokesSource, casacore::Slicer> GetImageSlicer(const AxisRange& z_range, int stokes);
-    std::pair<StokesSource, casacore::Slicer> GetImageSlicer(
-        const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
+    StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
+    StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
     // Image view for z index
     inline void SetAnimationViewSettings(const CARTA::AddRequiredTiles& required_animation_tiles) {
@@ -168,16 +167,16 @@ public:
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     std::shared_ptr<casacore::LCRegion> GetImageRegion(
         int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
-    bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, std::pair<StokesSource, casacore::ImageRegion>& stokes_region);
-    casacore::IPosition GetRegionShape(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region);
+    bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region);
+    casacore::IPosition GetRegionShape(const StokesRegion& stokes_region);
     // Returns data vector
-    bool GetRegionData(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region, std::vector<float>& data);
-    bool GetSlicerData(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, float* data);
+    bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data);
+    bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region,
-        const std::vector<CARTA::StatsType>& required_stats, bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    bool GetSlicerStats(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, std::vector<CARTA::StatsType>& required_stats,
-        bool per_z, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
+        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    bool GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
+        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
@@ -185,9 +184,8 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
-    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback,
-        const std::pair<StokesSource, casacore::ImageRegion>& stokes_region, const CARTA::MomentRequest& moment_request,
-        CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
+    bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
     void StopMomentCalc();
 
     // Save as a new file or export sub-image to CASA/FITS format

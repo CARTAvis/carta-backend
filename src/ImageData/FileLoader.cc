@@ -322,9 +322,9 @@ std::vector<int> FileLoader::GetRenderAxes() {
     return axes;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSource, casacore::Slicer>& stokes_slicer) {
-    StokesSource stokes_source = stokes_slicer.first;
-    casacore::Slicer slicer = stokes_slicer.second;
+bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
+    StokesSource stokes_source = stokes_slicer.stokes_source;
+    casacore::Slicer slicer = stokes_slicer.slicer;
     try {
         auto image = GetStokesImage(stokes_source); // Get the opened image or computed stokes image from the original one
 
@@ -392,9 +392,9 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const std::pair<StokesSo
     }
 }
 
-bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& stokes_slicer, casacore::SubImage<float>& sub_image) {
-    StokesSource stokes_source = stokes_slicer.first;
-    casacore::Slicer slicer = stokes_slicer.second;
+bool FileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_slicer.stokes_source;
+    casacore::Slicer slicer = stokes_slicer.slicer;
 
     // Get the opened casacore image or computed stokes image
     auto image = GetStokesImage(stokes_source);
@@ -407,10 +407,9 @@ bool FileLoader::GetSubImage(const std::pair<StokesSource, casacore::Slicer>& st
     return true;
 }
 
-bool FileLoader::GetSubImage(
-    const std::pair<StokesSource, casacore::LattRegionHolder>& stokes_region, casacore::SubImage<float>& sub_image) {
-    StokesSource stokes_source = stokes_region.first;
-    casacore::LattRegionHolder region = stokes_region.second;
+bool FileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_region.stokes_source;
+    casacore::LattRegionHolder region = stokes_region.image_region;
 
     // Get the opened casacore image or computed stokes image
     auto image = GetStokesImage(stokes_source);

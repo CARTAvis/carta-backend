@@ -498,7 +498,7 @@ bool Hdf5Loader::GetChunk(
 
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        GetSlice(tmp, std::make_pair(stokes_source, slicer));
+        GetSlice(tmp, StokesSlicer(stokes_source, slicer));
         data_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;
