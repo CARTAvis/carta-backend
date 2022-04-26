@@ -1633,8 +1633,8 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
         profile_ok =
             GetLineSpatialData(file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float> profile, double increment) {
                 auto profile_size = profile.size();
-                end = profile_size - 1;
-                float crpix = floor(profile_size / 2);
+                int end = profile_size - 1;
+                float crpix = profile_size / 2;
                 auto adjusted_increment = AdjustIncrementUnit(increment, profile_size);
                 float cdelt = adjusted_increment.getValue();
                 float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
@@ -1848,15 +1848,26 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             box_centers[idx] = PointXy(x, y);
         }
 
-        // Check if angular separation of pixels is linear
-        if (!CheckLinearOffsets(box_centers, reference_csys, increment)) {
-            spdlog::debug("Fixed pixel offsets not linear");
-            profiles.resize();
-            return false;
-        }
-
         // Get profiles for each line segment; progress is iregion/num_regions
         auto num_regions = box_centers.size();
+
+        if (num_regions == 0) {
+            spdlog::debug("Line includes no pixels");
+            return false;
+        } else if (num_regions == 1) {
+            // Set increment
+            float x(box_centers[0].x), y(box_centers[0].y);
+            PointXy box_start(x - (0.5 * cos_x), y - (0.5 * sin_x));
+            PointXy box_end(x + (0.5 * cos_x), y + (0.5 * sin_x));
+            increment = GetPointSeparation(reference_csys, box_start, box_end);
+        } else {
+            // Check if angular separation of pixels is linear
+            if (!CheckLinearOffsets(box_centers, reference_csys, increment)) {
+                spdlog::debug("Fixed pixel offsets not linear");
+                profiles.resize();
+                return false;
+            }
+        }
 
         // Set box regions from centers, user width, height
         for (size_t iregion = 0; iregion < num_regions; ++iregion) {
@@ -1929,7 +1940,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
 
             std::vector<PointXy> box_centers;
             if (trim_line) {
-                spdlog::debug("Trim line {} starting endpoint", iline);
+                spdlog::debug("Trim line segment {} starting endpoint", iline);
             } else {
                 box_centers.push_back(endpoint0);
             }
@@ -1941,8 +1952,12 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             }
 
             num_regions = box_centers.size();
-
-            if ((num_regions > 1) && !CheckLinearOffsets(box_centers, reference_csys, increment)) {
+            if (num_regions == 0) {
+                spdlog::debug("Line segment {} includes no pixels", iline);
+                continue;
+            } else if (num_regions == 1) {
+                // TODO: set increment
+            } else if (!CheckLinearOffsets(box_centers, reference_csys, increment)) {
                 spdlog::debug("Fixed pixel offsets not linear");
                 profiles.resize();
                 return false;
@@ -1975,7 +1990,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile =
                     GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-                spdlog::debug("Polyline line {} box region {} num pixels={}", iline, iregion, num_pixels);
+                spdlog::debug("Line segment {} box region {} num pixels={}", iline, iregion, num_pixels);
                 profiles.row(profile_row++) = region_profile;
             }
 
@@ -2143,13 +2158,18 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
         // Number of region profiles determined by increments in line length.
         auto num_increments = line_separation / increment;
+        if (num_increments < 1.0) {
+            message = "Line includes no pixels";
+            return false;
+        }
+
         int num_offsets = lround((num_increments - 1.0) / 2.0);
         int num_regions = (num_offsets * 2) + 1;
         std::vector<std::vector<double>> line_points(num_regions + 1);
 
         // Generate points along line for start and end of each box
         // Start at center and add points in each offset direction
-        std::vector<double> center = FindPointAtTargetSeparation(reference_csys, center_point, endpoint0, (increment / 2.0), tolerance);
+        std::vector<double> center = FindPointAtTargetSeparation(reference_csys, center_point, endpoint1, (increment / 2.0), tolerance);
         line_points[num_offsets] = center;
 
         // Copy center
@@ -2274,6 +2294,10 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
             // Use vector instead of PointXy for "no point" when reach end of line
             int num_regions = lround(line_separation / increment);
+            if (num_regions == 0) {
+                continue;
+            }
+
             std::vector<std::vector<double>> line_points;
 
             std::vector<double> line_point = {endpoint0.x, endpoint0.y};
@@ -2377,7 +2401,6 @@ bool RegionHandler::MoveEndpointInImage(std::shared_ptr<casacore::CoordinateSyst
     if (x_in && y_in) {
         // Line segment completely inside, outside length is zero
         length_outside_image = 0.0;
-        spdlog::debug("Endpoint in image, length outside={}", length_outside_image);
         return true;
     } else if ((x_out_left && (cx < 0.0)) || (x_out_right && (cx >= xrange)) || (y_out_bottom && (cy < 0.0)) ||
                (y_out_top && (cy >= yrange))) {
@@ -2649,7 +2672,6 @@ casacore::Quantity RegionHandler::AdjustIncrementUnit(double offset_increment, s
     // - deg if 2 deg <= length
     // Returns increment as a Quantity with value and unit
     casacore::Quantity increment(offset_increment, "arcsec");
-
     auto offset_length = offset_increment * num_offsets;
 
     if ((offset_length * 1.0e3) < 2.0) {
