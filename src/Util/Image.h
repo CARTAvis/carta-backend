@@ -140,8 +140,8 @@ static std::unordered_map<std::string, CARTA::PolarizationType> StokesStringType
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
-bool ComputedStokes(int stokes);
-bool ComputedStokes(const std::string& stokes_type);
+bool IsComputedStokes(int stokes);
+bool IsComputedStokes(const std::string& stokes_type);
 
 // The struct StokesSource is used to tell the file loader to get the original image interface, or get the computed stokes image interface.
 // The x, y, and z ranges from the StokesSource indicate the range of image data to be calculated (for the new stokes type image).
@@ -162,7 +162,7 @@ struct StokesSource {
         : stokes(stokes_), z_range(z_range_), x_range(x_range_), y_range(y_range_) {}
 
     bool OriginalImage() const {
-        return !ComputedStokes(stokes);
+        return !IsComputedStokes(stokes);
     }
     bool operator==(const StokesSource& rhs) const {
         if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
