@@ -730,7 +730,7 @@ TEST_F(PolarizationCalculatorTest, TestStokesSource) {
     StokesSource stokes_source_10 = StokesSource();
     StokesSource stokes_source_11 = stokes_source_10;
 
-    EXPECT_TRUE(stokes_source_10.OriginalImage());
+    EXPECT_TRUE(stokes_source_10.IsOriginalImage());
     EXPECT_TRUE(stokes_source_10 != stokes_source_1);
     EXPECT_TRUE(stokes_source_10 == stokes_source_11);
 

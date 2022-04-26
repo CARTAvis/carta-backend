@@ -357,7 +357,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
     std::lock_guard<std::mutex> guard(_region_approx_mutex);
     // The cache of lattice coordinate region is only for the original image (not computed stokes image). In order to avoid the ambiguity
-    if (stokes_source.OriginalImage()) {
+    if (stokes_source.IsOriginalImage()) {
         lc_region = GetCachedLCRegion(file_id);
     }
 
@@ -382,7 +382,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
 
                 // Cache converted polygon
                 // Only for the original image (not computed stokes image). In order to avoid the ambiguity
-                if (lc_region && stokes_source.OriginalImage()) {
+                if (lc_region && stokes_source.IsOriginalImage()) {
                     _polygon_regions[file_id] = lc_region;
                 }
             }
@@ -828,7 +828,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetConvertedLCRegion(int file_id, st
     }
 
     // Cache the lattice coordinate region only for the original image (not computed stokes image). In order to avoid the ambiguity
-    if (lc_region && stokes_source.OriginalImage()) {
+    if (lc_region && stokes_source.IsOriginalImage()) {
         // Make a copy and cache LCRegion in map
         std::lock_guard<std::mutex> guard(_region_mutex);
         _applied_regions[file_id] = lc_region;

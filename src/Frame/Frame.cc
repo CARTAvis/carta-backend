@@ -141,7 +141,7 @@ std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const Stokes
 
 casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     casacore::IPosition ipos;
-    if (stokes_source.OriginalImage() && IsValid()) {
+    if (stokes_source.IsOriginalImage() && IsValid()) {
         ipos = _image_shape;
     } else {
         auto image = _loader->GetStokesImage(stokes_source);
@@ -218,7 +218,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_x = _width - 1;
         }
 
-        if (stokes_source.OriginalImage()) {
+        if (stokes_source.IsOriginalImage()) {
             start(_x_axis) = start_x;
             end(_x_axis) = end_x;
         } else { // Reset the slice cut for the computed stokes image
@@ -239,7 +239,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_y = _height - 1;
         }
 
-        if (stokes_source.OriginalImage()) {
+        if (stokes_source.IsOriginalImage()) {
             start(_y_axis) = start_y;
             end(_y_axis) = end_y;
         } else { // Reset the slice cut for the computed stokes image
@@ -264,7 +264,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
             end_z = CurrentZ();
         }
 
-        if (stokes_source.OriginalImage()) {
+        if (stokes_source.IsOriginalImage()) {
             start(_z_axis) = start_z;
             end(_z_axis) = end_z;
         } else { // Reset the slice cut for the computed stokes image
@@ -278,7 +278,7 @@ std::pair<StokesSource, casacore::Slicer> Frame::GetImageSlicer(
         // Normalize stokes constant
         stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
 
-        if (stokes_source.OriginalImage()) {
+        if (stokes_source.IsOriginalImage()) {
             start(_stokes_axis) = stokes;
             end(_stokes_axis) = stokes;
         } else {
@@ -1661,7 +1661,7 @@ bool Frame::GetRegionData(const std::pair<StokesSource, casacore::LattRegionHold
         casacore::IPosition start(subimage_shape.size(), 0);
         casacore::IPosition count(subimage_shape);
         casacore::Slicer slicer(start, count); // entire subimage
-        bool is_computed_stokes(!stokes_region.first.OriginalImage());
+        bool is_computed_stokes(!stokes_region.first.IsOriginalImage());
 
         // Get image data
         std::unique_lock<std::mutex> ulock(_image_mutex);

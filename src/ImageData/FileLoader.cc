@@ -158,7 +158,7 @@ casacore::IPosition FileLoader::GetShape() {
 }
 
 std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(const StokesSource& stokes_source) {
-    if (stokes_source.OriginalImage()) {
+    if (stokes_source.IsOriginalImage()) {
         return _coord_sys;
     } else {
         auto image = GetStokesImage(stokes_source);
@@ -905,7 +905,7 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
 }
 
 typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
-    if (stokes_source.OriginalImage()) {
+    if (stokes_source.IsOriginalImage()) {
         return GetImage();
     }
 

@@ -161,7 +161,7 @@ struct StokesSource {
     StokesSource(int stokes_, AxisRange z_range_, AxisRange x_range_, AxisRange y_range_)
         : stokes(stokes_), z_range(z_range_), x_range(x_range_), y_range(y_range_) {}
 
-    bool OriginalImage() const {
+    bool IsOriginalImage() const {
         return !IsComputedStokes(stokes);
     }
     bool operator==(const StokesSource& rhs) const {
