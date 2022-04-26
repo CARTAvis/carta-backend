@@ -2286,116 +2286,66 @@ void RegionHandler::GetStokesPtotal(
     const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal) {
     auto calc_step1 = [&](double q, double u) {
         if (!std::isnan(q) && !std::isnan(u)) {
-            return (pow(q, 2) + pow(u, 2));
+            return (std::pow(q, 2) + std::pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    auto calc_step2 = [&](double step1, double v) {
+    auto calc_step2 = [&](double v, double step1) {
         if (!std::isnan(step1) && !std::isnan(v)) {
-            return sqrt(step1 + pow(v, 2));
+            return std::sqrt(step1 + std::pow(v, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    for (auto stats_q : profiles_q) {
-        for (auto stats_u : profiles_u) {
-            if (stats_q.first == stats_u.first) {
-                std::vector<double>& results = profiles_ptotal[stats_q.first];
-                results.resize(stats_q.second.size());
-                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), calc_step1);
-            }
-        }
-    }
-
-    for (auto stats_ptotal : profiles_ptotal) {
-        for (auto stats_v : profiles_v) {
-            if (stats_ptotal.first == stats_v.first) {
-                std::vector<double>& results = profiles_ptotal[stats_v.first];
-                std::transform(stats_ptotal.second.begin(), stats_ptotal.second.end(), stats_v.second.begin(), results.begin(), calc_step2);
-            }
-        }
-    }
+    CombineStokes(profiles_ptotal, profiles_q, profiles_u, calc_step1);
+    CombineStokes(profiles_ptotal, profiles_v, calc_step2);
 }
 
 void RegionHandler::GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
     const ProfilesMap& profiles_v, ProfilesMap& profiles_pftotal) {
     auto calc_step1 = [&](double q, double u) {
         if (!std::isnan(q) && !std::isnan(u)) {
-            return (pow(q, 2) + pow(u, 2));
+            return (std::pow(q, 2) + std::pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    auto calc_step2 = [&](double step1, double v) {
+    auto calc_step2 = [&](double v, double step1) {
         if (!std::isnan(step1) && !std::isnan(v)) {
-            return sqrt(step1 + pow(v, 2));
+            return std::sqrt(step1 + std::pow(v, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    auto calc_step3 = [&](double step2, double i) {
+    auto calc_step3 = [&](double i, double step2) {
         if (!std::isnan(step2) && !std::isnan(i)) {
             return 100.0 * (step2 / i);
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    for (auto stats_q : profiles_q) {
-        for (auto stats_u : profiles_u) {
-            if (stats_q.first == stats_u.first) {
-                std::vector<double>& results = profiles_pftotal[stats_q.first];
-                results.resize(stats_q.second.size());
-                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), calc_step1);
-            }
-        }
-    }
-
-    for (auto stats_pftotal : profiles_pftotal) {
-        for (auto stats_v : profiles_v) {
-            if (stats_pftotal.first == stats_v.first) {
-                std::vector<double>& results = profiles_pftotal[stats_v.first];
-                std::transform(
-                    stats_pftotal.second.begin(), stats_pftotal.second.end(), stats_v.second.begin(), results.begin(), calc_step2);
-            }
-        }
-    }
-
-    for (auto stats_pftotal : profiles_pftotal) {
-        for (auto stats_i : profiles_i) {
-            if (stats_pftotal.first == stats_i.first) {
-                std::vector<double>& results = profiles_pftotal[stats_i.first];
-                std::transform(
-                    stats_pftotal.second.begin(), stats_pftotal.second.end(), stats_i.second.begin(), results.begin(), calc_step3);
-            }
-        }
-    }
+    CombineStokes(profiles_pftotal, profiles_q, profiles_u, calc_step1);
+    CombineStokes(profiles_pftotal, profiles_v, calc_step2);
+    CombineStokes(profiles_pftotal, profiles_i, calc_step3);
 }
 
 void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_plinear) {
     auto calc_pi = [&](double q, double u) {
         if (!std::isnan(q) && !std::isnan(u)) {
-            return sqrt(pow(q, 2) + pow(u, 2));
+            return std::sqrt(std::pow(q, 2) + std::pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    for (auto stats_q : profiles_q) {
-        for (auto stats_u : profiles_u) {
-            if (stats_q.first == stats_u.first) {
-                std::vector<double>& results = profiles_plinear[stats_q.first];
-                results.resize(stats_q.second.size());
-                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), calc_pi);
-            }
-        }
-    }
+    CombineStokes(profiles_plinear, profiles_q, profiles_u, calc_pi);
 }
 
 void RegionHandler::GetStokesPflinear(
     const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear) {
     auto calc_pi = [&](double q, double u) {
         if (!std::isnan(q) && !std::isnan(u)) {
-            return sqrt(pow(q, 2) + pow(u, 2));
+            return std::sqrt(std::pow(q, 2) + std::pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
@@ -2407,40 +2357,41 @@ void RegionHandler::GetStokesPflinear(
         return std::numeric_limits<double>::quiet_NaN();
     };
 
-    for (auto stats_q : profiles_q) {
-        for (auto stats_u : profiles_u) {
-            if (stats_q.first == stats_u.first) {
-                std::vector<double>& results = profiles_pflinear[stats_q.first];
-                results.resize(stats_q.second.size());
-                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), calc_pi);
-            }
-        }
-    }
-
-    for (auto stats_pflinear : profiles_pflinear) {
-        for (auto stats_i : profiles_i) {
-            if (stats_pflinear.first == stats_i.first) {
-                std::vector<double>& results = profiles_pflinear[stats_pflinear.first];
-                std::transform(stats_i.second.begin(), stats_i.second.end(), stats_pflinear.second.begin(), results.begin(), calc_fpi);
-            }
-        }
-    }
+    CombineStokes(profiles_pflinear, profiles_q, profiles_u, calc_pi);
+    CombineStokes(profiles_pflinear, profiles_i, calc_fpi);
 }
 
 void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle) {
     auto calc_pa = [&](double q, double u) {
         if (!std::isnan(q) && !std::isnan(u)) {
-            return (180.0 / C::pi) * atan2(u, q) / 2;
+            return (180.0 / casacore::C::pi) * atan2(u, q) / 2;
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
+    CombineStokes(profiles_pangle, profiles_q, profiles_u, calc_pa);
+}
+
+void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
+    const std::function<double(double, double)>& func) {
     for (auto stats_q : profiles_q) {
         for (auto stats_u : profiles_u) {
             if (stats_q.first == stats_u.first) {
-                std::vector<double>& results = profiles_pangle[stats_q.first];
+                std::vector<double>& results = profiles_out[stats_q.first];
                 results.resize(stats_q.second.size());
-                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), calc_pa);
+                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), func);
+            }
+        }
+    }
+}
+
+void RegionHandler::CombineStokes(
+    ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func) {
+    for (auto stats_out : profiles_out) {
+        for (auto stats_other : profiles_other) {
+            if (stats_out.first == stats_other.first) {
+                std::vector<double>& results = profiles_out[stats_out.first];
+                std::transform(stats_other.second.begin(), stats_other.second.end(), stats_out.second.begin(), results.begin(), func);
             }
         }
     }
