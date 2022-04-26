@@ -23,6 +23,5 @@ CARTA::PolarizationType GetStokesType(int stokes_value) {
 }
 
 bool IsComputedStokes(int stokes) {
-    return ((stokes == COMPUTE_STOKES_PTOTAL) || (stokes == COMPUTE_STOKES_PLINEAR) || (stokes == COMPUTE_STOKES_PFTOTAL) ||
-            (stokes == COMPUTE_STOKES_PFLINEAR) || (stokes == COMPUTE_STOKES_PANGLE));
+    return ((stokes >= COMPUTE_STOKES_PTOTAL) && (stokes <= COMPUTE_STOKES_PANGLE));
 }
