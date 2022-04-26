@@ -2285,14 +2285,14 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
 void RegionHandler::GetStokesPtotal(
     const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal) {
     auto calc_step1 = [&](double q, double u) {
-        if (!std::isnan(q) && !isnan(u)) {
+        if (!std::isnan(q) && !std::isnan(u)) {
             return (pow(q, 2) + pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
     auto calc_step2 = [&](double step1, double v) {
-        if (!std::isnan(step1) && !isnan(v)) {
+        if (!std::isnan(step1) && !std::isnan(v)) {
             return sqrt(step1 + pow(v, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
@@ -2321,21 +2321,21 @@ void RegionHandler::GetStokesPtotal(
 void RegionHandler::GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
     const ProfilesMap& profiles_v, ProfilesMap& profiles_pftotal) {
     auto calc_step1 = [&](double q, double u) {
-        if (!std::isnan(q) && !isnan(u)) {
+        if (!std::isnan(q) && !std::isnan(u)) {
             return (pow(q, 2) + pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
     auto calc_step2 = [&](double step1, double v) {
-        if (!std::isnan(step1) && !isnan(v)) {
+        if (!std::isnan(step1) && !std::isnan(v)) {
             return sqrt(step1 + pow(v, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
     auto calc_step3 = [&](double step2, double i) {
-        if (!std::isnan(step2) && !isnan(i)) {
+        if (!std::isnan(step2) && !std::isnan(i)) {
             return 100.0 * (step2 / i);
         }
         return std::numeric_limits<double>::quiet_NaN();
@@ -2374,7 +2374,7 @@ void RegionHandler::GetStokesPftotal(const ProfilesMap& profiles_i, const Profil
 
 void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_plinear) {
     auto calc_pi = [&](double q, double u) {
-        if (!std::isnan(q) && !isnan(u)) {
+        if (!std::isnan(q) && !std::isnan(u)) {
             return sqrt(pow(q, 2) + pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
@@ -2394,14 +2394,14 @@ void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const Profil
 void RegionHandler::GetStokesPflinear(
     const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear) {
     auto calc_pi = [&](double q, double u) {
-        if (!std::isnan(q) && !isnan(u)) {
+        if (!std::isnan(q) && !std::isnan(u)) {
             return sqrt(pow(q, 2) + pow(u, 2));
         }
         return std::numeric_limits<double>::quiet_NaN();
     };
 
     auto calc_fpi = [&](double i, double pi) {
-        if (!std::isnan(i) && !isnan(pi)) {
+        if (!std::isnan(i) && !std::isnan(pi)) {
             return 100.0 * (pi / i);
         }
         return std::numeric_limits<double>::quiet_NaN();
@@ -2429,7 +2429,7 @@ void RegionHandler::GetStokesPflinear(
 
 void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle) {
     auto calc_pa = [&](double q, double u) {
-        if (!std::isnan(q) && !isnan(u)) {
+        if (!std::isnan(q) && !std::isnan(u)) {
             return (180.0 / C::pi) * atan2(u, q) / 2;
         }
         return std::numeric_limits<double>::quiet_NaN();
