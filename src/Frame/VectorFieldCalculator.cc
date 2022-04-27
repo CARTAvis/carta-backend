@@ -176,7 +176,7 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
             return (is_valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
         };
 
-        auto set_nan_to_result = [&](float i, float result) {
+        auto apply_threshold = [&](float i, float result) {
             return ((std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) ? FLOAT_NAN : result);
         };
 
@@ -198,12 +198,12 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
 
         // Set NAN for PI/FPI if stokes I is NAN or below the threshold
         if (calculate_pi && require_stokes_i) {
-            std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), set_nan_to_result);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pi.begin(), pi.begin(), apply_threshold);
         }
 
         // Set NAN for PA if stokes I is NAN or below the threshold
         if (calculate_pa && require_stokes_i) {
-            std::transform(downsampled_i.begin(), downsampled_i.end(), pa.begin(), pa.begin(), set_nan_to_result);
+            std::transform(downsampled_i.begin(), downsampled_i.end(), pa.begin(), pa.begin(), apply_threshold);
         }
 
         // Fill polarized intensity tiles protobuf data
