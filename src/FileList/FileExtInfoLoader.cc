@@ -132,7 +132,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
     if (_loader) {
         try {
             _loader->OpenFile(hdu);
-            auto image = _loader->GetImage();
+
+            bool check_data_type(false);
+            auto image = _loader->GetImage(check_data_type);
 
             if (image) {
                 // Check dimensions
@@ -146,8 +148,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 // For computed entries:
                 bool use_image_for_entries(false);
-
+                auto data_type = _loader->GetDataType();
                 casacore::String image_type(image->imageType());
+
                 if (image_type == "FITSImage") {
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
                     casacore::String filename(image->name());
@@ -183,6 +186,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     FitsHeaderInfoToHeaderEntries(fhi, extended_info);
                     use_image_for_entries = true;
                 }
+
+                AddDataTypeEntry(extended_info, data_type);
 
                 int spectral_axis, depth_axis, stokes_axis;
                 if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
@@ -583,6 +588,7 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     casacore::IPosition shape;
     int chan_axis(-1), depth_axis(-1), stokes_axis(-1);
     std::vector<std::string> spectral_ctypes = {"ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA"};
+    casacore::DataType data_type(casacore::DataType::TpFloat);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto header_entry = extended_info.header_entries(i);
@@ -618,10 +624,20 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
                     depth_axis = chan_axis;
                 }
             }
+        } else if (entry_name.find("BITPIX") == 0) {
+            auto value = header_entry.value();
+            std::unordered_map<std::string, casacore::DataType> bitpix_types(
+                {{"8", casacore::DataType::TpChar}, {"16", casacore::DataType::TpShort}, {"32", casacore::DataType::TpInt},
+                    {"64", casacore::DataType::TpInt64}, {"-32", casacore::DataType::TpFloat}, {"-64", casacore::DataType::TpDouble}});
+            if (bitpix_types.find(value) != bitpix_types.end()) {
+                data_type = bitpix_types[value];
+            }
         }
     }
 
+    AddDataTypeEntry(extended_info, data_type);
     AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
+
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
         if (depth_axis > -1) {
@@ -631,6 +647,15 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
             compressed_fits->SetStokesSuffix(stokes_axis);
         }
     }
+}
+
+void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type) {
+    std::stringstream ss;
+    ss << data_type;
+    auto entry = extended_info.add_computed_entries();
+    entry->set_name("Data type");
+    entry->set_value(ss.str());
+    entry->set_entry_type(CARTA::EntryType::STRING);
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,

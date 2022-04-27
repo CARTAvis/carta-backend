@@ -505,6 +505,16 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             // Get or create loader for frame
             auto loader = _loaders.Get(fullname);
 
+            // Open complex image with LEL amplitude instead
+            if (loader->IsComplexDataType()) {
+                _loaders.Remove(filename);
+
+                std::string expression = "AMPLITUDE(" + filename + ")";
+                bool is_lel_expr(true);
+                auto open_file_message = Message::OpenFile(directory, expression, hdu, file_id, message.render_mode(), is_lel_expr);
+                return OnOpenFile(open_file_message, request_id, silent);
+            }
+
             // create Frame for image
             auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
 
@@ -1413,6 +1423,27 @@ void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
     int file_id(stop_pv_calc.file_id());
     if (_region_handler) {
         _region_handler->StopPvCalc(file_id);
+    }
+}
+
+void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id) {
+    int file_id(fitting_request.file_id());
+    CARTA::FittingResponse fitting_response;
+
+    if (_frames.count(file_id)) {
+        auto t_start_fitting = std::chrono::high_resolution_clock::now();
+
+        auto& frame = _frames.at(file_id);
+        frame->FitImage(fitting_request, fitting_response);
+
+        auto t_end_fitting = std::chrono::high_resolution_clock::now();
+        auto dt_fitting = std::chrono::duration_cast<std::chrono::microseconds>(t_end_fitting - t_start_fitting).count();
+        spdlog::performance("Fit 2D image in {:.3f} ms", dt_fitting * 1e-3);
+
+        SendEvent(CARTA::EventType::FITTING_RESPONSE, request_id, fitting_response);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Fitting"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
 

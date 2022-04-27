@@ -49,6 +49,7 @@ set(TEST_SOURCES
         TestHdf5Image.cc
         TestHistogram.cc
         TestIcd.cc
+        TestImageFitting.cc
 		TestLineSpatialProfiles.cc
         TestMain.cc
         TestMoment.cc

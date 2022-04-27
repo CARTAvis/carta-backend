@@ -1745,6 +1745,22 @@ void Frame::StopMomentCalc() {
     }
 }
 
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+    if (!_image_fitter) {
+        _image_fitter = std::make_unique<ImageFitter>(_width, _height);
+    }
+
+    bool success = false;
+    if (_image_fitter) {
+        FillImageCache();
+        std::vector<CARTA::GaussianComponent> initial_values(
+            fitting_request.initial_values().begin(), fitting_request.initial_values().end());
+        success = _image_fitter->FitImage(_image_cache.get(), initial_values, fitting_response);
+    }
+
+    return success;
+}
+
 // Export modified image to file, for changed range of channels/stokes and chopped region
 // Input root_folder as target path
 // Input save_file_msg as requesting parameters
@@ -1779,10 +1795,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         return;
     }
 
+    double rest_freq(save_file_msg.rest_freq());
+    bool change_rest_freq = !std::isnan(rest_freq);
+
     // Try to save file from loader (for entire LEL image in CASA format only)
-    if (!region && _loader->SaveFile(output_file_type, output_filename.string(), message)) {
-        save_file_ack.set_success(true);
-        return;
+    if (!region && !change_rest_freq) {
+        if (_loader->SaveFile(output_file_type, output_filename.string(), message)) {
+            save_file_ack.set_success(true);
+            return;
+        }
     }
 
     // Begin with entire image
@@ -1830,6 +1851,18 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     } else {
         return;
+    }
+
+    if (change_rest_freq) {
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        casacore::String error_msg("");
+        bool success = coord_sys.setRestFrequency(error_msg, casacore::Quantity(rest_freq, casacore::Unit("Hz")));
+        if (success) {
+            success = image->setCoordinateInfo(coord_sys);
+        }
+        if (!success) {
+            spdlog::warn("Failed to set new rest freq; use header rest freq instead: {}", error_msg);
+        }
     }
 
     // Export image data to file
