@@ -138,7 +138,6 @@ private:
         double& increment, casacore::Matrix<float>& profiles, bool& cancelled, std::string& message);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const PointXy& endpoint0, const PointXy& endpoint1);
-    size_t PolylinePixelLength(const std::vector<CARTA::Point>& control_points);
     bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
         casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
@@ -162,6 +161,7 @@ private:
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
+    std::mutex _region_mutex;
 
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
