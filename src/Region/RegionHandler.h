@@ -164,6 +164,8 @@ private:
         const std::function<double(double, double)>& func);
     void CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func);
     bool IsValid(double a, double b);
+    bool GetComputedStokesProfiles(
+        ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

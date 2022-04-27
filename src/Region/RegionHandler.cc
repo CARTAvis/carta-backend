@@ -1162,10 +1162,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             point.set_x(origin(0));
             point.set_y(origin(1));
 
-            auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string coordinate) {
+            auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                 int tmp_stokes;
                 std::vector<float> tmp_profile;
-                if (!_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) ||
+                if (!_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) ||
                     !_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, tmp_stokes, point)) {
                     return false;
                 }
@@ -1175,36 +1175,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 return true;
             };
 
-            // For computed stokes
-            ProfilesMap profile_i, profile_q, profile_u, profile_v;
-            if (stokes_index == COMPUTE_STOKES_PTOTAL) {
-                if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") || !get_profiles_data(profile_v, "Vz")) {
+            if (IsComputedStokes(stokes_index)) { // For computed stokes
+                if (!GetComputedStokesProfiles(results, stokes_index, get_profiles_data)) {
                     return false;
                 }
-                GetStokesPtotal(profile_q, profile_u, profile_v, results);
-            } else if (stokes_index == COMPUTE_STOKES_PFTOTAL) {
-                if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") ||
-                    !get_profiles_data(profile_v, "Vz")) {
-                    return false;
-                }
-                GetStokesPftotal(profile_i, profile_q, profile_u, profile_v, results);
-            } else if (stokes_index == COMPUTE_STOKES_PLINEAR) {
-                if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
-                    return false;
-                }
-                GetStokesPlinear(profile_q, profile_u, results);
-            } else if (stokes_index == COMPUTE_STOKES_PFLINEAR) {
-                if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
-                    return false;
-                }
-                GetStokesPflinear(profile_i, profile_q, profile_u, results);
-            } else if (stokes_index == COMPUTE_STOKES_PANGLE) {
-                if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
-                    return false;
-                }
-                GetStokesPangle(profile_q, profile_u, results);
-            } else {
-                // For regular stokes I, Q, U, or V
+            } else { // For regular stokes I, Q, U, or V
                 std::vector<float> tmp_profile;
                 if (!_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, stokes_index, point)) {
                     return false;
@@ -1247,44 +1222,18 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
 
                 // Get partial profile
-                auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string coordinate) {
+                auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
                     int tmp_stokes;
-                    return (_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) &&
+                    return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
                             _frames.at(file_id)->GetLoaderSpectralData(region_id, tmp_stokes, mask, xy_origin, tmp_results, progress));
                 };
 
-                // For computed stokes
-                ProfilesMap profiles_i, profiles_q, profiles_u, profiles_v, partial_profiles;
-                if (stokes_index == COMPUTE_STOKES_PTOTAL) {
-                    if (!get_profiles_data(profiles_q, "Qz") || !get_profiles_data(profiles_u, "Uz") ||
-                        !get_profiles_data(profiles_v, "Vz")) {
+                ProfilesMap partial_profiles;
+                if (IsComputedStokes(stokes_index)) { // For computed stokes
+                    if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
                         return false;
                     }
-                    GetStokesPtotal(profiles_q, profiles_u, profiles_v, partial_profiles);
-                } else if (stokes_index == COMPUTE_STOKES_PFTOTAL) {
-                    if (!get_profiles_data(profiles_i, "Iz") || !get_profiles_data(profiles_q, "Qz") ||
-                        !get_profiles_data(profiles_u, "Uz") || !get_profiles_data(profiles_v, "Vz")) {
-                        return false;
-                    }
-                    GetStokesPftotal(profiles_i, profiles_q, profiles_u, profiles_v, partial_profiles);
-                } else if (stokes_index == COMPUTE_STOKES_PLINEAR) {
-                    if (!get_profiles_data(profiles_q, "Qz") || !get_profiles_data(profiles_u, "Uz")) {
-                        return false;
-                    }
-                    GetStokesPlinear(profiles_q, profiles_u, partial_profiles);
-                } else if (stokes_index == COMPUTE_STOKES_PFLINEAR) {
-                    if (!get_profiles_data(profiles_i, "Iz") || !get_profiles_data(profiles_q, "Qz") ||
-                        !get_profiles_data(profiles_u, "Uz")) {
-                        return false;
-                    }
-                    GetStokesPflinear(profiles_i, profiles_q, profiles_u, partial_profiles);
-                } else if (stokes_index == COMPUTE_STOKES_PANGLE) {
-                    if (!get_profiles_data(profiles_q, "Qz") || !get_profiles_data(profiles_u, "Uz")) {
-                        return false;
-                    }
-                    GetStokesPangle(profiles_q, profiles_u, partial_profiles);
-                } else {
-                    // For regular stokes I, Q, U, or V
+                } else { // For regular stokes I, Q, U, or V
                     if (!_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
                         return false;
                     }
@@ -1346,47 +1295,21 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         // Get 3D region for z range and stokes_index
         AxisRange z_range(start_z, end_z);
 
-        auto get_partial_profiles = [&](ProfilesMap& tmp_partial_profiles, std::string coordinate) {
+        auto get_partial_profiles = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
             int tmp_stokes;
             StokesRegion stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
-            return (_frames.at(file_id)->GetStokesTypeIndex(coordinate, tmp_stokes) &&
+            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
                     ApplyRegionToFile(region_id, file_id, z_range, tmp_stokes, stokes_region, lc_region) &&
                     _frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles));
         };
 
-        // For computed stokes
-        ProfilesMap profiles_i, profiles_q, profiles_u, profiles_v, partial_profiles;
-        if (stokes_index == COMPUTE_STOKES_PTOTAL) {
-            if (!get_partial_profiles(profiles_q, "Qz") || !get_partial_profiles(profiles_u, "Uz") ||
-                !get_partial_profiles(profiles_v, "Vz")) {
+        ProfilesMap partial_profiles;
+        if (IsComputedStokes(stokes_index)) { // For computed stokes
+            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_partial_profiles)) {
                 return false;
             }
-            GetStokesPtotal(profiles_q, profiles_u, profiles_v, partial_profiles);
-        } else if (stokes_index == COMPUTE_STOKES_PFTOTAL) {
-            if (!get_partial_profiles(profiles_i, "Iz") || !get_partial_profiles(profiles_q, "Qz") ||
-                !get_partial_profiles(profiles_u, "Uz") || !get_partial_profiles(profiles_v, "Vz")) {
-                return false;
-            }
-            GetStokesPftotal(profiles_i, profiles_q, profiles_u, profiles_v, partial_profiles);
-        } else if (stokes_index == COMPUTE_STOKES_PLINEAR) {
-            if (!get_partial_profiles(profiles_q, "Qz") || !get_partial_profiles(profiles_u, "Uz")) {
-                return false;
-            }
-            GetStokesPlinear(profiles_q, profiles_u, partial_profiles);
-        } else if (stokes_index == COMPUTE_STOKES_PFLINEAR) {
-            if (!get_partial_profiles(profiles_i, "Iz") || !get_partial_profiles(profiles_q, "Qz") ||
-                !get_partial_profiles(profiles_u, "Uz")) {
-                return false;
-            }
-            GetStokesPflinear(profiles_i, profiles_q, profiles_u, partial_profiles);
-        } else if (stokes_index == COMPUTE_STOKES_PANGLE) {
-            if (!get_partial_profiles(profiles_q, "Qz") || !get_partial_profiles(profiles_u, "Uz")) {
-                return false;
-            }
-            GetStokesPangle(profiles_q, profiles_u, partial_profiles);
-        } else {
-            // For regular stokes I, Q, U, or V
+        } else { // For regular stokes I, Q, U, or V
             StokesRegion stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
 
@@ -2355,6 +2278,39 @@ void RegionHandler::CombineStokes(
 
 bool RegionHandler::IsValid(double a, double b) {
     return (!std::isnan(a) && !std::isnan(b));
+}
+
+bool RegionHandler::GetComputedStokesProfiles(
+    ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data) {
+    ProfilesMap profile_i, profile_q, profile_u, profile_v;
+    if (stokes == COMPUTE_STOKES_PTOTAL) {
+        if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") || !get_profiles_data(profile_v, "Vz")) {
+            return false;
+        }
+        GetStokesPtotal(profile_q, profile_u, profile_v, profiles);
+    } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
+        if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") ||
+            !get_profiles_data(profile_v, "Vz")) {
+            return false;
+        }
+        GetStokesPftotal(profile_i, profile_q, profile_u, profile_v, profiles);
+    } else if (stokes == COMPUTE_STOKES_PLINEAR) {
+        if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+            return false;
+        }
+        GetStokesPlinear(profile_q, profile_u, profiles);
+    } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+        if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+            return false;
+        }
+        GetStokesPflinear(profile_i, profile_q, profile_u, profiles);
+    } else if (stokes == COMPUTE_STOKES_PANGLE) {
+        if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+            return false;
+        }
+        GetStokesPangle(profile_q, profile_u, profiles);
+    }
+    return true;
 }
 
 } // namespace carta
