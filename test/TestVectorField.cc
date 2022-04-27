@@ -23,7 +23,6 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    FRIEND_TEST(VectorFieldTest, ExampleFriendTest);
 
     std::vector<int> GetLoaderMips() {
         std::vector<int> results;
