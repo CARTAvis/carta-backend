@@ -8,6 +8,8 @@
 
 #include "DataStream/Compression.h"
 
+#define FLOAT_NAN std::numeric_limits<float>::quiet_NaN()
+
 namespace carta {
 
 bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
@@ -160,32 +162,22 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
         }
 
         // Lambda functions for calculating PI, fractional PI, and PA
+        auto is_valid = [](float a, float b) { return (!std::isnan(a) && !std::isnan(b)); };
+
         auto calc_pi = [&](float q, float u) {
-            if (!std::isnan(q) && !isnan(u)) {
-                return (float)sqrt(pow(q, 2) + pow(u, 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
-            }
-            return std::numeric_limits<float>::quiet_NaN();
+            return (is_valid(q, u)
+                        ? ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0))
+                        : FLOAT_NAN);
         };
 
-        auto calc_fpi = [&](float i, float pi) {
-            if (!std::isnan(i) && !isnan(pi)) {
-                return (pi / i);
-            }
-            return std::numeric_limits<float>::quiet_NaN();
-        };
+        auto calc_fpi = [&](float i, float pi) { return (is_valid(i, pi) ? (pi / i) : FLOAT_NAN); };
 
         auto calc_pa = [&](float q, float u) {
-            if (!std::isnan(q) && !isnan(u)) {
-                return (float)(180.0 / casacore::C::pi) * atan2(u, q) / 2;
-            }
-            return std::numeric_limits<float>::quiet_NaN();
+            return (is_valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
         };
 
         auto set_nan_to_result = [&](float i, float result) {
-            if (std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) {
-                return std::numeric_limits<float>::quiet_NaN();
-            }
-            return result;
+            return ((std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) ? FLOAT_NAN : result);
         };
 
         // Calculate polarized intensity (pi) or polarized angle (pa) if required
