@@ -1162,11 +1162,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             point.set_x(origin(0));
             point.set_y(origin(1));
 
-            auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
-                int tmp_stokes;
+            auto get_stokes_profiles_data = [&](ProfilesMap& tmp_results, int tmp_stokes) {
                 std::vector<float> tmp_profile;
-                if (!_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) ||
-                    !_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, tmp_stokes, point)) {
+                if (!_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, tmp_stokes, point)) {
                     return false;
                 }
                 // Set results; there is only one required stat for point
@@ -1175,17 +1173,20 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 return true;
             };
 
+            auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
+                int tmp_stokes;
+                return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
+                        get_stokes_profiles_data(tmp_results, tmp_stokes));
+            };
+
             if (IsComputedStokes(stokes_index)) { // For computed stokes
                 if (!GetComputedStokesProfiles(results, stokes_index, get_profiles_data)) {
                     return false;
                 }
             } else { // For regular stokes I, Q, U, or V
-                std::vector<float> tmp_profile;
-                if (!_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, stokes_index, point)) {
+                if (!get_stokes_profiles_data(results, stokes_index)) {
                     return false;
                 }
-                std::vector<double> tmp_data(tmp_profile.begin(), tmp_profile.end());
-                results[required_stats[0]] = tmp_data;
             }
 
             partial_results_callback(results, 1.0);
@@ -1295,26 +1296,26 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         // Get 3D region for z range and stokes_index
         AxisRange z_range(start_z, end_z);
 
-        auto get_partial_profiles = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
-            int tmp_stokes;
+        auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes) {
             StokesRegion stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
-            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
-                    ApplyRegionToFile(region_id, file_id, z_range, tmp_stokes, stokes_region, lc_region) &&
+            return (ApplyRegionToFile(region_id, file_id, z_range, tmp_stokes, stokes_region, lc_region) &&
                     _frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles));
+        };
+
+        auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
+            int tmp_stokes;
+            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
+                    get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes));
         };
 
         ProfilesMap partial_profiles;
         if (IsComputedStokes(stokes_index)) { // For computed stokes
-            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_partial_profiles)) {
+            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
                 return false;
             }
         } else { // For regular stokes I, Q, U, or V
-            StokesRegion stokes_region;
-            bool per_z(true); // Get per-z stats data for region for all stats (for cache)
-
-            if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, stokes_region, lc_region) ||
-                !_frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, partial_profiles)) {
+            if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
                 return false;
             }
         }
