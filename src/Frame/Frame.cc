@@ -1779,6 +1779,22 @@ void Frame::StopMomentCalc() {
     }
 }
 
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+    if (!_image_fitter) {
+        _image_fitter = std::make_unique<ImageFitter>(_width, _height);
+    }
+
+    bool success = false;
+    if (_image_fitter) {
+        FillImageCache();
+        std::vector<CARTA::GaussianComponent> initial_values(
+            fitting_request.initial_values().begin(), fitting_request.initial_values().end());
+        success = _image_fitter->FitImage(_image_cache.get(), initial_values, fitting_response);
+    }
+
+    return success;
+}
+
 // Export modified image to file, for changed range of channels/stokes and chopped region
 // Input root_folder as target path
 // Input save_file_msg as requesting parameters

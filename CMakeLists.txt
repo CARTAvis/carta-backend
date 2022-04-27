@@ -48,6 +48,7 @@ endif ()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FIND_PACKAGE(CURL REQUIRED)
+FIND_PACKAGE(GSL REQUIRED)
 FIND_PACKAGE(ZFP CONFIG REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
 
@@ -168,6 +169,7 @@ set(LINK_LIBS
         pugixml
         curl
         wcs
+        gsl
         casa_casa
         casa_coordinates
         casa_tables
@@ -237,7 +239,8 @@ set(SOURCE_FILES
         src/Util/Image.cc
         src/Util/Message.cc
         src/Util/String.cc
-        src/Util/Token.cc)
+        src/Util/Token.cc
+        src/ImageFitter/ImageFitter.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
