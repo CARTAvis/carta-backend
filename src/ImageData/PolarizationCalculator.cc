@@ -116,10 +116,6 @@ void PolarizationCalculator::FiddleStokesCoordinate(casacore::ImageInterface<flo
     }
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::GetStokesImage(const StokesTypes& type) {
-    return _stokes_images[type];
-}
-
 casacore::LatticeExprNode PolarizationCalculator::MakeTotalPolarizedIntensityNode() {
     casacore::LatticeExprNode lin_node = casacore::LatticeExprNode(
         casacore::pow(*_stokes_images[V], 2) + casacore::pow(*_stokes_images[U], 2) + casacore::pow(*_stokes_images[Q], 2));
@@ -154,7 +150,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    if (!GetStokesImage(Q) || !GetStokesImage(U) || !GetStokesImage(V)) {
+    if (!_stokes_images[Q] || !_stokes_images[U] || !_stokes_images[V]) {
         spdlog::error("This image lacks stokes Q, U, or V. Cannot compute total polarized intensity");
         return nullptr;
     }
@@ -173,7 +169,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    if (!GetStokesImage(I) || !GetStokesImage(Q) || !GetStokesImage(U) || !GetStokesImage(V)) {
+    if (!_stokes_images[I] || !_stokes_images[Q] || !_stokes_images[U] || !_stokes_images[V]) {
         spdlog::error("This image lacks stokes I, Q, U, or V. Cannot compute total fractional polarized intensity");
         return nullptr;
     }
@@ -192,7 +188,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    if (!GetStokesImage(Q) || !GetStokesImage(U)) {
+    if (!_stokes_images[Q] || !_stokes_images[U]) {
         spdlog::error("This image lacks stokes Q or U. Cannot compute polarized intensity");
         return nullptr;
     }
@@ -211,7 +207,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    if (!GetStokesImage(I) || !GetStokesImage(Q) || !GetStokesImage(U)) {
+    if (!_stokes_images[I] || !_stokes_images[Q] || !_stokes_images[U]) {
         spdlog::error("This image lacks stokes I, Q, or U. Cannot compute fractional polarized intensity");
         return nullptr;
     }
@@ -230,12 +226,12 @@ std::shared_ptr<casacore::ImageInterface<float>> PolarizationCalculator::Compute
         return nullptr;
     }
 
-    if (!GetStokesImage(Q) || !GetStokesImage(U)) {
+    if (!_stokes_images[Q] || !_stokes_images[U]) {
         spdlog::error("This image lacks stokes Q or U. Cannot compute polarized angle");
         return nullptr;
     }
 
-    casacore::LatticeExprNode node(casacore::pa(*GetStokesImage(U), *GetStokesImage(Q)));
+    casacore::LatticeExprNode node(casacore::pa(*_stokes_images[U], *_stokes_images[Q]));
     casacore::LatticeExpr<float> lattice_expr(node);
     auto image_expr = std::make_shared<casacore::ImageExpr<float>>(lattice_expr, casacore::String("Pangle"));
     image_expr->setUnits(casacore::Unit("deg"));

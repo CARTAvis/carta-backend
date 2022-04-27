@@ -35,7 +35,6 @@ public:
 
 private:
     std::shared_ptr<casacore::ImageInterface<float>> MakeSubImage(casacore::IPosition& blc, casacore::IPosition& trc, int axis, int pix);
-    std::shared_ptr<casacore::ImageInterface<float>> GetStokesImage(const StokesTypes& type);
     casacore::LatticeExprNode MakeTotalPolarizedIntensityNode();
     casacore::LatticeExprNode MakePolarizedIntensityNode();
     void SetImageStokesInfo(casacore::ImageInterface<float>& image, const StokesTypes& stokes);
