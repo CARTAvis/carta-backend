@@ -1430,10 +1430,8 @@ void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
 }
 
 void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    if (_frames.count(message.file_id())) {
-        if (_frames.at(message.file_id())->SetVectorOverlayParameters(message)) {
-            SendVectorFieldData(message.file_id());
-        }
+    if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message)) {
+        SendVectorFieldData(message.file_id());
     }
 }
 
