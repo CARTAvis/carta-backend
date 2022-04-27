@@ -19,6 +19,7 @@
 
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/fitting_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
@@ -35,6 +36,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
+#include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "ImageGenerators/MomentGenerator.h"
 #include "ImageStats/BasicStatsCalculator.h"
@@ -192,6 +194,9 @@ public:
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
     void StopMomentCalc();
 
+    // Image fitting
+    bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
+
     // Save as a new file or export sub-image to CASA/FITS format
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
         std::shared_ptr<Region> image_region);
@@ -323,6 +328,9 @@ protected:
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
+
+    // Image fitter
+    std::unique_ptr<ImageFitter> _image_fitter;
 
     // Vector field settings
     VectorFieldSettings _vector_field_settings;

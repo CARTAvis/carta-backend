@@ -28,6 +28,7 @@
 #include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/fitting_request.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
@@ -125,6 +126,7 @@ public:
     bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
     void OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id);
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
+    void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {

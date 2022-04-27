@@ -1429,6 +1429,27 @@ void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
     }
 }
 
+void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id) {
+    int file_id(fitting_request.file_id());
+    CARTA::FittingResponse fitting_response;
+
+    if (_frames.count(file_id)) {
+        auto t_start_fitting = std::chrono::high_resolution_clock::now();
+
+        auto& frame = _frames.at(file_id);
+        frame->FitImage(fitting_request, fitting_response);
+
+        auto t_end_fitting = std::chrono::high_resolution_clock::now();
+        auto dt_fitting = std::chrono::duration_cast<std::chrono::microseconds>(t_end_fitting - t_start_fitting).count();
+        spdlog::performance("Fit 2D image in {:.3f} ms", dt_fitting * 1e-3);
+
+        SendEvent(CARTA::EventType::FITTING_RESPONSE, request_id, fitting_response);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Fitting"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
 void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
     if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message)) {
         SendVectorFieldData(message.file_id());
