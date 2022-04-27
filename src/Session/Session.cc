@@ -1900,7 +1900,7 @@ bool Session::SendVectorFieldData(int file_id) {
         if (vector_field_calculator.DoCalculations(callback)) {
             return true;
         }
-        SendLogEvent("Error processing vector filed image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
+        SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
     }
     return false;
 }
