@@ -58,7 +58,6 @@ set(TEST_SOURCES
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc
-        TestVectorField.cc
         TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
