@@ -2284,12 +2284,8 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
 
 void RegionHandler::GetStokesPtotal(
     const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal) {
-    auto calc_step1 = [&](double q, double u) {
-        return (IsValid(q, u) ? (std::pow(q, 2) + std::pow(u, 2)) : std::numeric_limits<double>::quiet_NaN());
-    };
-    auto calc_step2 = [&](double v, double step1) {
-        return (IsValid(v, step1) ? std::sqrt(step1 + std::pow(v, 2)) : std::numeric_limits<double>::quiet_NaN());
-    };
+    auto calc_step1 = [&](double q, double u) { return (std::pow(q, 2) + std::pow(u, 2)); };
+    auto calc_step2 = [&](double v, double step1) { return std::sqrt(step1 + std::pow(v, 2)); };
 
     CombineStokes(profiles_ptotal, profiles_q, profiles_u, calc_step1);
     CombineStokes(profiles_ptotal, profiles_v, calc_step2);
@@ -2297,15 +2293,9 @@ void RegionHandler::GetStokesPtotal(
 
 void RegionHandler::GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
     const ProfilesMap& profiles_v, ProfilesMap& profiles_pftotal) {
-    auto calc_step1 = [&](double q, double u) {
-        return (IsValid(q, u) ? (std::pow(q, 2) + std::pow(u, 2)) : std::numeric_limits<double>::quiet_NaN());
-    };
-    auto calc_step2 = [&](double v, double step1) {
-        return (IsValid(v, step1) ? std::sqrt(step1 + std::pow(v, 2)) : std::numeric_limits<double>::quiet_NaN());
-    };
-    auto calc_step3 = [&](double i, double step2) {
-        return (IsValid(i, step2) ? 100.0 * (step2 / i) : std::numeric_limits<double>::quiet_NaN());
-    };
+    auto calc_step1 = [&](double q, double u) { return (std::pow(q, 2) + std::pow(u, 2)); };
+    auto calc_step2 = [&](double v, double step1) { return std::sqrt(step1 + std::pow(v, 2)); };
+    auto calc_step3 = [&](double i, double step2) { return 100.0 * (step2 / i); };
 
     CombineStokes(profiles_pftotal, profiles_q, profiles_u, calc_step1);
     CombineStokes(profiles_pftotal, profiles_v, calc_step2);
@@ -2313,18 +2303,14 @@ void RegionHandler::GetStokesPftotal(const ProfilesMap& profiles_i, const Profil
 }
 
 void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_plinear) {
-    auto calc_pi = [&](double q, double u) {
-        return (IsValid(q, u) ? std::sqrt(std::pow(q, 2) + std::pow(u, 2)) : std::numeric_limits<double>::quiet_NaN());
-    };
+    auto calc_pi = [&](double q, double u) { return std::sqrt(std::pow(q, 2) + std::pow(u, 2)); };
 
     CombineStokes(profiles_plinear, profiles_q, profiles_u, calc_pi);
 }
 
 void RegionHandler::GetStokesPflinear(
     const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear) {
-    auto calc_pi = [&](double q, double u) {
-        return (IsValid(q, u) ? std::sqrt(std::pow(q, 2) + std::pow(u, 2)) : std::numeric_limits<double>::quiet_NaN());
-    };
+    auto calc_pi = [&](double q, double u) { return std::sqrt(std::pow(q, 2) + std::pow(u, 2)); };
     auto calc_fpi = [&](double i, double pi) { return (IsValid(i, pi) ? 100.0 * (pi / i) : std::numeric_limits<double>::quiet_NaN()); };
 
     CombineStokes(profiles_pflinear, profiles_q, profiles_u, calc_pi);
@@ -2332,21 +2318,21 @@ void RegionHandler::GetStokesPflinear(
 }
 
 void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle) {
-    auto calc_pa = [&](double q, double u) {
-        return (IsValid(q, u) ? (180.0 / casacore::C::pi) * atan2(u, q) / 2 : std::numeric_limits<double>::quiet_NaN());
-    };
+    auto calc_pa = [&](double q, double u) { return (180.0 / casacore::C::pi) * atan2(u, q) / 2; };
 
     CombineStokes(profiles_pangle, profiles_q, profiles_u, calc_pa);
 }
 
 void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
     const std::function<double(double, double)>& func) {
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+
     for (auto stats_q : profiles_q) {
         for (auto stats_u : profiles_u) {
             if (stats_q.first == stats_u.first) {
                 std::vector<double>& results = profiles_out[stats_q.first];
                 results.resize(stats_q.second.size());
-                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), func);
+                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), func_if_valid);
             }
         }
     }
@@ -2354,11 +2340,14 @@ void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& 
 
 void RegionHandler::CombineStokes(
     ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func) {
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+
     for (auto stats_out : profiles_out) {
         for (auto stats_other : profiles_other) {
             if (stats_out.first == stats_other.first) {
                 std::vector<double>& results = profiles_out[stats_out.first];
-                std::transform(stats_other.second.begin(), stats_other.second.end(), stats_out.second.begin(), results.begin(), func);
+                std::transform(
+                    stats_other.second.begin(), stats_other.second.end(), stats_out.second.begin(), results.begin(), func_if_valid);
             }
         }
     }
