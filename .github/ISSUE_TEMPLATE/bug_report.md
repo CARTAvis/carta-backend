@@ -24,9 +24,11 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots/videos to help explain your problem.
 
 **Platform info (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+ - OS [e.g. macOS Monterey]: 
+ - Browser [e.g. chrome, safari, electron app]: 
+ - Browser version [e.g. 22]: 
+ - Backend branch [e.g. dev, v3b2 release]:
+ - Frontend branch [e.g. dev, v3b2 release]:
 
 **Additional context**
 Add any other context about the problem here.

@@ -32,6 +32,7 @@ public:
 
         carta::ProgramSettings settings;
         settings.ApplyCommandLineSettings(argVector.size(), cstrings.data());
+        settings.PushFilePaths();
         return std::move(settings);
     }
 
