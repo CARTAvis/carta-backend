@@ -32,31 +32,9 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         debug_msgs.push_back("Using command-line settings");
     }
     ApplyCommandLineSettings(argc, argv);
-
-    user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
-    const fs::path user_settings_path = user_directory / "backend.json";
-    const fs::path system_settings_path = "/etc/carta/backend.json";
-
-    json settings;
-    std::error_code error_code;
-
-    if (!no_system_config && fs::exists(system_settings_path, error_code)) {
-        settings = JSONSettingsFromFile(system_settings_path.string());
-        system_settings_json_exists = true;
-        debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
-    }
-
-    if (!no_user_config && fs::exists(user_settings_path, error_code)) {
-        auto user_settings = JSONSettingsFromFile(user_settings_path.string());
-        user_settings_json_exists = true;
-        debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
-        settings.merge_patch(user_settings); // user on top of system
-    }
-
-    if (system_settings_json_exists || user_settings_json_exists) {
-        settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
-        SetSettingsFromJSON(settings);
-    }
+    ApplyJSONSettings();
+    // Push files after all settings are applied
+    PushFilePaths();
 
     // Apply deprecated no_http flag
     if (no_http) {
@@ -342,7 +320,6 @@ global configuration files, respectively.
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
-    std::vector<fs::path> file_paths;
 
     for (const auto& arg : positional_arguments) {
         fs::path p(arg);
@@ -372,14 +349,6 @@ global configuration files, respectively.
             file_paths.clear();
         }
     }
-    if (file_paths.size()) {
-        // Calculate paths relative to top level folder
-        auto top_level_path = fs::absolute(top_level_folder).lexically_normal();
-        for (const auto& p : file_paths) {
-            auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
-            files.push_back(relative_path.string());
-        }
-    }
 
     // produce JSON for overridding system and user configuration;
     // Options here need to match all options available for system and user settings
@@ -402,6 +371,44 @@ global configuration files, respectively.
     for (const auto& [key, elem] : vector_int_keys_map) {
         if (result.count(key)) {
             command_line_settings[key] = result[key].as<std::vector<int>>();
+        }
+    }
+}
+
+void ProgramSettings::ApplyJSONSettings() {
+    user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+    const fs::path user_settings_path = user_directory / "backend.json";
+    const fs::path system_settings_path = "/etc/carta/backend.json";
+
+    json settings;
+    std::error_code error_code;
+
+    if (!no_system_config && fs::exists(system_settings_path, error_code)) {
+        settings = JSONSettingsFromFile(system_settings_path.string());
+        system_settings_json_exists = true;
+        debug_msgs.push_back(fmt::format("Reading system settings from {}.", system_settings_path.string()));
+    }
+
+    if (!no_user_config && fs::exists(user_settings_path, error_code)) {
+        auto user_settings = JSONSettingsFromFile(user_settings_path.string());
+        user_settings_json_exists = true;
+        debug_msgs.push_back(fmt::format("Reading user settings from {}.", user_settings_path.string()));
+        settings.merge_patch(user_settings); // user on top of system
+    }
+
+    if (system_settings_json_exists || user_settings_json_exists) {
+        settings.merge_patch(command_line_settings); // force command-line on top of user and sytem
+        SetSettingsFromJSON(settings);
+    }
+}
+
+void ProgramSettings::PushFilePaths() {
+    if (file_paths.size()) {
+        // Calculate paths relative to top level folder
+        auto top_level_path = fs::absolute(top_level_folder).lexically_normal();
+        for (const auto& p : file_paths) {
+            auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
+            files.push_back(relative_path.string());
         }
     }
 }
