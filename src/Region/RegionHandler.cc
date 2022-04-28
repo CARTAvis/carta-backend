@@ -1954,7 +1954,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             // Number of regions = pixel length of line
             auto dx_pixels = endpoint1.x - endpoint0.x;
             auto dy_pixels = endpoint1.y - endpoint0.y;
-            int num_regions = int(sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels)));
+            int num_regions = int(sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels))) + 1;
 
             int start(0);
             if (trim_line) {
@@ -2020,11 +2020,8 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             if (box_centers.empty()) {
                 trim_line = false;
             } else {
-                if (GetPointSeparation(reference_csys, box_centers.back(), endpoint1) < (0.5 * increment)) {
-                    trim_line = true;
-                } else {
-                    trim_line = false;
-                }
+                std::lock_guard<std::mutex> lock(_pix_mvdir_mutex);
+                trim_line = (GetPointSeparation(reference_csys, box_centers.back(), endpoint1) < (0.5 * increment));
             }
 
             // Check if region or frame is closing, or region changed
@@ -2310,7 +2307,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             }
 
             std::vector<std::vector<double>> line_points;
-
             std::vector<double> line_point = {endpoint0.x, endpoint0.y};
             line_points.push_back(line_point);
 
@@ -2371,16 +2367,10 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             if (line_points.back().empty()) {
                 trim_line = false;
             } else {
-                mvdir_lock.lock();
                 PointXy last_point_xy(line_points.back()[0], line_points.back()[1]);
-                double separation = GetPointSeparation(reference_csys, last_point_xy, endpoint1);
+                mvdir_lock.lock();
+                trim_line = (GetPointSeparation(reference_csys, last_point_xy, endpoint1) < (0.5 * increment));
                 mvdir_lock.unlock();
-
-                if (separation < (0.5 * increment)) {
-                    trim_line = true;
-                } else {
-                    trim_line = false;
-                }
             }
         } // Done with lines
 
