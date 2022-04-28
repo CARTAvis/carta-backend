@@ -172,9 +172,31 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
 
 bool FitsLoader::AddHistory(const CARTA::MomentRequest& moment_request) const {
     // Set history of moments requests
+    std::time_t cur_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::string time_stamp = std::ctime(&cur_time);
     int z_min = moment_request.spectral_range().min();
     int z_max = moment_request.spectral_range().max();
-    std::string history = "HISTORY moments spectral range [" + std::to_string(z_min) + ", " + std::to_string(z_max) + "]" + '\0';
+    std::vector<std::string> histories;
+    histories.emplace_back(fmt::format("HISTORY {} moments spectral range [{}, {}](channel)", time_stamp, z_min, z_max) + '\0');
+
+    if (_coord_sys && _coord_sys->hasSpectralAxis()) {
+        auto spectral_coord = _coord_sys->spectralCoordinate();
+        casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
+        spectral_units(0) = ((spectral_units(0) == "Hz") ? "GHz" : spectral_units(0));
+        spectral_coord.setWorldAxisUnits(spectral_units);
+        std::string velocity_units("km/s");
+        spectral_coord.setVelocity(velocity_units);
+        std::vector<double> frequencies(2);
+        std::vector<double> velocities(2);
+
+        if (spectral_coord.toWorld(frequencies[0], z_min) && spectral_coord.toWorld(frequencies[1], z_max)) {
+            histories.emplace_back(fmt::format("HISTORY > [{:.4f}, {:.4f}]({})", frequencies[0], frequencies[1], spectral_units(0)) + '\0');
+        }
+        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], z_min) &&
+            spectral_coord.pixelToVelocity(velocities[1], z_max)) {
+            histories.emplace_back(fmt::format("HISTORY > [{:.4f}, {:.4f}]({})", velocities[0], velocities[1], velocity_units) + '\0');
+        }
+    }
 
     fitsfile* fptr;
     int status(0), hdu(_hdu_num + 1), hdutype;
@@ -183,7 +205,9 @@ bool FitsLoader::AddHistory(const CARTA::MomentRequest& moment_request) const {
     fits_open_file(&fptr, _filename.c_str(), READWRITE, &status);
     fits_movabs_hdu(fptr, hdu, &hdutype, &status);
     if (hdutype == IMAGE_HDU) {
-        fits_write_record(fptr, history.c_str(), &status);
+        for (auto history : histories) {
+            fits_write_record(fptr, history.c_str(), &status);
+        }
     }
     fits_close_file(fptr, &status);
 
