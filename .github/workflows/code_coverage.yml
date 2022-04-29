@@ -17,8 +17,8 @@ jobs:
           cd ../..
           mkdir coverage
           gcovr -f src/ --xml-pretty -j 4 -o coverage/coverage.xml
-      - name: send coverage report
       - uses: 5monkeys/cobertura-action@master
+      - name: send coverage report        
         with:
           path: coverage/coverage.xml
           repo_token: ${{ secrets.GITHUB_TOKEN }}
