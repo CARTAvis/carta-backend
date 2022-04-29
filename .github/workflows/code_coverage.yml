@@ -1,7 +1,8 @@
 name: code coverage
 on: push
 jobs:
-  runs-on:
+  build-backend:
+    runs-on: ubuntu-latest
     container: ajmasiaa/rhel8-jenkins-apr2022
     steps:
       - uses: actions/checkout@v3
