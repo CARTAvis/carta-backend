@@ -4,7 +4,7 @@ jobs:
   build:
     container: ajmasiaa/rhel8-jenkins-apr2022
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: build and run unit tests
         shell: bash
         run: |
@@ -18,7 +18,6 @@ jobs:
           mkdir coverage
           gcovr -f src/ --xml-pretty -j 4 -o coverage/coverage.xml
       - uses: 5monkeys/cobertura-action@master
-      - name: send coverage report        
         with:
           path: coverage/coverage.xml
           repo_token: ${{ secrets.GITHUB_TOKEN }}
