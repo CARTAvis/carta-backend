@@ -147,8 +147,8 @@ private:
     bool GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
         casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message);
-    bool MoveEndpointInImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& image_shape, float rotation,
-        const PointXy& center_point, PointXy& endpoint, double& length_outside_image);
+    bool MovePointInImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& image_shape, float rotation,
+        PointXy& point, double& length_outside_image);
     double GetWorldLengthOutsideImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const PointXy& point1, const PointXy& point2);
     std::vector<double> FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const PointXy& start_point,
         const PointXy& end_point, double target_separation, double tolerance);

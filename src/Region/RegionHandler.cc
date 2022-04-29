@@ -2141,48 +2141,42 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         line_center.push_back((endpoint0.y + endpoint1.y) / 2);
         PointXy center_point(line_center[0], line_center[1]); // for point separation
 
-        // TODO
-        if (!center_point.InImage(image_shape(0), image_shape(1))) {
-            message = "Cannot create profile for line center outside image.";
-            return false;
-        }
-
-        // Move line endpoints in image if outside
         float rotation = GetLineRotation(endpoint0, endpoint1);
-        double pos_length_outside(0.0), neg_length_outside(0.0), center_length_outside(0.0);
-        bool have_pos_offset = MoveEndpointInImage(reference_csys, image_shape, rotation, center_point, endpoint0, pos_length_outside);
-        bool have_neg_offset = MoveEndpointInImage(reference_csys, image_shape, rotation, center_point, endpoint1, neg_length_outside);
 
-        if (!have_pos_offset && !have_neg_offset) {
-            message = "Cannot create profile for line completely outside image.";
-            return false;
+        std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
+        double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
+
+        if (!line_separation) {
+            // endpoint(s) out of image and coordinate system
+            double end0_length_out(0.0), end1_length_out(0.0);
+            if (MovePointInImage(reference_csys, image_shape, rotation, endpoint0, end0_length_out) &&
+                MovePointInImage(reference_csys, image_shape, rotation, endpoint1, end1_length_out)) {
+                line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1) + end0_length_out + end1_length_out;
+            } else {
+                message = "Line includes no pixels inside image";
+                return false;
+            }
         }
 
-        // Use longer length from center to endpoint.
-        std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-        double line_separation0 = GetPointSeparation(reference_csys, endpoint0, center_point) + pos_length_outside;
-        double line_separation1 = GetPointSeparation(reference_csys, endpoint1, center_point) + neg_length_outside;
-        double line_separation = max(line_separation0, line_separation1) * 2.0;
+        // TODO
+        if (!GetPointSeparation(reference_csys, center_point, endpoint0)) {
+            message = "Cannot convert line center to world coordinates";
+            return false;
+        }
 
         // Number of region profiles determined by increments in line length.
         auto num_increments = line_separation / increment;
-        if (num_increments < 1.0) {
-            message = "Line includes no pixels";
-            return false;
-        }
+        int num_offsets = lround(num_increments / 2.0);
+        int num_regions = num_offsets * 2;
+        std::vector<std::vector<double>> line_points(num_regions + 1); // points are start/end of each box
 
-        int num_offsets = lround((num_increments - 1.0) / 2.0);
-        int num_regions = (num_offsets * 2) + 1;
-        std::vector<std::vector<double>> line_points(num_regions + 1);
-
-        // Generate points along line for start and end of each box
         // Start at center and add points in each offset direction
-        std::vector<double> center = FindPointAtTargetSeparation(reference_csys, center_point, endpoint1, (increment / 2.0), tolerance);
+        // Check if we can use center point
+        std::vector<double> center = {center_point.x, center_point.y};
         line_points[num_offsets] = center;
 
         // Copy center
-        std::vector<double> pos_box_start({center[0], center[1]});
-        std::vector<double> neg_box_start({center[0], center[1]});
+        std::vector<double> pos_box_start({center[0], center[1]}), neg_box_start({center[0], center[1]});
 
         // Get points along line from center out with increment spacing to set regions
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
@@ -2195,23 +2189,18 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             // Find ends of box regions, at increment from start of box in positive offset direction.
             // Each box height (box_start to box_end) is variable to be fixed angular spacing.
             // Note: mvdir_lock is still locked while finding these points
-            if (have_pos_offset && !pos_box_start.empty()) {
+            // if (have_pos_offset && !pos_box_start.empty()) {
+            if (!pos_box_start.empty()) {
                 PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
                 std::vector<double> pos_box_end =
                     FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
                 line_points[num_offsets + ioffset] = pos_box_end;
                 pos_box_start = pos_box_end; // end of this box is start of next box
-
-                if ((ioffset == num_offsets) && !pos_box_start.empty()) {
-                    // complete last region
-                    pos_start_point = PointXy(pos_box_start[0], pos_box_start[1]);
-                    pos_box_end = FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
-                    line_points[num_offsets + ioffset + 1] = pos_box_end;
-                }
             }
 
             // Find ends of box regions, at increment from start of box in negative offset direction.
-            if (have_neg_offset && !neg_box_start.empty()) {
+            // if (have_neg_offset && !neg_box_start.empty()) {
+            if (!neg_box_start.empty()) {
                 PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
                 std::vector<double> neg_box_end =
                     FindPointAtTargetSeparation(reference_csys, neg_start_point, endpoint1, increment, tolerance);
@@ -2295,9 +2284,26 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
             double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
 
-            if (line_separation == 0.0) {
-                message = "Conversion of line endpoints to world coordinates failed.";
-                return false;
+            if (!line_separation) {
+                // endpoint(s) out of image and coordinate system
+                double end0_length_out(0.0), end1_length_out(0.0);
+
+                if (MovePointInImage(reference_csys, image_shape, rotation, endpoint0, end0_length_out) &&
+                    MovePointInImage(reference_csys, image_shape, rotation, endpoint1, end1_length_out)) {
+                    line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1) + end0_length_out + end1_length_out;
+                } else {
+                    spdlog::debug("Line {} includes no pixels inside image", iline);
+                    line_separation = GetWorldLengthOutsideImage(reference_csys, endpoint0, endpoint1);
+                    int num_regions = lround(line_separation / increment);
+                    int current_nrow(profiles.nrow()), new_nrow(current_nrow + num_regions);
+                    profiles.resize(casacore::IPosition(2, new_nrow, 1), true);
+                    for (auto irow = current_nrow; irow < new_nrow; ++irow) {
+                        profiles.row(irow) = NAN;
+                    }
+
+                    trim_line = false;
+                    continue;
+                }
             }
 
             // Use vector instead of PointXy for "no point" when reach end of line
@@ -2384,58 +2390,54 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
     return (progress == 1.0) && !allEQ(profiles, NAN);
 }
 
-bool RegionHandler::MoveEndpointInImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& image_shape,
-    float rotation, const PointXy& center_point, PointXy& endpoint, double& length_outside_image) {
-    // Returns false if endpoint and center both outside image without crossing it, and length of segment outside image (arcsec).
-    // Else returns true, new endpoint, and length of segment outside (arcsec)
+bool RegionHandler::MovePointInImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& image_shape,
+    float rotation, PointXy& point, double& length_outside_image) {
+    // Returns false if cannot move point inside (entire line outside image),
+    // else returns true with updated endpoint and length of segment outside (arcsec)
     auto xrange(image_shape(0));
     auto yrange(image_shape(1));
-    auto cx = center_point.x;
-    auto cy = center_point.y;
-    auto x = endpoint.x;
-    auto y = endpoint.y;
+    auto x = point.x;
+    auto y = point.y;
 
-    bool x_out_left(x < 0.0), x_out_right(x >= xrange), x_in(!x_out_left && !x_out_right);
-    bool y_out_bottom(y < 0.0), y_out_top(y >= yrange), y_in(!y_out_bottom && !y_out_top);
+    bool x_in(x >= 0.0 && x < xrange);
+    bool y_in(y >= 0.0 && y < yrange);
 
     if (x_in && y_in) {
         // Line segment completely inside, outside length is zero
         length_outside_image = 0.0;
         return true;
-    } else if ((x_out_left && (cx < 0.0)) || (x_out_right && (cx >= xrange)) || (y_out_bottom && (cy < 0.0)) ||
-               (y_out_top && (cy >= yrange))) {
-        // Line segment completely outside, return length
-        length_outside_image = GetWorldLengthOutsideImage(coord_sys, center_point, endpoint);
-        spdlog::debug("Cannot move endpoint [{}, {}] in image, length outside={}", x, y, length_outside_image);
-        return false;
     }
 
     float cos_x = cos(rotation * M_PI / 180.0f);
     float sin_x = sin(rotation * M_PI / 180.0f);
 
     // Line segment partially outside - move endpoint to edge of image
-    float new_x(0.0), new_y(0.0);
-    if (y_out_top || x_in) {
-        // Set y in range then get new x
-        if (y_out_top) {
-            new_y = yrange - 1;
-        }
+    float new_x(x), new_y(y);
 
+    // Try setting y in range then get new x
+    if (!y_in) {
+        new_y = y < 0.0 ? 0.0 : yrange - 1;
         float npix_out = (y - new_y) / sin_x;
         new_x = x - (npix_out * cos_x);
-    } else {
+    }
+
+    // Check new settings
+    PointXy new_point(new_x, new_y);
+    if (!new_point.InImage(xrange, yrange)) {
         // Set x in range then get new y
-        if (x_out_right) {
-            new_x = xrange - 1;
-        }
+        new_x = x < 0.0 ? 0.0 : xrange - 1;
         float npix_out = (x - new_x) / cos_x;
         new_y = y - (npix_out * sin_x);
     }
 
-    auto new_endpoint = PointXy(new_x, new_y);
-    length_outside_image = GetWorldLengthOutsideImage(coord_sys, new_endpoint, endpoint);
-    spdlog::debug("Moved endpoint [{},{}] to [{},{}], length out={}", x, y, new_x, new_y, length_outside_image);
-    endpoint = new_endpoint;
+    new_point = PointXy(new_x, new_y);
+    if (!new_point.InImage(xrange, yrange)) {
+        return false;
+    }
+
+    length_outside_image = GetWorldLengthOutsideImage(coord_sys, new_point, point);
+    spdlog::debug("Moved point [{},{}] to [{},{}], length out={}", x, y, new_x, new_y, length_outside_image);
+    point = new_point;
     return true;
 }
 
