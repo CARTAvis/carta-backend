@@ -6,3 +6,25 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: ./scripts/style.py all check
+  build:
+    container: ajmasiaa/rhel8-jenkins-apr2022
+    steps:
+      - uses: actions/checkout@v2
+      - name: build and run unit tests
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage'
+          make -j 4
+          cd test
+          ./carta_backend_tests
+          cd ../..
+          mkdir coverage
+          gcovr -f src/ --xml-pretty -j 4 -o coverage/coverage.xml
+      - name: send coverage report
+      - uses: 5monkeys/cobertura-action@master
+        with:
+          path: coverage/coverage.xml
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          minimum_coverage: 39
