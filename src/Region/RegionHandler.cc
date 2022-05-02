@@ -82,7 +82,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
 }
 
 bool RegionHandler::RegionChanged(int region_id) {
-    if (RegionSet(region_id)) {
+    if (!RegionSet(region_id)) {
         return false;
     }
     return GetRegion(region_id)->RegionChanged();
@@ -340,40 +340,47 @@ bool RegionHandler::SetHistogramRequirements(
         return true;
     }
 
-    if (RegionSet(region_id)) {
-        // Save frame pointer
-        _frames[file_id] = frame;
-
-        // Make HistogramConfig vector of requirements
-        std::vector<HistogramConfig> input_configs;
-        for (auto& config : configs) {
-            HistogramConfig hist_config(config.coordinate(), config.channel(), config.num_bins());
-            input_configs.push_back(hist_config);
-        }
-
-        // Set requirements
-        ConfigId config_id(file_id, region_id);
-        _histogram_req[config_id].configs = input_configs;
-        return true;
+    if (!RegionSet(region_id)) {
+        spdlog::error("Histogram requirements failed: no region with id {}", region_id);
+        return false;
     }
 
-    return false;
+    if (!IsClosedRegion(region_id)) {
+        spdlog::debug("Histogram requirements not valid for region {} type", region_id);
+        return false;
+    }
+
+    // Save frame pointer
+    _frames[file_id] = frame;
+
+    // Make HistogramConfig vector of requirements
+    std::vector<HistogramConfig> input_configs;
+    for (auto& config : configs) {
+        HistogramConfig hist_config(config.coordinate(), config.channel(), config.num_bins());
+        input_configs.push_back(hist_config);
+    }
+
+    // Set requirements
+    ConfigId config_id(file_id, region_id);
+    _histogram_req[config_id].configs = input_configs;
+    return true;
 }
 
 bool RegionHandler::SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
     const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
     // Clear all requirements for this file/region
-    if (!RegionSet(region_id)) {
-        if (spatial_profiles.empty()) {
-            // Frontend clears requirements after region removed, prevent error in log by returning true.
-            return true;
-        } else {
-            spdlog::error("Spatial requirements failed: no region with id {}", region_id);
-            return false;
-        }
+    if (spatial_profiles.empty() && !RegionSet(region_id)) {
+        // Frontend clears requirements after region removed, prevent error in log by returning true.
+        return true;
     }
 
-    if (!IsPointRegion(region_id) && !IsLineRegion(region_id)) {
+    if (!RegionSet(region_id)) {
+        spdlog::error("Spatial requirements failed: no region with id {}", region_id);
+        return false;
+    }
+
+    if (IsClosedRegion(region_id)) {
+        spdlog::debug("Spatial requirements not valid for region {} type", region_id);
         return false;
     }
 
@@ -427,6 +434,11 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
 
     if (!RegionSet(region_id)) {
         spdlog::error("Spectral requirements failed: no region with id {}", region_id);
+        return false;
+    }
+
+    if (IsLineRegion(region_id)) {
+        spdlog::debug("Spectral requirements not valid for region {} type", region_id);
         return false;
     }
 
@@ -559,16 +571,23 @@ bool RegionHandler::SetStatsRequirements(
         return true;
     }
 
-    if (RegionSet(region_id)) {
-        // Save frame pointer
-        _frames[file_id] = frame;
-
-        // Set requirements
-        ConfigId config_id(file_id, region_id);
-        _stats_req[config_id].stats_configs = stats_configs;
-        return true;
+    if (!RegionSet(region_id)) {
+        spdlog::error("Statistics requirements failed: no region with id {}", region_id);
+        return false;
     }
-    return false;
+
+    if (!IsClosedRegion(region_id)) {
+        spdlog::debug("Statistics requirements not valid for region {} type", region_id);
+        return false;
+    }
+
+    // Save frame pointer
+    _frames[file_id] = frame;
+
+    // Set requirements
+    ConfigId config_id(file_id, region_id);
+    _stats_req[config_id].stats_configs = stats_configs;
+    return true;
 }
 
 void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
@@ -866,14 +885,13 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
     }
 
     // 2. Region is line type but not polyline
-    auto region = GetRegion(region_id);
-    if (!region->IsAnnotation()) {
+    if (!IsLineRegion(region_id)) {
         pv_response.set_message("Region type not supported for PV image generator.");
         return false;
     }
-    auto region_state = region->GetRegionState();
-    if (region_state.type == CARTA::RegionType::POLYLINE) {
-        pv_response.set_message("Region type POLYLINE not supported yet for PV image generator.");
+
+    if (GetRegion(region_id)->GetRegionState().type == CARTA::RegionType::POLYLINE) {
+        pv_response.set_message("Region type POLYLINE not supported for PV image generator.");
         return false;
     }
 
@@ -897,7 +915,7 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
     casacore::Matrix<float> pv_data; // Spectral profiles for each box region: shape=[num_regions, num_channels]
     std::string message;
 
-    if (GetLineProfiles(file_id, region_id, width, per_z, stokes_index, progress_callback, increment, pv_data, cancelled, message)) {
+    if (GetLineProfiles(file_id, region_id, width, per_z, stokes_index, "", progress_callback, increment, pv_data, cancelled, message)) {
         if (!_stop_pv[file_id]) {
             // Use PV generator to create PV image
             auto input_filename = frame->GetFileName();
@@ -1135,7 +1153,6 @@ bool RegionHandler::FillSpectralProfileData(
     // 1. a specific region and a specific file
     // 2. a specific region and ALL_FILES
     // 3. a specific file and ALL_REGIONS
-
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
@@ -1586,12 +1603,16 @@ bool RegionHandler::GetRegionStatsData(
 
 bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
     // Cursor/point spatial profiles
-    ConfigId config_id(file_id, region_id);
-    if (!RegionSet(region_id) || !_frames.count(file_id) || !_spatial_req.count(config_id)) {
+    if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
 
     if (!IsPointRegion(region_id)) {
+        return false;
+    }
+
+    ConfigId config_id(file_id, region_id);
+    if (!_spatial_req.count(config_id)) {
         return false;
     }
 
@@ -1611,8 +1632,16 @@ bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std:
 
 bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb) {
     // Line spatial profiles.  Use callback to return each profile individually.
+    if (!RegionFileIdsValid(region_id, file_id)) {
+        return false;
+    }
+
+    if (!IsLineRegion(region_id)) {
+        return false;
+    }
+
     ConfigId config_id(file_id, region_id);
-    if (!RegionSet(region_id) || !_frames.count(file_id) || !_spatial_req.count(config_id)) {
+    if (!_spatial_req.count(config_id)) {
         return false;
     }
 
@@ -1673,7 +1702,8 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
     casacore::Matrix<float> line_profile;
     std::string message;
 
-    if (GetLineProfiles(file_id, region_id, width, per_z, stokes_index, progress_callback, increment, line_profile, cancelled, message)) {
+    if (GetLineProfiles(
+            file_id, region_id, width, per_z, stokes_index, coordinate, progress_callback, increment, line_profile, cancelled, message)) {
         // Check for cancel
         if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
             return false;
@@ -1712,6 +1742,14 @@ bool RegionHandler::IsLineRegion(int region_id) {
     return false;
 }
 
+bool RegionHandler::IsClosedRegion(int region_id) {
+    if (RegionSet(region_id)) {
+        auto type = GetRegion(region_id)->GetRegionState().type;
+        return (type != CARTA::RegionType::LINE) && (type != CARTA::RegionType::POLYLINE) && (type != CARTA::RegionType::POINT);
+    }
+    return false;
+}
+
 std::vector<int> RegionHandler::GetSpatialReqRegionsForFile(int file_id) {
     std::vector<int> results;
     std::unique_lock<std::mutex> ulock(_spatial_mutex);
@@ -1738,7 +1776,7 @@ std::vector<int> RegionHandler::GetSpatialReqFilesForRegion(int region_id) {
     return results;
 }
 
-bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index,
+bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
     std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles, bool& cancelled,
     std::string& message) {
     // Generate box regions to approximate a line with a width (pixels), and get mean of each box (per z else current z).
@@ -1770,11 +1808,11 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
         return false;
     }
 
-    bool profiles_complete = GetFixedPixelRegionProfiles(
-        file_id, region_id, width, per_z, stokes_index, region_state, reference_csys, progress_callback, profiles, increment, cancelled);
+    bool profiles_complete = GetFixedPixelRegionProfiles(file_id, region_id, width, per_z, stokes_index, coordinate, region_state,
+        reference_csys, progress_callback, profiles, increment, cancelled);
 
     if (profiles_complete) {
-        spdlog::debug("Region {}: Using fixed pixel increment for line box regions.", region_id);
+        spdlog::debug("Region {}: Using fixed pixel increment for line profiles.", region_id);
         return true;
     }
 
@@ -1784,11 +1822,11 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
         return false;
     }
 
-    profiles_complete = GetFixedAngularRegionProfiles(file_id, region_id, width, per_z, stokes_index, region_state, reference_csys,
-        progress_callback, profiles, increment, cancelled, message);
+    profiles_complete = GetFixedAngularRegionProfiles(file_id, region_id, width, per_z, stokes_index, coordinate, region_state,
+        reference_csys, progress_callback, profiles, increment, cancelled, message);
 
     if (profiles_complete) {
-        spdlog::debug("Region {}: Using fixed angular increment for line box regions.", region_id);
+        spdlog::debug("Region {}: Using fixed angular increment for line profiles.", region_id);
     }
 
     return profiles_complete;
@@ -1815,8 +1853,8 @@ float RegionHandler::GetLineRotation(const PointXy& endpoint0, const PointXy& en
 }
 
 bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index,
-    RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
-    casacore::Matrix<float>& profiles, double& increment, bool& cancelled) {
+    const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
+    std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled) {
     // Calculate mean spectral profiles for box regions along line with fixed pixel spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the box centers in arcsec, and whether profiles were cancelled.
     // Returns false if profiles cancelled or linear pixel centers are tabular in world coordinates.
@@ -1831,32 +1869,26 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
         PointXy endpoint0(control_points[0].x(), control_points[0].y());
         PointXy endpoint1(control_points[1].x(), control_points[1].y());
 
-        // Center point of line segment
+        // Number of pixels in line, to determine number of offsets
+        auto dx_pixels = endpoint1.x - endpoint0.x;
+        auto dy_pixels = endpoint1.y - endpoint0.y;
+        size_t pixel_length = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
+        int num_offsets = max(lround(float(pixel_length - 1) / 2.0), 0);
+
+        // Offset range [-offset, offset] from center pixel
+        std::vector<PointXy> box_centers((num_offsets * 2) + 1);
+
+        // Set center pixel at center index
         auto center_x = (endpoint0.x + endpoint1.x) / 2;
         auto center_y = (endpoint0.y + endpoint1.y) / 2;
+        auto center_idx = num_offsets;
+        PointXy point(center_x, center_y);
+        box_centers[center_idx] = point;
 
         // Rotation angle of line, applied to get next pixel
         float rotation = GetLineRotation(endpoint0, endpoint1);
         float cos_x = cos(rotation * M_PI / 180.0f);
         float sin_x = sin(rotation * M_PI / 180.0f);
-        // Overlap regions if not vertical or horizontal line
-        float height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
-
-        // Number of pixels in line, to determine number of offsets
-        auto dx_pixels = endpoint1.x - endpoint0.x;
-        auto dy_pixels = endpoint1.y - endpoint0.y;
-        size_t pixel_length = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
-
-        // Offset range [-offset, offset] from center, in pixels
-        int num_offsets = max(lround(float(pixel_length - 1) / 2.0), 0);
-        auto center_idx = num_offsets;
-
-        // Number of box centers in line is center plus pos/neg offsets
-        std::vector<PointXy> box_centers((num_offsets * 2) + 1);
-
-        // Set center pixel at center index
-        PointXy point(center_x, center_y);
-        box_centers[center_idx] = point;
 
         // Set box centers in pos and neg direction from line center out
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
@@ -1888,9 +1920,18 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             return false;
         }
 
+        // Overlap regions if not vertical or horizontal line
+        float height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
+
         // Set box regions from centers, user width, height
         for (size_t iregion = 0; iregion < num_regions; ++iregion) {
             if (per_z && _stop_pv[file_id]) {
+                cancelled = true;
+                return false;
+            }
+
+            // Check if requirements removed
+            if (!per_z && !HasSpatialRequirements(region_id, file_id, coordinate, width)) {
                 cancelled = true;
                 return false;
             }
@@ -1916,7 +1957,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             double num_pixels(0.0);
             casacore::Vector<float> region_profile =
                 GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-            spdlog::debug("Line box region {} max num pixels={}", iregion, num_pixels);
+            spdlog::debug("Line profile {} max num pixels={}", iregion, num_pixels);
 
             if (profiles.empty()) {
                 profiles.resize(casacore::IPosition(2, num_regions, region_profile.size()));
@@ -1944,13 +1985,6 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             PointXy endpoint0(control_points[iline].x(), control_points[iline].y());
             PointXy endpoint1(control_points[iline + 1].x(), control_points[iline + 1].y());
 
-            // Rotation angle of line segment, applied to get next pixel
-            float rotation = GetLineRotation(endpoint0, endpoint1);
-            float cos_x = cos(rotation * M_PI / 180.0f);
-            float sin_x = sin(rotation * M_PI / 180.0f);
-            // Overlap regions if not vertical or horizontal line
-            float height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
-
             // Number of regions = pixel length of line
             auto dx_pixels = endpoint1.x - endpoint0.x;
             auto dy_pixels = endpoint1.y - endpoint0.y;
@@ -1958,9 +1992,14 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
 
             int start(0);
             if (trim_line) {
-                spdlog::debug("Trim line segment {} starting endpoint", iline);
+                spdlog::debug("Trim line segment {}", iline);
                 start = 1;
             }
+
+            // Rotation angle of line segment, applied to get next pixel
+            float rotation = GetLineRotation(endpoint0, endpoint1);
+            float cos_x = cos(rotation * M_PI / 180.0f);
+            float sin_x = sin(rotation * M_PI / 180.0f);
 
             std::vector<PointXy> box_centers;
             for (int iregion = start; iregion < num_regions; ++iregion) {
@@ -1969,25 +2008,34 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
                 box_centers.push_back(PointXy(x, y));
             }
 
-            num_regions = box_centers.size();
+            num_regions = box_centers.size(); // adjust if trimmed
 
             if (num_regions == 0) {
-                spdlog::debug("Line segment {} includes no pixels", iline);
+                spdlog::debug("Line segment {} contains no pixels", iline);
                 continue;
             } else if (num_regions == 1) {
-                // Set increment for 1 pixel, for setting trim_line
-                auto xlength = reference_csys->toWorldLength(1.0, 0).get("arcsec").getValue();
-                auto ylength = reference_csys->toWorldLength(1.0, 1).get("arcsec").getValue();
+                // Set increment for 1 pixel (usually set in CheckLinearOffsets)
+                auto xlength = reference_csys->toWorldLength(cos_x, 0).get("arcsec").getValue();
+                auto ylength = reference_csys->toWorldLength(sin_x, 1).get("arcsec").getValue();
                 increment = sqrt((xlength * xlength) + (ylength * ylength));
-            } else if ((num_regions > 1) && !CheckLinearOffsets(box_centers, reference_csys, increment)) {
+            } else if (!CheckLinearOffsets(box_centers, reference_csys, increment)) {
                 spdlog::debug("Fixed pixel offsets not linear");
                 profiles.resize();
                 return false;
             }
 
+            // Overlap regions if not vertical or horizontal line
+            float height = (fmod(rotation, 90.0) == 0.0 ? 1.0 : 3.0);
+
             for (int iregion = 0; iregion < num_regions; ++iregion) {
                 // Check if region or frame is closing, or region changed
                 if (CancelLineProfiles(region_id, file_id, region_state)) {
+                    cancelled = true;
+                    return false;
+                }
+
+                // Check if requirements removed
+                if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
                     cancelled = true;
                     return false;
                 }
@@ -2012,7 +2060,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile =
                     GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-                spdlog::debug("Line segment {} box region {} num pixels={}", iline, iregion, num_pixels);
+                spdlog::debug("Line segment {} profile {} num pixels={}", iline, iregion, num_pixels);
                 profiles.row(profile_row++) = region_profile;
             }
 
@@ -2078,15 +2126,11 @@ bool RegionHandler::CheckLinearOffsets(
     return true;
 }
 
-double RegionHandler::GetPointSeparation(std::shared_ptr<CoordinateSystem> coord_sys, const PointXy& point1, const PointXy& point2) {
+double RegionHandler::GetPointSeparation(std::shared_ptr<CoordinateSystem> coord_sys, const PointXy& point0, const PointXy& point1) {
     // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
     // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     double separation(0.0);
-    casacore::Vector<casacore::Double> v1(2), v2(2);
-    v1[0] = point1.x;
-    v1[1] = point1.y;
-    v2[0] = point2.x;
-    v2[1] = point2.y;
+    casacore::Vector<casacore::Double> v1({point0.x, point0.y}), v2({point1.x, point1.y});
 
     try {
         casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(v1);
@@ -2108,16 +2152,14 @@ double RegionHandler::GetSeparationTolerance(std::shared_ptr<casacore::Coordinat
 }
 
 bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index,
-    RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
-    casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message) {
+    const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
+    std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
+    std::string& message) {
     // Calculate mean spectral profiles for polygon regions along line with fixed angular spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the regions in arcsec, and whether profiles were cancelled.
     // Returns false if profiles cancelled or failed, with an error message.
     auto control_points = region_state.control_points;
     size_t num_lines(control_points.size() - 1);
-
-    // For checking if point in image
-    casacore::IPosition image_shape = _frames.at(file_id)->ImageShape();
 
     // Target increment is CDELT2, target width is width * CDELT2
     auto inc2 = reference_csys->increment()(1);
@@ -2135,32 +2177,13 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         PointXy endpoint0(control_points[0].x(), control_points[0].y());
         PointXy endpoint1(control_points[1].x(), control_points[1].y());
 
-        // Center point (pixel coords) of line segment as vector
-        std::vector<double> line_center;
-        line_center.push_back((endpoint0.x + endpoint1.x) / 2);
-        line_center.push_back((endpoint0.y + endpoint1.y) / 2);
-        PointXy center_point(line_center[0], line_center[1]); // for point separation
-
-        float rotation = GetLineRotation(endpoint0, endpoint1);
-
         std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
         double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
+        mvdir_lock.unlock();
 
         if (!line_separation) {
             // endpoint(s) out of image and coordinate system
-            double end0_length_out(0.0), end1_length_out(0.0);
-            if (MovePointInImage(reference_csys, image_shape, rotation, endpoint0, end0_length_out) &&
-                MovePointInImage(reference_csys, image_shape, rotation, endpoint1, end1_length_out)) {
-                line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1) + end0_length_out + end1_length_out;
-            } else {
-                message = "Line includes no pixels inside image";
-                return false;
-            }
-        }
-
-        // TODO
-        if (!GetPointSeparation(reference_csys, center_point, endpoint0)) {
-            message = "Cannot convert line center to world coordinates";
+            message = "endpoints do not have valid world coordinates.";
             return false;
         }
 
@@ -2168,17 +2191,23 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         auto num_increments = line_separation / increment;
         int num_offsets = lround(num_increments / 2.0);
         int num_regions = num_offsets * 2;
-        std::vector<std::vector<double>> line_points(num_regions + 1); // points are start/end of each box
+        if (num_regions == 0) {
+            spdlog::debug("line shorter than target increment");
+            return false;
+        }
 
         // Start at center and add points in each offset direction
-        // Check if we can use center point
-        std::vector<double> center = {center_point.x, center_point.y};
-        line_points[num_offsets] = center;
+        std::vector<std::vector<double>> line_points(num_regions + 1); // points are start/end of each box
+        std::vector<double> line_center;
+        line_center.push_back((endpoint0.x + endpoint1.x) / 2);
+        line_center.push_back((endpoint0.y + endpoint1.y) / 2);
+        line_points[num_offsets] = line_center;
 
-        // Copy center
-        std::vector<double> pos_box_start({center[0], center[1]}), neg_box_start({center[0], center[1]});
+        // Copy center for offsets
+        std::vector<double> pos_box_start({line_center[0], line_center[1]}), neg_box_start({line_center[0], line_center[1]});
 
         // Get points along line from center out with increment spacing to set regions
+        mvdir_lock.lock();
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
             // Check PV generator cancellation
             if (per_z && _stop_pv[file_id]) {
@@ -2186,10 +2215,8 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 return false;
             }
 
-            // Find ends of box regions, at increment from start of box in positive offset direction.
             // Each box height (box_start to box_end) is variable to be fixed angular spacing.
-            // Note: mvdir_lock is still locked while finding these points
-            // if (have_pos_offset && !pos_box_start.empty()) {
+            // Find ends of box regions, at increment from start of box in positive offset direction.
             if (!pos_box_start.empty()) {
                 PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
                 std::vector<double> pos_box_end =
@@ -2199,7 +2226,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             }
 
             // Find ends of box regions, at increment from start of box in negative offset direction.
-            // if (have_neg_offset && !neg_box_start.empty()) {
             if (!neg_box_start.empty()) {
                 PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
                 std::vector<double> neg_box_end =
@@ -2208,24 +2234,30 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 neg_box_start = neg_box_end; // end of this box is start of next box
             }
         }
-
-        // Finished with points along line: unlock mutex
         mvdir_lock.unlock();
 
         // Set matrix size to fill in rows; ncol = image depth (PV data) or 1 (spatial profile)
-        if (per_z) {
-            profiles.resize(casacore::IPosition(2, num_regions, _frames.at(file_id)->Depth()));
-        } else {
-            profiles.resize(casacore::IPosition(2, num_regions, 1));
-        }
+        auto profile_depth = per_z ? _frames.at(file_id)->Depth() : 1;
+        profiles.resize(casacore::IPosition(2, num_regions, profile_depth));
 
-        // Create polygons for box regions along line starting and ending at calculated points.
-        // Start at previous point, end at two points ahead, except at end of line.
-        int start_idx, end_idx;
+        int start_idx, end_idx;                                 // for start and end of overlapping box regions
+        float rotation = GetLineRotation(endpoint0, endpoint1); // for temporary RegionState
 
         for (int iregion = 0; iregion < num_regions; ++iregion) {
             // Check if user cancelled
             if (per_z && _stop_pv[file_id]) {
+                cancelled = true;
+                return false;
+            }
+
+            // Check if requirements removed
+            if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
+                cancelled = true;
+                return false;
+            }
+
+            // Check if region or frame is closing, or region changed
+            if (CancelLineProfiles(region_id, file_id, region_state)) {
                 cancelled = true;
                 return false;
             }
@@ -2247,7 +2279,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile =
                     GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-                spdlog::debug("Line box region {} max num pixels={}", iregion, num_pixels);
+                spdlog::debug("Line profile {} max num pixels={}", iregion, num_pixels);
 
                 profiles.row(iregion) = region_profile;
             }
@@ -2271,53 +2303,45 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         int profile_row(0);
 
         for (size_t iline = 0; iline < num_lines; iline++) {
+            // Check if requirements removed
+            if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
+                cancelled = true;
+                return false;
+            }
+
+            // Check if region or frame is closing, or region changed
+            if (CancelLineProfiles(region_id, file_id, region_state)) {
+                cancelled = true;
+                return false;
+            }
+
             PointXy endpoint0(control_points[iline].x(), control_points[iline].y());
             PointXy endpoint1(control_points[iline + 1].x(), control_points[iline + 1].y());
 
-            // Rotation of line segment
-            float rotation = GetLineRotation(endpoint0, endpoint1);
-            // Apply rotation to get next pixel
-            float cos_x = cos(rotation * M_PI / 180.0f);
-            float sin_x = sin(rotation * M_PI / 180.0f);
-
-            // Number of regions in segment is (angular length / increment)
+            // Angular length of line (arcsec)
             std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
             double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
 
             if (!line_separation) {
                 // endpoint(s) out of image and coordinate system
-                double end0_length_out(0.0), end1_length_out(0.0);
-
-                if (MovePointInImage(reference_csys, image_shape, rotation, endpoint0, end0_length_out) &&
-                    MovePointInImage(reference_csys, image_shape, rotation, endpoint1, end1_length_out)) {
-                    line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1) + end0_length_out + end1_length_out;
-                } else {
-                    spdlog::debug("Line {} includes no pixels inside image", iline);
-                    line_separation = GetWorldLengthOutsideImage(reference_csys, endpoint0, endpoint1);
-                    int num_regions = lround(line_separation / increment);
-                    int current_nrow(profiles.nrow()), new_nrow(current_nrow + num_regions);
-                    profiles.resize(casacore::IPosition(2, new_nrow, 1), true);
-                    for (auto irow = current_nrow; irow < new_nrow; ++irow) {
-                        profiles.row(irow) = NAN;
-                    }
-
-                    trim_line = false;
-                    continue;
-                }
+                message = "endpoints do not have valid world coordinates.";
+                return false;
             }
 
-            // Use vector instead of PointXy for "no point" when reach end of line
+            // Number of regions in segment is (angular length / increment)
             int num_regions = lround(line_separation / increment);
             if (num_regions == 0) {
+                spdlog::debug("Polyline segment {} shorter than target increment", iline);
                 continue;
             }
 
+            // Use vector instead of PointXy for "no point" when reach end of line
             std::vector<std::vector<double>> line_points;
             std::vector<double> line_point = {endpoint0.x, endpoint0.y};
             line_points.push_back(line_point);
 
             for (int iregion = 1; iregion < num_regions + 1; ++iregion) {
-                // Find next point (next box end) along line at target separation; mvdir_lock is still locked
+                // Find next point (next box end) along line at target separation
                 std::vector<double> last_point = line_points.back();
                 PointXy last_point_xy(last_point[0], last_point[1]);
                 std::vector<double> next_point =
@@ -2332,16 +2356,29 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             mvdir_lock.unlock();
 
             num_regions = line_points.size() - 1;
-            int start_idx, end_idx; // points for start and end of overlapping box regions
+            int start_idx, end_idx;                                 // for start and end of overlapping box regions
+            float rotation = GetLineRotation(endpoint0, endpoint1); // for temporary box RegionState
 
             for (int iregion = 0; iregion < num_regions; ++iregion) {
+                // Check if requirements removed
+                if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
+                    cancelled = true;
+                    return false;
+                }
+
+                // Check if region or frame is closing, or region changed
+                if (CancelLineProfiles(region_id, file_id, region_state)) {
+                    cancelled = true;
+                    return false;
+                }
+
                 if (iregion == 0) {
                     // Add rows for this line's region profiles
                     auto num_line_profiles = trim_line ? num_regions - 1 : num_regions;
                     profiles.resize(casacore::IPosition(2, profiles.nrow() + num_line_profiles, 1), true);
 
                     if (trim_line) {
-                        spdlog::debug("Polyline line {} box region {} trimmed", iline, iregion);
+                        spdlog::debug("Polyline segment {} trimmed", iline);
                         continue;
                     }
                 }
@@ -2363,7 +2400,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                     double num_pixels(0.0);
                     casacore::Vector<float> region_profile =
                         GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, stokes_index, num_pixels);
-                    spdlog::debug("Polyline line {} box region {} max num pixels={}", iline, iregion, num_pixels);
+                    spdlog::debug("Polyline segment {} profile {} max num pixels={}", iline, iregion, num_pixels);
 
                     profiles.row(profile_row++) = region_profile;
                 }
@@ -2388,64 +2425,6 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
     }
 
     return (progress == 1.0) && !allEQ(profiles, NAN);
-}
-
-bool RegionHandler::MovePointInImage(std::shared_ptr<casacore::CoordinateSystem> coord_sys, const casacore::IPosition& image_shape,
-    float rotation, PointXy& point, double& length_outside_image) {
-    // Returns false if cannot move point inside (entire line outside image),
-    // else returns true with updated endpoint and length of segment outside (arcsec)
-    auto xrange(image_shape(0));
-    auto yrange(image_shape(1));
-    auto x = point.x;
-    auto y = point.y;
-
-    bool x_in(x >= 0.0 && x < xrange);
-    bool y_in(y >= 0.0 && y < yrange);
-
-    if (x_in && y_in) {
-        // Line segment completely inside, outside length is zero
-        length_outside_image = 0.0;
-        return true;
-    }
-
-    float cos_x = cos(rotation * M_PI / 180.0f);
-    float sin_x = sin(rotation * M_PI / 180.0f);
-
-    // Line segment partially outside - move endpoint to edge of image
-    float new_x(x), new_y(y);
-
-    // Try setting y in range then get new x
-    if (!y_in) {
-        new_y = y < 0.0 ? 0.0 : yrange - 1;
-        float npix_out = (y - new_y) / sin_x;
-        new_x = x - (npix_out * cos_x);
-    }
-
-    // Check new settings
-    PointXy new_point(new_x, new_y);
-    if (!new_point.InImage(xrange, yrange)) {
-        // Set x in range then get new y
-        new_x = x < 0.0 ? 0.0 : xrange - 1;
-        float npix_out = (x - new_x) / cos_x;
-        new_y = y - (npix_out * sin_x);
-    }
-
-    new_point = PointXy(new_x, new_y);
-    if (!new_point.InImage(xrange, yrange)) {
-        return false;
-    }
-
-    length_outside_image = GetWorldLengthOutsideImage(coord_sys, new_point, point);
-    spdlog::debug("Moved point [{},{}] to [{},{}], length out={}", x, y, new_x, new_y, length_outside_image);
-    point = new_point;
-    return true;
-}
-
-double RegionHandler::GetWorldLengthOutsideImage(
-    std::shared_ptr<casacore::CoordinateSystem> coord_sys, const PointXy& point1, const PointXy& point2) {
-    double xlength = coord_sys->toWorldLength(abs(point1.x - point2.x), 0).get("arcsec").getValue();
-    double ylength = coord_sys->toWorldLength(abs(point1.y - point2.y), 1).get("arcsec").getValue();
-    return sqrt((xlength * xlength) + (ylength * ylength));
 }
 
 std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
@@ -2564,12 +2543,6 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     control_points[2] = point;
     mvdir_lock.unlock();
 
-    // Set polygon RegionState
-    /*
-    spdlog::debug("Box region corners=[{}, {}], [{}, {}], [{}, {}], [{}, {}]", control_points[0].x(), control_points[0].y(),
-        control_points[1].x(), control_points[1].y(), control_points[2].x(), control_points[2].y(), control_points[3].x(),
-        control_points[3].y());
-    */
     float polygon_rotation(0.0);
     RegionState region_state = RegionState(file_id, CARTA::RegionType::POLYGON, control_points, polygon_rotation);
     return region_state;
@@ -2579,16 +2552,10 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
     std::shared_ptr<casacore::CoordinateSystem> reference_csys, bool per_z, int stokes_index, double& num_pixels) {
     // Create temporary region with RegionState and CoordinateSystem
     // Return stats/spectral profile (depending on per_z) for given file_id image, and number of pixels in the region.
-    auto depth = _frames.at(file_id)->Depth();
 
     // Initialize return values
-    casacore::Vector<float> profile;
-    if (per_z) {
-        profile.resize(depth);
-    } else {
-        profile.resize(1);
-    }
-    profile = NAN;
+    auto profile_size = per_z ? _frames.at(file_id)->Depth() : 1;
+    casacore::Vector<float> profile(profile_size, NAN);
     num_pixels = 0.0;
 
     if (!region_state.RegionDefined()) {

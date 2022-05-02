@@ -813,11 +813,6 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
             err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
             SendLogEvent(err_message, {"region"}, CARTA::ErrorSeverity::DEBUG);
         }
-
-        // Update the spatial profile data if it is a point or line region
-        if (_region_handler->IsPointRegion(region_id) || _region_handler->IsLineRegion(region_id)) {
-            SendSpatialProfileDataByRegionId(region_id);
-        }
     } else {
         err_message = fmt::format("Cannot set region, file id {} not found", file_id);
     }
@@ -1601,7 +1596,6 @@ void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fi
 bool Session::SendSpatialProfileData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
-    std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec; // spatial profile with different stokes
 
     auto send_results = [&](int file_id, int region_id, std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec) {
         for (auto& spatial_profile_data : spatial_profile_data_vec) {
@@ -1614,11 +1608,12 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
 
     if (_frames.find(file_id) != _frames.end()) {
         if (region_id == CURSOR_REGION_ID) {
-            // Cursor spatial profile
+            std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec;
             if (_frames.at(file_id)->FillSpatialProfileData(spatial_profile_data_vec)) {
                 send_results(file_id, region_id, spatial_profile_data_vec);
             }
         } else if (_region_handler->IsPointRegion(region_id)) {
+            std::vector<CARTA::SpatialProfileData> spatial_profile_data_vec;
             if (_region_handler->FillPointSpatialProfileData(file_id, region_id, spatial_profile_data_vec)) {
                 send_results(file_id, region_id, spatial_profile_data_vec);
             }
@@ -1634,7 +1629,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
-        SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+        SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
     return data_sent;
 }
@@ -1875,9 +1870,11 @@ void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool 
     if (z_changed || stokes_changed) {
         SendRegionStatsData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
+        // SpatialProfileData sent after new requirements received
     }
 
     if (!z_changed && !stokes_changed) { // region changed, update all
+        SendSpatialProfileDataByRegionId(region_id);
         SendSpectralProfileData(file_id, region_id, stokes_changed);
         SendRegionStatsData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
