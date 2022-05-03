@@ -16,7 +16,6 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
-#include <carta-protobuf/moment_request.pb.h>
 
 #include "ImageData/FileInfo.h"
 
