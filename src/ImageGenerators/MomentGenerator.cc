@@ -20,7 +20,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
 
 bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
     const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<GeneratedImage>& collapse_results) {
+    std::vector<GeneratedImage>& collapse_results, const std::vector<CARTA::Point>& control_points) {
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
     _progress_callback = progress_callback;
@@ -74,7 +74,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        AddHistory(moment_image, moment_request);
+                        AddHistory(moment_image, moment_request, control_points);
                         collapse_results.push_back(GeneratedImage(moment_file_id, out_file_name, moment_image));
                     }
                     _success = true;
@@ -291,13 +291,23 @@ inline void MomentGenerator::SetMomentTypeMaps() {
     _moment_suffix_map[IM::MINIMUM_COORDINATE] = "minimum_coord";
 }
 
-void MomentGenerator::AddHistory(
-    const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image, const CARTA::MomentRequest& moment_request) {
+void MomentGenerator::AddHistory(const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image,
+    const CARTA::MomentRequest& moment_request, const std::vector<CARTA::Point>& control_points) {
     std::shared_ptr<casacore::CoordinateSystem> coord_sys =
         std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
 
     // Set input image info
     std::string input_image = fmt::format("Input image: {}\n", GetInputFileName());
+
+    // Set region control points
+    std::string region_points = "Region control points: ";
+    for (auto point : control_points) {
+        if (region_points.back() == ']') {
+            region_points += ", ";
+        }
+        region_points += fmt::format("[{:.4f}, {:.4f}]", point.x(), point.y());
+    }
+    region_points += "\n";
 
     // Set spectral range info
     int z_min = moment_request.spectral_range().min();
@@ -336,6 +346,6 @@ void MomentGenerator::AddHistory(
     }
 
     casacore::LoggerHolder logger;
-    logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << spectral_range << mask << casacore::LogIO::POST;
+    logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << region_points << spectral_range << mask << casacore::LogIO::POST;
     moment_image->appendLog(logger);
 }

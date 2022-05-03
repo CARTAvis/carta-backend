@@ -1719,7 +1719,8 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results) {
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+    std::vector<CARTA::Point> control_points) {
     std::shared_lock lock(GetActiveTaskMutex());
 
     if (!_moment_generator) {
@@ -1729,10 +1730,14 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
 
     _loader->CloseImageIfUpdated();
 
+    if (control_points.empty()) {
+        control_points = {Message::Point(0, 0), Message::Point(_width - 1, _height - 1)};
+    }
+
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
-        _moment_generator->CalculateMoments(
-            file_id, image_region, _z_axis, _stokes_axis, progress_callback, moment_request, moment_response, collapse_results);
+        _moment_generator->CalculateMoments(file_id, image_region, _z_axis, _stokes_axis, progress_callback, moment_request,
+            moment_response, collapse_results, control_points);
         ulock.unlock();
     }
 

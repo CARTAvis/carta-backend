@@ -30,7 +30,8 @@ public:
     // Calculate moments
     bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
         const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
-        CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
+        CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+        const std::vector<CARTA::Point>& control_points);
 
     // Stop moments calculation
     void StopCalculation();
@@ -54,8 +55,8 @@ private:
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetInputFileName();
     inline void SetMomentTypeMaps();
-    void AddHistory(
-        const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image, const CARTA::MomentRequest& moment_request);
+    void AddHistory(const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image,
+        const CARTA::MomentRequest& moment_request, const std::vector<CARTA::Point>& control_points);
 
     // Image parameters
     casacore::String _filename;
