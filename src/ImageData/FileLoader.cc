@@ -898,7 +898,3 @@ bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_
     message = "Cannot save image type from loader.";
     return false;
 }
-
-bool FileLoader::AddHistory(const CARTA::MomentRequest& moment_request) const {
-    return false;
-}

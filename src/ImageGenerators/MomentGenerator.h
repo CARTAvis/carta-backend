@@ -52,8 +52,10 @@ private:
     void ResetImageMoments(const casacore::ImageRegion& image_region);
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);
-    casacore::String GetOutputFileName();
+    casacore::String GetInputFileName();
     inline void SetMomentTypeMaps();
+    void AddHistory(
+        const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image, const CARTA::MomentRequest& moment_request);
 
     // Image parameters
     casacore::String _filename;

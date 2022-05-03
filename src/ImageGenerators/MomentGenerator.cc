@@ -55,19 +55,17 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
             } else {
                 casacore::Bool do_temp = true;
                 casacore::Bool remove_axis = false;
-                casacore::String out_file = GetOutputFileName();
-                std::size_t found = out_file.find_last_of("/");
-                std::string file_base_name = out_file.substr(found + 1);
+                casacore::String file_base_name = GetInputFileName() + ".moment";
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
 
                     // Do calculations and save collapse results in the memory
-                    auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
+                    auto result_images = _image_moments->createMoments(do_temp, file_base_name, remove_axis);
 
                     for (int i = 0; i < result_images.size(); ++i) {
                         // Set temp moment file name
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string out_file_name = file_base_name + "." + moment_suffix;
+                        std::string out_file_name = std::string(file_base_name) + "." + moment_suffix;
 
                         // Set a temp moment file Id. Todo: find another better way to assign the temp file Id
                         int moment_type = _moments[i];
@@ -76,6 +74,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
+                        AddHistory(moment_image, moment_request);
                         collapse_results.push_back(GeneratedImage(moment_file_id, out_file_name, moment_image));
                     }
                     _success = true;
@@ -206,13 +205,12 @@ casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     }
 }
 
-casacore::String MomentGenerator::GetOutputFileName() {
+casacore::String MomentGenerator::GetInputFileName() {
     // Store moment images in a temporary folder
     casacore::String result(_filename);
-    result += ".moment";
     size_t found = result.find_last_of("/");
     if (found) {
-        result.replace(0, found, "");
+        result.replace(0, found + 1, "");
     }
     return result;
 }
@@ -291,4 +289,53 @@ inline void MomentGenerator::SetMomentTypeMaps() {
     _moment_suffix_map[IM::MAXIMUM_COORDINATE] = "maximum_coord";
     _moment_suffix_map[IM::MINIMUM] = "minimum";
     _moment_suffix_map[IM::MINIMUM_COORDINATE] = "minimum_coord";
+}
+
+void MomentGenerator::AddHistory(
+    const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image, const CARTA::MomentRequest& moment_request) {
+    std::shared_ptr<casacore::CoordinateSystem> coord_sys =
+        std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+
+    // Set input image info
+    std::string input_image = fmt::format("Input image: {}\n", GetInputFileName());
+
+    // Set spectral range info
+    int z_min = moment_request.spectral_range().min();
+    int z_max = moment_request.spectral_range().max();
+    std::string spectral_range = fmt::format("Spectral range: [{}, {}](channel)", z_min, z_max);
+    if (coord_sys && coord_sys->hasSpectralAxis()) {
+        auto spectral_coord = coord_sys->spectralCoordinate();
+        casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
+        spectral_units(0) = ((spectral_units(0) == "Hz") ? "GHz" : spectral_units(0));
+        spectral_coord.setWorldAxisUnits(spectral_units);
+        std::string velocity_units("km/s");
+        spectral_coord.setVelocity(velocity_units);
+        std::vector<double> frequencies(2);
+        std::vector<double> velocities(2);
+
+        if (spectral_coord.toWorld(frequencies[0], z_min) && spectral_coord.toWorld(frequencies[1], z_max)) {
+            spectral_range += fmt::format(", [{:.4f}, {:.4f}]({})", frequencies[0], frequencies[1], spectral_units(0));
+        }
+        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], z_min) &&
+            spectral_coord.pixelToVelocity(velocities[1], z_max)) {
+            spectral_range += fmt::format(", [{:.4f}, {:.4f}]({})", velocities[0], velocities[1], velocity_units);
+        }
+    }
+    spectral_range += "\n";
+
+    // Set mask info
+    float pixel_min = moment_request.pixel_range().min();
+    float pixel_max = moment_request.pixel_range().max();
+    std::string mask = "Mask: ";
+    if (moment_request.mask() == CARTA::Include) {
+        mask += fmt::format("include pixels [{:.4f}, {:.4f}]({})\n", pixel_min, pixel_max, _image->units().getName());
+    } else if (moment_request.mask() == CARTA::Exclude) {
+        mask += fmt::format("exclude pixels [{:.4f}, {:.4f}]({})\n", pixel_min, pixel_max, _image->units().getName());
+    } else {
+        mask += "none\n";
+    }
+
+    casacore::LoggerHolder logger;
+    logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << spectral_range << mask << casacore::LogIO::POST;
+    moment_image->appendLog(logger);
 }

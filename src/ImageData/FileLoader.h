@@ -108,8 +108,6 @@ public:
     // Handle images created from LEL expression
     virtual bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message);
 
-    virtual bool AddHistory(const CARTA::MomentRequest& moment_request) const;
-
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;
