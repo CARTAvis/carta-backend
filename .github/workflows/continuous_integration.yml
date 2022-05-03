@@ -1,4 +1,4 @@
-name: ci
+name: CI
 on: push
 jobs:
   format-check:
@@ -6,3 +6,30 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: ./scripts/style.py all check
+  code-coverage:
+    runs-on: ubuntu-latest
+    container: ajmasiaa/rhel8-jenkins-apr2022
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build backend
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_CXX_FLAGS='--coverage' -DCMAKE_C_FLAGS='--coverage'
+          make -j 4
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ./carta_backend_tests
+      - name: Generate code coverage report
+        shell: bash
+        run: |
+          mkdir coverage
+          gcovr -f src/ --xml-pretty -j 4 -o coverage/coverage.xml
+      - name: Upload report to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage
