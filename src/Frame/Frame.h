@@ -187,7 +187,7 @@ public:
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const casacore::ImageRegion& image_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
-        std::vector<CARTA::Point> control_points = std::vector<CARTA::Point>());
+        RegionState region_state = RegionState());
     void StopMomentCalc();
 
     // Image fitting

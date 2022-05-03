@@ -16,6 +16,7 @@
 
 #include "ImageGenerator.h"
 #include "ImageMoments.h"
+#include "Region/Region.h"
 
 #define FIRST_PROGRESS_AFTER_MILLI_SECS 5000
 #define PROGRESS_REPORT_INTERVAL 0.1
@@ -30,8 +31,7 @@ public:
     // Calculate moments
     bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
         const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
-        CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
-        const std::vector<CARTA::Point>& control_points);
+        CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results, const RegionState& region_state);
 
     // Stop moments calculation
     void StopCalculation();
@@ -56,7 +56,7 @@ private:
     casacore::String GetInputFileName();
     inline void SetMomentTypeMaps();
     void AddHistory(const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image,
-        const CARTA::MomentRequest& moment_request, const std::vector<CARTA::Point>& control_points);
+        const CARTA::MomentRequest& moment_request, const RegionState& region_state);
 
     // Image parameters
     casacore::String _filename;

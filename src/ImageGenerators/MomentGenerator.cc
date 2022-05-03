@@ -20,7 +20,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
 
 bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
     const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<GeneratedImage>& collapse_results, const std::vector<CARTA::Point>& control_points) {
+    std::vector<GeneratedImage>& collapse_results, const RegionState& region_state) {
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
     _progress_callback = progress_callback;
@@ -74,7 +74,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        AddHistory(moment_image, moment_request, control_points);
+                        AddHistory(moment_image, moment_request, region_state);
                         collapse_results.push_back(GeneratedImage(moment_file_id, out_file_name, moment_image));
                     }
                     _success = true;
@@ -292,22 +292,36 @@ inline void MomentGenerator::SetMomentTypeMaps() {
 }
 
 void MomentGenerator::AddHistory(const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image,
-    const CARTA::MomentRequest& moment_request, const std::vector<CARTA::Point>& control_points) {
+    const CARTA::MomentRequest& moment_request, const RegionState& region_state) {
     std::shared_ptr<casacore::CoordinateSystem> coord_sys =
         std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
 
     // Set input image info
     std::string input_image = fmt::format("Input image: {}\n", GetInputFileName());
 
-    // Set region control points
-    std::string region_points = "Region control points: ";
-    for (auto point : control_points) {
-        if (region_points.back() == ']') {
-            region_points += ", ";
-        }
-        region_points += fmt::format("[{:.4f}, {:.4f}]", point.x(), point.y());
+    // Set region info
+    auto control_points = region_state.control_points;
+    std::string region_info;
+    if (region_state.type == CARTA::RegionType::RECTANGLE) {
+        region_info = "Region: rotbox[";
+    } else if (region_state.type == CARTA::RegionType::ELLIPSE) {
+        region_info = "Region: ellipse[";
+    } else if (region_state.type == CARTA::RegionType::POLYGON) {
+        region_info = "Region: poly[";
     }
-    region_points += "\n";
+
+    for (auto point : control_points) {
+        if (region_info.back() == ']') {
+            region_info += ", ";
+        }
+        region_info += fmt::format("[{:.4f}pix, {:.4f}pix]", point.x(), point.y());
+    }
+
+    if (region_state.type == CARTA::RegionType::POLYGON) {
+        region_info += "]\n";
+    } else {
+        region_info += fmt::format(", {:.4f}deg]\n", region_state.rotation);
+    }
 
     // Set spectral range info
     int z_min = moment_request.spectral_range().min();
@@ -346,6 +360,6 @@ void MomentGenerator::AddHistory(const std::shared_ptr<casacore::ImageInterface<
     }
 
     casacore::LoggerHolder logger;
-    logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << region_points << spectral_range << mask << casacore::LogIO::POST;
+    logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << region_info << spectral_range << mask << casacore::LogIO::POST;
     moment_image->appendLog(logger);
 }

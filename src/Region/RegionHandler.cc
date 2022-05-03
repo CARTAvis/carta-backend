@@ -737,9 +737,8 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
     // Do calculations
     if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region, lc_region)) {
-        std::vector<CARTA::Point> control_points = _regions.at(region_id)->GetRegionState().control_points;
-        frame->CalculateMoments(
-            file_id, progress_callback, image_region, moment_request, moment_response, collapse_results, control_points);
+        auto region_state = _regions.at(region_id)->GetRegionState();
+        frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results, region_state);
     }
     return !collapse_results.empty();
 }
