@@ -55,14 +55,14 @@ private:
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetInputFileName();
     inline void SetMomentTypeMaps();
-    void AddHistory(const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image,
-        const CARTA::MomentRequest& moment_request, const RegionState& region_state);
+    void SetMomentImageLogger(const CARTA::MomentRequest& moment_request, const RegionState& region_state);
 
     // Image parameters
     casacore::String _filename;
     casacore::ImageInterface<float>* _image;
     int _spectral_axis;
     int _stokes_axis;
+    casacore::LoggerHolder _logger;
 
     // Moments settings
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;

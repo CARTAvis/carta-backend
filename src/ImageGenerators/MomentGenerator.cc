@@ -62,6 +62,8 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                     // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, file_base_name, remove_axis);
 
+                    SetMomentImageLogger(moment_request, region_state);
+
                     for (int i = 0; i < result_images.size(); ++i) {
                         // Set temp moment file name
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
@@ -74,7 +76,9 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        AddHistory(moment_image, moment_request, region_state);
+
+                        // Add moment requests info to an image header as the HISTORY key
+                        moment_image->appendLog(_logger);
                         collapse_results.push_back(GeneratedImage(moment_file_id, out_file_name, moment_image));
                     }
                     _success = true;
@@ -291,10 +295,9 @@ inline void MomentGenerator::SetMomentTypeMaps() {
     _moment_suffix_map[IM::MINIMUM_COORDINATE] = "minimum_coord";
 }
 
-void MomentGenerator::AddHistory(const std::shared_ptr<casacore::ImageInterface<casacore::Float>>& moment_image,
-    const CARTA::MomentRequest& moment_request, const RegionState& region_state) {
-    std::shared_ptr<casacore::CoordinateSystem> coord_sys =
-        std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+void MomentGenerator::SetMomentImageLogger(const CARTA::MomentRequest& moment_request, const RegionState& region_state) {
+    // Clear the logger
+    _logger.clear();
 
     // Set input image info
     std::string input_image = fmt::format("Input image: {}\n", GetInputFileName());
@@ -327,6 +330,10 @@ void MomentGenerator::AddHistory(const std::shared_ptr<casacore::ImageInterface<
     int z_min = moment_request.spectral_range().min();
     int z_max = moment_request.spectral_range().max();
     std::string spectral_range = fmt::format("Spectral range: [{}, {}](channel)", z_min, z_max);
+
+    std::shared_ptr<casacore::CoordinateSystem> coord_sys =
+        std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
+
     if (coord_sys && coord_sys->hasSpectralAxis()) {
         auto spectral_coord = coord_sys->spectralCoordinate();
         casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
@@ -359,7 +366,6 @@ void MomentGenerator::AddHistory(const std::shared_ptr<casacore::ImageInterface<
         mask += "none\n";
     }
 
-    casacore::LoggerHolder logger;
-    logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << region_info << spectral_range << mask << casacore::LogIO::POST;
-    moment_image->appendLog(logger);
+    // Set the new logger
+    _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << region_info << spectral_range << mask << casacore::LogIO::POST;
 }
