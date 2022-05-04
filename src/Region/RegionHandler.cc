@@ -595,12 +595,14 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     if (region_id == ALL_REGIONS) {
         _histogram_req.clear();
         _stats_req.clear();
-        std::unique_lock<std::mutex> ulock1(_spectral_mutex);
+
+        std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
-        ulock1.unlock();
-        std::unique_lock<std::mutex> ulock2(_spatial_mutex);
+        spectral_lock.unlock();
+
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         _spatial_req.clear();
-        ulock2.unlock();
+        spatial_lock.unlock();
 
         _histogram_cache.clear();
         _spectral_cache.clear();
@@ -1846,10 +1848,10 @@ bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& 
     return false;
 }
 
-float RegionHandler::GetLineRotation(const PointXy& endpoint0, const PointXy& endpoint1) {
+float RegionHandler::GetLineRotation(const PointXy& line_start, const PointXy& line_end) {
     // Not set on line region import, or line segment of polyline
     // Angle from x-axis in deg
-    return atan2(double(endpoint0.y - endpoint1.y), double(endpoint0.x - endpoint1.x)) * 180.0 / M_PI;
+    return atan2(double(line_start.y - line_end.y), double(line_start.x - line_end.x)) * 180.0 / M_PI;
 }
 
 bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index,
@@ -1866,12 +1868,12 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
 
     if (num_lines == 1) {
         // Get box centers along line; start at line center and add offsets
-        PointXy endpoint0(control_points[0].x(), control_points[0].y());
-        PointXy endpoint1(control_points[1].x(), control_points[1].y());
+        PointXy line_start(control_points[0].x(), control_points[0].y());
+        PointXy line_end(control_points[1].x(), control_points[1].y());
 
         // Number of pixels in line, to determine number of offsets
-        auto dx_pixels = endpoint1.x - endpoint0.x;
-        auto dy_pixels = endpoint1.y - endpoint0.y;
+        auto dx_pixels = line_end.x - line_start.x;
+        auto dy_pixels = line_end.y - line_start.y;
         size_t pixel_length = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
         int num_offsets = max(lround(float(pixel_length - 1) / 2.0), 0);
 
@@ -1879,26 +1881,26 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
         std::vector<PointXy> box_centers((num_offsets * 2) + 1);
 
         // Set center pixel at center index
-        auto center_x = (endpoint0.x + endpoint1.x) / 2;
-        auto center_y = (endpoint0.y + endpoint1.y) / 2;
+        auto center_x = (line_start.x + line_end.x) / 2;
+        auto center_y = (line_start.y + line_end.y) / 2;
         auto center_idx = num_offsets;
         PointXy point(center_x, center_y);
         box_centers[center_idx] = point;
 
         // Rotation angle of line, applied to get next pixel
-        float rotation = GetLineRotation(endpoint0, endpoint1);
+        float rotation = GetLineRotation(line_start, line_end);
         float cos_x = cos(rotation * M_PI / 180.0f);
         float sin_x = sin(rotation * M_PI / 180.0f);
 
         // Set box centers in pos and neg direction from line center out
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
-            // Positive offset toward endpoint0
+            // Positive offset toward line_start
             auto idx = center_idx + ioffset;
             auto x = center_x + (ioffset * cos_x);
             auto y = center_y + (ioffset * sin_x);
             box_centers[idx] = PointXy(x, y);
 
-            // Negative offset toward endpoint1
+            // Negative offset toward line_end
             idx = center_idx - ioffset;
             x = center_x - (ioffset * cos_x);
             y = center_y - (ioffset * sin_x);
@@ -1982,12 +1984,12 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
         int profile_row(0);
 
         for (size_t iline = 0; iline < num_lines; iline++) {
-            PointXy endpoint0(control_points[iline].x(), control_points[iline].y());
-            PointXy endpoint1(control_points[iline + 1].x(), control_points[iline + 1].y());
+            PointXy line_start(control_points[iline].x(), control_points[iline].y());
+            PointXy line_end(control_points[iline + 1].x(), control_points[iline + 1].y());
 
             // Number of regions = pixel length of line
-            auto dx_pixels = endpoint1.x - endpoint0.x;
-            auto dy_pixels = endpoint1.y - endpoint0.y;
+            auto dx_pixels = line_end.x - line_start.x;
+            auto dy_pixels = line_end.y - line_start.y;
             int num_regions = int(sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels))) + 1;
 
             int start(0);
@@ -1997,14 +1999,14 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             }
 
             // Rotation angle of line segment, applied to get next pixel
-            float rotation = GetLineRotation(endpoint0, endpoint1);
+            float rotation = GetLineRotation(line_start, line_end);
             float cos_x = cos(rotation * M_PI / 180.0f);
             float sin_x = sin(rotation * M_PI / 180.0f);
 
             std::vector<PointXy> box_centers;
             for (int iregion = start; iregion < num_regions; ++iregion) {
-                auto x = endpoint0.x - (iregion * cos_x);
-                auto y = endpoint0.y - (iregion * sin_x);
+                auto x = line_start.x - (iregion * cos_x);
+                auto y = line_start.y - (iregion * sin_x);
                 box_centers.push_back(PointXy(x, y));
             }
 
@@ -2069,7 +2071,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
                 trim_line = false;
             } else {
                 std::lock_guard<std::mutex> lock(_pix_mvdir_mutex);
-                trim_line = (GetPointSeparation(reference_csys, box_centers.back(), endpoint1) < (0.5 * increment));
+                trim_line = (GetPointSeparation(reference_csys, box_centers.back(), line_end) < (0.5 * increment));
             }
 
             // Check if region or frame is closing, or region changed
@@ -2126,11 +2128,11 @@ bool RegionHandler::CheckLinearOffsets(
     return true;
 }
 
-double RegionHandler::GetPointSeparation(std::shared_ptr<CoordinateSystem> coord_sys, const PointXy& point0, const PointXy& point1) {
+double RegionHandler::GetPointSeparation(std::shared_ptr<CoordinateSystem> coord_sys, const PointXy& point1, const PointXy& point2) {
     // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
     // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     double separation(0.0);
-    casacore::Vector<casacore::Double> v1({point0.x, point0.y}), v2({point1.x, point1.y});
+    casacore::Vector<casacore::Double> v1({point1.x, point1.y}), v2({point2.x, point2.y});
 
     try {
         casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(v1);
@@ -2174,11 +2176,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
     if (num_lines == 1) {
         // Use pixel center of line and keep it centered
-        PointXy endpoint0(control_points[0].x(), control_points[0].y());
-        PointXy endpoint1(control_points[1].x(), control_points[1].y());
+        PointXy line_start(control_points[0].x(), control_points[0].y());
+        PointXy line_end(control_points[1].x(), control_points[1].y());
 
         std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-        double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
+        double line_separation = GetPointSeparation(reference_csys, line_start, line_end);
         mvdir_lock.unlock();
 
         if (!line_separation) {
@@ -2199,8 +2201,8 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         // Start at center and add points in each offset direction
         std::vector<std::vector<double>> line_points(num_regions + 1); // points are start/end of each box
         std::vector<double> line_center;
-        line_center.push_back((endpoint0.x + endpoint1.x) / 2);
-        line_center.push_back((endpoint0.y + endpoint1.y) / 2);
+        line_center.push_back((line_start.x + line_end.x) / 2);
+        line_center.push_back((line_start.y + line_end.y) / 2);
         line_points[num_offsets] = line_center;
 
         // Copy center for offsets
@@ -2220,7 +2222,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             if (!pos_box_start.empty()) {
                 PointXy pos_start_point(pos_box_start[0], pos_box_start[1]);
                 std::vector<double> pos_box_end =
-                    FindPointAtTargetSeparation(reference_csys, pos_start_point, endpoint0, increment, tolerance);
+                    FindPointAtTargetSeparation(reference_csys, pos_start_point, line_start, increment, tolerance);
                 line_points[num_offsets + ioffset] = pos_box_end;
                 pos_box_start = pos_box_end; // end of this box is start of next box
             }
@@ -2229,7 +2231,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             if (!neg_box_start.empty()) {
                 PointXy neg_start_point(neg_box_start[0], neg_box_start[1]);
                 std::vector<double> neg_box_end =
-                    FindPointAtTargetSeparation(reference_csys, neg_start_point, endpoint1, increment, tolerance);
+                    FindPointAtTargetSeparation(reference_csys, neg_start_point, line_end, increment, tolerance);
                 line_points[num_offsets - ioffset] = neg_box_end;
                 neg_box_start = neg_box_end; // end of this box is start of next box
             }
@@ -2241,7 +2243,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         profiles.resize(casacore::IPosition(2, num_regions, profile_depth));
 
         int start_idx, end_idx;                                 // for start and end of overlapping box regions
-        float rotation = GetLineRotation(endpoint0, endpoint1); // for temporary RegionState
+        float rotation = GetLineRotation(line_start, line_end); // for temporary RegionState
 
         for (int iregion = 0; iregion < num_regions; ++iregion) {
             // Check if user cancelled
@@ -2315,12 +2317,12 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 return false;
             }
 
-            PointXy endpoint0(control_points[iline].x(), control_points[iline].y());
-            PointXy endpoint1(control_points[iline + 1].x(), control_points[iline + 1].y());
+            PointXy line_start(control_points[iline].x(), control_points[iline].y());
+            PointXy line_end(control_points[iline + 1].x(), control_points[iline + 1].y());
 
             // Angular length of line (arcsec)
             std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-            double line_separation = GetPointSeparation(reference_csys, endpoint0, endpoint1);
+            double line_separation = GetPointSeparation(reference_csys, line_start, line_end);
 
             if (!line_separation) {
                 // endpoint(s) out of image and coordinate system
@@ -2337,15 +2339,14 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
             // Use vector instead of PointXy for "no point" when reach end of line
             std::vector<std::vector<double>> line_points;
-            std::vector<double> line_point = {endpoint0.x, endpoint0.y};
+            std::vector<double> line_point = {line_start.x, line_start.y};
             line_points.push_back(line_point);
 
             for (int iregion = 1; iregion < num_regions + 1; ++iregion) {
                 // Find next point (next box end) along line at target separation
                 std::vector<double> last_point = line_points.back();
                 PointXy last_point_xy(last_point[0], last_point[1]);
-                std::vector<double> next_point =
-                    FindPointAtTargetSeparation(reference_csys, last_point_xy, endpoint1, increment, tolerance);
+                std::vector<double> next_point = FindPointAtTargetSeparation(reference_csys, last_point_xy, line_end, increment, tolerance);
 
                 if (next_point.empty()) {
                     break;
@@ -2357,7 +2358,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
             num_regions = line_points.size() - 1;
             int start_idx, end_idx;                                 // for start and end of overlapping box regions
-            float rotation = GetLineRotation(endpoint0, endpoint1); // for temporary box RegionState
+            float rotation = GetLineRotation(line_start, line_end); // for temporary box RegionState
 
             for (int iregion = 0; iregion < num_regions; ++iregion) {
                 // Check if requirements removed
@@ -2412,7 +2413,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
             } else {
                 PointXy last_point_xy(line_points.back()[0], line_points.back()[1]);
                 mvdir_lock.lock();
-                trim_line = (GetPointSeparation(reference_csys, last_point_xy, endpoint1) < (0.5 * increment));
+                trim_line = (GetPointSeparation(reference_csys, last_point_xy, line_end) < (0.5 * increment));
                 mvdir_lock.unlock();
             }
         } // Done with lines
