@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added image fitter for multiple 2D Gaussian component fitting ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
 * Added spatial profiles for line/polyline regions ([#796](https://github.com/CARTAvis/carta-backend/issues/796)).
 
+### Fixed
+* Fixed CRTF export bug for labelpos ([#1012](https://github.com/CARTAvis/carta-backend/issues/1012)).
+
 ## [3.0.0-beta.2]
 
 ### Changed
