@@ -163,7 +163,7 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
                         : FLOAT_NAN);
         };
 
-        auto calc_fpi = [&](float i, float pi) { return (is_valid(i, pi) ? 100.0 * (pi / i) : FLOAT_NAN); };
+        auto calc_fpi = [&](float i, float pi) { return (is_valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN); };
 
         auto calc_pa = [&](float q, float u) {
             return (is_valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
