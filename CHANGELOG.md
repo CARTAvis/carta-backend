@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Removed gRPC service and moved scripting interface to HTTP server ([#1022](https://github.com/CARTAvis/carta-backend/pull/1022)).
 * Added more fine-grained commandline flags to enable and disable functions of the HTTP server.
+* Optimised performance of image data cache ([#967](https://github.com/CARTAvis/carta-backend/issues/967)).
 * Added exit on timeout flag to Linux desktop launcher ([#989](https://github.com/CARTAvis/carta-backend/issues/989)).
 * Separated stdout and stderr logging ([#869](https://github.com/CARTAvis/carta-backend/issues/869)).
 
