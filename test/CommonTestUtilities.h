@@ -15,6 +15,8 @@
 #include <spdlog/fmt/fmt.h>
 
 #include "App.h"
+#include "Util/Casacore.h"
+#include "Util/Message.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -81,7 +83,18 @@ public:
     void TearDown() override;
 };
 
+bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0);
+void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::ImageInterface<float>> image, int stokes,
+    AxisRange z_range = AxisRange(ALL_Z), AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y));
+template <typename T>
+std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile);
+std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile);
 void CmpValues(float data1, float data2, float abs_err = 0);
 void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);
+void CmpSpatialProfiles(
+    const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles);
+bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2);
+
+#include "CommonTestUtilities.tcc"
 
 #endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_

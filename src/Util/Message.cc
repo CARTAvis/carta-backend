@@ -305,6 +305,13 @@ CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> 
     return resume_session;
 }
 
+CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std::string& coordinate) {
+    CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
+    spectral_config.set_coordinate(coordinate);
+    spectral_config.add_stats_types(CARTA::StatsType::Mean);
+    return spectral_config;
+}
+
 CARTA::FileListRequest Message::FileListRequest(const std::string& directory) {
     CARTA::FileListRequest file_list_request;
     file_list_request.set_directory(directory);

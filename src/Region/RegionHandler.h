@@ -118,8 +118,9 @@ private:
 
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
-    std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(int region_id, int file_id, bool report_error = true);
-    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
+    std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
+        int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
         std::shared_ptr<casacore::LCRegion> region_2D);
 
     // Data stream helpers
@@ -160,6 +161,23 @@ private:
     casacore::Vector<float> GetTemporaryRegionProfile(int region_idx, int file_id, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, int stokes_index, double& num_pixels);
     casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
+
+    // Get computed stokes profiles for a region
+    using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
+    void GetStokesPtotal(
+        const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal);
+    void GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
+        const ProfilesMap& profiles_v, ProfilesMap& profiles_pftotal);
+    void GetStokesPlinear(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_plinear);
+    void GetStokesPflinear(
+        const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear);
+    void GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle);
+    void CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
+        const std::function<double(double, double)>& func);
+    void CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func);
+    bool IsValid(double a, double b);
+    bool GetComputedStokesProfiles(
+        ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

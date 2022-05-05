@@ -1264,12 +1264,12 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             _region_handler->CalculateMoments(
                 file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
         } else {
-            casacore::ImageRegion image_region;
+            StokesRegion stokes_region;
             int z_min(moment_request.spectral_range().min());
             int z_max(moment_request.spectral_range().max());
 
-            if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region)) {
-                frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
+            if (frame->GetImageRegion(file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), stokes_region)) {
+                frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results);
             }
         }
 
@@ -1974,11 +1974,15 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     always_wait = true;
     _animation_id++;
     CARTA::StartAnimationAck ack_message;
+    std::vector<int> stokes_indices;
+    if (!msg.stokes_indices().empty()) {
+        stokes_indices = {msg.stokes_indices().begin(), msg.stokes_indices().end()};
+    }
 
     if (_frames.count(file_id)) {
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
         _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
-            msg.matched_frames(), frame_rate, looping, reverse_at_end, always_wait));
+            msg.matched_frames(), stokes_indices, frame_rate, looping, reverse_at_end, always_wait));
         ack_message.set_success(true);
         ack_message.set_animation_id(_animation_id);
         ack_message.set_message("Starting animation");
@@ -2001,7 +2005,7 @@ void Session::ExecuteAnimationFrameInner() {
         try {
             std::string err_message;
             auto active_frame_z = curr_frame.channel();
-            auto active_frame_stokes = curr_frame.stokes();
+            auto active_frame_stokes = _animation_object->_stokes_indices[curr_frame.stokes()];
 
             if ((_animation_object->_context).is_group_execution_cancelled()) {
                 return;

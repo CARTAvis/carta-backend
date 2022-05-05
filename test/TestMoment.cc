@@ -18,28 +18,6 @@ using namespace carta;
 
 class MomentTest : public ::testing::Test, public FileFinder {
 public:
-    static bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num = 0) {
-        bool image_ok(false);
-        try {
-            casacore::ImageOpener::ImageTypes image_types = casacore::ImageOpener::imageType(filename);
-            switch (image_types) {
-                case casacore::ImageOpener::AIPSPP:
-                    image = std::make_shared<casacore::PagedImage<float>>(filename);
-                    image_ok = true;
-                    break;
-                case casacore::ImageOpener::FITS:
-                    image = std::make_shared<casacore::FITSImage>(filename, 0, hdu_num);
-                    image_ok = true;
-                    break;
-                default:
-                    break;
-            }
-        } catch (const AipsError& x) {
-            spdlog::error("Error on opening the file: {}", x.getMesg());
-        }
-        return image_ok;
-    }
-
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
         // Get spectral and stokes indices
         casacore::CoordinateSystem coord_sys = image->coordinates();
