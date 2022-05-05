@@ -18,10 +18,29 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "ImageData/FileInfo.h"
+#include "Util/Casacore.h"
+#include "Util/Image.h"
 
 namespace carta {
 
 class Frame;
+
+struct StokesSlicer {
+    StokesSource stokes_source;
+    casacore::Slicer slicer;
+
+    StokesSlicer() {}
+    StokesSlicer(StokesSource stokes_source_, casacore::Slicer slicer_) : stokes_source(stokes_source_), slicer(slicer_) {}
+};
+
+struct StokesRegion {
+    StokesSource stokes_source;
+    casacore::ImageRegion image_region;
+
+    StokesRegion() {}
+    StokesRegion(StokesSource stokes_source_, casacore::ImageRegion image_region_)
+        : stokes_source(stokes_source_), image_region(image_region_) {}
+};
 
 class FileLoader {
 public:
@@ -50,21 +69,24 @@ public:
     casacore::DataType GetDataType();
     bool IsComplexDataType();
 
+    // Return the opened casacore image or computed stokes image
+    ImageRef GetStokesImage(const StokesSource& stokes_source);
+
     // read beam subtable
     bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
-    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem();
+    std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
     bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
     std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
+    bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
 
     // SubImage
-    bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
@@ -116,6 +138,10 @@ protected:
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
+    // Computed stokes image
+    std::shared_ptr<casacore::ImageInterface<float>> _computed_stokes_image;
+    StokesSource _stokes_source;
+
     // Save image properties
     casacore::IPosition _image_shape;
     size_t _num_dims, _image_plane_size;
@@ -129,6 +155,7 @@ protected:
     // Storage for z-plane and cube statistics
     std::vector<std::vector<FileInfo::ImageStats>> _z_stats;
     std::vector<FileInfo::ImageStats> _cube_stats;
+    FileInfo::ImageStats _empty_stats;
 
     // Storage for the stokes type vs. stokes index
     std::unordered_map<CARTA::PolarizationType, int> _stokes_indices;

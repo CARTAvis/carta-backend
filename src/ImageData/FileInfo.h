@@ -26,7 +26,7 @@ struct ImageStats {
     std::vector<float> percentile_ranks;
     std::vector<int> histogram_bins;
 
-    bool valid;
+    bool valid = false;
     // Remove this check when we drop support for the old schema.
     bool full;
 };

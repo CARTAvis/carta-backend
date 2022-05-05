@@ -662,7 +662,8 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
-std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(int region_id, int file_id, bool report_error) {
+std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
+    int region_id, int file_id, const StokesSource& stokes_source, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -673,10 +674,10 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(int region_
         return nullptr;
     }
 
-    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), report_error);
+    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id), stokes_source, report_error);
 }
 
-bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, casacore::ImageRegion& region,
+bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
     std::shared_ptr<casacore::LCRegion> region_2D) {
     // Returns 3D image region for region applied to image and extended by z-range and stokes index
     if (!RegionFileIdsValid(region_id, file_id)) {
@@ -684,18 +685,20 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
     }
 
     try {
+        StokesSource stokes_source(stokes, z_range);
+        stokes_region.stokes_source = stokes_source;
         auto applied_region = region_2D;
         if (!applied_region) {
-            applied_region = ApplyRegionToFile(region_id, file_id);
+            applied_region = ApplyRegionToFile(region_id, file_id, stokes_source);
         }
         if (!applied_region) {
             return false;
         }
 
-        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape(stokes_source));
 
         // Create LCBox with z range and stokes using a slicer
-        casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes);
+        casacore::Slicer z_stokes_slicer = _frames.at(file_id)->GetImageSlicer(z_range, stokes).slicer;
 
         // Set returned region
         // Combine applied region with z/stokes box
@@ -703,7 +706,7 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
             // Intersection combines applied_region xy limits and box z/stokes limits
             casacore::LCBox z_stokes_box(z_stokes_slicer, image_shape);
             casacore::LCIntersection final_region(*applied_region, z_stokes_box);
-            region = casacore::ImageRegion(final_region);
+            stokes_region.image_region = casacore::ImageRegion(final_region);
         } else {
             // Extension extends applied_region in xy axes by z/stokes axes only
             // Remove xy axes from z/stokes box
@@ -714,7 +717,7 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 
             casacore::IPosition extend_axes = casacore::IPosition::makeAxisPath(image_shape.size()).removeAxes(remove_xy);
             casacore::LCExtension final_region(*applied_region, extend_axes, z_stokes_box);
-            region = casacore::ImageRegion(final_region);
+            stokes_region.image_region = casacore::ImageRegion(final_region);
         }
 
         return true;
@@ -730,14 +733,14 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
 bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<GeneratedImage>& collapse_results) {
-    casacore::ImageRegion image_region;
+    StokesRegion stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
     int z_min(moment_request.spectral_range().min());
     int z_max(moment_request.spectral_range().max());
 
     // Do calculations
-    if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), image_region, lc_region)) {
-        frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
+    if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), stokes_region, lc_region)) {
+        frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results);
     }
     return !collapse_results.empty();
 }
@@ -918,7 +921,7 @@ bool RegionHandler::GetRegionHistogramData(
     bool have_basic_stats(false);
 
     // Reuse the image region for each histogram
-    casacore::ImageRegion image_region;
+    StokesRegion stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
 
     // Reuse data with respect to stokes and stats for each histogram; results depend on num_bins
@@ -945,7 +948,7 @@ bool RegionHandler::GetRegionHistogramData(
         histogram_message.set_stokes(stokes);
 
         // Get image region
-        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, image_region, lc_region)) {
+        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
@@ -956,7 +959,7 @@ bool RegionHandler::GetRegionHistogramData(
         // number of bins may be set or calculated
         int num_bins(hist_config.num_bins);
         if (num_bins == AUTO_BIN_SIZE) {
-            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(image_region);
+            casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(stokes_region);
             num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
         }
 
@@ -982,7 +985,7 @@ bool RegionHandler::GetRegionHistogramData(
         // Calculate stats and/or histograms, not in cache
         // Get data in region
         if (!data.count(stokes)) {
-            if (!_frames.at(file_id)->GetRegionData(image_region, data[stokes])) {
+            if (!_frames.at(file_id)->GetRegionData(stokes_region, data[stokes])) {
                 spdlog::error("Failed to get data in the region!");
                 return false;
             }
@@ -1140,7 +1143,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get 2D region to check if inside image
-    auto lc_region = ApplyRegionToFile(region_id, file_id, report_error);
+    auto lc_region = ApplyRegionToFile(region_id, file_id, StokesSource(), report_error); // Apply region to the original image coordinate
     if (!lc_region) {
         progress = 1.0;
         partial_results_callback(results, progress); // region outside image, send NaNs
@@ -1158,16 +1161,36 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             CARTA::Point point;
             point.set_x(origin(0));
             point.set_y(origin(1));
-            std::vector<float> profile;
-            bool ok = _frames.at(file_id)->GetLoaderPointSpectralData(profile, stokes_index, point);
-            if (ok) {
+
+            auto get_stokes_profiles_data = [&](ProfilesMap& tmp_results, int tmp_stokes) {
+                std::vector<float> tmp_profile;
+                if (!_frames.at(file_id)->GetLoaderPointSpectralData(tmp_profile, tmp_stokes, point)) {
+                    return false;
+                }
                 // Set results; there is only one required stat for point
-                std::vector<double> data(profile.begin(), profile.end());
-                results[required_stats[0]] = data;
-                progress = 1.0;
-                partial_results_callback(results, progress);
+                std::vector<double> tmp_data(tmp_profile.begin(), tmp_profile.end());
+                tmp_results[required_stats[0]] = tmp_data;
+                return true;
+            };
+
+            auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
+                int tmp_stokes;
+                return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
+                        get_stokes_profiles_data(tmp_results, tmp_stokes));
+            };
+
+            if (IsComputedStokes(stokes_index)) { // For computed stokes
+                if (!GetComputedStokesProfiles(results, stokes_index, get_profiles_data)) {
+                    return false;
+                }
+            } else { // For regular stokes I, Q, U, or V
+                if (!get_stokes_profiles_data(results, stokes_index)) {
+                    return false;
+                }
             }
-            return ok;
+
+            partial_results_callback(results, 1.0);
+            return true;
         }
 
         // Get 2D origin and 2D mask for Hdf5Loader
@@ -1200,29 +1223,41 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
 
                 // Get partial profile
-                std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
-                if (_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
-                    // get the time elapse for this step
-                    auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
+                auto get_profiles_data = [&](ProfilesMap& tmp_results, std::string tmp_coordinate) {
+                    int tmp_stokes;
+                    return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
+                            _frames.at(file_id)->GetLoaderSpectralData(region_id, tmp_stokes, mask, xy_origin, tmp_results, progress));
+                };
 
-                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
-                        // Copy partial profile to results
-                        for (const auto& profile : partial_profiles) {
-                            auto stats_type = profile.first;
-                            if (results.count(stats_type)) {
-                                results[stats_type] = profile.second;
-                            }
-                        }
-
-                        // restart timer
-                        t_latest = t_end;
-
-                        // send partial result
-                        partial_results_callback(results, progress);
+                ProfilesMap partial_profiles;
+                if (IsComputedStokes(stokes_index)) { // For computed stokes
+                    if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+                        return false;
                     }
-                } else {
-                    return false;
+                } else { // For regular stokes I, Q, U, or V
+                    if (!_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
+                        return false;
+                    }
+                }
+
+                // get the time elapse for this step
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
+
+                if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= 1.0)) {
+                    // Copy partial profile to results
+                    for (const auto& profile : partial_profiles) {
+                        auto stats_type = profile.first;
+                        if (results.count(stats_type)) {
+                            results[stats_type] = profile.second;
+                        }
+                    }
+
+                    // restart timer
+                    t_latest = t_end;
+
+                    // send partial result
+                    partial_results_callback(results, progress);
                 }
             }
 
@@ -1246,6 +1281,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
+    if (IsComputedStokes(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
+        lc_region = nullptr;
+    }
+
     // Get per-z stats data for spectral profiles
     while (progress < 1.0) {
         // start the timer
@@ -1256,16 +1295,29 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
         // Get 3D region for z range and stokes_index
         AxisRange z_range(start_z, end_z);
-        casacore::ImageRegion image_region;
-        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes_index, image_region, lc_region)) {
-            return false;
-        }
 
-        // Get per-z stats data for region for all stats (for cache)
-        bool per_z(true);
-        std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
-        if (!_frames.at(file_id)->GetRegionStats(image_region, _spectral_stats, per_z, partial_profiles)) {
-            return false;
+        auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes) {
+            StokesRegion stokes_region;
+            bool per_z(true); // Get per-z stats data for region for all stats (for cache)
+            return (ApplyRegionToFile(region_id, file_id, z_range, tmp_stokes, stokes_region, lc_region) &&
+                    _frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles));
+        };
+
+        auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
+            int tmp_stokes;
+            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
+                    get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes));
+        };
+
+        ProfilesMap partial_profiles;
+        if (IsComputedStokes(stokes_index)) { // For computed stokes
+            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+                return false;
+            }
+        } else { // For regular stokes I, Q, U, or V
+            if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
+                return false;
+            }
         }
 
         // Copy partial profile to results and cache_results (all stats)
@@ -1429,9 +1481,9 @@ bool RegionHandler::GetRegionStatsData(
 
     // Get region
     AxisRange z_range(z);
-    casacore::ImageRegion image_region;
+    StokesRegion stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, image_region, lc_region)) {
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
         // region outside image: NaN results
         std::map<CARTA::StatsType, double> stats_results;
         for (const auto& carta_stat : required_stats) {
@@ -1450,7 +1502,7 @@ bool RegionHandler::GetRegionStatsData(
     // calculate stats
     bool per_z(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
-    if (_frames.at(file_id)->GetRegionStats(image_region, required_stats, per_z, stats_map)) {
+    if (_frames.at(file_id)->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_results;
         for (auto& value : stats_map) {
@@ -2152,6 +2204,114 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(
     RemoveRegion(region_id);
 
     return profile;
+}
+
+void RegionHandler::GetStokesPtotal(
+    const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal) {
+    auto calc_step1 = [&](double q, double u) { return (std::pow(q, 2) + std::pow(u, 2)); };
+    auto calc_step2 = [&](double v, double step1) { return std::sqrt(step1 + std::pow(v, 2)); };
+
+    CombineStokes(profiles_ptotal, profiles_q, profiles_u, calc_step1);
+    CombineStokes(profiles_ptotal, profiles_v, calc_step2);
+}
+
+void RegionHandler::GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
+    const ProfilesMap& profiles_v, ProfilesMap& profiles_pftotal) {
+    auto calc_step1 = [&](double q, double u) { return (std::pow(q, 2) + std::pow(u, 2)); };
+    auto calc_step2 = [&](double v, double step1) { return std::sqrt(step1 + std::pow(v, 2)); };
+    auto calc_step3 = [&](double i, double step2) { return 100.0 * (step2 / i); };
+
+    CombineStokes(profiles_pftotal, profiles_q, profiles_u, calc_step1);
+    CombineStokes(profiles_pftotal, profiles_v, calc_step2);
+    CombineStokes(profiles_pftotal, profiles_i, calc_step3);
+}
+
+void RegionHandler::GetStokesPlinear(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_plinear) {
+    auto calc_pi = [&](double q, double u) { return std::sqrt(std::pow(q, 2) + std::pow(u, 2)); };
+
+    CombineStokes(profiles_plinear, profiles_q, profiles_u, calc_pi);
+}
+
+void RegionHandler::GetStokesPflinear(
+    const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pflinear) {
+    auto calc_pi = [&](double q, double u) { return std::sqrt(std::pow(q, 2) + std::pow(u, 2)); };
+    auto calc_fpi = [&](double i, double pi) { return (IsValid(i, pi) ? 100.0 * (pi / i) : std::numeric_limits<double>::quiet_NaN()); };
+
+    CombineStokes(profiles_pflinear, profiles_q, profiles_u, calc_pi);
+    CombineStokes(profiles_pflinear, profiles_i, calc_fpi);
+}
+
+void RegionHandler::GetStokesPangle(const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, ProfilesMap& profiles_pangle) {
+    auto calc_pa = [&](double q, double u) { return (180.0 / casacore::C::pi) * atan2(u, q) / 2; };
+
+    CombineStokes(profiles_pangle, profiles_q, profiles_u, calc_pa);
+}
+
+void RegionHandler::CombineStokes(ProfilesMap& profiles_out, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,
+    const std::function<double(double, double)>& func) {
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+
+    for (auto stats_q : profiles_q) {
+        for (auto stats_u : profiles_u) {
+            if (stats_q.first == stats_u.first) {
+                std::vector<double>& results = profiles_out[stats_q.first];
+                results.resize(stats_q.second.size());
+                std::transform(stats_q.second.begin(), stats_q.second.end(), stats_u.second.begin(), results.begin(), func_if_valid);
+            }
+        }
+    }
+}
+
+void RegionHandler::CombineStokes(
+    ProfilesMap& profiles_out, const ProfilesMap& profiles_other, const std::function<double(double, double)>& func) {
+    auto func_if_valid = [&](double a, double b) { return (IsValid(a, b) ? func(a, b) : std::numeric_limits<double>::quiet_NaN()); };
+
+    for (auto stats_out : profiles_out) {
+        for (auto stats_other : profiles_other) {
+            if (stats_out.first == stats_other.first) {
+                std::vector<double>& results = profiles_out[stats_out.first];
+                std::transform(
+                    stats_other.second.begin(), stats_other.second.end(), stats_out.second.begin(), results.begin(), func_if_valid);
+            }
+        }
+    }
+}
+
+bool RegionHandler::IsValid(double a, double b) {
+    return (!std::isnan(a) && !std::isnan(b));
+}
+
+bool RegionHandler::GetComputedStokesProfiles(
+    ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data) {
+    ProfilesMap profile_i, profile_q, profile_u, profile_v;
+    if (stokes == COMPUTE_STOKES_PTOTAL) {
+        if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") || !get_profiles_data(profile_v, "Vz")) {
+            return false;
+        }
+        GetStokesPtotal(profile_q, profile_u, profile_v, profiles);
+    } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
+        if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz") ||
+            !get_profiles_data(profile_v, "Vz")) {
+            return false;
+        }
+        GetStokesPftotal(profile_i, profile_q, profile_u, profile_v, profiles);
+    } else if (stokes == COMPUTE_STOKES_PLINEAR) {
+        if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+            return false;
+        }
+        GetStokesPlinear(profile_q, profile_u, profiles);
+    } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
+        if (!get_profiles_data(profile_i, "Iz") || !get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+            return false;
+        }
+        GetStokesPflinear(profile_i, profile_q, profile_u, profiles);
+    } else if (stokes == COMPUTE_STOKES_PANGLE) {
+        if (!get_profiles_data(profile_q, "Qz") || !get_profiles_data(profile_u, "Uz")) {
+            return false;
+        }
+        GetStokesPangle(profile_q, profile_u, profiles);
+    }
+    return true;
 }
 
 } // namespace carta

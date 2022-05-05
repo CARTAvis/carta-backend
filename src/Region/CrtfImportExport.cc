@@ -1207,7 +1207,7 @@ void CrtfImportExport::ExportStyleParameters(const RegionStyle& region_style, st
     if (!region_style.name.empty()) {
         oss << ", label=\"" << region_style.name << "\", ";
         oss << "labelcolor=green, ";
-        oss << "labelposition=" << casa::AnnotationBase::DEFAULT_LABELPOS;
+        oss << "labelpos=" << casa::AnnotationBase::DEFAULT_LABELPOS;
     }
 
     region_line.append(oss.str());
