@@ -21,3 +21,11 @@ CARTA::PolarizationType GetStokesType(int stokes_value) {
     }
     return stokes_type;
 }
+
+bool IsComputedStokes(int stokes) {
+    return ((stokes >= COMPUTE_STOKES_PTOTAL) && (stokes <= COMPUTE_STOKES_PANGLE));
+}
+
+bool IsComputedStokes(const std::string& stokes) {
+    return IsComputedStokes(StokesValues[StokesStringTypes[stokes]]);
+}

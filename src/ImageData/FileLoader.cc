@@ -22,6 +22,7 @@
 #include "Hdf5Loader.h"
 #include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
+#include "PolarizationCalculator.h"
 
 using namespace carta;
 
@@ -156,8 +157,16 @@ casacore::IPosition FileLoader::GetShape() {
     return _image_shape;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem() {
-    return _coord_sys;
+std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(const StokesSource& stokes_source) {
+    if (stokes_source.IsOriginalImage()) {
+        return _coord_sys;
+    } else {
+        auto image = GetStokesImage(stokes_source);
+        if (image) {
+            return std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(image->coordinates().clone()));
+        }
+    }
+    return std::make_shared<casacore::CoordinateSystem>();
 }
 
 bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
@@ -313,9 +322,11 @@ std::vector<int> FileLoader::GetRenderAxes() {
     return axes;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
+bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
+    StokesSource stokes_source = stokes_slicer.stokes_source;
+    casacore::Slicer slicer = stokes_slicer.slicer;
     try {
-        auto image = GetImage();
+        auto image = GetStokesImage(stokes_source); // Get the opened image or computed stokes image from the original one
 
         if (!image) {
             return false;
@@ -381,24 +392,32 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
     }
 }
 
-bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
-    // Get SubImage from Slicer
-    auto image = GetImage();
+bool FileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_slicer.stokes_source;
+    casacore::Slicer slicer = stokes_slicer.slicer;
+
+    // Get the opened casacore image or computed stokes image
+    auto image = GetStokesImage(stokes_source);
     if (!image) {
         return false;
     }
 
+    // Get SubImage from Slicer
     sub_image = casacore::SubImage<float>(*(image.get()), slicer);
     return true;
 }
 
-bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
-    // Get SubImage from image region
-    auto image = GetImage();
+bool FileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
+    StokesSource stokes_source = stokes_region.stokes_source;
+    casacore::LattRegionHolder region = stokes_region.image_region;
+
+    // Get the opened casacore image or computed stokes image
+    auto image = GetStokesImage(stokes_source);
     if (!image) {
         return false;
     }
 
+    // Get SubImage from image region
     sub_image = casacore::SubImage<float>(*(image.get()), region);
     return true;
 }
@@ -812,7 +831,10 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 }
 
 FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
-    return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
+    if (!IsComputedStokes(current_stokes)) { // Note: loader cache does not support the computed stokes
+        return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
+    }
+    return _empty_stats;
 }
 
 bool FileLoader::GetCursorSpectralData(
@@ -879,6 +901,35 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
         return true;
     }
     return false;
+}
+
+typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
+    if (stokes_source.IsOriginalImage()) {
+        return GetImage();
+    }
+
+    if (_stokes_source != stokes_source) {
+        // compute new stokes image with respect to the channel range
+        carta::PolarizationCalculator polarization_calculator(
+            GetImage(), AxisRange(stokes_source.z_range), AxisRange(stokes_source.x_range), AxisRange(stokes_source.y_range));
+
+        if (stokes_source.stokes == COMPUTE_STOKES_PTOTAL) {
+            _computed_stokes_image = polarization_calculator.ComputeTotalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PFTOTAL) {
+            _computed_stokes_image = polarization_calculator.ComputeTotalFractionalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PLINEAR) {
+            _computed_stokes_image = polarization_calculator.ComputePolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PFLINEAR) {
+            _computed_stokes_image = polarization_calculator.ComputeFractionalPolarizedIntensity();
+        } else if (stokes_source.stokes == COMPUTE_STOKES_PANGLE) {
+            _computed_stokes_image = polarization_calculator.ComputePolarizedAngle();
+        } else {
+            spdlog::error("Unknown computed stokes index {}", stokes_source.stokes);
+            _computed_stokes_image = nullptr;
+        }
+        _stokes_source = stokes_source;
+    }
+    return _computed_stokes_image;
 }
 
 void FileLoader::SetStokesCrval(float stokes_crval) {
