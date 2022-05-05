@@ -20,7 +20,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, std::shared_p
 
 bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
     const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<GeneratedImage>& collapse_results, const RegionState& region_state) {
+    std::vector<GeneratedImage>& collapse_results, const RegionState& region_state, const std::string& stokes) {
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
     _progress_callback = progress_callback;
@@ -62,7 +62,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
                     // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, file_base_name, remove_axis);
 
-                    SetMomentImageLogger(moment_request, region_state);
+                    SetMomentImageLogger(moment_request, region_state, stokes);
 
                     for (int i = 0; i < result_images.size(); ++i) {
                         // Set temp moment file name
@@ -295,7 +295,8 @@ inline void MomentGenerator::SetMomentTypeMaps() {
     _moment_suffix_map[IM::MINIMUM_COORDINATE] = "minimum_coord";
 }
 
-void MomentGenerator::SetMomentImageLogger(const CARTA::MomentRequest& moment_request, const RegionState& region_state) {
+void MomentGenerator::SetMomentImageLogger(
+    const CARTA::MomentRequest& moment_request, const RegionState& region_state, const std::string& stokes) {
     // Clear the logger
     _logger.clear();
 
@@ -357,15 +358,19 @@ void MomentGenerator::SetMomentImageLogger(const CARTA::MomentRequest& moment_re
     // Set mask info
     float pixel_min = moment_request.pixel_range().min();
     float pixel_max = moment_request.pixel_range().max();
-    std::string mask = "Mask: ";
+    std::string mask_info("Mask: ");
     if (moment_request.mask() == CARTA::Include) {
-        mask += fmt::format("include pixels [{:.4f}, {:.4f}]({})\n", pixel_min, pixel_max, _image->units().getName());
+        mask_info += fmt::format("include pixels [{:.4f}, {:.4f}]({})\n", pixel_min, pixel_max, _image->units().getName());
     } else if (moment_request.mask() == CARTA::Exclude) {
-        mask += fmt::format("exclude pixels [{:.4f}, {:.4f}]({})\n", pixel_min, pixel_max, _image->units().getName());
+        mask_info += fmt::format("exclude pixels [{:.4f}, {:.4f}]({})\n", pixel_min, pixel_max, _image->units().getName());
     } else {
-        mask += "none\n";
+        mask_info += "none\n";
     }
 
+    // Set stokes
+    std::string stokes_info = fmt::format("Stokes: {}\n", stokes);
+
     // Set the new logger
-    _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n" << input_image << region_info << spectral_range << mask << casacore::LogIO::POST;
+    _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n"
+                    << input_image << region_info << spectral_range << stokes_info << mask_info << casacore::LogIO::POST;
 }

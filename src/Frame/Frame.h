@@ -199,6 +199,7 @@ public:
         std::shared_ptr<Region> image_region);
 
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
+    std::string GetStokesType(int stokes_index);
 
     std::shared_mutex& GetActiveTaskMutex();
 

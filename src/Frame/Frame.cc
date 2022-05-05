@@ -1773,7 +1773,7 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _z_axis, _stokes_axis, progress_callback, moment_request,
-            moment_response, collapse_results, region_state);
+            moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
         ulock.unlock();
     }
 
@@ -2219,6 +2219,16 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
         stokes_index = CurrentStokes(); // current stokes
     }
     return true;
+}
+
+std::string Frame::GetStokesType(int stokes_index) {
+    for (auto stokes_type : StokesStringTypes) {
+        int tmp_stokes_index;
+        if (_loader->GetStokesTypeIndex(stokes_type.second, tmp_stokes_index) && (tmp_stokes_index == stokes_index)) {
+            return stokes_type.first;
+        }
+    }
+    return "unknown";
 }
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
