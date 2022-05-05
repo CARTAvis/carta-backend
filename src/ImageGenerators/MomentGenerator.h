@@ -25,8 +25,8 @@ namespace carta {
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
-    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image);
-    ~MomentGenerator(){};
+    MomentGenerator(const casacore::String& filename, std::shared_ptr<casacore::ImageInterface<float>> image);
+    ~MomentGenerator() = default;
 
     // Calculate moments
     bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
@@ -59,7 +59,7 @@ private:
 
     // Image parameters
     casacore::String _filename;
-    casacore::ImageInterface<float>* _image;
+    std::shared_ptr<casacore::ImageInterface<float>> _image;
     int _spectral_axis;
     int _stokes_axis;
     casacore::LoggerHolder _logger;

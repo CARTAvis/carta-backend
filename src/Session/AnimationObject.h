@@ -49,11 +49,12 @@ class AnimationObject {
     volatile int _file_open;
     volatile bool _waiting_flow_event;
     SessionContext _context;
+    std::vector<int> _stokes_indices; // stokes index order in the animation
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
         CARTA::AnimationFrame& delta_frame, const google::protobuf::Map<google::protobuf::int32, CARTA::MatchedFrameList>& matched_frames,
-        int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
+        std::vector<int> stokes_indices, int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
         : _file_id(file_id),
           _start_frame(start_frame),
           _first_frame(first_frame),
@@ -71,6 +72,12 @@ public:
             }
             // Empty array for the active file_id, since its channel will be set automatically
             _matched_frames[file_id] = {};
+        }
+
+        if (!stokes_indices.empty()) {
+            _stokes_indices = stokes_indices;
+        } else {
+            _stokes_indices = {0, 1, 2, 3}; // i.e., [I, Q, U, V]
         }
 
         // handle negative deltas

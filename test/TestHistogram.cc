@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include "CommonTestUtilities.h"
 #include "ImageStats/Histogram.h"
 #include "ThreadingManager/ThreadingManager.h"
 
@@ -26,28 +27,6 @@ public:
     HistogramTest() {
         mt = std::mt19937(rd());
         float_random = std::uniform_real_distribution<float>(0, 1.0f);
-    }
-
-    static bool CompareResults(const carta::Histogram& a, const carta::Histogram& b) {
-        if (a.GetNbins() != b.GetNbins()) {
-            return false;
-        }
-        if (fabs(a.GetMinVal() - b.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
-            return false;
-        }
-        if (fabs(a.GetMaxVal() - b.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
-            return false;
-        }
-
-        for (auto i = 0; i < a.GetNbins(); i++) {
-            auto bin_a = a.GetHistogramBins()[i];
-            auto bin_b = b.GetHistogramBins()[i];
-            if (bin_a != bin_b) {
-                return false;
-            }
-        }
-
-        return true;
     }
 };
 
@@ -95,7 +74,7 @@ TEST_F(HistogramTest, TestHistogramConstructor) {
     std::for_each(data.begin(), data.end(), [&](float& v) { v = float_random(mt); });
     carta::Histogram hist(1024, 0.0f, 1.0f, data.data(), data.size());
     carta::Histogram hist2(hist);
-    EXPECT_TRUE(CompareResults(hist, hist2));
+    EXPECT_TRUE(CmpHistograms(hist, hist2));
 }
 
 TEST_F(HistogramTest, TestHistogramAdd) {
@@ -104,7 +83,7 @@ TEST_F(HistogramTest, TestHistogramAdd) {
     carta::Histogram hist(1024, 0.0f, 1.0f, data.data(), data.size());
     const auto total_counts = accumulate(hist.GetHistogramBins().begin(), hist.GetHistogramBins().end(), 0);
     carta::Histogram hist2(1024, 0.0f, 1.0f, data.data(), data.size());
-    EXPECT_TRUE(CompareResults(hist, hist2)); // naive?
+    EXPECT_TRUE(CmpHistograms(hist, hist2)); // naive?
     hist.Add(hist2);
     const auto total_counts2 = accumulate(hist.GetHistogramBins().begin(), hist.GetHistogramBins().end(), 0);
     EXPECT_EQ(2 * total_counts, total_counts2);
@@ -121,7 +100,7 @@ TEST_F(HistogramTest, TestSingleThreading) {
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data.data(), data.size());
     for (auto i = 2; i < 24; i++) {
         carta::Histogram hist_mt(1024, 0.0f, 1.0f, data.data(), data.size());
-        EXPECT_TRUE(CompareResults(hist_st, hist_mt));
+        EXPECT_TRUE(CmpHistograms(hist_st, hist_mt));
     }
 }
 
@@ -136,7 +115,7 @@ TEST_F(HistogramTest, TestMultithreading) {
     for (auto i = 2; i < 24; i++) {
         carta::ThreadManager::SetThreadLimit(i);
         carta::Histogram hist_mt(1024, 0.0f, 1.0f, data.data(), data.size());
-        EXPECT_TRUE(CompareResults(hist_st, hist_mt));
+        EXPECT_TRUE(CmpHistograms(hist_st, hist_mt));
     }
 }
 #ifdef COMPILE_PERFORMANCE_TESTS
