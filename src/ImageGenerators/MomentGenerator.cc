@@ -368,7 +368,7 @@ void MomentGenerator::SetMomentImageLogger(
     }
 
     // Set stokes info
-    std::string stokes_info = fmt::format("Stokes: {}\n", stokes);
+    std::string stokes_info = fmt::format("Polarization: {}\n", stokes);
 
     // Set the new logger
     _logger.logio() << "CARTA MOMENT MAP GENERATOR LOG\n"

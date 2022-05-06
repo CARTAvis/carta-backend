@@ -2225,8 +2225,32 @@ std::string Frame::GetStokesType(int stokes_index) {
     for (auto stokes_type : StokesStringTypes) {
         int tmp_stokes_index;
         if (_loader->GetStokesTypeIndex(stokes_type.second, tmp_stokes_index) && (tmp_stokes_index == stokes_index)) {
-            return stokes_type.first;
+            std::string stokes = (stokes_type.first.length() == 1) ? fmt::format("Stokes {}", stokes_type.first) : stokes_type.first;
+            return stokes;
         }
+    }
+    if (IsComputedStokes(stokes_index)) {
+        std::string computed_stokes;
+        switch (StokesTypes[stokes_index]) {
+            case CARTA::PolarizationType::Ptotal:
+                computed_stokes = "Total linearly polarized intensity";
+                break;
+            case CARTA::PolarizationType::Plinear:
+                computed_stokes = "Linearly polarized intensity";
+                break;
+            case CARTA::PolarizationType::PFtotal:
+                computed_stokes = "Total fractional linear polarization";
+                break;
+            case CARTA::PolarizationType::PFlinear:
+                computed_stokes = "Fractional linear polarization";
+                break;
+            case CARTA::PolarizationType::Pangle:
+                computed_stokes = "Linearly polarized angle";
+                break;
+            default:
+                break;
+        }
+        return computed_stokes;
     }
     return "Unknown";
 }
