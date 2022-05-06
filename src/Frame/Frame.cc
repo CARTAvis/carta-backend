@@ -2228,7 +2228,7 @@ std::string Frame::GetStokesType(int stokes_index) {
             return stokes_type.first;
         }
     }
-    return "unknown";
+    return "Unknown";
 }
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {

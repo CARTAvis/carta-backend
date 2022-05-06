@@ -740,8 +740,8 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
     // Do calculations
     if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), stokes_region, lc_region)) {
-        auto region_state = _regions.at(region_id)->GetRegionState();
-        frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results, region_state);
+        frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results,
+            _regions.at(region_id)->GetRegionState());
     }
     return !collapse_results.empty();
 }

@@ -367,7 +367,7 @@ void MomentGenerator::SetMomentImageLogger(
         mask_info += "none\n";
     }
 
-    // Set stokes
+    // Set stokes info
     std::string stokes_info = fmt::format("Stokes: {}\n", stokes);
 
     // Set the new logger
