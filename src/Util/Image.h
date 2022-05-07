@@ -33,11 +33,11 @@
 // stokes
 #define DEFAULT_STOKES 0
 #define CURRENT_STOKES -1
-#define COMPUTE_STOKES_PTOTAL StokesValues[CARTA::PolarizationType::Ptotal]     // Total linearly polarized intensity: (Q^2+U^2+V^2)^(1/2)
-#define COMPUTE_STOKES_PLINEAR StokesValues[CARTA::PolarizationType::Plinear]   // Linearly polarized intensity: (Q^2+U^2)^(1/2)
-#define COMPUTE_STOKES_PFTOTAL StokesValues[CARTA::PolarizationType::PFtotal]   // Total fractional linear polarization: Ptotal/I
-#define COMPUTE_STOKES_PFLINEAR StokesValues[CARTA::PolarizationType::PFlinear] // Fractional linear polarization: Plinear/I
-#define COMPUTE_STOKES_PANGLE StokesValues[CARTA::PolarizationType::Pangle]     // Linearly polarized angle: (tan^-1(U/Q))/2
+#define COMPUTE_STOKES_PTOTAL StokesValues[CARTA::PolarizationType::Ptotal]     // Total polarization intensity: (Q^2+U^2+V^2)^(1/2)
+#define COMPUTE_STOKES_PLINEAR StokesValues[CARTA::PolarizationType::Plinear]   // Linear polarization intensity: (Q^2+U^2)^(1/2)
+#define COMPUTE_STOKES_PFTOTAL StokesValues[CARTA::PolarizationType::PFtotal]   // Fractional total polarization intensity: Ptotal/I
+#define COMPUTE_STOKES_PFLINEAR StokesValues[CARTA::PolarizationType::PFlinear] // Fractional linear polarization intensity: Plinear/I
+#define COMPUTE_STOKES_PANGLE StokesValues[CARTA::PolarizationType::Pangle]     // Polarization angle: (tan^-1(U/Q))/2
 
 // raster image data
 #define TILE_SIZE 256

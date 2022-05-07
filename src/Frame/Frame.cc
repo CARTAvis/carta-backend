@@ -2233,19 +2233,19 @@ std::string Frame::GetStokesType(int stokes_index) {
         std::string computed_stokes;
         switch (StokesTypes[stokes_index]) {
             case CARTA::PolarizationType::Ptotal:
-                computed_stokes = "Total linearly polarized intensity";
+                computed_stokes = "Total polarization intensity";
                 break;
             case CARTA::PolarizationType::Plinear:
-                computed_stokes = "Linearly polarized intensity";
+                computed_stokes = "Linear polarization intensity";
                 break;
             case CARTA::PolarizationType::PFtotal:
-                computed_stokes = "Total fractional linear polarization";
+                computed_stokes = "Fractional total polarization intensity";
                 break;
             case CARTA::PolarizationType::PFlinear:
-                computed_stokes = "Fractional linear polarization";
+                computed_stokes = "Fractional linear polarization intensity";
                 break;
             case CARTA::PolarizationType::Pangle:
-                computed_stokes = "Linearly polarized angle";
+                computed_stokes = "Polarization angle";
                 break;
             default:
                 break;
