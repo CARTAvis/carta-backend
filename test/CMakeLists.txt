@@ -52,6 +52,7 @@ set(TEST_SOURCES
         TestImageFitting.cc
         TestMain.cc
         TestMoment.cc
+        TestPolarizationCalculator.cc
         TestProgramSettings.cc
         TestPvGenerator.cc
         TestRestApi.cc
