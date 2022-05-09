@@ -2479,10 +2479,11 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<c
         return target_point;
     }
 
-    // Set progressively smaller range end0-end1 which contains target point by testing midpoints
-    std::vector<double> end0({start_point[0], start_point[1]});
-    std::vector<double> end1({end_point[0], end_point[1]});
-    std::vector<double> last_end1, midpoint;
+    // Set progressively smaller range start-end which contains target point by testing midpoints
+    std::vector<double> start({start_point[0], start_point[1]});
+    std::vector<double> end({end_point[0], end_point[1]});
+
+    std::vector<double> last_end, midpoint(2);
     int limit(0);
     auto delta = separation - target_separation;
 
@@ -2492,27 +2493,27 @@ std::vector<double> RegionHandler::FindPointAtTargetSeparation(std::shared_ptr<c
         }
 
         if (delta > 0) {
-            // Separation too large, get midpoint of end0/end1
-            midpoint[0] = (end0[0] + end1[0]) / 2;
-            midpoint[1] = (end0[1] + end1[1]) / 2;
-            last_end1 = end1;
-            end1 = midpoint;
+            // Separation too large, get midpoint of start/end
+            midpoint[0] = (start[0] + end[0]) / 2;
+            midpoint[1] = (start[1] + end[1]) / 2;
+            last_end = end;
+            end = midpoint;
         } else {
-            // Separation too small: get midpoint of end1/last_end1
-            midpoint[0] = (end1[0] + last_end1[0]) / 2;
-            midpoint[1] = (end1[1] + last_end1[1]) / 2;
-            end0 = end1;
-            end1 = midpoint;
+            // Separation too small: get midpoint of end/last_end
+            midpoint[0] = (end[0] + last_end[0]) / 2;
+            midpoint[1] = (end[1] + last_end[1]) / 2;
+            start = end;
+            end = midpoint;
         }
 
         // Get separation between start point and new endpoint
-        separation = GetPointSeparation(coord_sys, start_point, end1);
+        separation = GetPointSeparation(coord_sys, start_point, end);
         delta = separation - target_separation;
     }
 
     if (abs(delta) <= tolerance) {
-        target_point.push_back(end1[0]);
-        target_point.push_back(end1[1]);
+        target_point.push_back(end[0]);
+        target_point.push_back(end[1]);
     }
 
     return target_point;
@@ -2538,9 +2539,9 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     // Create line perpendicular to line (along "width axis") at box start to find box corners
     std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
 
-    // Endpoint in positive direction 3 pixels out from box start
-    std::vector<double> target_endpoint({box_start[0] - (pixel_width * cos_x), box_start[1] - (pixel_width * sin_x)});
-    std::vector<double> corner = FindPointAtTargetSeparation(coord_sys, box_start, target_endpoint, half_width, tolerance);
+    // Endpoint in positive direction width*2 pixels out from box start
+    std::vector<double> target_end({box_start[0] - (pixel_width * 2 * cos_x), box_start[1] - (pixel_width * 2 * sin_x)});
+    std::vector<double> corner = FindPointAtTargetSeparation(coord_sys, box_start, target_end, half_width, tolerance);
     if (corner.empty()) {
         return RegionState();
     }
@@ -2549,8 +2550,8 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     control_points[0] = point;
 
     // Endpoint in negative direction width*2 pixels out from box start
-    target_endpoint = {box_start[0] + (pixel_width * 2 * cos_x), box_start[1] + (pixel_width * 2 * sin_x)};
-    corner = FindPointAtTargetSeparation(coord_sys, box_start, target_endpoint, half_width, tolerance);
+    target_end = {box_start[0] + (pixel_width * 2 * cos_x), box_start[1] + (pixel_width * 2 * sin_x)};
+    corner = FindPointAtTargetSeparation(coord_sys, box_start, target_end, half_width, tolerance);
     if (corner.empty()) {
         return RegionState();
     }
@@ -2559,9 +2560,9 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     control_points[3] = point;
 
     // Find box corners from box end
-    // Endpoint in positive direction 3 pixels out from box end
-    target_endpoint = {box_end[0] - (pixel_width * cos_x), box_end[1] - (pixel_width * sin_x)};
-    corner = FindPointAtTargetSeparation(coord_sys, box_end, target_endpoint, half_width, tolerance);
+    // Endpoint in positive direction width*2 pixels out from box end
+    target_end = {box_end[0] - (pixel_width * 2 * cos_x), box_end[1] - (pixel_width * 2 * sin_x)};
+    corner = FindPointAtTargetSeparation(coord_sys, box_end, target_end, half_width, tolerance);
     if (corner.empty()) {
         return RegionState();
     }
@@ -2569,9 +2570,9 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     point.set_y(corner[1]);
     control_points[1] = point;
 
-    // Endpoint in negative direction 3 pixels out from box end
-    target_endpoint = {box_end[0] + (pixel_width * cos_x), box_end[1] + (pixel_width * sin_x)};
-    corner = FindPointAtTargetSeparation(coord_sys, box_end, target_endpoint, half_width, tolerance);
+    // Endpoint in negative direction width*2 pixels out from box end
+    target_end = {box_end[0] + (pixel_width * 2 * cos_x), box_end[1] + (pixel_width * 2 * sin_x)};
+    corner = FindPointAtTargetSeparation(coord_sys, box_end, target_end, half_width, tolerance);
     if (corner.empty()) {
         return RegionState();
     }
