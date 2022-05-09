@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Separated stdout and stderr logging ([#869](https://github.com/CARTAvis/carta-backend/issues/869)).
 
 ### Added
-
+* Added moment map generation information to the header of generated images ([#1024](https://github.com/CARTAvis/carta-backend/issues/1024)).
 * Added support for creating CASA LEL images dynamically ([#655](https://github.com/CARTAvis/carta-backend/issues/665)).
 * Added spatial and spectral range information to the file browser ([#845](https://github.com/CARTAvis/carta-backend/issues/845)).
 * Added computed Stokes images and supported the analysis (profiles, contours, statistics, etc.) of them ([#433](https://github.com/CARTAvis/carta-backend/issues/433)).

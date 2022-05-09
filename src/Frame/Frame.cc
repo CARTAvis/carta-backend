@@ -1766,15 +1766,22 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results) {
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+    RegionState region_state) {
     std::shared_lock lock(GetActiveTaskMutex());
     _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.stokes_source)));
     _loader->CloseImageIfUpdated();
 
+    if (region_state.control_points.empty()) {
+        region_state.type = CARTA::RegionType::RECTANGLE;
+        region_state.control_points = {Message::Point(0, 0), Message::Point(_width - 1, _height - 1)};
+        region_state.rotation = 0.0;
+    }
+
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _z_axis, _stokes_axis, progress_callback, moment_request,
-            moment_response, collapse_results);
+            moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
         ulock.unlock();
     }
 
@@ -2229,6 +2236,23 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
         stokes_index = CurrentStokes(); // current stokes
     }
     return true;
+}
+
+std::string Frame::GetStokesType(int stokes_index) {
+    for (auto stokes_type : StokesStringTypes) {
+        int tmp_stokes_index;
+        if (_loader->GetStokesTypeIndex(stokes_type.second, tmp_stokes_index) && (tmp_stokes_index == stokes_index)) {
+            std::string stokes = (stokes_type.first.length() == 1) ? fmt::format("Stokes {}", stokes_type.first) : stokes_type.first;
+            return stokes;
+        }
+    }
+    if (IsComputedStokes(stokes_index)) {
+        CARTA::PolarizationType stokes_type = StokesTypes[stokes_index];
+        if (ComputedStokesName.count(stokes_type)) {
+            return ComputedStokesName[stokes_type];
+        }
+    }
+    return "Unknown";
 }
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {

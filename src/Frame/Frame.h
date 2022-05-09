@@ -89,6 +89,12 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
+static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesName{
+    {CARTA::PolarizationType::Ptotal, "Total polarization intensity"}, {CARTA::PolarizationType::Plinear, "Linear polarization intensity"},
+    {CARTA::PolarizationType::PFtotal, "Fractional total polarization intensity"},
+    {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
+    {CARTA::PolarizationType::Pangle, "Polarization angle"}};
+
 class Frame {
 public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
@@ -192,7 +198,8 @@ public:
 
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+        RegionState region_state = RegionState());
     void StopMomentCalc();
 
     // Image fitting
@@ -203,6 +210,7 @@ public:
         std::shared_ptr<Region> image_region);
 
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
+    std::string GetStokesType(int stokes_index);
 
     std::shared_mutex& GetActiveTaskMutex();
 

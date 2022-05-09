@@ -312,7 +312,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         ThrowIf(!output_image, "Failed to create output file");
         output_image->setMiscInfo(_image->miscInfo());
         output_image->setImageInfo(_image->imageInfo());
-        output_image->appendLog(_image->logger());
         output_image->makeMask("mask0", true, true);
 
         // Set output image units if possible
