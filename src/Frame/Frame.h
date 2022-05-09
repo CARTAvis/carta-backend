@@ -86,6 +86,12 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
+static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesName{
+    {CARTA::PolarizationType::Ptotal, "Total polarization intensity"}, {CARTA::PolarizationType::Plinear, "Linear polarization intensity"},
+    {CARTA::PolarizationType::PFtotal, "Fractional total polarization intensity"},
+    {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
+    {CARTA::PolarizationType::Pangle, "Polarization angle"}};
+
 class Frame {
 public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
