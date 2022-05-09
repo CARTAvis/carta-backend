@@ -473,7 +473,6 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
         bool is_circle = (parameters[3] == parameters[4]);
         // convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
-        std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
         for (size_t i = 1; i < nparam; ++i) {
             std::string param(parameters[i]);
             // Convert DS9 unit to Quantity unit for readQuantity
@@ -484,10 +483,10 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
                 casacore::Quantity param_quantity;
                 if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if ((i == nparam - 1) || !_pixel_coord) {
-                            param_quantity.setUnit(units[i]);
-                        } else {
+                        if (_pixel_coord) {
                             param_quantity.setUnit("pixel");
+                        } else {
+                            param_quantity.setUnit("deg");
                         }
                     }
                     param_quantities.push_back(param_quantity);
@@ -566,7 +565,6 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
         // convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
         // DS9 wcs default units
-        std::vector<casacore::String> ds9_units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
         for (size_t i = 1; i < nparam; ++i) {
             std::string param(parameters[i]);
             // Convert DS9 unit to Quantity unit for readQuantity
@@ -577,10 +575,10 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
                 casacore::Quantity param_quantity;
                 if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if ((i == nparam - 1) || !_pixel_coord) {
-                            param_quantity.setUnit(ds9_units[i]);
-                        } else {
+                        if (_pixel_coord) {
                             param_quantity.setUnit("pixel");
+                        } else {
+                            param_quantity.setUnit("deg");
                         }
                     }
                     param_quantities.push_back(param_quantity);
