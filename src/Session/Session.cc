@@ -28,6 +28,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "Frame/VectorFieldCalculator.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
@@ -749,6 +750,8 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         if (frame->SetImageChannels(z_target, stokes_target, err_message)) {
             // Send Contour data if required
             SendContourData(file_id);
+            // Send vector field data if required
+            SendVectorFieldData(file_id);
             bool send_histogram(true);
             UpdateImageData(file_id, send_histogram, z_changed, stokes_changed);
             UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
@@ -1312,12 +1315,10 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         } else if (region_id) {
             std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
             if (_region) {
-                if (active_frame->GetImageRegion(file_id, _region)) {
-                    active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
-                } else {
-                    save_file_ack.set_success(false);
-                    save_file_ack.set_message("The selected region is entirely outside the image.");
-                }
+                active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
+            } else {
+                save_file_ack.set_success(false);
+                save_file_ack.set_message("No region with id {} found.", region_id);
             }
         } else {
             // Save full image
@@ -1439,6 +1440,12 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"Fitting"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
+    if (_frames.count(message.file_id()) && _frames.at(message.file_id())->SetVectorOverlayParameters(message)) {
+        SendVectorFieldData(message.file_id());
     }
 }
 
@@ -1893,6 +1900,41 @@ void Session::RegionDataStreams(int file_id, int region_id) {
     }
 }
 
+bool Session::SendVectorFieldData(int file_id) {
+    if (_frames.count(file_id)) {
+        auto frame = _frames.at(file_id);
+        auto settings = frame->GetVectorFieldParameters();
+        if (settings.smoothing_factor < 1) {
+            return true;
+        }
+
+        if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
+            CARTA::VectorOverlayTileData empty_response;
+            empty_response.set_file_id(file_id);
+            empty_response.set_channel(frame->CurrentZ());
+            empty_response.set_stokes_intensity(settings.stokes_intensity);
+            empty_response.set_stokes_angle(settings.stokes_angle);
+            empty_response.set_progress(1.0);
+            SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, empty_response);
+            return true;
+        }
+
+        // Set callback function
+        auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
+            partial_response.set_file_id(file_id);
+            SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, partial_response);
+        };
+
+        // Do PI/PA calculations
+        VectorFieldCalculator vector_field_calculator(frame);
+        if (vector_field_calculator.DoCalculations(callback)) {
+            return true;
+        }
+        SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
+    }
+    return false;
+}
+
 // *********************************************************************************
 // SEND uWEBSOCKET MESSAGES
 
@@ -2064,6 +2106,9 @@ void Session::ExecuteAnimationFrameInner() {
                     // Send contour data if required. Empty contour data messages are sent if there are no contour levels
                     SendContourData(file_id, is_active_frame);
 
+                    // Send vector field data if required
+                    SendVectorFieldData(file_id);
+
                     // Send tile data for active frame
                     if (is_active_frame) {
                         OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
@@ -2080,6 +2125,9 @@ void Session::ExecuteAnimationFrameInner() {
 
                     // Send contour data if required
                     SendContourData(active_file_id);
+
+                    // Send vector field data if required
+                    SendVectorFieldData(active_file_id);
 
                     // Send tile data
                     OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
