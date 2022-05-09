@@ -1320,12 +1320,10 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         } else if (region_id) {
             std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
             if (_region) {
-                if (active_frame->GetImageRegion(file_id, _region)) {
-                    active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
-                } else {
-                    save_file_ack.set_success(false);
-                    save_file_ack.set_message("The selected region is entirely outside the image.");
-                }
+                active_frame->SaveFile(_top_level_folder, save_file, save_file_ack, _region);
+            } else {
+                save_file_ack.set_success(false);
+                save_file_ack.set_message("No region with id {} found.", region_id);
             }
         } else {
             // Save full image

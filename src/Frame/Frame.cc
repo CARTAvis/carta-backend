@@ -1859,21 +1859,29 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     if (region) {
         image_region = GetImageRegion(file_id, region);
+
+        if (!image_region) {
+            save_file_ack.set_success(false);
+            save_file_ack.set_message("The selected region is entirely outside the image.");
+            return;
+        }
+
         region_shape = image_region->shape();
     }
 
     //// Todo: support saving computed stokes images
     if (image_shape.size() == 2) {
         if (region) {
-            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region.get())), sub_image);
+            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image);
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
             if (region) {
-                auto latt_region_holder = LattRegionHolder(image_region.get());
-                auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);
+                auto latt_region_holder = LattRegionHolder(image_region->cloneRegion());
+                auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, latt_region_holder);
+
                 _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
             } else {
                 auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
@@ -2121,11 +2129,11 @@ casacore::Slicer Frame::GetExportImageSlicer(const CARTA::SaveFile& save_file_ms
 // Input image_shape as casacore::IPosition of source image
 // Input region_shape as casacore::IPosition of target region
 // Input image_region as casacore::LCRegion of infomation of target region to chop
-// Output latt_region_holder as casacore::LattRegionHolder of target region
-//   If dimension of region does not match the source image, will modify latt_region_holder.
+// Input latt_region_holder as casacore::LattRegionHolder of target LCRegion (or will throw exception)
+// Output latt_region_holder modified if dimension of region does not match the source image
 // Return casacore::Slicer(start, end, stride) for apply subImage()
 casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
-    casacore::IPosition region_shape, std::shared_ptr<casacore::LCRegion> image_region, casacore::LattRegionHolder& latt_region_holder) {
+    casacore::IPosition region_shape, casacore::LattRegionHolder& latt_region_holder) {
     auto channels = std::vector<int>();
     auto stokes = std::vector<int>();
     ValidateChannelStokes(channels, stokes, save_file_msg);
@@ -2133,6 +2141,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
     casacore::IPosition start;
     casacore::IPosition end;
     casacore::IPosition stride;
+
     switch (image_shape.size()) {
         // 3 dimensional cube image
         case 3:
@@ -2142,10 +2151,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, channels[1]);
                 stride = casacore::IPosition(3, 1, 1, channels[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(1, 2),
                         casacore::LCBox(
                             casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[2]), casacore::IPosition(1, image_shape[2])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             } else {
                 // Stokes present
@@ -2153,10 +2162,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, stokes[1]);
                 stride = casacore::IPosition(3, 1, 1, stokes[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(1, 2),
                         casacore::LCBox(
                             casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[3]), casacore::IPosition(1, image_shape[3])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             }
             break;
@@ -2168,10 +2177,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, channels[1], stokes[1]);
                 stride = casacore::IPosition(4, 1, 1, channels[2], stokes[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(2, 2, 3),
                         casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[2], image_shape[3]),
                             casacore::IPosition(2, image_shape[2], image_shape[3])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             } else {
                 // Channels present after stokes
@@ -2179,10 +2188,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, stokes[1], channels[1]);
                 stride = casacore::IPosition(4, 1, 1, stokes[2], channels[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(2, 2, 3),
                         casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[3], image_shape[2]),
                             casacore::IPosition(2, image_shape[3], image_shape[2])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             }
             break;
