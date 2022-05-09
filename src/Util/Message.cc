@@ -5,6 +5,8 @@
 */
 
 #include "Message.h"
+#include "DataStream/Compression.h"
+
 #include <chrono>
 
 CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
@@ -344,6 +346,24 @@ CARTA::SetContourParameters Message::SetContourParameters(int file_id, int ref_f
     message.set_decimation_factor(decimation_factor);
     message.set_compression_level(compression_level);
     message.set_contour_chunk_size(contour_chunk_size);
+    return message;
+}
+
+CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(int file_id, int mip, bool fractional, double threshold,
+    bool debiasing, double q_error, double u_error, int stokes_intensity, int stokes_angle, const CARTA::CompressionType& compression_type,
+    float compression_quality) {
+    CARTA::SetVectorOverlayParameters message;
+    message.set_file_id(file_id);
+    message.set_smoothing_factor(mip);
+    message.set_fractional(fractional);
+    message.set_threshold(threshold);
+    message.set_debiasing(debiasing);
+    message.set_q_error(q_error);
+    message.set_u_error(u_error);
+    message.set_stokes_intensity(stokes_intensity);
+    message.set_stokes_angle(stokes_angle);
+    message.set_compression_type(compression_type);
+    message.set_compression_quality(compression_quality);
     return message;
 }
 

@@ -98,6 +98,18 @@ std::vector<float> DataReader::ReadProfileY(hsize_t x, hsize_t channel, hsize_t 
     return ReadRegion({x, 0, channel, stokes}, {x + 1, _height, channel + 1, stokes + 1});
 }
 
+std::vector<float> DataReader::ReadXY(hsize_t channel, hsize_t stokes) {
+    return ReadRegion({0, 0, channel, stokes}, {_width, _height, channel + 1, stokes + 1});
+}
+
+hsize_t DataReader::Width() {
+    return _width;
+}
+
+hsize_t DataReader::Height() {
+    return _height;
+}
+
 FitsDataReader::FitsDataReader(const std::string& imgpath) {
     int status(0);
 

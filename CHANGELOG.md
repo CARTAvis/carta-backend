@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Separated stdout and stderr logging ([#869](https://github.com/CARTAvis/carta-backend/issues/869)).
 
 ### Added
+
 * Added support for creating CASA LEL images dynamically ([#655](https://github.com/CARTAvis/carta-backend/issues/665)).
 * Added spatial and spectral range information to the file browser ([#845](https://github.com/CARTAvis/carta-backend/issues/845)).
 * Added computed Stokes images and supported the analysis (profiles, contours, statistics, etc.) of them ([#433](https://github.com/CARTAvis/carta-backend/issues/433)).
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added ability to set a custom rest frequency for saving subimages. ([#918](https://github.com/CARTAvis/carta-backend/issues/918)).
 * Added image fitter for multiple 2D Gaussian component fitting ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
 * Added support for a custom carta-casacore script for updating casacore data in a local user directory ([#961](https://github.com/CARTAvis/carta-backend/issues/961)).
+* Added support of vector field (polarization intensity/angle) calculations ([#1002](https://github.com/CARTAvis/carta-backend/issues/1002)).
 
 ### Fixed
 * Fixed problem with backend hanging rather than exiting after all sessions have disconnected ([#988](https://github.com/CARTAvis/carta-backend/pull/988)).

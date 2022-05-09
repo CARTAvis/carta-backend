@@ -64,6 +64,7 @@ public:
     void Receive(CARTA::FileListRequest message);
     void Receive(CARTA::RegionListRequest message);
     void Receive(CARTA::CatalogListRequest message);
+    void Receive(CARTA::SetVectorOverlayParameters message);
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
     void ClearMessagesQueue();

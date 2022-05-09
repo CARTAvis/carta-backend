@@ -28,6 +28,8 @@
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
+#include <carta-protobuf/vector_overlay.pb.h>
+#include <carta-protobuf/vector_overlay_tile.pb.h>
 
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
@@ -44,6 +46,7 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
+#include "VectorFieldSettings.h"
 
 namespace carta {
 
@@ -102,6 +105,8 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
+    size_t Width();     // length of x axis
+    size_t Height();    // length of y axis
     size_t Depth();     // length of z axis
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
@@ -208,6 +213,17 @@ public:
 
     // Close image with cached data
     void CloseCachedImage(const std::string& file);
+
+    // Polarization vector field
+    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    inline VectorFieldSettings& GetVectorFieldParameters() {
+        return _vector_field_settings;
+    };
+    inline void ClearVectorFieldParameters() {
+        _vector_field_settings.ClearSettings();
+    };
+    bool GetDownsampledRasterData(
+        std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
 
 protected:
     // Validate z and stokes index values
@@ -316,6 +332,9 @@ protected:
 
     // Image fitter
     std::unique_ptr<ImageFitter> _image_fitter;
+
+    // Vector field settings
+    VectorFieldSettings _vector_field_settings;
 };
 
 } // namespace carta

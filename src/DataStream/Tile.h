@@ -41,6 +41,13 @@ struct Tile {
         double total_layers = ceil(log2(max_mip));
         return pow(2.0, total_layers - layer);
     }
+
+    static int32_t MipToLayer(int32_t mip, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
+        double total_tiles_x = ceil((double)(image_width) / tile_width);
+        double total_tiles_y = ceil((double)(image_height) / tile_height);
+        double max_mip = std::max(total_tiles_x, total_tiles_y);
+        return ceil(log2(max_mip / mip));
+    }
 };
 
 } // namespace carta
