@@ -8,9 +8,14 @@
 #define CARTA_BACKEND__UTIL_IMAGE_H_
 
 #include <cmath>
+#include <functional>
 #include <string>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/vector_overlay_tile.pb.h>
+
+#include "DataStream/Tile.h"
 
 // region ids
 #define CUBE_REGION_ID -2
