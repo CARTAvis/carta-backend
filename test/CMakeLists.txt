@@ -50,6 +50,7 @@ set(TEST_SOURCES
         TestHistogram.cc
         TestIcd.cc
         TestImageFitting.cc
+		TestLineSpatialProfiles.cc
         TestMain.cc
         TestMoment.cc
         TestProgramSettings.cc

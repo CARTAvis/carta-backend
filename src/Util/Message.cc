@@ -226,12 +226,13 @@ CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, 
     return stop_animation;
 }
 
-CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(std::string coordinate, int start, int end, int mip) {
+CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(std::string coordinate, int start, int end, int mip, int width) {
     CARTA::SetSpatialRequirements_SpatialConfig spatial_config;
     spatial_config.set_coordinate(coordinate);
     spatial_config.set_start(start);
     spatial_config.set_end(end);
     spatial_config.set_mip(mip);
+    spatial_config.set_width(width);
     return spatial_config;
 }
 
@@ -394,6 +395,32 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
         }
     }
+    return profile_message;
+}
+
+CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
+    int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
+    CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit) {
+    CARTA::SpatialProfileData profile_message;
+    profile_message.set_file_id(file_id);
+    profile_message.set_region_id(region_id);
+    profile_message.set_x(x);
+    profile_message.set_y(y);
+    profile_message.set_channel(channel);
+    profile_message.set_stokes(stokes);
+    profile_message.set_value(value);
+    auto spatial_profile = profile_message.add_profiles();
+    spatial_profile->set_start(start);
+    spatial_profile->set_end(end);
+    spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+    spatial_profile->set_coordinate(coordinate);
+    spatial_profile->set_mip(mip);
+    auto profile_axis = spatial_profile->mutable_line_axis();
+    profile_axis->set_axis_type(axis_type);
+    profile_axis->set_crpix(crpix);
+    profile_axis->set_crval(crval);
+    profile_axis->set_cdelt(cdelt);
+    profile_axis->set_unit(unit);
     return profile_message;
 }
 

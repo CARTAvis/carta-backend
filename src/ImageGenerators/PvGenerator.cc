@@ -31,7 +31,7 @@ PvGenerator::PvGenerator(int file_id, const std::string& filename) {
 }
 
 bool PvGenerator::GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
-    double offset_increment, int stokes, GeneratedImage& pv_image, std::string& message) {
+    const casacore::Quantity& offset_increment, int stokes, GeneratedImage& pv_image, std::string& message) {
     // Create PV image with input data. Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
     // Create casacore::TempImage
     casacore::IPosition pv_shape = pv_data.shape();
@@ -60,7 +60,7 @@ std::string PvGenerator::GetPvFilename(const std::string& filename) {
 }
 
 bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes,
-    double offset_increment, std::string& message) {
+    const casacore::Quantity& offset_increment, std::string& message) {
     // Create coordinate system and temp image _image
     casacore::CoordinateSystem input_csys = input_image->coordinates();
     if (!input_csys.hasSpectralAxis()) {
@@ -87,17 +87,16 @@ bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> 
 }
 
 casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
-    const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape, int stokes, double offset_increment) {
+    const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment) {
     // Set PV coordinate system with LinearCoordinate and input coordinates for spectral and stokes
     casacore::CoordinateSystem csys;
-    casacore::Quantity increment = AdjustIncrementUnit(offset_increment, pv_shape(0));
 
     // Add linear coordinate (offset); needs to have 2 axes or pc matrix will fail in wcslib.
     // Will remove degenerate linear axis below
     casacore::Vector<casacore::String> name(2, "Offset");
-    casacore::Vector<casacore::String> unit(2, increment.getUnit());
+    casacore::Vector<casacore::String> unit(2, offset_increment.getUnit());
     casacore::Vector<casacore::Double> crval(2, 0.0); // center offset is 0
-    casacore::Vector<casacore::Double> inc(2, increment.getValue());
+    casacore::Vector<casacore::Double> inc(2, offset_increment.getValue());
     casacore::Matrix<casacore::Double> pc(2, 2, 1);
     pc(0, 1) = 0.0;
     pc(1, 0) = 0.0;
@@ -123,30 +122,6 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
     csys.setObsInfo(input_csys.obsInfo());
 
     return csys;
-}
-
-casacore::Quantity PvGenerator::AdjustIncrementUnit(double offset_increment, size_t num_offsets) {
-    // Given offset increment in arcsec, adjust to:
-    // - milliarcsec if length < 2 milliarcsec
-    // - arcsec if 2 milliarcsec <= length < 2 arcmin
-    // - arcminute if 2 arcmin <= length < 2 deg
-    // - deg if 2 deg <= length
-    // Returns increment as a Quantity with value and unit
-    casacore::Quantity increment(offset_increment, "arcsec");
-
-    auto offset_length = offset_increment * num_offsets;
-
-    if ((offset_length * 1.0e3) < 2.0) { // milliarcsec
-        increment = increment.get("marcsec");
-    } else if ((offset_length / 60.0) >= 2.0) { // arcmin
-        if ((offset_length / 3600.0) < 2.0) {   // deg
-            increment = increment.get("arcmin");
-        } else {
-            increment = increment.get("deg");
-        }
-    }
-
-    return increment;
 }
 
 GeneratedImage PvGenerator::GetGeneratedImage() {

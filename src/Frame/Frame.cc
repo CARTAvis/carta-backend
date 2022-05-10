@@ -2209,9 +2209,19 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
-    if (coordinate.size() > 1) {
+    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
+    bool is_stokes_string = StokesStringTypes.find(coordinate) != StokesStringTypes.end();
+
+    if (coordinate.size() == 2 || coordinate.size() == 3 || is_stokes_string) {
         bool stokes_ok(false);
-        std::string stokes_string = coordinate.substr(0, coordinate.size() - 1);
+
+        std::string stokes_string;
+        if (is_stokes_string) {
+            stokes_string = coordinate;
+        } else {
+            stokes_string = coordinate.substr(0, coordinate.size() - 1);
+        }
+
         if (StokesStringTypes.count(stokes_string)) {
             CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
             if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
