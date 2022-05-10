@@ -938,18 +938,18 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, std:
         }
     }
 
-    // Clean up
-    cancelled = _stop_pv[file_id]; // Final check
-    if (add_frame) {
-        RemoveFrame(file_id); // Sets stop flag in case image closed during pv generation
-    }
-    _stop_pv.erase(file_id);
-
-    if (cancelled) {
+    if (cancelled || _stop_pv[file_id]) {
         pv_success = false;
         message = "PV image generator cancelled.";
+        cancelled = true;
         spdlog::debug(message);
     }
+
+    // Clean up
+    if (add_frame) {
+        RemoveFrame(file_id);
+    }
+    _stop_pv.erase(file_id);
 
     // Complete message
     pv_response.set_success(pv_success);
