@@ -421,6 +421,10 @@ bool RegionHandler::HasSpatialRequirements(int region_id, int file_id, const std
         }
     }
 
+    if (!has_req) {
+        spdlog::debug("Spatial requirements for region {} file {} coordinate {} width {} removed", region_id, file_id, coordinate, width);
+    }
+
     return has_req;
 }
 
@@ -1888,16 +1892,22 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
     // Cancel if region or frame is closing
+    bool cancel(false);
+
     if (!RegionFileIdsValid(region_id, file_id)) {
-        return true;
+        cancel = true;
     }
 
     // Cancel if region changed
     if (GetRegion(region_id)->GetRegionState() != region_state) {
-        return true;
+        cancel = true;
     }
 
-    return false;
+    if (cancel) {
+        spdlog::debug("Cancel line profiles: region/file closed or changed");
+    }
+
+    return cancel;
 }
 
 float RegionHandler::GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end) {
@@ -1973,6 +1983,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
         // Set box regions from centers, user width, height
         for (size_t iregion = 0; iregion < num_regions; ++iregion) {
             if (per_z && _stop_pv[file_id]) {
+                spdlog::debug("Stopping line profiles: PV generator cancelled");
                 cancelled = true;
                 return false;
             }
@@ -2254,6 +2265,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
             // Check PV generator cancellation
             if (per_z && _stop_pv[file_id]) {
+                spdlog::debug("Stopping line profiles: PV generator cancelled");
                 cancelled = true;
                 return false;
             }
@@ -2287,12 +2299,13 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
         for (int iregion = 0; iregion < num_regions; ++iregion) {
             // Check if user cancelled
             if (per_z && _stop_pv[file_id]) {
+                spdlog::debug("Stopping line profiles: PV generator cancelled");
                 cancelled = true;
                 return false;
             }
 
             // Check if requirements removed
-            if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
+            if (!per_z && !HasSpatialRequirements(region_id, file_id, coordinate, width)) {
                 cancelled = true;
                 return false;
             }
