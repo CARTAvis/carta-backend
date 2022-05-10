@@ -154,6 +154,14 @@ casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     return ipos;
 }
 
+size_t Frame::Width() {
+    return _width;
+}
+
+size_t Frame::Height() {
+    return _height;
+}
+
 size_t Frame::Depth() {
     return _depth;
 }
@@ -1758,15 +1766,22 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results) {
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+    RegionState region_state) {
     std::shared_lock lock(GetActiveTaskMutex());
     _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.stokes_source)));
     _loader->CloseImageIfUpdated();
 
+    if (region_state.control_points.empty()) {
+        region_state.type = CARTA::RegionType::RECTANGLE;
+        region_state.control_points = {Message::Point(0, 0), Message::Point(_width - 1, _height - 1)};
+        region_state.rotation = 0.0;
+    }
+
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _z_axis, _stokes_axis, progress_callback, moment_request,
-            moment_response, collapse_results);
+            moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
         ulock.unlock();
     }
 
@@ -1851,21 +1866,29 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     if (region) {
         image_region = GetImageRegion(file_id, region);
+
+        if (!image_region) {
+            save_file_ack.set_success(false);
+            save_file_ack.set_message("The selected region is entirely outside the image.");
+            return;
+        }
+
         region_shape = image_region->shape();
     }
 
     //// Todo: support saving computed stokes images
     if (image_shape.size() == 2) {
         if (region) {
-            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region.get())), sub_image);
+            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image);
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }
     } else if (image_shape.size() > 2 && image_shape.size() < 5) {
         try {
             if (region) {
-                auto latt_region_holder = LattRegionHolder(image_region.get());
-                auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, image_region, latt_region_holder);
+                auto latt_region_holder = LattRegionHolder(image_region->cloneRegion());
+                auto slice_sub_image = GetExportRegionSlicer(save_file_msg, image_shape, region_shape, latt_region_holder);
+
                 _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image);
             } else {
                 auto slice_sub_image = GetExportImageSlicer(save_file_msg, image_shape);
@@ -2113,11 +2136,11 @@ casacore::Slicer Frame::GetExportImageSlicer(const CARTA::SaveFile& save_file_ms
 // Input image_shape as casacore::IPosition of source image
 // Input region_shape as casacore::IPosition of target region
 // Input image_region as casacore::LCRegion of infomation of target region to chop
-// Output latt_region_holder as casacore::LattRegionHolder of target region
-//   If dimension of region does not match the source image, will modify latt_region_holder.
+// Input latt_region_holder as casacore::LattRegionHolder of target LCRegion (or will throw exception)
+// Output latt_region_holder modified if dimension of region does not match the source image
 // Return casacore::Slicer(start, end, stride) for apply subImage()
 casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
-    casacore::IPosition region_shape, std::shared_ptr<casacore::LCRegion> image_region, casacore::LattRegionHolder& latt_region_holder) {
+    casacore::IPosition region_shape, casacore::LattRegionHolder& latt_region_holder) {
     auto channels = std::vector<int>();
     auto stokes = std::vector<int>();
     ValidateChannelStokes(channels, stokes, save_file_msg);
@@ -2125,6 +2148,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
     casacore::IPosition start;
     casacore::IPosition end;
     casacore::IPosition stride;
+
     switch (image_shape.size()) {
         // 3 dimensional cube image
         case 3:
@@ -2134,10 +2158,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, channels[1]);
                 stride = casacore::IPosition(3, 1, 1, channels[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(1, 2),
                         casacore::LCBox(
                             casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[2]), casacore::IPosition(1, image_shape[2])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             } else {
                 // Stokes present
@@ -2145,10 +2169,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, stokes[1]);
                 stride = casacore::IPosition(3, 1, 1, stokes[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(1, 2),
                         casacore::LCBox(
                             casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[3]), casacore::IPosition(1, image_shape[3])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             }
             break;
@@ -2160,10 +2184,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, channels[1], stokes[1]);
                 stride = casacore::IPosition(4, 1, 1, channels[2], stokes[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(2, 2, 3),
                         casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[2], image_shape[3]),
                             casacore::IPosition(2, image_shape[2], image_shape[3])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             } else {
                 // Channels present after stokes
@@ -2171,10 +2195,10 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, stokes[1], channels[1]);
                 stride = casacore::IPosition(4, 1, 1, stokes[2], channels[2]);
                 if (region_shape.size() < image_shape.size()) {
-                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                    auto region_ext = casacore::LCExtension(*latt_region_holder.asLCRegionPtr(), casacore::IPosition(2, 2, 3),
                         casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[3], image_shape[2]),
                             casacore::IPosition(2, image_shape[3], image_shape[2])));
-                    latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
+                    latt_region_holder = LattRegionHolder(region_ext);
                 }
             }
             break;
@@ -2214,6 +2238,23 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
     return true;
 }
 
+std::string Frame::GetStokesType(int stokes_index) {
+    for (auto stokes_type : StokesStringTypes) {
+        int tmp_stokes_index;
+        if (_loader->GetStokesTypeIndex(stokes_type.second, tmp_stokes_index) && (tmp_stokes_index == stokes_index)) {
+            std::string stokes = (stokes_type.first.length() == 1) ? fmt::format("Stokes {}", stokes_type.first) : stokes_type.first;
+            return stokes;
+        }
+    }
+    if (IsComputedStokes(stokes_index)) {
+        CARTA::PolarizationType stokes_type = StokesTypes[stokes_index];
+        if (ComputedStokesName.count(stokes_type)) {
+            return ComputedStokesName[stokes_type];
+        }
+    }
+    return "Unknown";
+}
+
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
 }
@@ -2233,6 +2274,70 @@ void Frame::CloseCachedImage(const std::string& file) {
     if (_loader->GetFileName() == file) {
         _loader->CloseImageIfUpdated();
     }
+}
+
+bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
+    VectorFieldSettings new_settings(message);
+    if (_vector_field_settings != new_settings) {
+        _vector_field_settings = new_settings;
+        return true;
+    }
+    return false;
+}
+
+bool Frame::GetDownsampledRasterData(
+    std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip) {
+    int tile_original_width = bounds.x_max() - bounds.x_min();
+    int tile_original_height = bounds.y_max() - bounds.y_min();
+    if (tile_original_width * tile_original_height == 0) {
+        return false;
+    }
+
+    downsampled_width = std::ceil((float)tile_original_width / mip);
+    downsampled_height = std::ceil((float)tile_original_height / mip);
+    std::vector<float> tile_data;
+    bool use_loader_downsampled_data(false);
+
+    // Check does the (HDF5) loader has the right (mip) downsampled data
+    if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
+        return true;
+    } else {
+        // Check is there another downsampled data that we can use to downsample
+        for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
+            if (mip % sub_mip == 0) {
+                int loader_mip = mip / sub_mip;
+                if (_loader->HasMip(loader_mip) &&
+                    _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
+                    use_loader_downsampled_data = true;
+                    // Reset mip
+                    mip = sub_mip;
+                    // Reset the original tile width and height
+                    tile_original_width = std::ceil((float)tile_original_width / loader_mip);
+                    tile_original_height = std::ceil((float)tile_original_height / loader_mip);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!use_loader_downsampled_data) {
+        // Get full resolution raster tile data
+        int x_min = bounds.x_min();
+        int x_max = bounds.x_max() - 1;
+        int y_min = bounds.y_min();
+        int y_max = bounds.y_max() - 1;
+
+        auto tile_stokes_section = GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(z), stokes);
+        tile_data.resize(tile_stokes_section.slicer.length().product());
+        if (!GetSlicerData(tile_stokes_section, tile_data.data())) {
+            return false;
+        }
+    }
+
+    // Get downsampled raster tile data by block averaging
+    data.resize(downsampled_height * downsampled_width);
+    return BlockSmooth(
+        tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
 } // namespace carta

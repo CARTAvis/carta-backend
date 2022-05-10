@@ -59,6 +59,33 @@ int Compress(std::vector<float>& array, size_t offset, std::vector<char>& compre
     return status;
 }
 
+int Decompress(std::vector<float>& array, std::vector<char>& compression_buffer, int nx, int ny, int precision) {
+    int status = 0;    /* return value: 0 = success */
+    zfp_type type;     /* array scalar type */
+    zfp_field* field;  /* array meta data */
+    zfp_stream* zfp;   /* compressed stream */
+    bitstream* stream; /* bit stream to write to or read from */
+    type = zfp_type_float;
+    array.resize(nx * ny); // resize the resulting data
+    field = zfp_field_2d(array.data(), type, nx, ny);
+    zfp = zfp_stream_open(NULL);
+
+    zfp_stream_set_precision(zfp, precision);
+    stream = stream_open(compression_buffer.data(), compression_buffer.size());
+    zfp_stream_set_bit_stream(zfp, stream);
+    zfp_stream_rewind(zfp);
+
+    if (!zfp_decompress(zfp, field)) {
+        status = 1;
+    }
+
+    zfp_field_free(field);
+    zfp_stream_close(zfp);
+    stream_close(stream);
+
+    return status;
+}
+
 // Removes NaNs from an array and returns run-length encoded list of NaNs
 std::vector<int32_t> GetNanEncodingsSimple(std::vector<float>& array, int offset, int length) {
     int32_t prev_index = offset;

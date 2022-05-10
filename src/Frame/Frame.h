@@ -28,6 +28,8 @@
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
+#include <carta-protobuf/vector_overlay.pb.h>
+#include <carta-protobuf/vector_overlay_tile.pb.h>
 
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
@@ -44,6 +46,7 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
+#include "VectorFieldSettings.h"
 
 namespace carta {
 
@@ -86,6 +89,12 @@ static std::unordered_map<CARTA::FileType, string> FileTypeString{{CARTA::FileTy
     {CARTA::FileType::DS9_REG, "DS9"}, {CARTA::FileType::FITS, "FITS"}, {CARTA::FileType::HDF5, "HDF5"},
     {CARTA::FileType::MIRIAD, "MIRIAD"}, {CARTA::FileType::UNKNOWN, "Unknown"}};
 
+static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesName{
+    {CARTA::PolarizationType::Ptotal, "Total polarization intensity"}, {CARTA::PolarizationType::Plinear, "Linear polarization intensity"},
+    {CARTA::PolarizationType::PFtotal, "Fractional total polarization intensity"},
+    {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
+    {CARTA::PolarizationType::Pangle, "Polarization angle"}};
+
 class Frame {
 public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
@@ -102,6 +111,8 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
+    size_t Width();     // length of x axis
+    size_t Height();    // length of y axis
     size_t Depth();     // length of z axis
     size_t NumStokes(); // if no stokes axis, nstokes=1
     int CurrentZ();
@@ -187,7 +198,8 @@ public:
 
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
+        RegionState region_state = RegionState());
     void StopMomentCalc();
 
     // Image fitting
@@ -198,6 +210,7 @@ public:
         std::shared_ptr<Region> image_region);
 
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
+    std::string GetStokesType(int stokes_index);
 
     std::shared_mutex& GetActiveTaskMutex();
 
@@ -208,6 +221,17 @@ public:
 
     // Close image with cached data
     void CloseCachedImage(const std::string& file);
+
+    // Polarization vector field
+    bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    inline VectorFieldSettings& GetVectorFieldParameters() {
+        return _vector_field_settings;
+    };
+    inline void ClearVectorFieldParameters() {
+        _vector_field_settings.ClearSettings();
+    };
+    bool GetDownsampledRasterData(
+        std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
 
 protected:
     // Validate z and stokes index values
@@ -245,7 +269,7 @@ protected:
     void ValidateChannelStokes(std::vector<int>& channels, std::vector<int>& stokes, const CARTA::SaveFile& save_file_msg);
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
-        casacore::IPosition region_shape, std::shared_ptr<casacore::LCRegion> image_region, casacore::LattRegionHolder& latt_region_holder);
+        casacore::IPosition region_shape, casacore::LattRegionHolder& latt_region_holder);
 
     void InitImageHistogramConfigs();
 
@@ -316,6 +340,9 @@ protected:
 
     // Image fitter
     std::unique_ptr<ImageFitter> _image_fitter;
+
+    // Vector field settings
+    VectorFieldSettings _vector_field_settings;
 };
 
 } // namespace carta

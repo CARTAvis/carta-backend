@@ -36,6 +36,8 @@ class GeneralMessageTask : public OnMessageTask {
             _session->OnPvRequest(_message, _request_id);
         } else if constexpr (std::is_same_v<T, CARTA::FittingRequest>) {
             _session->OnFittingRequest(_message, _request_id);
+        } else if constexpr (std::is_same_v<T, CARTA::SetVectorOverlayParameters>) {
+            _session->OnSetVectorOverlayParameters(_message);
         } else {
             spdlog::warn("Bad event type for GeneralMessageTask!");
         }

@@ -46,6 +46,9 @@ public:
     float ReadPointXY(hsize_t x, hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
     std::vector<float> ReadProfileX(hsize_t y, hsize_t channel = 0, hsize_t stokes = 0);
     std::vector<float> ReadProfileY(hsize_t x, hsize_t channel = 0, hsize_t stokes = 0);
+    std::vector<float> ReadXY(hsize_t channel = 0, hsize_t stokes = 0);
+    hsize_t Width();
+    hsize_t Height();
 
 protected:
     int _N;
