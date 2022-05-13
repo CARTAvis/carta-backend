@@ -1156,7 +1156,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         } else {
             StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = stokes_slicer.slicer.length().product();
-            std::shared_ptr<float[]> data(new float[N]); // zero initialization
+            std::unique_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(stokes_slicer, data.get())) {
                 cursor_value = data[0];
             }
@@ -1527,7 +1527,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     count(_z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
-                    std::shared_ptr<float[]> buffer(new float[N]);
+                    std::unique_ptr<float[]> buffer(new float[N]);
                     end_channel = start(_z_axis) + nz - 1;
                     auto stokes_slicer =
                         GetImageSlicer(AxisRange(x_index), AxisRange(y_index), AxisRange(start(_z_axis), end_channel), stokes);
