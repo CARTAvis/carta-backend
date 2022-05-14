@@ -368,6 +368,15 @@ CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(int file_i
     return message;
 }
 
+CARTA::ImageBounds Message::ImageBounds(int x_min, int x_max, int y_min, int y_max) {
+    CARTA::ImageBounds message;
+    message.set_x_min(x_min);
+    message.set_x_max(x_max);
+    message.set_y_min(y_min);
+    message.set_y_max(y_max);
+    return message;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

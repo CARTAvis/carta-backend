@@ -88,6 +88,7 @@ public:
     static CARTA::SetVectorOverlayParameters SetVectorOverlayParameters(int file_id, int mip, bool fractional, double threshold,
         bool debiasing, double q_error, double u_error, int stokes_intensity, int stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
+    static CARTA::ImageBounds ImageBounds(int x_min, int x_max, int y_min, int y_max);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,

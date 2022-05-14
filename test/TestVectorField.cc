@@ -74,7 +74,7 @@ public:
         return BlockSmooth(tile_data.data(), data.data(), tile_original_width, tile_original_height, width, height, 0, 0, mip);
     }
 
-    bool ImageBoundsValid(const CARTA::ImageBounds& bounds) {
+    static bool ImageBoundsValid(const CARTA::ImageBounds& bounds) {
         int tile_width = bounds.x_max() - bounds.x_min();
         int tile_height = bounds.y_max() - bounds.y_min();
         return ((tile_width > 0) && (tile_height > 0));
@@ -99,7 +99,7 @@ class VectorFieldTest : public ::testing::Test {
     };
 
 public:
-    bool TestLoaderDownsampledData(
+    static bool TestLoaderDownsampledData(
         std::string image_shape, std::string image_opts, std::string stokes_type, std::vector<int>& loader_mips) {
         // Create the sample image
         std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
@@ -119,12 +119,7 @@ public:
         }
 
         int channel = frame->CurrentZ();
-
-        CARTA::ImageBounds bounds;
-        bounds.set_x_min(0);
-        bounds.set_x_max(frame->Width());
-        bounds.set_y_min(0);
-        bounds.set_y_max(frame->Height());
+        CARTA::ImageBounds bounds = Message::ImageBounds(0, frame->Width(), 0, frame->Height());
 
         for (auto loader_mip : loader_mips) {
             // Get (HDF5) loader downsampled data
@@ -164,12 +159,7 @@ public:
         int channel = frame->CurrentZ();
         int image_width = frame->Width();
         int image_height = frame->Height();
-
-        CARTA::ImageBounds bounds;
-        bounds.set_x_min(0);
-        bounds.set_x_max(image_width);
-        bounds.set_y_min(0);
-        bounds.set_y_max(image_height);
+        CARTA::ImageBounds bounds = Message::ImageBounds(0, image_width, 0, image_height);
 
         // Get (HDF5) loader downsampled data
         std::vector<float> loader_data;
@@ -223,7 +213,7 @@ public:
         return true;
     }
 
-    static bool TestTilesData(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
+    bool TestTilesData(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
         // Create the sample image
         std::string file_path_string;
         if (file_type == CARTA::FileType::HDF5) {
@@ -291,7 +281,7 @@ public:
                 int image_x = x_min + tile_x;
                 int image_y = y_min + tile_y;
                 int image_index = image_y * image_width + image_x;
-                if (!std::isnan(image_data[image_index]) || !std::isnan(tile_data[j])) {
+                if (IsValid(image_data[image_index], tile_data[j])) {
                     EXPECT_FLOAT_EQ(image_data[image_index], tile_data[j]);
                 }
                 ++count;
@@ -335,9 +325,7 @@ public:
         int width = std::ceil((float)image_width / mip);
         std::vector<float> data(height * width);
         BlockSmooth(image_data.data(), data.data(), image_width, image_height, width, height, 0, 0, mip);
-
         CheckDownsampledData(image_data, data, image_width, image_height, width, height, mip);
-
         return true;
     }
 
@@ -362,15 +350,16 @@ public:
         // Initialize stokes maps
         std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
         std::unordered_map<std::string, StokesSlicer> stokes_slicers{{"I", StokesSlicer()}, {"Q", StokesSlicer()}, {"U", StokesSlicer()}};
-        std::unordered_map<std::string, std::vector<float>> stokes_data{
+        std::unordered_map<std::string, std::vector<float>> data{
             {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
-        std::unordered_map<std::string, std::vector<float>> stokes_downsampled_data{
+        std::unordered_map<std::string, std::vector<float>> downsampled_data{
             {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
 
         // Get Stokes I, Q, and U indices
-        for (auto& stokes : stokes_indices) {
-            auto stokes_type = stokes.first;
-            if (!frame->GetStokesTypeIndex(stokes_type + "x", stokes.second)) {
+        for (auto& one : stokes_indices) {
+            const auto& stokes_type = one.first;
+            auto& stokes_index = one.second;
+            if (!frame->GetStokesTypeIndex(stokes_type + "x", stokes_index)) {
                 return false;
             }
         }
@@ -383,7 +372,6 @@ public:
         int image_width = frame->Width();
         int image_height = frame->Height();
         GetTiles(image_width, image_height, mip, tiles);
-
         EXPECT_GT(tiles.size(), 0);
 
         // Set results data
@@ -410,19 +398,21 @@ public:
             int y_min = bounds.y_min();
             int y_max = bounds.y_max() - 1;
 
-            for (auto& slicer : stokes_slicers) {
-                auto stokes_type = slicer.first;
-                slicer.second = frame->GetImageSlicer(
+            for (auto& one : stokes_slicers) {
+                const auto& stokes_type = one.first;
+                auto& stokes_slicer = one.second;
+                stokes_slicer = frame->GetImageSlicer(
                     AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_indices[stokes_type]);
             }
 
-            for (auto& data : stokes_data) {
-                auto stokes_type = data.first;
-                data.second.resize(stokes_slicers[stokes_type].slicer.length().product());
-                if (!frame->GetSlicerData(stokes_slicers[stokes_type], data.second.data())) {
+            for (auto& one : data) {
+                const auto& stokes_type = one.first;
+                auto& tmp_data = one.second;
+                tmp_data.resize(stokes_slicers[stokes_type].slicer.length().product());
+                if (!frame->GetSlicerData(stokes_slicers[stokes_type], tmp_data.data())) {
                     return false;
                 }
-                EXPECT_EQ(data.second.size(), tile_original_width * tile_original_height);
+                EXPECT_EQ(tmp_data.size(), tile_original_width * tile_original_height);
             }
 
             // Block averaging, get downsampled data
@@ -438,13 +428,12 @@ public:
                 EXPECT_EQ(tile_original_height, height);
             }
 
-            for (auto& downsampled_data : stokes_downsampled_data) {
-                auto stokes_type = downsampled_data.first;
-                downsampled_data.second.resize(area);
-                BlockSmooth(stokes_data[stokes_type].data(), downsampled_data.second.data(), tile_original_width, tile_original_height,
-                    width, height, 0, 0, mip);
-                CheckDownsampledData(
-                    stokes_data[stokes_type], downsampled_data.second, tile_original_width, tile_original_height, width, height, mip);
+            for (auto& one : downsampled_data) {
+                const auto& stokes_type = one.first;
+                auto& tmp_data = one.second;
+                tmp_data.resize(area);
+                BlockSmooth(data[stokes_type].data(), tmp_data.data(), tile_original_width, tile_original_height, width, height, 0, 0, mip);
+                CheckDownsampledData(data[stokes_type], tmp_data, tile_original_width, tile_original_height, width, height, mip);
             }
 
             // Set PI/PA results
@@ -454,45 +443,39 @@ public:
             pa.resize(area);
 
             // Calculate PI
-            std::transform(stokes_downsampled_data["Q"].begin(), stokes_downsampled_data["Q"].end(), stokes_downsampled_data["U"].begin(),
-                pi.begin(), _calc_pi);
-
+            std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pi.begin(), _calc_pi);
             if (fractional) { // Calculate FPI
-                std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
+                std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
             }
 
             // Calculate PA
-            std::transform(stokes_downsampled_data["Q"].begin(), stokes_downsampled_data["Q"].end(), stokes_downsampled_data["U"].begin(),
-                pa.begin(), _calc_pa);
+            std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pa.begin(), _calc_pa);
 
             // Set NaN for PI and PA if stokes I is NaN or below the threshold
-            std::transform(
-                stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
-            std::transform(
-                stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
+            std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
+            std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
 
             // Check calculation results
             for (int j = 0; j < area; ++j) {
                 float expected_pi;
                 if (fractional) {
-                    expected_pi = sqrt(pow(stokes_downsampled_data["Q"][j], 2) + pow(stokes_downsampled_data["U"][j], 2) -
+                    expected_pi = sqrt(pow(downsampled_data["Q"][j], 2) + pow(downsampled_data["U"][j], 2) -
                                        (pow(q_error, 2) + pow(u_error, 2)) / 2.0) /
-                                  stokes_downsampled_data["I"][j];
+                                  downsampled_data["I"][j];
                 } else {
-                    expected_pi = sqrt(pow(stokes_downsampled_data["Q"][j], 2) + pow(stokes_downsampled_data["U"][j], 2) -
-                                       (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
+                    expected_pi = sqrt(
+                        pow(downsampled_data["Q"][j], 2) + pow(downsampled_data["U"][j], 2) - (pow(q_error, 2) + pow(u_error, 2)) / 2.0);
                 }
 
-                float expected_pa =
-                    (float)(180.0 / casacore::C::pi) * atan2(stokes_downsampled_data["U"][j], stokes_downsampled_data["Q"][j]) / 2;
+                float expected_pa = (float)(180.0 / casacore::C::pi) * atan2(downsampled_data["U"][j], downsampled_data["Q"][j]) / 2;
 
-                expected_pi = (stokes_downsampled_data["I"][j] >= threshold) ? expected_pi : FLOAT_NAN;
-                expected_pa = (stokes_downsampled_data["I"][j] >= threshold) ? expected_pa : FLOAT_NAN;
+                expected_pi = (downsampled_data["I"][j] >= threshold) ? expected_pi : FLOAT_NAN;
+                expected_pa = (downsampled_data["I"][j] >= threshold) ? expected_pa : FLOAT_NAN;
 
-                if (!std::isnan(pi[j]) || !std::isnan(expected_pi)) {
+                if (IsValid(pi[j], expected_pi)) {
                     EXPECT_FLOAT_EQ(pi[j], expected_pi);
                 }
-                if (!std::isnan(pa[j]) || !std::isnan(expected_pa)) {
+                if (IsValid(pa[j], expected_pa)) {
                     EXPECT_FLOAT_EQ(pa[j], expected_pa);
                 }
             }
@@ -558,12 +541,12 @@ public:
         }
     }
 
-    void TestMipLayerConversion(int mip, int image_width, int image_height) {
+    static void TestMipLayerConversion(int mip, int image_width, int image_height) {
         int layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
         EXPECT_EQ(mip, Tile::LayerToMip(layer, image_width, image_height, TILE_SIZE, TILE_SIZE));
     }
 
-    void TestRasterTilesGeneration(int image_width, int image_height, int mip) {
+    static void TestRasterTilesGeneration(int image_width, int image_height, int mip) {
         std::vector<Tile> tiles;
         GetTiles(image_width, image_height, mip, tiles);
 
@@ -611,15 +594,16 @@ public:
         // Initialize stokes maps
         std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
         std::unordered_map<std::string, StokesSlicer> stokes_slicers{{"I", StokesSlicer()}, {"Q", StokesSlicer()}, {"U", StokesSlicer()}};
-        std::unordered_map<std::string, std::vector<float>> stokes_data{
+        std::unordered_map<std::string, std::vector<float>> data{
             {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
-        std::unordered_map<std::string, std::vector<float>> stokes_downsampled_data{
+        std::unordered_map<std::string, std::vector<float>> downsampled_data{
             {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
 
         // Get Stokes I, Q, and U indices
         for (auto& stokes : stokes_indices) {
-            auto stokes_type = stokes.first;
-            if (!frame->GetStokesTypeIndex(stokes_type + "x", stokes.second)) {
+            const auto& stokes_type = stokes.first;
+            auto& stokes_index = stokes.second;
+            if (!frame->GetStokesTypeIndex(stokes_type + "x", stokes_index)) {
                 return false;
             }
         }
@@ -634,19 +618,21 @@ public:
         int y_min = 0;
         int y_max = image_height - 1;
 
-        for (auto& slicer : stokes_slicers) {
-            auto stokes_type = slicer.first;
-            slicer.second =
+        for (auto& one : stokes_slicers) {
+            const auto& stokes_type = one.first;
+            auto& stokes_slicer = one.second;
+            stokes_slicer =
                 frame->GetImageSlicer(AxisRange(x_min, x_max), AxisRange(y_min, y_max), AxisRange(channel), stokes_indices[stokes_type]);
         }
 
-        for (auto& data : stokes_data) {
-            auto stokes_type = data.first;
-            data.second.resize(stokes_slicers[stokes_type].slicer.length().product());
-            if (!frame->GetSlicerData(stokes_slicers[stokes_type], data.second.data())) {
+        for (auto& one : data) {
+            const auto& stokes_type = one.first;
+            auto& tmp_data = one.second;
+            tmp_data.resize(stokes_slicers[stokes_type].slicer.length().product());
+            if (!frame->GetSlicerData(stokes_slicers[stokes_type], tmp_data.data())) {
                 return false;
             }
-            EXPECT_EQ(data.second.size(), image_width * image_height);
+            EXPECT_EQ(tmp_data.size(), image_width * image_height);
         }
 
         // Block averaging, get downsampled data
@@ -654,12 +640,12 @@ public:
         int height = std::ceil((float)image_height / mip);
         int area = height * width;
 
-        for (auto& downsampled_data : stokes_downsampled_data) {
-            auto stokes_type = downsampled_data.first;
-            downsampled_data.second.resize(area);
-            BlockSmooth(
-                stokes_data[stokes_type].data(), downsampled_data.second.data(), image_width, image_height, width, height, 0, 0, mip);
-            CheckDownsampledData(stokes_data[stokes_type], downsampled_data.second, image_width, image_height, width, height, mip);
+        for (auto& one : downsampled_data) {
+            const auto& stokes_type = one.first;
+            auto& tmp_data = one.second;
+            tmp_data.resize(area);
+            BlockSmooth(data[stokes_type].data(), tmp_data.data(), image_width, image_height, width, height, 0, 0, mip);
+            CheckDownsampledData(data[stokes_type], tmp_data, image_width, image_height, width, height, mip);
         }
 
         // Reset Q and U errors as 0 if debiasing is not used
@@ -671,20 +657,17 @@ public:
         std::vector<float> pi(area), pa(area);
 
         // Calculate PI
-        std::transform(stokes_downsampled_data["Q"].begin(), stokes_downsampled_data["Q"].end(), stokes_downsampled_data["U"].begin(),
-            pi.begin(), _calc_pi);
-
+        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pi.begin(), _calc_pi);
         if (fractional) { // Calculate FPI
-            std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
+            std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
         }
 
         // Calculate PA
-        std::transform(stokes_downsampled_data["Q"].begin(), stokes_downsampled_data["Q"].end(), stokes_downsampled_data["U"].begin(),
-            pa.begin(), _calc_pa);
+        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pa.begin(), _calc_pa);
 
         // Set NaN for PI and PA if stokes I is NaN or below the threshold
-        std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
-        std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
+        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
+        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with the new Frame function
@@ -704,14 +687,12 @@ public:
         auto callback = [&](CARTA::VectorOverlayTileData& response) {
             EXPECT_EQ(response.intensity_tiles_size(), 1);
             if (response.intensity_tiles_size()) {
-                // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
                 GetTileData(tile_pi, width, pi2);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
-                // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
                 GetTileData(tile_pa, width, pa2);
             }
@@ -737,14 +718,14 @@ public:
         return true;
     }
 
-    void CheckProgresses(const std::vector<double>& progresses) {
+    static void CheckProgresses(const std::vector<double>& progresses) {
         EXPECT_TRUE(!progresses.empty());
         if (!progresses.empty()) {
             EXPECT_EQ(progresses.back(), 1);
         }
     }
 
-    void GetTileData(const CARTA::TileData& tile, int downsampled_width, std::vector<float>& array) {
+    static void GetTileData(const CARTA::TileData& tile, int downsampled_width, std::vector<float>& array) {
         int tile_x = tile.x();
         int tile_y = tile.y();
         int tile_width = tile.width();
@@ -802,14 +783,12 @@ public:
         auto callback = [&](CARTA::VectorOverlayTileData& response) {
             EXPECT_EQ(response.intensity_tiles_size(), 1);
             if (response.intensity_tiles_size()) {
-                // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
                 GetTileData(tile_pi, width, pi2);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
-                // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
                 GetTileData(tile_pa, width, pa2);
             }
@@ -850,14 +829,15 @@ public:
 
         // Initialize stokes maps
         std::unordered_map<std::string, int> stokes_indices{{"I", 0}, {"Q", 1}, {"U", 2}};
-        std::unordered_map<std::string, std::vector<float>> stokes_data{
+        std::unordered_map<std::string, std::vector<float>> data{
             {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
-        std::unordered_map<std::string, std::vector<float>> stokes_downsampled_data{
+        std::unordered_map<std::string, std::vector<float>> downsampled_data{
             {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
 
-        for (auto& data : stokes_data) {
-            auto stokes_type = data.first;
-            data.second = reader->ReadXY(channel, stokes_indices[stokes_type]);
+        for (auto& one : data) {
+            const auto& stokes_type = one.first;
+            auto& tmp_data = one.second;
+            tmp_data = reader->ReadXY(channel, stokes_indices[stokes_type]);
         }
 
         // Block averaging, get downsampled data
@@ -867,11 +847,11 @@ public:
         height = std::ceil((float)image_height / mip);
         int area = height * width;
 
-        for (auto& downsampled_data : stokes_downsampled_data) {
-            auto stokes_type = downsampled_data.first;
-            downsampled_data.second.resize(area);
-            BlockSmooth(
-                stokes_data[stokes_type].data(), downsampled_data.second.data(), image_width, image_height, width, height, 0, 0, mip);
+        for (auto& one : downsampled_data) {
+            const auto& stokes_type = one.first;
+            auto& tmp_data = one.second;
+            tmp_data.resize(area);
+            BlockSmooth(data[stokes_type].data(), tmp_data.data(), image_width, image_height, width, height, 0, 0, mip);
         }
 
         // Reset Q and U errors as 0 if debiasing is not used
@@ -884,24 +864,21 @@ public:
         pa.resize(area);
 
         // Calculate PI
-        std::transform(stokes_downsampled_data["Q"].begin(), stokes_downsampled_data["Q"].end(), stokes_downsampled_data["U"].begin(),
-            pi.begin(), _calc_pi);
-
+        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pi.begin(), _calc_pi);
         if (fractional) { // Calculate FPI
-            std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
+            std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
         }
 
         // Calculate PA
-        std::transform(stokes_downsampled_data["Q"].begin(), stokes_downsampled_data["Q"].end(), stokes_downsampled_data["U"].begin(),
-            pa.begin(), _calc_pa);
+        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pa.begin(), _calc_pa);
 
         // Set NaN for PI and PA if stokes I is NaN or below the threshold
-        std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
-        std::transform(stokes_downsampled_data["I"].begin(), stokes_downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
+        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
+        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
     }
 
-    void GetDownsampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip, int& width,
-        int& height, std::vector<float>& pa) {
+    static void GetDownsampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
+        int& width, int& height, std::vector<float>& pa) {
         // Create the image reader
         std::shared_ptr<DataReader> reader = nullptr;
         if (file_type == CARTA::FileType::HDF5) {
@@ -922,7 +899,7 @@ public:
         BlockSmooth(image_data.data(), pa.data(), image_width, image_height, width, height, 0, 0, mip);
     }
 
-    void TestStokesIntensityOrAngleSettings(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
+    static void TestStokesIntensityOrAngleSettings(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
         bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
         int stokes_angle = 1) {
         // Create the sample image
@@ -1009,14 +986,12 @@ public:
         auto callback = [&](CARTA::VectorOverlayTileData& response) {
             EXPECT_EQ(response.intensity_tiles_size(), 1);
             if (response.intensity_tiles_size()) {
-                // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
                 GetTileData(tile_pi, width, pi_no_compression);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
-                // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
                 GetTileData(tile_pa, width, pa_no_compression);
             }
@@ -1043,14 +1018,12 @@ public:
         auto callback2 = [&](CARTA::VectorOverlayTileData& response) {
             EXPECT_EQ(response.intensity_tiles_size(), 1);
             if (response.intensity_tiles_size()) {
-                // Fill PI values
                 auto tile_pi = response.intensity_tiles(0);
                 DecompressTileData(tile_pi, width, comprerssion_quality, pi_compression);
             }
 
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
-                // Fill PA values
                 auto tile_pa = response.angle_tiles(0);
                 DecompressTileData(tile_pa, width, comprerssion_quality, pa_compression);
             }
@@ -1063,7 +1036,7 @@ public:
         float pi_abs_err_mean = 0;
         int count_pi = 0;
         for (int i = 0; i < area; ++i) {
-            if (!std::isnan(pi_no_compression[i]) && !std::isnan(pi_compression[i])) {
+            if (IsValid(pi_no_compression[i], pi_compression[i])) {
                 pi_abs_err_mean += fabs(pi_no_compression[i] - pi_compression[i]);
                 ++count_pi;
             }
@@ -1074,7 +1047,7 @@ public:
         float pa_abs_err_mean = 0;
         int count_pa = 0;
         for (int i = 0; i < area; ++i) {
-            if (!std::isnan(pa_no_compression[i]) && !std::isnan(pa_compression[i])) {
+            if (IsValid(pa_no_compression[i], pa_compression[i])) {
                 pa_abs_err_mean += fabs(pa_no_compression[i] - pa_compression[i]);
                 ++count_pa;
             }
@@ -1087,7 +1060,8 @@ public:
         return std::make_pair(pi_abs_err_mean, pa_abs_err_mean);
     }
 
-    void DecompressTileData(const CARTA::TileData& tile, int downsampled_width, float comprerssion_quality, std::vector<float>& array) {
+    static void DecompressTileData(
+        const CARTA::TileData& tile, int downsampled_width, float comprerssion_quality, std::vector<float>& array) {
         int tile_x = tile.x();
         int tile_y = tile.y();
         int tile_width = tile.width();
@@ -1167,14 +1141,12 @@ public:
                 auto response = Message::DecodeMessage<CARTA::VectorOverlayTileData>(message);
                 EXPECT_EQ(response.intensity_tiles_size(), 1);
                 if (response.intensity_tiles_size()) {
-                    // Fill PI values
                     auto tile_pi = response.intensity_tiles(0);
                     GetTileData(tile_pi, width, pi2);
                 }
 
                 EXPECT_EQ(response.angle_tiles_size(), 1);
                 if (response.angle_tiles_size()) {
-                    // Fill PA values
                     auto tile_pa = response.angle_tiles(0);
                     GetTileData(tile_pa, width, pa2);
                 }
@@ -1274,7 +1246,6 @@ public:
                 if (stokes_intensity > -1) {
                     EXPECT_EQ(response.intensity_tiles_size(), 1);
                     if (response.intensity_tiles_size()) {
-                        // Fill PI values
                         auto tile_pi = response.intensity_tiles(0);
                         GetTileData(tile_pi, width, pi);
                     }
@@ -1282,7 +1253,6 @@ public:
                 if (stokes_angle > -1) {
                     EXPECT_EQ(response.angle_tiles_size(), 1);
                     if (response.angle_tiles_size()) {
-                        // Fill PA values
                         auto tile_pa = response.angle_tiles(0);
                         GetTileData(tile_pa, width, pa2);
                     }
@@ -1312,8 +1282,8 @@ public:
         CheckProgresses(progresses);
     }
 
-    void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa, std::vector<float>& pa2,
-        int downsampled_width, int downsampled_height) {
+    static void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa,
+        std::vector<float>& pa2, int downsampled_width, int downsampled_height) {
         // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data,
         // and the remainder of image width or height divided by this smaller mip is not 0.
         // Then the error would happen on the right or bottom edge of downsampled pixels compared to that downsampled from the full
@@ -1336,7 +1306,7 @@ public:
         }
     }
 
-    bool IsValid(double a, double b) {
+    static bool IsValid(double a, double b) {
         return (!std::isnan(a) && !std::isnan(b));
     }
 };
