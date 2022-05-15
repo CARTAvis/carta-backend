@@ -361,10 +361,7 @@ public:
 
         // Get a point region spatial profiles
         std::vector<CARTA::SpatialProfileData> spatial_profiles1;
-        auto projected_file_ids = region_handler->GetProjectedFileIds(region_id);
-        for (auto projected_file_id : projected_file_ids) {
-            region_handler->FillSpatialProfileData(projected_file_id, region_id, spatial_profiles1);
-        }
+        region_handler->FillPointSpatialProfileData(file_id, region_id, spatial_profiles1);
 
         // Get a point region spatial profiles in another way
         auto spatial_profiles2 = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
