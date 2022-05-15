@@ -25,8 +25,6 @@ ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> 
     _num_dims = _image_shape.size();
     _has_pixel_mask = _image->hasPixelMask();
     _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
-    std::cerr << "ImagePtrLoader image shape=" << _image->shape() << std::endl;
-    std::cerr << "ImagePtrLoader image datatype=" << _image->dataType() << std::endl;
     _data_type = _image->dataType();
 }
 

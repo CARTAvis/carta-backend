@@ -1156,7 +1156,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         } else {
             StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
             const auto N = stokes_slicer.slicer.length().product();
-            std::shared_ptr<float[]> data(new float[N]); // zero initialization
+            std::unique_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(stokes_slicer, data.get())) {
                 cursor_value = data[0];
             }
@@ -1527,7 +1527,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     count(_z_axis) = nz;
                     casacore::Slicer slicer(start, count);
                     const auto N = slicer.length().product();
-                    std::shared_ptr<float[]> buffer(new float[N]);
+                    std::unique_ptr<float[]> buffer(new float[N]);
                     end_channel = start(_z_axis) + nz - 1;
                     auto stokes_slicer =
                         GetImageSlicer(AxisRange(x_index), AxisRange(y_index), AxisRange(start(_z_axis), end_channel), stokes);
@@ -2209,9 +2209,19 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
-    if (coordinate.size() > 1) {
+    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
+    bool is_stokes_string = StokesStringTypes.find(coordinate) != StokesStringTypes.end();
+
+    if (coordinate.size() == 2 || coordinate.size() == 3 || is_stokes_string) {
         bool stokes_ok(false);
-        std::string stokes_string = coordinate.substr(0, coordinate.size() - 1);
+
+        std::string stokes_string;
+        if (is_stokes_string) {
+            stokes_string = coordinate;
+        } else {
+            stokes_string = coordinate.substr(0, coordinate.size() - 1);
+        }
+
         if (StokesStringTypes.count(stokes_string)) {
             CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
             if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {

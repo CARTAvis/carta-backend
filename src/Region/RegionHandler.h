@@ -44,6 +44,7 @@ struct RegionProperties {
 class RegionHandler {
 public:
     RegionHandler() = default;
+    ~RegionHandler();
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys);
@@ -63,6 +64,8 @@ public:
     // Requirements
     bool SetHistogramRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
+    bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
     bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
@@ -74,18 +77,19 @@ public:
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
+    bool FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    bool FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb);
 
     // Calculate moments
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
 
-    // Point regions
-    bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
-        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
-    bool FillSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec);
+    // Spatial Requirements
     bool IsPointRegion(int region_id);
-    std::vector<int> GetPointRegionIds(int file_id);
-    std::vector<int> GetProjectedFileIds(int region_id);
+    bool IsLineRegion(int region_id);
+    bool IsClosedRegion(int region_id);
+    std::vector<int> GetSpatialReqRegionsForFile(int file_id);
+    std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
     // Generate PV image
     bool CalculatePvImage(int file_id, int region_id, int width, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
@@ -100,16 +104,17 @@ private:
     bool RegionSet(int region_id);
     bool FrameSet(int file_id);
 
-    // Clear requirements for closed region(s) or file(s)
+    // Requirements helpers
+    // Check if requirements exist
+    bool HasSpectralRequirements(
+        int region_id, int file_id, const std::string& coordinate, const std::vector<CARTA::StatsType>& required_stats);
+    bool HasSpatialRequirements(int region_id, int file_id, const std::string& coordinate, int width);
+    // Set all spectral requirements "new" when region changes
+    void UpdateNewSpectralRequirements(int region_id);
+    // Clear requirements and cache for region(s) or file(s)
     void RemoveRegionRequirementsCache(int region_id);
     void RemoveFileRequirementsCache(int file_id);
-    // Clear cache for changed region
     void ClearRegionCache(int region_id);
-
-    // Check if spectral config has been changed/cancelled
-    bool HasSpectralRequirements(int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats);
-    // Set all requirements "new" when region changes
-    void UpdateNewSpectralRequirements(int region_id);
 
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
@@ -118,7 +123,7 @@ private:
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
         std::shared_ptr<casacore::LCRegion> region_2D);
 
-    // Fill data stream messages
+    // Data stream helpers
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
         std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
@@ -126,29 +131,36 @@ private:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
+    bool GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
+        const std::function<void(std::vector<float>, double)>& spatial_profile_callback);
 
     // Generate box regions to approximate a line with a width, and get mean of each box (per z else current z).
     // Used for pv generator and spatial profiles.
-    bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, std::function<void(float)>& progress_callback,
-        double& increment, casacore::Matrix<float>& profiles, bool& cancelled, std::string& message);
-    void SetLineRotation(RegionState& region_state);
-    bool GetFixedPixelRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-        std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
-        casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
+    bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
+        std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles, bool& cancelled,
+        std::string& message);
+    bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
+    float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
+    bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
+        RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
+        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
     bool CheckLinearOffsets(
-        const std::vector<CARTA::Point>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
+        const std::vector<std::vector<double>>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
+    double GetPointSeparation(
+        std::shared_ptr<CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2);
     double GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys);
-    bool GetFixedAngularRegionProfiles(int file_id, int width, bool per_z, RegionState& region_state,
-        std::shared_ptr<casacore::CoordinateSystem> reference_csys, std::function<void(float)>& progress_callback,
-        casacore::Matrix<float>& profiles, double& increment, bool& cancelled, std::string& message);
-    bool SetPointInRange(float max_point, float& point);
-    casacore::Vector<double> FindPointAtTargetSeparation(const casacore::DirectionCoordinate& direction_coord,
-        const casacore::Vector<double>& endpoint0, const casacore::Vector<double>& endpoint1, double target_separation, double tolerance);
-    RegionState GetTemporaryRegionState(casacore::DirectionCoordinate& direction_coord, int file_id,
-        const casacore::Vector<double>& box_start, const casacore::Vector<double>& box_end, int pixel_width, double angular_width,
-        float height_angle, double tolerance);
-    casacore::Vector<float> GetTemporaryRegionProfile(
-        int file_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, double& num_pixels);
+    bool GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
+        RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
+        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
+        std::string& message);
+    std::vector<double> FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
+        const std::vector<double>& start_point, const std::vector<double>& end_point, double target_separation, double tolerance);
+    RegionState GetTemporaryRegionState(std::shared_ptr<casacore::CoordinateSystem> coord_sys, int file_id,
+        const std::vector<double>& box_start, const std::vector<double>& box_end, int pixel_width, double angular_width,
+        float line_rotation, double tolerance);
+    casacore::Vector<float> GetTemporaryRegionProfile(int region_idx, int file_id, RegionState& region_state,
+        std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, int stokes_index, double& num_pixels);
+    casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
 
     // Get computed stokes profiles for a region
     using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
@@ -169,6 +181,7 @@ private:
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
+    std::mutex _region_mutex;
 
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
@@ -177,6 +190,9 @@ private:
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
+    std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
+    // Lock requirements to add/remove
+    std::mutex _spatial_mutex;
     std::mutex _spectral_mutex;
 
     // Cache; CacheId key contains file, region, stokes, (optional) z index
@@ -185,17 +201,18 @@ private:
     std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
 
     // Spectral profiles to calculate with ImageStatistics.
-    // TODO: Remove NumPixels, for pvgen testing
     std::vector<CARTA::StatsType> _spectral_stats = {CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity, CARTA::StatsType::Mean,
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
         CARTA::StatsType::Extrema, CARTA::StatsType::NumPixels};
 
-    // Point regions configs, key is region id
-    std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
-    std::mutex _spatial_mutex;
-
     // PV cancellation: key is file_id
     std::unordered_map<int, bool> _stop_pv;
+
+    // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
+    std::mutex _pix_mvdir_mutex;
+
+    // Prevent crash during line profiles
+    std::mutex _line_profile_mutex;
 };
 
 } // namespace carta
