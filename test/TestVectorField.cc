@@ -85,18 +85,220 @@ class VectorFieldTest : public ::testing::Test {
     float _q_error = 0.0;
     float _u_error = 0.0;
     float _threshold = FLOAT_NAN;
+
     std::function<float(float, float)> _calc_pi = [this](float q, float u) {
         return ((IsValid(q, u)) ? (float)sqrt(pow(q, 2) + pow(u, 2) - (pow(_q_error, 2) + pow(_u_error, 2)) / 2.0) : FLOAT_NAN);
     };
-    std::function<float(float, float)> _calc_fpi = [this](float i, float pi) {
-        return (IsValid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
-    };
-    std::function<float(float, float)> _calc_pa = [this](float q, float u) {
+    std::function<float(float, float)> _calc_fpi = [](float i, float pi) { return (IsValid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN); };
+    std::function<float(float, float)> _calc_pa = [](float q, float u) {
         return (IsValid(q, u) ? (float)(180.0 / casacore::C::pi) * atan2(u, q) / 2 : FLOAT_NAN);
     };
     std::function<float(float, float)> _apply_threshold = [this](float i, float result) {
         return ((std::isnan(i) || (!std::isnan(_threshold) && (i < _threshold))) ? FLOAT_NAN : result);
     };
+
+    static std::string GenerateImage(const CARTA::FileType& file_type, const std::string& image_opts) {
+        if (file_type == CARTA::FileType::HDF5) {
+            return ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
+        } else {
+            return ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
+        }
+    }
+
+    void SetErrorsThreshold(const float& q_error, const float& u_error, const float& threshold) {
+        _q_error = q_error;
+        _u_error = u_error;
+        _threshold = threshold;
+    }
+
+    void CheckDownsampledData(const std::vector<float>& src_data, const std::vector<float>& dest_data, int src_width, int src_height,
+        int dest_width, int dest_height, int mip) {
+        EXPECT_GE(src_data.size(), 0);
+        EXPECT_GE(dest_data.size(), 0);
+        if ((src_width % mip == 0) && (src_height % mip == 0)) {
+            EXPECT_TRUE(src_data.size() == dest_data.size() * pow(mip, 2));
+        } else {
+            EXPECT_TRUE(src_data.size() < dest_data.size() * pow(mip, 2));
+        }
+
+        for (int x = 0; x < dest_width; ++x) {
+            for (int y = 0; y < dest_height; ++y) {
+                int i_max = std::min(x * mip + mip, src_width);
+                int j_max = std::min(y * mip + mip, src_height);
+                float avg = 0;
+                int count = 0;
+                for (int i = x * mip; i < i_max; ++i) {
+                    for (int j = y * mip; j < j_max; ++j) {
+                        if (!std::isnan(src_data[j * src_width + i])) {
+                            avg += src_data[j * src_width + i];
+                            ++count;
+                        }
+                    }
+                }
+                avg /= count;
+                if (count != 0) {
+                    EXPECT_NEAR(dest_data[y * dest_width + x], avg, 1e-6);
+                }
+            }
+        }
+    }
+
+    void CalcPiAndPa(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip, bool debiasing, bool fractional,
+        double threshold, double q_error, double u_error, int& width, int& height, std::vector<float>& pi, std::vector<float>& pa) {
+        SetErrorsThreshold(q_error, u_error, threshold);
+
+        // Create the image reader
+        std::shared_ptr<DataReader> reader = nullptr;
+        if (file_type == CARTA::FileType::HDF5) {
+            reader.reset(new Hdf5DataReader(file_path));
+        } else {
+            reader.reset(new FitsDataReader(file_path));
+        }
+
+        // Initialize stokes maps
+        std::unordered_map<std::string, int> stokes_indices{{"I", 0}, {"Q", 1}, {"U", 2}};
+        std::unordered_map<std::string, std::vector<float>> data{
+            {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
+        std::unordered_map<std::string, std::vector<float>> downsampled_data{
+            {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
+
+        for (auto& one : data) {
+            const auto& stokes_type = one.first;
+            auto& tmp_data = one.second;
+            tmp_data = reader->ReadXY(channel, stokes_indices[stokes_type]);
+        }
+
+        // Block averaging, get downsampled data
+        int image_width = reader->Width();
+        int image_height = reader->Height();
+        width = std::ceil((float)image_width / mip);
+        height = std::ceil((float)image_height / mip);
+        int area = height * width;
+
+        for (auto& one : downsampled_data) {
+            const auto& stokes_type = one.first;
+            auto& tmp_data = one.second;
+            tmp_data.resize(area);
+            BlockSmooth(data[stokes_type].data(), tmp_data.data(), image_width, image_height, width, height, 0, 0, mip);
+        }
+
+        // Reset Q and U errors as 0 if debiasing is not used
+        if (!debiasing) {
+            q_error = u_error = 0;
+        }
+
+        // Set PI/PA results
+        pi.resize(area);
+        pa.resize(area);
+
+        // Calculate PI
+        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pi.begin(), _calc_pi);
+        if (fractional) { // Calculate FPI
+            std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
+        }
+
+        // Calculate PA
+        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pa.begin(), _calc_pa);
+
+        // Set NaN for PI and PA if stokes I is NaN or below the threshold
+        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
+        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
+    }
+
+    static bool IsValid(double a, double b) {
+        return (!std::isnan(a) && !std::isnan(b));
+    }
+
+    static void CheckProgresses(const std::vector<double>& progresses) {
+        EXPECT_TRUE(!progresses.empty());
+        if (!progresses.empty()) {
+            EXPECT_EQ(progresses.back(), 1);
+        }
+    }
+
+    static void GetTileData(const CARTA::TileData& tile, int downsampled_width, std::vector<float>& array) {
+        int tile_x = tile.x();
+        int tile_y = tile.y();
+        int tile_width = tile.width();
+        int tile_height = tile.height();
+        int tile_layer = tile.layer();
+        std::string buf = tile.image_data();
+        std::vector<float> val(buf.size() / sizeof(float));
+        memcpy(val.data(), buf.data(), buf.size());
+
+        for (int i = 0; i < val.size(); ++i) {
+            int x = tile_x * TILE_SIZE + (i % tile_width);
+            int y = tile_y * TILE_SIZE + (i / tile_width);
+            array[y * downsampled_width + x] = val[i];
+        }
+    }
+
+    static void DecompressTileData(
+        const CARTA::TileData& tile, int downsampled_width, float comprerssion_quality, std::vector<float>& array) {
+        int tile_x = tile.x();
+        int tile_y = tile.y();
+        int tile_width = tile.width();
+        int tile_height = tile.height();
+        int tile_layer = tile.layer();
+        std::vector<char> buf(tile.image_data().begin(), tile.image_data().end());
+
+        // Decompress the data
+        std::vector<float> val;
+        Decompress(val, buf, tile_width, tile_height, comprerssion_quality);
+        EXPECT_EQ(val.size(), tile_width * tile_height);
+
+        for (int i = 0; i < val.size(); ++i) {
+            int x = tile_x * TILE_SIZE + (i % tile_width);
+            int y = tile_y * TILE_SIZE + (i / tile_width);
+            array[y * downsampled_width + x] = val[i];
+        }
+    }
+
+    static void GetDownsampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
+        int& width, int& height, std::vector<float>& pa) {
+        // Create the image reader
+        std::shared_ptr<DataReader> reader = nullptr;
+        if (file_type == CARTA::FileType::HDF5) {
+            reader.reset(new Hdf5DataReader(file_path));
+        } else {
+            reader.reset(new FitsDataReader(file_path));
+        }
+
+        std::vector<float> image_data = reader->ReadXY(channel, stokes);
+
+        // Block averaging, get downsampled data
+        int image_width = reader->Width();
+        int image_height = reader->Height();
+        width = std::ceil((float)image_width / mip);
+        height = std::ceil((float)image_height / mip);
+        pa.resize(height * width);
+
+        BlockSmooth(image_data.data(), pa.data(), image_width, image_height, width, height, 0, 0, mip);
+    }
+
+    static void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa,
+        std::vector<float>& pa2, int downsampled_width, int downsampled_height) {
+        // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data,
+        // and the remainder of image width or height divided by this smaller mip is not 0.
+        // Then the error would happen on the right or bottom edge of downsampled pixels compared to that downsampled from the full
+        // resolution pixels. Because the "weight" of pixels for averaging in a mip X mip block are not equal.
+        // In such case, we ignore the comparison of the data which on the right or bottom edge.
+
+        // Remove the right edge data
+        for (int i = 0; i < pi.size(); ++i) {
+            if ((i + 1) % downsampled_width == 0) {
+                pi[i] = pi2[i] = FLOAT_NAN;
+                pa[i] = pa2[i] = FLOAT_NAN;
+            }
+        }
+        // Remove the bottom edge data
+        for (int i = 0; i < pi.size(); ++i) {
+            if (i / downsampled_width == downsampled_height - 1) {
+                pi[i] = pi2[i] = FLOAT_NAN;
+                pa[i] = pa2[i] = FLOAT_NAN;
+            }
+        }
+    }
 
 public:
     static bool TestLoaderDownsampledData(
@@ -215,12 +417,7 @@ public:
 
     bool TestTilesData(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -269,7 +466,6 @@ public:
             if (!frame->GetSlicerData(tile_section, tile_data.data())) {
                 return false;
             }
-
             EXPECT_GT(tile_data.size(), 0);
             EXPECT_EQ(tile_data.size(), tile_original_width * tile_original_height);
 
@@ -293,12 +489,7 @@ public:
 
     bool TestBlockSmooth(std::string image_opts, const CARTA::FileType& file_type, std::string stokes_type, int mip) {
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -331,17 +522,10 @@ public:
 
     bool TestTileCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional, double q_error = 0,
         double u_error = 0, double threshold = 0) {
-        _q_error = q_error;
-        _u_error = u_error;
-        _threshold = threshold;
+        SetErrorsThreshold(q_error, u_error, threshold);
 
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -509,38 +693,6 @@ public:
         return true;
     }
 
-    void CheckDownsampledData(const std::vector<float>& src_data, const std::vector<float>& dest_data, int src_width, int src_height,
-        int dest_width, int dest_height, int mip) {
-        EXPECT_GE(src_data.size(), 0);
-        EXPECT_GE(dest_data.size(), 0);
-        if ((src_width % mip == 0) && (src_height % mip == 0)) {
-            EXPECT_TRUE(src_data.size() == dest_data.size() * pow(mip, 2));
-        } else {
-            EXPECT_TRUE(src_data.size() < dest_data.size() * pow(mip, 2));
-        }
-
-        for (int x = 0; x < dest_width; ++x) {
-            for (int y = 0; y < dest_height; ++y) {
-                int i_max = std::min(x * mip + mip, src_width);
-                int j_max = std::min(y * mip + mip, src_height);
-                float avg = 0;
-                int count = 0;
-                for (int i = x * mip; i < i_max; ++i) {
-                    for (int j = y * mip; j < j_max; ++j) {
-                        if (!std::isnan(src_data[j * src_width + i])) {
-                            avg += src_data[j * src_width + i];
-                            ++count;
-                        }
-                    }
-                }
-                avg /= count;
-                if (count != 0) {
-                    EXPECT_NEAR(dest_data[y * dest_width + x], avg, 1e-6);
-                }
-            }
-        }
-    }
-
     static void TestMipLayerConversion(int mip, int image_width, int image_height) {
         int layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
         EXPECT_EQ(mip, Tile::LayerToMip(layer, image_width, image_height, TILE_SIZE, TILE_SIZE));
@@ -572,17 +724,10 @@ public:
 
     bool TestVectorFieldCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional, bool debiasing = true,
         double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1, int stokes_angle = 1) {
-        _q_error = q_error;
-        _u_error = u_error;
-        _threshold = threshold;
+        SetErrorsThreshold(q_error, u_error, threshold);
 
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -670,7 +815,7 @@ public:
         std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
 
         // =======================================================================================================
-        // Calculate the vector field tile by tile with the new Frame function
+        // Calculate the vector field tile by tile with the Frame function
 
         // Set the protobuf message
         auto message = Message::SetVectorOverlayParameters(
@@ -718,39 +863,10 @@ public:
         return true;
     }
 
-    static void CheckProgresses(const std::vector<double>& progresses) {
-        EXPECT_TRUE(!progresses.empty());
-        if (!progresses.empty()) {
-            EXPECT_EQ(progresses.back(), 1);
-        }
-    }
-
-    static void GetTileData(const CARTA::TileData& tile, int downsampled_width, std::vector<float>& array) {
-        int tile_x = tile.x();
-        int tile_y = tile.y();
-        int tile_width = tile.width();
-        int tile_height = tile.height();
-        int tile_layer = tile.layer();
-        std::string buf = tile.image_data();
-        std::vector<float> val(buf.size() / sizeof(float));
-        memcpy(val.data(), buf.data(), buf.size());
-
-        for (int i = 0; i < val.size(); ++i) {
-            int x = tile_x * TILE_SIZE + (i % tile_width);
-            int y = tile_y * TILE_SIZE + (i / tile_width);
-            array[y * downsampled_width + x] = val[i];
-        }
-    }
-
     void TestVectorFieldCalc2(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional, bool debiasing = true,
         double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1, int stokes_angle = 1) {
         // Create the sample image
-        std::string file_path;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path = GenerateImage(file_type, image_opts);
 
         // =======================================================================================================
         // Calculate the vector field with the whole 2D image data
@@ -762,7 +878,7 @@ public:
         CalcPiAndPa(file_path, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, width, height, pi, pa);
 
         // =======================================================================================================
-        // Calculate the vector field tile by tile with the new Frame function
+        // Calculate the vector field tile by tile with the Frame function
 
         // Open file with the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -813,102 +929,11 @@ public:
         CheckProgresses(progresses);
     }
 
-    void CalcPiAndPa(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip, bool debiasing, bool fractional,
-        double threshold, double q_error, double u_error, int& width, int& height, std::vector<float>& pi, std::vector<float>& pa) {
-        _q_error = q_error;
-        _u_error = u_error;
-        _threshold = threshold;
-
-        // Create the image reader
-        std::shared_ptr<DataReader> reader = nullptr;
-        if (file_type == CARTA::FileType::HDF5) {
-            reader.reset(new Hdf5DataReader(file_path));
-        } else {
-            reader.reset(new FitsDataReader(file_path));
-        }
-
-        // Initialize stokes maps
-        std::unordered_map<std::string, int> stokes_indices{{"I", 0}, {"Q", 1}, {"U", 2}};
-        std::unordered_map<std::string, std::vector<float>> data{
-            {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
-        std::unordered_map<std::string, std::vector<float>> downsampled_data{
-            {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
-
-        for (auto& one : data) {
-            const auto& stokes_type = one.first;
-            auto& tmp_data = one.second;
-            tmp_data = reader->ReadXY(channel, stokes_indices[stokes_type]);
-        }
-
-        // Block averaging, get downsampled data
-        int image_width = reader->Width();
-        int image_height = reader->Height();
-        width = std::ceil((float)image_width / mip);
-        height = std::ceil((float)image_height / mip);
-        int area = height * width;
-
-        for (auto& one : downsampled_data) {
-            const auto& stokes_type = one.first;
-            auto& tmp_data = one.second;
-            tmp_data.resize(area);
-            BlockSmooth(data[stokes_type].data(), tmp_data.data(), image_width, image_height, width, height, 0, 0, mip);
-        }
-
-        // Reset Q and U errors as 0 if debiasing is not used
-        if (!debiasing) {
-            q_error = u_error = 0;
-        }
-
-        // Set PI/PA results
-        pi.resize(area);
-        pa.resize(area);
-
-        // Calculate PI
-        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pi.begin(), _calc_pi);
-        if (fractional) { // Calculate FPI
-            std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _calc_fpi);
-        }
-
-        // Calculate PA
-        std::transform(downsampled_data["Q"].begin(), downsampled_data["Q"].end(), downsampled_data["U"].begin(), pa.begin(), _calc_pa);
-
-        // Set NaN for PI and PA if stokes I is NaN or below the threshold
-        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pi.begin(), pi.begin(), _apply_threshold);
-        std::transform(downsampled_data["I"].begin(), downsampled_data["I"].end(), pa.begin(), pa.begin(), _apply_threshold);
-    }
-
-    static void GetDownsampledPixels(const std::string& file_path, const CARTA::FileType& file_type, int channel, int stokes, int mip,
-        int& width, int& height, std::vector<float>& pa) {
-        // Create the image reader
-        std::shared_ptr<DataReader> reader = nullptr;
-        if (file_type == CARTA::FileType::HDF5) {
-            reader.reset(new Hdf5DataReader(file_path));
-        } else {
-            reader.reset(new FitsDataReader(file_path));
-        }
-
-        std::vector<float> image_data = reader->ReadXY(channel, stokes);
-
-        // Block averaging, get downsampled data
-        int image_width = reader->Width();
-        int image_height = reader->Height();
-        width = std::ceil((float)image_width / mip);
-        height = std::ceil((float)image_height / mip);
-        pa.resize(height * width);
-
-        BlockSmooth(image_data.data(), pa.data(), image_width, image_height, width, height, 0, 0, mip);
-    }
-
     static void TestStokesIntensityOrAngleSettings(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
         bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
         int stokes_angle = 1) {
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -950,17 +975,10 @@ public:
     }
 
     std::pair<float, float> TestZFPCompression(std::string image_opts, const CARTA::FileType& file_type, int mip,
-        float comprerssion_quality, bool fractional, bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0) {
-        int stokes_intensity = 1;
-        int stokes_angle = 1;
-
+        float comprerssion_quality, bool fractional, bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0,
+        int stokes_intensity = 1, int stokes_angle = 1) {
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // Open a file in the Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
@@ -1060,37 +1078,11 @@ public:
         return std::make_pair(pi_abs_err_mean, pa_abs_err_mean);
     }
 
-    static void DecompressTileData(
-        const CARTA::TileData& tile, int downsampled_width, float comprerssion_quality, std::vector<float>& array) {
-        int tile_x = tile.x();
-        int tile_y = tile.y();
-        int tile_width = tile.width();
-        int tile_height = tile.height();
-        int tile_layer = tile.layer();
-        std::vector<char> buf(tile.image_data().begin(), tile.image_data().end());
-
-        // Decompress the data
-        std::vector<float> val;
-        Decompress(val, buf, tile_width, tile_height, comprerssion_quality);
-        EXPECT_EQ(val.size(), tile_width * tile_height);
-
-        for (int i = 0; i < val.size(); ++i) {
-            int x = tile_x * TILE_SIZE + (i % tile_width);
-            int y = tile_y * TILE_SIZE + (i / tile_width);
-            array[y * downsampled_width + x] = val[i];
-        }
-    }
-
     void TestSessionVectorFieldCalc(std::string image_opts, const CARTA::FileType& file_type, int mip, bool fractional,
         bool debiasing = true, double q_error = 0, double u_error = 0, double threshold = 0, int stokes_intensity = 1,
         int stokes_angle = 1) {
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // =======================================================================================================
         // Calculate the vector field with the whole 2D image data
@@ -1103,29 +1095,21 @@ public:
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with by the Session
-
         auto dummy_backend = BackendModel::GetDummyBackend();
 
         std::filesystem::path file_path(file_path_string);
-
         CARTA::OpenFile open_file = Message::OpenFile(file_path.parent_path(), file_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
-
         dummy_backend->Receive(open_file);
 
         auto set_image_channels = Message::SetImageChannels(0, channel, 0, CARTA::CompressionType::ZFP, 11);
-
         dummy_backend->Receive(set_image_channels);
-
         dummy_backend->WaitForJobFinished();
-
         dummy_backend->ClearMessagesQueue();
 
         // Set the protobuf message
         auto set_vector_field_params = Message::SetVectorOverlayParameters(
             0, mip, fractional, threshold, debiasing, q_error, u_error, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
-
         dummy_backend->Receive(set_vector_field_params);
-
         dummy_backend->WaitForJobFinished();
 
         // Set results data
@@ -1168,15 +1152,10 @@ public:
         CheckProgresses(progresses);
     }
 
-    void TestImageWithNoStokesAxis(std::string image_shape, std::string image_opts, const CARTA::FileType& file_type, int mip,
+    static void TestImageWithNoStokesAxis(std::string image_shape, std::string image_opts, const CARTA::FileType& file_type, int mip,
         int stokes_intensity, int stokes_angle, double threshold = std::numeric_limits<double>::quiet_NaN()) {
         // Create the sample image
-        std::string file_path_string;
-        if (file_type == CARTA::FileType::HDF5) {
-            file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
-        } else {
-            file_path_string = ImageGenerator::GeneratedFitsImagePath(image_shape, image_opts);
-        }
+        std::string file_path_string = GenerateImage(file_type, image_opts);
 
         // =======================================================================================================
         // Calculate the vector field with the whole 2D image data
@@ -1206,29 +1185,21 @@ public:
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with by the Session
-
         auto dummy_backend = BackendModel::GetDummyBackend();
 
         std::filesystem::path file_path(file_path_string);
-
         CARTA::OpenFile open_file = Message::OpenFile(file_path.parent_path(), file_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
-
         dummy_backend->Receive(open_file);
 
         auto set_image_channels = Message::SetImageChannels(0, channel, 0, CARTA::CompressionType::ZFP, 11);
-
         dummy_backend->Receive(set_image_channels);
-
         dummy_backend->WaitForJobFinished();
-
         dummy_backend->ClearMessagesQueue();
 
         // Set the protobuf message
         auto set_vector_field_params = Message::SetVectorOverlayParameters(
             0, mip, false, threshold, false, 0, 0, stokes_intensity, stokes_angle, CARTA::CompressionType::NONE, 0);
-
         dummy_backend->Receive(set_vector_field_params);
-
         dummy_backend->WaitForJobFinished();
 
         // Set results data
@@ -1280,34 +1251,6 @@ public:
             }
         }
         CheckProgresses(progresses);
-    }
-
-    static void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa,
-        std::vector<float>& pa2, int downsampled_width, int downsampled_height) {
-        // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data,
-        // and the remainder of image width or height divided by this smaller mip is not 0.
-        // Then the error would happen on the right or bottom edge of downsampled pixels compared to that downsampled from the full
-        // resolution pixels. Because the "weight" of pixels for averaging in a mip X mip block are not equal.
-        // In such case, we ignore the comparison of the data which on the right or bottom edge.
-
-        // Remove the right edge data
-        for (int i = 0; i < pi.size(); ++i) {
-            if ((i + 1) % downsampled_width == 0) {
-                pi[i] = pi2[i] = FLOAT_NAN;
-                pa[i] = pa2[i] = FLOAT_NAN;
-            }
-        }
-        // Remove the bottom edge data
-        for (int i = 0; i < pi.size(); ++i) {
-            if (i / downsampled_width == downsampled_height - 1) {
-                pi[i] = pi2[i] = FLOAT_NAN;
-                pa[i] = pa2[i] = FLOAT_NAN;
-            }
-        }
-    }
-
-    static bool IsValid(double a, double b) {
-        return (!std::isnan(a) && !std::isnan(b));
     }
 };
 
@@ -1520,7 +1463,6 @@ TEST_F(VectorFieldTest, TestLoaderDownsampledData) {
     float abs_error = 1e-6;              // or 0.3
     int mip = 12;
     std::vector<int> loader_mips;
-
     EXPECT_TRUE(TestLoaderDownsampledData(image_shape, image_opts, "Ix", loader_mips));
 
     for (auto loader_mip : loader_mips) {
