@@ -100,9 +100,8 @@ class VectorFieldTest : public ::testing::Test {
     static std::string GenerateImage(const CARTA::FileType& file_type, const std::string& image_opts) {
         if (file_type == CARTA::FileType::HDF5) {
             return ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, image_opts);
-        } else {
-            return ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
         }
+        return ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, image_opts);
     }
 
     void SetErrorsThreshold(const float& q_error, const float& u_error, const float& threshold) {
@@ -143,7 +142,7 @@ class VectorFieldTest : public ::testing::Test {
         }
     }
 
-    void CalcPiAndPa(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip, bool debiasing, bool fractional,
+    void CalcPiPa(const std::string& file_path, const CARTA::FileType& file_type, int channel, int mip, bool debiasing, bool fractional,
         double threshold, double q_error, double u_error, int& width, int& height, std::vector<float>& pi, std::vector<float>& pa) {
         SetErrorsThreshold(q_error, u_error, threshold);
 
@@ -243,14 +242,14 @@ class VectorFieldTest : public ::testing::Test {
         std::vector<char> buf(tile.image_data().begin(), tile.image_data().end());
 
         // Decompress the data
-        std::vector<float> val;
-        Decompress(val, buf, tile_width, tile_height, comprerssion_quality);
-        EXPECT_EQ(val.size(), tile_width * tile_height);
+        std::vector<float> values;
+        Decompress(values, buf, tile_width, tile_height, comprerssion_quality);
+        EXPECT_EQ(values.size(), tile_width * tile_height);
 
-        for (int i = 0; i < val.size(); ++i) {
+        for (int i = 0; i < values.size(); ++i) {
             int x = tile_x * TILE_SIZE + (i % tile_width);
             int y = tile_y * TILE_SIZE + (i / tile_width);
-            array[y * downsampled_width + x] = val[i];
+            array[y * downsampled_width + x] = values[i];
         }
     }
 
@@ -276,13 +275,12 @@ class VectorFieldTest : public ::testing::Test {
         BlockSmooth(image_data.data(), pa.data(), image_width, image_height, width, height, 0, 0, mip);
     }
 
-    static void RemoveRightAndBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa,
-        std::vector<float>& pa2, int downsampled_width, int downsampled_height) {
-        // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data,
-        // and the remainder of image width or height divided by this smaller mip is not 0.
-        // Then the error would happen on the right or bottom edge of downsampled pixels compared to that downsampled from the full
-        // resolution pixels. Because the "weight" of pixels for averaging in a mip X mip block are not equal.
-        // In such case, we ignore the comparison of the data which on the right or bottom edge.
+    static void RemoveRightBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa, std::vector<float>& pa2,
+        int downsampled_width, int downsampled_height) {
+        // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data, and the remainder of image width
+        // or height divided by this smaller mip is not 0. The error would happen on the right or bottom edge of downsampled pixels compared
+        // to that downsampled from the full resolution pixels. Because the "weight" of pixels for averaging in a mip X mip block are not
+        // equal. In such case, we ignore the comparison of the data which on the right or bottom edge.
 
         // Remove the right edge data
         for (int i = 0; i < pi.size(); ++i) {
@@ -835,14 +833,11 @@ public:
                 auto tile_pi = response.intensity_tiles(0);
                 GetTileData(tile_pi, width, pi2);
             }
-
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 auto tile_pa = response.angle_tiles(0);
                 GetTileData(tile_pa, width, pa2);
             }
-
-            // Record progress
             progresses.push_back(response.progress());
         };
 
@@ -852,7 +847,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, width, height);
+            RemoveRightBottomEdgeData(pi, pi2, pa, pa2, width, height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-5);
         } else {
@@ -872,10 +867,9 @@ public:
         // Calculate the vector field with the whole 2D image data
 
         int channel = 0;
-        int width;
-        int height;
+        int width, height;
         std::vector<float> pi, pa;
-        CalcPiAndPa(file_path, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, width, height, pi, pa);
+        CalcPiPa(file_path, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, width, height, pi, pa);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with the Frame function
@@ -902,14 +896,11 @@ public:
                 auto tile_pi = response.intensity_tiles(0);
                 GetTileData(tile_pi, width, pi2);
             }
-
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 auto tile_pa = response.angle_tiles(0);
                 GetTileData(tile_pa, width, pa2);
             }
-
-            // Record progress
             progresses.push_back(response.progress());
         };
 
@@ -919,7 +910,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, width, height);
+            RemoveRightBottomEdgeData(pi, pi2, pa, pa2, width, height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-4);
         } else {
@@ -947,29 +938,32 @@ public:
         frame->SetVectorOverlayParameters(message);
 
         // Set results data
+        int intensity_tiles_size = 0;
+        int angle_tiles_size = 0;
         std::vector<double> progresses;
 
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& response) {
-            if (stokes_intensity > -1) {
-                EXPECT_GE(response.intensity_tiles_size(), 1);
-            } else {
-                EXPECT_EQ(response.intensity_tiles_size(), 1);
-            }
-
-            if (stokes_angle > -1) {
-                EXPECT_GE(response.angle_tiles_size(), 1);
-            } else {
-                EXPECT_EQ(response.angle_tiles_size(), 1);
-            }
-
-            // Record progress
+            intensity_tiles_size = response.intensity_tiles_size();
+            angle_tiles_size = response.angle_tiles_size();
             progresses.push_back(response.progress());
         };
 
         // Do PI/PA calculations by the Frame function
         VectorFieldCalculator vector_field_calculator(frame);
         vector_field_calculator.DoCalculations(callback);
+
+        if (stokes_intensity > -1) {
+            EXPECT_GE(intensity_tiles_size, 1);
+        } else {
+            EXPECT_EQ(intensity_tiles_size, 1);
+        }
+
+        if (stokes_angle > -1) {
+            EXPECT_GE(angle_tiles_size, 1);
+        } else {
+            EXPECT_EQ(angle_tiles_size, 1);
+        }
 
         CheckProgresses(progresses);
     }
@@ -1039,7 +1033,6 @@ public:
                 auto tile_pi = response.intensity_tiles(0);
                 DecompressTileData(tile_pi, width, comprerssion_quality, pi_compression);
             }
-
             EXPECT_EQ(response.angle_tiles_size(), 1);
             if (response.angle_tiles_size()) {
                 auto tile_pa = response.angle_tiles(0);
@@ -1088,10 +1081,9 @@ public:
         // Calculate the vector field with the whole 2D image data
 
         int channel = 0;
-        int width;
-        int height;
+        int width, height;
         std::vector<float> pi, pa;
-        CalcPiAndPa(file_path_string, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, width, height, pi, pa);
+        CalcPiPa(file_path_string, file_type, channel, mip, debiasing, fractional, threshold, q_error, u_error, width, height, pi, pa);
 
         // =======================================================================================================
         // Calculate the vector field tile by tile with by the Session
@@ -1128,21 +1120,18 @@ public:
                     auto tile_pi = response.intensity_tiles(0);
                     GetTileData(tile_pi, width, pi2);
                 }
-
                 EXPECT_EQ(response.angle_tiles_size(), 1);
                 if (response.angle_tiles_size()) {
                     auto tile_pa = response.angle_tiles(0);
                     GetTileData(tile_pa, width, pa2);
                 }
-
-                // Record progress
                 progresses.push_back(response.progress());
             }
         }
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightAndBottomEdgeData(pi, pi2, pa, pa2, width, height);
+            RemoveRightBottomEdgeData(pi, pi2, pa, pa2, width, height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-3);
         } else {
@@ -1162,8 +1151,7 @@ public:
 
         int channel = 0;
         int stokes = 0;
-        int width;
-        int height;
+        int width, height;
         std::vector<float> pixels;
         GetDownsampledPixels(file_path_string, file_type, channel, stokes, mip, width, height, pixels);
 
@@ -1228,8 +1216,6 @@ public:
                         GetTileData(tile_pa, width, pa2);
                     }
                 }
-
-                // Record progress
                 progresses.push_back(response.progress());
             }
         }
@@ -1291,21 +1277,17 @@ TEST_F(VectorFieldTest, TestRasterTilesGeneration) {
 TEST_F(VectorFieldTest, TestTilesData) {
     std::string image_opts = IMAGE_OPTS_NAN;
     CARTA::FileType file_type = CARTA::FileType::FITS;
+    std::string stokes_type = "Ix";
     int mip = 4;
-    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ix", mip));
-    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Qx", mip));
-    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Ux", mip));
-    EXPECT_TRUE(TestTilesData(image_opts, file_type, "Vx", mip));
+    EXPECT_TRUE(TestTilesData(image_opts, file_type, stokes_type, mip));
 }
 
 TEST_F(VectorFieldTest, TestBlockSmooth) {
     std::string image_opts = IMAGE_OPTS_NAN;
     CARTA::FileType file_type = CARTA::FileType::FITS;
+    std::string stokes_type = "Ix";
     int mip = 4;
-    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ix", mip));
-    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Qx", mip));
-    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Ux", mip));
-    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, "Vx", mip));
+    EXPECT_TRUE(TestBlockSmooth(image_opts, file_type, stokes_type, mip));
 }
 
 TEST_F(VectorFieldTest, TestTileCalc) {
@@ -1459,15 +1441,16 @@ TEST_F(VectorFieldTest, TestLoaderDownsampledData) {
     int image_width = 1110;
     int image_height = 1110;
     std::string image_shape = fmt::format("{} {} 25 4", image_width, image_height);
-    std::string image_opts = IMAGE_OPTS; // or IMAGE_OPTS_NAN
-    float abs_error = 1e-6;              // or 0.3
+    std::string image_opts = IMAGE_OPTS; // Note: if a block contains NAN pixels (using IMAGE_OPTS_NAN), its error would be large
+    float abs_error = 1e-6;
     int mip = 12;
+    std::string stokes_type = "Ix";
     std::vector<int> loader_mips;
-    EXPECT_TRUE(TestLoaderDownsampledData(image_shape, image_opts, "Ix", loader_mips));
+    EXPECT_TRUE(TestLoaderDownsampledData(image_shape, image_opts, stokes_type, loader_mips));
 
     for (auto loader_mip : loader_mips) {
         if (mip % loader_mip == 0) {
-            EXPECT_TRUE(TestBlockSmoothDownsampledData(image_shape, image_opts, "Ix", mip, loader_mip, abs_error));
+            EXPECT_TRUE(TestBlockSmoothDownsampledData(image_shape, image_opts, stokes_type, mip, loader_mip, abs_error));
         }
     }
 }
