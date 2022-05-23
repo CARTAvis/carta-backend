@@ -18,6 +18,14 @@ using namespace carta;
 static const std::string IMAGE_SHAPE = "100 100 25 4";
 static const std::string IMAGE_OPTS = "-s 0 -n row column channel -d 5";
 
+static const std::set<int> COMPUTED_STOKES{
+    COMPUTE_STOKES_PTOTAL, COMPUTE_STOKES_PFTOTAL, COMPUTE_STOKES_PLINEAR, COMPUTE_STOKES_PFLINEAR, COMPUTE_STOKES_PANGLE};
+
+static std::unordered_map<std::string, int> STOKES_INDEX{{"I", 0}, {"Q", 1}, {"U", 2}, {"V", 3}};
+
+static std::unordered_map<std::string, std::vector<float>> DATA{
+    {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}, {"V", std::vector<float>()}};
+
 class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
 public:
     class TestFrame : public Frame {
@@ -51,73 +59,58 @@ public:
 
             // Calculate stokes data
             std::string message;
-            std::vector<float> data_vec;
+            std::vector<float> data;
             for (int channel = 0; channel < spectral_axis_size; ++channel) {
-                frame->SetImageChannels(channel, COMPUTE_STOKES_PTOTAL, message);
-                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PTOTAL, data_vec);
-
-                frame->SetImageChannels(channel, COMPUTE_STOKES_PFTOTAL, message);
-                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PFTOTAL, data_vec);
-
-                frame->SetImageChannels(channel, COMPUTE_STOKES_PLINEAR, message);
-                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PLINEAR, data_vec);
-
-                frame->SetImageChannels(channel, COMPUTE_STOKES_PFLINEAR, message);
-                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PFLINEAR, data_vec);
-
-                frame->SetImageChannels(channel, COMPUTE_STOKES_PANGLE, message);
-                GetDataVector(data_vec, frame->_image_cache.get(), frame->_image_cache_size);
-                CheckFrameImageCache(image, channel, COMPUTE_STOKES_PANGLE, data_vec);
+                for (const auto& stokes : COMPUTED_STOKES) {
+                    frame->SetImageChannels(channel, stokes, message);
+                    GetImageData(data, frame->_image_cache.get(), frame->_image_cache_size);
+                    CheckImageCache(image, channel, stokes, data);
+                }
             }
         }
 
-        static void GetDataVector(std::vector<float>& data_vec, float* data_ptr, size_t data_size) {
-            data_vec.resize(data_size);
+        static void GetImageData(std::vector<float>& data, const float* data_ptr, size_t data_size) {
+            data.resize(data_size);
             for (int i = 0; i < data_size; ++i) {
-                data_vec[i] = data_ptr[i];
+                data[i] = data_ptr[i];
             }
         }
     };
 
-    static void CheckFrameImageCache(
+    static void CheckImageCache(
         const std::shared_ptr<casacore::ImageInterface<float>>& image, int channel, int stokes, const std::vector<float>& data) {
         if (image->ndim() < 4) {
             spdlog::error("Invalid image dimension.");
             return;
         }
 
-        // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
-        std::vector<float> data_i, data_q, data_u, data_v;
-        GetImageData(data_i, image, 0, AxisRange(channel));
-        GetImageData(data_q, image, 1, AxisRange(channel));
-        GetImageData(data_u, image, 2, AxisRange(channel));
-        GetImageData(data_v, image, 3, AxisRange(channel));
+        // Get stokes data I, Q, U, and V
+        for (const auto& one : STOKES_INDEX) {
+            auto stokes_type = one.first;
+            GetImageData(DATA[stokes_type], image, STOKES_INDEX[stokes_type], AxisRange(channel));
+        }
 
-        EXPECT_TRUE((data.size() == data_i.size()) && (data.size() == data_q.size()) && (data.size() == data_u.size()) &&
-                    (data.size() == data_v.size()));
+        EXPECT_TRUE((data.size() == DATA["I"].size()) && (data.size() == DATA["Q"].size()) && (data.size() == DATA["U"].size()) &&
+                    (data.size() == DATA["V"].size()));
 
         // Verify each pixel value from calculation results
         for (int i = 0; i < data.size(); ++i) {
             if (!isnan(data[i])) {
                 if (stokes == COMPUTE_STOKES_PTOTAL) {
-                    auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
+                    auto total_polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2));
                     EXPECT_FLOAT_EQ(data[i], total_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
                     auto total_fractional_polarized_intensity =
-                        100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                        100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2)) / DATA["I"][i];
                     EXPECT_FLOAT_EQ(data[i], total_fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PLINEAR) {
-                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    auto polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2));
                     EXPECT_FLOAT_EQ(data[i], polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto fractional_polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    auto fractional_polarized_intensity = 100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2)) / DATA["I"][i];
                     EXPECT_FLOAT_EQ(data[i], fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                    auto polarized_angle = (180.0 / casacore::C::pi) * atan2(data_u[i], data_q[i]) / 2;
+                    auto polarized_angle = (180.0 / casacore::C::pi) * atan2(DATA["U"][i], DATA["Q"][i]) / 2;
                     EXPECT_FLOAT_EQ(data[i], polarized_angle);
                 }
             }
@@ -133,43 +126,41 @@ public:
 
         // Get spectral axis size
         int x_size = image->shape()[0];
-        int y_size = image->shape()[1];
 
-        // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
-        std::vector<float> data_i, data_q, data_u, data_v;
-        GetImageData(data_i, image, 0, AxisRange(channel));
-        GetImageData(data_q, image, 1, AxisRange(channel));
-        GetImageData(data_u, image, 2, AxisRange(channel));
-        GetImageData(data_v, image, 3, AxisRange(channel));
+        // Get stokes data I, Q, U, and V
+        for (const auto& one : STOKES_INDEX) {
+            auto stokes_type = one.first;
+            GetImageData(DATA[stokes_type], image, STOKES_INDEX[stokes_type], AxisRange(channel));
+        }
 
         // Get profile x
         std::vector<float> profile_x;
-        for (int i = 0; i < data_i.size(); ++i) {
+        for (int i = 0; i < DATA["I"].size(); ++i) {
             if (((i / x_size) == cursor_y) && ((i % x_size) < x_size)) {
                 if (stokes == COMPUTE_STOKES_PTOTAL) {
-                    auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
+                    auto total_polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2));
                     profile_x.push_back(total_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
                     auto total_fractional_polarized_intensity =
-                        100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                        100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2)) / DATA["I"][i];
                     profile_x.push_back(total_fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PLINEAR) {
-                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    auto polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2));
                     profile_x.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto fractional_polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    auto fractional_polarized_intensity = 100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2)) / DATA["I"][i];
                     profile_x.push_back(fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                    auto polarized_angle = (180.0 / casacore::C::pi) * atan2(data_u[i], data_q[i]) / 2;
+                    auto polarized_angle = (180.0 / casacore::C::pi) * atan2(DATA["U"][i], DATA["Q"][i]) / 2;
                     profile_x.push_back(polarized_angle);
                 } else if (stokes == 0) {
-                    profile_x.push_back(data_i[i]);
+                    profile_x.push_back(DATA["I"][i]);
                 } else if (stokes == 1) {
-                    profile_x.push_back(data_q[i]);
+                    profile_x.push_back(DATA["Q"][i]);
                 } else if (stokes == 2) {
-                    profile_x.push_back(data_u[i]);
+                    profile_x.push_back(DATA["U"][i]);
                 } else if (stokes == 3) {
-                    profile_x.push_back(data_v[i]);
+                    profile_x.push_back(DATA["V"][i]);
                 } else {
                     spdlog::error("Unknown stokes: {}", stokes);
                 }
@@ -178,32 +169,32 @@ public:
 
         // Get profile y
         std::vector<float> profile_y;
-        for (int i = 0; i < data_i.size(); ++i) {
+        for (int i = 0; i < DATA["I"].size(); ++i) {
             if ((i % x_size) == cursor_x) {
                 if (stokes == COMPUTE_STOKES_PTOTAL) {
-                    auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
+                    auto total_polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2));
                     profile_y.push_back(total_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
                     auto total_fractional_polarized_intensity =
-                        100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                        100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2)) / DATA["I"][i];
                     profile_y.push_back(total_fractional_polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PLINEAR) {
-                    auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                    auto polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2));
                     profile_y.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                    auto polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                    auto polarized_intensity = 100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2)) / DATA["I"][i];
                     profile_y.push_back(polarized_intensity);
                 } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                    auto polarized_angle = (180.0 / casacore::C::pi) * atan2(data_u[i], data_q[i]) / 2;
+                    auto polarized_angle = (180.0 / casacore::C::pi) * atan2(DATA["U"][i], DATA["Q"][i]) / 2;
                     profile_y.push_back(polarized_angle);
                 } else if (stokes == 0) {
-                    profile_y.push_back(data_i[i]);
+                    profile_y.push_back(DATA["I"][i]);
                 } else if (stokes == 1) {
-                    profile_y.push_back(data_q[i]);
+                    profile_y.push_back(DATA["Q"][i]);
                 } else if (stokes == 2) {
-                    profile_y.push_back(data_u[i]);
+                    profile_y.push_back(DATA["U"][i]);
                 } else if (stokes == 3) {
-                    profile_y.push_back(data_v[i]);
+                    profile_y.push_back(DATA["V"][i]);
                 } else {
                     spdlog::error("Unknown stokes: {}", stokes);
                 }
@@ -219,40 +210,39 @@ public:
             return std::vector<float>();
         }
 
-        // Assume stokes indices, I = 0, Q = 1, U = 2, V = 3
-        std::vector<float> data_i, data_q, data_u, data_v;
-        GetImageData(data_i, image, 0, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(data_q, image, 1, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(data_u, image, 2, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
-        GetImageData(data_v, image, 3, z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        // Get stokes data I, Q, U, and V
+        for (const auto& one : STOKES_INDEX) {
+            auto stokes_type = one.first;
+            GetImageData(DATA[stokes_type], image, STOKES_INDEX[stokes_type], z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+        }
 
         // Get profile z
         std::vector<float> profile;
-        for (int i = 0; i < data_i.size(); ++i) {
+        for (int i = 0; i < DATA["I"].size(); ++i) {
             if (stokes == COMPUTE_STOKES_PTOTAL) {
-                auto total_polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2));
+                auto total_polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2));
                 profile.push_back(total_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PFTOTAL) {
                 auto total_fractional_polarized_intensity =
-                    100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2) + pow(data_v[i], 2)) / data_i[i];
+                    100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2) + pow(DATA["V"][i], 2)) / DATA["I"][i];
                 profile.push_back(total_fractional_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PLINEAR) {
-                auto polarized_intensity = sqrt(pow(data_q[i], 2) + pow(data_u[i], 2));
+                auto polarized_intensity = sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2));
                 profile.push_back(polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PFLINEAR) {
-                auto fractional_polarized_intensity = 100.0 * sqrt(pow(data_q[i], 2) + pow(data_u[i], 2)) / data_i[i];
+                auto fractional_polarized_intensity = 100.0 * sqrt(pow(DATA["Q"][i], 2) + pow(DATA["U"][i], 2)) / DATA["I"][i];
                 profile.push_back(fractional_polarized_intensity);
             } else if (stokes == COMPUTE_STOKES_PANGLE) {
-                auto polarized_angle = (180.0 / casacore::C::pi) * atan2(data_u[i], data_q[i]) / 2;
+                auto polarized_angle = (180.0 / casacore::C::pi) * atan2(DATA["U"][i], DATA["Q"][i]) / 2;
                 profile.push_back(polarized_angle);
             } else if (stokes == 0) {
-                profile.push_back(data_i[i]);
+                profile.push_back(DATA["I"][i]);
             } else if (stokes == 1) {
-                profile.push_back(data_q[i]);
+                profile.push_back(DATA["Q"][i]);
             } else if (stokes == 2) {
-                profile.push_back(data_u[i]);
+                profile.push_back(DATA["U"][i]);
             } else if (stokes == 3) {
-                profile.push_back(data_v[i]);
+                profile.push_back(DATA["V"][i]);
             } else {
                 spdlog::error("Unknown stokes: {}", stokes);
             }
@@ -288,14 +278,14 @@ public:
         frame->SetImageChannels(current_channel, current_stokes, message);
 
         // Get spatial spatial_configs from the Frame
-        std::vector<CARTA::SpatialProfileData> data_vec;
-        frame->FillSpatialProfileData(data_vec);
+        std::vector<CARTA::SpatialProfileData> spatial_profiles1;
+        frame->FillSpatialProfileData(spatial_profiles1);
 
         // Get spatial spatial_configs in another way
-        auto data_profiles = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
+        auto spatial_profiles2 = GetCursorSpatialProfiles(image, current_channel, config_stokes, cursor_x, cursor_y);
 
         // Check the consistency of two ways
-        CmpSpatialProfiles(data_vec, data_profiles);
+        CmpSpatialProfiles(spatial_profiles1, spatial_profiles2);
 
         // Set spectral configs for the cursor
         std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
@@ -315,7 +305,7 @@ public:
 
         auto spectral_profile_as_float1 = GetSpectralProfileValues<float>(spectral_profile);
 
-        // Get spatial spatial_configs by another way
+        // Get spatial spatial_configs in another way
         int stokes = (stokes_config_z == "z") ? current_stokes : config_stokes;
         std::vector<float> spectral_profile_as_float2 = GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
@@ -389,7 +379,7 @@ public:
         // convert the double type vector to the float type vector
         std::vector<float> spectral_profile_as_float1(spectral_profile_as_double.begin(), spectral_profile_as_double.end());
 
-        // Get spectral profiles by another way
+        // Get spectral profiles in another way
         int stokes = (stokes_config_z == "z") ? current_stokes : config_stokes;
         std::vector<float> spectral_profile_as_float2 = GetCursorSpectralProfiles(image, AxisRange(ALL_Z), stokes, cursor_x, cursor_y);
 
@@ -572,9 +562,7 @@ TEST_F(PolarizationCalculatorTest, TestPointRegionProfiles) {
 }
 
 TEST_F(PolarizationCalculatorTest, TestCubeHistogram) {
-    TestCubeHistogram(COMPUTE_STOKES_PTOTAL);
-    TestCubeHistogram(COMPUTE_STOKES_PFTOTAL);
-    TestCubeHistogram(COMPUTE_STOKES_PLINEAR);
-    TestCubeHistogram(COMPUTE_STOKES_PFLINEAR);
-    TestCubeHistogram(COMPUTE_STOKES_PANGLE);
+    for (const auto& stokes : COMPUTED_STOKES) {
+        TestCubeHistogram(stokes);
+    }
 }
