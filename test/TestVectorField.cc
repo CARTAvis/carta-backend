@@ -110,7 +110,7 @@ class VectorFieldTest : public ::testing::Test {
         _threshold = threshold;
     }
 
-    void CheckDownsampledData(const std::vector<float>& src_data, const std::vector<float>& dest_data, int src_width, int src_height,
+    static void CheckDownsampledData(const std::vector<float>& src_data, const std::vector<float>& dest_data, int src_width, int src_height,
         int dest_width, int dest_height, int mip) {
         EXPECT_GE(src_data.size(), 0);
         EXPECT_GE(dest_data.size(), 0);
@@ -275,7 +275,7 @@ class VectorFieldTest : public ::testing::Test {
         BlockSmooth(image_data.data(), pa.data(), image_width, image_height, width, height, 0, 0, mip);
     }
 
-    static void RemoveRightBottomEdgeData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa, std::vector<float>& pa2,
+    static void RemoveRightBottomEdgesData(std::vector<float>& pi, std::vector<float>& pi2, std::vector<float>& pa, std::vector<float>& pa2,
         int downsampled_width, int downsampled_height) {
         // For HDF5 files, if its downsampled data is calculated from the smaller mip (downsampled) data, and the remainder of image width
         // or height divided by this smaller mip is not 0. The error would happen on the right or bottom edge of downsampled pixels compared
@@ -302,11 +302,11 @@ public:
     static bool TestLoaderDownsampledData(
         std::string image_shape, std::string image_opts, std::string stokes_type, std::vector<int>& loader_mips) {
         // Create the sample image
-        std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
+        std::string hdf5_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(file_path_string), "0"));
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(hdf5_path_string), "0"));
 
         // Get loader mips
         loader_mips = frame->GetLoaderMips();
@@ -344,11 +344,11 @@ public:
     bool TestBlockSmoothDownsampledData(
         std::string image_shape, std::string image_opts, std::string stokes_type, int mip, int loader_mip, float abs_error) {
         // Create the sample image
-        std::string file_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
+        std::string hdf5_path_string = ImageGenerator::GeneratedHdf5ImagePath(image_shape, image_opts);
 
         // Open the file
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(file_path_string), "0"));
+        std::unique_ptr<TestFrame> frame(new TestFrame(0, loaders.Get(hdf5_path_string), "0"));
 
         // Get Stokes index
         int stokes;
@@ -793,7 +793,7 @@ public:
 
         // Reset Q and U errors as 0 if debiasing is not used
         if (!debiasing) {
-            q_error = u_error = 0;
+            _q_error = _u_error = 0.0;
         }
 
         // Set PI/PA results
@@ -847,7 +847,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightBottomEdgeData(pi, pi2, pa, pa2, width, height);
+            RemoveRightBottomEdgesData(pi, pi2, pa, pa2, width, height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-5);
         } else {
@@ -910,7 +910,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightBottomEdgeData(pi, pi2, pa, pa2, width, height);
+            RemoveRightBottomEdgesData(pi, pi2, pa, pa2, width, height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-4);
         } else {
@@ -1131,7 +1131,7 @@ public:
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
-            RemoveRightBottomEdgeData(pi, pi2, pa, pa2, width, height);
+            RemoveRightBottomEdgesData(pi, pi2, pa, pa2, width, height);
             CmpVectors(pi, pi2, 1e-5);
             CmpVectors(pa, pa2, 1e-3);
         } else {
@@ -1193,7 +1193,7 @@ public:
         // Set results data
         std::pair<std::vector<char>, bool> message_pair;
         std::vector<float> pi(width * height);
-        std::vector<float> pa2(width * height);
+        std::vector<float> pa(width * height);
         std::vector<double> progresses;
 
         while (dummy_backend->TryPopMessagesQueue(message_pair)) {
@@ -1213,7 +1213,7 @@ public:
                     EXPECT_EQ(response.angle_tiles_size(), 1);
                     if (response.angle_tiles_size()) {
                         auto tile_pa = response.angle_tiles(0);
-                        GetTileData(tile_pa, width, pa2);
+                        GetTileData(tile_pa, width, pa);
                     }
                 }
                 progresses.push_back(response.progress());
@@ -1226,14 +1226,14 @@ public:
                 CmpVectors(pixels, pi, 1e-6);
             }
             if (stokes_angle > -1) {
-                CmpVectors(pixels, pa2, 1e-6);
+                CmpVectors(pixels, pa, 1e-6);
             }
         } else {
             if (stokes_intensity > -1) {
                 CmpVectors(pixels, pi);
             }
             if (stokes_angle > -1) {
-                CmpVectors(pixels, pa2);
+                CmpVectors(pixels, pa);
             }
         }
         CheckProgresses(progresses);
