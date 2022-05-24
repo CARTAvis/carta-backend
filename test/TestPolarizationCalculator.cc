@@ -21,12 +21,12 @@ static const std::string IMAGE_OPTS = "-s 0 -n row column channel -d 5";
 static const std::set<int> COMPUTED_STOKES{
     COMPUTE_STOKES_PTOTAL, COMPUTE_STOKES_PFTOTAL, COMPUTE_STOKES_PLINEAR, COMPUTE_STOKES_PFLINEAR, COMPUTE_STOKES_PANGLE};
 
-static std::unordered_map<std::string, int> STOKES_INDEX{{"I", 0}, {"Q", 1}, {"U", 2}, {"V", 3}};
+static std::unordered_map<std::string, int> STOKES_INDICES{{"I", 0}, {"Q", 1}, {"U", 2}, {"V", 3}};
 
 static std::unordered_map<std::string, std::vector<float>> DATA{
     {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}, {"V", std::vector<float>()}};
 
-class PolarizationCalculatorTest : public ::testing::Test, public FileFinder {
+class PolarizationCalculatorTest : public ::testing::Test {
 public:
     class TestFrame : public Frame {
     public:
@@ -85,9 +85,9 @@ public:
         }
 
         // Get stokes data I, Q, U, and V
-        for (const auto& one : STOKES_INDEX) {
+        for (const auto& one : STOKES_INDICES) {
             auto stokes_type = one.first;
-            GetImageData(DATA[stokes_type], image, STOKES_INDEX[stokes_type], AxisRange(channel));
+            GetImageData(DATA[stokes_type], image, STOKES_INDICES[stokes_type], AxisRange(channel));
         }
 
         EXPECT_TRUE((data.size() == DATA["I"].size()) && (data.size() == DATA["Q"].size()) && (data.size() == DATA["U"].size()) &&
@@ -128,9 +128,9 @@ public:
         int x_size = image->shape()[0];
 
         // Get stokes data I, Q, U, and V
-        for (const auto& one : STOKES_INDEX) {
+        for (const auto& one : STOKES_INDICES) {
             auto stokes_type = one.first;
-            GetImageData(DATA[stokes_type], image, STOKES_INDEX[stokes_type], AxisRange(channel));
+            GetImageData(DATA[stokes_type], image, STOKES_INDICES[stokes_type], AxisRange(channel));
         }
 
         // Get profile x
@@ -211,9 +211,9 @@ public:
         }
 
         // Get stokes data I, Q, U, and V
-        for (const auto& one : STOKES_INDEX) {
+        for (const auto& one : STOKES_INDICES) {
             auto stokes_type = one.first;
-            GetImageData(DATA[stokes_type], image, STOKES_INDEX[stokes_type], z_range, AxisRange(cursor_x), AxisRange(cursor_y));
+            GetImageData(DATA[stokes_type], image, STOKES_INDICES[stokes_type], z_range, AxisRange(cursor_x), AxisRange(cursor_y));
         }
 
         // Get profile z
@@ -252,16 +252,16 @@ public:
 
     static void TestCursorProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
         std::string stokes_config_y, std::string stokes_config_z) {
-        auto ref_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-        auto exp_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         // Open an image file
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        EXPECT_TRUE(OpenImage(image, ref_file_path));
+        EXPECT_TRUE(OpenImage(image, fits_file_path));
 
         // Open an image file through Frame
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(exp_file_path), "0"));
+        std::unique_ptr<Frame> frame(new Frame(0, loaders.Get(hdf5_file_path), "0"));
         EXPECT_TRUE(frame->IsValid());
 
         // Set spatial spatial_configs requirements
@@ -315,17 +315,17 @@ public:
 
     static void TestPointRegionProfiles(int current_channel, int current_stokes, int config_stokes, std::string stokes_config_x,
         std::string stokes_config_y, std::string stokes_config_z) {
-        auto ref_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-        auto exp_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         // Open a reference image file
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        EXPECT_TRUE(OpenImage(image, ref_file_path));
+        EXPECT_TRUE(OpenImage(image, fits_file_path));
 
         // Open an experimental image through the Frame
         int file_id(0);
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame = std::make_shared<Frame>(file_id, loaders.Get(exp_file_path), "0");
+        auto frame = std::make_shared<Frame>(file_id, loaders.Get(hdf5_file_path), "0");
         EXPECT_TRUE(frame->IsValid());
 
         // Set image channels through the Frame
@@ -425,16 +425,16 @@ public:
     }
 
     static void TestCubeHistogram(int current_stokes) {
-        auto ref_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
-        auto exp_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto fits_file_path = ImageGenerator::GeneratedFitsImagePath(IMAGE_SHAPE, IMAGE_OPTS);
+        auto hdf5_file_path = ImageGenerator::GeneratedHdf5ImagePath(IMAGE_SHAPE, IMAGE_OPTS);
 
         // Open a reference image file
         std::shared_ptr<casacore::ImageInterface<float>> image;
-        EXPECT_TRUE(OpenImage(image, ref_file_path));
+        EXPECT_TRUE(OpenImage(image, fits_file_path));
 
         // Calculate the cube histogram
         LoaderCache loaders(LOADER_CACHE_SIZE);
-        auto frame1 = std::make_shared<Frame>(0, loaders.Get(exp_file_path), "0");
+        auto frame1 = std::make_shared<Frame>(0, loaders.Get(hdf5_file_path), "0");
         carta::Histogram cube_histogram1;
         CalculateCubeHistogram(frame1, 0, current_stokes, cube_histogram1);
 
