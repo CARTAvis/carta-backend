@@ -91,6 +91,7 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
 int ImageFitter::SolveSystem() {
     gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
     const gsl_multifit_nlinear_type* T = gsl_multifit_nlinear_trust;
+    fdf_params.solver = gsl_multifit_nlinear_solver_cholesky;
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
