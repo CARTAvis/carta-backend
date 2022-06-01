@@ -970,6 +970,71 @@ void RegionHandler::StopPvCalc(int file_id) {
     }
 }
 
+bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame) {
+    int file_id(fitting_request.file_id());
+    int region_id(fitting_request.region_id());
+
+    if (region_id == -1) {
+        region_id = TEMP_FOV_REGION_ID;
+
+        auto fov_info(fitting_request.fov_info());
+        std::vector<CARTA::Point> points = {fov_info.control_points().begin(), fov_info.control_points().end()};
+        RegionState region_state(fitting_request.file_id(), fov_info.region_type(), points, fov_info.rotation());
+        auto csys = frame->CoordinateSystem();
+
+        if (!SetRegion(region_id, region_state, csys)) {
+            fitting_response.set_message("field of view set up failed");
+            fitting_response.set_success(false);
+            return false;
+        }
+    } else {
+        fitting_response.set_message("region not supported");
+        fitting_response.set_success(false);
+        return false;
+    }
+
+    // Save frame pointer
+    _frames[file_id] = frame;
+
+    AxisRange z_range(frame->CurrentZ());
+    int stokes = frame->CurrentStokes();
+    StokesRegion stokes_region;
+    std::shared_ptr<casacore::LCRegion> lc_region;
+
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
+        fitting_response.set_message("region is outside image or is not closed");
+        fitting_response.set_success(false);
+        return false;
+    }
+
+    casacore::IPosition region_shape = frame->GetRegionShape(stokes_region);
+    spdlog::info("region shape {}", region_shape.toString());
+
+    casacore::IPosition origin(2, 0, 0);
+    casacore::IPosition region_origin = stokes_region.image_region.asLCRegion().expand(origin);
+    spdlog::info("region origin {}", region_origin.toString());
+
+    std::vector<float> region_data;
+    if (!frame->GetRegionData(stokes_region, region_data)) {
+        spdlog::error("Failed to get data in the region!");
+        fitting_response.set_message("failed to get data");
+        fitting_response.set_success(false);
+        return false;
+    }
+    
+    ImageFitter image_fitter(region_shape(0), region_shape(1));
+    bool success = false;
+    std::vector<CARTA::GaussianComponent> initial_values(
+        fitting_request.initial_values().begin(), fitting_request.initial_values().end());
+    success = image_fitter.FitImage(region_data.data(), initial_values, fitting_response);
+
+    if (region_id == TEMP_FOV_REGION_ID) {
+        RemoveRegion(region_id);
+    }
+
+    return success;
+}
+
 // ********************************************************************
 // Fill data stream messages:
 // These always use a callback since there may be multiple region/file requirements

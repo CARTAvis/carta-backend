@@ -1429,8 +1429,16 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
     if (_frames.count(file_id)) {
         auto t_start_fitting = std::chrono::high_resolution_clock::now();
 
-        auto& frame = _frames.at(file_id);
-        frame->FitImage(fitting_request, fitting_response);
+        int region_id(fitting_request.region_id());
+        if (region_id != 0) {
+            if (!_region_handler) {
+                // created on demand only
+                _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
+            }
+            _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id));
+        } else {
+            _frames.at(file_id)->FitImage(fitting_request, fitting_response);
+        }
 
         auto t_end_fitting = std::chrono::high_resolution_clock::now();
         auto dt_fitting = std::chrono::duration_cast<std::chrono::microseconds>(t_end_fitting - t_start_fitting).count();

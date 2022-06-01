@@ -23,6 +23,7 @@
 #define CURSOR_REGION_ID 0
 #define ALL_REGIONS -10
 #define TEMP_REGION_ID -100
+#define TEMP_FOV_REGION_ID -1000
 
 // x axis
 #define ALL_X -2
