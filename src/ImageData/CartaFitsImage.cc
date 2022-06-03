@@ -27,6 +27,8 @@
 
 using namespace carta;
 
+volatile int CartaFitsImage::_count = 0;
+
 CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
     : casacore::ImageInterface<float>(),
       _filename(filename),
@@ -40,6 +42,7 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
     if (!ccfile.exists() || !ccfile.isReadable()) {
         throw(casacore::AipsError("FITS file is not readable or does not exist."));
     }
+    ++_count;
 
     SetUpImage();
 }
@@ -58,11 +61,15 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
     }
+    ++_count;
 }
 
 CartaFitsImage::~CartaFitsImage() {
-    CloseFile();
-    delete _pixel_mask;
+    --_count;
+    if (!_count) {
+        CloseFile();
+        delete _pixel_mask;
+    }
 }
 
 // Image interface
