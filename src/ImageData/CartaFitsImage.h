@@ -104,8 +104,8 @@ private:
     casacore::Lattice<bool>* _pixel_mask;
     casacore::TiledShape _tiled_shape;
 
-    // Number of CartaFitsImage objects
-    static volatile int _count;
+    // Whether is a copy of the other CartaFitsImage
+    bool _is_copy;
 };
 
 } // namespace carta
