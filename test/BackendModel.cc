@@ -209,18 +209,6 @@ void BackendModel::Receive(CARTA::SaveFile message) {
     _session->OnSaveFile(message, DUMMY_REQUEST_ID);
 }
 
-void BackendModel::Receive(CARTA::SplataloguePing message) {
-    carta::logger::LogReceivedEventType(CARTA::EventType::SPLATALOGUE_PING);
-    OnMessageTask* tsk = new OnSplataloguePingTask(_session, DUMMY_REQUEST_ID);
-    ThreadManager::QueueTask(tsk);
-}
-
-void BackendModel::Receive(CARTA::SpectralLineRequest message) {
-    carta::logger::LogReceivedEventType(CARTA::EventType::SPECTRAL_LINE_REQUEST);
-    OnMessageTask* tsk = new GeneralMessageTask<CARTA::SpectralLineRequest>(_session, message, DUMMY_REQUEST_ID);
-    ThreadManager::QueueTask(tsk);
-}
-
 void BackendModel::Receive(CARTA::ConcatStokesFiles message) {
     carta::logger::LogReceivedEventType(CARTA::EventType::CONCAT_STOKES_FILES);
     _session->OnConcatStokesFiles(message, DUMMY_REQUEST_ID);
