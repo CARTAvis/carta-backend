@@ -58,7 +58,7 @@ std::string SafeStringEscape(const std::string& input) {
 
     for (const auto c : input) {
         // Keep alphanumeric and other accepted characters intact
-        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+        if (isalnum(c, std::locale::classic()) || c == '-' || c == '_' || c == '.' || c == '~') {
             escaped << c;
             continue;
         }
