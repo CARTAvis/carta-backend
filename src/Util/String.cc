@@ -6,9 +6,7 @@
 
 #include "String.h"
 
-#include <curl/curl.h>
-
-#include <memory>
+#include <iomanip>
 #include <sstream>
 
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
@@ -53,14 +51,23 @@ bool ConstantTimeStringCompare(const std::string& a, const std::string& b) {
 }
 
 std::string SafeStringEscape(const std::string& input) {
-    // This is needed to ensure we don't mix malloc/free with new/delete
-    // Reference: https://chromium.googlesource.com/chromium/src/base/+/9b9882fcdabd89115c828acb27020ede8cefee0d/memory/scoped_ptr.h#171
-    struct free_deleter {
-        void operator()(void* p) {
-            free(p);
-        }
-    };
+    // Adapted from https://stackoverflow.com/a/17708801
+    std::ostringstream escaped;
+    escaped.fill('0');
+    escaped << std::hex;
 
-    std::unique_ptr<char, free_deleter> escaped_string(curl_easy_escape(nullptr, input.c_str(), 0));
-    return std::string(escaped_string.get());
+    for (const auto c : input) {
+        // Keep alphanumeric and other accepted characters intact
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            escaped << c;
+            continue;
+        }
+
+        // Any other characters are percent-encoded
+        escaped << std::uppercase;
+        escaped << '%' << std::setw(2) << int((unsigned char)c);
+        escaped << std::nouppercase;
+    }
+
+    return escaped.str();
 }

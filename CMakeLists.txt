@@ -47,7 +47,6 @@ endif ()
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-FIND_PACKAGE(CURL REQUIRED)
 FIND_PACKAGE(GSL REQUIRED)
 FIND_PACKAGE(ZFP CONFIG REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -167,7 +166,6 @@ set(LINK_LIBS
         zstd
         cfitsio
         pugixml
-        curl
         wcs
         gsl
         casa_casa
