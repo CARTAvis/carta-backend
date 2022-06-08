@@ -488,6 +488,18 @@ CARTA::ContourImageData Message::ContourImageData(int file_id, uint32_t referenc
     return message;
 }
 
+CARTA::VectorOverlayTileData Message::VectorOverlayTileData(int file_id, int channel, int stokes_intensity, int stokes_angle,
+    const CARTA::CompressionType& compression_type, float compression_quality) {
+    CARTA::VectorOverlayTileData message;
+    message.set_file_id(file_id);
+    message.set_channel(channel);
+    message.set_stokes_intensity(stokes_intensity);
+    message.set_stokes_angle(stokes_angle);
+    message.set_compression_type(compression_type);
+    message.set_compression_quality(compression_quality);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

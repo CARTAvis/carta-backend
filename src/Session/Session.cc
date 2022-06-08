@@ -1859,11 +1859,8 @@ bool Session::SendVectorFieldData(int file_id) {
         }
 
         if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
-            CARTA::VectorOverlayTileData empty_response;
-            empty_response.set_file_id(file_id);
-            empty_response.set_channel(frame->CurrentZ());
-            empty_response.set_stokes_intensity(settings.stokes_intensity);
-            empty_response.set_stokes_angle(settings.stokes_angle);
+            CARTA::VectorOverlayTileData empty_response = Message::VectorOverlayTileData(file_id, frame->CurrentZ(),
+                settings.stokes_intensity, settings.stokes_angle, settings.compression_type, settings.compression_quality);
             empty_response.set_progress(1.0);
             SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, empty_response);
             return true;
@@ -1871,12 +1868,11 @@ bool Session::SendVectorFieldData(int file_id) {
 
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
-            partial_response.set_file_id(file_id);
             SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, partial_response);
         };
 
         // Do PI/PA calculations
-        VectorFieldCalculator vector_field_calculator(frame);
+        VectorFieldCalculator vector_field_calculator(file_id, frame);
         if (vector_field_calculator.DoCalculations(callback)) {
             return true;
         }

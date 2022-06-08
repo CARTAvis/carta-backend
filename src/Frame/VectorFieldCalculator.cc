@@ -40,12 +40,8 @@ bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
     int channel = frame->CurrentZ();
 
     // Set response messages
-    CARTA::VectorOverlayTileData response;
-    response.set_channel(channel);
-    response.set_stokes_intensity(stokes_intensity);
-    response.set_stokes_angle(stokes_angle);
-    response.set_compression_type(compression_type);
-    response.set_compression_quality(compression_quality);
+    CARTA::VectorOverlayTileData response =
+        Message::VectorOverlayTileData(file_id, channel, stokes_intensity, stokes_angle, compression_type, compression_quality);
     auto* tile_pi = response.add_intensity_tiles();
     auto* tile_pa = response.add_angle_tiles();
 

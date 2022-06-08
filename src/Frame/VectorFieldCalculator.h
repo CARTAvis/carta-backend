@@ -14,10 +14,10 @@ namespace carta {
 using VectorFieldCallback = const std::function<void(CARTA::VectorOverlayTileData&)>;
 
 struct VectorFieldCalculator {
+    int file_id;
     std::shared_ptr<Frame> frame;
 
-    VectorFieldCalculator(const std::shared_ptr<Frame>& frame_) : frame(frame_) {}
-
+    VectorFieldCalculator(int file_id_, const std::shared_ptr<Frame>& frame_) : file_id(file_id_), frame(frame_) {}
     bool DoCalculations(VectorFieldCallback& callback);
 };
 

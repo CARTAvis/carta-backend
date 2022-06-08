@@ -107,6 +107,8 @@ public:
     static CARTA::PvProgress PvProgress(int file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(int file_id, int region_id, int channel, int stokes, float progress);
     static CARTA::ContourImageData ContourImageData(int file_id, uint32_t reference_file_id, int channel, int stokes, double progress);
+    static CARTA::VectorOverlayTileData VectorOverlayTileData(int file_id, int channel, int stokes_intensity, int stokes_angle,
+        const CARTA::CompressionType& compression_type, float compression_quality);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
