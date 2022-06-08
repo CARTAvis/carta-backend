@@ -1125,11 +1125,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 err_file_ids.append(std::to_string(image.file_id()) + " ");
             }
         } else {
-            CARTA::OpenFile open_file_msg;
-            open_file_msg.set_directory(image.directory());
-            open_file_msg.set_file(image.file());
-            open_file_msg.set_hdu(image.hdu());
-            open_file_msg.set_file_id(image.file_id());
+            CARTA::OpenFile open_file_msg = Message::OpenFile(image.directory(), image.file(), image.hdu(), image.file_id());
 
             // Open a file
             if (!OnOpenFile(open_file_msg, request_id, true)) {
