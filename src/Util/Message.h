@@ -101,6 +101,7 @@ public:
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
+    static CARTA::MomentProgress MomentProgress(int file_id, float progress);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

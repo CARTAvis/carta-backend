@@ -1228,9 +1228,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         auto& frame = _frames.at(file_id);
         // Set moment progress callback function
         auto progress_callback = [&](float progress) {
-            CARTA::MomentProgress moment_progress;
-            moment_progress.set_file_id(file_id);
-            moment_progress.set_progress(progress);
+            CARTA::MomentProgress moment_progress = Message::MomentProgress(file_id, progress);
             SendEvent(CARTA::EventType::MOMENT_PROGRESS, request_id, moment_progress);
         };
 

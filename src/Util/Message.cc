@@ -454,6 +454,13 @@ CARTA::RegisterViewerAck Message::RegisterViewerAck(
     return message;
 }
 
+CARTA::MomentProgress Message::MomentProgress(int file_id, float progress) {
+    CARTA::MomentProgress message;
+    message.set_file_id(file_id);
+    message.set_progress(progress);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
