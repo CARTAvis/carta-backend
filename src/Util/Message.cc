@@ -478,6 +478,16 @@ CARTA::RegionHistogramData Message::RegionHistogramData(int file_id, int region_
     return message;
 }
 
+CARTA::ContourImageData Message::ContourImageData(int file_id, uint32_t reference_file_id, int channel, int stokes, double progress) {
+    CARTA::ContourImageData message;
+    message.set_file_id(file_id);
+    message.set_reference_file_id(reference_file_id);
+    message.set_channel(channel);
+    message.set_stokes(stokes);
+    message.set_progress(progress);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

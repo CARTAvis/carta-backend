@@ -1735,12 +1735,8 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
             if (ignore_empty) {
                 return false;
             } else {
-                CARTA::ContourImageData empty_response;
-                empty_response.set_file_id(file_id);
-                empty_response.set_reference_file_id(settings.reference_file_id);
-                empty_response.set_channel(frame->CurrentZ());
-                empty_response.set_stokes(frame->CurrentStokes());
-                empty_response.set_progress(1.0);
+                CARTA::ContourImageData empty_response =
+                    Message::ContourImageData(file_id, settings.reference_file_id, frame->CurrentZ(), frame->CurrentStokes(), 1.0);
                 SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, 0, empty_response);
                 return true;
             }
@@ -1749,14 +1745,9 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
         int64_t total_vertices = 0;
 
         auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
-            CARTA::ContourImageData partial_response;
-            partial_response.set_file_id(file_id);
             // Currently only supports identical reference file IDs
-            partial_response.set_reference_file_id(settings.reference_file_id);
-            partial_response.set_channel(frame->CurrentZ());
-            partial_response.set_stokes(frame->CurrentStokes());
-            partial_response.set_progress(progress);
-
+            CARTA::ContourImageData partial_response =
+                Message::ContourImageData(file_id, settings.reference_file_id, frame->CurrentZ(), frame->CurrentStokes(), progress);
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
 #if _DISABLE_CONTOUR_COMPRESSION_
