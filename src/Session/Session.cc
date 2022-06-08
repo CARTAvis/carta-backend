@@ -1137,10 +1137,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
         if (file_ok) {
             // Set image channels
-            CARTA::SetImageChannels set_image_channels_msg;
-            set_image_channels_msg.set_file_id(image.file_id());
-            set_image_channels_msg.set_channel(image.channel());
-            set_image_channels_msg.set_stokes(image.stokes());
+            CARTA::SetImageChannels set_image_channels_msg = Message::SetImageChannels(image.file_id(), image.channel(), image.stokes());
             OnSetImageChannels(set_image_channels_msg);
 
             // Set regions

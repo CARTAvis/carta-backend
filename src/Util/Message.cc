@@ -41,11 +41,13 @@ CARTA::SetImageChannels Message::SetImageChannels(
     set_image_channels.set_file_id(file_id);
     set_image_channels.set_channel(channel);
     set_image_channels.set_stokes(stokes);
-    CARTA::AddRequiredTiles* required_tiles = set_image_channels.mutable_required_tiles();
-    required_tiles->set_file_id(file_id);
-    required_tiles->set_compression_type(compression_type);
-    required_tiles->set_compression_quality(compression_quality);
-    required_tiles->add_tiles(0);
+    if (compression_quality > -1) {
+        CARTA::AddRequiredTiles* required_tiles = set_image_channels.mutable_required_tiles();
+        required_tiles->set_file_id(file_id);
+        required_tiles->set_compression_type(compression_type);
+        required_tiles->set_compression_quality(compression_quality);
+        required_tiles->add_tiles(0);
+    }
     return set_image_channels;
 }
 

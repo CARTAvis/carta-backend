@@ -52,8 +52,8 @@ public:
     static CARTA::CloseFile CloseFile(int32_t file_id);
     static CARTA::OpenFile OpenFile(std::string directory, std::string file, std::string hdu, int32_t file_id,
         CARTA::RenderMode render_mode = CARTA::RenderMode::RASTER, bool lel_expr = false);
-    static CARTA::SetImageChannels SetImageChannels(
-        int32_t file_id, int32_t channel, int32_t stokes, CARTA::CompressionType compression_type, float compression_quality);
+    static CARTA::SetImageChannels SetImageChannels(int32_t file_id, int32_t channel, int32_t stokes,
+        CARTA::CompressionType compression_type = CARTA::CompressionType::NONE, float compression_quality = -1);
     static CARTA::SetCursor SetCursor(int32_t file_id, float x, float y);
     static CARTA::SetSpatialRequirements SetSpatialRequirements(int32_t file_id, int32_t region_id);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id);
