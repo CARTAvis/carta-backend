@@ -274,7 +274,6 @@ protected:
 
     // Specialized for cube; accumulate per-z histograms and send progress messages
     bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
-    void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int channel, int stokes, float progress);
 
     // Send data streams
     bool SendContourData(int file_id, bool ignore_empty = true);

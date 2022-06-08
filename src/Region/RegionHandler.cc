@@ -1076,12 +1076,7 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Set histogram fields
-        CARTA::RegionHistogramData histogram_message;
-        histogram_message.set_file_id(file_id);
-        histogram_message.set_region_id(region_id);
-        histogram_message.set_progress(1.0); // only cube histograms have partial results
-        histogram_message.set_channel(z);
-        histogram_message.set_stokes(stokes);
+        CARTA::RegionHistogramData histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
 
         // Get image region
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {

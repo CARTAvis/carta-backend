@@ -17,6 +17,7 @@
 #include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region.pb.h>
+#include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
@@ -104,6 +105,7 @@ public:
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int file_id, float progress);
     static CARTA::PvProgress PvProgress(int file_id, float progress);
+    static CARTA::RegionHistogramData RegionHistogramData(int file_id, int region_id, int channel, int stokes, float progress);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

@@ -733,18 +733,11 @@ bool Frame::FillRegionHistogramData(
     for (auto& histogram_config : requirements) {
         auto t_start_image_histogram = std::chrono::high_resolution_clock::now();
 
-        // create and fill region histogram data message
-        CARTA::RegionHistogramData histogram_data;
-        histogram_data.set_file_id(file_id);
-        histogram_data.set_region_id(region_id);
-        histogram_data.set_progress(1.0);
-
         // Set channel
         int z = histogram_config.channel;
         if ((z == CURRENT_Z) || (Depth() == 1)) {
             z = CurrentZ();
         }
-        histogram_data.set_channel(z);
 
         // Use number of bins in requirements
         int num_bins = histogram_config.num_bins;
@@ -753,7 +746,9 @@ bool Frame::FillRegionHistogramData(
         if (!GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
             continue;
         }
-        histogram_data.set_stokes(stokes);
+
+        // create and fill region histogram data message
+        CARTA::RegionHistogramData histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
 
         // fill histogram submessage from cache (loader or local)
         auto* histogram = histogram_data.mutable_histograms();
