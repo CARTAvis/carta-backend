@@ -14,6 +14,7 @@
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/pv_request.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
@@ -102,6 +103,7 @@ public:
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int file_id, float progress);
+    static CARTA::PvProgress PvProgress(int file_id, float progress);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

@@ -1361,9 +1361,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
 
             // Set pv progress callback function
             auto progress_callback = [&](float progress) {
-                CARTA::PvProgress pv_progress;
-                pv_progress.set_file_id(file_id);
-                pv_progress.set_progress(progress);
+                CARTA::PvProgress pv_progress = Message::PvProgress(file_id, progress);
                 SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
             };
 
