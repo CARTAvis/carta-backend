@@ -380,12 +380,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     }
 
     // response
-    CARTA::RegisterViewerAck ack_message;
-    ack_message.set_session_id(session_id);
-    ack_message.set_success(success);
-    ack_message.set_message(status);
-    ack_message.set_session_type(type);
-
+    CARTA::RegisterViewerAck ack_message = Message::RegisterViewerAck(session_id, success, status, type);
     auto& platform_string_map = *ack_message.mutable_platform_strings();
     platform_string_map["release_info"] = GetReleaseInformation();
 #if __APPLE__

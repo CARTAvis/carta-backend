@@ -99,6 +99,8 @@ public:
         CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
     static CARTA::RasterTileSync RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync);
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
+    static CARTA::RegisterViewerAck RegisterViewerAck(
+        uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

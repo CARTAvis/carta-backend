@@ -444,6 +444,16 @@ CARTA::SetRegionAck Message::SetRegionAck(int32_t region_id, bool success, std::
     return message;
 }
 
+CARTA::RegisterViewerAck Message::RegisterViewerAck(
+    uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type) {
+    CARTA::RegisterViewerAck message;
+    message.set_session_id(session_id);
+    message.set_success(success);
+    message.set_message(status);
+    message.set_session_type(type);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
