@@ -812,10 +812,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
     // RESPONSE
     if (!silent) {
-        CARTA::SetRegionAck ack;
-        ack.set_region_id(region_id);
-        ack.set_success(success);
-        ack.set_message(err_message);
+        CARTA::SetRegionAck ack = Message::SetRegionAck(region_id, success, err_message);
         SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     }
 

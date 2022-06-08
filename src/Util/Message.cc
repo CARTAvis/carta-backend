@@ -434,6 +434,14 @@ CARTA::RasterTileSync Message::RasterTileSync(int32_t file_id, int channel, int 
     return message;
 }
 
+CARTA::SetRegionAck Message::SetRegionAck(int32_t region_id, bool success, std::string err_message) {
+    CARTA::SetRegionAck message;
+    message.set_region_id(region_id);
+    message.set_success(success);
+    message.set_message(err_message);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

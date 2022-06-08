@@ -98,6 +98,7 @@ public:
         int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
         CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
     static CARTA::RasterTileSync RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync);
+    static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
