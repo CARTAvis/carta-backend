@@ -1103,8 +1103,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     ConnectCalled();
 
     // Close all images
-    CARTA::CloseFile close_file_msg;
-    close_file_msg.set_file_id(-1);
+    CARTA::CloseFile close_file_msg = Message::CloseFile(-1);
     OnCloseFile(close_file_msg);
 
     auto t_start_resume = std::chrono::high_resolution_clock::now();
