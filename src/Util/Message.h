@@ -14,6 +14,7 @@
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
@@ -96,6 +97,7 @@ public:
     static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
         int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
         CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
+    static CARTA::RasterTileSync RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

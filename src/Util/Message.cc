@@ -424,6 +424,16 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     return profile_message;
 }
 
+CARTA::RasterTileSync Message::RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync) {
+    CARTA::RasterTileSync message;
+    message.set_file_id(file_id);
+    message.set_channel(channel);
+    message.set_stokes(stokes);
+    message.set_animation_id(animation_id);
+    message.set_end_sync(end_sync);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
