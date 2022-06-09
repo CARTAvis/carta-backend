@@ -1101,10 +1101,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
         bool file_ok(true);
 
         if (image.stokes_files_size() > 1) {
-            CARTA::ConcatStokesFiles concat_stokes_files_msg;
-            concat_stokes_files_msg.set_file_id(image.file_id());
-            *concat_stokes_files_msg.mutable_stokes_files() = image.stokes_files();
-
+            CARTA::ConcatStokesFiles concat_stokes_files_msg = Message::ConcatStokesFiles(image.file_id(), image.stokes_files());
             // Open a concatenated stokes file
             if (!OnConcatStokesFiles(concat_stokes_files_msg, request_id)) {
                 success = false;

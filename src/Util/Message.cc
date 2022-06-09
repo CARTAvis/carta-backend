@@ -378,6 +378,14 @@ CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CA
     return message;
 }
 
+CARTA::ConcatStokesFiles Message::ConcatStokesFiles(
+    int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files) {
+    CARTA::ConcatStokesFiles message;
+    message.set_file_id(file_id);
+    *message.mutable_stokes_files() = stokes_files;
+    return message;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);

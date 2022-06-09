@@ -93,6 +93,8 @@ public:
         bool debiasing, double q_error, double u_error, int stokes_intensity, int stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
     static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
+    static CARTA::ConcatStokesFiles ConcatStokesFiles(
+        int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
