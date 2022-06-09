@@ -517,6 +517,13 @@ CARTA::FileInfo Message::FileInfo(const std::string& name, CARTA::FileType type,
     return message;
 }
 
+CARTA::RasterTileData Message::RasterTileData(int32_t file_id, int animation_id) {
+    CARTA::RasterTileData message;
+    message.set_file_id(file_id);
+    message.set_animation_id(animation_id);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

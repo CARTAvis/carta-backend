@@ -689,9 +689,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             for (int j = 0; j < stride; j++) {
                 for (int i = j; i < num_tiles; i += stride) {
                     const auto& encoded_coordinate = message.tiles(i);
-                    CARTA::RasterTileData raster_tile_data;
-                    raster_tile_data.set_file_id(file_id);
-                    raster_tile_data.set_animation_id(animation_id);
+                    CARTA::RasterTileData raster_tile_data = Message::RasterTileData(file_id, animation_id);
                     auto tile = Tile::Decode(encoded_coordinate);
                     if (_frames.count(file_id) &&
                         _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, z, stokes, compression_type, compression_quality)) {

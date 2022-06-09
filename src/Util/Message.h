@@ -112,6 +112,7 @@ public:
         const CARTA::CompressionType& compression_type, float compression_quality);
     static CARTA::ErrorData ErrorData(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
     static CARTA::FileInfo FileInfo(const std::string& name, CARTA::FileType type, int64_t size = 0, const std::string& hdu = "");
+    static CARTA::RasterTileData RasterTileData(int32_t file_id, int animation_id);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
