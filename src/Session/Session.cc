@@ -1940,7 +1940,6 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     reverse_at_end = msg.reverse();
     always_wait = true;
     _animation_id++;
-    CARTA::StartAnimationAck ack_message;
     std::vector<int> stokes_indices;
     if (!msg.stokes_indices().empty()) {
         stokes_indices = {msg.stokes_indices().begin(), msg.stokes_indices().end()};
@@ -1950,13 +1949,10 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
         _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
             msg.matched_frames(), stokes_indices, frame_rate, looping, reverse_at_end, always_wait));
-        ack_message.set_success(true);
-        ack_message.set_animation_id(_animation_id);
-        ack_message.set_message("Starting animation");
+        CARTA::StartAnimationAck ack_message = Message::StartAnimationAck(true, _animation_id, "Starting animation");
         SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
     } else {
-        ack_message.set_success(false);
-        ack_message.set_message("Incorrect file ID");
+        CARTA::StartAnimationAck ack_message = Message::StartAnimationAck(false, _animation_id, "Incorrect file ID");
         SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
     }
 }

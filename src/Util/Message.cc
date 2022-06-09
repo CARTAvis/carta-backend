@@ -540,6 +540,14 @@ CARTA::RasterTileData Message::RasterTileData(int32_t file_id, int animation_id)
     return message;
 }
 
+CARTA::StartAnimationAck Message::StartAnimationAck(bool success, int animation_id, const std::string& message) {
+    CARTA::StartAnimationAck start_animation_ack;
+    start_animation_ack.set_success(success);
+    start_animation_ack.set_animation_id(animation_id);
+    start_animation_ack.set_message(message);
+    return start_animation_ack;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
