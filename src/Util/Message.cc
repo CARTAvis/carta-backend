@@ -548,6 +548,13 @@ CARTA::StartAnimationAck Message::StartAnimationAck(bool success, int animation_
     return start_animation_ack;
 }
 
+CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string& message) {
+    CARTA::ImportRegionAck import_region_ack;
+    import_region_ack.set_success(success);
+    import_region_ack.set_message(message);
+    return import_region_ack;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

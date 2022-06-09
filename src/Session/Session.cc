@@ -824,13 +824,12 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         CARTA::FileType file_type(message.type());
         std::string directory(message.directory()), filename(message.file());
         std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
-        CARTA::ImportRegionAck import_ack; // response
 
         // check for file or contents set
         bool import_file(!directory.empty() && !filename.empty()), import_contents(!contents.empty());
         if (!import_file && !import_contents) {
-            import_ack.set_success(false);
-            import_ack.set_message("Import region failed: cannot import by filename or contents.");
+            CARTA::ImportRegionAck import_ack =
+                Message::ImportRegionAck(false, "Import region failed: cannot import by filename or contents.");
             SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
             return;
         }
@@ -841,8 +840,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             region_file = GetResolvedFilename(_top_level_folder, directory, filename);
             casacore::File ccfile(region_file);
             if (!ccfile.exists() || !ccfile.isReadable()) {
-                import_ack.set_success(false);
-                import_ack.set_message("Import region failed: cannot open file.");
+                CARTA::ImportRegionAck import_ack = Message::ImportRegionAck(false, "Import region failed: cannot open file.");
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
@@ -859,6 +857,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
+        CARTA::ImportRegionAck import_ack;
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
         // Measure duration for get tile data
         auto t_end_import_region = std::chrono::high_resolution_clock::now();

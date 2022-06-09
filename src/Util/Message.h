@@ -13,6 +13,7 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/pv_request.pb.h>
@@ -117,6 +118,7 @@ public:
     static CARTA::FileInfo FileInfo(const std::string& name, CARTA::FileType type, int64_t size = 0, const std::string& hdu = "");
     static CARTA::RasterTileData RasterTileData(int32_t file_id, int animation_id);
     static CARTA::StartAnimationAck StartAnimationAck(bool success, int animation_id, const std::string& message);
+    static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
