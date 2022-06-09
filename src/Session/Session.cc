@@ -1136,12 +1136,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                     *set_cursor_msg.mutable_point() = cursor;
                     OnSetCursor(set_cursor_msg, request_id);
                 } else {
-                    CARTA::SetRegion set_region_msg;
-                    set_region_msg.set_file_id(image.file_id());
-                    set_region_msg.set_region_id(region_id_info.first);
-                    CARTA::RegionInfo resume_region_info = region_id_info.second;
-                    *set_region_msg.mutable_region_info() = resume_region_info;
-
+                    CARTA::SetRegion set_region_msg = Message::SetRegion(image.file_id(), region_id_info.first, region_id_info.second);
                     if (!OnSetRegion(set_region_msg, request_id, true)) {
                         success = false;
                         err_region_ids.append(std::to_string(region_id_info.first) + " ");
