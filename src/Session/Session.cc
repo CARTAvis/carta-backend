@@ -530,11 +530,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 lock.unlock();
 
                 // copy file info, extended file info
-                CARTA::FileInfo response_file_info = CARTA::FileInfo();
-                response_file_info.set_name(file_info.name());
-                response_file_info.set_type(file_info.type());
-                response_file_info.set_size(file_info.size());
-                response_file_info.add_hdu_list(hdu); // loaded hdu only
+                CARTA::FileInfo response_file_info = Message::FileInfo(file_info.name(), file_info.type(), file_info.size(), hdu);
                 *ack.mutable_file_info() = response_file_info;
                 *ack.mutable_file_info_extended() = file_info_extended;
                 uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
@@ -603,9 +599,7 @@ bool Session::OnOpenFile(
             lock.unlock();
 
             // Set file info, extended file info
-            CARTA::FileInfo response_file_info = CARTA::FileInfo();
-            response_file_info.set_name(name);
-            response_file_info.set_type(CARTA::FileType::CASA);
+            CARTA::FileInfo response_file_info = Message::FileInfo(name, CARTA::FileType::CASA);
             *open_file_ack->mutable_file_info() = response_file_info;
             *open_file_ack->mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;

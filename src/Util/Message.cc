@@ -508,6 +508,15 @@ CARTA::ErrorData Message::ErrorData(const std::string& message, std::vector<std:
     return error_data;
 }
 
+CARTA::FileInfo Message::FileInfo(const std::string& name, CARTA::FileType type, int64_t size, const std::string& hdu) {
+    CARTA::FileInfo message;
+    message.set_name(name);
+    message.set_type(type);
+    message.set_size(size);
+    message.add_hdu_list(hdu);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
