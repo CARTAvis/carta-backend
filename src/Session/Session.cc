@@ -1932,10 +1932,7 @@ void Session::SendFileEvent(
 }
 
 void Session::SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity) {
-    CARTA::ErrorData error_data;
-    error_data.set_message(message);
-    error_data.set_severity(severity);
-    *error_data.mutable_tags() = {tags.begin(), tags.end()};
+    CARTA::ErrorData error_data = Message::ErrorData(message, tags, severity);
     SendEvent(CARTA::EventType::ERROR_DATA, 0, error_data);
     if ((severity > CARTA::ErrorSeverity::DEBUG)) {
         spdlog::debug("Session {}: {}", _id, message);

@@ -10,6 +10,7 @@
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
+#include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
@@ -109,6 +110,7 @@ public:
     static CARTA::ContourImageData ContourImageData(int file_id, uint32_t reference_file_id, int channel, int stokes, double progress);
     static CARTA::VectorOverlayTileData VectorOverlayTileData(int file_id, int channel, int stokes_intensity, int stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
+    static CARTA::ErrorData ErrorData(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

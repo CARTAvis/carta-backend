@@ -500,6 +500,14 @@ CARTA::VectorOverlayTileData Message::VectorOverlayTileData(int file_id, int cha
     return message;
 }
 
+CARTA::ErrorData Message::ErrorData(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity) {
+    CARTA::ErrorData error_data;
+    error_data.set_message(message);
+    error_data.set_severity(severity);
+    *error_data.mutable_tags() = {tags.begin(), tags.end()};
+    return error_data;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
