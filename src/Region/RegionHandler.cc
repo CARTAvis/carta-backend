@@ -983,11 +983,13 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
         auto csys = frame->CoordinateSystem();
 
         if (!SetRegion(region_id, region_state, csys)) {
-            fitting_response.set_message("field of view set up failed");
+            spdlog::error("Failed to set up field of view region!");
+            fitting_response.set_message("failed to set up field of view region");
             fitting_response.set_success(false);
             return false;
         }
     } else {
+        // TODO: support image fitting with regions
         fitting_response.set_message("region not supported");
         fitting_response.set_success(false);
         return false;
@@ -1007,26 +1009,8 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
         return false;
     }
 
-    casacore::IPosition region_shape = frame->GetRegionShape(stokes_region);
-    spdlog::info("region shape {}", region_shape.toString());
-
-    casacore::IPosition origin(2, 0, 0);
-    casacore::IPosition region_origin = stokes_region.image_region.asLCRegion().expand(origin);
-    spdlog::info("region origin {}", region_origin.toString());
-
-    std::vector<float> region_data;
-    if (!frame->GetRegionData(stokes_region, region_data)) {
-        spdlog::error("Failed to get data in the region!");
-        fitting_response.set_message("failed to get data");
-        fitting_response.set_success(false);
-        return false;
-    }
-    
-    ImageFitter image_fitter(region_shape(0), region_shape(1));
     bool success = false;
-    std::vector<CARTA::GaussianComponent> initial_values(
-        fitting_request.initial_values().begin(), fitting_request.initial_values().end());
-    success = image_fitter.FitImage(region_data.data(), initial_values, fitting_response);
+    success = frame->FitImage(fitting_request, fitting_response, &stokes_region);
 
     if (region_id == TEMP_FOV_REGION_ID) {
         RemoveRegion(region_id);

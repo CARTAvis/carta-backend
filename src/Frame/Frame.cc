@@ -1794,17 +1794,37 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, StokesRegion* stokes_region) {
     if (!_image_fitter) {
-        _image_fitter = std::make_unique<ImageFitter>(_width, _height);
+        _image_fitter = std::make_unique<ImageFitter>();
     }
 
     bool success = false;
+
     if (_image_fitter) {
-        FillImageCache();
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
-        success = _image_fitter->FitImage(_image_cache.get(), initial_values, fitting_response);
+        
+        if (stokes_region != nullptr) {
+            casacore::IPosition region_shape = GetRegionShape(*stokes_region);
+            spdlog::info("Creating region subimage data with shape {} x {}.", region_shape(0), region_shape(1));
+
+            std::vector<float> region_data;
+            if (!GetRegionData(*stokes_region, region_data)) {
+                spdlog::error("Failed to get data in the region!");
+                fitting_response.set_message("failed to get data");
+                fitting_response.set_success(false);
+                return false;
+            }
+
+            casacore::IPosition origin(2, 0, 0);
+            casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
+
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), initial_values, fitting_response);
+        } else {
+            FillImageCache();
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_response);
+        }
     }
 
     return success;

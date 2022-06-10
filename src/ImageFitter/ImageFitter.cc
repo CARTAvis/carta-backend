@@ -13,24 +13,25 @@
 
 using namespace carta;
 
-ImageFitter::ImageFitter(size_t width, size_t height) {
-    _fit_data.width = width;
-    _fit_data.n = width * height;
-
+ImageFitter::ImageFitter() {
     _fdf.f = FuncF;
     _fdf.df = nullptr; // internally computed using finite difference approximations of f when set to NULL
     _fdf.fvv = nullptr;
     _fdf.params = &_fit_data;
-    _fdf.n = _fit_data.n;
 
     // avoid GSL default error handler calling abort()
     gsl_set_error_handler(&ErrorHandler);
 }
 
 bool ImageFitter::FitImage(
-    float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response) {
+    size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response) {
     bool success = false;
+
+    _fit_data.width = width;
+    _fit_data.n = width * height;
     _fit_data.data = image;
+    _fdf.n = _fit_data.n;
+
     CalculateNanNum();
     SetInitialValues(initial_values);
 
