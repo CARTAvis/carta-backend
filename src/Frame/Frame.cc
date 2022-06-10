@@ -1108,13 +1108,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     }
 
     if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
-        CARTA::SpatialProfileData spatial_data;
-        spatial_data.set_x(x);
-        spatial_data.set_y(y);
-        spatial_data.set_channel(CurrentZ());
-        spatial_data.set_stokes(CurrentStokes());
-        spatial_data.set_value(cursor_value_with_current_stokes);
-
+        CARTA::SpatialProfileData spatial_data =
+            Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
         spatial_data_vec.push_back(spatial_data);
         return true;
     }
@@ -1154,12 +1149,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // set message fields
-        CARTA::SpatialProfileData spatial_data;
-        spatial_data.set_x(x);
-        spatial_data.set_y(y);
-        spatial_data.set_channel(CurrentZ());
-        spatial_data.set_stokes(stokes);
-        spatial_data.set_value(cursor_value);
+        CARTA::SpatialProfileData spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
 
         // add profiles
         std::vector<float> profile;

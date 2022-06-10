@@ -104,6 +104,7 @@ public:
     static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
         int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
         CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
+    static CARTA::SpatialProfileData SpatialProfileData(int x, int y, int channel, int stokes, float value);
     static CARTA::RasterTileSync RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync);
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
     static CARTA::RegisterViewerAck RegisterViewerAck(

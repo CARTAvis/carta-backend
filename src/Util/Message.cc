@@ -442,6 +442,16 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     return profile_message;
 }
 
+CARTA::SpatialProfileData Message::SpatialProfileData(int x, int y, int channel, int stokes, float value) {
+    CARTA::SpatialProfileData message;
+    message.set_x(x);
+    message.set_y(y);
+    message.set_channel(channel);
+    message.set_stokes(stokes);
+    message.set_value(value);
+    return message;
+}
+
 CARTA::RasterTileSync Message::RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync) {
     CARTA::RasterTileSync message;
     message.set_file_id(file_id);
