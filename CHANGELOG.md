@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
 * Ensured that HTTP server returns error codes correctly ([#1011](https://github.com/CARTAvis/carta-backend/issues/1011)).
+* Fixed incorrect spectral profiles for computed stokes ([#1122](https://github.com/CARTAvis/carta-backend/issues/1122)).
 
 ## [3.0.0-beta.3]
 
