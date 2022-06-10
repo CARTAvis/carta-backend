@@ -119,6 +119,7 @@ public:
     static CARTA::RasterTileData RasterTileData(int32_t file_id, int animation_id);
     static CARTA::StartAnimationAck StartAnimationAck(bool success, int animation_id, const std::string& message);
     static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);
+    static CARTA::RegionStatsData RegionStatsData(int file_id, int region_id, int channel, int stokes);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

@@ -555,6 +555,15 @@ CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string&
     return import_region_ack;
 }
 
+CARTA::RegionStatsData Message::RegionStatsData(int file_id, int region_id, int channel, int stokes) {
+    CARTA::RegionStatsData message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    message.set_channel(channel);
+    message.set_stokes(stokes);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

@@ -1001,11 +1001,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         }
 
         // Set response message
-        CARTA::RegionStatsData stats_data;
-        stats_data.set_file_id(file_id);
-        stats_data.set_region_id(region_id);
-        stats_data.set_channel(z);
-        stats_data.set_stokes(stokes);
+        CARTA::RegionStatsData stats_data = Message::RegionStatsData(file_id, region_id, z, stokes);
 
         // Set required stats types
         std::vector<CARTA::StatsType> required_stats;
