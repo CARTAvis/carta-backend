@@ -1850,7 +1850,6 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
     // Do not send image histogram if already sent with raster data.
     if (_frames.count(file_id)) {
         if (stokes_changed) {
-            SendRegionHistogramData(file_id, CUBE_REGION_ID);
             SendSpectralProfileData(file_id, CURSOR_REGION_ID, stokes_changed);
         }
 

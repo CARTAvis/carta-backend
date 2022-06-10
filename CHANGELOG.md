@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+* Enhanced image fitting performance by switching the solver from qr to cholesky ([#1114](https://github.com/CARTAvis/carta-backend/pull/1114)).
+* Made HTTP server return a different error code for disabled features ([#1115](https://github.com/CARTAvis/carta-backend/issues/1115)).
+
+### Fixed
+
+* Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
+* Ensured that HTTP server returns error codes correctly ([#1011](https://github.com/CARTAvis/carta-backend/issues/1011)).
+
 ## [3.0.0-beta.3]
 
 ### Changed
