@@ -416,6 +416,13 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
     return profile_message;
 }
 
+CARTA::SpectralProfileData Message::SpectralProfileData(int stokes, float progress) {
+    CARTA::SpectralProfileData message;
+    message.set_stokes(stokes);
+    message.set_progress(progress);
+    return message;
+}
+
 CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
     int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
     CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit) {

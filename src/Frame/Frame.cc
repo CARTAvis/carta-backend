@@ -1452,9 +1452,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
 
         // Create final profile message for callback
-        CARTA::SpectralProfileData profile_message;
-        profile_message.set_stokes(CurrentStokes());
-        profile_message.set_progress(1.0);
+        CARTA::SpectralProfileData profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
         auto spectral_profile = profile_message.add_profiles();
         spectral_profile->set_coordinate(config.coordinate);
         // point spectral profiles only have one stats type
@@ -1555,9 +1553,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         // reset profile timer and send partial profile message
                         t_start_profile = t_end_slice;
 
-                        CARTA::SpectralProfileData partial_data;
-                        partial_data.set_stokes(CurrentStokes());
-                        partial_data.set_progress(progress);
+                        CARTA::SpectralProfileData partial_data = Message::SpectralProfileData(CurrentStokes(), progress);
                         auto partial_profile = partial_data.add_profiles();
                         partial_profile->set_stats_type(config.all_stats[0]);
                         partial_profile->set_coordinate(config.coordinate);
