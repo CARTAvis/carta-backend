@@ -37,6 +37,13 @@ bool ImageFitter::FitImage(
     CalculateNanNum();
     SetInitialValues(initial_values);
 
+    // avoid SolveSystem crashes with insufficient data points
+    if (_fit_data.n < _num_components * 6) {
+        fitting_response.set_message("insufficient data points");
+        fitting_response.set_success(success);
+        return false;
+    }
+    
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n, _num_components);
     int status = SolveSystem();
 
