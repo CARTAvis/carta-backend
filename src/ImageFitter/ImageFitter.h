@@ -37,7 +37,8 @@ struct FitStatus {
 class ImageFitter {
 public:
     ImageFitter();
-    bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response, size_t offsetX = 0, size_t offsetY = 0);
+    bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
+        CARTA::FittingResponse& fitting_response, size_t offsetX = 0, size_t offsetY = 0);
 
 private:
     FitData _fit_data;

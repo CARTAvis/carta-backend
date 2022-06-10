@@ -23,8 +23,8 @@ ImageFitter::ImageFitter() {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(
-    size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response, size_t offsetX, size_t offsetY) {
+bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
+    CARTA::FittingResponse& fitting_response, size_t offsetX, size_t offsetY) {
     bool success = false;
 
     _fit_data.width = width;
@@ -43,7 +43,7 @@ bool ImageFitter::FitImage(
         fitting_response.set_success(success);
         return false;
     }
-    
+
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n, _num_components);
     int status = SolveSystem();
 

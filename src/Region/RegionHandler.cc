@@ -970,7 +970,8 @@ void RegionHandler::StopPvCalc(int file_id) {
     }
 }
 
-bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame) {
+bool RegionHandler::FitImage(
+    const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame) {
     int file_id(fitting_request.file_id());
     int region_id(fitting_request.region_id());
 
