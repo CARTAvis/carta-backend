@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Enhanced image fitting performance by switching the solver from qr to cholesky ([#1114](https://github.com/CARTAvis/carta-backend/pull/1114)).
 * Made HTTP server return a different error code for disabled features ([#1115](https://github.com/CARTAvis/carta-backend/issues/1115)).
 
+### Added
+
+* Added tests for the vector field calculator.
+
 ### Fixed
 
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
@@ -37,7 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added support for a custom carta-casacore script for updating casacore data in a local user directory ([#961](https://github.com/CARTAvis/carta-backend/issues/961)).
 * Added support of vector field (polarization intensity/angle) calculations ([#1002](https://github.com/CARTAvis/carta-backend/issues/1002)).
 * Added spatial profiles for line/polyline regions ([#796](https://github.com/CARTAvis/carta-backend/issues/796)).
-* Added tests for the vector field calculator.
 
 ### Fixed
 * Fixed problem with backend hanging rather than exiting after all sessions have disconnected ([#988](https://github.com/CARTAvis/carta-backend/pull/988)).
