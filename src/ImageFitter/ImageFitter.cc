@@ -24,12 +24,14 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(
-    size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response) {
+    size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values, CARTA::FittingResponse& fitting_response, size_t offsetX, size_t offsetY) {
     bool success = false;
 
     _fit_data.width = width;
     _fit_data.n = width * height;
     _fit_data.data = image;
+    _fit_data.offsetX = offsetX;
+    _fit_data.offsetY = offsetY;
     _fdf.n = _fit_data.n;
 
     CalculateNanNum();
@@ -79,8 +81,8 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
     _fit_errors = gsl_vector_alloc(p);
     for (size_t i = 0; i < _num_components; i++) {
         CARTA::GaussianComponent component(initial_values[i]);
-        gsl_vector_set(_fit_values, i * 6, component.center().x());
-        gsl_vector_set(_fit_values, i * 6 + 1, component.center().y());
+        gsl_vector_set(_fit_values, i * 6, component.center().x() - _fit_data.offsetX);
+        gsl_vector_set(_fit_values, i * 6 + 1, component.center().y() - _fit_data.offsetY);
         gsl_vector_set(_fit_values, i * 6 + 2, component.amp());
         gsl_vector_set(_fit_values, i * 6 + 3, component.fwhm().x());
         gsl_vector_set(_fit_values, i * 6 + 4, component.fwhm().y());
@@ -124,6 +126,12 @@ int ImageFitter::SolveSystem() {
 
     gsl_multifit_nlinear_free(work);
     gsl_matrix_free(covar);
+
+    for (size_t i = 0; i < _num_components; i++) {
+        gsl_vector_set(_fit_values, i * 6, gsl_vector_get(_fit_values, i * 6) + _fit_data.offsetX);
+        gsl_vector_set(_fit_values, i * 6 + 1, gsl_vector_get(_fit_values, i * 6 + 1) + _fit_data.offsetY);
+    }
+
     return status;
 }
 
