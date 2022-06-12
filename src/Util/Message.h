@@ -65,7 +65,7 @@ public:
         int32_t file_id, int32_t region_id, int32_t channel = CURRENT_Z, int32_t num_bins = AUTO_BIN_SIZE);
     static CARTA::AddRequiredTiles AddRequiredTiles(
         int32_t file_id, CARTA::CompressionType compression_type, float compression_quality, const std::vector<float>& tiles);
-    static CARTA::Point Point(int x, int y);
+    static CARTA::Point Point(float x, float y);
     static CARTA::SetRegion SetRegion(
         int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation);
     static CARTA::SetStatsRequirements SetStatsRequirements(int32_t file_id, int32_t region_id, std::string coordinate);

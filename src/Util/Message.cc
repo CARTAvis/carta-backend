@@ -109,7 +109,7 @@ CARTA::AddRequiredTiles Message::AddRequiredTiles(
     return add_required_tiles;
 }
 
-CARTA::Point Message::Point(int x, int y) {
+CARTA::Point Message::Point(float x, float y) {
     CARTA::Point point;
     point.set_x(x);
     point.set_y(y);

@@ -417,10 +417,7 @@ RegionState CrtfImportExport::ImportAnnSymbol(casacore::CountedPtr<const casa::A
 
         // Set control points
         std::vector<CARTA::Point> control_points;
-        CARTA::Point point;
-        point.set_x(pixel_coords[0]);
-        point.set_y(pixel_coords[1]);
-        control_points.push_back(point);
+        control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
 
         // Set other RegionState parameters
         CARTA::RegionType type(CARTA::RegionType::POINT);
@@ -450,10 +447,7 @@ RegionState CrtfImportExport::ImportAnnLine(casacore::CountedPtr<const casa::Ann
             casacore::Vector<casacore::Double> pixel_coords;
             _coord_sys->toPixel(pixel_coords, world_coords);
 
-            CARTA::Point point;
-            point.set_x(pixel_coords[0]);
-            point.set_y(pixel_coords[1]);
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
         }
 
         // Set other RegionState parameters
@@ -478,10 +472,7 @@ RegionState CrtfImportExport::ImportAnnPolyline(casacore::CountedPtr<const casa:
         // Set control points
         std::vector<CARTA::Point> control_points;
         for (size_t i = 0; i < x.size(); ++i) {
-            CARTA::Point point;
-            point.set_x(x[i]);
-            point.set_y(y[i]);
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(x[i], y[i]));
         }
 
         // Set other RegionState parameters
@@ -574,10 +565,7 @@ RegionState CrtfImportExport::ImportAnnPolygon(casacore::CountedPtr<const casa::
         // Set control points
         std::vector<CARTA::Point> control_points;
         for (size_t i = 0; i < x.size(); ++i) {
-            CARTA::Point point;
-            point.set_x(x[i]);
-            point.set_y(y[i]);
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(x[i], y[i]));
         }
 
         // Set RegionState
@@ -655,22 +643,15 @@ RegionState CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::
         casacore::Vector<casacore::Double> world_coords = angles.getValue();
         world_coords.resize(_coord_sys->nPixelAxes(), true);
         _coord_sys->toPixel(pixel_coords, world_coords);
-        CARTA::Point point;
-        point.set_x(pixel_coords[0]);
-        point.set_y(pixel_coords[1]);
-        control_points.push_back(point);
+        control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
 
         // Second point: bmaj, bmin in pixel length
         if (bmaj.getUnit() == "pix") {
-            point.set_x(bmaj.getValue());
-            point.set_y(bmin.getValue());
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(bmaj.getValue(), bmin.getValue()));
         } else {
             double bmaj_pixel = WorldToPixelLength(bmaj, 0);
             double bmin_pixel = WorldToPixelLength(bmin, 1);
-            point.set_x(bmaj_pixel);
-            point.set_y(bmin_pixel);
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(bmaj_pixel, bmin_pixel));
         }
 
         // Other RegionState parameters
@@ -803,10 +784,7 @@ RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& paramete
             if (ConvertPointToPixels(coord_frame, point, pixel_coords)) {
                 // Set control points
                 std::vector<CARTA::Point> control_points;
-                CARTA::Point point;
-                point.set_x(pixel_coords[0]);
-                point.set_y(pixel_coords[1]);
-                control_points.push_back(point);
+                control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
 
                 // Set RegionState
                 CARTA::RegionType type(CARTA::RegionType::POINT);
@@ -887,21 +865,15 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
             if (ConvertPointToPixels(coord_frame, point, pixel_coords)) {
                 // Set control points for center point
                 std::vector<CARTA::Point> control_points;
-                CARTA::Point point;
-                point.set_x(pixel_coords[0]);
-                point.set_y(pixel_coords[1]);
-                control_points.push_back(point);
+                control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
 
                 // Set bmaj, bmin or radius
                 if (region == "ellipse") {
-                    point.set_x(WorldToPixelLength(p3, 0));
-                    point.set_y(WorldToPixelLength(p4, 1));
+                    control_points.push_back(Message::Point(WorldToPixelLength(p3, 0), WorldToPixelLength(p4, 1)));
                 } else {
                     double radius = WorldToPixelLength(p3, 0);
-                    point.set_x(radius);
-                    point.set_y(radius);
+                    control_points.push_back(Message::Point(radius, radius));
                 }
-                control_points.push_back(point);
 
                 // Create RegionState and add to vector
                 CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
@@ -952,10 +924,7 @@ RegionState CrtfImportExport::ImportAnnPolygonLine(std::vector<std::string>& par
                 casacore::Vector<casacore::Double> pixel_coords;
                 if (ConvertPointToPixels(coord_frame, point, pixel_coords)) {
                     // Set control points
-                    CARTA::Point point;
-                    point.set_x(pixel_coords[0]);
-                    point.set_y(pixel_coords[1]);
-                    control_points.push_back(point);
+                    control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
                 } else {
                     spdlog::error("{} import conversion to pixel failed", region);
                     _import_errors.append(region + " import failed.\n");
@@ -1057,13 +1026,8 @@ bool CrtfImportExport::RectangleControlPointsFromVertices(
     double width = fabs(trc_x - blc_x);
     double height = fabs(trc_y - blc_y);
 
-    CARTA::Point point;
-    point.set_x(cx);
-    point.set_y(cy);
-    control_points.push_back(point);
-    point.set_x(width);
-    point.set_y(height);
-    control_points.push_back(point);
+    control_points.push_back(Message::Point(cx, cy));
+    control_points.push_back(Message::Point(width, height));
     return true;
 }
 
@@ -1134,13 +1098,8 @@ bool CrtfImportExport::GetCenterBoxPoints(const std::string& region, casacore::Q
             double height_pix = WorldToPixelLength(height, 1);
 
             // Set control points
-            CARTA::Point point;
-            point.set_x(pixel_coords[0]);
-            point.set_y(pixel_coords[1]);
-            control_points.push_back(point);
-            point.set_x(width_pix);
-            point.set_y(height_pix);
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
+            control_points.push_back(Message::Point(width_pix, height_pix));
             return true;
         } else {
             spdlog::error("{} import conversion to pixels failed", region);
