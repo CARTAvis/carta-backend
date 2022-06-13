@@ -21,12 +21,6 @@ public:
     float* GetImageCacheData() {
         return _image_cache.get();
     };
-    size_t GetWidth() {
-        return _width;
-    };
-    size_t GetHeight() {
-        return _height;
-    };
     FRIEND_TEST(ImageFittingTest, OneComponentFitting);
     FRIEND_TEST(ImageFittingTest, ThreeComponentFitting);
 };
@@ -64,8 +58,9 @@ public:
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
         CARTA::FittingResponse fitting_response;
-        std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter(frame->GetWidth(), frame->GetHeight()));
-        bool success = image_fitter->FitImage(frame->GetImageCacheData(), _initial_values, fitting_response);
+        std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
+        bool success =
+            image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, fitting_response);
 
         if (failed_message.length() == 0) {
             EXPECT_EQ(success, True);
