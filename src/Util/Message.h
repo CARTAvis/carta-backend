@@ -125,6 +125,7 @@ public:
     static CARTA::StartAnimationAck StartAnimationAck(bool success, int animation_id, const std::string& message);
     static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);
     static CARTA::RegionStatsData RegionStatsData(int file_id, int region_id, int channel, int stokes);
+    static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);

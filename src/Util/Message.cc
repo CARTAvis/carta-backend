@@ -598,6 +598,16 @@ CARTA::RegionStatsData Message::RegionStatsData(int file_id, int region_id, int 
     return message;
 }
 
+CARTA::Beam Message::Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa) {
+    CARTA::Beam message;
+    message.set_channel(channel);
+    message.set_stokes(stokes);
+    message.set_major_axis(major_axis);
+    message.set_minor_axis(minor_axis);
+    message.set_pa(pa);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {
