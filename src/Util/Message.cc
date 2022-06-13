@@ -608,6 +608,16 @@ CARTA::Beam Message::Beam(int32_t channel, int32_t stokes, float major_axis, flo
     return message;
 }
 
+CARTA::ListProgress Message::ListProgress(
+    const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage) {
+    CARTA::ListProgress message;
+    message.set_file_list_type(file_list_type);
+    message.set_total_count(total_count);
+    message.set_checked_count(checked_count);
+    message.set_percentage(percentage);
+    return message;
+}
+
 void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
     double mean, double std_dev) {
     if (histogram) {

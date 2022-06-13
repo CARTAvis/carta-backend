@@ -126,6 +126,8 @@ public:
     static CARTA::ImportRegionAck ImportRegionAck(bool success, const std::string& message);
     static CARTA::RegionStatsData RegionStatsData(int file_id, int region_id, int channel, int stokes);
     static CARTA::Beam Beam(int32_t channel, int32_t stokes, float major_axis, float minor_axis, float pa);
+    static CARTA::ListProgress ListProgress(
+        const CARTA::FileListType& file_list_type, int32_t total_count, int32_t checked_count, float percentage);
 
     // Decode messages
     static CARTA::EventType EventType(std::vector<char>& message);
