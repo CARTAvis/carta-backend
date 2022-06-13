@@ -96,6 +96,9 @@ public:
     static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
     static CARTA::ConcatStokesFiles ConcatStokesFiles(
         int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files);
+    static CARTA::DoublePoint DoublePoint(double x, double y);
+    static CARTA::GaussianComponent GaussianComponent(
+        const CARTA::DoublePoint& center, double amp, const CARTA::DoublePoint& fwhm, double pa);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,

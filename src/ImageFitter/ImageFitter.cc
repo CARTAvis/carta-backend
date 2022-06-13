@@ -8,6 +8,7 @@
 #define DEG_TO_RAD M_PI / 180.0
 
 #include "ImageFitter.h"
+#include "Util/Message.h"
 
 #include <omp.h>
 
@@ -216,16 +217,11 @@ void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, i
 }
 
 CARTA::GaussianComponent ImageFitter::GetGaussianComponent(gsl_vector* value_vector, size_t index) {
-    CARTA::GaussianComponent component;
-    CARTA::DoublePoint center;
-    center.set_x(gsl_vector_get(value_vector, index * 6));
-    center.set_y(gsl_vector_get(value_vector, index * 6 + 1));
-    *component.mutable_center() = center;
-    component.set_amp(gsl_vector_get(value_vector, index * 6 + 2));
-    CARTA::DoublePoint fwhm;
-    fwhm.set_x(gsl_vector_get(value_vector, index * 6 + 3));
-    fwhm.set_y(gsl_vector_get(value_vector, index * 6 + 4));
-    *component.mutable_fwhm() = fwhm;
-    component.set_pa(gsl_vector_get(value_vector, index * 6 + 5));
+    CARTA::DoublePoint center = Message::DoublePoint(gsl_vector_get(value_vector, index * 6), gsl_vector_get(value_vector, index * 6 + 1));
+    double amp = gsl_vector_get(value_vector, index * 6 + 2);
+    CARTA::DoublePoint fwhm =
+        Message::DoublePoint(gsl_vector_get(value_vector, index * 6 + 3), gsl_vector_get(value_vector, index * 6 + 4));
+    double pa = gsl_vector_get(value_vector, index * 6 + 5);
+    CARTA::GaussianComponent component = Message::GaussianComponent(center, amp, fwhm, pa);
     return component;
 }

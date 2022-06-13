@@ -386,6 +386,23 @@ CARTA::ConcatStokesFiles Message::ConcatStokesFiles(
     return message;
 }
 
+CARTA::DoublePoint Message::DoublePoint(double x, double y) {
+    CARTA::DoublePoint message;
+    message.set_x(x);
+    message.set_y(y);
+    return message;
+}
+
+CARTA::GaussianComponent Message::GaussianComponent(
+    const CARTA::DoublePoint& center, double amp, const CARTA::DoublePoint& fwhm, double pa) {
+    CARTA::GaussianComponent message;
+    *message.mutable_center() = center;
+    message.set_amp(amp);
+    *message.mutable_fwhm() = fwhm;
+    message.set_pa(pa);
+    return message;
+}
+
 CARTA::EventType Message::EventType(std::vector<char>& message) {
     carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
     return static_cast<CARTA::EventType>(head.type);
