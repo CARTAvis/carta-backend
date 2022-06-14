@@ -975,7 +975,7 @@ bool RegionHandler::FitImage(
     int file_id(fitting_request.file_id());
     int region_id(fitting_request.region_id());
 
-    if (region_id == -1) {
+    if (region_id == 0) {
         region_id = TEMP_FOV_REGION_ID;
 
         auto fov_info(fitting_request.fov_info());

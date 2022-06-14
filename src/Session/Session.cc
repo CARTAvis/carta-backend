@@ -1430,7 +1430,7 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
         auto t_start_fitting = std::chrono::high_resolution_clock::now();
 
         int region_id(fitting_request.region_id());
-        if (region_id != 0) {
+        if (region_id != IMAGE_REGION_ID) {
             if (!_region_handler) {
                 // created on demand only
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
