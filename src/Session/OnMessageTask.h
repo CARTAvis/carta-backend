@@ -107,15 +107,6 @@ public:
     ~SpectralProfileTask() = default;
 };
 
-class OnSplataloguePingTask : public OnMessageTask {
-    OnMessageTask* execute() override;
-    uint32_t _request_id;
-
-public:
-    OnSplataloguePingTask(Session* session, uint32_t request_id) : OnMessageTask(session), _request_id(request_id) {}
-    ~OnSplataloguePingTask() = default;
-};
-
 } // namespace carta
 
 #include "OnMessageTask.tcc"
