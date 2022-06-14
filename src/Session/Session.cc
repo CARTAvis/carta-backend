@@ -33,7 +33,6 @@
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
-#include "SpectralLine/SpectralLineCrawler.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"
 #include "Util/App.h"
@@ -1286,19 +1285,6 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::DEBUG);
     }
-}
-
-void Session::OnSplataloguePing(uint32_t request_id) {
-    CARTA::SplataloguePong splatalogue_pong;
-    SpectralLineCrawler::Ping(splatalogue_pong);
-    SendEvent(CARTA::EventType::SPLATALOGUE_PONG, request_id, splatalogue_pong);
-}
-
-void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
-    CARTA::SpectralLineResponse spectral_line_response;
-    SpectralLineCrawler::SendRequest(
-        spectral_line_request.frequency_range(), spectral_line_request.line_intensity_lower_limit(), spectral_line_response);
-    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
 }
 
 bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id) {

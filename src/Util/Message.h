@@ -26,7 +26,6 @@
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
-#include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
@@ -38,7 +37,7 @@
 #include "ImageStats/Histogram.h"
 
 namespace carta {
-const uint16_t ICD_VERSION = 27;
+const uint16_t ICD_VERSION = 28;
 struct EventHeader {
     uint16_t type;
     uint16_t icd_version;

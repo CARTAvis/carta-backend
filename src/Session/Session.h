@@ -39,7 +39,6 @@
 #include <carta-protobuf/scripting.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
-#include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/stop_pv_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
@@ -118,8 +117,6 @@ public:
     void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id, bool silent = false);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
-    void OnSplataloguePing(uint32_t request_id);
-    void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);

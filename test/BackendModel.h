@@ -54,8 +54,6 @@ public:
     void Receive(CARTA::CatalogFilterRequest message);
     void Receive(CARTA::StopMomentCalc message);
     void Receive(CARTA::SaveFile message);
-    void Receive(CARTA::SplataloguePing message);
-    void Receive(CARTA::SpectralLineRequest message);
     void Receive(CARTA::ConcatStokesFiles message);
     void Receive(CARTA::StopFileList message);
     void Receive(CARTA::SetSpatialRequirements message);

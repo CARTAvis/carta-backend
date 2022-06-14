@@ -70,8 +70,3 @@ OnMessageTask* SpectralProfileTask::execute() {
     _session->SendSpectralProfileData(_file_id, _region_id);
     return nullptr;
 }
-
-OnMessageTask* OnSplataloguePingTask::execute() {
-    _session->OnSplataloguePing(_request_id);
-    return nullptr;
-}
