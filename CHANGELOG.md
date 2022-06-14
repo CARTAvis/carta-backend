@@ -6,20 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Added
+* Added support for image fitting with field of view ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
 
+### Changed
 * Enhanced image fitting performance by switching the solver from qr to cholesky ([#1114](https://github.com/CARTAvis/carta-backend/pull/1114)).
 * Made HTTP server return a different error code for disabled features ([#1115](https://github.com/CARTAvis/carta-backend/issues/1115)).
 
 ### Fixed
-
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
 * Ensured that HTTP server returns error codes correctly ([#1011](https://github.com/CARTAvis/carta-backend/issues/1011)).
 
 ## [3.0.0-beta.3]
 
 ### Changed
-
 * Removed gRPC service and moved scripting interface to HTTP server ([#1022](https://github.com/CARTAvis/carta-backend/pull/1022)).
 * Added more fine-grained commandline flags to enable and disable functions of the HTTP server.
 * Optimised performance of image data cache ([#967](https://github.com/CARTAvis/carta-backend/issues/967)).
