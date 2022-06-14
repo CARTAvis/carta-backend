@@ -135,13 +135,7 @@ public:
     static CARTA::EventType EventType(std::vector<char>& message);
 
     template <typename T>
-    static T DecodeMessage(std::vector<char>& message) {
-        T decoded_message;
-        char* event_buf = message.data() + sizeof(carta::EventHeader);
-        int event_length = message.size() - sizeof(carta::EventHeader);
-        decoded_message.ParseFromArray(event_buf, event_length);
-        return decoded_message;
-    }
+    static T DecodeMessage(std::vector<char>& message);
 };
 
 void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
@@ -149,5 +143,7 @@ void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_wid
 void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
     std::map<CARTA::StatsType, double>& stats_value_map);
+
+#include "Message.tcc"
 
 #endif // CARTA_BACKEND__UTIL_MESSAGE_H_
