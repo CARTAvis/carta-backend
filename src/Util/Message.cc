@@ -228,7 +228,8 @@ CARTA::StopAnimation Message::StopAnimation(int32_t file_id, std::pair<int32_t, 
     return stop_animation;
 }
 
-CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(std::string coordinate, int start, int end, int mip, int width) {
+CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(
+    std::string coordinate, int32_t start, int32_t end, int32_t mip, int32_t width) {
     CARTA::SetSpatialRequirements_SpatialConfig spatial_config;
     spatial_config.set_coordinate(coordinate);
     spatial_config.set_start(start);
@@ -238,7 +239,7 @@ CARTA::SetSpatialRequirements_SpatialConfig Message::SpatialConfig(std::string c
     return spatial_config;
 }
 
-CARTA::IntBounds Message::IntBounds(int min, int max) {
+CARTA::IntBounds Message::IntBounds(int32_t min, int32_t max) {
     CARTA::IntBounds int_bounds;
     int_bounds.set_min(min);
     int_bounds.set_max(max);
@@ -330,9 +331,9 @@ CARTA::FileInfoRequest Message::FileInfoRequest(const std::string& directory, co
     return file_info_request;
 }
 
-CARTA::SetContourParameters Message::SetContourParameters(int file_id, int ref_file_id, int x_min, int x_max, int y_min, int y_max,
-    const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int smoothing_factor, int decimation_factor,
-    int compression_level, int contour_chunk_size) {
+CARTA::SetContourParameters Message::SetContourParameters(uint32_t file_id, uint32_t ref_file_id, int32_t x_min, int32_t x_max,
+    int32_t y_min, int32_t y_max, const std::vector<double>& levels, CARTA::SmoothingMode smoothing_mode, int32_t smoothing_factor,
+    int32_t decimation_factor, int32_t compression_level, int32_t contour_chunk_size) {
     CARTA::SetContourParameters message;
     message.set_file_id(file_id);
     message.set_reference_file_id(ref_file_id);
@@ -352,9 +353,9 @@ CARTA::SetContourParameters Message::SetContourParameters(int file_id, int ref_f
     return message;
 }
 
-CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(int file_id, int mip, bool fractional, double threshold,
-    bool debiasing, double q_error, double u_error, int stokes_intensity, int stokes_angle, const CARTA::CompressionType& compression_type,
-    float compression_quality) {
+CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(uint32_t file_id, uint32_t mip, bool fractional, double threshold,
+    bool debiasing, double q_error, double u_error, int32_t stokes_intensity, int32_t stokes_angle,
+    const CARTA::CompressionType& compression_type, float compression_quality) {
     CARTA::SetVectorOverlayParameters message;
     message.set_file_id(file_id);
     message.set_smoothing_factor(mip);
@@ -419,7 +420,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
 
     for (auto stats_type : required_stats) {
         // one SpectralProfile per stats type
-        auto new_profile = profile_message.add_profiles();
+        auto* new_profile = profile_message.add_profiles();
         new_profile->set_coordinate(coordinate);
         new_profile->set_stats_type(stats_type);
 
@@ -433,7 +434,7 @@ CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t
     return profile_message;
 }
 
-CARTA::SpectralProfileData Message::SpectralProfileData(int stokes, float progress) {
+CARTA::SpectralProfileData Message::SpectralProfileData(int32_t stokes, float progress) {
     CARTA::SpectralProfileData message;
     message.set_stokes(stokes);
     message.set_progress(progress);
@@ -451,13 +452,13 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     profile_message.set_channel(channel);
     profile_message.set_stokes(stokes);
     profile_message.set_value(value);
-    auto spatial_profile = profile_message.add_profiles();
+    auto* spatial_profile = profile_message.add_profiles();
     spatial_profile->set_start(start);
     spatial_profile->set_end(end);
     spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
     spatial_profile->set_coordinate(coordinate);
     spatial_profile->set_mip(mip);
-    auto profile_axis = spatial_profile->mutable_line_axis();
+    auto* profile_axis = spatial_profile->mutable_line_axis();
     profile_axis->set_axis_type(axis_type);
     profile_axis->set_crpix(crpix);
     profile_axis->set_crval(crval);
@@ -466,7 +467,7 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t file_id, int32_t r
     return profile_message;
 }
 
-CARTA::SpatialProfileData Message::SpatialProfileData(int x, int y, int channel, int stokes, float value) {
+CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value) {
     CARTA::SpatialProfileData message;
     message.set_x(x);
     message.set_y(y);
@@ -476,7 +477,7 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int x, int y, int channel,
     return message;
 }
 
-CARTA::RasterTileSync Message::RasterTileSync(int32_t file_id, int channel, int stokes, int animation_id, bool end_sync) {
+CARTA::RasterTileSync Message::RasterTileSync(int32_t file_id, int32_t channel, int32_t stokes, int32_t animation_id, bool end_sync) {
     CARTA::RasterTileSync message;
     message.set_file_id(file_id);
     message.set_channel(channel);
@@ -504,21 +505,22 @@ CARTA::RegisterViewerAck Message::RegisterViewerAck(
     return message;
 }
 
-CARTA::MomentProgress Message::MomentProgress(int file_id, float progress) {
+CARTA::MomentProgress Message::MomentProgress(int32_t file_id, float progress) {
     CARTA::MomentProgress message;
     message.set_file_id(file_id);
     message.set_progress(progress);
     return message;
 }
 
-CARTA::PvProgress Message::PvProgress(int file_id, float progress) {
+CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress) {
     CARTA::PvProgress message;
     message.set_file_id(file_id);
     message.set_progress(progress);
     return message;
 }
 
-CARTA::RegionHistogramData Message::RegionHistogramData(int file_id, int region_id, int channel, int stokes, float progress) {
+CARTA::RegionHistogramData Message::RegionHistogramData(
+    int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress) {
     CARTA::RegionHistogramData message;
     message.set_file_id(file_id);
     message.set_region_id(region_id);
@@ -528,7 +530,8 @@ CARTA::RegionHistogramData Message::RegionHistogramData(int file_id, int region_
     return message;
 }
 
-CARTA::ContourImageData Message::ContourImageData(int file_id, uint32_t reference_file_id, int channel, int stokes, double progress) {
+CARTA::ContourImageData Message::ContourImageData(
+    int32_t file_id, uint32_t reference_file_id, int32_t channel, int32_t stokes, double progress) {
     CARTA::ContourImageData message;
     message.set_file_id(file_id);
     message.set_reference_file_id(reference_file_id);
@@ -538,8 +541,8 @@ CARTA::ContourImageData Message::ContourImageData(int file_id, uint32_t referenc
     return message;
 }
 
-CARTA::VectorOverlayTileData Message::VectorOverlayTileData(int file_id, int channel, int stokes_intensity, int stokes_angle,
-    const CARTA::CompressionType& compression_type, float compression_quality) {
+CARTA::VectorOverlayTileData Message::VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,
+    int32_t stokes_angle, const CARTA::CompressionType& compression_type, float compression_quality) {
     CARTA::VectorOverlayTileData message;
     message.set_file_id(file_id);
     message.set_channel(channel);
@@ -567,14 +570,14 @@ CARTA::FileInfo Message::FileInfo(const std::string& name, CARTA::FileType type,
     return message;
 }
 
-CARTA::RasterTileData Message::RasterTileData(int32_t file_id, int animation_id) {
+CARTA::RasterTileData Message::RasterTileData(int32_t file_id, int32_t animation_id) {
     CARTA::RasterTileData message;
     message.set_file_id(file_id);
     message.set_animation_id(animation_id);
     return message;
 }
 
-CARTA::StartAnimationAck Message::StartAnimationAck(bool success, int animation_id, const std::string& message) {
+CARTA::StartAnimationAck Message::StartAnimationAck(bool success, int32_t animation_id, const std::string& message) {
     CARTA::StartAnimationAck start_animation_ack;
     start_animation_ack.set_success(success);
     start_animation_ack.set_animation_id(animation_id);
@@ -589,7 +592,7 @@ CARTA::ImportRegionAck Message::ImportRegionAck(bool success, const std::string&
     return import_region_ack;
 }
 
-CARTA::RegionStatsData Message::RegionStatsData(int file_id, int region_id, int channel, int stokes) {
+CARTA::RegionStatsData Message::RegionStatsData(int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes) {
     CARTA::RegionStatsData message;
     message.set_file_id(file_id);
     message.set_region_id(region_id);
@@ -618,8 +621,8 @@ CARTA::ListProgress Message::ListProgress(
     return message;
 }
 
-void FillHistogram(CARTA::Histogram* histogram, int num_bins, double bin_width, double first_bin_center, const std::vector<int>& bins,
-    double mean, double std_dev) {
+void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_width, double first_bin_center,
+    const std::vector<int32_t>& bins, double mean, double std_dev) {
     if (histogram) {
         histogram->set_num_bins(num_bins);
         histogram->set_bin_width(bin_width);
@@ -649,7 +652,7 @@ void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA:
         }
 
         // add StatisticsValue to message
-        auto stats_value = stats_data.add_statistics();
+        auto* stats_value = stats_data.add_statistics();
         stats_value->set_stats_type(carta_stats_type);
         stats_value->set_value(value);
     }
