@@ -7,7 +7,6 @@
 #include <thread>
 #include <vector>
 
-#include <curl/curl.h>
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
@@ -92,9 +91,6 @@ int main(int argc, char* argv[]) {
 
         // One FileListHandler works for all sessions.
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
-
-        // Init curl
-        curl_global_init(CURL_GLOBAL_ALL);
 
         // Session manager
         session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler);
