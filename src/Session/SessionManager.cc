@@ -376,22 +376,6 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
-                case CARTA::EventType::SPLATALOGUE_PING: {
-                    CARTA::SplataloguePing message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new OnSplataloguePingTask(session, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
-                    CARTA::SpectralLineRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::SpectralLineRequest>(session, message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
                 case CARTA::EventType::CONCAT_STOKES_FILES: {
                     CARTA::ConcatStokesFiles message;
                     if (message.ParseFromArray(event_buf, event_length)) {

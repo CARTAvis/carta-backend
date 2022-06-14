@@ -5,7 +5,7 @@ RUN \
   apt-get update && \
   apt-get -y upgrade && \
   apt-get install -y apt-utils autoconf bison build-essential byobu cmake curl default-jre dialog emacs \
-    fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libcurl4-gnutls-dev \
+    fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev \
     libpugixml-dev libcfitsio-dev libhdf5-dev liblapack-dev libncurses-dev libreadline-dev libssl-dev \ 
     libstarlink-ast-dev libtool libxml2-dev libzstd-dev libgsl-dev man pkg-config python3-pip \
     software-properties-common unzip vim wcslib-dev wget uuid-dev && \

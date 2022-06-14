@@ -18,8 +18,6 @@ class GeneralMessageTask : public OnMessageTask {
             _session->OnAddRequiredTiles(_message, _session->AnimationRunning());
         } else if constexpr (std::is_same_v<T, CARTA::SetContourParameters>) {
             _session->OnSetContourParameters(_message);
-        } else if constexpr (std::is_same_v<T, CARTA::SpectralLineRequest>) {
-            _session->OnSpectralLineRequest(_message, _request_id);
         } else if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
             _session->OnSetSpatialRequirements(_message);
         } else if constexpr (std::is_same_v<T, CARTA::SetStatsRequirements>) {
