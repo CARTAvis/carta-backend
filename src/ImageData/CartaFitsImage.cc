@@ -35,8 +35,7 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
       _is_compressed(false),
       _datatype(casacore::TpOther),
       _has_blanks(false),
-      _pixel_mask(nullptr),
-      _is_copy(false) {
+      _pixel_mask(nullptr) {
     casacore::File ccfile(filename);
     if (!ccfile.exists() || !ccfile.isReadable()) {
         throw(casacore::AipsError("FITS file is not readable or does not exist."));
@@ -49,24 +48,21 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
     : ImageInterface<float>(other),
       _filename(other._filename),
       _hdu(other._hdu),
-      _fptr(other._fptr),
+      _fptr(nullptr),
       _shape(other._shape),
       _is_compressed(other._is_compressed),
       _datatype(other._datatype),
       _has_blanks(other._has_blanks),
       _pixel_mask(nullptr),
-      _tiled_shape(other._tiled_shape),
-      _is_copy(true) {
+      _tiled_shape(other._tiled_shape) {
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
     }
 }
 
 CartaFitsImage::~CartaFitsImage() {
-    if (!_is_copy) {
-        CloseFile();
-        delete _pixel_mask;
-    }
+    CloseFile();
+    delete _pixel_mask;
 }
 
 // Image interface
