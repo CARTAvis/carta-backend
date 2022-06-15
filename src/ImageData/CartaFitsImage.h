@@ -103,6 +103,9 @@ private:
 
     casacore::Lattice<bool>* _pixel_mask;
     casacore::TiledShape _tiled_shape;
+
+    // Whether is a copy of the other CartaFitsImage
+    bool _is_copy;
 };
 
 } // namespace carta
