@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -372,22 +372,6 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::SaveFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSaveFile(message, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SPLATALOGUE_PING: {
-                    CARTA::SplataloguePing message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new OnSplataloguePingTask(session, head.request_id);
-                        message_parsed = true;
-                    }
-                    break;
-                }
-                case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
-                    CARTA::SpectralLineRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new GeneralMessageTask<CARTA::SpectralLineRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
                     break;

@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -18,8 +18,6 @@ class GeneralMessageTask : public OnMessageTask {
             _session->OnAddRequiredTiles(_message, _session->AnimationRunning());
         } else if constexpr (std::is_same_v<T, CARTA::SetContourParameters>) {
             _session->OnSetContourParameters(_message);
-        } else if constexpr (std::is_same_v<T, CARTA::SpectralLineRequest>) {
-            _session->OnSpectralLineRequest(_message, _request_id);
         } else if constexpr (std::is_same_v<T, CARTA::SetSpatialRequirements>) {
             _session->OnSetSpatialRequirements(_message);
         } else if constexpr (std::is_same_v<T, CARTA::SetStatsRequirements>) {

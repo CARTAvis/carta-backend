@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -207,18 +207,6 @@ void BackendModel::Receive(CARTA::StopMomentCalc message) {
 void BackendModel::Receive(CARTA::SaveFile message) {
     carta::logger::LogReceivedEventType(CARTA::EventType::SAVE_FILE);
     _session->OnSaveFile(message, DUMMY_REQUEST_ID);
-}
-
-void BackendModel::Receive(CARTA::SplataloguePing message) {
-    carta::logger::LogReceivedEventType(CARTA::EventType::SPLATALOGUE_PING);
-    OnMessageTask* tsk = new OnSplataloguePingTask(_session, DUMMY_REQUEST_ID);
-    ThreadManager::QueueTask(tsk);
-}
-
-void BackendModel::Receive(CARTA::SpectralLineRequest message) {
-    carta::logger::LogReceivedEventType(CARTA::EventType::SPECTRAL_LINE_REQUEST);
-    OnMessageTask* tsk = new GeneralMessageTask<CARTA::SpectralLineRequest>(_session, message, DUMMY_REQUEST_ID);
-    ThreadManager::QueueTask(tsk);
 }
 
 void BackendModel::Receive(CARTA::ConcatStokesFiles message) {

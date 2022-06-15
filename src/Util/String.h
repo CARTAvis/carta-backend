@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-// wrapper for curl_easy_escape function that handles cleaning up char ptrs properly
+// Escape URL strings
 std::string SafeStringEscape(const std::string& input);
 
 // split input string into a vector of strings by delimiter
