@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
 * Ensured that HTTP server returns error codes correctly ([#1011](https://github.com/CARTAvis/carta-backend/issues/1011)).
+* Fixed crash problems for compressed FITS files ([#999](https://github.com/CARTAvis/carta-backend/issues/999) and [#1014](https://github.com/CARTAvis/carta-backend/issues/1014)).
 * Fixed slow loading of FITS image with large number of HISTORY headers ([#1063](https://github.com/CARTAvis/carta-backend/issues/1063)).
 
 ## [3.0.0-beta.3]
