@@ -67,7 +67,7 @@ void BasicStatsCalculator<T>::reduce() {
             }
             _num_pixels++;
             _sum += (double)val;
-            _sum_squares += (double)val * (double)val;
+            _sum_squares += std::pow(val, 2);
         }
     }
 }
