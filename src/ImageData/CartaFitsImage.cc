@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -35,7 +35,8 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
       _is_compressed(false),
       _datatype(casacore::TpOther),
       _has_blanks(false),
-      _pixel_mask(nullptr) {
+      _pixel_mask(nullptr),
+      _is_copy(false) {
     casacore::File ccfile(filename);
     if (!ccfile.exists() || !ccfile.isReadable()) {
         throw(casacore::AipsError("FITS file is not readable or does not exist."));
@@ -54,15 +55,18 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
       _datatype(other._datatype),
       _has_blanks(other._has_blanks),
       _pixel_mask(nullptr),
-      _tiled_shape(other._tiled_shape) {
+      _tiled_shape(other._tiled_shape),
+      _is_copy(true) {
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
     }
 }
 
 CartaFitsImage::~CartaFitsImage() {
-    CloseFile();
-    delete _pixel_mask;
+    if (!_is_copy) {
+        CloseFile();
+        delete _pixel_mask;
+    }
 }
 
 // Image interface
