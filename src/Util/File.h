@@ -12,6 +12,7 @@
 #include "FileSystem.h"
 
 // Valid for little-endian only
+#define ALMA_GZ_MAGIC_NUMBER 0x88B1F
 #define FITS_MAGIC_NUMBER 0x504D4953
 #define GZ_MAGIC_NUMBER 0x08088B1F
 #define HDF5_MAGIC_NUMBER 0x46444889
