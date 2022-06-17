@@ -12,9 +12,7 @@
 #include "FileSystem.h"
 
 // Valid for little-endian only
-#define ALMA_GZ_MAGIC_NUMBER 0x88B1F
 #define FITS_MAGIC_NUMBER 0x504D4953
-#define GZ_MAGIC_NUMBER 0x08088B1F
 #define HDF5_MAGIC_NUMBER 0x46444889
 #define XML_MAGIC_NUMBER 0x6D783F3C
 
@@ -31,6 +29,7 @@ CARTA::CatalogFileType GuessTableType(const std::string& path_string, bool check
 
 uint32_t GetMagicNumber(const std::string& filename);
 bool IsCompressedFits(const std::string& filename);
+bool IsGzFile(uint32_t magic_number);
 
 // directory functions
 int GetNumItems(const std::string& path);
