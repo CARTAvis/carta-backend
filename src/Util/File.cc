@@ -36,10 +36,7 @@ bool IsCompressedFits(const std::string& filename) {
 
 bool IsGzFile(uint32_t magic_number) {
     std::string hex_string = fmt::format("{:#x}", magic_number);
-    if ((hex_string.length() > 4) && (hex_string.substr(hex_string.length() - 4) == "8b1f")) {
-        return true;
-    }
-    return false;
+    return (hex_string.length() > 4) && (hex_string.substr(hex_string.length() - 4) == "8b1f");
 }
 
 int GetNumItems(const std::string& path) {
