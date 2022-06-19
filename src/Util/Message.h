@@ -23,6 +23,7 @@
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
+#include <carta-protobuf/scripting.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
@@ -98,6 +99,8 @@ public:
     static CARTA::DoublePoint DoublePoint(double x, double y);
     static CARTA::GaussianComponent GaussianComponent(
         const CARTA::DoublePoint& center, double amp, const CARTA::DoublePoint& fwhm, double pa);
+    static CARTA::ScriptingRequest ScriptingRequest(uint32_t scripting_request_id, const std::string& target, const std::string& action,
+        const std::string& parameters, bool async, const std::string& return_path);
 
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
