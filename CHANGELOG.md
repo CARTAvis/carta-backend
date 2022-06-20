@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Ensured that HTTP server returns error codes correctly ([#1011](https://github.com/CARTAvis/carta-backend/issues/1011)).
 * Fixed crash problems for compressed FITS files ([#999](https://github.com/CARTAvis/carta-backend/issues/999) and [#1014](https://github.com/CARTAvis/carta-backend/issues/1014)).
 * Fixed the incorrect STD for images with large pixel values ([#1069](https://github.com/CARTAvis/carta-backend/issues/1069)).
+* Fixed incorrect spectral profiles for computed stokes ([#1122](https://github.com/CARTAvis/carta-backend/issues/1122)).
 
 ## [3.0.0-beta.3]
 
