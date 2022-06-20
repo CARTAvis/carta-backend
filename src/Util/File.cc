@@ -25,7 +25,7 @@ uint32_t GetMagicNumber(const std::string& filename) {
 
 bool IsCompressedFits(const std::string& filename) {
     // Check if gzip file, then check .fits extension
-    if (IsGzFile(GetMagicNumber(filename))) {
+    if (IsGzMagicNumber(GetMagicNumber(filename))) {
         fs::path gz_path(filename);
         std::string extension = gz_path.stem().extension().string();
         return HasSuffix(extension, ".fits");
@@ -34,7 +34,7 @@ bool IsCompressedFits(const std::string& filename) {
     return false;
 }
 
-bool IsGzFile(uint32_t magic_number) {
+bool IsGzMagicNumber(uint32_t magic_number) {
     std::string hex_string = fmt::format("{:#x}", magic_number);
     return (hex_string.length() > 4) && (hex_string.substr(hex_string.length() - 4) == "8b1f");
 }
@@ -81,7 +81,7 @@ CARTA::FileType GuessImageType(const std::string& path_string, bool check_conten
             return CARTA::FITS;
         } else if (magic_number == HDF5_MAGIC_NUMBER) {
             return CARTA::HDF5;
-        } else if (IsGzFile(magic_number)) {
+        } else if (IsGzMagicNumber(magic_number)) {
             fs::path gz_path(path_string);
             std::string extension = gz_path.stem().extension().string();
             return HasSuffix(extension, ".fits") ? CARTA::FITS : CARTA::UNKNOWN;
