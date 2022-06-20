@@ -55,7 +55,7 @@ public:
         bool success =
             image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, fitting_response);
         
-        CompareResults(gaussian_model, fitting_response, success, failed_message);
+        CompareResults(fitting_response, success, failed_message);
     }
 
 private:
@@ -73,18 +73,18 @@ private:
         return file_path;
     }
 
-    void CompareResults(std::vector<float> gaussian_model, CARTA::FittingResponse fitting_response, bool success, std::string failed_message) {
+    void CompareResults(CARTA::FittingResponse fitting_response, bool success, std::string failed_message) {
         if (failed_message.length() == 0) {
             EXPECT_EQ(success, True);
             EXPECT_EQ(fitting_response.success(), True);
-            for (size_t i = 0; i < gaussian_model[0]; i++) {
+            for (size_t i = 0; i < _initial_values.size(); i++) {
                 CARTA::GaussianComponent component = fitting_response.result_values(i);
-                EXPECT_EQ(std::round(component.center().x()), gaussian_model[6 * i + 1]);
-                EXPECT_EQ(std::round(component.center().y()), gaussian_model[6 * i + 2]);
-                EXPECT_EQ(std::round(component.amp()), gaussian_model[6 * i + 3]);
-                EXPECT_EQ(std::round(component.fwhm().x()), gaussian_model[6 * i + 4]);
-                EXPECT_EQ(std::round(component.fwhm().y()), gaussian_model[6 * i + 5]);
-                EXPECT_EQ(std::round(component.pa()), gaussian_model[6 * i + 6]);
+                EXPECT_EQ(std::round(component.center().x()), _initial_values[i].center().x());
+                EXPECT_EQ(std::round(component.center().y()), _initial_values[i].center().y());
+                EXPECT_EQ(std::round(component.amp()), _initial_values[i].amp());
+                EXPECT_EQ(std::round(component.fwhm().x()), _initial_values[i].fwhm().x());
+                EXPECT_EQ(std::round(component.fwhm().y()), _initial_values[i].fwhm().y());
+                EXPECT_EQ(std::round(component.pa()), _initial_values[i].pa());
             }
         } else {
             EXPECT_EQ(success, False);
