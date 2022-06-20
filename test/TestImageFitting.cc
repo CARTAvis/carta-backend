@@ -45,15 +45,8 @@ public:
         }
     }
 
-    void FitImage(std::vector<float> gaussian_model, std::string failed_message) {
-        std::string gaussian_model_string = std::to_string(gaussian_model[0]);
-        for (size_t i = 1; i < gaussian_model.size(); i++) {
-            gaussian_model_string.append(" ");
-            gaussian_model_string.append(i % 6 == 0 ? std::to_string(gaussian_model[i] - 90.0) : std::to_string(gaussian_model[i]));
-        }
-
-        std::string file_path =
-            ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
+    void FitImage(std::vector<float> gaussian_model, std::string failed_message = "") {
+        std::string file_path = GetGeneratedFilePath(gaussian_model);
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
@@ -61,9 +54,29 @@ public:
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
         bool success =
             image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, fitting_response);
+        
+        CompareResults(gaussian_model, fitting_response, success, failed_message);
+    }
 
+private:
+    std::vector<CARTA::GaussianComponent> _initial_values;
+
+    static std::string GetGeneratedFilePath(std::vector<float> gaussian_model) {
+        std::string gaussian_model_string = std::to_string(gaussian_model[0]);
+        for (size_t i = 1; i < gaussian_model.size(); i++) {
+            gaussian_model_string.append(" ");
+            gaussian_model_string.append(i % 6 == 0 ? std::to_string(gaussian_model[i] - 90.0) : std::to_string(gaussian_model[i]));
+        }
+        
+        std::string file_path =
+            ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
+        return file_path;
+    }
+
+    void CompareResults(std::vector<float> gaussian_model, CARTA::FittingResponse fitting_response, bool success, std::string failed_message) {
         if (failed_message.length() == 0) {
             EXPECT_EQ(success, True);
+            EXPECT_EQ(fitting_response.success(), True);
             for (size_t i = 0; i < gaussian_model[0]; i++) {
                 CARTA::GaussianComponent component = fitting_response.result_values(i);
                 EXPECT_EQ(std::round(component.center().x()), gaussian_model[6 * i + 1]);
@@ -75,18 +88,16 @@ public:
             }
         } else {
             EXPECT_EQ(success, False);
+            EXPECT_EQ(fitting_response.success(), False);
             EXPECT_EQ(fitting_response.message(), failed_message);
         }
     }
-
-private:
-    std::vector<CARTA::GaussianComponent> _initial_values;
 };
 
 TEST_F(ImageFittingTest, OneComponentFitting) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     SetInitialValues(gaussian_model);
-    FitImage(gaussian_model, "");
+    FitImage(gaussian_model);
 
     std::vector<float> bad_inital = {1, 64, 64, 20, 0, 0, 135};
     SetInitialValues(bad_inital);
@@ -96,7 +107,7 @@ TEST_F(ImageFittingTest, OneComponentFitting) {
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
     std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 210, 32, 32, 20, 20, 10, 210, 96, 96, 20, 20, 10, 210};
     SetInitialValues(gaussian_model);
-    FitImage(gaussian_model, "");
+    FitImage(gaussian_model);
 
     std::vector<float> bad_inital = {3, 64, 64, 20, 20, 10, 210, 64, 64, 20, 20, 10, 210, 96, 96, 20, 0, 0, 210};
     SetInitialValues(bad_inital);
