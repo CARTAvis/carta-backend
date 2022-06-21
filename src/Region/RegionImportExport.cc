@@ -160,6 +160,21 @@ void RegionImportExport::ParseRegionParameters(
                         next = region_definition.find_first_of(" ", current);
                         string value_end = region_definition.substr(current, next - current);
                         properties[key] = value + " " + value_end;
+                    } else if (key == "point") {
+                        // size optional, get next string and try to convert to long int
+                        current = next + 1;
+                        auto possible_next = region_definition.find_first_of(" ", current);
+                        string possible_size = region_definition.substr(current, possible_next - current);
+
+                        char* endptr(nullptr);
+                        auto point_size = strtol(possible_size.c_str(), &endptr, 10);
+                        if ((point_size != 0) && (point_size != LONG_MAX) && (point_size != LONG_MIN)) {
+                            // conversion successful
+                            next = possible_next;
+                            properties[key] = value + " " + possible_size;
+                        } else {
+                            properties[key] = value;
+                        }
                     } else if (value.find_first_of("'\"[{(", 0) == 0) {
                         // value delimited by special chars; find end and strip delimiters
                         char start_delim = value.front();
