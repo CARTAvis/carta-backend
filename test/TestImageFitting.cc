@@ -152,3 +152,30 @@ TEST_F(ImageFittingTest, FittingWithFov) {
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 64, 64}, 10);
     FitImageWithFov(gaussian_model, 0);
 }
+
+TEST_F(ImageFittingTest, IncorrectRegionId) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    FitImageWithFov(gaussian_model, IMAGE_REGION_ID, "region not supported");
+    FitImageWithFov(gaussian_model, 1, "region not supported");
+}
+
+TEST_F(ImageFittingTest, IncorrectFov) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    FitImageWithFov(gaussian_model, 0, "failed to set up field of view region");
+    
+    SetFov(CARTA::RegionType::LINE, {0, 0, 1, 1}, 0);
+    FitImageWithFov(gaussian_model, 0, "region is outside image or is not closed");
+}
+
+TEST_F(ImageFittingTest, FovOutsideImage) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    SetFov(CARTA::RegionType::RECTANGLE, {-100, -100, 10, 10}, 0);
+    FitImageWithFov(gaussian_model, 0, "region is outside image or is not closed");
+}
+
+TEST_F(ImageFittingTest, insufficientData) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    SetInitialValues(gaussian_model);
+    SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 2, 2}, 0);
+    FitImageWithFov(gaussian_model, 0, "insufficient data points");
+}
