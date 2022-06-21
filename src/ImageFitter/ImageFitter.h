@@ -24,8 +24,8 @@ struct FitData {
     size_t width;
     size_t n;
     size_t n_notnan; // number of pixels excluding nan pixels
-    size_t offsetX;
-    size_t offsetY;
+    size_t offset_x;
+    size_t offset_y;
 };
 
 struct FitStatus {
@@ -39,7 +39,7 @@ class ImageFitter {
 public:
     ImageFitter();
     bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-        CARTA::FittingResponse& fitting_response, size_t offsetX = 0, size_t offsetY = 0);
+        CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
 
 private:
     FitData _fit_data;
