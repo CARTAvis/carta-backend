@@ -65,7 +65,7 @@ public:
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
         bool success =
             image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, fitting_response);
-        
+
         CompareResults(fitting_response, success, failed_message);
     }
 
@@ -99,7 +99,7 @@ private:
             gaussian_model_string.append(" ");
             gaussian_model_string.append(i % 6 == 0 ? std::to_string(gaussian_model[i] - 90.0) : std::to_string(gaussian_model[i]));
         }
-        
+
         std::string file_path =
             ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
         return file_path;
@@ -162,7 +162,7 @@ TEST_F(ImageFittingTest, IncorrectRegionId) {
 TEST_F(ImageFittingTest, IncorrectFov) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     FitImageWithFov(gaussian_model, 0, "failed to set up field of view region");
-    
+
     SetFov(CARTA::RegionType::LINE, {0, 0, 1, 1}, 0);
     FitImageWithFov(gaussian_model, 0, "region is outside image or is not closed");
 }
