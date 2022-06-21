@@ -22,7 +22,8 @@ namespace carta {
 struct FitData {
     float* data;
     size_t width;
-    size_t n; // number of pixels excluding nan pixels
+    size_t n;
+    size_t n_notnan; // number of pixels excluding nan pixels
     size_t offsetX;
     size_t offsetY;
 };

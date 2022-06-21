@@ -10,6 +10,7 @@
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "Logger/Logger.h"
+#include "Region/RegionHandler.h"
 
 #include "CommonTestUtilities.h"
 
@@ -45,6 +46,16 @@ public:
         }
     }
 
+    void SetFov(CARTA::RegionType region_type, std::vector<float> control_points, float rotation) {
+        _fov_info.set_region_type(region_type);
+        for (size_t i = 0; i < control_points.size() / 2; i++) {
+            auto* control_point = _fov_info.add_control_points();
+            control_point->set_x(control_points[i * 2]);
+            control_point->set_y(control_points[i * 2 + 1]);
+        }
+        _fov_info.set_rotation(rotation);
+    }
+
     void FitImage(std::vector<float> gaussian_model, std::string failed_message = "") {
         std::string file_path = GetGeneratedFilePath(gaussian_model);
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
@@ -58,8 +69,29 @@ public:
         CompareResults(fitting_response, success, failed_message);
     }
 
+    void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
+        std::string file_path = GetGeneratedFilePath(gaussian_model);
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+
+        CARTA::FittingRequest fitting_request;
+        fitting_request.set_file_id(0);
+        fitting_request.set_region_id(region_id);
+        for (size_t i = 0; i < _initial_values.size(); i++) {
+            *fitting_request.add_initial_values() = _initial_values[i];
+        }
+        *fitting_request.mutable_fov_info() = _fov_info;
+
+        CARTA::FittingResponse fitting_response;
+        carta::RegionHandler region_handler;
+        bool success = region_handler.FitImage(fitting_request, fitting_response, frame);
+
+        CompareResults(fitting_response, success, failed_message);
+    }
+
 private:
     std::vector<CARTA::GaussianComponent> _initial_values;
+    CARTA::RegionInfo _fov_info;
 
     static std::string GetGeneratedFilePath(std::vector<float> gaussian_model) {
         std::string gaussian_model_string = std::to_string(gaussian_model[0]);
@@ -112,4 +144,11 @@ TEST_F(ImageFittingTest, ThreeComponentFitting) {
     std::vector<float> bad_inital = {3, 64, 64, 20, 20, 10, 210, 64, 64, 20, 20, 10, 210, 96, 96, 20, 0, 0, 210};
     SetInitialValues(bad_inital);
     FitImage(gaussian_model, "fit did not converge");
+}
+
+TEST_F(ImageFittingTest, FittingWithFov) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    SetInitialValues(gaussian_model);
+    SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 64, 64}, 10);
+    FitImageWithFov(gaussian_model, 0);
 }

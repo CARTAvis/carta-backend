@@ -38,13 +38,13 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     SetInitialValues(initial_values);
 
     // avoid SolveSystem crashes with insufficient data points
-    if (_fit_data.n < _num_components * 6) {
+    if (_fit_data.n_notnan < _num_components * 6) {
         fitting_response.set_message("insufficient data points");
         fitting_response.set_success(success);
         return false;
     }
 
-    spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n, _num_components);
+    spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n_notnan, _num_components);
     int status = SolveSystem();
 
     if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
@@ -72,10 +72,10 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
 }
 
 void ImageFitter::CalculateNanNum() {
-    _fit_data.n = _fdf.n;
+    _fit_data.n_notnan = _fit_data.n;
     for (size_t i = 0; i < _fit_data.n; i++) {
         if (isnan(_fit_data.data[i])) {
-            _fit_data.n--;
+            _fit_data.n_notnan--;
         }
     }
 }
@@ -123,7 +123,7 @@ int ImageFitter::SolveSystem() {
 
     gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
     gsl_multifit_nlinear_covar(jac, 0.0, covar);
-    const double c = sqrt(_fit_status.chisq / (_fit_data.n - p));
+    const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
     for (size_t i = 0; i < p; i++) {
         gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
     }
@@ -167,7 +167,7 @@ std::string ImageFitter::GetLog() {
     log += fmt::format("final |f(x)|         = {:.12e}\n", sqrt(_fit_status.chisq));
     log += fmt::format("initial cost         = {:.12e}\n", _fit_status.chisq0);
     log += fmt::format("final cost           = {:.12e}\n", _fit_status.chisq);
-    log += fmt::format("residual variance    = {:.12e}\n", _fit_status.chisq / (_fit_data.n - _fdf.p));
+    log += fmt::format("residual variance    = {:.12e}\n", _fit_status.chisq / (_fit_data.n_notnan - _fdf.p));
     log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
 
     return log;
