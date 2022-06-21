@@ -643,7 +643,7 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
 
 RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& parameters) {
     // Import DS9 polygon into RegionState
-    // polygon x1 y1 x2 y2 x3 y3 ...
+    // polygon x1 y1 x2 y2 x3 y3 ... or line x1 y1 x2 y2
     RegionState region_state;
 
     size_t nparam(parameters.size());

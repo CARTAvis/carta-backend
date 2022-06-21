@@ -146,6 +146,7 @@ void RegionImportExport::ParseRegionParameters(
                     } else { // e.g. color=#00ffff
                         next = region_definition.find_first_of(" ", current);
                     }
+
                     if ((next != std::string::npos) && (next - current > 0)) {
                         std::string value = region_definition.substr(current, next - current);
                         properties[key] = value;
@@ -153,8 +154,8 @@ void RegionImportExport::ParseRegionParameters(
                 } else if (kvpair.size() == 2) {
                     // check if value is delimited by ' ', " ", [ ], or { }
                     std::string value = kvpair[1];
-                    if (key == "dashlist") {
-                        // values separated by space e.g. "dashlist=8 3"; find next space
+                    if ((key == "dashlist") || (key == "line")) {
+                        // values separated by space e.g. "dashlist=8 3" or "line=0 0"; find next space
                         current = next + 1;
                         next = region_definition.find_first_of(" ", current);
                         string value_end = region_definition.substr(current, next - current);
