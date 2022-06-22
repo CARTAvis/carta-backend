@@ -105,7 +105,7 @@ private:
         return file_path;
     }
 
-    void CompareResults(CARTA::FittingResponse fitting_response, bool success, std::string failed_message) {
+    void CompareResults(const CARTA::FittingResponse fitting_response, const bool success, const std::string failed_message) {
         if (failed_message.length() == 0) {
             EXPECT_EQ(success, True);
             EXPECT_EQ(fitting_response.success(), True);
