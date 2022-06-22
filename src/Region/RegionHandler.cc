@@ -19,7 +19,6 @@
 #include "Logger/Logger.h"
 #include "Util/File.h"
 #include "Util/Image.h"
-#include "Util/Message.h"
 
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
@@ -1076,7 +1075,7 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Set histogram fields
-        CARTA::RegionHistogramData histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
+        auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
 
         // Get image region
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
@@ -1216,7 +1215,7 @@ bool RegionHandler::FillSpectralProfileData(
                 bool report_error(true);
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats, report_error,
                     [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                        CARTA::SpectralProfileData profile_message = Message::SpectralProfileData(
+                        auto profile_message = Message::SpectralProfileData(
                             config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
                     });
@@ -1289,7 +1288,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
             casacore::IPosition origin = lc_region->boundingBox().start();
-            CARTA::Point point = Message::Point(origin(0), origin(1));
+            auto point = Message::Point(origin(0), origin(1));
 
             auto get_stokes_profiles_data = [&](ProfilesMap& tmp_results, int tmp_stokes) {
                 std::vector<float> tmp_profile;
@@ -1737,8 +1736,8 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
                 float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
                 std::string unit = adjusted_increment.getUnit();
 
-                CARTA::SpatialProfileData profile_message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index,
-                    value, start, end, profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
+                auto profile_message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value, start, end,
+                    profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
                 cb(profile_message);
             });
     }

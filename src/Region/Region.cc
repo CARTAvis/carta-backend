@@ -25,7 +25,6 @@
 
 #include "../Logger/Logger.h"
 #include "Util/Image.h"
-#include "Util/Message.h"
 
 using namespace carta;
 

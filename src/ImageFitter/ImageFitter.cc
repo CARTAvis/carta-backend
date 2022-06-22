@@ -217,11 +217,10 @@ void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, i
 }
 
 CARTA::GaussianComponent ImageFitter::GetGaussianComponent(gsl_vector* value_vector, size_t index) {
-    CARTA::DoublePoint center = Message::DoublePoint(gsl_vector_get(value_vector, index * 6), gsl_vector_get(value_vector, index * 6 + 1));
+    auto center = Message::DoublePoint(gsl_vector_get(value_vector, index * 6), gsl_vector_get(value_vector, index * 6 + 1));
     double amp = gsl_vector_get(value_vector, index * 6 + 2);
-    CARTA::DoublePoint fwhm =
-        Message::DoublePoint(gsl_vector_get(value_vector, index * 6 + 3), gsl_vector_get(value_vector, index * 6 + 4));
+    auto fwhm = Message::DoublePoint(gsl_vector_get(value_vector, index * 6 + 3), gsl_vector_get(value_vector, index * 6 + 4));
     double pa = gsl_vector_get(value_vector, index * 6 + 5);
-    CARTA::GaussianComponent component = Message::GaussianComponent(center, amp, fwhm, pa);
+    auto component = Message::GaussianComponent(center, amp, fwhm, pa);
     return component;
 }

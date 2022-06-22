@@ -565,7 +565,7 @@ bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_r
         return false;
     }
 
-    CARTA::ScriptingRequest message = Message::ScriptingRequest(scripting_request_id, target, action, parameters, async, return_path);
+    auto message = Message::ScriptingRequest(scripting_request_id, target, action, parameters, async, return_path);
     session->SendScriptingRequest(message, callback, session_closed_callback);
     return true;
 }

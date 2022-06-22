@@ -9,6 +9,7 @@
 
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
+#include "Util/Message.h"
 
 namespace carta {
 

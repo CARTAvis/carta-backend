@@ -36,9 +36,9 @@ public:
     void SetInitialValues(std::vector<float> gaussian_model) {
         _initial_values = {};
         for (size_t i = 0; i < gaussian_model[0]; i++) {
-            CARTA::DoublePoint center = Message::DoublePoint(gaussian_model[6 * i + 1], gaussian_model[6 * i + 2]);
+            auto center = Message::DoublePoint(gaussian_model[6 * i + 1], gaussian_model[6 * i + 2]);
             double amp = gaussian_model[6 * i + 3];
-            CARTA::DoublePoint fwhm = Message::DoublePoint(gaussian_model[6 * i + 4], gaussian_model[6 * i + 5]);
+            auto fwhm = Message::DoublePoint(gaussian_model[6 * i + 4], gaussian_model[6 * i + 5]);
             double pa = gaussian_model[6 * i + 6];
             _initial_values.push_back(Message::GaussianComponent(center, amp, fwhm, pa));
         }

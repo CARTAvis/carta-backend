@@ -748,7 +748,7 @@ bool Frame::FillRegionHistogramData(
         }
 
         // create and fill region histogram data message
-        CARTA::RegionHistogramData histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
+        auto histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
 
         // fill histogram submessage from cache (loader or local)
         auto* histogram = histogram_data.mutable_histograms();
@@ -1001,7 +1001,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         }
 
         // Set response message
-        CARTA::RegionStatsData stats_data = Message::RegionStatsData(file_id, region_id, z, stokes);
+        auto stats_data = Message::RegionStatsData(file_id, region_id, z, stokes);
 
         // Set required stats types
         std::vector<CARTA::StatsType> required_stats;
@@ -1108,8 +1108,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     }
 
     if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
-        CARTA::SpatialProfileData spatial_data =
-            Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
+        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
         spatial_data_vec.push_back(spatial_data);
         return true;
     }
@@ -1149,7 +1148,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // set message fields
-        CARTA::SpatialProfileData spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
+        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
 
         // add profiles
         std::vector<float> profile;
@@ -1452,7 +1451,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
 
         // Create final profile message for callback
-        CARTA::SpectralProfileData profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
+        auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
         auto spectral_profile = profile_message.add_profiles();
         spectral_profile->set_coordinate(config.coordinate);
         // point spectral profiles only have one stats type
@@ -1553,7 +1552,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         // reset profile timer and send partial profile message
                         t_start_profile = t_end_slice;
 
-                        CARTA::SpectralProfileData partial_data = Message::SpectralProfileData(CurrentStokes(), progress);
+                        auto partial_data = Message::SpectralProfileData(CurrentStokes(), progress);
                         auto partial_profile = partial_data.add_profiles();
                         partial_profile->set_stats_type(config.all_stats[0]);
                         partial_profile->set_coordinate(config.coordinate);
