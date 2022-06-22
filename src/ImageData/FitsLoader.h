@@ -78,11 +78,13 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         // Default is casacore::FITSImage; if fails, try CartaFitsImage
         bool use_casacore_fits(true);
         auto num_headers = GetNumHeaders(_filename, hdu_num);
+
         if (num_headers == 0) {
             throw(casacore::AipsError("Error reading FITS file."));
         }
-        if (num_headers > 10000) {
-            // casacore::FITSImage parses HISTORY for beam
+
+        if (num_headers > 2000) {
+            // casacore::FITSImage parses HISTORY
             use_casacore_fits = false;
         }
 
