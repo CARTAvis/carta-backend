@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
 * Ensured that HTTP server returns error codes correctly ([#1011](https://github.com/CARTAvis/carta-backend/issues/1011)).
+* Fixed incorrect pixel number when fitting image with nan pixels ([#1128](https://github.com/CARTAvis/carta-backend/pull/1128)).
 
 ## [3.0.0-beta.3]
 
