@@ -17,11 +17,11 @@ SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
 void SessionManager::DeleteSession(uint32_t session_id) {
+    std::unique_lock<std::mutex> ulock(_sessions_mutex);
     if (!_sessions.count(session_id)) {
         return;
     }
 
-    std::unique_lock<std::mutex> ulock(_sessions_mutex);
     Session* session = _sessions[session_id];
     if (session) {
         spdlog::info(
