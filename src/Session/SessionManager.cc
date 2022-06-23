@@ -17,6 +17,11 @@ SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
 void SessionManager::DeleteSession(uint32_t session_id) {
+    if (!_sessions.count(session_id)) {
+        return;
+    }
+
+    std::unique_lock<std::mutex> ulock(_sessions_mutex);
     Session* session = _sessions[session_id];
     if (session) {
         spdlog::info(
@@ -83,8 +88,10 @@ void SessionManager::OnConnect(WSType* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
+    std::unique_lock<std::mutex> ulock(_sessions_mutex);
     _sessions[session_id] = new Session(ws, loop, session_id, address, _settings.top_level_folder, _settings.starting_folder,
         _file_list_handler, _settings.read_only_mode, _settings.enable_scripting);
+    ulock.unlock();
 
     _sessions[session_id]->IncreaseRefCount();
 
@@ -104,7 +111,7 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
 
     // Delete the Session
-    if (_sessions.count(session_id) > 0) {
+    if (_sessions.count(session_id)) {
         _sessions[session_id]->DecreaseRefCount();
         DeleteSession(session_id);
     }
