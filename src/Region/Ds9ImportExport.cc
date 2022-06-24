@@ -513,8 +513,10 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
             }
 
             // bmaj, bmin
-            control_points.push_back(
-                Message::Point(WorldToPixelLength(param_quantities[2], 0), WorldToPixelLength(param_quantities[3], 1)));
+            CARTA::Point point;
+            point.set_x(WorldToPixelLength(param_quantities[2], 0));
+            point.set_y(WorldToPixelLength(param_quantities[3], 1));
+            control_points.push_back(point);
         }
 
         // Set RegionState
@@ -595,8 +597,10 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
             }
 
             // width, height
-            control_points.push_back(
-                Message::Point(WorldToPixelLength(param_quantities[2], 0), WorldToPixelLength(param_quantities[3], 1)));
+            CARTA::Point point;
+            point.set_x(WorldToPixelLength(param_quantities[2], 0));
+            point.set_y(WorldToPixelLength(param_quantities[3], 1));
+            control_points.push_back(point);
         }
 
         // Create RegionState
