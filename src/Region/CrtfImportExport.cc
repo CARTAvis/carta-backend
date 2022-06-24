@@ -869,9 +869,7 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
 
                 // Set bmaj, bmin or radius
                 if (region == "ellipse") {
-                    double bmaj = WorldToPixelLength(p3, 0);
-                    double bmin = WorldToPixelLength(p4, 1);
-                    control_points.push_back(Message::Point(bmaj, bmin));
+                    control_points.push_back(Message::Point(WorldToPixelLength(p3, 0), WorldToPixelLength(p4, 1)));
                 } else {
                     double radius = WorldToPixelLength(p3, 0);
                     control_points.push_back(Message::Point(radius, radius));
