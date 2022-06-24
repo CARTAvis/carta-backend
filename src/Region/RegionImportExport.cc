@@ -124,13 +124,17 @@ void RegionImportExport::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
     size_t next(0), current(0), end(region_definition.size());
+
     while (current < end) {
         next = region_definition.find_first_of(_parser_delim, current);
+
         if (next == std::string::npos) {
             next = end;
         }
+
         if ((next - current) > 0) {
             std::string param = region_definition.substr(current, next - current);
+
             if (param.find("=") == std::string::npos) {
                 parameters.push_back(param);
             } else {
@@ -141,6 +145,7 @@ void RegionImportExport::ParseRegionParameters(
                 if (kvpair.size() == 1) {
                     // value starts with delim
                     current = next + 1;
+
                     if (region_definition[next] == '[') { // e.g. corr=[I, Q]
                         next = region_definition.find_first_of("]", current);
                     } else { // e.g. color=#00ffff
@@ -154,25 +159,41 @@ void RegionImportExport::ParseRegionParameters(
                 } else if (kvpair.size() == 2) {
                     // check if value is delimited by ' ', " ", [ ], or { }
                     std::string value = kvpair[1];
+
                     if ((key == "dashlist") || (key == "line")) {
                         // values separated by space e.g. "dashlist=8 3" or "line=0 0"; find next space
                         current = next + 1;
-                        next = region_definition.find_first_of(" ", current);
-                        string value_end = region_definition.substr(current, next - current);
-                        properties[key] = value + " " + value_end;
-                    } else if (key == "point") {
-                        // size optional, get next string and try to convert to long int
-                        current = next + 1;
-                        auto possible_next = region_definition.find_first_of(" ", current);
-                        string possible_size = region_definition.substr(current, possible_next - current);
 
-                        char* endptr(nullptr);
-                        auto point_size = strtol(possible_size.c_str(), &endptr, 10);
-                        if ((point_size != 0) && (point_size != LONG_MAX) && (point_size != LONG_MIN)) {
-                            // conversion successful
-                            next = possible_next;
-                            properties[key] = value + " " + possible_size;
+                        if (current < end) {
+                            next = region_definition.find_first_of(" ", current);
+                            std::string second_arg = region_definition.substr(current, next - current);
+                            properties[key] = value + " " + second_arg;
+                        }
+                    } else if (key == "point") {
+                        // point=shape [size] e.g. "point=circle" or "point=diamond 10" - size optional
+                        current = next + 1;
+
+                        if (current < end) {
+                            // Get next string
+                            auto possible_next = region_definition.find_first_of(" ", current);
+                            string possible_size = region_definition.substr(current, possible_next - current);
+
+                            if (!possible_size.empty()) {
+                                // Try to convert to int
+                                char* endptr(nullptr);
+                                auto point_size = strtol(possible_size.c_str(), &endptr, 10);
+
+                                if ((point_size != 0) && (point_size != LONG_MAX) && (point_size != LONG_MIN)) {
+                                    // conversion successful - add size
+                                    next = possible_next;
+                                    properties[key] = value + " " + possible_size;
+                                } else {
+                                    // conversion failed - shape only
+                                    properties[key] = value;
+                                }
+                            }
                         } else {
+                            // end of line
                             properties[key] = value;
                         }
                     } else if (value.find_first_of("'\"[{(", 0) == 0) {
@@ -180,8 +201,8 @@ void RegionImportExport::ParseRegionParameters(
                         char start_delim = value.front();
                         std::unordered_map<char, char> delim_map = {{'\'', '\''}, {'"', '"'}, {'[', ']'}, {'{', '}'}, {'(', ')'}};
                         char end_delim = delim_map[start_delim];
-
                         value.erase(0, 1); // erase start delim
+
                         if (value.back() == end_delim) {
                             value.pop_back();
                             properties[key] = value;
@@ -202,6 +223,7 @@ void RegionImportExport::ParseRegionParameters(
                 }
             }
         }
+
         if (next < end) {
             current = next + 1;
         } else {
