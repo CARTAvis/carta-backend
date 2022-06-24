@@ -123,6 +123,13 @@ CARTA::Point Message::Point(const casacore::Vector<casacore::Double>& input, int
     return point;
 }
 
+CARTA::Point Message::Point(const std::vector<casacore::Quantity>& input, int x_index, int y_index) {
+    CARTA::Point point;
+    point.set_x(input[x_index].getValue());
+    point.set_y(input[y_index].getValue());
+    return point;
+}
+
 CARTA::SetRegion Message::SetRegion(
     int32_t file_id, int32_t region_id, CARTA::RegionType region_type, std::vector<CARTA::Point> control_points, float rotation) {
     CARTA::SetRegion set_region;

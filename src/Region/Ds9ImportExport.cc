@@ -422,7 +422,7 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
     // Control points in pixel coordinates
     std::vector<CARTA::Point> control_points;
     if (_pixel_coord) {
-        control_points.push_back(Message::Point(param_quantities[0].getValue(), param_quantities[1].getValue()));
+        control_points.push_back(Message::Point(param_quantities));
     } else {
         casacore::Vector<casacore::Double> pixel_coords;
         if (ConvertPointToPixels(_file_ref_frame, param_quantities, pixel_coords)) {
@@ -497,8 +497,8 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
         if (_pixel_coord) {
-            control_points.push_back(Message::Point(param_quantities[0].getValue(), param_quantities[1].getValue()));
-            control_points.push_back(Message::Point(param_quantities[2].getValue(), param_quantities[3].getValue()));
+            control_points.push_back(Message::Point(param_quantities));
+            control_points.push_back(Message::Point(param_quantities, 2, 3));
         } else {
             // cx, cy
             std::vector<casacore::Quantity> center_coords;
@@ -579,8 +579,8 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
         if (_pixel_coord) {
-            control_points.push_back(Message::Point(param_quantities[0].getValue(), param_quantities[1].getValue()));
-            control_points.push_back(Message::Point(param_quantities[2].getValue(), param_quantities[3].getValue()));
+            control_points.push_back(Message::Point(param_quantities));
+            control_points.push_back(Message::Point(param_quantities, 2, 3));
         } else {
             // cx, cy
             std::vector<casacore::Quantity> center_coords;
@@ -661,7 +661,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
     std::vector<CARTA::Point> control_points;
     for (size_t i = 0; i < param_quantities.size(); i += 2) {
         if (_pixel_coord) {
-            control_points.push_back(Message::Point(param_quantities[i].getValue(), param_quantities[i + 1].getValue()));
+            control_points.push_back(Message::Point(param_quantities, i, i + 1));
         } else {
             std::vector<casacore::Quantity> point;
             point.push_back(param_quantities[i]);

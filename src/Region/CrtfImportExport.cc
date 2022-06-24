@@ -1098,7 +1098,7 @@ bool CrtfImportExport::GetCenterBoxPoints(const std::string& region, casacore::Q
             double height_pix = WorldToPixelLength(height, 1);
 
             // Set control points
-            control_points.push_back(Message::Point(pixel_coords[0], pixel_coords[1]));
+            control_points.push_back(Message::Point(pixel_coords));
             control_points.push_back(Message::Point(width_pix, height_pix));
             return true;
         } else {
