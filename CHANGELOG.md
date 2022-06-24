@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed the incorrect STD for images with large pixel values ([#1069](https://github.com/CARTAvis/carta-backend/issues/1069)).
 * Fixed incorrect spectral profiles for computed stokes ([#1122](https://github.com/CARTAvis/carta-backend/issues/1122)). 
 * Fixed the problem of recognizing FITS gzip files from ALMA Science Archive ([#1130](https://github.com/CARTAvis/carta-backend/issues/1130)).
-* Fixed the DS9 import bug with line arrow and point properties ([#1129](https://github.com/CARTAvis/carta-backend/issues/1129)).
+* Fixed slow loading of FITS image with large number of HISTORY headers ([#1063](https://github.com/CARTAvis/carta-backend/issues/1063)).
+* Fixed the DS9 import bug with region properties ([#1129](https://github.com/CARTAvis/carta-backend/issues/1129)).
 
 ## [3.0.0-beta.3]
 
