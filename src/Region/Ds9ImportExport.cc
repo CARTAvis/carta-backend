@@ -426,7 +426,7 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
     } else {
         casacore::Vector<casacore::Double> pixel_coords;
         if (ConvertPointToPixels(_file_ref_frame, param_quantities, pixel_coords)) {
-            control_points.push_back(Message::Point(pixel_coords(0), pixel_coords(1)));
+            control_points.push_back(Message::Point(pixel_coords));
         } else {
             std::string invalid_param("Failed to apply point to image.\n");
             _import_errors.append(invalid_param);
@@ -506,7 +506,7 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
             center_coords.push_back(param_quantities[1]);
             casacore::Vector<casacore::Double> pixel_coords;
             if (ConvertPointToPixels(_file_ref_frame, center_coords, pixel_coords)) {
-                control_points.push_back(Message::Point(pixel_coords(0), pixel_coords(1)));
+                control_points.push_back(Message::Point(pixel_coords));
             } else {
                 _import_errors.append("Failed to apply ellipse to image.\n");
                 return region_state;
@@ -588,7 +588,7 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
             center_coords.push_back(param_quantities[1]);
             casacore::Vector<casacore::Double> pixel_coords;
             if (ConvertPointToPixels(_file_ref_frame, center_coords, pixel_coords)) {
-                control_points.push_back(Message::Point(pixel_coords(0), pixel_coords(1)));
+                control_points.push_back(Message::Point(pixel_coords));
             } else {
                 _import_errors.append("Failed to apply box to image.\n");
                 return region_state;
@@ -668,7 +668,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
             point.push_back(param_quantities[i + 1]);
             casacore::Vector<casacore::Double> pixel_coords;
             if (ConvertPointToPixels(_file_ref_frame, point, pixel_coords)) {
-                control_points.push_back(Message::Point(pixel_coords(0), pixel_coords(1)));
+                control_points.push_back(Message::Point(pixel_coords));
             } else {
                 _import_errors.append("Failed to apply polygon to image.\n");
                 return region_state;
