@@ -1995,7 +1995,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
 
             // Set temporary region state
             std::vector<CARTA::Point> control_points;
-            control_points.push_back(Message::Point(box_centers[iregion][0], box_centers[iregion][1]));
+            control_points.push_back(Message::Point(box_centers[iregion]));
             control_points.push_back(Message::Point(width, height));
             RegionState temp_region_state(region_state.reference_file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
 
@@ -2091,7 +2091,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
 
                 // Set box region
                 std::vector<CARTA::Point> control_points;
-                control_points.push_back(Message::Point(box_centers[iregion][0], box_centers[iregion][1]));
+                control_points.push_back(Message::Point(box_centers[iregion]));
                 control_points.push_back(Message::Point(width, height));
                 RegionState temp_region_state(region_state.reference_file_id, CARTA::RegionType::RECTANGLE, control_points, rotation);
 
@@ -2540,7 +2540,7 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     if (corner.empty()) {
         return RegionState();
     }
-    control_points[0] = Message::Point(corner[0], corner[1]);
+    control_points[0] = Message::Point(corner);
 
     // Endpoint in negative direction width*2 pixels out from box start
     target_end = {box_start[0] + (pixel_width * 2 * cos_x), box_start[1] + (pixel_width * 2 * sin_x)};
@@ -2548,7 +2548,7 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     if (corner.empty()) {
         return RegionState();
     }
-    control_points[3] = Message::Point(corner[0], corner[1]);
+    control_points[3] = Message::Point(corner);
 
     // Find box corners from box end
     // Endpoint in positive direction width*2 pixels out from box end
@@ -2557,7 +2557,7 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     if (corner.empty()) {
         return RegionState();
     }
-    control_points[1] = Message::Point(corner[0], corner[1]);
+    control_points[1] = Message::Point(corner);
 
     // Endpoint in negative direction width*2 pixels out from box end
     target_end = {box_end[0] + (pixel_width * 2 * cos_x), box_end[1] + (pixel_width * 2 * sin_x)};
@@ -2565,7 +2565,7 @@ RegionState RegionHandler::GetTemporaryRegionState(std::shared_ptr<casacore::Coo
     if (corner.empty()) {
         return RegionState();
     }
-    control_points[2] = Message::Point(corner[0], corner[1]);
+    control_points[2] = Message::Point(corner);
     mvdir_lock.unlock();
 
     float polygon_rotation(0.0);
