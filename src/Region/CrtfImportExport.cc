@@ -649,9 +649,7 @@ RegionState CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::
         if (bmaj.getUnit() == "pix") {
             control_points.push_back(Message::Point(bmaj.getValue(), bmin.getValue()));
         } else {
-            double bmaj_pixel = WorldToPixelLength(bmaj, 0);
-            double bmin_pixel = WorldToPixelLength(bmin, 1);
-            control_points.push_back(Message::Point(bmaj_pixel, bmin_pixel));
+            control_points.push_back(Message::Point(WorldToPixelLength(bmaj, 0), WorldToPixelLength(bmin, 1)));
         }
 
         // Other RegionState parameters
@@ -1093,13 +1091,9 @@ bool CrtfImportExport::GetCenterBoxPoints(const std::string& region, casacore::Q
         centerpoint.push_back(cy);
         casacore::Vector<casacore::Double> pixel_coords;
         if (ConvertPointToPixels(region_frame, centerpoint, pixel_coords)) {
-            // Get width/height in pixel length
-            double width_pix = WorldToPixelLength(width, 0);
-            double height_pix = WorldToPixelLength(height, 1);
-
             // Set control points
             control_points.push_back(Message::Point(pixel_coords));
-            control_points.push_back(Message::Point(width_pix, height_pix));
+            control_points.push_back(Message::Point(WorldToPixelLength(width, 0), WorldToPixelLength(height, 1)));
             return true;
         } else {
             spdlog::error("{} import conversion to pixels failed", region);
