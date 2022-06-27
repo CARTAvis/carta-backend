@@ -45,6 +45,7 @@ set(TEST_SOURCES
         TestFileList.cc
         TestFitsTable.cc
         TestFitsImage.cc
+        TestFrame.cc
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
