@@ -10,13 +10,14 @@
 #include "CartaFitsImage.h"
 
 #include <casacore/casa/Arrays/ArrayMath.h>
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
 namespace carta {
 
 template <typename T>
 bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer) {
     // Read section of data from FITS file and put it in buffer
-
     // Get section components (convert to 1-based)
     std::vector<long> start, end, inc;
     casacore::IPosition slicer_start = section.start();
@@ -117,6 +118,26 @@ bool CartaFitsImage::GetPixelMask(fitsfile* fptr, int datatype, const casacore::
     casacore::Array<bool> mask_array(marray.shape());
     convertArray(mask_array, marray);
     mask = casacore::ArrayLattice<bool>(mask_array);
+    return true;
+}
+
+template <typename T>
+bool CartaFitsImage::GetNanPixelMask(casacore::ArrayLattice<bool>& mask) {
+    // Pixel mask for entire image
+    auto mask_array = mask.asArray();
+    mask_array.resize(shape());
+
+    casacore::SubImage<T> sub_image(dynamic_cast<casacore::ImageInterface<T>&>(*this));
+    casacore::RO_MaskedLatticeIterator<T> lattice_iter(sub_image);
+
+    for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
+        casacore::Array<T> cursor_data = lattice_iter.cursor();
+        casacore::Array<bool> cursor_mask = isNaN(cursor_data);
+
+        casacore::Slicer cursor_slicer(lattice_iter.position(), lattice_iter.cursorShape());
+        mask_array(cursor_slicer) = cursor_mask;
+    }
+
     return true;
 }
 
