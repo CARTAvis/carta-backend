@@ -117,24 +117,15 @@ CARTA::Point Message::Point(float x, float y) {
 }
 
 CARTA::Point Message::Point(const casacore::Vector<casacore::Double>& input, int x_index, int y_index) {
-    CARTA::Point point;
-    point.set_x((float)input(x_index));
-    point.set_y((float)input(y_index));
-    return point;
+    return Message::Point(input(x_index), input(y_index));
 }
 
 CARTA::Point Message::Point(const std::vector<casacore::Quantity>& input, int x_index, int y_index) {
-    CARTA::Point point;
-    point.set_x((float)input[x_index].getValue());
-    point.set_y((float)input[y_index].getValue());
-    return point;
+    return Message::Point(input[x_index].getValue(), input[y_index].getValue());
 }
 
 CARTA::Point Message::Point(const std::vector<double>& input, int x_index, int y_index) {
-    CARTA::Point point;
-    point.set_x((float)input[x_index]);
-    point.set_y((float)input[y_index]);
-    return point;
+    return Message::Point(input[x_index], input[y_index]);
 }
 
 CARTA::SetRegion Message::SetRegion(
