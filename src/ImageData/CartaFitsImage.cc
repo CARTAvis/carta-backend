@@ -198,7 +198,6 @@ const casacore::Lattice<bool>& CartaFitsImage::pixelMask() const {
 }
 
 casacore::Lattice<bool>& CartaFitsImage::pixelMask() {
-    spdlog::debug("CartaFitsImage::pixelMask");
     if (!_has_blanks) {
         throw(casacore::AipsError("CartaFitsImage::pixelMask - no pixel mask used"));
     }
