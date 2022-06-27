@@ -132,7 +132,7 @@ bool CartaFitsImage::GetNanPixelMask(casacore::ArrayLattice<bool>& mask) {
 
     for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
         casacore::Array<T> cursor_data = lattice_iter.cursor();
-        casacore::Array<bool> cursor_mask = isNaN(cursor_data);
+        casacore::Array<bool> cursor_mask = isFinite(cursor_data);
 
         casacore::Slicer cursor_slicer(lattice_iter.position(), lattice_iter.cursorShape());
         mask_array(cursor_slicer) = cursor_mask;
