@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Enhanced image fitting performance by switching the solver from qr to cholesky ([#1114](https://github.com/CARTAvis/carta-backend/pull/1114)).
 * Made HTTP server return a different error code for disabled features ([#1115](https://github.com/CARTAvis/carta-backend/issues/1115)).
 * Removed Splatalogue interaction from backend codebase and removed dependency on libcurl ([#994](https://github.com/cartavis/carta-backend/issues/994)).
+* Use wrappers to construct protocol buffer messages where possible ([#960](https://github.com/CARTAvis/carta-backend/issues/960)).
 
 ### Fixed
 
@@ -20,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed the incorrect STD for images with large pixel values ([#1069](https://github.com/CARTAvis/carta-backend/issues/1069)).
 * Fixed incorrect spectral profiles for computed stokes ([#1122](https://github.com/CARTAvis/carta-backend/issues/1122)). 
 * Fixed the problem of recognizing FITS gzip files from ALMA Science Archive ([#1130](https://github.com/CARTAvis/carta-backend/issues/1130)).
+* Fixed slow loading of FITS image with large number of HISTORY headers ([#1063](https://github.com/CARTAvis/carta-backend/issues/1063)).
+* Fixed the DS9 import bug with region properties ([#1129](https://github.com/CARTAvis/carta-backend/issues/1129)).
 
 ## [3.0.0-beta.3]
 
@@ -58,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed CRTF export bug for labelpos ([#1012](https://github.com/CARTAvis/carta-backend/issues/1012)).
 * Fixed DS9 import bug for region parameter with no unit ([#1101](https://github.com/CARTAvis/carta-backend/issues/1101)).
 * Fixed offset in center of offset axis of generated PV image ([#1038](https://github.com/CARTAvis/carta-backend/issues/1038)).
+* Fixed CARTA FITS image pixel mask for floating-point images.
 * Fixed various memory leaks, and several memory errors uncovered by address sanitization.
 
 ## [3.0.0-beta.2]
