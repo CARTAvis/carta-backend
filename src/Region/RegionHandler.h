@@ -11,10 +11,6 @@
 
 #include <vector>
 
-#include <carta-protobuf/export_region.pb.h>
-#include <carta-protobuf/import_region.pb.h>
-#include <carta-protobuf/region_requirements.pb.h>
-
 #include "Cache/RequirementsCache.h"
 #include "Frame/Frame.h"
 #include "ImageGenerators/PvGenerator.h"

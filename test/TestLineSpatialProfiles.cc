@@ -24,10 +24,7 @@ public:
         std::shared_ptr<casacore::CoordinateSystem> csys) {
         std::vector<CARTA::Point> control_points;
         for (auto i = 0; i < endpoints.size(); i += 2) {
-            CARTA::Point point;
-            point.set_x(endpoints[i]);
-            point.set_y(endpoints[i + 1]);
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(endpoints[i], endpoints[i + 1]));
         }
 
         // Define RegionState for line region and set region (region_id updated)

@@ -5,6 +5,7 @@
 */
 
 #include "ListProgressReporter.h"
+#include "Util/Message.h"
 
 using namespace carta;
 
@@ -23,11 +24,6 @@ int ListProgressReporter::UpdateProgress() {
 }
 
 void ListProgressReporter::ReportFileListProgress(const CARTA::FileListType& file_list_type) {
-    CARTA::ListProgress progress;
-    progress.set_file_list_type(file_list_type);
-    progress.set_total_count(_total_steps);
-    progress.set_checked_count(_num_of_steps_done);
-    progress.set_percentage(_percentage);
-    _progress_callback(progress);
+    _progress_callback(Message::ListProgress(file_list_type, _total_steps, _num_of_steps_done, _percentage));
     _start_time = std::chrono::high_resolution_clock::now();
 }

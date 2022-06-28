@@ -13,8 +13,6 @@
 #include <tuple>
 #include <vector>
 
-#include <carta-protobuf/contour.pb.h>
-
 #include "AnimationObject.h"
 #include "Session.h"
 #include "SessionManager.h"
