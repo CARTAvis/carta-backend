@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed CRTF export bug for labelpos ([#1012](https://github.com/CARTAvis/carta-backend/issues/1012)).
 * Fixed DS9 import bug for region parameter with no unit ([#1101](https://github.com/CARTAvis/carta-backend/issues/1101)).
 * Fixed offset in center of offset axis of generated PV image ([#1038](https://github.com/CARTAvis/carta-backend/issues/1038)).
+* Fixed CARTA FITS image pixel mask for floating-point images.
 * Fixed various memory leaks, and several memory errors uncovered by address sanitization.
 
 ## [3.0.0-beta.2]

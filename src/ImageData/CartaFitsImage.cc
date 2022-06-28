@@ -218,7 +218,11 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
     }
 
     if (!_pixel_mask) {
-        SetPixelMask();
+        if (_datatype > 0) {
+            SetPixelMask();
+        } else {
+            return doGetNanMaskSlice(buffer, section);
+        }
     }
 
     if (_pixel_mask) {
@@ -390,6 +394,9 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
         status = 0;
         fits_read_key(fptr, TLONG, key.c_str(), &blank_value, comment, &status);
         _has_blanks = !status;
+    } else {
+        // For float (-32) and double (-64) mask is represented by NaN
+        _has_blanks = true;
     }
 
     // Get headers to set up image:
@@ -1414,11 +1421,15 @@ void CartaFitsImage::SetPixelMask() {
             break;
         }
         case -32: {
-            ok = GetPixelMask<float>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetNanPixelMask<float>(mask_lattice);
             break;
         }
         case -64: {
-            ok = GetPixelMask<double>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetNanPixelMask<double>(mask_lattice);
+            break;
+        }
+        default: {
+            ok = false;
             break;
         }
     }
@@ -1431,4 +1442,15 @@ void CartaFitsImage::SetPixelMask() {
     }
 
     CloseFile();
+}
+
+bool CartaFitsImage::doGetNanMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
+    // Create mask from finite (not NaN or infinite) values in slice
+    casacore::Array<float> data;
+    if (doGetSlice(data, section)) {
+        buffer = isFinite(data);
+        return true;
+    }
+
+    return false;
 }
