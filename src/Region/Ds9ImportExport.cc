@@ -617,16 +617,16 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
 
 RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& parameters) {
     // Import DS9 polygon into RegionState
-    // polygon x1 y1 x2 y2 x3 y3 ...
+    // polygon x1 y1 x2 y2 x3 y3 ... or line x1 y1 x2 y2
     RegionState region_state;
+
+    std::string region_name(parameters[0]);
 
     size_t nparam(parameters.size());
     if ((nparam % 2) != 1) { // parameters[0] is region name
-        _import_errors.append("polygon syntax error, odd number of arguments.\n");
+        _import_errors.append(region_name + " syntax error.\n");
         return region_state;
     }
-
-    std::string region_name(parameters[0]);
 
     // convert strings to Quantities
     std::vector<casacore::Quantity> param_quantities;
@@ -648,7 +648,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
                 }
                 param_quantities.push_back(param_quantity);
             } else {
-                std::string invalid_param("Invalid polygon parameter " + param + ".\n");
+                std::string invalid_param("Invalid " + region_name + " parameter " + param + ".\n");
                 _import_errors.append(invalid_param);
                 return region_state;
             }
@@ -670,7 +670,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
             if (ConvertPointToPixels(_file_ref_frame, point, pixel_coords)) {
                 control_points.push_back(Message::Point(pixel_coords));
             } else {
-                _import_errors.append("Failed to apply polygon to image.\n");
+                _import_errors.append("Failed to apply " + region_name + " to image.\n");
                 return region_state;
             }
         }
