@@ -17,20 +17,6 @@
 #include <shared_mutex>
 #include <unordered_map>
 
-#include <carta-protobuf/contour.pb.h>
-#include <carta-protobuf/defs.pb.h>
-#include <carta-protobuf/fitting_request.pb.h>
-#include <carta-protobuf/raster_tile.pb.h>
-#include <carta-protobuf/region_histogram.pb.h>
-#include <carta-protobuf/region_requirements.pb.h>
-#include <carta-protobuf/region_stats.pb.h>
-#include <carta-protobuf/save_file.pb.h>
-#include <carta-protobuf/spatial_profile.pb.h>
-#include <carta-protobuf/spectral_profile.pb.h>
-#include <carta-protobuf/tiles.pb.h>
-#include <carta-protobuf/vector_overlay.pb.h>
-#include <carta-protobuf/vector_overlay_tile.pb.h>
-
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
