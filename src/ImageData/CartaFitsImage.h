@@ -62,8 +62,8 @@ private:
     void CloseFileIfError(const int& status, const std::string& error);
 
     void SetUpImage();
-    void GetFitsHeaders(int& nheaders, std::string& hdrstr);
-    casacore::Vector<casacore::String> FitsHeaderStrings(int nheaders, const std::string& header);
+    void GetFitsHeaderString(int& nheaders, std::string& hdrstr);
+    void SetFitsHeaderStrings(int nheaders, const std::string& header);
 
     // casacore ImageFITSConverter workaround
     casacore::CoordinateSystem SetCoordinateSystem(
@@ -82,11 +82,14 @@ private:
 
     // Pixel mask
     void SetPixelMask();
+    bool doGetNanMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section);
 
     template <typename T>
     bool GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer);
     template <typename T>
     bool GetPixelMask(fitsfile* fptr, int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask);
+    template <typename T>
+    bool GetNanPixelMask(casacore::ArrayLattice<bool>& mask);
 
     std::string _filename;
     unsigned int _hdu;
@@ -99,7 +102,8 @@ private:
     casacore::IPosition _shape;
     int _datatype; // bitpix value
     bool _has_blanks;
-    casacore::Vector<casacore::String> _fits_header_strings;
+    casacore::Vector<casacore::String> _all_header_strings;
+    casacore::Vector<casacore::String> _image_header_strings;
 
     casacore::Lattice<bool>* _pixel_mask;
     casacore::TiledShape _tiled_shape;

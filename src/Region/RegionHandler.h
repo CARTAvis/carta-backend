@@ -11,10 +11,6 @@
 
 #include <vector>
 
-#include <carta-protobuf/export_region.pb.h>
-#include <carta-protobuf/import_region.pb.h>
-#include <carta-protobuf/region_requirements.pb.h>
-
 #include "Cache/RequirementsCache.h"
 #include "Frame/Frame.h"
 #include "ImageGenerators/PvGenerator.h"
@@ -95,6 +91,9 @@ public:
     bool CalculatePvImage(int file_id, int region_id, int width, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
     void StopPvCalc(int file_id);
+
+    // Image fitting
+    bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame);
 
 private:
     // Get unique region id (max id + 1)

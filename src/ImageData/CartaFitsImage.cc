@@ -218,7 +218,11 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
     }
 
     if (!_pixel_mask) {
-        SetPixelMask();
+        if (_datatype > 0) {
+            SetPixelMask();
+        } else {
+            return doGetNanMaskSlice(buffer, section);
+        }
     }
 
     if (_pixel_mask) {
@@ -278,10 +282,10 @@ void CartaFitsImage::SetUpImage() {
     // Read headers into string
     int nheaders(0);
     std::string header;
-    GetFitsHeaders(nheaders, header);
+    GetFitsHeaderString(nheaders, header);
 
     // Headers as String vector to pass to converter
-    casacore::Vector<casacore::String> header_strings = FitsHeaderStrings(nheaders, header);
+    SetFitsHeaderStrings(nheaders, header);
 
     casacore::Record unused_headers;
     casacore::LogSink sink;
@@ -293,7 +297,7 @@ void CartaFitsImage::SetUpImage() {
     try {
         // Set coordinate system
         coord_sys = casacore::ImageFITSConverter::getCoordinateSystem(
-            stokes_fits_value, unused_headers, header_strings, log, 0, _shape, drop_stokes);
+            stokes_fits_value, unused_headers, _image_header_strings, log, 0, _shape, drop_stokes);
     } catch (const casacore::AipsError& err) {
         if (err.getMesg().startsWith("TabularCoordinate")) {
             // Spectral axis defined in velocity fails if no rest freq to convert to frequencies
@@ -346,7 +350,7 @@ void CartaFitsImage::SetUpImage() {
     }
 }
 
-void CartaFitsImage::GetFitsHeaders(int& nheaders, std::string& hdrstr) {
+void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     // Read header values into single string, and store some image parameters.
     // Returns string and number of keys contained in string.
     // Throws exception if any headers missing.
@@ -390,6 +394,9 @@ void CartaFitsImage::GetFitsHeaders(int& nheaders, std::string& hdrstr) {
         status = 0;
         fits_read_key(fptr, TLONG, key.c_str(), &blank_value, comment, &status);
         _has_blanks = !status;
+    } else {
+        // For float (-32) and double (-64) mask is represented by NaN
+        _has_blanks = true;
     }
 
     // Get headers to set up image:
@@ -434,31 +441,40 @@ void CartaFitsImage::GetFitsHeaders(int& nheaders, std::string& hdrstr) {
     CloseFile();
 }
 
-casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings(int nheaders, const std::string& header) {
-    // Return header string as vector of 80-char strings. Also returns number of headers and header string.
-    casacore::Vector<casacore::String> header_strings(nheaders);
+void CartaFitsImage::SetFitsHeaderStrings(int nheaders, const std::string& header) {
+    // Set header strings as vector of 80-char strings, with and without history headers.
+    _all_header_strings.resize(nheaders);
+    std::vector<casacore::String> no_history_strings;
     size_t pos(0);
 
     for (int i = 0; i < nheaders; ++i) {
-        header_strings(i) = header.substr(pos, 80);
+        casacore::String hstring = header.substr(pos, 80);
+        _all_header_strings(i) = hstring;
+
+        if (!hstring.startsWith("HISTORY")) {
+            no_history_strings.push_back(hstring);
+        }
+
         pos += 80;
     }
 
-    _fits_header_strings = header_strings;
-
-    return header_strings;
+    // For setting up image
+    _image_header_strings = no_history_strings;
 }
 
 casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings() {
-    // Return headers as string vector
-    if (!_fits_header_strings.empty()) {
-        return _fits_header_strings;
+    // Return all headers as string vector
+    if (_all_header_strings.empty()) {
+        // Headers as single string
+        int nheaders(0);
+        std::string fits_headers;
+        GetFitsHeaderString(nheaders, fits_headers);
+
+        // Headers as vector of strings
+        SetFitsHeaderStrings(nheaders, fits_headers);
     }
 
-    int nheaders;
-    std::string fits_headers;
-    GetFitsHeaders(nheaders, fits_headers);
-    return FitsHeaderStrings(nheaders, fits_headers);
+    return _all_header_strings;
 }
 
 casacore::CoordinateSystem CartaFitsImage::SetCoordinateSystem(
@@ -1405,11 +1421,15 @@ void CartaFitsImage::SetPixelMask() {
             break;
         }
         case -32: {
-            ok = GetPixelMask<float>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetNanPixelMask<float>(mask_lattice);
             break;
         }
         case -64: {
-            ok = GetPixelMask<double>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetNanPixelMask<double>(mask_lattice);
+            break;
+        }
+        default: {
+            ok = false;
             break;
         }
     }
@@ -1422,4 +1442,15 @@ void CartaFitsImage::SetPixelMask() {
     }
 
     CloseFile();
+}
+
+bool CartaFitsImage::doGetNanMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
+    // Create mask from finite (not NaN or infinite) values in slice
+    casacore::Array<float> data;
+    if (doGetSlice(data, section)) {
+        buffer = isFinite(data);
+        return true;
+    }
+
+    return false;
 }
