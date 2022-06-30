@@ -598,7 +598,8 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
     region_points.push_back(first_point);
 
     double total_length = GetTotalSegmentLength(region_points);
-    double target_segment_length = total_length / num_vertices;
+    double npoly_vertices = std::min((double)num_vertices, total_length);
+    double target_segment_length = total_length / npoly_vertices;
 
     // Divide each region polygon segment into target number of segments with target length
     for (size_t i = 1; i < region_points.size(); ++i) {
@@ -606,16 +607,22 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
         auto delta_x = region_points[i].x() - region_points[i - 1].x();
         auto delta_y = region_points[i].y() - region_points[i - 1].y();
         auto segment_length = sqrt((delta_x * delta_x) + (delta_y * delta_y));
-        auto dir_x = delta_x / segment_length;
-        auto dir_y = delta_y / segment_length;
-
         auto target_nsegment = round(segment_length / target_segment_length);
-        auto target_length = segment_length / target_nsegment;
+
+        // LCPolygon mask sets almost horizontal segment as a range of x to next point
+        if (abs(delta_y / delta_x) < 0.1) {
+            // one point per y
+            target_nsegment = abs(delta_y);
+        }
 
         auto first_segment_point(region_points[i - 1]);
         polygon_points.push_back(first_segment_point);
+
         auto first_x(first_segment_point.x());
         auto first_y(first_segment_point.y());
+        auto dir_x = delta_x / segment_length;
+        auto dir_y = delta_y / segment_length;
+        auto target_length = segment_length / target_nsegment;
 
         for (size_t j = 1; j < target_nsegment; ++j) {
             auto length_from_first = j * target_length;
