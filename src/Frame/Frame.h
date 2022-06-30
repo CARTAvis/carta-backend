@@ -189,7 +189,8 @@ public:
     void StopMomentCalc();
 
     // Image fitting
-    bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response);
+    bool FitImage(
+        const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, StokesRegion* stokes_region = nullptr);
 
     // Save as a new file or export sub-image to CASA/FITS format
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,

@@ -969,6 +969,56 @@ void RegionHandler::StopPvCalc(int file_id) {
     }
 }
 
+bool RegionHandler::FitImage(
+    const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame) {
+    int file_id(fitting_request.file_id());
+    int region_id(fitting_request.region_id());
+
+    if (region_id == 0) {
+        region_id = TEMP_FOV_REGION_ID;
+
+        auto fov_info(fitting_request.fov_info());
+        std::vector<CARTA::Point> points = {fov_info.control_points().begin(), fov_info.control_points().end()};
+        RegionState region_state(fitting_request.file_id(), fov_info.region_type(), points, fov_info.rotation());
+        auto csys = frame->CoordinateSystem();
+
+        if (!SetRegion(region_id, region_state, csys)) {
+            spdlog::error("Failed to set up field of view region!");
+            fitting_response.set_message("failed to set up field of view region");
+            fitting_response.set_success(false);
+            return false;
+        }
+    } else {
+        // TODO: support image fitting with regions
+        fitting_response.set_message("region not supported");
+        fitting_response.set_success(false);
+        return false;
+    }
+
+    // Save frame pointer
+    _frames[file_id] = frame;
+
+    AxisRange z_range(frame->CurrentZ());
+    int stokes = frame->CurrentStokes();
+    StokesRegion stokes_region;
+    std::shared_ptr<casacore::LCRegion> lc_region;
+
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
+        fitting_response.set_message("region is outside image or is not closed");
+        fitting_response.set_success(false);
+        return false;
+    }
+
+    bool success = false;
+    success = frame->FitImage(fitting_request, fitting_response, &stokes_region);
+
+    if (region_id == TEMP_FOV_REGION_ID) {
+        RemoveRegion(region_id);
+    }
+
+    return success;
+}
+
 // ********************************************************************
 // Fill data stream messages:
 // These always use a callback since there may be multiple region/file requirements
