@@ -7,7 +7,7 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
-#include <chrono>
+#include <fitsio.h>
 
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/images/Images/FITSImage.h>
@@ -30,6 +30,7 @@ private:
     std::string _unzip_file;
     casacore::uInt _hdu_num;
 
+    int GetNumHeaders(const std::string& filename, int hdu);
     void RemoveHistoryBeam(unsigned int hdu_num);
 };
 
@@ -76,6 +77,16 @@ void FitsLoader::OpenFile(const std::string& hdu) {
 
         // Default is casacore::FITSImage; if fails, try CartaFitsImage
         bool use_casacore_fits(true);
+        auto num_headers = GetNumHeaders(_filename, hdu_num);
+
+        if (num_headers == 0) {
+            throw(casacore::AipsError("Error reading FITS file."));
+        }
+
+        if (num_headers > 2000) {
+            // casacore::FITSImage parses HISTORY
+            use_casacore_fits = false;
+        }
 
         try {
             if (_is_gz) {
@@ -88,9 +99,11 @@ void FitsLoader::OpenFile(const std::string& hdu) {
                     // use casacore for unzipped FITS file
                     _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
                 }
-            } else {
+            } else if (use_casacore_fits) {
                 _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
                 RemoveHistoryBeam(hdu_num);
+            } else {
+                _image.reset(new CartaFitsImage(_filename, hdu_num));
             }
         } catch (const casacore::AipsError& err) {
             if (use_casacore_fits) {
@@ -126,6 +139,31 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             _data_type = fits_image->internalDataType();
         }
     }
+}
+
+int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {
+    // Return number of FITS headers, 0 if error.
+    int num_headers(0);
+
+    // Open file read-only
+    fitsfile* fptr(nullptr);
+    int status(0);
+    fits_open_file(&fptr, filename.c_str(), 0, &status);
+    if (status) {
+        return num_headers;
+    }
+
+    // Advance to hdu (FITS hdu is 1-based)
+    int* hdutype(nullptr);
+    fits_movabs_hdu(fptr, hdu + 1, hdutype, &status);
+    if (status) {
+        return num_headers;
+    }
+
+    fits_get_hdrspace(fptr, &num_headers, nullptr, &status);
+    fits_close_file(fptr, &status);
+
+    return num_headers;
 }
 
 void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {

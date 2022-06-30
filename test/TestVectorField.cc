@@ -842,7 +842,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(frame);
+        VectorFieldCalculator vector_field_calculator(0, frame);
         vector_field_calculator.DoCalculations(callback);
 
         // Check results
@@ -905,7 +905,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(frame);
+        VectorFieldCalculator vector_field_calculator(0, frame);
         vector_field_calculator.DoCalculations(callback);
 
         // Check results
@@ -950,7 +950,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(frame);
+        VectorFieldCalculator vector_field_calculator(0, frame);
         vector_field_calculator.DoCalculations(callback);
 
         if (stokes_intensity > -1) {
@@ -1010,7 +1010,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(frame);
+        VectorFieldCalculator vector_field_calculator(0, frame);
         vector_field_calculator.DoCalculations(callback);
 
         // =============================================================================

@@ -728,18 +728,11 @@ bool Frame::FillRegionHistogramData(
     for (auto& histogram_config : requirements) {
         auto t_start_image_histogram = std::chrono::high_resolution_clock::now();
 
-        // create and fill region histogram data message
-        CARTA::RegionHistogramData histogram_data;
-        histogram_data.set_file_id(file_id);
-        histogram_data.set_region_id(region_id);
-        histogram_data.set_progress(1.0);
-
         // Set channel
         int z = histogram_config.channel;
         if ((z == CURRENT_Z) || (Depth() == 1)) {
             z = CurrentZ();
         }
-        histogram_data.set_channel(z);
 
         // Use number of bins in requirements
         int num_bins = histogram_config.num_bins;
@@ -748,7 +741,9 @@ bool Frame::FillRegionHistogramData(
         if (!GetStokesTypeIndex(histogram_config.coordinate, stokes)) {
             continue;
         }
-        histogram_data.set_stokes(stokes);
+
+        // create and fill region histogram data message
+        auto histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
 
         // fill histogram submessage from cache (loader or local)
         auto* histogram = histogram_data.mutable_histograms();
@@ -1001,11 +996,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         }
 
         // Set response message
-        CARTA::RegionStatsData stats_data;
-        stats_data.set_file_id(file_id);
-        stats_data.set_region_id(region_id);
-        stats_data.set_channel(z);
-        stats_data.set_stokes(stokes);
+        auto stats_data = Message::RegionStatsData(file_id, region_id, z, stokes);
 
         // Set required stats types
         std::vector<CARTA::StatsType> required_stats;
@@ -1112,13 +1103,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     }
 
     if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
-        CARTA::SpatialProfileData spatial_data;
-        spatial_data.set_x(x);
-        spatial_data.set_y(y);
-        spatial_data.set_channel(CurrentZ());
-        spatial_data.set_stokes(CurrentStokes());
-        spatial_data.set_value(cursor_value_with_current_stokes);
-
+        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
         spatial_data_vec.push_back(spatial_data);
         return true;
     }
@@ -1158,12 +1143,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // set message fields
-        CARTA::SpatialProfileData spatial_data;
-        spatial_data.set_x(x);
-        spatial_data.set_y(y);
-        spatial_data.set_channel(CurrentZ());
-        spatial_data.set_stokes(stokes);
-        spatial_data.set_value(cursor_value);
+        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
 
         // add profiles
         std::vector<float> profile;
@@ -1466,9 +1446,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
 
         // Create final profile message for callback
-        CARTA::SpectralProfileData profile_message;
-        profile_message.set_stokes(CurrentStokes());
-        profile_message.set_progress(1.0);
+        auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
         auto spectral_profile = profile_message.add_profiles();
         spectral_profile->set_coordinate(config.coordinate);
         // point spectral profiles only have one stats type
@@ -1569,9 +1547,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         // reset profile timer and send partial profile message
                         t_start_profile = t_end_slice;
 
-                        CARTA::SpectralProfileData partial_data;
-                        partial_data.set_stokes(CurrentStokes());
-                        partial_data.set_progress(progress);
+                        auto partial_data = Message::SpectralProfileData(CurrentStokes(), progress);
                         auto partial_profile = partial_data.add_profiles();
                         partial_profile->set_stats_type(config.all_stats[0]);
                         partial_profile->set_coordinate(config.coordinate);
@@ -1789,17 +1765,38 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response) {
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, StokesRegion* stokes_region) {
     if (!_image_fitter) {
-        _image_fitter = std::make_unique<ImageFitter>(_width, _height);
+        _image_fitter = std::make_unique<ImageFitter>();
     }
 
     bool success = false;
+
     if (_image_fitter) {
-        FillImageCache();
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
-        success = _image_fitter->FitImage(_image_cache.get(), initial_values, fitting_response);
+
+        if (stokes_region != nullptr) {
+            casacore::IPosition region_shape = GetRegionShape(*stokes_region);
+            spdlog::info("Creating region subimage data with shape {} x {}.", region_shape(0), region_shape(1));
+
+            std::vector<float> region_data;
+            if (!GetRegionData(*stokes_region, region_data)) {
+                spdlog::error("Failed to get data in the region!");
+                fitting_response.set_message("failed to get data");
+                fitting_response.set_success(false);
+                return false;
+            }
+
+            casacore::IPosition origin(2, 0, 0);
+            casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
+
+            success = _image_fitter->FitImage(
+                region_shape(0), region_shape(1), region_data.data(), initial_values, fitting_response, region_origin(0), region_origin(1));
+        } else {
+            FillImageCache();
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_response);
+        }
     }
 
     return success;
