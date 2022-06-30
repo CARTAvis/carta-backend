@@ -24,13 +24,8 @@ public:
         std::shared_ptr<casacore::CoordinateSystem> csys) {
         // Define RegionState for line region
         std::vector<CARTA::Point> control_points;
-        CARTA::Point point;
-        point.set_x(endpoints[0]);
-        point.set_y(endpoints[1]);
-        control_points.push_back(point);
-        point.set_x(endpoints[2]);
-        point.set_y(endpoints[3]);
-        control_points.push_back(point);
+        control_points.push_back(Message::Point(endpoints[0], endpoints[1]));
+        control_points.push_back(Message::Point(endpoints[2], endpoints[3]));
         RegionState region_state(file_id, CARTA::RegionType::LINE, control_points, 0.0);
 
         // Set region

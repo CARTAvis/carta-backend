@@ -469,23 +469,11 @@ std::vector<CARTA::Point> Region::GetRectangleMidpoints() {
     RectanglePointsToCorners(region_state.control_points, region_state.rotation, x, y);
 
     std::vector<CARTA::Point> midpoints;
-    CARTA::Point midpoint;
     // start with right side brc, trc
-    midpoint.set_x((x[1] + x[2]) / 2.0);
-    midpoint.set_y((y[1] + y[2]) / 2.0);
-    midpoints.push_back(midpoint);
-
-    midpoint.set_x((x[2] + x[3]) / 2.0);
-    midpoint.set_y((y[2] + y[3]) / 2.0);
-    midpoints.push_back(midpoint);
-
-    midpoint.set_x((x[3] + x[0]) / 2.0);
-    midpoint.set_y((y[3] + y[0]) / 2.0);
-    midpoints.push_back(midpoint);
-
-    midpoint.set_x((x[0] + x[1]) / 2.0);
-    midpoint.set_y((y[0] + y[1]) / 2.0);
-    midpoints.push_back(midpoint);
+    midpoints.push_back(Message::Point((x[1] + x[2]) / 2.0, (y[1] + y[2]) / 2.0));
+    midpoints.push_back(Message::Point((x[2] + x[3]) / 2.0, (y[2] + y[3]) / 2.0));
+    midpoints.push_back(Message::Point((x[3] + x[0]) / 2.0, (y[3] + y[0]) / 2.0));
+    midpoints.push_back(Message::Point((x[0] + x[1]) / 2.0, (y[0] + y[1]) / 2.0));
 
     return midpoints;
 }
@@ -581,10 +569,7 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
         RectanglePointsToCorners(region_state.control_points, region_state.rotation, x, y);
 
         for (size_t i = 0; i < x.size(); ++i) {
-            CARTA::Point point;
-            point.set_x(x(i));
-            point.set_y(y(i));
-            region_points.push_back(point);
+            region_points.push_back(Message::Point(x(i), y(i)));
         }
     } else if (region_type == CARTA::RegionType::POLYGON) {
         region_points = region_state.control_points;
@@ -628,10 +613,7 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
             auto length_from_first = j * target_length;
             auto x_offset = dir_x * length_from_first;
             auto y_offset = dir_y * length_from_first;
-            CARTA::Point point;
-            point.set_x(first_x + x_offset);
-            point.set_y(first_y + y_offset);
-            polygon_points.push_back(point);
+            polygon_points.push_back(Message::Point(first_x + x_offset, first_y + y_offset));
         }
     }
 
@@ -661,10 +643,7 @@ std::vector<CARTA::Point> Region::GetApproximateEllipsePoints(int num_vertices) 
         auto x_offset = (cos_rotation * rot_bmin) - (sin_rotation * rot_bmaj);
         auto y_offset = (sin_rotation * rot_bmin) + (cos_rotation * rot_bmaj);
 
-        CARTA::Point point;
-        point.set_x(cx + x_offset);
-        point.set_y(cy + y_offset);
-        polygon_points.push_back(point);
+        polygon_points.push_back(Message::Point(cx + x_offset, cy + y_offset));
     }
     return polygon_points;
 }
