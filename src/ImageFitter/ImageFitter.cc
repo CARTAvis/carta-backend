@@ -42,7 +42,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     if (_fit_data.n_notnan < _num_components * 6) {
         fitting_response.set_message("insufficient data points");
         fitting_response.set_success(success);
-        
+
         gsl_vector_free(_fit_values);
         gsl_vector_free(_fit_errors);
         return false;
