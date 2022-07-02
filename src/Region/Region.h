@@ -164,12 +164,14 @@ private:
     std::shared_ptr<casacore::LCRegion> GetCachedPolygonRegion(int file_id);
     std::shared_ptr<casacore::LCRegion> GetAppliedPolygonRegion(
         int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape);
-    std::vector<CARTA::Point> GetReferencePolygonPoints(int num_vertices);
-    std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
+    std::vector<std::vector<CARTA::Point>> GetReferencePolygonPoints(int num_vertices);
+    std::vector<std::vector<CARTA::Point>> GetApproximatePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
     double GetTotalSegmentLength(std::vector<CARTA::Point>& points);
     bool ConvertPointsToImagePixels(const std::vector<CARTA::Point>& points, std::shared_ptr<casacore::CoordinateSystem> output_csys,
         casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
+    void RemoveHorizontalPolygonPoints(casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
+    bool ValuesNear(float val1, float val2);
 
     // Region applied to any image; used for export
     std::shared_ptr<casacore::LCRegion> GetCachedLCRegion(int file_id);
