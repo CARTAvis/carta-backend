@@ -23,14 +23,6 @@ pipeline {
                             }
                         }
                     }
-                    post {
-                        success {
-                            slackSend color: 'good', message: 'Ubuntu backend build success';
-                        }
-                        failure {
-                            slackSend color: 'danger', message: 'Ubuntu backend build failed';
-                        }
-                    }
                 }
                 stage('macOS 12') {
                     agent {
@@ -50,14 +42,6 @@ pipeline {
                             }
                         }
                     }
-                    post {
-                        success {
-                            slackSend color: 'good', message: 'macOS backend build success';
-                        }
-                        failure {
-                            slackSend color: 'danger', message: 'macOS backend build failed';
-                        }
-                    }
                 }
                 stage('AlmaLinux 8.5') {
                     agent {
@@ -74,14 +58,6 @@ pipeline {
                                 sh "make -j 32"
                                 sh "./carta_backend --version"
                             }
-                        }
-                    }
-                    post {
-                        success {
-                            slackSend color: 'good', message: 'RedHat backend build success';
-                        }
-                        failure {
-                            slackSend color: 'danger', message: 'RedHat backend build success';
                         }
                     }
                 }
@@ -104,12 +80,6 @@ pipeline {
                         always {
                             junit 'build/test/ubuntu_test_detail.xml'
                         }
-                        success {
-                            slackSend color: 'good', message: 'Ubuntu Unit Tests success';
-                        }
-                        failure {
-                            slackSend color: 'danger', message: 'Ubuntu Unit Tests failure';
-                        }
                     }   
                 }
                 stage('macOS 12') {
@@ -127,12 +97,6 @@ pipeline {
                         always {
                             junit 'build/test/macos_test_detail.xml'
                         }
-                        success {
-                            slackSend color: 'good', message: 'macOS Unit Tests success';
-                        }
-                        failure {
-                            slackSend color: 'danger', message: 'macOS Unit Tests failure';
-                        }   
                     }
                 }
                 stage('AlmaLinux 8.5') {
@@ -150,12 +114,6 @@ pipeline {
                         always {
                             junit 'build/test/almalinux_test_detail.xml'
                         }
-                        success {
-                            slackSend color: 'good', message: 'macOS Unit Tests success';
-                        }
-                        failure {
-                            slackSend color: 'danger', message: 'macOS Unit Tests failure';
-                        }
                     }
                 }
             }
@@ -163,10 +121,10 @@ pipeline {
     }
     post {
         success {
-            slackSend color: 'good', message: "Success - ${env.JOB_NAME} ${env.BUILD_NUMBER} ${env.BRANCH_NAME} ${env.GIT_BRANCH} (<${env.RUN_DISPLAY_URL}|open>)";
+            slackSend color: 'good', message: "Success - ${env.BRANCH_NAME} ${env.GIT_REVISION:0:7} (<${env.RUN_DISPLAY_URL}|open>)";
         }
         failure {
-             slackSend color: 'danger', message: "Failed - ${env.JOB_NAME} ${env.BUILD_NUMBER} ${env.BRANCH_NAME} ${env.GIT_BRANCH} (<${env.RUN_DISPLAY_URL}|open>)";
+             slackSend color: 'danger', message: "Failed - ${env.BRANCH_NAME} ${env.GIT_REVISION:0:7} (<${env.RUN_DISPLAY_URL}|open>)";
         }
     }
 }
