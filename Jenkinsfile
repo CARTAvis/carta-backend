@@ -1,7 +1,7 @@
 pipeline {
     agent none
     environment {
-        COMMIT_ID = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+        COMMIT_ID=''
     }
     options {
         preserveStashes() 
@@ -15,6 +15,9 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            script {
+                                COMMIT_ID = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                            }
                             sh "uname -a"
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
@@ -127,7 +130,7 @@ pipeline {
             slackSend color: 'good', message: "Success - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
         failure {
-             slackSend color: 'danger', message: "Failed - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+             slackSend color: 'danger', message: "Failed - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
     }
 }
