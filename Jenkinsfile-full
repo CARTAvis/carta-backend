@@ -1,14 +1,8 @@
-void setBuildStatus(String message, String state) {
-  step([
-      $class: "GitHubCommitStatusSetter",
-      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/CARTAvis/carta-backend"],
-      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
-      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
-      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
-  ]);
-}
 pipeline {
     agent none
+    environment {
+        COMMIT_ID=''
+    }
     options {
         preserveStashes()
         timeout(time: 2, unit: 'HOURS') 
@@ -37,11 +31,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "Ubuntu 18.04 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -63,11 +54,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "Ubuntu 20.04 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -89,11 +77,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "Ubuntu 22.04 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -114,11 +99,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "macOS 11 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -128,6 +110,9 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            script {
+                                COMMIT_ID = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                            }
                             sh "export PATH=/usr/local/bin:$PATH"
                             sh "git submodule update --init --recursive"
                             dir ('build') {
@@ -139,11 +124,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "macOS 12 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -165,11 +147,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "RedHat 7 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -191,11 +170,8 @@ pipeline {
                         }
                     }
                     post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: "RedHat 8 - carta-backend build - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -219,6 +195,9 @@ pipeline {
                         always {
                             junit 'test/ubuntu_bionic_test_detail.xml'
                         }
+                        failure {
+                            slackSend color: 'danger', message: "Ubuntu 18.04 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                        }
                     }
                 }
                 stage('2 Ubuntu 20.04') {
@@ -236,6 +215,9 @@ pipeline {
                     post {
                         always {
                             junit 'test/ubuntu_focal_test_detail.xml'
+                        }
+                        failure {
+                            slackSend color: 'danger', message: "Ubuntu 20.04 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }   
                     }   
                 }
@@ -255,6 +237,9 @@ pipeline {
                         always {
                             junit 'test/ubuntu_jammy_test_detail.xml'
                         }
+                        failure {
+                            slackSend color: 'danger', message: "Ubuntu 22.04 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                        }
                     }   
                 }
                 stage('4 macOS 11') {
@@ -272,12 +257,9 @@ pipeline {
                         always {
                             junit 'build/test/macos11_test_detail.xml'
                         }
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
-                        }   
+                            slackSend color: 'danger', message: "macOS 11 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                        }
                     }
                 }
                 stage('5 macOS 12') {
@@ -295,12 +277,9 @@ pipeline {
                         always {
                             junit 'build/test/macos12_test_detail.xml'
                         }
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
-                        }   
+                            slackSend color: 'danger', message: "macOS 12 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                        }
                     }
                 }
                 stage('6 RHEL7') {
@@ -319,6 +298,9 @@ pipeline {
                         always {
                             junit 'test/rhel7_test_detail.xml'
                         }
+                        failure {
+                            slackSend color: 'danger', message: "RedHat 7 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                        }
                     }
                 }
                 stage('7 RHEL8') {
@@ -336,6 +318,9 @@ pipeline {
                     post {
                         always {
                             junit 'test/rhel8_test_detail.xml'
+                        }
+                        failure {
+                            slackSend color: 'danger', message: "RedHat 8 - Unit Tests - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                         }
                     }
                 }
@@ -423,6 +408,11 @@ pipeline {
                                 file_browser()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test session and file_browser - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                     stage('animator') {
                         agent {
@@ -435,6 +425,11 @@ pipeline {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 animator()
+                            }
+                        }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test animator - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                             }
                         }
                     }
@@ -451,6 +446,11 @@ pipeline {
                                 region_statistics()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test region_statistics - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                     stage('region_manipulation') {
                         agent {
@@ -463,6 +463,11 @@ pipeline {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_manipulation()
+                            }
+                        }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test region_manipulation - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                             }
                         }
                     }
@@ -479,6 +484,11 @@ pipeline {
                                 cube_histogram()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test cube_histogram - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                     stage('pv_generator') {
                         agent {
@@ -491,6 +501,11 @@ pipeline {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 pv_generator()
+                            }
+                        }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test pv_generator - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                             }
                         }
                     }
@@ -507,6 +522,11 @@ pipeline {
                                 raster_tiles()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test raster_tiles - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                     stage('catalog') {
                         agent {
@@ -519,6 +539,11 @@ pipeline {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 catalog()
+                            }
+                        }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test catalog - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                             }
                         }
                     }
@@ -535,6 +560,11 @@ pipeline {
                                 moment()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test moment - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                     stage('resume') {
                         agent {
@@ -547,6 +577,11 @@ pipeline {
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 8 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 resume()
+                            }
+                        }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test resume - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
                             }
                         }
                     }
@@ -563,6 +598,11 @@ pipeline {
                                 match()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test match - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                     stage('close_file') {
                         agent {
@@ -577,12 +617,23 @@ pipeline {
                                 close_file()
                             }
                         }
+                        post {
+                            failure {
+                                slackSend color: 'danger', message: "ICD test close_file - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            }
+                        }
                     }
                 }
             }
         }
     }
+    post {
+        success {
+            slackSend color: 'good', message: "Full ICD test suite - Success - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+        }
+    }
 }
+
 def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone --depth 1 https://github.com/CARTAvis/carta-backend-ICD-test.git"

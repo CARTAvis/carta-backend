@@ -127,10 +127,10 @@ pipeline {
     }
     post {
         success {
-            slackSend color: 'good', message: "Success - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+            slackSend color: 'good', message: "carta-backend - Success - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
         failure {
-             slackSend color: 'danger', message: "Failed - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+             slackSend color: 'danger', message: "carta-backend - Fail - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
     }
 }
