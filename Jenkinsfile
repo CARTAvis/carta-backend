@@ -1,5 +1,8 @@
 pipeline {
     agent none
+    environment {
+        COMMIT_ID = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+    }
     options {
         preserveStashes() 
     }
@@ -121,10 +124,10 @@ pipeline {
     }
     post {
         success {
-            slackSend color: 'good', message: "Success - ${env.BRANCH_NAME} ${env.GIT_REVISION:0:7} (<${env.RUN_DISPLAY_URL}|open>)";
+            slackSend color: 'good', message: "Success - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
         failure {
-             slackSend color: 'danger', message: "Failed - ${env.BRANCH_NAME} ${env.GIT_REVISION:0:7} (<${env.RUN_DISPLAY_URL}|open>)";
+             slackSend color: 'danger', message: "Failed - ${env.BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
     }
 }
