@@ -1,12 +1,3 @@
-void setBuildStatus(String message, String state) {
-  step([
-      $class: "GitHubCommitStatusSetter",
-      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/CARTAvis/carta-backend"],
-      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
-      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
-      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
-  ]);
-}
 pipeline {
     agent none
     options {
@@ -34,10 +25,10 @@ pipeline {
                     }
                     post {
                         success {
-                            setBuildStatus("build succeeded", "SUCCESS");
+                            slackSend color: 'good', message: 'Ubuntu backend build success';
                         }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: 'Ubuntu backend build failed';
                         }
                     }
                 }
@@ -61,10 +52,10 @@ pipeline {
                     }
                     post {
                         success {
-                            setBuildStatus("build succeeded", "SUCCESS");
+                            slackSend color: 'good', message: 'macOS backend build success';
                         }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: 'macOS backend build failed';
                         }
                     }
                 }
@@ -87,10 +78,10 @@ pipeline {
                     }
                     post {
                         success {
-                            setBuildStatus("build succeeded", "SUCCESS");
+                            slackSend color: 'good', message: 'RedHat backend build success';
                         }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: 'RedHat backend build success';
                         }
                     }
                 }
@@ -114,10 +105,10 @@ pipeline {
                             junit 'build/test/ubuntu_test_detail.xml'
                         }
                         success {
-                            setBuildStatus("build succeeded", "SUCCESS");
+                            slackSend color: 'good', message: 'Ubuntu Unit Tests success';
                         }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: 'Ubuntu Unit Tests failure';
                         }
                     }   
                 }
@@ -137,10 +128,10 @@ pipeline {
                             junit 'build/test/macos_test_detail.xml'
                         }
                         success {
-                            setBuildStatus("build succeeded", "SUCCESS");
+                            slackSend color: 'good', message: 'macOS Unit Tests success';
                         }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: 'macOS Unit Tests failure';
                         }   
                     }
                 }
@@ -160,14 +151,22 @@ pipeline {
                             junit 'build/test/almalinux_test_detail.xml'
                         }
                         success {
-                            setBuildStatus("build succeeded", "SUCCESS");
+                            slackSend color: 'good', message: 'macOS Unit Tests success';
                         }
                         failure {
-                            setBuildStatus("build failed", "FAILURE");
+                            slackSend color: 'danger', message: 'macOS Unit Tests failure';
                         }
                     }
                 }
             }
+        }
+    }
+    post {
+        success {
+            slackSend color: 'good', message: "Success - ${env.JOB_NAME} ${env.BUILD_NUMBER} ${env.BRANCH_NAME} ${env.GIT_BRANCH} (<${env.RUN_DISPLAY_URL}|open>)";
+        }
+        failure {
+             slackSend color: 'danger', message: "Failed - ${env.JOB_NAME} ${env.BUILD_NUMBER} ${env.BRANCH_NAME} ${env.GIT_BRANCH} (<${env.RUN_DISPLAY_URL}|open>)";
         }
     }
 }
