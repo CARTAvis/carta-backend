@@ -60,7 +60,7 @@ public:
 
         std::string file_path =
             ImageGenerator::GeneratedFitsImagePath("128 128", fmt::format("--gaussian-model {} -s 0", gaussian_model_string));
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(file_path));
         std::unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
 
         CARTA::FittingResponse fitting_response;

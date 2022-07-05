@@ -15,14 +15,14 @@
 
 namespace carta {
 
-class ConcatLoader : public FileLoader {
+class ConcatLoader : public BaseFileLoader {
 public:
     ConcatLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-ConcatLoader::ConcatLoader(const std::string& filename) : FileLoader(filename) {}
+ConcatLoader::ConcatLoader(const std::string& filename) : BaseFileLoader(filename) {}
 
 void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {

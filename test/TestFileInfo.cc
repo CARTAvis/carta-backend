@@ -47,7 +47,7 @@ public:
     static void CheckFileExtInfoLoader(
         const std::string& request_filename, const CARTA::FileType& request_file_type, const std::string& request_hdu = "") {
         std::string fullname = SAMPLE_FILES_PATH + "/" + request_filename;
-        auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(fullname));
+        auto loader = std::shared_ptr<carta::FileLoader>(carta::BaseFileLoader::GetLoader(fullname));
         FileExtInfoLoader ext_info_loader(loader);
         bool file_info_ok;
         std::string message;

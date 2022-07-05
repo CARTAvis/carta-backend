@@ -21,7 +21,7 @@
 
 namespace carta {
 
-class Hdf5Loader : public FileLoader {
+class Hdf5Loader : public BaseFileLoader {
 public:
     Hdf5Loader(const std::string& filename);
 

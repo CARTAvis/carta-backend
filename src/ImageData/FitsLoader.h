@@ -19,7 +19,7 @@
 
 namespace carta {
 
-class FitsLoader : public FileLoader {
+class FitsLoader : public BaseFileLoader {
 public:
     FitsLoader(const std::string& filename, bool is_gz = false);
     ~FitsLoader();
@@ -34,7 +34,7 @@ private:
     void RemoveHistoryBeam(unsigned int hdu_num);
 };
 
-FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
+FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : BaseFileLoader(filename, "", is_gz) {}
 
 FitsLoader::~FitsLoader() {
     // Remove decompressed fits.gz file

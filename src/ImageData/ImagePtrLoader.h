@@ -11,14 +11,14 @@
 
 namespace carta {
 
-class ImagePtrLoader : public FileLoader {
+class ImagePtrLoader : public BaseFileLoader {
 public:
     ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) : FileLoader("") {
+ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) : BaseFileLoader("") {
     _image = image;
 
     _image_shape = _image->shape();

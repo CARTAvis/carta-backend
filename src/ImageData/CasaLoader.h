@@ -15,7 +15,7 @@
 
 namespace carta {
 
-class CasaLoader : public FileLoader {
+class CasaLoader : public BaseFileLoader {
 public:
     CasaLoader(const std::string& filename);
 
@@ -25,7 +25,7 @@ private:
     casacore::TempImage<float>* ConvertImageToFloat(casacore::LatticeBase* lattice);
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
+CasaLoader::CasaLoader(const std::string& filename) : BaseFileLoader(filename) {}
 
 void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {

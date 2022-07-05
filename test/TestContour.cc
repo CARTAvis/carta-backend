@@ -26,7 +26,7 @@ public:
             file_path = ImageGenerator::GeneratedFitsImagePath(image_shape, image_opts);
         }
 
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
+        std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(file_path));
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
 
         spdlog::info("The generated image contains random pixels values with mean = 0 and STD = 1.");

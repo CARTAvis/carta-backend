@@ -14,7 +14,7 @@
 
 namespace carta {
 
-class MiriadLoader : public FileLoader {
+class MiriadLoader : public BaseFileLoader {
 public:
     MiriadLoader(const std::string& file);
 
@@ -23,7 +23,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 };
 
-MiriadLoader::MiriadLoader(const std::string& filename) : FileLoader(filename) {}
+MiriadLoader::MiriadLoader(const std::string& filename) : BaseFileLoader(filename) {}
 
 bool MiriadLoader::CanOpenFile(std::string& error) {
     // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.

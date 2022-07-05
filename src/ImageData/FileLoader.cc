@@ -26,7 +26,7 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string& directory) {
+FileLoader* BaseFileLoader::GetLoader(const std::string& filename, const std::string& directory) {
     if (!directory.empty()) {
         // filename is LEL expression for image(s) in directory
         return new ExprLoader(filename, directory);
@@ -61,7 +61,7 @@ FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string
     return nullptr;
 }
 
-FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+FileLoader* BaseFileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
     if (image) {
         return new ImagePtrLoader(image);
     } else {
@@ -70,7 +70,7 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
-FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
+BaseFileLoader::BaseFileLoader(const std::string& filename, const std::string& directory, bool is_gz)
     : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
     // Set initial modify time if filename is not LEL expression for file in directory
     if (directory.empty()) {
@@ -78,11 +78,11 @@ FileLoader::FileLoader(const std::string& filename, const std::string& directory
     }
 }
 
-bool FileLoader::CanOpenFile(std::string& /*error*/) {
+bool BaseFileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
+typename FileLoader::ImageRef BaseFileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
     }
@@ -99,14 +99,14 @@ typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     return _image;
 }
 
-void FileLoader::CloseImageIfUpdated() {
+void BaseFileLoader::CloseImageIfUpdated() {
     // Close image if updated when only the loader owns
     if (_image.unique() && ImageUpdated()) {
         _image->tempClose();
     }
 }
 
-bool FileLoader::ImageUpdated() {
+bool BaseFileLoader::ImageUpdated() {
     bool changed(false);
 
     // Do not close compressed image or run getstat on LEL ImageExpr (sets directory)
@@ -125,7 +125,7 @@ bool FileLoader::ImageUpdated() {
     return changed;
 }
 
-bool FileLoader::HasData(FileInfo::Data dl) const {
+bool BaseFileLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
@@ -145,19 +145,19 @@ bool FileLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-casacore::DataType FileLoader::GetDataType() {
+casacore::DataType BaseFileLoader::GetDataType() {
     return _data_type;
 }
 
-bool FileLoader::IsComplexDataType() {
+bool BaseFileLoader::IsComplexDataType() {
     return (_data_type == casacore::DataType::TpComplex) || (_data_type == casacore::DataType::TpDComplex);
 }
 
-casacore::IPosition FileLoader::GetShape() {
+casacore::IPosition BaseFileLoader::GetShape() {
     return _image_shape;
 }
 
-std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(const StokesSource& stokes_source) {
+std::shared_ptr<casacore::CoordinateSystem> BaseFileLoader::GetCoordinateSystem(const StokesSource& stokes_source) {
     if (stokes_source.IsOriginalImage()) {
         return _coord_sys;
     } else {
@@ -169,7 +169,8 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(cons
     return std::make_shared<casacore::CoordinateSystem>();
 }
 
-bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
+bool BaseFileLoader::FindCoordinateAxes(
+    casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message) {
     // Return image shape and axes for image. Spectral axis may or may not be z axis.
     // All parameters are return values.
     spectral_axis = -1;
@@ -276,7 +277,7 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, int& spectral_ax
     return true;
 }
 
-std::vector<int> FileLoader::GetRenderAxes() {
+std::vector<int> BaseFileLoader::GetRenderAxes() {
     // Determine which axes will be rendered
     std::vector<int> axes;
 
@@ -322,7 +323,7 @@ std::vector<int> FileLoader::GetRenderAxes() {
     return axes;
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
+bool BaseFileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
     StokesSource stokes_source = stokes_slicer.stokes_source;
     casacore::Slicer slicer = stokes_slicer.slicer;
     try {
@@ -392,7 +393,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
     }
 }
 
-bool FileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
+bool BaseFileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
     StokesSource stokes_source = stokes_slicer.stokes_source;
     casacore::Slicer slicer = stokes_slicer.slicer;
 
@@ -407,7 +408,7 @@ bool FileLoader::GetSubImage(const StokesSlicer& stokes_slicer, casacore::SubIma
     return true;
 }
 
-bool FileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
+bool BaseFileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
     StokesSource stokes_source = stokes_region.stokes_source;
     casacore::LattRegionHolder region = stokes_region.image_region;
 
@@ -422,7 +423,7 @@ bool FileLoader::GetSubImage(const StokesRegion& stokes_region, casacore::SubIma
     return true;
 }
 
-bool FileLoader::GetSubImage(
+bool BaseFileLoader::GetSubImage(
     const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
     auto image = GetImage();
     if (!image) {
@@ -434,7 +435,7 @@ bool FileLoader::GetSubImage(
     return true;
 }
 
-bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
+bool BaseFileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     // Obtains beam table from ImageInfo
     bool success(false);
     try {
@@ -481,15 +482,15 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     return success;
 }
 
-const casacore::IPosition FileLoader::GetStatsDataShape(FileInfo::Data ds) {
+const casacore::IPosition BaseFileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
 
-std::unique_ptr<casacore::ArrayBase> FileLoader::GetStatsData(FileInfo::Data ds) {
+std::unique_ptr<casacore::ArrayBase> BaseFileLoader::GetStatsData(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsData not implemented in this loader");
 }
 
-void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
+void BaseFileLoader::LoadStats2DBasic(FileInfo::Data ds) {
     if (HasData(ds)) {
         const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
 
@@ -551,7 +552,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
     }
 }
 
-void FileLoader::LoadStats2DHist() {
+void BaseFileLoader::LoadStats2DHist() {
     FileInfo::Data ds = FileInfo::Data::STATS_2D_HIST;
 
     if (HasData(ds)) {
@@ -580,7 +581,7 @@ void FileLoader::LoadStats2DHist() {
 
 // TODO: untested
 
-void FileLoader::LoadStats2DPercent() {
+void BaseFileLoader::LoadStats2DPercent() {
     FileInfo::Data dsr = FileInfo::Data::RANKS;
     FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
@@ -616,7 +617,7 @@ void FileLoader::LoadStats2DPercent() {
     }
 }
 
-void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
+void BaseFileLoader::LoadStats3DBasic(FileInfo::Data ds) {
     if (HasData(ds)) {
         const casacore::IPosition& stat_dims = GetStatsDataShape(ds);
 
@@ -667,7 +668,7 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
     }
 }
 
-void FileLoader::LoadStats3DHist() {
+void BaseFileLoader::LoadStats3DHist() {
     FileInfo::Data ds = FileInfo::Data::STATS_3D_HIST;
 
     if (HasData(ds)) {
@@ -693,7 +694,7 @@ void FileLoader::LoadStats3DHist() {
 
 // TODO: untested
 
-void FileLoader::LoadStats3DPercent() {
+void BaseFileLoader::LoadStats3DPercent() {
     FileInfo::Data dsr = FileInfo::Data::RANKS;
     FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
@@ -726,7 +727,7 @@ void FileLoader::LoadStats3DPercent() {
     }
 }
 
-void FileLoader::LoadImageStats(bool load_percentiles) {
+void BaseFileLoader::LoadImageStats(bool load_percentiles) {
     _z_stats.resize(_num_stokes);
     for (size_t s = 0; s < _num_stokes; s++) {
         _z_stats[s].resize(_depth);
@@ -830,55 +831,55 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     }
 }
 
-FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int z) {
+FileInfo::ImageStats& BaseFileLoader::GetImageStats(int current_stokes, int z) {
     if (!IsComputedStokes(current_stokes)) { // Note: loader cache does not support the computed stokes
         return (z >= 0 ? _z_stats[current_stokes][z] : _cube_stats[current_stokes]);
     }
     return _empty_stats;
 }
 
-bool FileLoader::GetCursorSpectralData(
+bool BaseFileLoader::GetCursorSpectralData(
     std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
+bool BaseFileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
     // Must be implemented in subclasses; should call before GetRegionSpectralData
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool BaseFileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetDownsampledRasterData(
+bool BaseFileLoader::GetDownsampledRasterData(
     std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetChunk(
+bool BaseFileLoader::GetChunk(
     std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::HasMip(int mip) const {
+bool BaseFileLoader::HasMip(int mip) const {
     return false;
 }
 
-bool FileLoader::UseTileCache() const {
+bool BaseFileLoader::UseTileCache() const {
     return false;
 }
 
-std::string FileLoader::GetFileName() {
+std::string BaseFileLoader::GetFileName() {
     return _filename;
 }
 
-double FileLoader::CalculateBeamArea() {
+double BaseFileLoader::CalculateBeamArea() {
     auto image = GetImage();
     if (!image) {
         return NAN;
@@ -895,7 +896,7 @@ double FileLoader::CalculateBeamArea() {
     return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());
 }
 
-bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
+bool BaseFileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     if (_stokes_indices.count(stokes_type)) {
         stokes_index = _stokes_indices[stokes_type];
         return true;
@@ -903,7 +904,7 @@ bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, 
     return false;
 }
 
-typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& stokes_source) {
+typename FileLoader::ImageRef BaseFileLoader::GetStokesImage(const StokesSource& stokes_source) {
     if (stokes_source.IsOriginalImage()) {
         return GetImage();
     }
@@ -932,19 +933,19 @@ typename FileLoader::ImageRef FileLoader::GetStokesImage(const StokesSource& sto
     return _computed_stokes_image;
 }
 
-void FileLoader::SetStokesCrval(float stokes_crval) {
+void BaseFileLoader::SetStokesCrval(float stokes_crval) {
     _stokes_crval = stokes_crval;
 }
 
-void FileLoader::SetStokesCrpix(float stokes_crpix) {
+void BaseFileLoader::SetStokesCrpix(float stokes_crpix) {
     _stokes_crpix = stokes_crpix;
 }
 
-void FileLoader::SetStokesCdelt(int stokes_cdelt) {
+void BaseFileLoader::SetStokesCdelt(int stokes_cdelt) {
     _stokes_cdelt = stokes_cdelt;
 }
 
-bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
+bool BaseFileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
     // Override in ExprLoader
     message = "Cannot save image type from loader.";
     return false;

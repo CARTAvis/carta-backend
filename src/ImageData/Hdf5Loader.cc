@@ -11,7 +11,7 @@
 
 namespace carta {
 
-Hdf5Loader::Hdf5Loader(const std::string& filename) : FileLoader(filename), _hdu("0") {}
+Hdf5Loader::Hdf5Loader(const std::string& filename) : BaseFileLoader(filename), _hdu("0") {}
 
 void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Explicitly handle empty HDU as the default 0

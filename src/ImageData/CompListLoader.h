@@ -15,14 +15,14 @@
 
 namespace carta {
 
-class CompListLoader : public FileLoader {
+class CompListLoader : public BaseFileLoader {
 public:
     CompListLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 };
 
-CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filename) {}
+CompListLoader::CompListLoader(const std::string& filename) : BaseFileLoader(filename) {}
 
 void CompListLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {

@@ -44,7 +44,7 @@ public:
 
 TEST_F(PvGeneratorTest, FitsPvImage) {
     auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     carta::RegionHandler region_handler;
 
@@ -113,7 +113,7 @@ TEST_F(PvGeneratorTest, FitsPvImage) {
 
 TEST_F(PvGeneratorTest, FitsPvImageHorizontalCut) {
     auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     carta::RegionHandler region_handler;
 
@@ -189,7 +189,7 @@ TEST_F(PvGeneratorTest, FitsPvImageHorizontalCut) {
 
 TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
     auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     carta::RegionHandler region_handler;
 
@@ -266,7 +266,7 @@ TEST_F(PvGeneratorTest, FitsPvImageVerticalCut) {
 TEST_F(PvGeneratorTest, TestNoSpectralAxis) {
     auto image_path = TestRoot() / "data/images/hdf5/noise_10px_10px.hdf5";
     auto path_string = GeneratedHdf5ImagePath("10 10 10");
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(path_string));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     carta::RegionHandler region_handler;
 

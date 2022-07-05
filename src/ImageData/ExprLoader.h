@@ -20,7 +20,7 @@
 
 namespace carta {
 
-class ExprLoader : public FileLoader {
+class ExprLoader : public BaseFileLoader {
 public:
     ExprLoader(const std::string& filename, const std::string& directory = "");
 
@@ -28,7 +28,7 @@ public:
     bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) override;
 };
 
-ExprLoader::ExprLoader(const std::string& filename, const std::string& directory) : FileLoader(filename, directory) {}
+ExprLoader::ExprLoader(const std::string& filename, const std::string& directory) : BaseFileLoader(filename, directory) {}
 
 void ExprLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {

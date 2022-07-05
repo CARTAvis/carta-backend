@@ -18,7 +18,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(TEST_COMMON_LIBS gtest gtest_main)
+set(TEST_COMMON_LIBS gmock gtest gtest_main)
 
 enable_testing()
 find_package(GTest)

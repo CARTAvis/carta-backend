@@ -63,7 +63,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const 
         // Create the loader -- don't block while doing this
         std::shared_ptr<FileLoader> loader_ptr;
         guard.unlock();
-        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename, directory));
+        loader_ptr = std::shared_ptr<FileLoader>(BaseFileLoader::GetLoader(filename, directory));
         guard.lock();
 
         // Check if the loader was added in the meantime
@@ -319,7 +319,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
+        image_loader = std::shared_ptr<FileLoader>(BaseFileLoader::GetLoader(image));
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
