@@ -34,7 +34,7 @@ std::vector<RegionProperties> RegionImportExport::GetImportedRegions(std::string
     error = _import_errors;
 
     if ((_import_regions.size() == 0) && error.empty()) {
-        error = "Import error: zero regions set. Regions may lie far outside image and cannot be converted to pixel coordinates.";
+        error = "Import error: zero regions set. No regions defined or regions lie outside image coordinate system.";
     }
 
     return _import_regions;

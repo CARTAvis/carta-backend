@@ -225,6 +225,7 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         if (IsDs9CoordSysKeyword(line)) {
             // Get ready for conversion
             ds9_coord_sys_ok = SetFileReferenceFrame(line);
+
             if (!ds9_coord_sys_ok) {
                 std::string csys_error = "coord sys " + line + " not supported.\n";
                 _import_errors.append(csys_error);
@@ -293,6 +294,10 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
 
 void Ds9ImportExport::SetImageReferenceFrame() {
     // Set image coord sys direction frame
+    if (!_coord_sys) {
+        return;
+    }
+
     if (_coord_sys->hasDirectionCoordinate()) {
         casacore::MDirection::Types reference_frame = _coord_sys->directionCoordinate().directionType();
         _image_ref_frame = casacore::MDirection::showType(reference_frame);
@@ -354,12 +359,15 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
         region_state = ImportRectangleRegion(parameters);
     } else if ((region_type.find("poly") != std::string::npos) || (region_type.find("line") != std::string::npos)) {
         region_state = ImportPolygonLineRegion(parameters);
-    } else if (region_type.find("vector") != std::string::npos) {
-        _import_errors.append("DS9 vector region not supported.\n");
-    } else if (region_type.find("text") != std::string::npos) {
-        _import_errors.append("DS9 text not supported.\n");
-    } else if (region_type.find("annulus") != std::string::npos) {
-        _import_errors.append("DS9 annulus region not supported.\n");
+    } else {
+        std::vector<std::string> ds9_regions{
+            "vector", "text", "ruler", "compass", "projection", "annulus", "panda", "epanda", "bpanda", "composite"};
+
+        if (std::find(ds9_regions.begin(), ds9_regions.end(), region_type) != ds9_regions.end()) {
+            _import_errors.append("DS9 " + region_type + " region not supported.\n");
+        } else {
+            throw(casacore::AipsError("Not a valid DS9 region file."));
+        }
     }
 
     if (region_state.RegionDefined()) {
@@ -423,7 +431,7 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
     std::vector<CARTA::Point> control_points;
     if (_pixel_coord) {
         control_points.push_back(Message::Point(param_quantities));
-    } else {
+    } else if (_coord_sys) {
         casacore::Vector<casacore::Double> pixel_coords;
         if (ConvertPointToPixels(_file_ref_frame, param_quantities, pixel_coords)) {
             control_points.push_back(Message::Point(pixel_coords));
@@ -499,7 +507,7 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
         if (_pixel_coord) {
             control_points.push_back(Message::Point(param_quantities));
             control_points.push_back(Message::Point(param_quantities, 2, 3));
-        } else {
+        } else if (_coord_sys) {
             // cx, cy
             std::vector<casacore::Quantity> center_coords;
             center_coords.push_back(param_quantities[0]);
@@ -581,7 +589,7 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
         if (_pixel_coord) {
             control_points.push_back(Message::Point(param_quantities));
             control_points.push_back(Message::Point(param_quantities, 2, 3));
-        } else {
+        } else if (_coord_sys) {
             // cx, cy
             std::vector<casacore::Quantity> center_coords;
             center_coords.push_back(param_quantities[0]);
@@ -662,7 +670,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
     for (size_t i = 0; i < param_quantities.size(); i += 2) {
         if (_pixel_coord) {
             control_points.push_back(Message::Point(param_quantities, i, i + 1));
-        } else {
+        } else if (_coord_sys) {
             std::vector<casacore::Quantity> point;
             point.push_back(param_quantities[i]);
             point.push_back(param_quantities[i + 1]);

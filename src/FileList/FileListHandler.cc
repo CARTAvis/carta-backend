@@ -16,6 +16,7 @@
 
 #include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
+#include "Region/Ds9ImportExport.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
@@ -147,11 +148,16 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     bool is_region_file(false);
 
                     if (region_list && cc_file.isRegular(true)) {
-                        auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
+                        auto region_file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
 
-                        if (file_type != CARTA::FileType::UNKNOWN || filter_mode == CARTA::AllFiles) {
+                        // Try to parse file as DS9 unless it is an image file
+                        if ((region_file_type == CARTA::FileType::UNKNOWN) && IsDs9FileNoHeader(full_path)) {
+                            region_file_type = CARTA::FileType::DS9_REG;
+                        }
+
+                        if (region_file_type != CARTA::FileType::UNKNOWN || filter_mode == CARTA::AllFiles) {
                             auto& file_info = *file_list.add_files();
-                            FillRegionFileInfo(file_info, full_path, file_type, false);
+                            FillRegionFileInfo(file_info, full_path, region_file_type, false);
                             is_region_file = true; // Done with file
                         }
                     }
@@ -278,6 +284,23 @@ void FileListHandler::OnRegionListRequest(
     _regionlist_folder = "nofolder"; // ready for next file list request
 }
 
+bool FileListHandler::IsDs9FileNoHeader(const std::string& full_path) {
+    if (GuessImageType(full_path, true) != CARTA::FileType::UNKNOWN) {
+        return false;
+    }
+
+    try {
+        std::shared_ptr<casacore::CoordinateSystem> coord_sys(nullptr);
+        casacore::IPosition shape;
+        auto ds9_importer = Ds9ImportExport(coord_sys, shape, -1, full_path, true);
+        return true;
+    } catch (const casacore::AipsError& err) {
+        // no DS9 regions found
+    }
+
+    return false;
+}
+
 bool FileListHandler::FillRegionFileInfo(
     CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type, bool determine_file_type) {
     // For region list and info response: name, type, size
@@ -291,8 +314,13 @@ bool FileListHandler::FillRegionFileInfo(
     file_info.set_name(filename_only);
 
     // FileType
-    if (type == CARTA::FileType::UNKNOWN && determine_file_type) { // not passed in
+    if (type == CARTA::FileType::UNKNOWN && determine_file_type) {
+        // not passed in, check magic number
         type = GuessRegionType(filename, true);
+
+        if ((type == CARTA::FileType::UNKNOWN) && IsDs9FileNoHeader(filename)) {
+            type = CARTA::FileType::DS9_REG;
+        }
     }
     file_info.set_type(type);
 
