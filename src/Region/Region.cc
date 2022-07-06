@@ -381,7 +381,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 spdlog::debug("Using direct region conversion for {}", RegionName(region_state.type));
             } else {
                 // Use polygon approximation of reference region to translate to another image
-                spdlog::debug("Using polygon approximation for rotbox or distorted region {}", RegionName(region_state.type));
+                spdlog::debug("Using polygon approximation for matched {} region", RegionName(region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
                 // Cache converted polygon
@@ -1355,47 +1355,47 @@ std::shared_mutex& Region::GetActiveTaskMutex() {
 void Region::RemoveHorizontalPolygonPoints(casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y) {
     // When polygon points have close y-points (horizontal segment), the x-range is masked only to the next point.
     // Remove points not near integral pixel.
-    // casacore::ArrayIterator cannot look ahead without incrementing pointer so use std::vector
-    std::vector<casacore::Double> xv({x.begin(), x.end()});
-    std::vector<casacore::Double> yv({y.begin(), y.end()});
-    size_t counter(0), npoints(x.size());
+    std::vector<casacore::Double> keep_x, keep_y;
+    size_t npoints(x.size());
 
-    for (auto itx = xv.begin(), ity = yv.begin(); itx != xv.end();) {
-        if (itx == xv.begin()) {
+    for (int i = 0; i < npoints - 2; ++i) {
+        if (i == 0) {
             // always include first point of segment
-            itx++;
-            ity++;
-            counter++;
+            keep_x.push_back(x[i]);
+            keep_y.push_back(y[i]);
             continue;
         }
 
-        if (counter == npoints - 1) {
-            break; // not at end but no next point
+        float this_y = y[i];
+        float next_y = y[i + 1];
+        if (!ValuesNear(this_y, next_y)) {
+            // Line connecting points not ~horizontal - keep point
+            keep_x.push_back(x[i]);
+            keep_y.push_back(y[i]);
+            continue;
         }
 
-        // use same test as LCPolygon::fillMask: use point near next point in y coord and near integral pixel
-        float this_y = *ity;
-        float next_y = *(ity + 1);
+        // Line connecting points ~horizontal - keep point nearest integral pixel
         int pixel_y = static_cast<int>(this_y);
 
-        auto near_point = ValuesNear(this_y, next_y);
-        auto near_pixel = ValuesNear(this_y, float(pixel_y));
-
-        if (near_point && !near_pixel) {
-            itx = xv.erase(itx);
-            ity = yv.erase(ity);
-        } else {
-            itx++;
-            ity++;
+        if (!ValuesNear(this_y, float(pixel_y))) {
+            // Skip point not near pixel
+            continue;
         }
 
-        counter++;
+        if ((static_cast<int>(next_y) == pixel_y) && ((this_y - pixel_y) > (next_y - pixel_y))) {
+            // Skip point if next point nearer to pixel
+            continue;
+        }
+
+        keep_x.push_back(x[i]);
+        keep_y.push_back(y[i]);
     }
 
-    if (xv.size() < npoints) {
+    if (keep_x.size() < npoints) {
         // Set to new vector with points removed
-        x = casacore::Vector<casacore::Double>(xv);
-        y = casacore::Vector<casacore::Double>(yv);
+        x = casacore::Vector<casacore::Double>(keep_x);
+        y = casacore::Vector<casacore::Double>(keep_y);
     }
 }
 
