@@ -66,6 +66,7 @@ public:
 
     // Return the opened casacore image or its class name
     ImageRef GetImage(bool check_data_type = true);
+    void UnlockImage();
     casacore::DataType GetDataType();
     bool IsComplexDataType();
 
