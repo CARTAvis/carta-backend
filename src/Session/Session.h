@@ -54,7 +54,7 @@ class LoaderCache {
 public:
     LoaderCache(int capacity);
     std::shared_ptr<FileLoader> Get(const std::string& filename, const std::string& directory = "");
-    void Remove(const std::string& filename);
+    void Remove(const std::string& fullname);
 
 private:
     int _capacity;

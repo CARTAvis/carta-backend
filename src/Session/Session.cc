@@ -46,15 +46,16 @@ LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
 std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
+    std::string fullname = directory.empty() ? filename : fmt::format("{}/{}", directory, filename);
 
     // We have a cached loader, but the file has changed
-    if (_map.find(filename) != _map.end() && _map[filename]->ImageUpdated()) {
-        _map.erase(filename);
-        _queue.remove(filename);
+    if (_map.find(fullname) != _map.end() && _map[fullname]->ImageUpdated()) {
+        _map.erase(fullname);
+        _queue.remove(fullname);
     }
 
     // We don't have a cached loader
-    if (_map.find(filename) == _map.end()) {
+    if (_map.find(fullname) == _map.end()) {
         // Create the loader -- don't block while doing this
         std::shared_ptr<FileLoader> loader_ptr;
         guard.unlock();
@@ -62,7 +63,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const 
         guard.lock();
 
         // Check if the loader was added in the meantime
-        if (_map.find(filename) == _map.end()) {
+        if (_map.find(fullname) == _map.end()) {
             // Evict oldest loader if necessary
             if (_map.size() == _capacity) {
                 _map.erase(_queue.back());
@@ -70,22 +71,22 @@ std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const 
             }
 
             // Insert the new loader
-            _map[filename] = loader_ptr;
-            _queue.push_front(filename);
+            _map[fullname] = loader_ptr;
+            _queue.push_front(fullname);
         }
     } else {
         // Touch the cache entry
-        _queue.remove(filename);
-        _queue.push_front(filename);
+        _queue.remove(fullname);
+        _queue.push_front(fullname);
     }
 
-    return _map[filename];
+    return _map[fullname];
 }
 
-void LoaderCache::Remove(const std::string& filename) {
+void LoaderCache::Remove(const std::string& fullname) {
     std::unique_lock<std::mutex> guard(_loader_cache_mutex);
-    _map.erase(filename);
-    _queue.remove(filename);
+    _map.erase(fullname);
+    _queue.remove(fullname);
 }
 
 volatile int Session::_num_sessions = 0;
@@ -479,6 +480,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             auto image = loader->GetImage();
             success = OnOpenFile(file_id, filename, image, &ack);
         } catch (const casacore::AipsError& err) {
+            std::string fullname = dir_path.empty() ? filename : fmt::format("{}/{}", dir_path, filename);
+            _loaders.Remove(fullname);
             success = false;
             err_message = err.getMesg();
         }
@@ -497,7 +500,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
             // Open complex image with LEL amplitude instead
             if (loader->IsComplexDataType()) {
-                _loaders.Remove(filename);
+                _loaders.Remove(fullname);
 
                 std::string expression = "AMPLITUDE(" + filename + ")";
                 bool is_lel_expr(true);
