@@ -191,7 +191,7 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
 
         int string_size = 0;
         // Find required string size by trimming whitespace
-        for (auto j = data_type_size - 1; j >= 0; j--) {
+        for (int j = data_type_size - 1; j >= 0; j--) {
             if (ptr[j] != ' ') {
                 string_size = j + 1;
                 break;
