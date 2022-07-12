@@ -336,6 +336,10 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
     std::unordered_map<std::string, std::string> properties;
     ParseRegionParameters(region_definition, parameters, properties);
 
+    if (parameters.empty()) {
+        return;
+    }
+
     // Process region definition include/exclude and remove indicator
     std::string region_type(parameters[0]);
     bool exclude_region(false);
