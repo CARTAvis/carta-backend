@@ -54,9 +54,10 @@ class LoaderCache {
 public:
     LoaderCache(int capacity);
     std::shared_ptr<FileLoader> Get(const std::string& filename, const std::string& directory = "");
-    void Remove(const std::string& fullname);
+    void Remove(const std::string& filename, const std::string& directory = "");
 
 private:
+    std::string GetKey(const std::string& filename, const std::string& directory);
     int _capacity;
     std::unordered_map<std::string, std::shared_ptr<FileLoader>> _map;
     std::list<std::string> _queue;
