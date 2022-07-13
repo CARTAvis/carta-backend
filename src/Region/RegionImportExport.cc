@@ -34,7 +34,7 @@ std::vector<RegionProperties> RegionImportExport::GetImportedRegions(std::string
     error = _import_errors;
 
     if ((_import_regions.size() == 0) && error.empty()) {
-        error = "Import error: zero regions set. Regions may lie far outside image and cannot be converted to pixel coordinates.";
+        error = "Import error: zero regions set. No regions defined or regions lie outside image coordinate system.";
     }
 
     return _import_regions;
@@ -123,6 +123,11 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
 void RegionImportExport::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
+
+    // Remove spaces around = to recognize properties
+    std::regex equals_spaces("[ ]+=[ ]+");
+    region_definition = std::regex_replace(region_definition, equals_spaces, "=");
+
     size_t next(0), current(0), end(region_definition.size());
 
     while (current < end) {
@@ -133,13 +138,16 @@ void RegionImportExport::ParseRegionParameters(
         }
 
         if ((next - current) > 0) {
-            std::string param = region_definition.substr(current, next - current);
+            // Section of region_definition between parser delimiters
+            std::string parse_string = region_definition.substr(current, next - current);
 
-            if (param.find("=") == std::string::npos) {
-                parameters.push_back(param);
+            if (parse_string.find("=") == std::string::npos) {
+                // Assume region parameter (region type)
+                parameters.push_back(parse_string);
             } else {
+                // Assume region property (kv pair)
                 std::vector<std::string> kvpair;
-                SplitString(param, '=', kvpair);
+                SplitString(parse_string, '=', kvpair);
                 std::string key = kvpair[0];
 
                 if (kvpair.size() == 1) {
@@ -204,10 +212,19 @@ void RegionImportExport::ParseRegionParameters(
                         value.erase(0, 1); // erase start delim
 
                         if (value.back() == end_delim) {
+                            // next parser delimiter is end delimiter
                             value.pop_back();
                             properties[key] = value;
+                        } else if ((start_delim == '\'') || (start_delim == '"')) {
+                            // quotes (not parser delimiter) used for string, find end
+                            auto end_string = value.find_first_of(end_delim);
+                            if (end_string == std::string::npos) {
+                                throw(casacore::AipsError("string syntax error in " + region_definition));
+                            }
+
+                            properties[key] = value.substr(0, end_string);
                         } else {
-                            // value has parser delim in it (e.g. sp); add it and advance
+                            // value has other parser delim inside outer delim
                             value.append(1, region_definition[next]);
                             current = next + 1;
 

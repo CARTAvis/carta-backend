@@ -16,6 +16,7 @@
 
 #include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
+#include "Region/Ds9ImportExport.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
@@ -132,6 +133,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         _first_report_made = false;
         ListProgressReporter progress_reporter(start_dir.nEntries(), _progress_callback);
 
+        bool list_all_files(filter_mode == CARTA::AllFiles);
+
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
                 file_list.set_cancel(true);
@@ -143,34 +146,42 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
             if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
+
                 try {
                     bool is_region_file(false);
 
                     if (region_list && cc_file.isRegular(true)) {
                         auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
 
-                        if (file_type != CARTA::FileType::UNKNOWN || filter_mode == CARTA::AllFiles) {
+                        if (!list_all_files && file_type == CARTA::UNKNOWN) {
+                            // Try extension for unknown file
+                            file_type = GuessRegionType(full_path, false);
+                        }
+
+                        if (list_all_files || file_type != CARTA::UNKNOWN) {
+                            // Known region file, or user does not want to check contents
                             auto& file_info = *file_list.add_files();
                             FillRegionFileInfo(file_info, full_path, file_type, false);
-                            is_region_file = true; // Done with file
+                            is_region_file = true;
                         }
                     }
 
                     if (!is_region_file) {
                         // Whether to add to file list
-                        bool add_file(false);
+                        bool add_image_file(false);
                         CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
 
-                        if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                            // Determine if image or directory
+                        if (!region_list && cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                            // Determine if image or directory for image list
                             auto image_type = CasacoreImageType(full_path);
+
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
                                 case casacore::ImageOpener::COMPLISTIMAGE: {
                                     file_type = CARTA::FileType::CASA;
-                                    add_file = true;
+                                    add_image_file = true;
                                     break;
                                 }
                                 case casacore::ImageOpener::GIPSY:
@@ -182,7 +193,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 }
                                 case casacore::ImageOpener::MIRIAD: {
                                     file_type = CARTA::FileType::MIRIAD;
-                                    add_file = true;
+                                    add_image_file = true;
                                     break;
                                 }
                                 case casacore::ImageOpener::UNKNOWN: {
@@ -199,10 +210,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                             }
                         } else if (!region_list && cc_file.isRegular(true)) {
                             file_type = GuessImageType(full_path, filter_mode == CARTA::Content);
-                            add_file = filter_mode == CARTA::AllFiles || file_type != CARTA::UNKNOWN;
+                            add_image_file = list_all_files || file_type != CARTA::UNKNOWN;
                         }
 
-                        if (add_file) { // add to file list: name, type, size, date
+                        if (add_image_file) { // add to image file list: name, type, size, date
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
                             FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
@@ -291,8 +302,12 @@ bool FileListHandler::FillRegionFileInfo(
     file_info.set_name(filename_only);
 
     // FileType
-    if (type == CARTA::FileType::UNKNOWN && determine_file_type) { // not passed in
+    if (type == CARTA::FileType::UNKNOWN && determine_file_type) {
         type = GuessRegionType(filename, true);
+
+        if (type == CARTA::FileType::UNKNOWN) {
+            type = GuessRegionType(filename, false);
+        }
     }
     file_info.set_type(type);
 
