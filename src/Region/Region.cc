@@ -507,12 +507,17 @@ std::shared_ptr<casacore::LCRegion> Region::GetAppliedPolygonRegion(
     casacore::Vector<casacore::Double> x, y;
 
     if (polygon_points.size() == 1) {
-        // Point, Rectangle, and Ellipse have one "segment"
+        // Point and ellipse have one vector for all points
         if (!ConvertPointsToImagePixels(polygon_points[0], output_csys, x, y)) {
             spdlog::error("Error approximating {} as polygon in matched image.", RegionName(region_state.type));
             return lc_region;
         }
+
+        if (!is_point) {
+            RemoveHorizontalPolygonPoints(x, y);
+        }
     } else {
+        // Rectangle and polygon have one vector for each side of rectangle or segment of original polygon
         for (auto& segment : polygon_points) {
             casacore::Vector<casacore::Double> segment_x, segment_y;
             if (!ConvertPointsToImagePixels(segment, output_csys, segment_x, segment_y)) {
