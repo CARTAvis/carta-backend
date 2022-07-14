@@ -225,6 +225,7 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         if (IsDs9CoordSysKeyword(line)) {
             // Get ready for conversion
             ds9_coord_sys_ok = SetFileReferenceFrame(line);
+
             if (!ds9_coord_sys_ok) {
                 std::string csys_error = "coord sys " + line + " not supported.\n";
                 _import_errors.append(csys_error);
@@ -293,6 +294,10 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
 
 void Ds9ImportExport::SetImageReferenceFrame() {
     // Set image coord sys direction frame
+    if (!_coord_sys) {
+        return;
+    }
+
     if (_coord_sys->hasDirectionCoordinate()) {
         casacore::MDirection::Types reference_frame = _coord_sys->directionCoordinate().directionType();
         _image_ref_frame = casacore::MDirection::showType(reference_frame);
@@ -331,6 +336,10 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
     std::unordered_map<std::string, std::string> properties;
     ParseRegionParameters(region_definition, parameters, properties);
 
+    if (parameters.empty()) {
+        return;
+    }
+
     // Process region definition include/exclude and remove indicator
     std::string region_type(parameters[0]);
     bool exclude_region(false);
@@ -354,12 +363,15 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
         region_state = ImportRectangleRegion(parameters);
     } else if ((region_type.find("poly") != std::string::npos) || (region_type.find("line") != std::string::npos)) {
         region_state = ImportPolygonLineRegion(parameters);
-    } else if (region_type.find("vector") != std::string::npos) {
-        _import_errors.append("DS9 vector region not supported.\n");
-    } else if (region_type.find("text") != std::string::npos) {
-        _import_errors.append("DS9 text not supported.\n");
-    } else if (region_type.find("annulus") != std::string::npos) {
-        _import_errors.append("DS9 annulus region not supported.\n");
+    } else {
+        std::vector<std::string> ds9_regions{
+            "vector", "text", "ruler", "compass", "projection", "annulus", "panda", "epanda", "bpanda", "composite"};
+
+        if (std::find(ds9_regions.begin(), ds9_regions.end(), region_type) != ds9_regions.end()) {
+            _import_errors.append("DS9 " + region_type + " region not supported.\n");
+        } else {
+            throw(casacore::AipsError("Not a valid DS9 region file."));
+        }
     }
 
     if (region_state.RegionDefined()) {
@@ -422,17 +434,11 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
     // Control points in pixel coordinates
     std::vector<CARTA::Point> control_points;
     if (_pixel_coord) {
-        CARTA::Point point;
-        point.set_x(param_quantities[0].getValue());
-        point.set_y(param_quantities[1].getValue());
-        control_points.push_back(point);
-    } else {
+        control_points.push_back(Message::Point(param_quantities));
+    } else if (_coord_sys) {
         casacore::Vector<casacore::Double> pixel_coords;
         if (ConvertPointToPixels(_file_ref_frame, param_quantities, pixel_coords)) {
-            CARTA::Point point;
-            point.set_x(pixel_coords(0));
-            point.set_y(pixel_coords(1));
-            control_points.push_back(point);
+            control_points.push_back(Message::Point(pixel_coords));
         } else {
             std::string invalid_param("Failed to apply point to image.\n");
             _import_errors.append(invalid_param);
@@ -503,34 +509,24 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
         if (_pixel_coord) {
-            CARTA::Point point;
-            point.set_x(param_quantities[0].getValue());
-            point.set_y(param_quantities[1].getValue());
-            control_points.push_back(point);
-            point.set_x(param_quantities[2].getValue());
-            point.set_y(param_quantities[3].getValue());
-            control_points.push_back(point);
-        } else {
+            control_points.push_back(Message::Point(param_quantities));
+            control_points.push_back(Message::Point(param_quantities, 2, 3));
+        } else if (_coord_sys) {
             // cx, cy
             std::vector<casacore::Quantity> center_coords;
             center_coords.push_back(param_quantities[0]);
             center_coords.push_back(param_quantities[1]);
             casacore::Vector<casacore::Double> pixel_coords;
             if (ConvertPointToPixels(_file_ref_frame, center_coords, pixel_coords)) {
-                CARTA::Point point;
-                point.set_x(pixel_coords(0));
-                point.set_y(pixel_coords(1));
-                control_points.push_back(point);
+                control_points.push_back(Message::Point(pixel_coords));
             } else {
                 _import_errors.append("Failed to apply ellipse to image.\n");
                 return region_state;
             }
 
             // bmaj, bmin
-            CARTA::Point point;
-            point.set_x(WorldToPixelLength(param_quantities[2], 0));
-            point.set_y(WorldToPixelLength(param_quantities[3], 1));
-            control_points.push_back(point);
+            control_points.push_back(
+                Message::Point(WorldToPixelLength(param_quantities[2], 0), WorldToPixelLength(param_quantities[3], 1)));
         }
 
         // Set RegionState
@@ -595,34 +591,24 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
         if (_pixel_coord) {
-            CARTA::Point point;
-            point.set_x(param_quantities[0].getValue());
-            point.set_y(param_quantities[1].getValue());
-            control_points.push_back(point);
-            point.set_x(param_quantities[2].getValue());
-            point.set_y(param_quantities[3].getValue());
-            control_points.push_back(point);
-        } else {
+            control_points.push_back(Message::Point(param_quantities));
+            control_points.push_back(Message::Point(param_quantities, 2, 3));
+        } else if (_coord_sys) {
             // cx, cy
             std::vector<casacore::Quantity> center_coords;
             center_coords.push_back(param_quantities[0]);
             center_coords.push_back(param_quantities[1]);
             casacore::Vector<casacore::Double> pixel_coords;
             if (ConvertPointToPixels(_file_ref_frame, center_coords, pixel_coords)) {
-                CARTA::Point point;
-                point.set_x(pixel_coords(0));
-                point.set_y(pixel_coords(1));
-                control_points.push_back(point);
+                control_points.push_back(Message::Point(pixel_coords));
             } else {
                 _import_errors.append("Failed to apply box to image.\n");
                 return region_state;
             }
 
             // width, height
-            CARTA::Point point;
-            point.set_x(WorldToPixelLength(param_quantities[2], 0));
-            point.set_y(WorldToPixelLength(param_quantities[3], 1));
-            control_points.push_back(point);
+            control_points.push_back(
+                Message::Point(WorldToPixelLength(param_quantities[2], 0), WorldToPixelLength(param_quantities[3], 1)));
         }
 
         // Create RegionState
@@ -643,16 +629,16 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
 
 RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& parameters) {
     // Import DS9 polygon into RegionState
-    // polygon x1 y1 x2 y2 x3 y3 ...
+    // polygon x1 y1 x2 y2 x3 y3 ... or line x1 y1 x2 y2
     RegionState region_state;
+
+    std::string region_name(parameters[0]);
 
     size_t nparam(parameters.size());
     if ((nparam % 2) != 1) { // parameters[0] is region name
-        _import_errors.append("polygon syntax error, odd number of arguments.\n");
+        _import_errors.append(region_name + " syntax error.\n");
         return region_state;
     }
-
-    std::string region_name(parameters[0]);
 
     // convert strings to Quantities
     std::vector<casacore::Quantity> param_quantities;
@@ -674,7 +660,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
                 }
                 param_quantities.push_back(param_quantity);
             } else {
-                std::string invalid_param("Invalid polygon parameter " + param + ".\n");
+                std::string invalid_param("Invalid " + region_name + " parameter " + param + ".\n");
                 _import_errors.append(invalid_param);
                 return region_state;
             }
@@ -687,22 +673,16 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
     std::vector<CARTA::Point> control_points;
     for (size_t i = 0; i < param_quantities.size(); i += 2) {
         if (_pixel_coord) {
-            CARTA::Point point;
-            point.set_x(param_quantities[i].getValue());
-            point.set_y(param_quantities[i + 1].getValue());
-            control_points.push_back(point);
-        } else {
+            control_points.push_back(Message::Point(param_quantities, i, i + 1));
+        } else if (_coord_sys) {
             std::vector<casacore::Quantity> point;
             point.push_back(param_quantities[i]);
             point.push_back(param_quantities[i + 1]);
             casacore::Vector<casacore::Double> pixel_coords;
             if (ConvertPointToPixels(_file_ref_frame, point, pixel_coords)) {
-                CARTA::Point point;
-                point.set_x(pixel_coords(0));
-                point.set_y(pixel_coords(1));
-                control_points.push_back(point);
+                control_points.push_back(Message::Point(pixel_coords));
             } else {
-                _import_errors.append("Failed to apply polygon to image.\n");
+                _import_errors.append("Failed to apply " + region_name + " to image.\n");
                 return region_state;
             }
         }

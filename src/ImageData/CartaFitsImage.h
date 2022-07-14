@@ -82,11 +82,14 @@ private:
 
     // Pixel mask
     void SetPixelMask();
+    bool doGetNanMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section);
 
     template <typename T>
     bool GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer);
     template <typename T>
     bool GetPixelMask(fitsfile* fptr, int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask);
+    template <typename T>
+    bool GetNanPixelMask(casacore::ArrayLattice<bool>& mask);
 
     std::string _filename;
     unsigned int _hdu;

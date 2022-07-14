@@ -21,10 +21,8 @@
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 #include <casacore/tables/Tables/TableRecord.h>
 
-#include <carta-protobuf/defs.pb.h>
-#include <carta-protobuf/enums.pb.h>
-
 #include "Util/Image.h"
+#include "Util/Message.h"
 
 #define DEFAULT_VERTEX_COUNT 1000
 
