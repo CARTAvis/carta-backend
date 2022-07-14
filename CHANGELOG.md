@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed incorrect pixel number when fitting image with nan pixels ([#1128](https://github.com/CARTAvis/carta-backend/pull/1128)).
 * Fixed errors on loading images via LEL ([#1144](https://github.com/CARTAvis/carta-backend/issues/1144)).
 * Fixed the DS9 import bug with no header line ([#1064](https://github.com/CARTAvis/carta-backend/issues/1064)).
+* Fixed the getstat error on generated image ([#1148](https://github.com/CARTAvis/carta-backend/issues/1148)).
 
 ## [3.0.0-beta.3]
 
