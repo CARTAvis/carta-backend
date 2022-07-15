@@ -99,13 +99,6 @@ typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     return _image;
 }
 
-void FileLoader::UnlockImage() {
-    // Release read lock
-    if (_image) {
-        _image->unlock();
-    }
-}
-
 void FileLoader::CloseImageIfUpdated() {
     // Close image if updated when only the loader owns
     if (_image.unique() && ImageUpdated()) {

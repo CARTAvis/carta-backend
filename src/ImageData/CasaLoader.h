@@ -13,7 +13,6 @@
 #include <casacore/images/Images/TempImage.h>
 
 #include "FileLoader.h"
-#include "Logger/Logger.h"
 
 namespace carta {
 

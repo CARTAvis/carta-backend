@@ -431,10 +431,6 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
         spdlog::error(message);
     }
 
-    // Release file lock
-    auto fullname = GetResolvedFilename(_top_level_folder, request.directory(), request.file());
-    _loaders.Get(fullname)->UnlockImage();
-
     // complete response message
     response.set_success(success);
     response.set_message(message);
