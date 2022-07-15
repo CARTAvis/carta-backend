@@ -72,10 +72,8 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
 
 FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
     : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
-    // Set initial modify time if filename is not LEL expression for file in directory
-    if (directory.empty()) {
-        ImageUpdated();
-    }
+    // Set initial modify time
+    ImageUpdated();
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
@@ -109,8 +107,9 @@ void FileLoader::CloseImageIfUpdated() {
 bool FileLoader::ImageUpdated() {
     bool changed(false);
 
-    // Do not close compressed image or run getstat on LEL ImageExpr (sets directory)
-    if (_is_gz || !_directory.empty()) {
+    // Do not close compressed image, or run getstat on generated image (no filename, in memory only) or
+    // LEL ImageExpr (directory is set, filename is LEL expression)
+    if (_is_gz || _filename.empty() || !_directory.empty()) {
         return changed;
     }
 
