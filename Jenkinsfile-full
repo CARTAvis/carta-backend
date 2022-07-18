@@ -564,17 +564,15 @@ pipeline {
                         }
                     }
                 }
-                post {
-                    unstable {
-                        slackSend color: 'warning', message: "Full ICD test suite - Unstable - ${PLATFORM} ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
-                    }
-                }
             }
         }
     }
     post {
         success {
             slackSend color: 'good', message: "Full ICD test suite - Success - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+        }
+        unstable {
+            slackSend color: 'warning', message: "Full ICD test suite - Unstable - ${env.BRANCH_NAME} ${env.COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
         }
     }
 }
