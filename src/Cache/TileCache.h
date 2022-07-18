@@ -27,17 +27,24 @@ class TileCache {
 public:
     using Key = TileCacheKey;
 
-    TileCache() {}
-    TileCache(int capacity);
+    virtual ~TileCache() = default;
 
-    // This is read-only and does not lock the cache
-    TilePtr Peek(Key key);
-
-    // These functions lock the cache
-    TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex);
-    void Reset(int32_t z, int32_t stokes, int capacity = 0);
+    virtual TilePtr Peek(Key key) = 0;
+    virtual TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) = 0;
+    virtual void Reset(int32_t z, int32_t stokes, int capacity = 0) = 0;
 
     static Key ChunkKey(Key tile_key);
+    static TileCache* GetTileCache();
+};
+
+class PooledTileCache : public TileCache {
+public:
+    PooledTileCache();
+    // This is read-only and does not lock the cache
+    TilePtr Peek(Key key) override;
+    // These functions lock the cache
+    TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) override;
+    void Reset(int32_t z, int32_t stokes, int capacity = 0) override;
 
 private:
     using TilePair = std::pair<Key, TilePtr>;

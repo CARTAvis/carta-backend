@@ -16,6 +16,10 @@
 #include "Logger/Logger.h"
 #include "Util/App.h"
 
+#include "Factories.h"
+
+using namespace carta;
+
 fs::path TestRoot() {
     std::string path_string;
     fs::path root;
@@ -252,6 +256,8 @@ void CartaEnvironment::SetUp() {
 void CartaEnvironment::TearDown() {
     // delete directory of generated images
     fs::remove_all(TestRoot() / "data" / "generated");
+    // reset all factories
+    Factories::Reset();
 }
 
 bool OpenImage(std::shared_ptr<casacore::ImageInterface<float>>& image, const std::string& filename, uInt hdu_num) {

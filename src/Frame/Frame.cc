@@ -34,7 +34,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
-      _tile_cache(0),
       _x_axis(0),
       _y_axis(1),
       _z_axis(-1),
@@ -43,8 +42,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _stokes_index(DEFAULT_STOKES),
       _depth(1),
       _num_stokes(1),
-      _image_cache_valid(false),
-      _moment_generator(nullptr) {
+      _image_cache_valid(false) {
     // Initialize for operator==
     _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
 
@@ -96,7 +94,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         int tiles_x = (_width - 1) / TILE_SIZE + 1;
         int tiles_y = (_height - 1) / TILE_SIZE + 1;
         int tile_cache_capacity = std::min(MAX_TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
-        _tile_cache.Reset(_z_index, _stokes_index, tile_cache_capacity);
+        _tile_cache.reset(TileCache::GetTileCache());
+        _tile_cache->Reset(_z_index, _stokes_index, tile_cache_capacity);
     }
 
     // set default histogram requirements
@@ -350,7 +349,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
 
                     if (_loader->UseTileCache()) {
                         // invalidate / clear the full resolution tile cache
-                        _tile_cache.Reset(_z_index, _stokes_index);
+                        _tile_cache->Reset(_z_index, _stokes_index);
                     }
                 }
 
@@ -587,7 +586,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (!_image_cache_valid && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        tile_data_ptr = _tile_cache->Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
         if (tile_data_ptr) {
             return true;
         }
@@ -1103,7 +1102,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
-        auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
+        auto tile = _tile_cache->Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
         auto tile_width = tile_size(tile_x, _width);
         cursor_value_with_current_stokes = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
     }
@@ -1224,7 +1223,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                                 if (!ignore_interrupt && (tile_index(point.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
                                     return have_profile;
                                 }
-                                auto tile = _tile_cache.Get(key, _loader, _image_mutex);
+                                auto tile = _tile_cache->Get(key, _loader, _image_mutex);
                                 auto tile_width = tile_size(tile_x, _width);
                                 auto tile_height = tile_size(tile_y, _height);
 
@@ -1248,7 +1247,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                                 if (!ignore_interrupt && (tile_index(point.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
                                     return have_profile;
                                 }
-                                auto tile = _tile_cache.Get(key, _loader, _image_mutex);
+                                auto tile = _tile_cache->Get(key, _loader, _image_mutex);
                                 auto tile_width = tile_size(tile_x, _width);
                                 auto tile_height = tile_size(tile_y, _height);
 

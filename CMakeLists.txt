@@ -234,6 +234,7 @@ set(SOURCE_FILES
         src/Timer/Timer.cc
         src/Util/App.cc
         src/Util/Casacore.cc
+        src/Util/Factories.cc
         src/Util/File.cc
         src/Util/Image.cc
         src/Util/Message.cc

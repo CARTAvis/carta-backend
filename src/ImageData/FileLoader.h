@@ -45,7 +45,6 @@ struct StokesRegion {
 class FileLoader {
 public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
-    //     FileLoader() {}
     virtual ~FileLoader() = default;
     virtual bool CanOpenFile(std::string& error) = 0;
     virtual void OpenFile(const std::string& hdu) = 0;

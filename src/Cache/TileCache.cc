@@ -14,12 +14,13 @@
 
 using namespace carta;
 
-TileCache::TileCache(int capacity) : _capacity(capacity), _z(0), _stokes(0), _pool(std::make_shared<TilePool>()) {
-    std::unique_lock<std::mutex> guard(_tile_cache_mutex);
-    _pool->Grow(capacity);
+TileCache::Key TileCache::ChunkKey(Key tile_key) {
+    return Key((tile_key.x / CHUNK_SIZE) * CHUNK_SIZE, (tile_key.y / CHUNK_SIZE) * CHUNK_SIZE);
 }
 
-TilePtr TileCache::Peek(Key key) {
+PooledTileCache::PooledTileCache() : _capacity(0), _z(0), _stokes(0), _pool(std::make_shared<TilePool>()) {}
+
+TilePtr PooledTileCache::Peek(Key key) {
     // This is a read-only operation which it is safe to do in parallel.
     if (_map.find(key) == _map.end()) {
         return nullptr;
@@ -28,7 +29,7 @@ TilePtr TileCache::Peek(Key key) {
     }
 }
 
-TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+TilePtr PooledTileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     bool valid(1);
 
@@ -48,7 +49,7 @@ TilePtr TileCache::Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& 
     return nullptr;
 }
 
-void TileCache::Reset(int32_t z, int32_t stokes, int capacity) {
+void PooledTileCache::Reset(int32_t z, int32_t stokes, int capacity) {
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
     if (capacity > 0) {
         _pool->Grow(capacity - _capacity);
@@ -60,12 +61,12 @@ void TileCache::Reset(int32_t z, int32_t stokes, int capacity) {
     _stokes = stokes;
 }
 
-TilePtr TileCache::UnsafePeek(Key key) {
+TilePtr PooledTileCache::UnsafePeek(Key key) {
     // Assumes that the tile is in the cache
     return _map.find(key)->second->second;
 }
 
-void TileCache::Touch(Key key) {
+void PooledTileCache::Touch(Key key) {
     // Move tile to the front of the queue
     // Assumes that the tile is in the cache
     auto tile = _map.find(key)->second->second;
@@ -74,11 +75,7 @@ void TileCache::Touch(Key key) {
     _map[key] = _queue.begin();
 }
 
-TileCache::Key TileCache::ChunkKey(Key tile_key) {
-    return Key((tile_key.x / CHUNK_SIZE) * CHUNK_SIZE, (tile_key.y / CHUNK_SIZE) * CHUNK_SIZE);
-}
-
-bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
+bool PooledTileCache::LoadChunk(Key chunk_key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) {
     // load a chunk from the file
     int data_width;
     int data_height;

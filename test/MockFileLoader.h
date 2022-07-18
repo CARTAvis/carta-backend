@@ -4,9 +4,14 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#ifndef CARTA_TEST_MOCKFILELOADER_H
+#define CARTA_TEST_MOCKFILELOADER_H
+
 #include "gmock/gmock.h"
 
 #include "ImageData/FileLoader.h"
+
+namespace carta {
 
 class MockFileLoader : public FileLoader {
 public:
@@ -63,3 +68,7 @@ public:
     MOCK_METHOD(void, LoadStats3DPercent, (), (override));
     MOCK_METHOD(double, CalculateBeamArea, (), (override));
 };
+
+} // namespace carta
+
+#endif // CARTA_TEST_MOCKFILELOADER_H

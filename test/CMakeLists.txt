@@ -38,6 +38,7 @@ set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
         BackendModel.cc
+        Factories.cc
         TestBlockSmooth.cc
         TestContour.cc
         TestExprImage.cc
@@ -63,11 +64,12 @@ set(TEST_SOURCES
         TestUtil.cc
         TestVoTable.cc)
 
-# Add all the sources in the main project and remove Main.cc
+# Add all the sources in the main project and remove Main.cc and Factories.cc
 foreach(src_file ${SOURCE_FILES})
     list(APPEND SOURCES ../${src_file})
 endforeach()
 list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
+list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Util/Factories.cc)
 
 # Copy test data to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
