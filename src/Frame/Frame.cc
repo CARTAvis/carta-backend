@@ -84,7 +84,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
-        std::cout << "+++ we're probably getting an error here: " << _open_image_error << std::endl;
         _valid = false;
         return;
     }
