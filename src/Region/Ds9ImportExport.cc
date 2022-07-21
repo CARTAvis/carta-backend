@@ -415,6 +415,9 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
             if (readQuantity(param_quantity, param)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
+                        if ((i == first_param) || (i == first_param + 1)) { // Change from 1-based to 0-based image coordinate in (x, y)
+                            param_quantity.setValue(param_quantity.getValue() - 1);
+                        }
                         param_quantity.setUnit("pixel");
                     } else {
                         param_quantity.setUnit("deg");
@@ -490,6 +493,9 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
                 if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
                         if (_pixel_coord) {
+                            if ((i == 1) || (i == 2)) { // Change from 1-based to 0-based image coordinate in (x, y)
+                                param_quantity.setValue(param_quantity.getValue() - 1);
+                            }
                             param_quantity.setUnit("pixel");
                         } else {
                             param_quantity.setUnit("deg");
@@ -572,6 +578,9 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
                 if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
                         if (_pixel_coord) {
+                            if ((i == 1) || (i == 2)) { // Change from 1-based to 0-based image coordinate in (x, y)
+                                param_quantity.setValue(param_quantity.getValue() - 1);
+                            }
                             param_quantity.setUnit("pixel");
                         } else {
                             param_quantity.setUnit("deg");
@@ -653,6 +662,8 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
             if (readQuantity(param_quantity, param)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
+                        // Change from 1-based to 0-based image coordinate for all points in (x, y)
+                        param_quantity.setValue(param_quantity.getValue() - 1);
                         param_quantity.setUnit("pixel");
                     } else {
                         param_quantity.setUnit("deg");
