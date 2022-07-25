@@ -213,7 +213,14 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Check ability to create export file if filename given
     if (!filename.empty()) {
         casacore::File export_file(filename);
-        if (!export_file.canCreate()) {
+        if (export_file.exists()) {
+            if (!export_file.isWritable()) {
+                export_ack.set_success(false);
+                export_ack.set_message("Export region failed: cannot overwrite file.");
+                export_ack.add_contents();
+                return;
+            }
+        } else if (!export_file.canCreate()) {
             export_ack.set_success(false);
             export_ack.set_message("Export region failed: cannot create file.");
             export_ack.add_contents();

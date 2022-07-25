@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed incorrect matched region pixel count ([#1108](https://github.com/CARTAvis/carta-backend/issues/1108)).
 * Fixed the getstat error on generated image ([#1148](https://github.com/CARTAvis/carta-backend/issues/1148)).
 * Fixed file info hang when a CASA image is locked ([#578](https://github.com/CARTAvis/carta-backend/pull/578)).
+* Fixed region export failure when no write permission ([#1133](https://github.com/CARTAvis/carta-backend/pull/1133)).
 
 ## [3.0.0-beta.3]
 
