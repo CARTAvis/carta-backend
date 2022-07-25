@@ -1389,7 +1389,7 @@ void FileExtInfoLoader::AddCoordRanges(
         }
     }
 
-    if (coord_system.hasSpectralAxis() && image_shape[coord_system.spectralAxisNumber()] > 1) {
+    if (coord_system.hasSpectralAxis() && image_shape[coord_system.spectralAxisNumber()] > 0) {
         auto spectral_coord = coord_system.spectralCoordinate();
         casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
         spectral_units(0) = spectral_units(0) == "Hz" ? "GHz" : spectral_units(0);
@@ -1401,18 +1401,27 @@ void FileExtInfoLoader::AddCoordRanges(
         double start_pixel = 0;
         double end_pixel = image_shape[coord_system.spectralAxisNumber()] - 1;
 
-        if (spectral_coord.toWorld(frequencies[0], start_pixel) && spectral_coord.toWorld(frequencies[1], end_pixel)) {
+        if (spectral_coord.toWorld(frequencies[0], start_pixel)) {
             auto* frequency_entry = extended_info.add_computed_entries();
-            frequency_entry->set_name("Frequency range");
-            frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], spectral_units(0)));
+            if (image_shape[coord_system.spectralAxisNumber()] > 1 && spectral_coord.toWorld(frequencies[1], end_pixel)) {
+                frequency_entry->set_name("Frequency range");
+                frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], spectral_units(0)));
+            } else { // For a single channel image
+                frequency_entry->set_name("Frequency");
+                frequency_entry->set_value(fmt::format("{:.4f} ({})", frequencies[0], spectral_units(0)));
+            }
             frequency_entry->set_entry_type(CARTA::EntryType::STRING);
         }
 
-        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel) &&
-            spectral_coord.pixelToVelocity(velocities[1], end_pixel)) {
+        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel)) {
             auto* velocity_entry = extended_info.add_computed_entries();
-            velocity_entry->set_name("Velocity range");
-            velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities[0], velocities[1], velocity_units));
+            if (image_shape[coord_system.spectralAxisNumber()] > 1 && spectral_coord.pixelToVelocity(velocities[1], end_pixel)) {
+                velocity_entry->set_name("Velocity range");
+                velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities[0], velocities[1], velocity_units));
+            } else { // For a single channel image
+                velocity_entry->set_name("Velocity");
+                velocity_entry->set_value(fmt::format("{:.4f} ({})", velocities[0], velocity_units));
+            }
             velocity_entry->set_entry_type(CARTA::EntryType::STRING);
         }
     }

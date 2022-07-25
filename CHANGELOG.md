@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Added support for image fitting with field of view ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
+* List frequency and velocity in file info for single channel image ([#1152](https://github.com/CARTAvis/carta-backend/issues/1152)).
 
 ### Changed
 * Enhanced image fitting performance by switching the solver from qr to cholesky ([#1114](https://github.com/CARTAvis/carta-backend/pull/1114)).
