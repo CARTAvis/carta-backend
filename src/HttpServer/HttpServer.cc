@@ -286,6 +286,7 @@ void HttpServer::HandleSetPreferences(Res* res, Req* req) {
     WaitForData(res, req, [this, res](const std::string& buffer) {
         auto status = UpdatePreferencesFromString(buffer);
         res->writeStatus(status);
+        res->writeHeader("Content-Type", "application/json");
         AddNoCacheHeaders(res);
         if (status == HTTP_200) {
             res->end(success_string);
@@ -341,6 +342,7 @@ void HttpServer::HandleClearPreferences(Res* res, Req* req) {
         auto status = ClearPreferencesFromString(buffer);
         res->writeStatus(status);
         AddNoCacheHeaders(res);
+        res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
             res->end(success_string);
         } else {
@@ -373,6 +375,7 @@ void HttpServer::HandleSetObject(const std::string& object_type, Res* res, Req* 
         auto status = SetObjectFromString(object_type, buffer);
         res->writeStatus(status);
         AddNoCacheHeaders(res);
+        res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
             res->end(success_string);
         } else {
@@ -391,6 +394,7 @@ void HttpServer::HandleClearObject(const std::string& object_type, Res* res, Req
         auto status = ClearObjectFromString(object_type, buffer);
         res->writeStatus(status);
         AddNoCacheHeaders(res);
+        res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
             res->end(success_string);
         } else {
@@ -561,6 +565,7 @@ void HttpServer::HandleScriptingAction(Res* res, Req* req) {
 
             res->writeStatus(status);
             AddNoCacheHeaders(res);
+            res->writeHeader("Content-Type", "application/json");
             if (status == HTTP_200) {
                 res->end(response_buffer);
             } else {

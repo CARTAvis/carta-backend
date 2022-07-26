@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Added support for image fitting with field of view ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
+* List frequency and velocity in file info for single channel image ([#1152](https://github.com/CARTAvis/carta-backend/issues/1152)).
 
 ### Changed
 * Enhanced image fitting performance by switching the solver from qr to cholesky ([#1114](https://github.com/CARTAvis/carta-backend/pull/1114)).
@@ -27,8 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed incorrect pixel number when fitting image with nan pixels ([#1128](https://github.com/CARTAvis/carta-backend/pull/1128)).
 * Fixed errors on loading images via LEL ([#1144](https://github.com/CARTAvis/carta-backend/issues/1144)).
 * Fixed the DS9 import bug with no header line ([#1064](https://github.com/CARTAvis/carta-backend/issues/1064)).
+* Fixed incorrect matched region pixel count ([#1108](https://github.com/CARTAvis/carta-backend/issues/1108)).
 * Fixed the getstat error on generated image ([#1148](https://github.com/CARTAvis/carta-backend/issues/1148)).
 * Fixed file info hang when a CASA image is locked ([#578](https://github.com/CARTAvis/carta-backend/pull/578)).
+* Fixed region export failure when no write permission ([#1133](https://github.com/CARTAvis/carta-backend/pull/1133)).
+* Fixed HTTP response codes when returning response to PUT requests ([#1157](https://github.com/CARTAvis/carta-backend/issues/1157)).
+* Fixed the problem of one-pixel position offset for DS9 regions projections ([#1138](https://github.com/CARTAvis/carta-backend/issues/1138)).
 * Fixed crash problems during moments ICD tests ([#1070](https://github.com/CARTAvis/carta-backend/issues/1070)).
 
 ## [3.0.0-beta.3]
