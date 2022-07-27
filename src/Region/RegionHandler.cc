@@ -133,15 +133,22 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> importer;
-    switch (region_file_type) {
-        case CARTA::FileType::CRTF:
-            importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
-            break;
-        case CARTA::FileType::DS9_REG:
-            importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
-            break;
-        default:
-            break;
+
+    try {
+        switch (region_file_type) {
+            case CARTA::FileType::CRTF:
+                importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
+                break;
+            case CARTA::FileType::DS9_REG:
+                importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
+                break;
+            default:
+                break;
+        }
+    } catch (const casacore::AipsError& err) {
+        import_ack.set_success(false);
+        import_ack.set_message("Region import failed: " + err.getMesg());
+        return;
     }
 
     if (!importer) {
