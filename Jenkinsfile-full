@@ -29,7 +29,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "Ubuntu 18.04 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "Ubuntu 18.04 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -52,7 +52,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "Ubuntu 20.04 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "Ubuntu 20.04 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -75,7 +75,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "Ubuntu 22.04 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "Ubuntu 22.04 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -97,7 +97,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "macOS 11 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "macOS 11 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -110,7 +110,8 @@ pipeline {
                             sh "export PATH=/usr/local/bin:$PATH"
                             sh "git submodule update --init --recursive"
                             script {
-                                COMMIT_ID = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                                COMMIT_ID_SHORT = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                                COMMIT_ID_LONG = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
                                 BRANCH_NAME = sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD').trim()
                             }
                             dir ('build') {
@@ -123,7 +124,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "macOS 12 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "macOS 12 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -146,7 +147,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "RedHat 7 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "RedHat 7 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -169,7 +170,7 @@ pipeline {
                     }
                     post {
                         failure {
-                            slackSend color: 'danger', message: "RedHat 8 - carta-backend build - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "RedHat 8 - carta-backend build - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -194,7 +195,7 @@ pipeline {
                             junit 'test/ubuntu_bionic_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "Ubuntu 18.04 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "Ubuntu 18.04 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -215,7 +216,7 @@ pipeline {
                             junit 'test/ubuntu_focal_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "Ubuntu 20.04 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "Ubuntu 20.04 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }   
                     }   
                 }
@@ -236,7 +237,7 @@ pipeline {
                             junit 'test/ubuntu_jammy_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "Ubuntu 22.04 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "Ubuntu 22.04 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }   
                 }
@@ -256,7 +257,7 @@ pipeline {
                             junit 'build/test/macos11_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "macOS 11 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "macOS 11 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -276,7 +277,7 @@ pipeline {
                             junit 'build/test/macos12_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "macOS 12 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "macOS 12 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -297,7 +298,7 @@ pipeline {
                             junit 'test/rhel7_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "RedHat 7 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "RedHat 7 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -318,7 +319,7 @@ pipeline {
                             junit 'test/rhel8_test_detail.xml'
                         }
                         failure {
-                            slackSend color: 'danger', message: "RedHat 8 - Unit Tests - Fail - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+                            slackSend color: 'danger', message: "RedHat 8 - Unit Tests - Fail - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
                         }
                     }
                 }
@@ -567,7 +568,7 @@ pipeline {
     }
     post {
         success {
-            slackSend color: 'good', message: "Full ICD test suite - Success - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+            slackSend color: 'good', message: "Full ICD test suite - Success - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
             withCredentials([string(credentialsId: 'acdc-jenkins-token', variable: 'TOKEN')]) {
             sh("""curl -X POST -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $TOKEN" https://api.github.com/repos/CARTAvis/carta-backend/statuses/${COMMIT_ID_LONG} \
@@ -576,7 +577,7 @@ pipeline {
 
         }
         unstable {
-            slackSend color: 'warning', message: "Full ICD test suite - Unstable - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+            slackSend color: 'warning', message: "Full ICD test suite - Unstable - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>)";
             withCredentials([string(credentialsId: 'acdc-jenkins-token', variable: 'TOKEN')]) {
             sh("""curl -X POST -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $TOKEN" https://api.github.com/repos/CARTAvis/carta-backend/statuses/${COMMIT_ID_LONG} \
@@ -586,7 +587,9 @@ pipeline {
     }
 }
 
-def COMMIT_ID
+def COMMIT_ID_SHORT
+
+def COMMIT_ID_LONG
 
 def BRANCH_NAME
 
