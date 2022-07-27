@@ -567,10 +567,21 @@ pipeline {
     }
     post {
         success {
-            slackSend color: 'good', message: "Full ICD test suite - Success - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+            slackSend color: 'good', message: "Full ICD test suite - Success - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+            withCredentials([string(credentialsId: 'acdc-jenkins-token', variable: 'TOKEN')]) {
+            sh("""curl -X POST -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $TOKEN" https://api.github.com/repos/CARTAvis/carta-backend/statuses/${COMMIT_ID_LONG} \
+            -d "{\\"state\\":\\"success\\",\\"target_url\\":\\"${env.RUN_DISPLAY_URL}\\",\\"description\\":\\"Success\\",\\"context\\":\\"ICD test suite\\"}" """)
+            }
+
         }
         unstable {
-            slackSend color: 'warning', message: "Full ICD test suite - Unstable - ${BRANCH_NAME} ${COMMIT_ID} (<${env.RUN_DISPLAY_URL}|open>)";
+            slackSend color: 'warning', message: "Full ICD test suite - Unstable - ${BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+            withCredentials([string(credentialsId: 'acdc-jenkins-token', variable: 'TOKEN')]) {
+            sh("""curl -X POST -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $TOKEN" https://api.github.com/repos/CARTAvis/carta-backend/statuses/${COMMIT_ID_LONG} \
+            -d "{\\"state\\":\\"success\\",\\"target_url\\":\\"${env.RUN_DISPLAY_URL}\\",\\"description\\":\\"Unstable\\",\\"context\\":\\"ICD test suite\\"}" """)
+            }
         }
     }
 }
