@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent any
     options {
         preserveStashes()
         timeout(time: 2, unit: 'HOURS') 
