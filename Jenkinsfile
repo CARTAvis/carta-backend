@@ -1,14 +1,8 @@
-void setBuildStatus(String message, String state) {
-  step([
-      $class: "GitHubCommitStatusSetter",
-      reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/CARTAvis/carta-backend"],
-      contextSource: [$class: "ManuallyEnteredCommitContextSource", context: "ci/jenkins/build-status"],
-      errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
-      statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
-  ]);
-}
 pipeline {
     agent none
+    environment {
+        COMMIT_ID=''
+    }
     options {
         preserveStashes() 
     }
@@ -21,6 +15,9 @@ pipeline {
                     }
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            script {
+                                COMMIT_ID = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                            }
                             sh "uname -a"
                             sh "lsb_release -a"
                             sh "git submodule update --init --recursive"
@@ -30,14 +27,6 @@ pipeline {
                                 sh "make -j 32"
                                 sh "./carta_backend --version"
                             }
-                        }
-                    }
-                    post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("build failed", "FAILURE");
                         }
                     }
                 }
@@ -59,14 +48,6 @@ pipeline {
                             }
                         }
                     }
-                    post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("build failed", "FAILURE");
-                        }
-                    }
                 }
                 stage('AlmaLinux 8.5') {
                     agent {
@@ -83,14 +64,6 @@ pipeline {
                                 sh "make -j 32"
                                 sh "./carta_backend --version"
                             }
-                        }
-                    }
-                    post {
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("build failed", "FAILURE");
                         }
                     }
                 }
@@ -113,12 +86,6 @@ pipeline {
                         always {
                             junit 'build/test/ubuntu_test_detail.xml'
                         }
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("build failed", "FAILURE");
-                        }
                     }   
                 }
                 stage('macOS 12') {
@@ -136,12 +103,6 @@ pipeline {
                         always {
                             junit 'build/test/macos_test_detail.xml'
                         }
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("build failed", "FAILURE");
-                        }   
                     }
                 }
                 stage('AlmaLinux 8.5') {
@@ -159,15 +120,17 @@ pipeline {
                         always {
                             junit 'build/test/almalinux_test_detail.xml'
                         }
-                        success {
-                            setBuildStatus("build succeeded", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("build failed", "FAILURE");
-                        }
                     }
                 }
             }
+        }
+    }
+    post {
+        success {
+            slackSend color: 'good', message: "carta-backend - Success - ${env.BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+        }
+        failure {
+             slackSend color: 'danger', message: "carta-backend - Fail - ${env.BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
         }
     }
 }

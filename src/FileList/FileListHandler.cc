@@ -148,30 +148,35 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                 casacore::String full_path(cc_file.path().absoluteName());
 
                 try {
-                    bool is_region_file(false);
+                    if (region_list) {
+                        if (cc_file.isRegular(true)) {
+                            auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
 
-                    if (region_list && cc_file.isRegular(true)) {
-                        auto file_type = GuessRegionType(full_path, filter_mode == CARTA::Content);
+                            if (!list_all_files && file_type == CARTA::UNKNOWN) {
+                                // Contents did not work, check extension (e.g. DS9 with no header)
+                                file_type = GuessRegionType(full_path, false);
+                            }
 
-                        if (!list_all_files && file_type == CARTA::UNKNOWN) {
-                            // Try extension for unknown file
-                            file_type = GuessRegionType(full_path, false);
+                            if (list_all_files || file_type != CARTA::UNKNOWN) {
+                                // Add file: known region file, or not checking type
+                                auto& file_info = *file_list.add_files();
+                                FillRegionFileInfo(file_info, full_path, file_type, false);
+                            }
+                        } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
+                                   (list_all_files || CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN)) {
+                            // Add directory: not image if checking type, or not checking type
+                            casacore::String dir_name(cc_file.path().baseName());
+                            auto directory_info = file_list.add_subdirectories();
+                            directory_info->set_name(dir_name);
+                            directory_info->set_date(cc_file.modifyTime());
+                            directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
                         }
-
-                        if (list_all_files || file_type != CARTA::UNKNOWN) {
-                            // Known region file, or user does not want to check contents
-                            auto& file_info = *file_list.add_files();
-                            FillRegionFileInfo(file_info, full_path, file_type, false);
-                            is_region_file = true;
-                        }
-                    }
-
-                    if (!is_region_file) {
-                        // Whether to add to file list
+                    } else {
+                        // Image list
                         bool add_image_file(false);
                         CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
 
-                        if (!region_list && cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                        if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                             // Determine if image or directory for image list
                             auto image_type = CasacoreImageType(full_path);
 
@@ -208,20 +213,21 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 default:
                                     break;
                             }
-                        } else if (!region_list && cc_file.isRegular(true)) {
+                        } else if (cc_file.isRegular(true)) {
                             file_type = GuessImageType(full_path, filter_mode == CARTA::Content);
+                            // Add file: known image file, or not checking type
                             add_image_file = list_all_files || file_type != CARTA::UNKNOWN;
                         }
 
-                        if (add_image_file) { // add to image file list: name, type, size, date
+                        if (add_image_file) {
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
                             FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
                             info_loader.FillFileInfo(file_info);
                         }
                     }
-                } catch (casacore::AipsError& err) { // RegularFileIO error
-                    // skip it
+                } catch (casacore::AipsError& err) {
+                    // RegularFileIO error, skip item
                 }
             }
 
