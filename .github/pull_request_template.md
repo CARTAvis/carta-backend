@@ -10,3 +10,5 @@
 - [ ] changelog updated / no changelog update needed
 - [ ] e2e test passing / added corresponding fix
 - [ ] protobuf updated to the latest dev commit / no protobuf update needed
+- [ ] added reviewers and assignee
+- [ ] added ZenHub estimate, milestone, and release
