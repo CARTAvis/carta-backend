@@ -68,6 +68,10 @@ struct HistogramConfig {
 
     HistogramConfig() {}
     HistogramConfig(const std::string& coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
+
+    bool operator==(const HistogramConfig& rhs) const {
+        return (coordinate == rhs.coordinate) && (channel == rhs.channel) && (num_bins == rhs.num_bins);
+    }
 };
 
 struct RegionHistogramConfig {
