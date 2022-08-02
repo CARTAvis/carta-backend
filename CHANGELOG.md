@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed region export failure when no write permission ([#1133](https://github.com/CARTAvis/carta-backend/pull/1133)).
 * Fixed HTTP response codes when returning response to PUT requests ([#1157](https://github.com/CARTAvis/carta-backend/issues/1157)).
 * Fixed the problem of one-pixel position offset for DS9 regions projections ([#1138](https://github.com/CARTAvis/carta-backend/issues/1138)).
+* Fixed crash problems during moments ICD tests ([#1070](https://github.com/CARTAvis/carta-backend/issues/1070)).
 * Fixed response when importing region file fails by catching exception ([#1160](https://github.com/CARTAvis/carta-backend/issues/1160)).
 * Fixed the crash when trying to load an unsupported image file ([#1161](https://github.com/CARTAvis/carta-backend/issues/1161)).
 * Fixed including directories in region file list ([#1159](https://github.com/CARTAvis/carta-backend/issues/1159)).
