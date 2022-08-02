@@ -133,15 +133,22 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> importer;
-    switch (region_file_type) {
-        case CARTA::FileType::CRTF:
-            importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
-            break;
-        case CARTA::FileType::DS9_REG:
-            importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
-            break;
-        default:
-            break;
+
+    try {
+        switch (region_file_type) {
+            case CARTA::FileType::CRTF:
+                importer.reset(new CrtfImportExport(csys, shape, frame->StokesAxis(), file_id, region_file, file_is_filename));
+                break;
+            case CARTA::FileType::DS9_REG:
+                importer.reset(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
+                break;
+            default:
+                break;
+        }
+    } catch (const casacore::AipsError& err) {
+        import_ack.set_success(false);
+        import_ack.set_message("Region import failed: " + err.getMesg());
+        return;
     }
 
     if (!importer) {
@@ -213,7 +220,14 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Check ability to create export file if filename given
     if (!filename.empty()) {
         casacore::File export_file(filename);
-        if (!export_file.canCreate()) {
+        if (export_file.exists()) {
+            if (!export_file.isWritable()) {
+                export_ack.set_success(false);
+                export_ack.set_message("Export region failed: cannot overwrite file.");
+                export_ack.add_contents();
+                return;
+            }
+        } else if (!export_file.canCreate()) {
             export_ack.set_success(false);
             export_ack.set_message("Export region failed: cannot create file.");
             export_ack.add_contents();
