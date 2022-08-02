@@ -381,7 +381,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetImageRegion(int file_id, std::sha
                 spdlog::debug("Using direct region conversion for {}", RegionName(region_state.type));
             } else {
                 // Use polygon approximation of reference region to translate to another image
-                spdlog::debug("Using polygon approximation for rotbox or distorted region {}", RegionName(region_state.type));
+                spdlog::debug("Using polygon approximation for matched {} region", RegionName(region_state.type));
                 lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
                 // Cache converted polygon
@@ -492,6 +492,7 @@ std::shared_ptr<casacore::LCRegion> Region::GetAppliedPolygonRegion(
     int file_id, std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape) {
     // Approximate region as polygon pixel vertices, and convert to given csys
     std::shared_ptr<casacore::LCRegion> lc_region;
+
     auto region_state = GetRegionState();
     bool is_point(region_state.type == CARTA::RegionType::POINT);
     size_t nvertices(is_point ? 1 : DEFAULT_VERTEX_COUNT);
@@ -502,67 +503,106 @@ std::shared_ptr<casacore::LCRegion> Region::GetAppliedPolygonRegion(
         return lc_region;
     }
 
+    // Set x and y for matched polygon region
     casacore::Vector<casacore::Double> x, y;
-    if (ConvertPointsToImagePixels(polygon_points, output_csys, x, y)) {
-        try {
-            if (is_point) {
-                // Point is not a polygon (needs at least 3 points), use LCBox instead
-                // Form blc, trc
-                size_t ndim(output_shape.size());
-                casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim);
-                blc(0) = x(0);
-                blc(1) = y(0);
-                trc(0) = x(0);
-                trc(1) = y(0);
-                for (size_t i = 2; i < ndim; ++i) {
-                    trc(i) = output_shape(i) - 1;
-                }
 
-                lc_region.reset(new casacore::LCBox(blc, trc, output_shape));
-            } else {
-                // Need 2-dim shape
-                casacore::IPosition keep_axes(2, 0, 1);
-                casacore::IPosition region_shape(output_shape.keepAxes(keep_axes));
-                lc_region.reset(new casacore::LCPolygon(x, y, region_shape));
-            }
-        } catch (const casacore::AipsError& err) {
-            spdlog::error("Cannot apply {} to file {}: {}", RegionName(region_state.type), file_id, err.getMesg());
+    if (polygon_points.size() == 1) {
+        // Point and ellipse have one vector for all points
+        if (!ConvertPointsToImagePixels(polygon_points[0], output_csys, x, y)) {
+            spdlog::error("Error approximating {} as polygon in matched image.", RegionName(region_state.type));
+            return lc_region;
+        }
+
+        if (!is_point) {
+            RemoveHorizontalPolygonPoints(x, y);
         }
     } else {
-        spdlog::error("Error approximating {} as polygon in matched image.", RegionName(region_state.type));
+        // Rectangle and polygon have one vector for each side of rectangle or segment of original polygon
+        for (auto& segment : polygon_points) {
+            casacore::Vector<casacore::Double> segment_x, segment_y;
+            if (!ConvertPointsToImagePixels(segment, output_csys, segment_x, segment_y)) {
+                spdlog::error("Error approximating {} as polygon in matched image.", RegionName(region_state.type));
+                return lc_region;
+            }
+
+            // For each polygon segment, if horizontal then remove points to fix LCPolygon mask
+            RemoveHorizontalPolygonPoints(segment_x, segment_y);
+
+            auto old_size = x.size();
+            x.resize(old_size + segment_x.size(), true);
+            y.resize(old_size + segment_y.size(), true);
+
+            // Append selected segment points
+            for (auto i = 0; i < segment_x.size(); ++i) {
+                x[old_size + i] = segment_x[i];
+                y[old_size + i] = segment_y[i];
+            }
+        }
+    }
+
+    try {
+        if (is_point) {
+            // Point is not a polygon (needs at least 3 points), use LCBox instead
+            // Form blc, trc
+            size_t ndim(output_shape.size());
+            casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim);
+            blc(0) = x(0);
+            blc(1) = y(0);
+            trc(0) = x(0);
+            trc(1) = y(0);
+
+            for (size_t i = 2; i < ndim; ++i) {
+                trc(i) = output_shape(i) - 1;
+            }
+
+            lc_region.reset(new casacore::LCBox(blc, trc, output_shape));
+        } else {
+            // Need 2-dim shape
+            casacore::IPosition keep_axes(2, 0, 1);
+            casacore::IPosition region_shape(output_shape.keepAxes(keep_axes));
+            lc_region.reset(new casacore::LCPolygon(x, y, region_shape));
+        }
+    } catch (const casacore::AipsError& err) {
+        spdlog::error("Cannot apply {} to file {}: {}", RegionName(region_state.type), file_id, err.getMesg());
     }
 
     return lc_region;
 }
 
-std::vector<CARTA::Point> Region::GetReferencePolygonPoints(int num_vertices) {
+std::vector<std::vector<CARTA::Point>> Region::GetReferencePolygonPoints(int num_vertices) {
     // Approximates reference region as polygon with input number of vertices.
     // Sets _polygon_control_points in reference image pixel coordinates.
     // Returns points as long as region type is supported and a closed region.
     auto region_state = GetRegionState();
     switch (region_state.type) {
         case CARTA::POINT: {
-            return region_state.control_points;
+            std::vector<std::vector<CARTA::Point>> points;
+            points.push_back(region_state.control_points);
+            return points;
         }
         case CARTA::RECTANGLE:
         case CARTA::POLYGON: {
             return GetApproximatePolygonPoints(num_vertices);
         }
         case CARTA::ELLIPSE: {
-            return GetApproximateEllipsePoints(num_vertices);
+            std::vector<std::vector<CARTA::Point>> points;
+            points.push_back(GetApproximateEllipsePoints(num_vertices));
+            return points;
         }
         default:
             return {};
     }
 }
 
-std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) {
-    // Approximate RECTANGLE or POLYGON region as polygon with num_vertices, return points.
-    std::vector<CARTA::Point> polygon_points;
-    auto region_state = GetRegionState();
+std::vector<std::vector<CARTA::Point>> Region::GetApproximatePolygonPoints(int num_vertices) {
+    // Approximate RECTANGLE or POLYGON region as polygon with num_vertices.
+    // Returns vector of points for each segment
+    std::vector<std::vector<CARTA::Point>> polygon_points;
 
+    auto region_state = GetRegionState();
     std::vector<CARTA::Point> region_points;
     CARTA::RegionType region_type(region_state.type);
+
     if (region_type == CARTA::RegionType::RECTANGLE) {
         // convert control points to corners to create 4-point polygon
         casacore::Vector<casacore::Double> x, y;
@@ -588,17 +628,19 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
     // Divide each region polygon segment into target number of segments with target length
     for (size_t i = 1; i < region_points.size(); ++i) {
         // Handle segment from point[i-1] to point[i]
+        std::vector<CARTA::Point> segment_points;
+
         auto delta_x = region_points[i].x() - region_points[i - 1].x();
         auto delta_y = region_points[i].y() - region_points[i - 1].y();
         auto segment_length = sqrt((delta_x * delta_x) + (delta_y * delta_y));
         auto dir_x = delta_x / segment_length;
         auto dir_y = delta_y / segment_length;
-
         auto target_nsegment = round(segment_length / target_segment_length);
         auto target_length = segment_length / target_nsegment;
 
         auto first_segment_point(region_points[i - 1]);
-        polygon_points.push_back(first_segment_point);
+        segment_points.push_back(first_segment_point);
+
         auto first_x(first_segment_point.x());
         auto first_y(first_segment_point.y());
 
@@ -606,8 +648,10 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
             auto length_from_first = j * target_length;
             auto x_offset = dir_x * length_from_first;
             auto y_offset = dir_y * length_from_first;
-            polygon_points.push_back(Message::Point(first_x + x_offset, first_y + y_offset));
+            segment_points.push_back(Message::Point(first_x + x_offset, first_y + y_offset));
         }
+
+        polygon_points.push_back(segment_points);
     }
 
     return polygon_points;
@@ -638,6 +682,7 @@ std::vector<CARTA::Point> Region::GetApproximateEllipsePoints(int num_vertices) 
 
         polygon_points.push_back(Message::Point(cx + x_offset, cy + y_offset));
     }
+
     return polygon_points;
 }
 
@@ -1310,4 +1355,56 @@ bool Region::ConvertWorldToPixel(std::vector<casacore::Quantity>& world_point, s
 
 std::shared_mutex& Region::GetActiveTaskMutex() {
     return _active_task_mutex;
+}
+
+void Region::RemoveHorizontalPolygonPoints(casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y) {
+    // When polygon points have close y-points (horizontal segment), the x-range is masked only to the next point.
+    // Remove points not near integral pixel.
+    std::vector<casacore::Double> keep_x, keep_y;
+    size_t npoints(x.size());
+
+    for (int i = 0; i < npoints - 2; ++i) {
+        if (i == 0) {
+            // always include first point of segment
+            keep_x.push_back(x[i]);
+            keep_y.push_back(y[i]);
+            continue;
+        }
+
+        float this_y = y[i];
+        float next_y = y[i + 1];
+        if (!ValuesNear(this_y, next_y)) {
+            // Line connecting points not ~horizontal - keep point
+            keep_x.push_back(x[i]);
+            keep_y.push_back(y[i]);
+            continue;
+        }
+
+        // Line connecting points ~horizontal - keep point nearest integral pixel
+        int pixel_y = static_cast<int>(this_y);
+
+        if (!ValuesNear(this_y, float(pixel_y))) {
+            // Skip point not near pixel
+            continue;
+        }
+
+        if ((static_cast<int>(next_y) == pixel_y) && ((this_y - pixel_y) > (next_y - pixel_y))) {
+            // Skip point if next point nearer to pixel
+            continue;
+        }
+
+        keep_x.push_back(x[i]);
+        keep_y.push_back(y[i]);
+    }
+
+    if (keep_x.size() < npoints) {
+        // Set to new vector with points removed
+        x = casacore::Vector<casacore::Double>(keep_x);
+        y = casacore::Vector<casacore::Double>(keep_y);
+    }
+}
+
+bool Region::ValuesNear(float val1, float val2) {
+    // near and nearAbs in casacore Math
+    return val1 == 0 || val2 == 0 ? casacore::nearAbs(val1, val2) : casacore::near(val1, val2);
 }

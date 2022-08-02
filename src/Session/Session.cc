@@ -49,7 +49,7 @@ std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const 
     auto key = GetKey(filename, directory);
 
     // We have a cached loader, but the file has changed
-    if (_map.find(key) != _map.end() && _map[key]->ImageUpdated()) {
+    if ((_map.find(key) != _map.end()) && _map[key] && _map[key]->ImageUpdated()) {
         _map.erase(key);
         _queue.remove(key);
     }
