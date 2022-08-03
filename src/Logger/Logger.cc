@@ -29,7 +29,8 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     if (!no_log_file) {
         log_fullname = (user_directory / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
-        stdout_log_file_sink->set_pattern(CARTA_LOGGER_PATTERN);
+        auto format = std::make_unique<spdlog::pattern_formatter>(CARTA_LOGGER_PATTERN, spdlog::pattern_time_type::utc);
+        stdout_log_file_sink->set_formatter(std::move(format));
         console_sinks.push_back(stdout_log_file_sink);
     }
 
@@ -78,7 +79,8 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     if (log_performance) {
         // Set the performance console
         auto perf_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        perf_console_sink->set_pattern(PERF_PATTERN);
+        auto perf_format = std::make_unique<spdlog::pattern_formatter>(PERF_PATTERN, spdlog::pattern_time_type::utc);
+        perf_console_sink->set_formatter(std::move(perf_format));
 
         // Set performance sinks
         std::vector<spdlog::sink_ptr> perf_sinks;
@@ -90,7 +92,8 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
             perf_log_fullname = (user_directory / "log/performance.log").string();
             auto perf_log_file_sink =
                 std::make_shared<spdlog::sinks::rotating_file_sink_mt>(perf_log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
-            perf_log_file_sink->set_pattern(PERF_PATTERN);
+            auto perf_log_file_format = std::make_unique<spdlog::pattern_formatter>(PERF_PATTERN, spdlog::pattern_time_type::utc);
+            perf_log_file_sink->set_formatter(std::move(perf_log_file_format));
             perf_sinks.push_back(perf_log_file_sink);
         }
 
