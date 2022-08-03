@@ -1,0 +1,28 @@
+FROM ubuntu:20.04
+
+# Install the basic packages
+RUN \
+  apt-get update && \
+  apt-get -y upgrade && \
+  DEBIAN_FRONTEND=noninteractive \
+  apt-get install -y --no-install-suggests --no-install-recommends software-properties-common && \
+  apt-add-repository -y -s ppa:kernsuite/kern-7 && \
+  add-apt-repository -y ppa:cartavis-team/carta && \
+  apt-get -y install carta-beta casacore-data && \
+  apt-get -y remove --auto-remove software-properties-common && \
+  apt-get -y clean
+
+# Set up initial images directory and initial preferences
+RUN mkdir -p /images && \
+    cp /usr/share/carta/default.fits /images/ && \
+    mkdir -p /root/.carta-beta/config && \
+    echo '{"telemetryConsentShown": true, "telemetryMode":"none"}' > /root/.carta-beta/config/preferences.json
+
+# Forward port so that the webapp can properly access it from outside of the container
+EXPOSE 3002
+
+ENV HOME /root
+WORKDIR /root
+
+CMD ["/usr/bin/carta_backend", "--no_browser", "--top_level_folder", "/images", "/images"]
+
