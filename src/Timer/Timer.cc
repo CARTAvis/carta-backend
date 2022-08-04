@@ -88,3 +88,12 @@ void Timer::Clear(const std::string& timer_name) {
         _measurements.erase(timer_name);
     }
 }
+
+PerfTimer::PerfTimer() {
+    _timer.Start("PerfTimer");
+}
+
+double PerfTimer::Elapsed() {
+    _timer.End("PerfTimer");
+    return _timer.GetMeasurement("PerfTimer").count();
+}

@@ -30,6 +30,17 @@ protected:
     std::unordered_map<std::string, std::pair<timer_duration, int>> _measurements;
 };
 
+class PerfTimer {
+public:
+    PerfTimer();
+    ~PerfTimer() = default;
+
+    double Elapsed();
+
+private:
+    Timer _timer;
+};
+
 } // namespace carta
 
 #endif // CARTA_BACKEND_TIMER_TIMER_H_

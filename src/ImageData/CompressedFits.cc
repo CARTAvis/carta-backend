@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "../Logger/Logger.h"
+#include "Timer/Timer.h"
 #include "Util/FileSystem.h"
 #include "Util/String.h"
 
@@ -31,7 +32,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
         return false;
     }
 
-    auto t_start_get_hdu_info = std::chrono::high_resolution_clock::now();
+    PerfTimer t;
 
     // For map:
     int hdu(-1);
@@ -187,9 +188,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
     gzclose(zip_file);
 
-    auto t_end_get_hdu_info = std::chrono::high_resolution_clock::now();
-    auto dt_get_hdu_info = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_hdu_info - t_start_get_hdu_info).count();
-    spdlog::performance("Get hdu info map in {:.3f} ms", dt_get_hdu_info * 1e-3);
+    spdlog::performance("Get hdu info map in {:.3f} ms", t.Elapsed());
     return true;
 }
 
@@ -200,7 +199,7 @@ bool CompressedFits::GetFirstImageHdu(string& hduname) {
         return false;
     }
 
-    auto t_start_get_first_image_hdu = std::chrono::high_resolution_clock::now();
+    PerfTimer t;
 
     bool first_image_hdu_ok(false);
     bool in_image_headers(false);
@@ -230,10 +229,7 @@ bool CompressedFits::GetFirstImageHdu(string& hduname) {
 
     gzclose(zip_file);
 
-    auto t_end_get_first_image_hdu = std::chrono::high_resolution_clock::now();
-    auto dt_get_first_image_hdu =
-        std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_first_image_hdu - t_start_get_first_image_hdu).count();
-    spdlog::performance("Get the first image hdu in {:.3f} ms", dt_get_first_image_hdu * 1e-3);
+    spdlog::performance("Get the first image hdu in {:.3f} ms", t.Elapsed());
     return first_image_hdu_ok;
 }
 
@@ -567,7 +563,7 @@ unsigned long long CompressedFits::GetDecompressSize() {
         return fs::file_size(unzip_path) / 1000;
     }
 
-    auto t_start_get_size = std::chrono::high_resolution_clock::now();
+    PerfTimer t;
 
     auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {
@@ -645,9 +641,7 @@ unsigned long long CompressedFits::GetDecompressSize() {
 
     gzclose(zip_file);
 
-    auto t_end_get_size = std::chrono::high_resolution_clock::now();
-    auto dt_get_size = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_size - t_start_get_size).count();
-    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", dt_get_size * 1e-3);
+    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", t.Elapsed());
 
     // Convert to kB
     return unzip_size / 1000;
@@ -665,7 +659,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
         return false;
     }
 
-    auto t_start_decompress = std::chrono::high_resolution_clock::now();
+    PerfTimer t;
     // Open input zip file and set buffer
     auto zip_file = OpenGzFile();
 
@@ -719,9 +713,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
     out_file.close();
     unzip_filename = _unzip_filename;
 
-    auto t_end_decompress = std::chrono::high_resolution_clock::now();
-    auto dt_decompress = std::chrono::duration_cast<std::chrono::microseconds>(t_end_decompress - t_start_decompress).count();
-    spdlog::performance("Decompress fits.gz in {:.3f} ms", dt_decompress * 1e-3);
+    spdlog::performance("Decompress fits.gz in {:.3f} ms", t.Elapsed());
 
     return true;
 }

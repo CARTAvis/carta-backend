@@ -13,6 +13,7 @@
 
 #include "../Logger/Logger.h"
 #include "ThreadingManager/ThreadingManager.h"
+#include "Timer/Timer.h"
 
 namespace carta {
 
@@ -137,7 +138,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     int64_t buffer_height = min(target_buffer_height, src_height);
 
     int64_t line_offset = 0;
-    auto t_start = std::chrono::high_resolution_clock::now();
+    PerfTimer t;
     std::unique_ptr<float[]> temp_array(new float[dest_width * buffer_height]);
     auto source_ptr = src_data;
     auto dest_ptr = dest_data;
@@ -170,11 +171,10 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         }
     }
 
-    auto t_end = std::chrono::high_resolution_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-    auto rate = dest_width * dest_height / (double)dt;
-    spdlog::performance("Smoothed with smoothing factor of {} and kernel size of {} in {:.3f} ms at {:.3f} MPix/s", smoothing_factor,
-        mask_size, dt * 1e-3, rate);
+    auto dt = t.Elapsed();
+    auto rate = dest_width * dest_height / (dt * 1e+3);
+    spdlog::performance(
+        "Smoothed with smoothing factor of {} and kernel size of {} in {:.3f} ms at {:.3f} MPix/s", smoothing_factor, mask_size, dt, rate);
 
     return true;
 }
