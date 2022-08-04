@@ -8,15 +8,12 @@
 
 using namespace carta;
 
-Timer::Timer() : _t_start(std::chrono::high_resolution_clock::now()), _stop(false) {}
+Timer::Timer() : _t_start(std::chrono::high_resolution_clock::now()) {}
 
 double Timer::Elapsed(Unit unit) {
-    if (!_stop) {
-        _t_end = std::chrono::high_resolution_clock::now();
-        _stop = true;
-    }
+    auto t_end = std::chrono::high_resolution_clock::now();
     if (unit == ms) {
-        return std::chrono::duration_cast<std::chrono::microseconds>(_t_end - _t_start).count() / 1000.0;
+        return std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count() / 1000.0;
     }
-    return std::chrono::duration_cast<std::chrono::microseconds>(_t_end - _t_start).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count();
 }

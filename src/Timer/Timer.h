@@ -27,8 +27,6 @@ public:
 
 private:
     std::chrono::high_resolution_clock::time_point _t_start;
-    std::chrono::high_resolution_clock::time_point _t_end;
-    bool _stop;
 };
 
 } // namespace carta
