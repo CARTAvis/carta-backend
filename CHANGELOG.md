@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed response when importing region file fails by catching exception ([#1160](https://github.com/CARTAvis/carta-backend/issues/1160)).
 * Fixed the crash when trying to load an unsupported image file ([#1161](https://github.com/CARTAvis/carta-backend/issues/1161)).
 * Fixed including directories in region file list ([#1159](https://github.com/CARTAvis/carta-backend/issues/1159)).
+* Fixed issue where NaN data was read incorrectly from a compressed FITS .fz image ([#1143](https://github.com/CARTAvis/carta-backend/issues/1143)).
 
 ## [3.0.0-beta.3]
 
