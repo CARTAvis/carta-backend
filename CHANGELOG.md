@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Made HTTP server return a different error code for disabled features ([#1115](https://github.com/CARTAvis/carta-backend/issues/1115)).
 * Removed Splatalogue interaction from backend codebase and removed dependency on libcurl ([#994](https://github.com/cartavis/carta-backend/issues/994)).
 * Use wrappers to construct protocol buffer messages where possible ([#960](https://github.com/CARTAvis/carta-backend/issues/960)).
+* Change the time zone in log messages from local to UTC ([#1151](https://github.com/CARTAvis/carta-backend/issues/1151)).
 
 ### Fixed
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
