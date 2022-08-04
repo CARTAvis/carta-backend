@@ -1108,7 +1108,7 @@ bool RegionHandler::FillRegionHistogramData(
 bool RegionHandler::GetRegionHistogramData(
     int region_id, int file_id, const std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
     // Fill stats message for given region, file
-    PerfTimer t;
+    Timer t;
 
     // Set channel range is the current channel
     int z(_frames.at(file_id)->CurrentZ());
@@ -1205,8 +1205,8 @@ bool RegionHandler::GetRegionHistogramData(
         histogram_messages.emplace_back(histogram_message);
     }
 
-    auto dt = t.Elapsed();
-    spdlog::performance("Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt, (float)stats.num_pixels / (dt * 1e+3));
+    spdlog::performance(
+        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed(Timer::ms), (float)stats.num_pixels / t.Elapsed(Timer::us));
 
     return true;
 }
@@ -1303,7 +1303,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
     bool use_current_stokes(coordinate == "z");
 
-    PerfTimer t;
+    Timer t;
 
     std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
     auto region = GetRegion(region_id);
@@ -1451,7 +1451,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed());
+            spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed(Timer::ms));
             return true;
         }
     } // end loader swizzled data
@@ -1562,7 +1562,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed(Timer::ms));
     return true;
 }
 
@@ -1641,7 +1641,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 bool RegionHandler::GetRegionStatsData(
     int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
-    PerfTimer t;
+    Timer t;
 
     int z(_frames.at(file_id)->CurrentZ());
     stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
@@ -1697,7 +1697,7 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        spdlog::performance("Fill region stats in {:.3f} ms", t.Elapsed());
+        spdlog::performance("Fill region stats in {:.3f} ms", t.Elapsed(Timer::ms));
         return true;
     }
 

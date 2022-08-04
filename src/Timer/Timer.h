@@ -18,27 +18,17 @@ namespace carta {
 
 class Timer {
 public:
-    void Start(const std::string& timer_name);
-    void End(const std::string& timer_name);
-    void Clear(const std::string& timer_name = "");
-    timer_duration GetMeasurement(const std::string& timer_name, bool clear_after_fetch = false);
-    std::string GetMeasurementString(const std::string& timer_name, bool clear_after_fetch = false);
-    void Print(const std::string& timer_name = "", bool clear_after_fetch = false);
+    enum Unit { ms, us };
 
-protected:
-    std::unordered_map<std::string, timer_entry> _entries;
-    std::unordered_map<std::string, std::pair<timer_duration, int>> _measurements;
-};
+    Timer();
+    ~Timer() = default;
 
-class PerfTimer {
-public:
-    PerfTimer();
-    ~PerfTimer() = default;
-
-    double Elapsed();
+    double Elapsed(Unit unit);
 
 private:
-    Timer _timer;
+    std::chrono::high_resolution_clock::time_point _t_start;
+    std::chrono::high_resolution_clock::time_point _t_end;
+    bool _stop;
 };
 
 } // namespace carta

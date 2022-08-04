@@ -138,7 +138,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     int64_t buffer_height = min(target_buffer_height, src_height);
 
     int64_t line_offset = 0;
-    PerfTimer t;
+    Timer t;
     std::unique_ptr<float[]> temp_array(new float[dest_width * buffer_height]);
     auto source_ptr = src_data;
     auto dest_ptr = dest_data;
@@ -171,8 +171,8 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         }
     }
 
-    auto dt = t.Elapsed();
-    auto rate = dest_width * dest_height / (dt * 1e+3);
+    auto dt = t.Elapsed(Timer::ms);
+    auto rate = dest_width * dest_height / t.Elapsed(Timer::us);
     spdlog::performance(
         "Smoothed with smoothing factor of {} and kernel size of {} in {:.3f} ms at {:.3f} MPix/s", smoothing_factor, mask_size, dt, rate);
 

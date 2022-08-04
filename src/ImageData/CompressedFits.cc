@@ -32,7 +32,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
         return false;
     }
 
-    PerfTimer t;
+    Timer t;
 
     // For map:
     int hdu(-1);
@@ -188,7 +188,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
     gzclose(zip_file);
 
-    spdlog::performance("Get hdu info map in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Get hdu info map in {:.3f} ms", t.Elapsed(Timer::ms));
     return true;
 }
 
@@ -199,7 +199,7 @@ bool CompressedFits::GetFirstImageHdu(string& hduname) {
         return false;
     }
 
-    PerfTimer t;
+    Timer t;
 
     bool first_image_hdu_ok(false);
     bool in_image_headers(false);
@@ -229,7 +229,7 @@ bool CompressedFits::GetFirstImageHdu(string& hduname) {
 
     gzclose(zip_file);
 
-    spdlog::performance("Get the first image hdu in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Get the first image hdu in {:.3f} ms", t.Elapsed(Timer::ms));
     return first_image_hdu_ok;
 }
 
@@ -563,7 +563,7 @@ unsigned long long CompressedFits::GetDecompressSize() {
         return fs::file_size(unzip_path) / 1000;
     }
 
-    PerfTimer t;
+    Timer t;
 
     auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {
@@ -641,7 +641,7 @@ unsigned long long CompressedFits::GetDecompressSize() {
 
     gzclose(zip_file);
 
-    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", t.Elapsed(Timer::ms));
 
     // Convert to kB
     return unzip_size / 1000;
@@ -659,7 +659,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
         return false;
     }
 
-    PerfTimer t;
+    Timer t;
     // Open input zip file and set buffer
     auto zip_file = OpenGzFile();
 
@@ -713,7 +713,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
     out_file.close();
     unzip_filename = _unzip_filename;
 
-    spdlog::performance("Decompress fits.gz in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Decompress fits.gz in {:.3f} ms", t.Elapsed(Timer::ms));
 
     return true;
 }

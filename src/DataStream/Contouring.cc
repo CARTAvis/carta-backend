@@ -222,7 +222,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
     std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
     ContourCallback& partial_callback) {
-    PerfTimer t;
+    Timer t;
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
@@ -235,8 +235,8 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     }
 
     if (spdlog::get(PERF_TAG)) {
-        auto dt_contours = t.Elapsed();
-        auto rate_contours = width * height / (dt_contours * 1e+3);
+        auto dt_contours = t.Elapsed(Timer::ms);
+        auto rate_contours = width * height / t.Elapsed(Timer::us);
         int vertex_count = 0;
         int segment_count = 0;
         for (auto& vertices : vertex_data) {

@@ -380,7 +380,7 @@ bool Frame::FillImageCache() {
         return true;
     }
 
-    PerfTimer t;
+    Timer t;
     StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
     _image_cache_size = stokes_slicer.slicer.length().product();
     _image_cache = std::make_unique<float[]>(_image_cache_size);
@@ -389,9 +389,8 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    auto dt = t.Elapsed();
-    spdlog::performance(
-        "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt, (float)(_width * _height) / (dt * 1e+3));
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, t.Elapsed(Timer::ms),
+        (float)(_width * _height) / t.Elapsed(Timer::us));
 
     _image_cache_valid = true;
     return true;
@@ -447,7 +446,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     bool write_lock(false);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
-    PerfTimer t;
+    Timer t;
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
         BlockSmooth(
@@ -457,10 +456,9 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         NearestNeighbor(_image_cache.get(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
-    auto dt = t.Elapsed();
     spdlog::performance("{} filter {}x{} raster data to {}x{} in {:.3f} ms at {:.3f} MPix/s",
-        (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region, dt,
-        (float)(num_rows_region * row_length_region) / (dt * 1e-3));
+        (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region,
+        t.Elapsed(Timer::ms), (float)(num_rows_region * row_length_region) / t.Elapsed(Timer::us));
 
     return true;
 }
@@ -508,7 +506,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 return false;
             }
 
-            PerfTimer t;
+            Timer t;
 
             // compress the data with the default precision
             std::vector<char> compression_buffer;
@@ -546,9 +544,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
 
             // Measure duration for compress tile data
-            auto dt = t.Elapsed();
-            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, dt,
-                (float)(tile_width * tile_height) / (dt * 1e+3));
+            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height,
+                t.Elapsed(Timer::Unit::ms), (float)(tile_width * tile_height) / t.Elapsed(Timer::Unit::us));
 
             return !(ZStokesChanged(z, stokes));
         }
@@ -726,7 +723,7 @@ bool Frame::FillRegionHistogramData(
     int stokes;
     bool have_valid_histogram(false);
     for (auto& histogram_config : requirements) {
-        PerfTimer t;
+        Timer t;
 
         // Set channel
         int z = histogram_config.channel;
@@ -767,8 +764,8 @@ bool Frame::FillRegionHistogramData(
             }
 
             if (histogram_filled) {
-                auto dt = t.Elapsed();
-                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt, (float)stats.num_pixels / (dt * 1e+3));
+                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed(Timer::ms),
+                    (float)stats.num_pixels / t.Elapsed(Timer::us));
             }
         } else {
             region_histogram_callback(histogram_data); // send region histogram data message
@@ -1018,8 +1015,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             continue;
         }
 
-        PerfTimer t;
-
+        Timer t;
         // Calculate stats map using slicer
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
@@ -1038,7 +1034,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             // cache results
             _image_stats[cache_key] = stats_map;
 
-            spdlog::performance("Fill image stats in {:.3f} ms", t.Elapsed());
+            spdlog::performance("Fill image stats in {:.3f} ms", t.Elapsed(Timer::ms));
         }
     }
 
@@ -1069,7 +1065,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         return false;
     }
 
-    PerfTimer t;
+    Timer t;
 
     // The starting index of the tile which contains this index.
     // A custom tile size can be specified so that this can be reused to calculate a chunk index.
@@ -1348,7 +1344,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         spatial_data_vec.emplace_back(spatial_data);
     }
 
-    spdlog::performance("Fill spatial profile in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Fill spatial profile in {:.3f} ms", t.Elapsed(Timer::ms));
 
     return true;
 }
@@ -1415,8 +1411,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
-    PerfTimer t;
-
+    Timer t;
     std::vector<SpectralConfig> current_configs;
     std::unique_lock<std::mutex> ulock(_spectral_mutex);
     current_configs.insert(current_configs.begin(), _cursor_spectral_configs.begin(), _cursor_spectral_configs.end());
@@ -1551,7 +1546,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
     }
 
-    spdlog::performance("Fill cursor spectral profile in {:.3f} ms", t.Elapsed());
+    spdlog::performance("Fill cursor spectral profile in {:.3f} ms", t.Elapsed(Timer::ms));
 
     return true;
 }
@@ -1608,7 +1603,7 @@ casacore::IPosition Frame::GetRegionShape(const StokesRegion& stokes_region) {
 
 bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data) {
     // Get image data with a region applied
-    PerfTimer t;
+    Timer t;
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
@@ -1654,7 +1649,7 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
             }
         }
 
-        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed());
+        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed(Timer::ms));
 
         return true;
     } catch (casacore::AipsError& err) {
