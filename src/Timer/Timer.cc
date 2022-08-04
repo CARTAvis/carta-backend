@@ -10,6 +10,8 @@
 
 #include "Logger/Logger.h"
 
+const std::string PERF_TIMER_NAME = "PerfTimer";
+
 using namespace carta;
 
 void Timer::Start(const std::string& timer_name) {
@@ -90,10 +92,10 @@ void Timer::Clear(const std::string& timer_name) {
 }
 
 PerfTimer::PerfTimer() {
-    _timer.Start("PerfTimer");
+    _timer.Start(PERF_TIMER_NAME);
 }
 
 double PerfTimer::Elapsed() {
-    _timer.End("PerfTimer");
-    return _timer.GetMeasurement("PerfTimer").count();
+    _timer.End(PERF_TIMER_NAME);
+    return _timer.GetMeasurement(PERF_TIMER_NAME).count();
 }
