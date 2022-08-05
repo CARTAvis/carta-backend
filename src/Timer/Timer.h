@@ -16,8 +16,6 @@ namespace carta {
 struct TimeDelta {
     double microseconds;
 
-    TimeDelta(double us) : microseconds(us) {}
-
     double ms() const {
         return (microseconds / 1000.0);
     }
