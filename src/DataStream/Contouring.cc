@@ -235,8 +235,8 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     }
 
     if (spdlog::get(PERF_TAG)) {
-        auto dt_contours = t.Elapsed(Timer::ms);
-        auto rate_contours = width * height / t.Elapsed(Timer::us);
+        auto dt_contours = t.Elapsed().ms();
+        auto rate_contours = width * height / t.Elapsed().us();
         int vertex_count = 0;
         int segment_count = 0;
         for (auto& vertices : vertex_data) {

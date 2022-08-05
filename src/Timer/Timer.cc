@@ -10,10 +10,8 @@ using namespace carta;
 
 Timer::Timer() : _t_start(std::chrono::high_resolution_clock::now()) {}
 
-double Timer::Elapsed(Unit unit) {
+TimeDelta Timer::Elapsed() {
     auto t_end = std::chrono::high_resolution_clock::now();
-    if (unit == ms) {
-        return std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count() / 1000.0;
-    }
-    return std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count();
+    TimeDelta time_delta(std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count());
+    return time_delta;
 }

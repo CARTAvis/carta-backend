@@ -188,7 +188,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
 
     gzclose(zip_file);
 
-    spdlog::performance("Get hdu info map in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Get hdu info map in {:.3f} ms", t.Elapsed().ms());
     return true;
 }
 
@@ -229,7 +229,7 @@ bool CompressedFits::GetFirstImageHdu(string& hduname) {
 
     gzclose(zip_file);
 
-    spdlog::performance("Get the first image hdu in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Get the first image hdu in {:.3f} ms", t.Elapsed().ms());
     return first_image_hdu_ok;
 }
 
@@ -641,7 +641,7 @@ unsigned long long CompressedFits::GetDecompressSize() {
 
     gzclose(zip_file);
 
-    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Get decompressed fits.gz size in {:.3f} ms", t.Elapsed().ms());
 
     // Convert to kB
     return unzip_size / 1000;
@@ -713,7 +713,7 @@ bool CompressedFits::DecompressGzFile(std::string& unzip_filename, std::string& 
     out_file.close();
     unzip_filename = _unzip_filename;
 
-    spdlog::performance("Decompress fits.gz in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Decompress fits.gz in {:.3f} ms", t.Elapsed().ms());
 
     return true;
 }

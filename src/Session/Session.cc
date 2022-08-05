@@ -704,7 +704,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         }
 
         // Measure duration for get tile data
-        spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed(Timer::ms));
+        spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
         auto final_message = Message::RasterTileSync(file_id, z, stokes, animation_id, true);
@@ -856,7 +856,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         CARTA::ImportRegionAck import_ack;
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
         // Measure duration for get tile data
-        spdlog::performance("Import region in {:.3f} ms", t.Elapsed(Timer::ms));
+        spdlog::performance("Import region in {:.3f} ms", t.Elapsed().ms());
 
         // send any errors to log
         std::string ack_message(import_ack.message());
@@ -1147,7 +1147,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     }
 
     // Measure duration for resume
-    spdlog::performance("Resume in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Resume in {:.3f} ms", t.Elapsed().ms());
 
     // RESPONSE
     CARTA::ResumeSessionAck ack;
@@ -1332,7 +1332,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 auto* open_file_ack = pv_response.mutable_open_file_ack();
                 OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
             }
-            spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed(Timer::ms));
+            spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed().ms());
         }
 
         SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
@@ -1366,7 +1366,7 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
             _frames.at(file_id)->FitImage(fitting_request, fitting_response);
         }
 
-        spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed(Timer::ms));
+        spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed().ms());
         SendEvent(CARTA::EventType::FITTING_RESPONSE, request_id, fitting_response);
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -1496,8 +1496,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     // cache cube histogram
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
 
-                    spdlog::performance("Fill cube histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed(Timer::ms),
-                        (float)cube_stats.num_pixels / t.Elapsed(Timer::us));
+                    spdlog::performance("Fill cube histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed().ms(),
+                        (float)cube_stats.num_pixels / t.Elapsed().us());
 
                     calculated = true;
                 }
@@ -2034,7 +2034,7 @@ void Session::ExecuteAnimationFrameInner() {
 
             // Measure duration for frame changing as animating
             if (z_changed || stokes_changed) {
-                spdlog::performance("Animator: Change frame in {:.3f} ms", t.Elapsed(Timer::ms));
+                spdlog::performance("Animator: Change frame in {:.3f} ms", t.Elapsed().ms());
             }
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", active_file_id);

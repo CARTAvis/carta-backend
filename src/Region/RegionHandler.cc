@@ -1206,7 +1206,7 @@ bool RegionHandler::GetRegionHistogramData(
     }
 
     spdlog::performance(
-        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed(Timer::ms), (float)stats.num_pixels / t.Elapsed(Timer::us));
+        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed().ms(), (float)stats.num_pixels / t.Elapsed().us());
 
     return true;
 }
@@ -1451,7 +1451,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed(Timer::ms));
+            spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed().ms());
             return true;
         }
     } // end loader swizzled data
@@ -1562,7 +1562,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed().ms());
     return true;
 }
 
@@ -1697,7 +1697,7 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        spdlog::performance("Fill region stats in {:.3f} ms", t.Elapsed(Timer::ms));
+        spdlog::performance("Fill region stats in {:.3f} ms", t.Elapsed().ms());
         return true;
     }
 

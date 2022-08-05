@@ -11,19 +11,27 @@
 #include <string>
 #include <unordered_map>
 
-typedef std::chrono::time_point<std::chrono::high_resolution_clock> timer_entry;
-typedef std::chrono::duration<double, std::milli> timer_duration;
-
 namespace carta {
+
+struct TimeDelta {
+    double microseconds;
+
+    TimeDelta(double us) : microseconds(us) {}
+
+    double ms() const {
+        return (microseconds / 1000.0);
+    }
+    double us() const {
+        return microseconds;
+    }
+};
 
 class Timer {
 public:
-    enum Unit { ms, us };
-
     Timer();
     ~Timer() = default;
 
-    double Elapsed(Unit unit);
+    TimeDelta Elapsed();
 
 private:
     std::chrono::high_resolution_clock::time_point _t_start;

@@ -31,7 +31,7 @@ public:
 
         _dummy_backend->Receive(register_viewer);
 
-        EXPECT_LT(t.Elapsed(carta::Timer::ms), 100); // expect the process time within 100 ms
+        EXPECT_LT(t.Elapsed().ms(), 100); // expect the process time within 100 ms
 
         _message_count = 0;
 

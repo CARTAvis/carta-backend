@@ -389,8 +389,8 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, t.Elapsed(Timer::ms),
-        (float)(_width * _height) / t.Elapsed(Timer::us));
+    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, t.Elapsed().ms(),
+        (float)(_width * _height) / t.Elapsed().us());
 
     _image_cache_valid = true;
     return true;
@@ -458,7 +458,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     spdlog::performance("{} filter {}x{} raster data to {}x{} in {:.3f} ms at {:.3f} MPix/s",
         (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region,
-        t.Elapsed(Timer::ms), (float)(num_rows_region * row_length_region) / t.Elapsed(Timer::us));
+        t.Elapsed().ms(), (float)(num_rows_region * row_length_region) / t.Elapsed().us());
 
     return true;
 }
@@ -544,8 +544,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
 
             // Measure duration for compress tile data
-            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height,
-                t.Elapsed(Timer::Unit::ms), (float)(tile_width * tile_height) / t.Elapsed(Timer::Unit::us));
+            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, t.Elapsed().ms(),
+                (float)(tile_width * tile_height) / t.Elapsed().us());
 
             return !(ZStokesChanged(z, stokes));
         }
@@ -764,8 +764,8 @@ bool Frame::FillRegionHistogramData(
             }
 
             if (histogram_filled) {
-                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed(Timer::ms),
-                    (float)stats.num_pixels / t.Elapsed(Timer::us));
+                spdlog::performance(
+                    "Fill image histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed().ms(), (float)stats.num_pixels / t.Elapsed().us());
             }
         } else {
             region_histogram_callback(histogram_data); // send region histogram data message
@@ -1034,7 +1034,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
             // cache results
             _image_stats[cache_key] = stats_map;
 
-            spdlog::performance("Fill image stats in {:.3f} ms", t.Elapsed(Timer::ms));
+            spdlog::performance("Fill image stats in {:.3f} ms", t.Elapsed().ms());
         }
     }
 
@@ -1344,7 +1344,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         spatial_data_vec.emplace_back(spatial_data);
     }
 
-    spdlog::performance("Fill spatial profile in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Fill spatial profile in {:.3f} ms", t.Elapsed().ms());
 
     return true;
 }
@@ -1546,7 +1546,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
     }
 
-    spdlog::performance("Fill cursor spectral profile in {:.3f} ms", t.Elapsed(Timer::ms));
+    spdlog::performance("Fill cursor spectral profile in {:.3f} ms", t.Elapsed().ms());
 
     return true;
 }
@@ -1649,7 +1649,7 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
             }
         }
 
-        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed(Timer::ms));
+        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
 
         return true;
     } catch (casacore::AipsError& err) {
