@@ -562,12 +562,12 @@ pipeline {
                             }
                         }
                     }
-                    stage('2D_image_fitting') {
+                    stage('image_fitting') {
                         agent {
                             label "${PLATFORM}-agent"
                         }
                         steps {
-                            warnError(catchInterruptions: true, message: 'ICD test 2D_image_fitting failure') {
+                            warnError(catchInterruptions: true, message: 'ICD test image_fitting failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
                                 sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
@@ -1065,7 +1065,7 @@ def close_file() {
     }
 }
 
-def 2D_image_fitting() {
+def image_fitting() {
     script {
         dir ('carta-backend-ICD-test') {
             sh "npm install && ./protobuf/build_proto.sh"
