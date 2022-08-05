@@ -4,7 +4,8 @@ pipeline {
         COMMIT_ID=''
     }
     options {
-        preserveStashes() 
+        preserveStashes()
+        disableConcurrentBuilds() 
     }
     stages {
         stage('Build') {
@@ -127,10 +128,10 @@ pipeline {
     }
     post {
         success {
-            slackSend color: 'good', message: "carta-backend - Success - ${env.BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+            slackSend color: 'good', message: "carta-backend - Success - ${env.BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID}>";
         }
         failure {
-             slackSend color: 'danger', message: "carta-backend - Fail - ${env.BRANCH_NAME} (<${env.RUN_DISPLAY_URL}|${COMMIT_ID}>)";
+             slackSend color: 'danger', message: "carta-backend - Fail - ${env.BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID}>";
         }
     }
 }
