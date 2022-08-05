@@ -1205,8 +1205,8 @@ bool RegionHandler::GetRegionHistogramData(
         histogram_messages.emplace_back(histogram_message);
     }
 
-    spdlog::performance(
-        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed().ms(), (float)stats.num_pixels / t.Elapsed().us());
+    auto dt = t.Elapsed();
+    spdlog::performance("Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)stats.num_pixels / dt.us());
 
     return true;
 }

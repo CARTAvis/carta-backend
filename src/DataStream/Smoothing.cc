@@ -171,10 +171,10 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         }
     }
 
-    auto dt = t.Elapsed().ms();
-    auto rate = dest_width * dest_height / t.Elapsed().us();
-    spdlog::performance(
-        "Smoothed with smoothing factor of {} and kernel size of {} in {:.3f} ms at {:.3f} MPix/s", smoothing_factor, mask_size, dt, rate);
+    auto dt = t.Elapsed();
+    auto rate = dest_width * dest_height / dt.us();
+    spdlog::performance("Smoothed with smoothing factor of {} and kernel size of {} in {:.3f} ms at {:.3f} MPix/s", smoothing_factor,
+        mask_size, dt.ms(), rate);
 
     return true;
 }

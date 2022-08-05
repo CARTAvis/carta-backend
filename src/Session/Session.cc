@@ -1496,8 +1496,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     // cache cube histogram
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
 
-                    spdlog::performance("Fill cube histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed().ms(),
-                        (float)cube_stats.num_pixels / t.Elapsed().us());
+                    auto dt = t.Elapsed();
+                    spdlog::performance(
+                        "Fill cube histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)cube_stats.num_pixels / dt.us());
 
                     calculated = true;
                 }

@@ -389,8 +389,9 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    spdlog::performance("Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, t.Elapsed().ms(),
-        (float)(_width * _height) / t.Elapsed().us());
+    auto dt = t.Elapsed();
+    spdlog::performance(
+        "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt.ms(), (float)(_width * _height) / dt.us());
 
     _image_cache_valid = true;
     return true;
@@ -456,9 +457,10 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         NearestNeighbor(_image_cache.get(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
+    auto dt = t.Elapsed();
     spdlog::performance("{} filter {}x{} raster data to {}x{} in {:.3f} ms at {:.3f} MPix/s",
-        (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region,
-        t.Elapsed().ms(), (float)(num_rows_region * row_length_region) / t.Elapsed().us());
+        (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour", req_height, req_width, num_rows_region, row_length_region, dt.ms(),
+        (float)(num_rows_region * row_length_region) / dt.us());
 
     return true;
 }
@@ -544,8 +546,9 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 "The compression ratio for tile (layer:{}, x:{}, y:{}) is {:.3f}.", tile.layer, tile.x, tile.y, compression_ratio);
 
             // Measure duration for compress tile data
-            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, t.Elapsed().ms(),
-                (float)(tile_width * tile_height) / t.Elapsed().us());
+            auto dt = t.Elapsed();
+            spdlog::performance("Compress {}x{} tile data in {:.3f} ms at {:.3f} MPix/s", tile_width, tile_height, dt.ms(),
+                (float)(tile_width * tile_height) / dt.us());
 
             return !(ZStokesChanged(z, stokes));
         }
@@ -764,8 +767,8 @@ bool Frame::FillRegionHistogramData(
             }
 
             if (histogram_filled) {
-                spdlog::performance(
-                    "Fill image histogram in {:.3f} ms at {:.3f} MPix/s", t.Elapsed().ms(), (float)stats.num_pixels / t.Elapsed().us());
+                auto dt = t.Elapsed();
+                spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)stats.num_pixels / dt.us());
             }
         } else {
             region_histogram_callback(histogram_data); // send region histogram data message

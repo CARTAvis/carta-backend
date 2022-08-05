@@ -235,8 +235,8 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     }
 
     if (spdlog::get(PERF_TAG)) {
-        auto dt_contours = t.Elapsed().ms();
-        auto rate_contours = width * height / t.Elapsed().us();
+        auto dt = t.Elapsed();
+        auto rate_contours = width * height / dt.us();
         int vertex_count = 0;
         int segment_count = 0;
         for (auto& vertices : vertex_data) {
@@ -247,7 +247,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         }
 
         spdlog::performance("Contoured {}x{} image in {:.3f} ms at {:.3f} MPix/s. Found {} vertices in {} segments across {} levels", width,
-            height, dt_contours, rate_contours, vertex_count, segment_count, levels.size());
+            height, dt.ms(), rate_contours, vertex_count, segment_count, levels.size());
     }
 }
 
