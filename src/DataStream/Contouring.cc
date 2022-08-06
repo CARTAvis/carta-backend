@@ -13,6 +13,7 @@
 
 #include "../Logger/Logger.h"
 #include "ThreadingManager/ThreadingManager.h"
+#include "Timer/Timer.h"
 
 namespace carta {
 
@@ -221,7 +222,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
     std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
     ContourCallback& partial_callback) {
-    auto t_start_contours = std::chrono::high_resolution_clock::now();
+    Timer t;
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
@@ -234,9 +235,8 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     }
 
     if (spdlog::get(PERF_TAG)) {
-        auto t_end_contours = std::chrono::high_resolution_clock::now();
-        auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
-        auto rate_contours = width * height / (double)dt_contours;
+        auto dt = t.Elapsed();
+        auto rate_contours = width * height / dt.us();
         int vertex_count = 0;
         int segment_count = 0;
         for (auto& vertices : vertex_data) {
@@ -247,7 +247,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         }
 
         spdlog::performance("Contoured {}x{} image in {:.3f} ms at {:.3f} MPix/s. Found {} vertices in {} segments across {} levels", width,
-            height, dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
+            height, dt.ms(), rate_contours, vertex_count, segment_count, levels.size());
     }
 }
 
