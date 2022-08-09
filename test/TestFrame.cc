@@ -4,10 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <type_traits>
 #include <gtest/gtest.h>
 
 #include "Frame/Frame.h"
 
+#include "CommonTestUtilities.h"
 #include "Factories.h"
 #include "MockFileLoader.h"
 #include "MockTileCache.h"
@@ -33,8 +35,7 @@ public:
     FRIEND_TEST(FrameTest, TestNoLoaderShape);
     FRIEND_TEST(FrameTest, TestNoLoaderData);
     FRIEND_TEST(FrameTest, TestBadLoaderStats);
-    FRIEND_TEST(FrameTest, TestIsValid);
-    FRIEND_TEST(FrameTest, TestGetErrorMessage);
+    FRIEND_TEST(FrameTest, TestSimpleGetters);
     FRIEND_TEST(FrameTest, TestGetFileName);
     FRIEND_TEST(FrameTest, TestGetFileNameNoLoader);
     //     FRIEND_TEST(FrameTest, );
@@ -159,20 +160,6 @@ TEST(FrameTest, TestBadLoaderStats) {
     ASSERT_EQ(frame._open_image_error, "Problem loading statistics from file: These stats are bad.");
 }
 
-TEST(FrameTest, TestIsValid) {
-    TestFrame frame(0, nullptr, "0");
-    frame._valid = true;
-    ASSERT_EQ(frame.IsValid(), true);
-    frame._valid = false;
-    ASSERT_EQ(frame.IsValid(), false);
-}
-
-TEST(FrameTest, TestGetErrorMessage) {
-    TestFrame frame(0, nullptr, "0");
-    frame._open_image_error = "Custom error";
-    ASSERT_EQ(frame.GetErrorMessage(), "Custom error");
-}
-
 TEST(FrameTest, TestGetFileName) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
     EXPECT_CALL(*loader, GetFileName()).WillOnce(Return("somefile.fits"));
@@ -184,6 +171,48 @@ TEST(FrameTest, TestGetFileName) {
 TEST(FrameTest, TestGetFileNameNoLoader) {
     TestFrame frame(0, nullptr, "0");
     ASSERT_EQ(frame.GetFileName(), "");
+}
+
+TEST(FrameTest, TestSimpleGetters) {
+    TestFrame frame(0, nullptr, "0");
+    
+    // TODO helper functions
+
+    ASSERT_TRUE((std::is_same_v<decltype(frame._valid), decltype(frame.IsValid())>));
+    frame._valid = true;
+    ASSERT_EQ(frame.IsValid(), true);
+    frame._valid = false;
+    ASSERT_EQ(frame.IsValid(), false);
+    
+    ASSERT_TRUE((std::is_same_v<decltype(frame._open_image_error), decltype(frame.GetErrorMessage())>));
+    frame._open_image_error = "test";
+    ASSERT_EQ(frame.GetErrorMessage(), "test");
+    
+    ASSERT_TRUE((std::is_same_v<decltype(frame._width), decltype(frame.Width())>));
+    ASSERT_TRUE((std::is_same_v<decltype(frame._height), decltype(frame.Height())>));
+    ASSERT_TRUE((std::is_same_v<decltype(frame._depth), decltype(frame.Depth())>));
+    ASSERT_TRUE((std::is_same_v<decltype(frame._num_stokes), decltype(frame.NumStokes())>));
+    frame._width = 123;
+    frame._height = 123;
+    frame._depth = 123;
+    frame._num_stokes = 123;
+    ASSERT_EQ(frame.Width(), 123);
+    ASSERT_EQ(frame.Height(), 123);
+    ASSERT_EQ(frame.Depth(), 123);
+    ASSERT_EQ(frame.NumStokes(), 123);
+    
+    ASSERT_TRUE((std::is_same_v<decltype(frame._z_index), decltype(frame.CurrentZ())>));
+    ASSERT_TRUE((std::is_same_v<decltype(frame._stokes_index), decltype(frame.CurrentStokes())>));
+    ASSERT_TRUE((std::is_same_v<decltype(frame._spectral_axis), decltype(frame.SpectralAxis())>));
+    ASSERT_TRUE((std::is_same_v<decltype(frame._stokes_axis), decltype(frame.StokesAxis())>));
+    frame._z_index = 123;
+    frame._stokes_index = 123;
+    frame._spectral_axis = 123;
+    frame._stokes_axis = 123;
+    ASSERT_EQ(frame.CurrentZ(), 123);
+    ASSERT_EQ(frame.CurrentStokes(), 123);
+    ASSERT_EQ(frame.SpectralAxis(), 123);
+    ASSERT_EQ(frame.StokesAxis(), 123);
 }
 
 // TEST(FrameTest, Test) {
