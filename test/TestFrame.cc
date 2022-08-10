@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <type_traits>
 #include <gtest/gtest.h>
+#include <type_traits>
 
 #include "Frame/Frame.h"
 
@@ -175,7 +175,7 @@ TEST(FrameTest, TestGetFileNameNoLoader) {
 
 TEST(FrameTest, TestSimpleGetters) {
     TestFrame frame(0, nullptr, "0");
-    
+
     // TODO helper functions
 
     ASSERT_TRUE((std::is_same_v<decltype(frame._valid), decltype(frame.IsValid())>));
@@ -183,11 +183,11 @@ TEST(FrameTest, TestSimpleGetters) {
     ASSERT_EQ(frame.IsValid(), true);
     frame._valid = false;
     ASSERT_EQ(frame.IsValid(), false);
-    
+
     ASSERT_TRUE((std::is_same_v<decltype(frame._open_image_error), decltype(frame.GetErrorMessage())>));
     frame._open_image_error = "test";
     ASSERT_EQ(frame.GetErrorMessage(), "test");
-    
+
     ASSERT_TRUE((std::is_same_v<decltype(frame._width), decltype(frame.Width())>));
     ASSERT_TRUE((std::is_same_v<decltype(frame._height), decltype(frame.Height())>));
     ASSERT_TRUE((std::is_same_v<decltype(frame._depth), decltype(frame.Depth())>));
@@ -200,7 +200,7 @@ TEST(FrameTest, TestSimpleGetters) {
     ASSERT_EQ(frame.Height(), 123);
     ASSERT_EQ(frame.Depth(), 123);
     ASSERT_EQ(frame.NumStokes(), 123);
-    
+
     ASSERT_TRUE((std::is_same_v<decltype(frame._z_index), decltype(frame.CurrentZ())>));
     ASSERT_TRUE((std::is_same_v<decltype(frame._stokes_index), decltype(frame.CurrentStokes())>));
     ASSERT_TRUE((std::is_same_v<decltype(frame._spectral_axis), decltype(frame.SpectralAxis())>));
