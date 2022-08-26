@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0]
 
 ### Added
 * Added support for image fitting with field of view ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Made HTTP server return a different error code for disabled features ([#1115](https://github.com/CARTAvis/carta-backend/issues/1115)).
 * Removed Splatalogue interaction from backend codebase and removed dependency on libcurl ([#994](https://github.com/cartavis/carta-backend/issues/994)).
 * Use wrappers to construct protocol buffer messages where possible ([#960](https://github.com/CARTAvis/carta-backend/issues/960)).
+* Change the time zone in log messages from local to UTC ([#1151](https://github.com/CARTAvis/carta-backend/issues/1151)).
+* Refactor the timer for performance measurements ([#1180](https://github.com/CARTAvis/carta-backend/issues/1180)).
 
 ### Fixed
 * Stopped calculating per-cube histogram unnecessarily when switching to a new Stokes value ([#1013](https://github.com/CARTAvis/carta-backend/issues/1013)).
@@ -38,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed response when importing region file fails by catching exception ([#1160](https://github.com/CARTAvis/carta-backend/issues/1160)).
 * Fixed the crash when trying to load an unsupported image file ([#1161](https://github.com/CARTAvis/carta-backend/issues/1161)).
 * Fixed including directories in region file list ([#1159](https://github.com/CARTAvis/carta-backend/issues/1159)).
+* Fixed issue where NaN data was read incorrectly from a compressed FITS .fz image ([#1143](https://github.com/CARTAvis/carta-backend/issues/1143)).
 
 ## [3.0.0-beta.3]
 

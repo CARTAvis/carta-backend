@@ -48,7 +48,7 @@ public:
     carta_sink()
         : ansicolor_sink<details::console_mutex>(stdout, color_mode::automatic),
           mutex_(details::console_mutex::mutex()),
-          formatter_(details::make_unique<spdlog::pattern_formatter>()) {
+          formatter_(details::make_unique<spdlog::pattern_formatter>(pattern_time_type::utc)) {
         target_file_ = stdout;
         colors_[level::trace] = to_string_(white);
         colors_[level::debug] = to_string_(cyan);

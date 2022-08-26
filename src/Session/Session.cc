@@ -679,8 +679,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
 
-        auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
-
+        Timer t;
         ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
         {
@@ -705,9 +704,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         }
 
         // Measure duration for get tile data
-        auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
-        auto dt_get_tile_data = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
-        spdlog::performance("Get tile data group in {:.3f} ms", dt_get_tile_data * 1e-3);
+        spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
         auto final_message = Message::RasterTileSync(file_id, z, stokes, animation_id, true);
@@ -851,8 +848,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             }
         }
 
-        auto t_start_import_region = std::chrono::high_resolution_clock::now();
-
+        Timer t;
         if (!_region_handler) { // created on demand only
             _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
@@ -860,9 +856,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         CARTA::ImportRegionAck import_ack;
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
         // Measure duration for get tile data
-        auto t_end_import_region = std::chrono::high_resolution_clock::now();
-        auto dt_import_region = std::chrono::duration_cast<std::chrono::microseconds>(t_end_import_region - t_start_import_region).count();
-        spdlog::performance("Import region in {:.3f} ms", dt_import_region * 1e-3);
+        spdlog::performance("Import region in {:.3f} ms", t.Elapsed().ms());
 
         // send any errors to log
         std::string ack_message(import_ack.message());
@@ -1092,8 +1086,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     auto close_file_msg = Message::CloseFile(-1);
     OnCloseFile(close_file_msg);
 
-    auto t_start_resume = std::chrono::high_resolution_clock::now();
-
+    Timer t;
     // Open images
     for (int i = 0; i < message.images_size(); ++i) {
         const CARTA::ImageProperties& image = message.images(i);
@@ -1154,9 +1147,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     }
 
     // Measure duration for resume
-    auto t_end_resume = std::chrono::high_resolution_clock::now();
-    auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
-    spdlog::performance("Resume in {:.3f} ms", dt_resume * 1e-3);
+    spdlog::performance("Resume in {:.3f} ms", t.Elapsed().ms());
 
     // RESPONSE
     CARTA::ResumeSessionAck ack;
@@ -1327,8 +1318,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_success(false);
             pv_response.set_message("Invalid region id.");
         } else {
-            auto t_start_pv_image = std::chrono::high_resolution_clock::now();
-
+            Timer t;
             // Set pv progress callback function
             auto progress_callback = [&](float progress) {
                 auto pv_progress = Message::PvProgress(file_id, progress);
@@ -1342,10 +1332,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 auto* open_file_ack = pv_response.mutable_open_file_ack();
                 OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
             }
-
-            auto t_end_pv_image = std::chrono::high_resolution_clock::now();
-            auto dt_pv_image = std::chrono::duration_cast<std::chrono::microseconds>(t_end_pv_image - t_start_pv_image).count();
-            spdlog::performance("Generate pv image in {:.3f} ms", dt_pv_image * 1e-3);
+            spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed().ms());
         }
 
         SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
@@ -1367,8 +1354,7 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
     CARTA::FittingResponse fitting_response;
 
     if (_frames.count(file_id)) {
-        auto t_start_fitting = std::chrono::high_resolution_clock::now();
-
+        Timer t;
         int region_id(fitting_request.region_id());
         if (region_id != IMAGE_REGION_ID) {
             if (!_region_handler) {
@@ -1380,10 +1366,7 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
             _frames.at(file_id)->FitImage(fitting_request, fitting_response);
         }
 
-        auto t_end_fitting = std::chrono::high_resolution_clock::now();
-        auto dt_fitting = std::chrono::duration_cast<std::chrono::microseconds>(t_end_fitting - t_start_fitting).count();
-        spdlog::performance("Fit 2D image in {:.3f} ms", dt_fitting * 1e-3);
-
+        spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed().ms());
         SendEvent(CARTA::EventType::FITTING_RESPONSE, request_id, fitting_response);
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -1410,7 +1393,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 return calculated; // no requirements
             }
 
-            auto t_start_cube_histogram = std::chrono::high_resolution_clock::now();
+            Timer t;
             auto num_bins = cube_histogram_config.num_bins;
 
             // Get stokes index
@@ -1513,11 +1496,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     // cache cube histogram
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
 
-                    auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
-                    auto dt_cube_histogram =
-                        std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
-                    spdlog::performance("Fill cube histogram in {:.3f} ms at {:.3f} MPix/s", dt_cube_histogram * 1e-3,
-                        (float)cube_stats.num_pixels / dt_cube_histogram);
+                    auto dt = t.Elapsed();
+                    spdlog::performance(
+                        "Fill cube histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)cube_stats.num_pixels / dt.us());
 
                     calculated = true;
                 }
@@ -1971,8 +1952,7 @@ void Session::ExecuteAnimationFrameInner() {
             _animation_object->_current_frame = curr_frame;
             auto offset = active_frame_z - _animation_object->_first_frame.channel();
 
-            auto t_start_change_frame = std::chrono::high_resolution_clock::now();
-
+            Timer t;
             if (z_changed && offset >= 0 && !_animation_object->_matched_frames.empty()) {
                 std::vector<int32_t> file_ids_to_update;
                 // Update z sequentially
@@ -2054,10 +2034,8 @@ void Session::ExecuteAnimationFrameInner() {
             }
 
             // Measure duration for frame changing as animating
-            auto t_end_change_frame = std::chrono::high_resolution_clock::now();
-            auto dt_change_frame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
             if (z_changed || stokes_changed) {
-                spdlog::performance("Animator: Change frame in {:.3f} ms", dt_change_frame * 1e-3);
+                spdlog::performance("Animator: Change frame in {:.3f} ms", t.Elapsed().ms());
             }
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", active_file_id);
