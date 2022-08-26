@@ -8,15 +8,15 @@ RUN \
   apt-get install -y --no-install-suggests --no-install-recommends software-properties-common && \
   apt-add-repository -y -s ppa:kernsuite/kern-7 && \
   add-apt-repository -y ppa:cartavis-team/carta && \
-  apt-get -y install carta-beta casacore-data && \
+  apt-get -y install carta casacore-data && \
   apt-get -y remove --auto-remove software-properties-common && \
   apt-get -y clean
 
 # Set up initial images directory and initial preferences
 RUN mkdir -p /images && \
     cp /usr/share/carta/default.fits /images/ && \
-    mkdir -p /root/.carta-beta/config && \
-    echo '{"telemetryConsentShown": true, "telemetryMode":"none"}' > /root/.carta-beta/config/preferences.json
+    mkdir -p /root/.carta/config && \
+    echo '{"telemetryConsentShown": true, "telemetryMode":"none"}' > /root/.carta/config/preferences.json
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
