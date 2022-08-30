@@ -2,12 +2,12 @@ name: CI
 on: push
 jobs:
   format-check:
-    runs-on: asiaa-test1
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - run: ./scripts/style.py all check
   code-coverage:
-    runs-on: asiaa-test1
+    runs-on: self-hosted
     container: ajmasiaa/rhel8-jenkins-apr2022
     steps:
       - uses: actions/checkout@v3
