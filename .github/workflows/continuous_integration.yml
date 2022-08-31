@@ -20,20 +20,22 @@ jobs:
           make -j 8
           ./carta_backend --version
       - name: Save unit tests directory
+        uses: actions/upload-artifact@v3
         with:
           name: macos12-unit-tests
           path: build/test
 
   macOS-12-unit-tests:
-    runs-on: [self-hosted, macOS-12-M1]
+    name: Run macOS 12 unit tests
     needs: backend-build-macOS-12
+    runs-on: [self-hosted, macOS-12-M1]
     steps:
+      - uses: actions/download-artifact@v3      
       - name: Restore unit tests directory
-        uses: actions/download-artifact@v3
         with:
           name: macos12-unit-tests
       - name: Run unit tests
-       run: |
-         cd build/test
-         ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml"
-
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml"
