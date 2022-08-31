@@ -10,8 +10,8 @@ jobs:
   macOS-12-backend-build:
     runs-on: [self-hosted, macOS-12-M1]
     steps:
-      - uses: actions/checkout@v3
-      - name: Build carta-backend
+      - name: Build carta-backend      
+        uses: actions/checkout@v3
         shell: bash
         run: |
           git submodule update --init --recursive
@@ -19,6 +19,7 @@ jobs:
           cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
           make -j 8
           ./carta_backend --version
+          
       - name: Save unit tests directory
         uses: actions/upload-artifact@v3
         with:
@@ -26,12 +27,11 @@ jobs:
           path: build/test
 
   macOS-12-unit-tests:
-    name: Run macOS 12 unit tests
-    needs: backend-build-macOS-12
     runs-on: [self-hosted, macOS-12-M1]
+    needs: backend-build-macOS-12
     steps:
-      - uses: actions/download-artifact@v3      
-      - name: Restore unit tests directory
+      - name: Restore unit tests directory      
+        uses: actions/download-artifact@v3      
         with:
           name: macos12-unit-tests
       - name: Run unit tests
