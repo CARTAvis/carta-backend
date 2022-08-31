@@ -16,6 +16,7 @@ jobs:
       - name: Build backend  
         shell: bash
         run: |
+          git submodule update --init --recursive
           mkdir build && cd build
           cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
           make -j 8
