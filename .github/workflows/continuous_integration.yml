@@ -10,11 +10,12 @@ jobs:
   macOS-12-backend-build:
     runs-on: [self-hosted, macOS-12-M1]
     steps:
-      - name: Build carta-backend      
+      - name: Checkout
         uses: actions/checkout@v3
+      
+      - name: Build backend  
         shell: bash
         run: |
-          git submodule update --init --recursive
           mkdir build && cd build
           cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
           make -j 8
@@ -34,6 +35,7 @@ jobs:
         uses: actions/download-artifact@v3      
         with:
           name: macos12-unit-tests
+          
       - name: Run unit tests
         shell: bash
         run: |
