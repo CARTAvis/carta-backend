@@ -43,7 +43,6 @@ private:
     casacore::Vector<casacore::String> FitsHeaderStrings(casacore::String& name, unsigned int hdu);
     bool GetFITSHeader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& hdu, casacore::ImageFITSHeaderInfo& fhi,
         casacore::String& error_string);
-    casacore::ImageFITSHeaderInfo GetFITSHeader(std::shared_ptr<casacore::ImageInterface<float>> image);
     void AddEntriesFromHeaderStrings(
         const casacore::Vector<casacore::String>& headers, const std::string& hdu, CARTA::FileInfoExtended& extended_info);
     void ConvertHeaderValueToNumeric(const casacore::String& name, casacore::String& value, CARTA::HeaderEntry* entry);

@@ -150,7 +150,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 bool use_image_for_entries(false);
                 auto data_type = _loader->GetDataType();
                 casacore::String image_type(image->imageType());
-                std::cerr << "************* FileExtInfoLoader using image type " << image_type << std::endl;
 
                 if (image_type == "FITSImage") {
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
