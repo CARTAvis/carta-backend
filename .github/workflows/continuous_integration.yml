@@ -28,7 +28,8 @@ jobs:
           git submodule update --init --recursive
           mkdir build && cd build
           cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
-                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer --coverage' \
+                   -DCMAKE_C_FLAGS='--coverage' \
                    -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
           make -j 32
 
@@ -54,6 +55,17 @@ jobs:
           path: build/test/ubuntu_test_report.xml
           reporter: java-junit
 
+      - name: Generate code coverage report
+        shell: bash
+        run: |
+          mkdir coverage
+          gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
+
+      - name: Upload report to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
@@ -143,4 +155,13 @@ jobs:
           name: AlmaLinux-8.5 unit test results
           path: build/test/almalinux_test_report.xml
           reporter: java-junit
+
+      - name: Post status to Slack
+        id: slack
+        uses: slackapi/slack-github-action@v1.21.0
+        with:
+          channel-id: 'actions-build-status'
+          slack-message: "GitHub build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
