@@ -100,7 +100,7 @@ jobs:
           reporter: java-junit
 
 
-  AlmaLinux-8.5:
+  AlmaLinux-8:
     runs-on: [self-hosted, almalinux-8.5]
     steps:
       - name: Checkout
