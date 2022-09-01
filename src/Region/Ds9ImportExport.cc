@@ -89,29 +89,31 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     }
 
     std::string region_line;
+    float one_based_x = points[0].x() + 1; // Change from 0-based to 1-based image coordinate in x
+    float one_based_y = points[0].y() + 1; // Change from 0-based to 1-based image coordinate in y
     switch (region_state.type) {
         case CARTA::RegionType::POINT: {
             // point(x, y)
-            region_line = fmt::format("point({:.2f}, {:.2f})", points[0].x(), points[0].y());
+            region_line = fmt::format("point({:.2f}, {:.2f})", one_based_x, one_based_y);
             break;
         }
         case CARTA::RegionType::RECTANGLE: {
             // box(x,y,width,height,angle)
             region_line =
-                fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
+                fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y, points[1].x(), points[1].y(), angle);
             break;
         }
         case CARTA::RegionType::ELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
             if (points[1].x() == points[1].y()) { // bmaj == bmin
-                region_line = fmt::format("circle({:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x());
+                region_line = fmt::format("circle({:.2f}, {:.2f}, {:.2f})", one_based_x, one_based_y, points[1].x());
             } else {
                 if (angle > 0.0) {
                     region_line = fmt::format(
-                        "ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
+                        "ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y, points[1].x(), points[1].y(), angle);
                 } else {
                     region_line =
-                        fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x(), points[1].y());
+                        fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f})", one_based_x, one_based_y, points[1].x(), points[1].y());
                 }
             }
             break;
@@ -120,9 +122,10 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
         case CARTA::RegionType::POLYLINE:
         case CARTA::RegionType::POLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_state.type], points[0].x(), points[0].y());
+            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_state.type], one_based_x, one_based_y);
             for (size_t i = 1; i < points.size(); ++i) {
-                region_line += fmt::format(", {:.2f}, {:.2f}", points[i].x(), points[i].y());
+                // Change from 0-based to 1-based image coordinate for the other points in (x, y)
+                region_line += fmt::format(", {:.2f}, {:.2f}", points[i].x() + 1, points[i].y() + 1);
             }
             region_line += ")";
             break;
@@ -415,6 +418,9 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
             if (readQuantity(param_quantity, param)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
+                        if ((i == first_param) || (i == first_param + 1)) { // Change from 1-based to 0-based image coordinate in (x, y)
+                            param_quantity.setValue(param_quantity.getValue() - 1);
+                        }
                         param_quantity.setUnit("pixel");
                     } else {
                         param_quantity.setUnit("deg");
@@ -490,6 +496,9 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
                 if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
                         if (_pixel_coord) {
+                            if ((i == 1) || (i == 2)) { // Change from 1-based to 0-based image coordinate in (x, y)
+                                param_quantity.setValue(param_quantity.getValue() - 1);
+                            }
                             param_quantity.setUnit("pixel");
                         } else {
                             param_quantity.setUnit("deg");
@@ -572,6 +581,9 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
                 if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
                         if (_pixel_coord) {
+                            if ((i == 1) || (i == 2)) { // Change from 1-based to 0-based image coordinate in (x, y)
+                                param_quantity.setValue(param_quantity.getValue() - 1);
+                            }
                             param_quantity.setUnit("pixel");
                         } else {
                             param_quantity.setUnit("deg");
@@ -653,6 +665,8 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
             if (readQuantity(param_quantity, param)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
+                        // Change from 1-based to 0-based image coordinate for all points in (x, y)
+                        param_quantity.setValue(param_quantity.getValue() - 1);
                         param_quantity.setUnit("pixel");
                     } else {
                         param_quantity.setUnit("deg");

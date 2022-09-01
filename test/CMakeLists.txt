@@ -60,7 +60,6 @@ set(TEST_SOURCES
         TestRestApi.cc
         TestSpatialProfiles.cc
         TestTileEncoding.cc
-        TestTimer.cc
         TestUtil.cc
         TestVoTable.cc)
 
