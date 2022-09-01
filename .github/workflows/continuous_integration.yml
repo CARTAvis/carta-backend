@@ -10,7 +10,7 @@ jobs:
       - run: ./scripts/style.py all check
 
 
-  Ubuntu-20.04:
+  Ubuntu-Focal:
     runs-on: [self-hosted, ubuntu-20.04]
     steps:
       - name: Checkout
