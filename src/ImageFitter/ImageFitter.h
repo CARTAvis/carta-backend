@@ -27,7 +27,7 @@ struct FitData {
     size_t offset_x;
     size_t offset_y;
     std::vector<int> fit_values_indexes;
-    std::vector<float> initial_values;
+    std::vector<double> initial_values;
 };
 
 struct FitStatus {
@@ -62,7 +62,7 @@ private:
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);
     static void ErrorHandler(const char* reason, const char* file, int line, int gsl_errno);
     static std::tuple<double, double, double, double, double, double> GetGaussianParams(const gsl_vector* value_vector, size_t index,
-        std::vector<int>& fit_values_indexes, std::vector<float>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
+        std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
     static CARTA::GaussianComponent GetGaussianComponent(std::tuple<double, double, double, double, double, double> params);
 };
 

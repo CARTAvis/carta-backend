@@ -67,7 +67,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
             fitting_response.add_result_values();
             *fitting_response.mutable_result_values(i) = GetGaussianComponent(values);
 
-            std::vector<float> zeros(6, 0.0);
+            std::vector<double> zeros(6, 0.0);
             auto errors = GetGaussianParams(_fit_errors, i * 6, _fit_data.fit_values_indexes, zeros);
             fitting_response.add_result_errors();
             *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
@@ -245,7 +245,7 @@ void ImageFitter::ErrorHandler(const char* reason, const char* file, int line, i
 }
 
 std::tuple<double, double, double, double, double, double> ImageFitter::GetGaussianParams(const gsl_vector* value_vector, size_t index,
-    std::vector<int>& fit_values_indexes, std::vector<float>& initial_values, size_t offset_x, size_t offset_y) {
+    std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x, size_t offset_y) {
     auto getParam = [&](int i) {
         int fit_values_index = fit_values_indexes[index + i];
         return fit_values_index < 0 ? initial_values[index + i] : gsl_vector_get(value_vector, fit_values_index);
