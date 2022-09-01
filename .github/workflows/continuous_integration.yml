@@ -1,38 +1,146 @@
 name: ci
 on: push
 jobs:
+
+
   format-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: ./scripts/style.py all check
 
-  macOS-12:
-    runs-on: [self-hosted, macOS-12-M1]
+
+  Ubuntu-20.04:
+    runs-on: [self-hosted, ubuntu-20.04]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      
-      - name: Build backend  
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          lsb_release -a
+
+      - name: Build backend
         shell: bash
         run: |
           git submodule update --init --recursive
           mkdir build && cd build
-          cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
-          make -j 8
-          ./carta_backend --version
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 32
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
 
       - name: Run unit tests
         shell: bash
         run: |
           cd build/test
-          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos_test_detail.xml
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
+          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
+          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:ubuntu_test_report.xml
 
-      - name: Unit test report
+      - name: Publish unit test report
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: macOS unit tests
-          path: build/test/macos_test_detail.xml
+          name: Ubuntu-20.04 unit test results
+          path: build/test/ubuntu_test_report.xml
+          reporter: java-junit
+
+
+  macOS-12:
+    runs-on: [self-hosted, macOS-12-M1]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          sw_vers
+
+      - name: Build backend  
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DDevSuppressExternalWarnings=ON \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 8
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 \
+          ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:macos_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: macOS-12 unit test results
+          path: build/test/macos_test_report.xml
+          reporter: java-junit
+
+
+  AlmaLinux-8.5:
+    runs-on: [self-hosted, almalinux-8.5]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          cat /etc/redhat-release
+
+      - name: Build backend
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 32
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
+          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
+          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:almalinux_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: AlmaLinux-8.5 unit test results
+          path: build/test/almalinux_test_report.xml
           reporter: java-junit
 
