@@ -35,11 +35,31 @@ public:
     FRIEND_TEST(FrameTest, TestNoLoaderShape);
     FRIEND_TEST(FrameTest, TestNoLoaderData);
     FRIEND_TEST(FrameTest, TestBadLoaderStats);
-    FRIEND_TEST(FrameTest, TestSimpleGetters);
+    FRIEND_TEST(FrameTest, TestIsValid);
+    FRIEND_TEST(FrameTest, TestIsConnected);
+    FRIEND_TEST(FrameTest, TestGetErrorMessage);
+    FRIEND_TEST(FrameTest, TestWidth);
+    FRIEND_TEST(FrameTest, TestHeight);
+    FRIEND_TEST(FrameTest, TestDepth);
+    FRIEND_TEST(FrameTest, TestNumStokes);
+    FRIEND_TEST(FrameTest, TestCurrentZ);
+    FRIEND_TEST(FrameTest, TestCurrentStokes);
+    FRIEND_TEST(FrameTest, TestSpectralAxis);
+    FRIEND_TEST(FrameTest, TestStokesAxis);
     FRIEND_TEST(FrameTest, TestGetFileName);
     FRIEND_TEST(FrameTest, TestGetFileNameNoLoader);
     //     FRIEND_TEST(FrameTest, );
 };
+
+// This macro simplifies adding tests for getters with no additional logic.
+// The individual tests must be added as friends to TestFrame above.
+#define TEST_SIMPLE_GETTER(gtr, atr, val)                                                                              \
+    TEST(FrameTest, Test##gtr) {                                                                                       \
+        TestFrame frame(0, nullptr, "0");                                                                              \
+        ASSERT_TRUE((std::is_same_v<std::remove_cv_t<decltype(frame.atr)>, std::remove_cv_t<decltype(frame.gtr())>>)); \
+        frame.atr = val;                                                                                               \
+        ASSERT_EQ(frame.gtr(), val);                                                                                   \
+    }
 
 TEST(FrameTest, TestConstructorNotHDF5) {
     // TODO extract defaults to a helper function
@@ -173,47 +193,19 @@ TEST(FrameTest, TestGetFileNameNoLoader) {
     ASSERT_EQ(frame.GetFileName(), "");
 }
 
-TEST(FrameTest, TestSimpleGetters) {
-    TestFrame frame(0, nullptr, "0");
+TEST_SIMPLE_GETTER(IsValid, _valid, true)
+TEST_SIMPLE_GETTER(IsConnected, _connected, true)
+TEST_SIMPLE_GETTER(GetErrorMessage, _open_image_error, "test")
 
-    // TODO helper functions
+TEST_SIMPLE_GETTER(Width, _width, 123)
+TEST_SIMPLE_GETTER(Height, _height, 123)
+TEST_SIMPLE_GETTER(Depth, _depth, 123)
+TEST_SIMPLE_GETTER(NumStokes, _num_stokes, 123)
 
-    ASSERT_TRUE((std::is_same_v<decltype(frame._valid), decltype(frame.IsValid())>));
-    frame._valid = true;
-    ASSERT_EQ(frame.IsValid(), true);
-    frame._valid = false;
-    ASSERT_EQ(frame.IsValid(), false);
-
-    ASSERT_TRUE((std::is_same_v<decltype(frame._open_image_error), decltype(frame.GetErrorMessage())>));
-    frame._open_image_error = "test";
-    ASSERT_EQ(frame.GetErrorMessage(), "test");
-
-    ASSERT_TRUE((std::is_same_v<decltype(frame._width), decltype(frame.Width())>));
-    ASSERT_TRUE((std::is_same_v<decltype(frame._height), decltype(frame.Height())>));
-    ASSERT_TRUE((std::is_same_v<decltype(frame._depth), decltype(frame.Depth())>));
-    ASSERT_TRUE((std::is_same_v<decltype(frame._num_stokes), decltype(frame.NumStokes())>));
-    frame._width = 123;
-    frame._height = 123;
-    frame._depth = 123;
-    frame._num_stokes = 123;
-    ASSERT_EQ(frame.Width(), 123);
-    ASSERT_EQ(frame.Height(), 123);
-    ASSERT_EQ(frame.Depth(), 123);
-    ASSERT_EQ(frame.NumStokes(), 123);
-
-    ASSERT_TRUE((std::is_same_v<decltype(frame._z_index), decltype(frame.CurrentZ())>));
-    ASSERT_TRUE((std::is_same_v<decltype(frame._stokes_index), decltype(frame.CurrentStokes())>));
-    ASSERT_TRUE((std::is_same_v<decltype(frame._spectral_axis), decltype(frame.SpectralAxis())>));
-    ASSERT_TRUE((std::is_same_v<decltype(frame._stokes_axis), decltype(frame.StokesAxis())>));
-    frame._z_index = 123;
-    frame._stokes_index = 123;
-    frame._spectral_axis = 123;
-    frame._stokes_axis = 123;
-    ASSERT_EQ(frame.CurrentZ(), 123);
-    ASSERT_EQ(frame.CurrentStokes(), 123);
-    ASSERT_EQ(frame.SpectralAxis(), 123);
-    ASSERT_EQ(frame.StokesAxis(), 123);
-}
+TEST_SIMPLE_GETTER(CurrentZ, _z_index, 123)
+TEST_SIMPLE_GETTER(CurrentStokes, _stokes_index, 123)
+TEST_SIMPLE_GETTER(SpectralAxis, _spectral_axis, 123)
+TEST_SIMPLE_GETTER(StokesAxis, _stokes_axis, 123)
 
 // TEST(FrameTest, Test) {
 // }
