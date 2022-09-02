@@ -17,6 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Fix ownership
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
       - name: System information
         shell: bash
         run: |
@@ -120,6 +124,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Fix ownership
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
 
       - name: System information
         shell: bash
