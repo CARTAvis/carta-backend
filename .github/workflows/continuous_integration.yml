@@ -70,6 +70,11 @@ jobs:
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: coverage/coverage.xml
+          badge: true
+          format: 'markdown'
+          output: 'both'
+          indicators: true
+          thresholds: '40 75'
 
 
   macOS-12:
