@@ -66,11 +66,10 @@ jobs:
           mkdir coverage
           gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
 
-      - name: Upload report to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: coverage
+      - name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+          with:
+          filename: coverage/coverage.xml
 
 
   macOS-12:
