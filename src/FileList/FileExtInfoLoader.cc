@@ -155,7 +155,23 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
                     casacore::String filename(image->name());
                     casacore::Vector<casacore::String> headers = FitsHeaderStrings(filename, FileInfo::GetFitsHdu(hdu));
-                    AddEntriesFromHeaderStrings(headers, hdu, extended_info);
+
+                    if (headers.empty()) {
+                        // Found unsupported headers
+                        // Get image headers in FITS format using casacore ImageHeaderToFITS
+                        casacore::ImageFITSHeaderInfo fhi;
+                        casacore::String error_string;
+                        if (GetFITSHeader(image, hdu, fhi, error_string)) {
+                            // Set header entries from ImageFITSHeaderInfo
+                            FitsHeaderInfoToHeaderEntries(fhi, extended_info);
+                            use_image_for_entries = true;
+                        } else {
+                            message = error_string;
+                            return false;
+                        }
+                    } else {
+                        AddEntriesFromHeaderStrings(headers, hdu, extended_info);
+                    }
                 } else if (image_type == "CartaFitsImage") {
                     CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(image.get());
                     casacore::Vector<casacore::String> headers = fits_image->FitsHeaderStrings();
@@ -166,25 +182,16 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else {
                     // Get image headers in FITS format using casacore ImageHeaderToFITS
-                    bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
-                    GetSpectralCoordPreferences(image.get(), prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
                     casacore::ImageFITSHeaderInfo fhi;
-                    casacore::String error_string, origin_string;
-                    bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(true);
-                    bool prim_head(hdu == "0");
-                    int bit_pix(-32);
-                    float min_pix(1.0), max_pix(-1.0);
-
-                    if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *(image.get()), prefer_velocity,
-                            optical_velocity, bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength,
-                            air_wavelength, prim_head, allow_append, origin_string, history)) {
+                    casacore::String error_string;
+                    if (GetFITSHeader(image, hdu, fhi, error_string)) {
+                        // Set header entries from ImageFITSHeaderInfo
+                        FitsHeaderInfoToHeaderEntries(fhi, extended_info);
+                        use_image_for_entries = true;
+                    } else {
                         message = error_string;
-                        return info_ok;
+                        return false;
                     }
-
-                    // Set header entries from ImageFITSHeaderInfo
-                    FitsHeaderInfoToHeaderEntries(fhi, extended_info);
-                    use_image_for_entries = true;
                 }
 
                 AddDataTypeEntry(extended_info, data_type);
@@ -1478,8 +1485,34 @@ casacore::Vector<casacore::String> FileExtInfoLoader::FitsHeaderStrings(casacore
 
     for (int i = 0; i < nkeys; ++i) {
         header_strings[i] = header_str.substr(pos, 80);
+
+        if (header_strings[i].contains("FELO-HEL") || header_strings[i].contains("VELO-LSR")) {
+            header_strings.resize();
+            return header_strings;
+        }
+
         pos += 80;
     }
 
     return header_strings;
+}
+
+bool FileExtInfoLoader::GetFITSHeader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& hdu,
+    casacore::ImageFITSHeaderInfo& fhi, casacore::String& error_string) {
+    bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
+    GetSpectralCoordPreferences(image.get(), prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
+
+    casacore::String origin_string;
+    bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(true);
+    bool prim_head(hdu == "0");
+    int bit_pix(-32);
+    float min_pix(1.0), max_pix(-1.0);
+
+    if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *(image.get()), prefer_velocity, optical_velocity, bit_pix,
+            min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head, allow_append,
+            origin_string, history)) {
+        return false;
+    }
+
+    return true;
 }
