@@ -82,16 +82,10 @@ jobs:
         with:
           name: coverage-report
 
-      - name: Figure out the path
-        shell: bash
-        run: |
-          ls -sort
-          $PWD
-
       - name: Publish coverage report 
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: carta-backend/coverage/coverage.xml
+          filename: coverage.xml
           badge: true
           format: 'markdown'
           indicators: true
@@ -206,10 +200,22 @@ jobs:
     if: always()
     steps:
       - uses: martialonline/workflow-status@v2
-        id: check
+        id: slack
       - uses: slackapi/slack-github-action@v1.21.0
         with:
           channel-id: 'actions-build-status'
-          slack-message: ${{ steps.check.outputs.ts }}
+          payload: |
+            {
+              "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  }
+                }
+              ]
+            }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
