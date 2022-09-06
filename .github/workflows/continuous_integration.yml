@@ -12,6 +12,7 @@ jobs:
 
   Ubuntu-Focal:
     runs-on: [self-hosted, Linux, X64]
+    needs: format-check
     container: carta/backend-builder-ubuntu-focal
     steps:
       - name: Checkout
@@ -66,19 +67,33 @@ jobs:
           mkdir coverage
           gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
 
-      - name: Code Coverage Summary Report
+      - name: Save coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/coverage.xml
+
+  Code-Coverage-Summary:
+    runs-on: ubuntu-latest
+    needs: [format-check, Ubuntu-Focal]
+    steps:
+      - name: Restore coverage report
+        uses: actions/download-artifact@v3      
+        with:
+          name: coverage-report
+
+      - name: Publish coverage report 
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: coverage/coverage.xml
           badge: true
           format: 'markdown'
-          output: 'both'
           indicators: true
           thresholds: '40 75'
 
-
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
+    needs: format-check
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -106,12 +121,17 @@ jobs:
           ./build/carta_backend --version
 
       - name: Run unit tests
-        shell: bash
-        run: |
-          cd build/test
-          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 \
-          ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer \
-          ./carta_backend_tests --gtest_output=xml:macos_test_report.xml
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 10
+          max_attempts: 2
+          retry_on: error
+          shell: bash
+          command: |
+            cd build/test
+            ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 \
+            ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer \
+            ./carta_backend_tests --gtest_output=xml:macos_test_report.xml
 
       - name: Publish unit test report
         uses: dorny/test-reporter@v1
@@ -124,6 +144,7 @@ jobs:
 
   AlmaLinux-8:
     runs-on: [self-hosted, Linux, X64]
+    needs: format-check
     container: carta/backend-builder-almalinux-8
     steps:
       - name: Checkout
@@ -174,11 +195,19 @@ jobs:
 
   post-build-status:
     runs-on: ubuntu-latest
-    needs: [format-check, Ubuntu-Focal, macOS-12, AlmaLinux-8]
+    needs: [Ubuntu-Focal, macOS-12, AlmaLinux-8]
     steps:
-      - uses: slackapi/slack-github-action@v1.21.0
-        with:
-          channel-id: 'actions-build-status'
-          slack-message: "GitHub build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      - uses: someimportantcompany/github-actions-slack-message@v1
+          if: success()
+          with:
+            channel: 'actions-build-status'
+            bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+            text: Success
+            color: success
+      - uses: someimportantcompany/github-actions-slack-message@v1
+          if: failure()
+          with:
+            channel: 'actions-build-status'
+            bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+            text: Failure
+            color: failure
