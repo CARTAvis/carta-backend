@@ -72,6 +72,8 @@ jobs:
         with:
           path: coverage/coverage.xml
           minimum_coverage: 38
+          show_line: True
+          show_branch: True
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
@@ -107,13 +109,14 @@ jobs:
         with:
           timeout_minutes: 2 
           max_attempts: 2
-          retry_on: error
+          retry_on_exit_code: 1
           shell: bash
           command: |
             cd build/test
             ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 \
             ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer \
             ./carta_backend_tests --gtest_output=xml:macos_test_report.xml
+            head -1 macos_test_report.xml
 
       - name: Publish unit test report
         uses: dorny/test-reporter@v1
