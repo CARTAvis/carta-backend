@@ -82,10 +82,16 @@ jobs:
         with:
           name: coverage-report
 
+      - name: Figure out the path
+        shell: bash
+        run: |
+          ls -sort
+          $PWD
+
       - name: Publish coverage report 
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: coverage/coverage.xml
+          filename: carta-backend/coverage/coverage.xml
           badge: true
           format: 'markdown'
           indicators: true
@@ -123,7 +129,7 @@ jobs:
       - name: Run unit tests
         uses: nick-fields/retry@v2
         with:
-          timeout_seconds: 10
+          timeout_minutes: 2 
           max_attempts: 2
           retry_on: error
           shell: bash
@@ -206,4 +212,4 @@ jobs:
           channel-id: 'actions-build-status'
           slack-message: ${{ steps.check.outputs.ts }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
