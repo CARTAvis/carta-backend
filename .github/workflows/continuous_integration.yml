@@ -67,29 +67,11 @@ jobs:
           mkdir coverage
           gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
 
-      - name: Save coverage report
-        uses: actions/upload-artifact@v3
+      - name: Publish coverage report
+        uses: 5monkeys/cobertura-action@master
         with:
-          name: coverage-report
           path: coverage/coverage.xml
-
-  Code-Coverage-Summary:
-    runs-on: ubuntu-latest
-    needs: [format-check, Ubuntu-Focal]
-    steps:
-      - name: Restore coverage report
-        uses: actions/download-artifact@v3      
-        with:
-          name: coverage-report
-
-      - name: Publish coverage report 
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: coverage.xml
-          badge: true
-          format: 'markdown'
-          indicators: true
-          thresholds: '40 75'
+          minimum_coverage: 38
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
