@@ -88,7 +88,7 @@ public:
     std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
     // Generate PV image
-    bool CalculatePvImage(int file_id, int region_id, int width, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+    bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
     void StopPvCalc(int file_id);
 
@@ -125,7 +125,7 @@ private:
     // Data stream helpers
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
         std::vector<CARTA::RegionHistogramData>& histogram_messages);
-    bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
+    bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats, bool report_error,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
@@ -133,23 +133,23 @@ private:
     bool GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
         const std::function<void(std::vector<float>, double)>& spatial_profile_callback);
 
-    // Generate box regions to approximate a line with a width, and get mean of each box (per z else current z).
+    // Generate box regions to approximate a line with a width, and get mean of each box for z-range.
     // Used for pv generator and spatial profiles.
-    bool GetLineProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
+    bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
         std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles, bool& cancelled,
         std::string& message);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
-    bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
-        RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
+    bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
+        const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
         std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
     bool CheckLinearOffsets(
         const std::vector<std::vector<double>>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
     double GetPointSeparation(
         std::shared_ptr<CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2);
     double GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys);
-    bool GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, int stokes_index, const std::string& coordinate,
-        RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
+    bool GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
+        const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
         std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
         std::string& message);
     std::vector<double> FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
@@ -158,7 +158,7 @@ private:
         const std::vector<double>& box_start, const std::vector<double>& box_end, int pixel_width, double angular_width,
         float line_rotation, double tolerance);
     casacore::Vector<float> GetTemporaryRegionProfile(int region_idx, int file_id, RegionState& region_state,
-        std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, int stokes_index, double& num_pixels);
+        std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, const AxisRange& z_range, int stokes_index, double& num_pixels);
     casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
 
     // Get computed stokes profiles for a region

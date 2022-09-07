@@ -263,8 +263,9 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete
@@ -289,7 +290,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     int width = mask_shape(0);
     int height = mask_shape(1);
-    int depth = _depth;
+    int depth = z_range.to - z_range.from + 1;
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
@@ -323,7 +324,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     size_t x_start = _region_stats[region_stats_id].latest_x;
 
     // Set initial values of stats, or those set to NAN in previous iterations
-    for (size_t z = 0; z < depth; z++) {
+    for (size_t z = z_range.from; z < depth; z++) {
         if ((x_start == 0) || (num_pixels[z] == 0)) {
             min[z] = std::numeric_limits<float>::max();
             max[z] = std::numeric_limits<float>::lowest();
@@ -339,7 +340,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         double sum_z, sum_sq_z;
         uint64_t num_pixels_z;
 
-        for (size_t z = 0; z < depth; z++) {
+        for (size_t z = z_range.from; z < depth; z++) {
             if (num_pixels[z]) {
                 sum_z = sum[z];
                 sum_sq_z = sum_sq[z];
@@ -387,7 +388,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                 continue;
             }
 
-            for (size_t z = 0; z < depth; z++) {
+            for (size_t z = z_range.from; z < depth; z++) {
                 double v = slice_data[y * depth + z];
 
                 // skip all NaN pixels
