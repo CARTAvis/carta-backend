@@ -11,7 +11,7 @@ jobs:
 
 
   Ubuntu-Focal:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, Docker]
     needs: format-check
     container: carta/backend-builder-ubuntu-focal
     steps:
@@ -57,7 +57,7 @@ jobs:
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: Ubuntu-20.04 unit test results
+          name: Ubuntu-Focal Unit Test results
           path: build/test/ubuntu_test_report.xml
           reporter: java-junit
 
@@ -76,6 +76,8 @@ jobs:
           output: both
           indicators: true
           thresholds: '38 75'
+          hide_branch_rate: true
+          hide_complexity: true
 
       - name: Publish code coverage summary
         uses: LouisBrunner/checks-action@v1.2.0
@@ -86,7 +88,7 @@ jobs:
           output: "{\"summary\":\"Code Coverage\"}"
           output_text_description_file: code-coverage-results.md
 
-      - name: Add coverage PR comment
+      - name: Add coverage comment to Pull Request
         uses: marocchino/sticky-pull-request-comment@v2
         if: github.event_name == 'pull_request'
         with:
@@ -140,13 +142,13 @@ jobs:
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: macOS-12 unit test results
+          name: macOS-12 Unit Test results
           path: build/test/macos_test_report.xml
           reporter: java-junit
 
 
   AlmaLinux-8:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, Docker]
     needs: format-check
     container: carta/backend-builder-almalinux-8
     steps:
@@ -191,7 +193,7 @@ jobs:
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: AlmaLinux-8.5 unit test results
+          name: AlmaLinux-8 Unit Test results
           path: build/test/almalinux_test_report.xml
           reporter: java-junit
 
