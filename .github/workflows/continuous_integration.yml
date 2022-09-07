@@ -128,7 +128,8 @@ jobs:
         uses: nick-fields/retry@master
         with:
           timeout_minutes: 2
-          max_attempts: 2
+          retry_wait_seconds: 60
+          max_attempts: 3
           retry_on_exit_code: 1
           shell: bash
           command: |
