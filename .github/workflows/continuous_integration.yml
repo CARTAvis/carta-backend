@@ -67,13 +67,27 @@ jobs:
           mkdir coverage
           gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
 
-      - name: Publish coverage report
-        uses: 5monkeys/cobertura-action@master
+      - name: Create code coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          path: coverage/coverage.xml
-          minimum_coverage: 38
-          show_line: True
-          show_branch: True
+          filename: coverage/coverage.xml
+          badge: true
+          format: 'markdown'
+          output: both
+          indicators: true
+          thresholds: '38 75'
+
+      - name: Publish code coverage
+        uses: test-summary/action@v1
+        with:
+          output: "code-coverage-results.md"
+
+      - name: Add coverage PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
   macOS-12:
     runs-on: [self-hosted, macOS-12-M1]
@@ -105,9 +119,9 @@ jobs:
           ./build/carta_backend --version
 
       - name: Run unit tests
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@master
         with:
-          timeout_minutes: 2 
+          timeout_minutes: 2
           max_attempts: 2
           retry_on_exit_code: 1
           shell: bash
