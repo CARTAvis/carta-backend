@@ -77,9 +77,12 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
 
 bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region,
     int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image) {
+    
+    // Todo: find another better way to assign the temp file Id
     int id = (file_id + 1) * ID_MULTIPLIER - 1;
-    model_image = GeneratedImage(id, GetFilename(filename, "model"), GetImageData(image, image_region));
-    residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region));
+    
+    model_image = GeneratedImage(id, GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
+    residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
     return true;
 }
 
@@ -143,6 +146,8 @@ int ImageFitter::SolveSystem() {
     _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
     _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
 
+    CalculateImageData(f);
+
     gsl_multifit_nlinear_free(work);
     gsl_matrix_free(covar);
 
@@ -152,6 +157,21 @@ int ImageFitter::SolveSystem() {
     }
 
     return status;
+}
+
+void ImageFitter::CalculateImageData(const gsl_vector* residual) {
+    _model_data.resize(residual->size);
+    _residual_data.resize(residual->size);
+    for (size_t i = 0; i < residual->size; i++) {
+        if(isnan(_fit_data.data[i])) {
+            _model_data[i] = _fit_data.data[i];
+            _residual_data[i] = _fit_data.data[i];
+        } else {
+            _model_data[i] = _fit_data.data[i] - gsl_vector_get(residual, i);
+            _residual_data[i] = gsl_vector_get(residual, i);
+        }
+        
+    }
 }
 
 std::string ImageFitter::GetLog() {
@@ -185,11 +205,15 @@ std::string ImageFitter::GetLog() {
     return log;
 }
 
-casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region) {
+casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data) {
     casa::SPIIF sub_image(new casacore::SubImage<casacore::Float>(*image, image_region));
     casacore::CoordinateSystem csys = sub_image->coordinates();
     casacore::IPosition shape = sub_image->shape();
     casa::SPIIF output_image(new casacore::TempImage<casacore::Float>(casacore::TiledShape(shape), csys));
+
+    casacore::Array<float> data_array(shape, image_data.data());
+    output_image->put(data_array);
+    output_image->flush();
     return output_image;
 }
 

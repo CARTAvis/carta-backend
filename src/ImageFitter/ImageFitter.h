@@ -54,14 +54,17 @@ private:
     gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
     FitStatus _fit_status;
+    std::vector<float> _model_data;
+    std::vector<float> _residual_data;
     const size_t _max_iter = 200;
 
     void CalculateNanNum();
     void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values);
     int SolveSystem();
+    void CalculateImageData(const gsl_vector* residual);
     void SetResults();
     std::string GetLog();
-    casa::SPIIF GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region);
+    casa::SPIIF GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data);
     std::string GetFilename(const std::string& filename, std::string suffix);
 
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
