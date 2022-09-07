@@ -985,7 +985,7 @@ void RegionHandler::StopPvCalc(int file_id) {
 }
 
 bool RegionHandler::FitImage(
-    const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame) {
+    const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame, GeneratedImage& model_image, GeneratedImage& residual_image) {
     int file_id(fitting_request.file_id());
     int region_id(fitting_request.region_id());
 
@@ -1025,7 +1025,7 @@ bool RegionHandler::FitImage(
     }
 
     bool success = false;
-    success = frame->FitImage(fitting_request, fitting_response, &stokes_region);
+    success = frame->FitImage(fitting_request, fitting_response, model_image, residual_image, &stokes_region);
 
     if (region_id == TEMP_FOV_REGION_ID) {
         RemoveRegion(region_id);

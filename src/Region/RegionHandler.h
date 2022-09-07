@@ -93,7 +93,7 @@ public:
     void StopPvCalc(int file_id);
 
     // Image fitting
-    bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame);
+    bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame, GeneratedImage& model_image, GeneratedImage& residual_image);
 
 private:
     // Get unique region id (max id + 1)

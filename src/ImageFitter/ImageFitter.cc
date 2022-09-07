@@ -75,6 +75,14 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     return success;
 }
 
+bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region,
+    int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image) {
+    int id = (file_id + 1) * ID_MULTIPLIER - 1;
+    model_image = GeneratedImage(id, GetFilename(filename, "model"), GetImageData(image, image_region));
+    residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region));
+    return true;
+}
+
 void ImageFitter::CalculateNanNum() {
     _fit_data.n_notnan = _fit_data.n;
     for (size_t i = 0; i < _fit_data.n; i++) {
@@ -175,6 +183,22 @@ std::string ImageFitter::GetLog() {
     log += fmt::format("final cond(J)        = {:.12e}\n", 1.0 / _fit_status.rcond);
 
     return log;
+}
+
+casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region) {
+    casa::SPIIF sub_image(new casacore::SubImage<casacore::Float>(*image, image_region));
+    casacore::CoordinateSystem csys = sub_image->coordinates();
+    casacore::IPosition shape = sub_image->shape();
+    casa::SPIIF output_image(new casacore::TempImage<casacore::Float>(casacore::TiledShape(shape), csys));
+    return output_image;
+}
+
+std::string ImageFitter::GetFilename(const std::string& filename, std::string suffix) {
+    fs::path filepath(filename);
+    fs::path output_filename = filepath.stem();
+    output_filename += "_" + suffix;
+    output_filename += filepath.extension();
+    return output_filename.string();
 }
 
 int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector* f) {

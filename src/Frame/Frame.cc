@@ -1749,7 +1749,7 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, StokesRegion* stokes_region) {
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image, GeneratedImage& residual_image, StokesRegion* stokes_region) {
     if (!_image_fitter) {
         _image_fitter = std::make_unique<ImageFitter>();
     }
@@ -1780,6 +1780,18 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
         } else {
             FillImageCache();
             success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_response);
+        }
+
+        if (success) {
+            int file_id(fitting_request.file_id());
+            StokesRegion output_stokes_region;
+            if (stokes_region != nullptr) {
+                output_stokes_region = *stokes_region;
+            } else {
+                GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_stokes_region);
+            }
+            casa::SPIIF image(_loader->GetStokesImage(output_stokes_region.stokes_source));
+            _image_fitter->GetGeneratedImages(image, output_stokes_region.image_region, file_id, GetFileName(), model_image, residual_image);
         }
     }
 

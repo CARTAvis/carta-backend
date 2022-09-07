@@ -13,8 +13,12 @@
 #include <string>
 #include <vector>
 
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/images/Images/TempImage.h>
+#include <imageanalysis/ImageTypedefs.h>
 #include <carta-protobuf/fitting_request.pb.h>
 
+#include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 
 namespace carta {
@@ -40,6 +44,8 @@ public:
     ImageFitter();
     bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
         CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
+    bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region,
+        int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image);
 
 private:
     FitData _fit_data;
@@ -55,6 +61,8 @@ private:
     int SolveSystem();
     void SetResults();
     std::string GetLog();
+    casa::SPIIF GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region);
+    std::string GetFilename(const std::string& filename, std::string suffix);
 
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);

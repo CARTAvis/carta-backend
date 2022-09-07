@@ -1355,15 +1355,25 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
 
     if (_frames.count(file_id)) {
         Timer t;
+        bool success(false);
         int region_id(fitting_request.region_id());
+        GeneratedImage model_image;
+        GeneratedImage residual_image;
+
         if (region_id != IMAGE_REGION_ID) {
             if (!_region_handler) {
-                // created on demand only
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-            _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id));
+            success = _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image);
         } else {
-            _frames.at(file_id)->FitImage(fitting_request, fitting_response);
+            success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image);
+        }
+
+        if (success) {
+            auto* model_image_open_file_ack = fitting_response.mutable_model_image();
+            OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
+            auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
+            OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
         }
 
         spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed().ms());
