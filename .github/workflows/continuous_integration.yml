@@ -206,7 +206,7 @@ jobs:
     steps:
       - name: Notify Slack
         uses: baijunyao/action-slack-notify@v3.0.0
-        if: always()
+        if: ${{ github.event_name == 'push' }}
         with:
           slack_channel_id: actions-build-status
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
