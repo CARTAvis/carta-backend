@@ -904,6 +904,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     int region_id(pv_request.region_id());
     int file_id(pv_request.file_id());
     int width(pv_request.width());
+    bool reverse(pv_request.reverse());
 
     AxisRange z_range;
     if (pv_request.has_spectral_range()) {
@@ -950,15 +951,17 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     casacore::Matrix<float> pv_data; // Spectral profiles for each box region: shape=[num_regions, num_channels]
     std::string message;
 
-    if (GetLineProfiles(file_id, region_id, width, z_range, stokes_index, "", progress_callback, increment, pv_data, cancelled, message)) {
+    if (GetLineProfiles(
+            file_id, region_id, width, z_range, stokes_index, "", progress_callback, increment, pv_data, cancelled, message, reverse)) {
         if (!_stop_pv[file_id]) {
             // Use PV generator to create PV image
             auto input_filename = frame->GetFileName();
             PvGenerator pv_generator(file_id, input_filename);
 
             auto input_image = frame->GetImage();
-            casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(0));
-            pv_success = pv_generator.GetPvImage(input_image, pv_data, pv_increment, stokes_index, pv_image, message);
+            int offset_axis = reverse ? 1 : 0;
+            casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(offset_axis));
+            pv_success = pv_generator.GetPvImage(input_image, pv_data, pv_increment, stokes_index, reverse, pv_image, message);
 
             frame->CloseCachedImage(input_filename);
         }
@@ -1898,7 +1901,7 @@ std::vector<int> RegionHandler::GetSpatialReqFilesForRegion(int region_id) {
 
 bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index,
     const std::string& coordinate, std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles,
-    bool& cancelled, std::string& message) {
+    bool& cancelled, std::string& message, bool reverse) {
     // Generate box regions to approximate a line with a width (pixels), and get mean of each box (per z else current z).
     // Input parameters: file_id, region_id, width, z_range. z_range must be valid channel numbers, not CURRENT_Z or ALL_Z.
     // Calls progress_callback after each profile.
@@ -1930,7 +1933,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     }
 
     bool profiles_complete = GetFixedPixelRegionProfiles(file_id, region_id, width, per_z, z_range, stokes_index, coordinate, region_state,
-        reference_csys, progress_callback, profiles, increment, cancelled);
+        reference_csys, progress_callback, profiles, increment, cancelled, reverse);
 
     if (profiles_complete) {
         spdlog::debug("Region {}: Using fixed pixel increment for line profiles.", region_id);
@@ -1944,7 +1947,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     }
 
     profiles_complete = GetFixedAngularRegionProfiles(file_id, region_id, width, per_z, z_range, stokes_index, coordinate, region_state,
-        reference_csys, progress_callback, profiles, increment, cancelled, message);
+        reference_csys, progress_callback, profiles, increment, cancelled, message, reverse);
 
     if (profiles_complete) {
         spdlog::debug("Region {}: Using fixed angular increment for line profiles.", region_id);
@@ -1981,7 +1984,7 @@ float RegionHandler::GetLineRotation(const std::vector<double>& line_start, cons
 
 bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range,
     int stokes_index, const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
-    std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled) {
+    std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled, bool reverse) {
     // Calculate mean spectral profiles for box regions along line with fixed pixel spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the box centers in arcsec, and whether profiles were cancelled.
     // Returns false if profiles cancelled or linear pixel centers are tabular in world coordinates.
@@ -2076,10 +2079,19 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             spdlog::debug("Line profile {} max num pixels={}", iregion, num_pixels);
 
             if (profiles.empty()) {
-                profiles.resize(casacore::IPosition(2, num_regions, region_profile.size()));
+                if (reverse) {
+                    profiles.resize(casacore::IPosition(2, region_profile.size(), num_regions));
+                } else {
+                    profiles.resize(casacore::IPosition(2, num_regions, region_profile.size()));
+                }
             }
 
-            profiles.row(iregion) = region_profile;
+            if (reverse) {
+                profiles.column(iregion) = region_profile;
+            } else {
+                profiles.row(iregion) = region_profile;
+            }
+
             progress = float(iregion + 1) / float(num_regions);
 
             if (per_z) {
@@ -2095,7 +2107,7 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
         }
     } else {
         bool trim_line(false); // Whether to skip first region after vertex
-        int profile_row(0);
+        int profile_idx(0);
 
         for (size_t iline = 0; iline < num_lines; iline++) {
             std::vector<double> line_start({control_points[iline].x(), control_points[iline].y()});
@@ -2155,8 +2167,13 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
                 }
 
                 if (iregion == 0) {
-                    // Add rows for this line's region profiles
-                    profiles.resize(casacore::IPosition(2, profiles.nrow() + num_regions, 1), true);
+                    if (reverse) {
+                        // Add columns for this line's region profiles
+                        profiles.resize(casacore::IPosition(2, 1, profiles.ncolumn() + num_regions), true);
+                    } else {
+                        // Add rows for this line's region profiles
+                        profiles.resize(casacore::IPosition(2, profiles.nrow() + num_regions, 1), true);
+                    }
                 }
 
                 // Set box region
@@ -2170,7 +2187,11 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
                 casacore::Vector<float> region_profile = GetTemporaryRegionProfile(
                     iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
                 spdlog::debug("Line segment {} profile {} num pixels={}", iline, iregion, num_pixels);
-                profiles.row(profile_row++) = region_profile;
+                if (reverse) {
+                    profiles.column(profile_idx++) = region_profile;
+                } else {
+                    profiles.row(profile_idx++) = region_profile;
+                }
             }
 
             // Check whether to trim next line's starting point
@@ -2263,7 +2284,7 @@ double RegionHandler::GetSeparationTolerance(std::shared_ptr<casacore::Coordinat
 bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range,
     int stokes_index, const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
     std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
-    std::string& message) {
+    std::string& message, bool reverse) {
     // Calculate mean spectral profiles for polygon regions along line with fixed angular spacing, with progress updates after each profile.
     // Return parameters include the profiles, the increment between the regions in arcsec, and whether profiles were cancelled.
     // Returns false if profiles cancelled or failed, with an error message.

@@ -137,12 +137,12 @@ private:
     // Used for pv generator and spatial profiles.
     bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
         std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles, bool& cancelled,
-        std::string& message);
+        std::string& message, bool reverse = false);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
     bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
         const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
-        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled);
+        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled, bool reverse);
     bool CheckLinearOffsets(
         const std::vector<std::vector<double>>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
     double GetPointSeparation(
@@ -151,7 +151,7 @@ private:
     bool GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
         const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
         std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
-        std::string& message);
+        std::string& message, bool reverse);
     std::vector<double> FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
         const std::vector<double>& start_point, const std::vector<double>& end_point, double target_separation, double tolerance);
     RegionState GetTemporaryRegionState(std::shared_ptr<casacore::CoordinateSystem> coord_sys, int file_id,
