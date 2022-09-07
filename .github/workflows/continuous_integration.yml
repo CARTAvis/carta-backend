@@ -80,7 +80,7 @@ jobs:
       - name: Publish code coverage
         uses: test-summary/action@v1
         with:
-          output: "code-coverage-results.md"
+          paths: "code-coverage-results.md"
 
       - name: Add coverage PR comment
         uses: marocchino/sticky-pull-request-comment@v2
@@ -191,30 +191,17 @@ jobs:
           path: build/test/almalinux_test_report.xml
           reporter: java-junit
 
-
-  notification:
-    name: Notify
+  Notify:
+    name: Notify Slack
     runs-on: ubuntu-latest
-    needs: [Ubuntu-Focal, macOS-12, AlmaLinux-8]
+    needs: [format-check, Ubuntu-Focal, macOS-12, AlmaLinux-8]
+    uses: baijunyao/action-slack-notify@v3.0.1
     if: always()
-    steps:
-      - uses: martialonline/workflow-status@v2
-        id: slack
-      - uses: slackapi/slack-github-action@v1.21.0
-        with:
-          channel-id: 'actions-build-status'
-          payload: |
-            {
-              "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      steps:
+        - name: Notify Slack
+          uses: baijunyao/action-slack-notify@v3.0.0
+          if: always()
+          with:
+            slack_channel_id: actions-build-status
+            slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+            github_context: ${{ toJson(github) }}
