@@ -1919,6 +1919,12 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     // Calls progress_callback after each profile.
     // Return parameters: increment (angular spacing of boxes, in arcsec), per-region profiles, cancelled, message.
     // Returns whether profiles completed.
+    if (width < 1 || width > 20) {
+        message = fmt::format("Invalid averaging width: {}.", width);
+        spdlog::error(message);
+        return false;
+    }
+
     if (!RegionSet(region_id)) {
         return false;
     }
