@@ -25,8 +25,10 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    CARTA::FittingResponse& fitting_response, size_t offset_x, size_t offset_y) {
+    bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, size_t offset_x, size_t offset_y) {
     bool success = false;
+    _model_data.clear();
+    _residual_data.clear();
 
     _fit_data.width = width;
     _fit_data.n = width * height;
@@ -34,6 +36,8 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
+    _create_model_data = create_model_image;
+    _create_residual_data = create_residual_image;
 
     CalculateNanNum();
     SetInitialValues(initial_values);
@@ -77,12 +81,15 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
 
 bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region,
     int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image) {
-    
     // Todo: find another better way to assign the temp file Id
     int id = (file_id + 1) * ID_MULTIPLIER - 1;
-    
-    model_image = GeneratedImage(id, GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
-    residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
+
+    if (_create_model_data) {
+        model_image = GeneratedImage(id, GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
+    }
+    if (_create_residual_data) {
+        residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
+    }
     return true;
 }
 
@@ -160,17 +167,16 @@ int ImageFitter::SolveSystem() {
 }
 
 void ImageFitter::CalculateImageData(const gsl_vector* residual) {
-    _model_data.resize(residual->size);
-    _residual_data.resize(residual->size);
-    for (size_t i = 0; i < residual->size; i++) {
-        if(isnan(_fit_data.data[i])) {
-            _model_data[i] = _fit_data.data[i];
-            _residual_data[i] = _fit_data.data[i];
-        } else {
+    size_t size = residual->size;
+    _model_data.resize(size);
+    _residual_data.resize(size);
+    for (size_t i = 0; i < size; i++) {
+        if (_create_model_data) {
             _model_data[i] = _fit_data.data[i] - gsl_vector_get(residual, i);
-            _residual_data[i] = gsl_vector_get(residual, i);
         }
-        
+        if (_create_residual_data) {
+            _residual_data[i] = isnan(_fit_data.data[i]) ? _fit_data.data[i] : gsl_vector_get(residual, i);
+        }
     }
 }
 

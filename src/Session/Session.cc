@@ -1370,10 +1370,14 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
         }
 
         if (success) {
-            auto* model_image_open_file_ack = fitting_response.mutable_model_image();
-            OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
-            auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
-            OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
+            if (fitting_request.create_model_image()) {
+                auto* model_image_open_file_ack = fitting_response.mutable_model_image();
+                OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
+            }
+            if (fitting_request.create_residual_image()) {
+                auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
+                OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
+            }
         }
 
         spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed().ms());

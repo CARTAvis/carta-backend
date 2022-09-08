@@ -43,7 +43,7 @@ class ImageFitter {
 public:
     ImageFitter();
     bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-        CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
+        bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
     bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region,
         int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image);
 
@@ -54,6 +54,8 @@ private:
     gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
     FitStatus _fit_status;
+    bool _create_model_data;
+    bool _create_residual_data;
     std::vector<float> _model_data;
     std::vector<float> _residual_data;
     const size_t _max_iter = 200;
