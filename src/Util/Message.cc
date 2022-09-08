@@ -537,7 +537,7 @@ CARTA::MomentProgress Message::MomentProgress(int32_t file_id, float progress) {
 }
 
 CARTA::PvRequest Message::PvRequest(
-    int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool overwrite) {
+    int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
     CARTA::PvRequest message;
     message.set_file_id(file_id);
     message.set_region_id(region_id);
@@ -550,7 +550,7 @@ CARTA::PvRequest Message::PvRequest(
     }
 
     message.set_reverse(reverse);
-    message.set_overwrite(overwrite);
+    message.set_keep(keep);
     return message;
 }
 

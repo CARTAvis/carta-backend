@@ -905,7 +905,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     int file_id(pv_request.file_id());
     int width(pv_request.width());
     bool reverse(pv_request.reverse());
-    bool overwrite(pv_request.overwrite());
+    bool keep(pv_request.keep());
 
     AxisRange z_range;
     if (pv_request.has_spectral_range()) {
@@ -959,7 +959,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
             auto input_filename = frame->GetFileName();
 
             int name_suffix(0);
-            if (!overwrite) {
+            if (keep) {
                 if (_pv_name_suffix.find(file_id) != _pv_name_suffix.end()) {
                     name_suffix = ++_pv_name_suffix[file_id];
                 }
