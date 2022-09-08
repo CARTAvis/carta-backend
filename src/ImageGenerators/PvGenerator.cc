@@ -25,9 +25,9 @@
 
 using namespace carta;
 
-PvGenerator::PvGenerator(int file_id, const std::string& filename) {
+PvGenerator::PvGenerator(int file_id, const std::string& filename, int suffix = 0) {
     _file_id = (file_id + 1) * ID_MULTIPLIER;
-    _name = GetPvFilename(filename);
+    _name = GetPvFilename(filename, suffix);
 }
 
 bool PvGenerator::GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
@@ -47,13 +47,17 @@ bool PvGenerator::GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> in
     return true;
 }
 
-std::string PvGenerator::GetPvFilename(const std::string& filename) {
+std::string PvGenerator::GetPvFilename(const std::string& filename, int suffix) {
     // image.ext -> image_pv.ext
     fs::path input_filepath(filename);
 
     // Assemble new filename
     auto pv_path = input_filepath.stem();
     pv_path += "_pv";
+    if (suffix > 0) {
+        pv_path += std::to_string(suffix);
+    }
+
     pv_path += input_filepath.extension();
 
     return pv_path.string();

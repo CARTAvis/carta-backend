@@ -204,8 +204,9 @@ private:
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
         CARTA::StatsType::Extrema, CARTA::StatsType::NumPixels};
 
-    // PV cancellation: key is file_id
+    // PV generator: key is file_id
     std::unordered_map<int, bool> _stop_pv;
+    std::unordered_map<int, int> _pv_name_suffix;
 
     // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
     std::mutex _pix_mvdir_mutex;

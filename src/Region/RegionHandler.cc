@@ -905,6 +905,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     int file_id(pv_request.file_id());
     int width(pv_request.width());
     bool reverse(pv_request.reverse());
+    bool overwrite(pv_request.overwrite());
 
     AxisRange z_range;
     if (pv_request.has_spectral_range()) {
@@ -954,9 +955,20 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     if (GetLineProfiles(
             file_id, region_id, width, z_range, stokes_index, "", progress_callback, increment, pv_data, cancelled, message, reverse)) {
         if (!_stop_pv[file_id]) {
-            // Use PV generator to create PV image
+            // Set PV image name from image filename and optional suffix (_pv1, _pv2, etc) to keep previous PV image
             auto input_filename = frame->GetFileName();
-            PvGenerator pv_generator(file_id, input_filename);
+
+            int name_suffix(0);
+            if (!overwrite) {
+                if (_pv_name_suffix.find(file_id) != _pv_name_suffix.end()) {
+                    name_suffix = ++_pv_name_suffix[file_id];
+                }
+
+                _pv_name_suffix[file_id] = name_suffix;
+            }
+
+            // Use PV generator to create PV image
+            PvGenerator pv_generator(file_id, input_filename, name_suffix);
 
             auto input_image = frame->GetImage();
             int offset_axis = reverse ? 1 : 0;

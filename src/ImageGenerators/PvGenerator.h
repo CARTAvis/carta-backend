@@ -19,7 +19,7 @@ namespace carta {
 
 class PvGenerator {
 public:
-    PvGenerator(int file_id, const std::string& filename);
+    PvGenerator(int file_id, const std::string& filename, int suffix);
 
     // Normally set up as x=offset, y=spectral.  If reverse=true, set up x=spectral, y=offset.
     // Returns generated pv_image or message if failure.
@@ -27,7 +27,7 @@ public:
         const casacore::Quantity& offset_increment, int stokes, bool reverse, GeneratedImage& pv_image, std::string& message);
 
 private:
-    std::string GetPvFilename(const std::string& filename);
+    std::string GetPvFilename(const std::string& filename, int suffix);
 
     bool SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes,
         const casacore::Quantity& offset_increment, bool reverse, std::string& message);
