@@ -79,7 +79,7 @@ public:
     casacore::IPosition GetShape();
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
     bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
-    std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
+    std::vector<int> GetRenderAxes(bool use_dir_axes = false); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
