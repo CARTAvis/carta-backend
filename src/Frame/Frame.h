@@ -281,6 +281,7 @@ protected:
     // Shape and axis info: X, Y, Z, Stokes
     casacore::IPosition _image_shape;
     int _x_axis, _y_axis, _z_axis, _spectral_axis, _stokes_axis;
+    std::vector<int> _direction_axes;
     int _z_index, _stokes_index; // current index
     size_t _width, _height, _depth, _num_stokes;
 

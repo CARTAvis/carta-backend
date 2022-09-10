@@ -196,11 +196,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 AddDataTypeEntry(extended_info, data_type);
 
+                std::vector<int> direction_axes;
                 int spectral_axis, depth_axis, stokes_axis;
-                if (_loader->FindCoordinateAxes(image_shape, spectral_axis, depth_axis, stokes_axis, message)) {
+                if (_loader->FindCoordinateAxes(image_shape, direction_axes, spectral_axis, stokes_axis, depth_axis, message)) {
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
                     std::vector<int> render_axes = _loader->GetRenderAxes();
-                    AddShapeEntries(extended_info, image_shape, spectral_axis, depth_axis, stokes_axis, render_axes);
+                    AddShapeEntries(extended_info, image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis);
                     AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
                     info_ok = true;
                 }
@@ -593,7 +594,8 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 
     // Use header entries to determine computed entries
     casacore::IPosition shape;
-    int chan_axis(-1), depth_axis(-1), stokes_axis(-1);
+    std::vector<int> direction_axes(2, -1);
+    int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
     std::vector<std::string> spectral_ctypes = {"ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA"};
     casacore::DataType data_type(casacore::DataType::TpFloat);
 
@@ -622,14 +624,19 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
             auto entry_value = header_entry.value();
             std::transform(entry_value.begin(), entry_value.end(), entry_value.begin(), [](unsigned char c) { return std::toupper(c); });
 
-            if (entry_value == "STOKES") {
+            if (entry_value.find("RA") == 0) {
+                direction_axes[0] = axis_num;
+            } else if (entry_value.find("DEC") == 0) {
+                direction_axes[1] = axis_num;
+            } else if (entry_value == "STOKES") {
                 stokes_axis = axis_num;
             } else if ((entry_value.find("FREQ") == 0) || (entry_value.find("WAV") != std::string::npos) ||
                        (std::find(spectral_ctypes.begin(), spectral_ctypes.end(), entry_value) != spectral_ctypes.end())) {
-                chan_axis = axis_num;
-                if (chan_axis > 1) {
-                    depth_axis = chan_axis;
-                }
+                spectral_axis = axis_num;
+            }
+
+            if (axis_num == 2) { // Default depth axis is the third axis from the file header
+                depth_axis = spectral_axis;
             }
         } else if (entry_name.find("BITPIX") == 0) {
             auto value = header_entry.value();
@@ -643,7 +650,7 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     }
 
     AddDataTypeEntry(extended_info, data_type);
-    AddShapeEntries(extended_info, shape, chan_axis, depth_axis, stokes_axis, render_axes);
+    AddShapeEntries(extended_info, shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis);
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
@@ -665,8 +672,8 @@ void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info,
     entry->set_entry_type(CARTA::EntryType::STRING);
 }
 
-void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,
-    int depth_axis, int stokes_axis, const std::vector<int>& render_axes) {
+void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape,
+    const std::vector<int>& direction_axes, int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
     int width(shape(render_axes[0]));
@@ -698,9 +705,23 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     shape_entry->set_value(shape_string);
     shape_entry->set_entry_type(CARTA::EntryType::STRING);
 
-    if (chan_axis >= 0) {
+    // Fill axes numbers info
+    std::string axes_numbers =
+        fmt::format("[{}, {}, {}, {}] (Ra, Dec, Spectral, Stokes)", direction_axes[0], direction_axes[1], spectral_axis, stokes_axis);
+    size_t start_pos = 0;
+    std::string from("-1"), to("NA");
+    while (((start_pos = axes_numbers.find(from, start_pos)) != std::string::npos) && (start_pos < axes_numbers.length())) {
+        axes_numbers.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    auto* axes_numbers_entry = extended_info.add_computed_entries();
+    axes_numbers_entry->set_name("Axes numbers");
+    axes_numbers_entry->set_value(axes_numbers);
+    axes_numbers_entry->set_entry_type(CARTA::EntryType::STRING);
+
+    if (depth_axis >= 0) {
         // header entry for number of channels
-        unsigned int nchan = shape(chan_axis);
+        unsigned int nchan = shape(depth_axis);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of channels");
         entry->set_value(std::to_string(nchan));
