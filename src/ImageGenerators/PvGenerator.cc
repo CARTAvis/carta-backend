@@ -9,6 +9,7 @@
 #include <chrono>
 
 #include <casacore/casa/Quanta/UnitMap.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
@@ -104,8 +105,23 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(
     casacore::LinearCoordinate linear_coord(name, unit, crval, inc, pc, crpix);
     csys.addCoordinate(linear_coord);
 
-    // Add spectral coordinate
-    csys.addCoordinate(input_csys.spectralCoordinate());
+    // Add spectral or direction axis if its axis number is 2 (i.e., depth axis)
+    if (input_csys.hasSpectralAxis() && input_csys.spectralAxisNumber() == 2) {
+        csys.addCoordinate(input_csys.spectralCoordinate());
+    } else if (input_csys.hasDirectionCoordinate()) {
+        auto dir_axes = input_csys.directionAxesNumbers();
+        if (dir_axes(0) == 2) {
+            csys.addCoordinate(input_csys.directionCoordinate());
+            csys.removeWorldAxis(3, 0.0); // Remove the second axis from direction axes
+        } else if (dir_axes(1) == 2) {
+            csys.addCoordinate(input_csys.directionCoordinate());
+            csys.removeWorldAxis(2, 0.0); // Remove the first axis from direction axes
+        } else {
+            spdlog::error("Can not find depth axis from direction coordinate.");
+        }
+    } else {
+        spdlog::error("Can not find depth axis from spectral or direction coordinates.");
+    }
 
     // Add stokes coordinate if input image has one
     if (input_csys.hasPolarizationCoordinate()) {
