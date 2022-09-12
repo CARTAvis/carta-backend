@@ -206,7 +206,7 @@ private:
 
     // PV generator: key is file_id
     std::unordered_map<int, bool> _stop_pv;
-    std::unordered_map<int, int> _pv_name_suffix;
+    std::unordered_map<int, int> _pv_name_index;
 
     // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
     std::mutex _pix_mvdir_mutex;

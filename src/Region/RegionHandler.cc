@@ -941,8 +941,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     // Reset stop flag
     _stop_pv[file_id] = false;
 
-    bool add_frame = !FrameSet(file_id);
-    if (add_frame) {
+    if (!FrameSet(file_id)) {
         _frames[file_id] = frame;
     }
 
@@ -955,20 +954,18 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     if (GetLineProfiles(
             file_id, region_id, width, z_range, stokes_index, "", progress_callback, increment, pv_data, cancelled, message, reverse)) {
         if (!_stop_pv[file_id]) {
-            // Set PV image name from image filename and optional suffix (_pv1, _pv2, etc) to keep previous PV image
+            // Set PV image name from image filename and optional index suffix (_pv1, _pv2, etc) to keep previous PV image
             auto input_filename = frame->GetFileName();
 
-            int name_suffix(0);
-            if (keep) {
-                if (_pv_name_suffix.find(file_id) != _pv_name_suffix.end()) {
-                    name_suffix = ++_pv_name_suffix[file_id];
-                }
-
-                _pv_name_suffix[file_id] = name_suffix;
+            int name_index(0);
+            if (keep && (_pv_name_index.find(file_id) != _pv_name_index.end())) {
+                name_index = ++_pv_name_index[file_id];
             }
 
+            _pv_name_index[file_id] = name_index;
+
             // Use PV generator to create PV image
-            PvGenerator pv_generator(file_id, input_filename, name_suffix);
+            PvGenerator pv_generator(file_id, input_filename, name_index);
 
             auto input_image = frame->GetImage();
             int offset_axis = reverse ? 1 : 0;
@@ -986,10 +983,6 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
         spdlog::debug(message);
     }
 
-    // Clean up
-    if (add_frame) {
-        RemoveFrame(file_id);
-    }
     _stop_pv.erase(file_id);
 
     // Complete message
@@ -1301,7 +1294,7 @@ bool RegionHandler::FillSpectralProfileData(
 
                 // Return spectral profile for this requirement
                 bool report_error(true);
-                AxisRange z_range(0, _frames.at(file_id)->Depth()); // all channels
+                AxisRange z_range(0, _frames.at(file_id)->Depth() - 1); // all channels
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(
@@ -1337,6 +1330,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     std::shared_lock region_lock(region->GetActiveTaskMutex());
 
     // Initialize results map for requested stats to NaN, progress to zero
+    size_t profile_end = z_range.to;
     size_t profile_size = z_range.to - z_range.from + 1;
     std::vector<double> init_spectral(profile_size, nan(""));
     std::map<CARTA::StatsType, std::vector<double>> results;
@@ -1494,7 +1488,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     }
 
     // Calculate and cache profiles
-    size_t start_z(z_range.from), count(0), end_z(0);
+    size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
@@ -1508,7 +1502,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        end_z = (start_z + delta_z > profile_size ? profile_size - 1 : start_z + delta_z - 1);
+        end_z = (start_z + delta_z > profile_end ? profile_end : start_z + delta_z - 1);
         count = end_z - start_z + 1;
 
         // Get 3D region for z range and stokes_index
@@ -1543,13 +1537,14 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             auto stats_type = profile.first;
             const std::vector<double>& stats_data = profile.second;
             if (results.count(stats_type)) {
-                memcpy(&results[stats_type][start_z], &stats_data[0], stats_data.size() * sizeof(double));
+                memcpy(&results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
             }
-            memcpy(&cache_results[stats_type][start_z], &stats_data[0], stats_data.size() * sizeof(double));
+            memcpy(&cache_results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
         }
 
         start_z += count;
-        progress = (float)start_z / profile_size;
+        profile_start += count;
+        progress = (float)profile_start / profile_size;
 
         // get the time elapse for this step
         auto t_end = std::chrono::high_resolution_clock::now();
