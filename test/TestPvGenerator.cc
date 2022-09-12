@@ -46,10 +46,11 @@ public:
         SetPvCut(region_handler, file_id, region_id, endpoints, frame->CoordinateSystem());
 
         // Request PV image
+        auto pv_request = Message::PvRequest(file_id, region_id, width);
         auto progress_callback = [&](float progress) {};
         CARTA::PvResponse pv_response;
         carta::GeneratedImage pv_image;
-        region_handler.CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image);
+        region_handler.CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image);
 
         if (expected_width_range) {
             EXPECT_TRUE(pv_response.success());
