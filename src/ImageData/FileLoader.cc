@@ -284,7 +284,7 @@ bool FileLoader::FindCoordinateAxes(
     return true;
 }
 
-std::vector<int> FileLoader::GetRenderAxes(bool use_dir_axes) {
+std::vector<int> FileLoader::GetRenderAxes() {
     // Determine which axes will be rendered
     std::vector<int> axes;
 
@@ -296,34 +296,25 @@ std::vector<int> FileLoader::GetRenderAxes(bool use_dir_axes) {
     // Default unless PV image
     axes.assign({0, 1});
 
-    if (_image_shape.size() > 2) {
-        // Normally, use direction axes
-        if (_coord_sys->hasDirectionCoordinate()) {
-            if (use_dir_axes) { // Use direction axes as render axes if any
-                casacore::Vector<casacore::Int> dir_axes = _coord_sys->directionAxesNumbers();
-                axes[0] = dir_axes[0];
-                axes[1] = dir_axes[1];
+    if (_image_shape.size() > 2 && _coord_sys->hasLinearCoordinate()) {
+        // Check for PV image: [Linear, Spectral] axes
+        // Returns -1 if no spectral axis
+        int spectral_axis = _coord_sys->spectralAxisNumber();
+
+        if (spectral_axis >= 0) {
+            // Find valid (not -1) linear axes
+            std::vector<int> valid_axes;
+            casacore::Vector<casacore::Int> lin_axes = _coord_sys->linearAxesNumbers();
+            for (auto axis : lin_axes) {
+                if (axis >= 0) {
+                    valid_axes.push_back(axis);
+                }
             }
-        } else if (_coord_sys->hasLinearCoordinate()) {
-            // Check for PV image: [Linear, Spectral] axes
-            // Returns -1 if no spectral axis
-            int spectral_axis = _coord_sys->spectralAxisNumber();
 
-            if (spectral_axis >= 0) {
-                // Find valid (not -1) linear axes
-                std::vector<int> valid_axes;
-                casacore::Vector<casacore::Int> lin_axes = _coord_sys->linearAxesNumbers();
-                for (auto axis : lin_axes) {
-                    if (axis >= 0) {
-                        valid_axes.push_back(axis);
-                    }
-                }
-
-                // One linear + spectral axis = pV image
-                if (valid_axes.size() == 1) {
-                    valid_axes.push_back(spectral_axis);
-                    axes = valid_axes;
-                }
+            // One linear + spectral axis = pV image
+            if (valid_axes.size() == 1) {
+                valid_axes.push_back(spectral_axis);
+                axes = valid_axes;
             }
         }
     }
