@@ -135,9 +135,9 @@ private:
 
     // Generate box regions to approximate a line with a width, and get mean of each box for z-range.
     // Used for pv generator and spatial profiles.
-    bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index, const std::string& coordinate,
-        std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles, bool& cancelled,
-        std::string& message, bool reverse = false);
+    bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, bool per_z, int stokes_index,
+        const std::string& coordinate, std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles,
+        bool& cancelled, std::string& message, bool reverse = false);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
     bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,

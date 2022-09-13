@@ -945,14 +945,14 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
         _frames[file_id] = frame;
     }
 
-    bool pv_success(false), cancelled(false);
+    bool per_z(true), pv_success(false), cancelled(false);
     int stokes_index = frame->CurrentStokes();
     double increment(0.0);           // Increment between box centers returned in arcsec
     casacore::Matrix<float> pv_data; // Spectral profiles for each box region: shape=[num_regions, num_channels]
     std::string message;
 
-    if (GetLineProfiles(
-            file_id, region_id, width, z_range, stokes_index, "", progress_callback, increment, pv_data, cancelled, message, reverse)) {
+    if (GetLineProfiles(file_id, region_id, width, z_range, per_z, stokes_index, "", progress_callback, increment, pv_data, cancelled,
+            message, reverse)) {
         if (!_stop_pv[file_id]) {
             // Set PV image name from image filename and optional index suffix (_pv1, _pv2, etc) to keep previous PV image
             auto input_filename = frame->GetFileName();
@@ -1826,14 +1826,14 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
 bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
     const std::function<void(std::vector<float>, double)>& spatial_profile_callback) {
     AxisRange z_range(_frames.at(file_id)->CurrentZ());
-    bool cancelled(false);
+    bool per_z(false), cancelled(false);
     GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for spatial profile
     double increment(0.0);
     casacore::Matrix<float> line_profile;
     std::string message;
 
-    if (GetLineProfiles(
-            file_id, region_id, width, z_range, stokes_index, coordinate, progress_callback, increment, line_profile, cancelled, message)) {
+    if (GetLineProfiles(file_id, region_id, width, z_range, per_z, stokes_index, coordinate, progress_callback, increment, line_profile,
+            cancelled, message)) {
         // Check for cancel
         if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
             return false;
@@ -1906,7 +1906,7 @@ std::vector<int> RegionHandler::GetSpatialReqFilesForRegion(int region_id) {
     return results;
 }
 
-bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, int stokes_index,
+bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, bool per_z, int stokes_index,
     const std::string& coordinate, std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles,
     bool& cancelled, std::string& message, bool reverse) {
     // Generate box regions to approximate a line with a width (pixels), and get mean of each box (per z else current z).
@@ -1927,7 +1927,6 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     auto region = GetRegion(region_id);
     auto region_state = region->GetRegionState();
     auto reference_csys = region->CoordinateSystem();
-    bool per_z = z_range.from != z_range.to;
 
     if (per_z && (region_state.type == CARTA::RegionType::POLYLINE)) {
         message = "Polyline region not supported for line spectral profiles.";
