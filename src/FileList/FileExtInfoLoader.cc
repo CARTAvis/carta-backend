@@ -688,12 +688,11 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     extended_info.set_stokes(stokes);
 
     auto* axes_numbers_info = extended_info.mutable_axes_numbers();
-    if (direction_axes.size() == 2) {
-        axes_numbers_info->add_directions(direction_axes[0]);
-        axes_numbers_info->add_directions(direction_axes[1]);
-    }
+    axes_numbers_info->set_dir_x(direction_axes[0]);
+    axes_numbers_info->set_dir_y(direction_axes[1]);
     axes_numbers_info->set_spectral(spectral_axis);
     axes_numbers_info->set_stokes(stokes_axis);
+    axes_numbers_info->set_depth(depth_axis);
 
     // shape computed_entry
     std::string shape_string;
