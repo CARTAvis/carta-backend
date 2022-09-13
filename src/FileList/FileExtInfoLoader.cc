@@ -624,9 +624,9 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
             auto entry_value = header_entry.value();
             std::transform(entry_value.begin(), entry_value.end(), entry_value.begin(), [](unsigned char c) { return std::toupper(c); });
 
-            if (entry_value.find("RA") == 0) {
+            if (entry_value.find("RA") == 0 || entry_value.find("GLON") == 0) {
                 direction_axes[0] = axis_num;
-            } else if (entry_value.find("DEC") == 0) {
+            } else if (entry_value.find("DEC") == 0 || entry_value.find("GLAT") == 0) {
                 direction_axes[1] = axis_num;
             } else if (entry_value == "STOKES") {
                 stokes_axis = axis_num;
@@ -715,7 +715,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     // Fill axes numbers info
     std::string axes_numbers =
-        fmt::format("[{}, {}, {}, {}] (Dir1, Dir2, Spectral, Stokes)", direction_axes[0], direction_axes[1], spectral_axis, stokes_axis);
+        fmt::format("[{}, {}, {}, {}] (DirX, DirY, Spectral, Stokes)", direction_axes[0], direction_axes[1], spectral_axis, stokes_axis);
     size_t start_pos = 0;
     std::string from("-1"), to("NA");
     while (((start_pos = axes_numbers.find(from, start_pos)) != std::string::npos) && (start_pos < axes_numbers.length())) {
