@@ -216,6 +216,18 @@ casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRe
     casacore::CoordinateSystem csys = sub_image->coordinates();
     casacore::IPosition shape = sub_image->shape();
     casa::SPIIF output_image(new casacore::TempImage<casacore::Float>(casacore::TiledShape(shape), csys));
+    output_image->setUnits(sub_image->units());
+    output_image->setMiscInfo(sub_image->miscInfo());
+    output_image->appendLog(sub_image->logger());
+
+    auto image_info = sub_image->imageInfo();
+    if (image_info.hasMultipleBeams()) {
+        // Use first beam, per imageanalysis ImageCollapser
+        auto beam = *(image_info.getBeamSet().getBeams().begin());
+        image_info.removeRestoringBeam();
+        image_info.setRestoringBeam(beam);
+    }
+    output_image->setImageInfo(image_info);
 
     casacore::Array<float> data_array(shape, image_data.data());
     output_image->put(data_array);
