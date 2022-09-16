@@ -17,6 +17,7 @@
 
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
+#include "Timer/Timer.h"
 #include "Util/File.h"
 #include "Util/Image.h"
 
@@ -1107,7 +1108,7 @@ bool RegionHandler::FillRegionHistogramData(
 bool RegionHandler::GetRegionHistogramData(
     int region_id, int file_id, const std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
     // Fill stats message for given region, file
-    auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
+    Timer t;
 
     // Set channel range is the current channel
     int z(_frames.at(file_id)->CurrentZ());
@@ -1204,11 +1205,8 @@ bool RegionHandler::GetRegionHistogramData(
         histogram_messages.emplace_back(histogram_message);
     }
 
-    auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
-    auto dt_region_histogram =
-        std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-    spdlog::performance(
-        "Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
+    auto dt = t.Elapsed();
+    spdlog::performance("Fill region histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)stats.num_pixels / dt.us());
 
     return true;
 }
@@ -1305,7 +1303,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
     bool use_current_stokes(coordinate == "z");
 
-    auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
+    Timer t;
 
     std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
     auto region = GetRegion(region_id);
@@ -1453,10 +1451,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-            auto dt_spectral_profile =
-                std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-            spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
+            spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed().ms());
             return true;
         }
     } // end loader swizzled data
@@ -1567,11 +1562,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-    auto dt_spectral_profile =
-        std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-    spdlog::performance("Fill spectral profile in {:.3f} ms", dt_spectral_profile * 1e-3);
-
+    spdlog::performance("Fill spectral profile in {:.3f} ms", t.Elapsed().ms());
     return true;
 }
 
@@ -1650,7 +1641,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 bool RegionHandler::GetRegionStatsData(
     int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
-    auto t_start_region_stats = std::chrono::high_resolution_clock::now();
+    Timer t;
 
     int z(_frames.at(file_id)->CurrentZ());
     stokes = (stokes == CURRENT_STOKES) ? _frames.at(file_id)->CurrentStokes() : stokes;
@@ -1706,10 +1697,7 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        auto t_end_region_stats = std::chrono::high_resolution_clock::now();
-        auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-        spdlog::performance("Fill region stats in {:.3f} ms", dt_region_stats * 1e-3);
-
+        spdlog::performance("Fill region stats in {:.3f} ms", t.Elapsed().ms());
         return true;
     }
 
@@ -1899,6 +1887,12 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, bool 
     // Calls progress_callback after each profile.
     // Return parameters: increment (angular spacing of boxes, in arcsec), per-region profiles, cancelled, message.
     // Returns whether profiles completed.
+    if (width < 1 || width > 20) {
+        message = fmt::format("Invalid averaging width: {}.", width);
+        spdlog::error(message);
+        return false;
+    }
+
     if (!RegionSet(region_id)) {
         return false;
     }
