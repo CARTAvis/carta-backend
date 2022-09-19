@@ -24,15 +24,16 @@ public:
     // Normally set up as x=offset, y=spectral.  If reverse=true, set up x=spectral, y=offset.
     // Returns generated pv_image or message if failure.
     bool GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
-        const casacore::Quantity& offset_increment, int stokes, bool reverse, GeneratedImage& pv_image, std::string& message);
+        const casacore::Quantity& offset_increment, double spectral_refval, int stokes, bool reverse, GeneratedImage& pv_image,
+        std::string& message);
 
 private:
     std::string GetPvFilename(const std::string& filename, int index);
 
     bool SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes,
-        const casacore::Quantity& offset_increment, bool reverse, std::string& message);
+        const casacore::Quantity& offset_increment, double spectral_refval, bool reverse, std::string& message);
     casacore::CoordinateSystem GetPvCoordinateSystem(const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape,
-        int stokes, const casacore::Quantity& offset_increment, bool reverse);
+        int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse);
     GeneratedImage GetGeneratedImage();
 
     // GeneratedImage parameters

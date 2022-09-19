@@ -31,11 +31,12 @@ PvGenerator::PvGenerator(int file_id, const std::string& filename, int index = 0
 }
 
 bool PvGenerator::GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
-    const casacore::Quantity& offset_increment, int stokes, bool reverse, GeneratedImage& pv_image, std::string& message) {
+    const casacore::Quantity& offset_increment, double spectral_refval, int stokes, bool reverse, GeneratedImage& pv_image,
+    std::string& message) {
     // Create PV image with input data. Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
     // Create casacore::TempImage
     casacore::IPosition pv_shape = pv_data.shape();
-    if (!SetupPvImage(input_image, pv_shape, stokes, offset_increment, reverse, message)) {
+    if (!SetupPvImage(input_image, pv_shape, stokes, offset_increment, spectral_refval, reverse, message)) {
         return false;
     }
 
@@ -66,7 +67,7 @@ std::string PvGenerator::GetPvFilename(const std::string& filename, int index) {
 }
 
 bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes,
-    const casacore::Quantity& offset_increment, bool reverse, std::string& message) {
+    const casacore::Quantity& offset_increment, double spectral_refval, bool reverse, std::string& message) {
     // Create coordinate system and temp image _image
     casacore::CoordinateSystem input_csys = input_image->coordinates();
     if (!input_csys.hasSpectralAxis()) {
@@ -74,7 +75,7 @@ bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> 
         return false;
     }
 
-    casacore::CoordinateSystem pv_csys = GetPvCoordinateSystem(input_csys, pv_shape, stokes, offset_increment, reverse);
+    casacore::CoordinateSystem pv_csys = GetPvCoordinateSystem(input_csys, pv_shape, stokes, offset_increment, spectral_refval, reverse);
     _image.reset(new casacore::TempImage<casacore::Float>(casacore::TiledShape(pv_shape), pv_csys));
     _image->setUnits(input_image->units());
     _image->setMiscInfo(input_image->miscInfo());
@@ -93,7 +94,7 @@ bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> 
 }
 
 casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape,
-    int stokes, const casacore::Quantity& offset_increment, bool reverse) {
+    int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse) {
     // Set PV coordinate system with LinearCoordinate and input coordinates for spectral and stokes
     casacore::CoordinateSystem csys;
     int offset_axis = reverse ? 1 : 0;
@@ -110,13 +111,18 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(const casacore::Co
     casacore::Vector<casacore::Double> crpix(2, (pv_shape[offset_axis] - 1) / 2);
     casacore::LinearCoordinate linear_coord(name, unit, crval, inc, pc, crpix);
 
+    // Set spectral reference value (changes if spectral range)
+    casacore::Vector<casacore::Double> refval(1, spectral_refval);
+    auto spectral_coord = input_csys.spectralCoordinate();
+    spectral_coord.setReferenceValue(refval);
+
     // Add offset and spectral coordinates
     if (reverse) {
-        csys.addCoordinate(input_csys.spectralCoordinate());
+        csys.addCoordinate(spectral_coord);
         csys.addCoordinate(linear_coord);
     } else {
         csys.addCoordinate(linear_coord);
-        csys.addCoordinate(input_csys.spectralCoordinate());
+        csys.addCoordinate(spectral_coord);
     }
 
     // Add stokes coordinate if input image has one
