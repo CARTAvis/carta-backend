@@ -35,6 +35,34 @@ public:
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }
+
+    static void TestAveragingWidthRange(int width, bool expected_width_range) {
+        auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+        std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+        carta::RegionHandler region_handler;
+        int file_id(0), region_id(-1);
+        std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0}; // Set line region [0, 0] to [9, 9]
+        SetPvCut(region_handler, file_id, region_id, endpoints, frame->CoordinateSystem());
+
+        // Request PV image
+        auto progress_callback = [&](float progress) {};
+        CARTA::PvResponse pv_response;
+        carta::GeneratedImage pv_image;
+        region_handler.CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image);
+
+        if (expected_width_range) {
+            EXPECT_TRUE(pv_response.success());
+            EXPECT_FALSE(pv_response.cancel());
+            EXPECT_NE(pv_image.image.get(), nullptr);
+            EXPECT_TRUE(pv_response.message().empty());
+        } else {
+            EXPECT_FALSE(pv_response.success());
+            EXPECT_FALSE(pv_response.cancel());
+            EXPECT_EQ(pv_image.image.get(), nullptr);
+            EXPECT_FALSE(pv_response.message().empty());
+        }
+    }
 };
 
 TEST_F(PvGeneratorTest, FitsPvImage) {
@@ -281,4 +309,11 @@ TEST_F(PvGeneratorTest, TestNoSpectralAxis) {
     EXPECT_EQ(pv_response.success(), false);
     EXPECT_EQ(pv_response.cancel(), false);
     EXPECT_EQ(pv_image.image.get(), nullptr);
+}
+
+TEST_F(PvGeneratorTest, AveragingWidthRange) {
+    TestAveragingWidthRange(0, false);
+    TestAveragingWidthRange(1, true);
+    TestAveragingWidthRange(20, true);
+    TestAveragingWidthRange(21, false);
 }

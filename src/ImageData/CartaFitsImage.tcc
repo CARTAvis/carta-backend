@@ -41,27 +41,34 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
     int dtype(TFLOAT);
 
     switch (datatype) {
-        case 8:
-            dtype = TBYTE;
+        case 8: {
+            fits_read_subset(fptr, TBYTE, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
             break;
-        case 16:
-            dtype = TSHORT;
+        }
+        case 16: {
+            fits_read_subset(fptr, TSHORT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
             break;
-        case 32:
-            dtype = TINT;
+        }
+        case 32: {
+            fits_read_subset(fptr, TINT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
             break;
-        case 64:
-            dtype = TLONGLONG;
+        }
+        case 64: {
+            fits_read_subset(fptr, TLONGLONG, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
             break;
-        case -32:
-            dtype = TFLOAT;
+        }
+        case -32: {
+            float fnull_val(NAN);
+            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
             break;
-        case -64:
-            dtype = TDOUBLE;
+        }
+        case -64: {
+            double dnull_val(NAN);
+            fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &dnull_val, tmp_buffer.data(), &anynul, &status);
             break;
+        }
     }
 
-    fits_read_subset(fptr, dtype, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
     if (status > 0) {
         spdlog::debug("fits_read_subset exited with status {}", status);
         return false;
