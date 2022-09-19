@@ -174,6 +174,29 @@ pipeline {
                         }
                     }
                 }
+                stage('8 RHEL9') {
+                    agent {
+                        label "rhel9-agent"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh "uname -a"
+                            sh "cat /etc/redhat-release"
+                            sh "git submodule update --init --recursive"
+                            dir ('build') {
+                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
+                                sh "make -j 16"
+                                stash includes: "test/**/*", name: "rhel9-unit-tests"
+                                stash includes: "carta_backend", name: "rhel9-backend"
+                            }
+                        }
+                    }
+                    post {
+                        failure {
+                            slackSend color: 'danger', message: "RedHat 9 - carta-backend build - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
+                        }
+                    }
+                }
             }
        }
        stage('Unit Tests') {
@@ -323,6 +346,27 @@ pipeline {
                         }
                     }
                 }
+                stage('8 RHEL9') {
+                    agent {
+                        label "rhel9-agent"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            unstash "rhel9-unit-tests"
+                            dir ('test') {
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:rhel8_test_detail.xml --gtest_filter=-FileListTest.SetTopLevelFolder:FileListTest.AccessForbiddenFolder"
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'test/rhel9_test_detail.xml'
+                        }
+                        failure {
+                            slackSend color: 'danger', message: "RedHat 9 - Unit Tests - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
+                        }
+                    }
+                }
             }
         }
         stage('Prepare for ICD tests') {
@@ -383,6 +427,14 @@ pipeline {
                         prepare_rhel8_ICD()
                     }
                 }
+                stage('8 RHEL9') {
+                    agent {
+                        label "rhel9-agent"
+                    }
+                    steps {
+                        prepare_rhel8_ICD()
+                    }
+                }
             }
         }
         stage('ICD tests') {
@@ -390,7 +442,7 @@ pipeline {
                 axes {
                     axis {
                         name 'PLATFORM'
-                        values 'bionic', 'focal', 'jammy', 'rhel7', 'rhel8', 'macos11', 'macos12'
+                        values 'bionic', 'focal', 'jammy', 'rhel7', 'rhel8', 'rhel9', 'macos11', 'macos12'
                     }
                 }
                 stages {
