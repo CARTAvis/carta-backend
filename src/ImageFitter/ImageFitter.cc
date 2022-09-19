@@ -27,6 +27,7 @@ ImageFitter::ImageFitter() {
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
     bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, size_t offset_x, size_t offset_y) {
     bool success = false;
+    _fit_data.stop_fitting = false;
     _model_data.clear();
     _residual_data.clear();
 
@@ -55,22 +56,26 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s).", _fit_data.n_notnan, _num_components);
     int status = SolveSystem();
 
-    if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
-        fitting_response.set_message("fit did not converge");
-    } else if (status) {
-        fitting_response.set_message(gsl_strerror(status));
-    }
-
-    if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
-        success = true;
-        spdlog::info("Writing fitting results and log.");
-        for (size_t i = 0; i < _num_components; i++) {
-            fitting_response.add_result_values();
-            *fitting_response.mutable_result_values(i) = GetGaussianComponent(_fit_values, i);
-            fitting_response.add_result_errors();
-            *fitting_response.mutable_result_errors(i) = GetGaussianComponent(_fit_errors, i);
+    if (_fit_data.stop_fitting) {
+        fitting_response.set_message("task cancelled");
+    } else {
+        if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
+            fitting_response.set_message("fit did not converge");
+        } else if (status) {
+            fitting_response.set_message(gsl_strerror(status));
         }
-        fitting_response.set_log(GetLog());
+
+        if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
+            success = true;
+            spdlog::info("Writing fitting results and log.");
+            for (size_t i = 0; i < _num_components; i++) {
+                fitting_response.add_result_values();
+                *fitting_response.mutable_result_values(i) = GetGaussianComponent(_fit_values, i);
+                fitting_response.add_result_errors();
+                *fitting_response.mutable_result_errors(i) = GetGaussianComponent(_fit_errors, i);
+            }
+            fitting_response.set_log(GetLog());
+        }
     }
     fitting_response.set_success(success);
 
@@ -91,6 +96,10 @@ bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageReg
         residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
     }
     return true;
+}
+
+void ImageFitter::StopFitting() {
+    _fit_data.stop_fitting = true;
 }
 
 void ImageFitter::CalculateNanNum() {
@@ -247,6 +256,12 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
     struct FitData* d = (struct FitData*)fit_data;
 
     for (size_t k = 0; k < fit_values->size; k += 6) {
+        // set residuals to zero to stop fitting procedure
+        if (d->stop_fitting) {
+            gsl_vector_set_zero(f);
+            return GSL_SUCCESS;
+        }
+
         const double center_x = gsl_vector_get(fit_values, k);
         const double center_y = gsl_vector_get(fit_values, k + 1);
         const double amp = gsl_vector_get(fit_values, k + 2);

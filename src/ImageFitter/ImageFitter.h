@@ -30,6 +30,7 @@ struct FitData {
     size_t n_notnan; // number of pixels excluding nan pixels
     size_t offset_x;
     size_t offset_y;
+    bool stop_fitting;
 };
 
 struct FitStatus {
@@ -46,6 +47,7 @@ public:
         bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
     bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region,
         int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image);
+    void StopFitting();
 
 private:
     FitData _fit_data;

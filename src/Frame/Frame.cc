@@ -1798,6 +1798,13 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
     return success;
 }
 
+void Frame::StopFitting() {
+    spdlog::debug("Cancelling image fitting.");
+    if (_image_fitter) {
+        _image_fitter->StopFitting();
+    }
+}
+
 // Export modified image to file, for changed range of channels/stokes and chopped region
 // Input root_folder as target path
 // Input save_file_msg as requesting parameters
