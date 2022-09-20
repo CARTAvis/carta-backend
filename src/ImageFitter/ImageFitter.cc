@@ -25,7 +25,7 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, size_t offset_x, size_t offset_y) {
+    bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
     _fit_data.stop_fitting = false;
     _model_data.clear();
@@ -39,6 +39,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _fdf.n = _fit_data.n;
     _create_model_data = create_model_image;
     _create_residual_data = create_residual_image;
+    _progress_callback = progress_callback;
 
     CalculateNanNum();
     SetInitialValues(initial_values);
@@ -136,7 +137,6 @@ int ImageFitter::SolveSystem() {
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
-    const bool print_iter = false;
     const size_t n = _fdf.n;
     const size_t p = _fdf.p;
     gsl_multifit_nlinear_workspace* work = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
@@ -146,8 +146,16 @@ int ImageFitter::SolveSystem() {
 
     gsl_multifit_nlinear_init(_fit_values, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
+
+    GeneratorProgressCallback iteration_progress_callback = [&](size_t iter) {
+        _progress_callback((iter + 1.0) / (_max_iter + 2.0)); // 2 for preparing fitting and generating results
+    };
     int status =
-        gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, print_iter ? Callback : nullptr, nullptr, &_fit_status.info, work);
+        gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, Callback, &iteration_progress_callback, &_fit_status.info, work);
+    if (!_fit_data.stop_fitting) {
+        iteration_progress_callback(_max_iter);
+    }
+    
     gsl_blas_ddot(f, f, &_fit_status.chisq);
     gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
     gsl_vector_memcpy(_fit_values, y);
@@ -298,6 +306,8 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
 }
 
 void ImageFitter::Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w) {
+    (*(GeneratorProgressCallback*)params)(iter);
+
     gsl_vector* f = gsl_multifit_nlinear_residual(w);
     gsl_vector* x = gsl_multifit_nlinear_position(w);
     double avratio = gsl_multifit_nlinear_avratio(w);

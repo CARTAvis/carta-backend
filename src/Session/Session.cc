@@ -1360,13 +1360,19 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
         GeneratedImage model_image;
         GeneratedImage residual_image;
 
+        // Set fitting progress callback function
+        auto progress_callback = [&](float progress) {
+            auto fitting_progress = Message::FittingProgress(file_id, progress);
+            SendEvent(CARTA::EventType::FITTING_PROGRESS, request_id, fitting_progress);
+        };
+
         if (region_id != IMAGE_REGION_ID) {
             if (!_region_handler) {
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-            success = _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image);
+            success = _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image, progress_callback);
         } else {
-            success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image);
+            success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image, progress_callback);
         }
 
         if (success) {

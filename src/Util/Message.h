@@ -128,6 +128,7 @@ public:
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress);
+    static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(
         int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress);
     static CARTA::ContourImageData ContourImageData(

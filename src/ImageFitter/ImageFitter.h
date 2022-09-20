@@ -44,7 +44,7 @@ class ImageFitter {
 public:
     ImageFitter();
     bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-        bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
+        bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x = 0, size_t offset_y = 0);
     bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region,
         int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image);
     void StopFitting();
@@ -61,6 +61,7 @@ private:
     std::vector<float> _model_data;
     std::vector<float> _residual_data;
     const size_t _max_iter = 200;
+    GeneratorProgressCallback _progress_callback;
 
     void CalculateNanNum();
     void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values);

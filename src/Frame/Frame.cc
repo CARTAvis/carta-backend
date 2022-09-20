@@ -1749,7 +1749,7 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image, GeneratedImage& residual_image, StokesRegion* stokes_region) {
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, StokesRegion* stokes_region) {
     if (!_image_fitter) {
         _image_fitter = std::make_unique<ImageFitter>();
     }
@@ -1776,10 +1776,10 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
             success = _image_fitter->FitImage(
-                region_shape(0), region_shape(1), region_data.data(), initial_values, fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, region_origin(0), region_origin(1));
+                region_shape(0), region_shape(1), region_data.data(), initial_values, fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response);
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
