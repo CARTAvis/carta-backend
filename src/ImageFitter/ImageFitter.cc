@@ -25,7 +25,8 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
+    bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
+    GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
     _fit_data.stop_fitting = false;
     _model_data.clear();
@@ -85,8 +86,8 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     return success;
 }
 
-bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region,
-    int file_id, const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image) {
+bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region, int file_id, const std::string& filename,
+    GeneratedImage& model_image, GeneratedImage& residual_image) {
     // Todo: find another better way to assign the temp file Id
     int id = (file_id + 1) * ID_MULTIPLIER - 1;
 
@@ -150,12 +151,11 @@ int ImageFitter::SolveSystem() {
     GeneratorProgressCallback iteration_progress_callback = [&](size_t iter) {
         _progress_callback((iter + 1.0) / (_max_iter + 2.0)); // 2 for preparing fitting and generating results
     };
-    int status =
-        gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, Callback, &iteration_progress_callback, &_fit_status.info, work);
+    int status = gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, Callback, &iteration_progress_callback, &_fit_status.info, work);
     if (!_fit_data.stop_fitting) {
         iteration_progress_callback(_max_iter);
     }
-    
+
     gsl_blas_ddot(f, f, &_fit_status.chisq);
     gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
     gsl_vector_memcpy(_fit_values, y);

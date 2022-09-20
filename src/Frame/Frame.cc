@@ -1749,7 +1749,8 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, StokesRegion* stokes_region) {
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
+    GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, StokesRegion* stokes_region) {
     if (!_image_fitter) {
         _image_fitter = std::make_unique<ImageFitter>();
     }
@@ -1775,11 +1776,13 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(
-                region_shape(0), region_shape(1), region_data.data(), initial_values, fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), initial_values,
+                fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback,
+                region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback);
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_request.create_model_image(),
+                fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
@@ -1791,7 +1794,8 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_stokes_region);
             }
             casa::SPIIF image(_loader->GetStokesImage(output_stokes_region.stokes_source));
-            _image_fitter->GetGeneratedImages(image, output_stokes_region.image_region, file_id, GetFileName(), model_image, residual_image);
+            _image_fitter->GetGeneratedImages(
+                image, output_stokes_region.image_region, file_id, GetFileName(), model_image, residual_image);
         }
     }
 

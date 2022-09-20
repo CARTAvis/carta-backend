@@ -1370,7 +1370,8 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
             if (!_region_handler) {
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-            success = _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image, progress_callback);
+            success = _region_handler->FitImage(
+                fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image, progress_callback);
         } else {
             success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image, progress_callback);
         }
