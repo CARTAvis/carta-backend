@@ -141,14 +141,16 @@ std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const Stokes
 
 casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     casacore::IPosition ipos;
-    if (stokes_source.IsOriginalImage() && IsValid()) {
-        ipos = _image_shape;
-    } else {
-        auto image = _loader->GetStokesImage(stokes_source);
-        if (image) {
-            ipos = image->shape();
+    if (IsValid()) {
+        if (stokes_source.IsOriginalImage()) {
+            ipos = _image_shape;
         } else {
-            spdlog::error("Failed to compute the stokes image!");
+            auto image = _loader->GetStokesImage(stokes_source);
+            if (image) {
+                ipos = image->shape();
+            } else {
+                spdlog::error("Failed to compute the stokes image!");
+            }
         }
     }
     return ipos;
