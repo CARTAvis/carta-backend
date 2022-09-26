@@ -7,8 +7,8 @@
 #ifndef CARTA_TEST_TESTFACTORIES_H
 #define CARTA_TEST_TESTFACTORIES_H
 
-#include "Cache/TileCache.h"
 #include <queue>
+#include "Cache/TileCache.h"
 
 namespace carta {
 
