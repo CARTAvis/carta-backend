@@ -5,6 +5,7 @@
 */
 
 #include <casacore/coordinates/Coordinates/CoordinateUtil.h>
+#include <casacore/images/Images/TempImage.h>
 #include <gtest/gtest.h>
 #include <type_traits>
 
@@ -51,6 +52,10 @@ public:
     FRIEND_TEST(FrameTest, TestGetFileNameNoLoader);
     FRIEND_TEST(FrameTest, TestCoordinateSystem);
     FRIEND_TEST(FrameTest, TestCoordinateSystemNotValid);
+    FRIEND_TEST(FrameTest, TestImageShapeNotComputed);
+    FRIEND_TEST(FrameTest, TestImageShapeComputed);
+    FRIEND_TEST(FrameTest, TestImageShapeComputedFailure);
+    FRIEND_TEST(FrameTest, TestImageShapeNotValid);
 };
 
 // This macro simplifies adding tests for getters with no additional logic.
@@ -219,4 +224,48 @@ TEST(FrameTest, TestCoordinateSystemNotValid) {
     TestFrame frame(0, nullptr, "0");
     // Check that the coordinate system is empty (has no coordinates).
     ASSERT_EQ(frame.CoordinateSystem()->nCoordinates(), 0);
+}
+
+TEST(FrameTest, TestImageShapeNotComputed) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    TestFrame frame(0, loader, "0");
+    // Use cached shape on frame
+    ASSERT_EQ(frame.ImageShape(), frame._image_shape);
+}
+
+TEST(FrameTest, TestImageShapeComputed) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+
+    // loader returns non-null image
+    auto shape = casacore::IPosition{10, 10, 10, 1};
+    auto temp_image = std::make_shared<casacore::TempImage<float>>();
+    temp_image->resize(casacore::TiledShape(shape));
+    EXPECT_CALL(*loader, GetStokesImage(_)).WillOnce(Return(temp_image));
+
+    TestFrame frame(0, loader, "0");
+    // A computed polarization
+    StokesSource stokes_source(COMPUTE_STOKES_PTOTAL, AxisRange(0));
+    // Should return shape of image returned from loader
+    ASSERT_EQ(frame.ImageShape(stokes_source), shape);
+}
+
+TEST(FrameTest, TestImageShapeComputedFailure) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    // loader returns null image
+    EXPECT_CALL(*loader, GetStokesImage(_)).WillOnce(Return(nullptr));
+
+    TestFrame frame(0, loader, "0");
+    // A computed polarization
+    StokesSource stokes_source(COMPUTE_STOKES_PTOTAL, AxisRange(0));
+    // Should return default blank shape
+    ASSERT_EQ(frame.ImageShape(stokes_source), casacore::IPosition());
+}
+
+TEST(FrameTest, TestImageShapeNotValid) {
+    TestFrame frame(0, nullptr, "0");
+    // Should return default blank shape
+    ASSERT_EQ(frame.ImageShape(), casacore::IPosition());
 }
