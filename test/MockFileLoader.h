@@ -11,10 +11,24 @@
 
 #include "ImageData/FileLoader.h"
 
+using ::testing::_;
+using ::testing::DoAll;
+using ::testing::Return;
+using ::testing::SetArgReferee;
+
 namespace carta {
 
 class MockFileLoader : public FileLoader {
 public:
+    // Helper method for setting up a loader for a valid frame
+    void MakeValid(casacore::IPosition shape = casacore::IPosition{30, 20, 10, 4}, int spectral_axis = 2, int z_axis = 2,
+        int stokes_axis = 3, std::vector<int> render_axes = {0, 1}) {
+        EXPECT_CALL(*this, FindCoordinateAxes(_, _, _, _, _))
+            .WillOnce(DoAll(SetArgReferee<0>(shape), SetArgReferee<1>(spectral_axis), SetArgReferee<2>(z_axis),
+                SetArgReferee<3>(stokes_axis), Return(true)));
+        EXPECT_CALL(*this, GetRenderAxes()).WillOnce(Return(render_axes));
+        EXPECT_CALL(*this, GetSlice(_, _)).WillOnce(Return(true));
+    }
     MOCK_METHOD(bool, CanOpenFile, (std::string & error), (override));
     MOCK_METHOD(void, OpenFile, (const std::string& hdu), (override));
     MOCK_METHOD(bool, HasData, (FileInfo::Data ds), (const, override));

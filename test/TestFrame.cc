@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <gtest/gtest.h>
 #include <type_traits>
 
@@ -48,7 +49,8 @@ public:
     FRIEND_TEST(FrameTest, TestStokesAxis);
     FRIEND_TEST(FrameTest, TestGetFileName);
     FRIEND_TEST(FrameTest, TestGetFileNameNoLoader);
-    //     FRIEND_TEST(FrameTest, );
+    FRIEND_TEST(FrameTest, TestCoordinateSystem);
+    FRIEND_TEST(FrameTest, TestCoordinateSystemNotValid);
 };
 
 // This macro simplifies adding tests for getters with no additional logic.
@@ -62,8 +64,6 @@ public:
     }
 
 TEST(FrameTest, TestConstructorNotHDF5) {
-    // TODO extract defaults to a helper function
-    // TODO maybe a constructor
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
     EXPECT_CALL(*loader, OpenFile("0"));
     EXPECT_CALL(*loader, FindCoordinateAxes(_, _, _, _, _))
@@ -96,8 +96,6 @@ TEST(FrameTest, TestConstructorNotHDF5) {
 
 TEST(FrameTest, TestConstructorHDF5) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    // TODO extract defaults to a helper function
-    // TODO maybe a constructor
     EXPECT_CALL(*loader, OpenFile("0"));
     EXPECT_CALL(*loader, FindCoordinateAxes(_, _, _, _, _))
         .WillOnce(DoAll(SetArgReferee<0>(casacore::IPosition{1000, 750, 10, 4}), SetArgReferee<1>(2), SetArgReferee<2>(2),
@@ -168,11 +166,7 @@ TEST(FrameTest, TestNoLoaderData) {
 
 TEST(FrameTest, TestBadLoaderStats) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    EXPECT_CALL(*loader, FindCoordinateAxes(_, _, _, _, _))
-        .WillOnce(DoAll(SetArgReferee<0>(casacore::IPosition{30, 20, 10, 4}), SetArgReferee<1>(2), SetArgReferee<2>(2), SetArgReferee<3>(3),
-            Return(true)));
-    EXPECT_CALL(*loader, GetRenderAxes()).WillOnce(Return(std::vector<int>{0, 1}));
-    EXPECT_CALL(*loader, GetSlice(_, _)).WillOnce(Return(true));
+    loader->MakeValid();
     EXPECT_CALL(*loader, LoadImageStats(_)).WillOnce(Throw(casacore::AipsError("These stats are bad.")));
 
     TestFrame frame(0, loader, "0");
@@ -207,5 +201,22 @@ TEST_SIMPLE_GETTER(CurrentStokes, _stokes_index, 123)
 TEST_SIMPLE_GETTER(SpectralAxis, _spectral_axis, 123)
 TEST_SIMPLE_GETTER(StokesAxis, _stokes_axis, 123)
 
-// TEST(FrameTest, Test) {
-// }
+TEST(FrameTest, TestCoordinateSystem) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+
+    auto mock_csys =
+        std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::makeCoordinateSystem(casacore::IPosition{30, 20, 10, 4}));
+    EXPECT_CALL(*loader, GetCoordinateSystem(_)).WillOnce(Return(mock_csys));
+
+    TestFrame frame(0, loader, "0");
+
+    // 0 means equality, and these should be the same object
+    ASSERT_EQ(casacore::CoordinateUtil::compareCoordinates(*frame.CoordinateSystem(), *mock_csys), 0);
+}
+
+TEST(FrameTest, TestCoordinateSystemNotValid) {
+    TestFrame frame(0, nullptr, "0");
+    // Check that the coordinate system is empty (has no coordinates).
+    ASSERT_EQ(frame.CoordinateSystem()->nCoordinates(), 0);
+}
