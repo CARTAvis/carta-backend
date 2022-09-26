@@ -38,7 +38,7 @@ public:
 
     static void TestAveragingWidthRange(int width, bool expected_width_range) {
         auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+        std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
         int file_id(0), region_id(-1);
