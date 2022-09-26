@@ -31,6 +31,9 @@ struct StokesSlicer {
 
     StokesSlicer() {}
     StokesSlicer(StokesSource stokes_source_, casacore::Slicer slicer_) : stokes_source(stokes_source_), slicer(slicer_) {}
+    bool operator==(const StokesSlicer& rhs) const {
+        return (stokes_source == rhs.stokes_source) && (slicer == rhs.slicer);
+    }
 };
 
 struct StokesRegion {

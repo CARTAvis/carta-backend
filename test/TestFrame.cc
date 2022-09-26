@@ -251,3 +251,14 @@ TEST(FrameTest, TestGetBeams) {
     ASSERT_EQ(frame.GetBeams(beams), true);
     ASSERT_EQ(beams.size(), 3);
 }
+
+TEST(FrameTest, TestGetImageSlicer) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    // Set up default dimensions and axes
+    loader->MakeValid();
+    TestFrame frame(0, loader, "0");
+
+    ASSERT_EQ(frame.GetImageSlicer(AxisRange(ALL_Z), 0),
+        StokesSlicer(StokesSource(0, AxisRange(ALL_Z)),
+            casacore::Slicer(casacore::IPosition{0, 0, 0, 0}, casacore::IPosition{29, 19, 9, 0}, casacore::Slicer::endIsLast)));
+}
