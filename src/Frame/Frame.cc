@@ -123,34 +123,23 @@ std::string Frame::GetErrorMessage() {
 }
 
 std::string Frame::GetFileName() {
-    std::string filename;
-
-    if (_loader) {
-        filename = _loader->GetFileName();
-    }
-
-    return filename;
+    return _loader->GetFileName();
 }
 
 std::shared_ptr<casacore::CoordinateSystem> Frame::CoordinateSystem(const StokesSource& stokes_source) {
-    if (IsValid()) {
-        return _loader->GetCoordinateSystem(stokes_source);
-    }
-    return std::make_shared<casacore::CoordinateSystem>();
+    return _loader->GetCoordinateSystem(stokes_source);
 }
 
 casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     casacore::IPosition ipos;
-    if (IsValid()) {
-        if (stokes_source.IsOriginalImage()) {
-            ipos = _image_shape;
+    if (stokes_source.IsOriginalImage()) {
+        ipos = _image_shape;
+    } else {
+        auto image = _loader->GetStokesImage(stokes_source);
+        if (image) {
+            ipos = image->shape();
         } else {
-            auto image = _loader->GetStokesImage(stokes_source);
-            if (image) {
-                ipos = image->shape();
-            } else {
-                spdlog::error("Failed to compute the stokes image!");
-            }
+            spdlog::error("Failed to compute the stokes image!");
         }
     }
     return ipos;

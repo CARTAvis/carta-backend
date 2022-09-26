@@ -8,12 +8,12 @@
 #define CARTA_TEST_TESTFACTORIES_H
 
 #include "Cache/TileCache.h"
+#include <queue>
 
 namespace carta {
 
 struct Factories {
-    static void Reset();
-    static TileCache* _mock_tile_cache;
+    static std::queue<TileCache*> _mock_tile_caches;
 };
 
 } // namespace carta

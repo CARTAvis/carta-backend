@@ -8,15 +8,13 @@
 
 using namespace carta;
 
-TileCache* Factories::_mock_tile_cache = nullptr;
-
-void Factories::Reset() {
-    _mock_tile_cache = nullptr;
-}
+std::queue<TileCache*> Factories::_mock_tile_caches;
 
 TileCache* TileCache::GetTileCache() {
-    if (Factories::_mock_tile_cache) {
-        return Factories::_mock_tile_cache;
+    if (!Factories::_mock_tile_caches.empty()) {
+        auto cache = Factories::_mock_tile_caches.front();
+        Factories::_mock_tile_caches.pop();
+        return cache;
     }
     return new PooledTileCache();
 }

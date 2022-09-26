@@ -49,13 +49,10 @@ public:
     FRIEND_TEST(FrameTest, TestSpectralAxis);
     FRIEND_TEST(FrameTest, TestStokesAxis);
     FRIEND_TEST(FrameTest, TestGetFileName);
-    FRIEND_TEST(FrameTest, TestGetFileNameNoLoader);
     FRIEND_TEST(FrameTest, TestCoordinateSystem);
-    FRIEND_TEST(FrameTest, TestCoordinateSystemNotValid);
     FRIEND_TEST(FrameTest, TestImageShapeNotComputed);
     FRIEND_TEST(FrameTest, TestImageShapeComputed);
     FRIEND_TEST(FrameTest, TestImageShapeComputedFailure);
-    FRIEND_TEST(FrameTest, TestImageShapeNotValid);
 };
 
 // This macro simplifies adding tests for getters with no additional logic.
@@ -113,7 +110,7 @@ TEST(FrameTest, TestConstructorHDF5) {
     EXPECT_CALL(*loader, LoadImageStats(_));
 
     MockTileCache* tile_cache = new MockTileCache();
-    Factories::_mock_tile_cache = tile_cache;
+    Factories::_mock_tile_caches.push(tile_cache);
     EXPECT_CALL(*tile_cache, Reset(0, 0, 14));
 
     TestFrame frame(0, loader, "0");
@@ -187,11 +184,6 @@ TEST(FrameTest, TestGetFileName) {
     ASSERT_EQ(frame.GetFileName(), "somefile.fits");
 }
 
-TEST(FrameTest, TestGetFileNameNoLoader) {
-    TestFrame frame(0, nullptr, "0");
-    ASSERT_EQ(frame.GetFileName(), "");
-}
-
 TEST_SIMPLE_GETTER(IsValid, _valid, true)
 TEST_SIMPLE_GETTER(IsConnected, _connected, true)
 TEST_SIMPLE_GETTER(GetErrorMessage, _open_image_error, "test")
@@ -218,12 +210,6 @@ TEST(FrameTest, TestCoordinateSystem) {
 
     // 0 means equality, and these should be the same object
     ASSERT_EQ(casacore::CoordinateUtil::compareCoordinates(*frame.CoordinateSystem(), *mock_csys), 0);
-}
-
-TEST(FrameTest, TestCoordinateSystemNotValid) {
-    TestFrame frame(0, nullptr, "0");
-    // Check that the coordinate system is empty (has no coordinates).
-    ASSERT_EQ(frame.CoordinateSystem()->nCoordinates(), 0);
 }
 
 TEST(FrameTest, TestImageShapeNotComputed) {
@@ -262,10 +248,4 @@ TEST(FrameTest, TestImageShapeComputedFailure) {
     StokesSource stokes_source(COMPUTE_STOKES_PTOTAL, AxisRange(0));
     // Should return default blank shape
     ASSERT_EQ(frame.ImageShape(stokes_source), casacore::IPosition());
-}
-
-TEST(FrameTest, TestImageShapeNotValid) {
-    TestFrame frame(0, nullptr, "0");
-    // Should return default blank shape
-    ASSERT_EQ(frame.ImageShape(), casacore::IPosition());
 }
