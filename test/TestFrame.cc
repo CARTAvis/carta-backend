@@ -48,11 +48,7 @@ public:
     FRIEND_TEST(FrameTest, TestCurrentStokes);
     FRIEND_TEST(FrameTest, TestSpectralAxis);
     FRIEND_TEST(FrameTest, TestStokesAxis);
-    FRIEND_TEST(FrameTest, TestGetFileName);
-    FRIEND_TEST(FrameTest, TestCoordinateSystem);
     FRIEND_TEST(FrameTest, TestImageShapeNotComputed);
-    FRIEND_TEST(FrameTest, TestImageShapeComputed);
-    FRIEND_TEST(FrameTest, TestImageShapeComputedFailure);
 };
 
 // This macro simplifies adding tests for getters with no additional logic.
@@ -200,8 +196,6 @@ TEST_SIMPLE_GETTER(StokesAxis, _stokes_axis, 123)
 
 TEST(FrameTest, TestCoordinateSystem) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
-
     auto mock_csys =
         std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::makeCoordinateSystem(casacore::IPosition{30, 20, 10, 4}));
     EXPECT_CALL(*loader, GetCoordinateSystem(_)).WillOnce(Return(mock_csys));
@@ -214,7 +208,6 @@ TEST(FrameTest, TestCoordinateSystem) {
 
 TEST(FrameTest, TestImageShapeNotComputed) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
     TestFrame frame(0, loader, "0");
     // Use cached shape on frame
     ASSERT_EQ(frame.ImageShape(), frame._image_shape);
@@ -222,8 +215,6 @@ TEST(FrameTest, TestImageShapeNotComputed) {
 
 TEST(FrameTest, TestImageShapeComputed) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
-
     // loader returns non-null image
     auto shape = casacore::IPosition{10, 10, 10, 1};
     auto temp_image = std::make_shared<casacore::TempImage<float>>();
@@ -239,7 +230,6 @@ TEST(FrameTest, TestImageShapeComputed) {
 
 TEST(FrameTest, TestImageShapeComputedFailure) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
     // loader returns null image
     EXPECT_CALL(*loader, GetStokesImage(_)).WillOnce(Return(nullptr));
 
@@ -248,4 +238,16 @@ TEST(FrameTest, TestImageShapeComputedFailure) {
     StokesSource stokes_source(COMPUTE_STOKES_PTOTAL, AxisRange(0));
     // Should return default blank shape
     ASSERT_EQ(frame.ImageShape(stokes_source), casacore::IPosition());
+}
+
+TEST(FrameTest, TestGetBeams) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    EXPECT_CALL(*loader, GetBeams(_, _)).WillOnce(DoAll(SetArgReferee<0>(std::vector<CARTA::Beam>(3)), Return(true)));
+    EXPECT_CALL(*loader, CloseImageIfUpdated());
+
+    TestFrame frame(0, loader, "0");
+    std::vector<CARTA::Beam> beams;
+    // Returns the value from the loader
+    ASSERT_EQ(frame.GetBeams(beams), true);
+    ASSERT_EQ(beams.size(), 3);
 }
