@@ -65,6 +65,22 @@ public:
     void SetUp() {
         setenv("HDF5_USE_FILE_LOCKING", "FALSE", 0);
     }
+
+    static void TestAveragingWidthRange(int width, bool expected_width_range) {
+        std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+        std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
+        int start(0), end(0), mip(0);
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+        CARTA::SpatialProfileData spatial_profile;
+
+        if (expected_width_range) {
+            ASSERT_TRUE(GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile));
+            ASSERT_EQ(spatial_profile.profiles_size(), 1);
+        } else {
+            ASSERT_FALSE(GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile));
+            ASSERT_EQ(spatial_profile.profiles_size(), 0);
+        }
+    }
 };
 
 TEST_F(LineSpatialProfileTest, FitsLineProfile) {
@@ -172,4 +188,11 @@ TEST_F(LineSpatialProfileTest, FitsPolylineProfile) {
 
     // Profile data width=1 of polyline is same as slices
     CmpVectors(profile_data, image_data);
+}
+
+TEST_F(LineSpatialProfileTest, AveragingWidthRange) {
+    TestAveragingWidthRange(0, false);
+    TestAveragingWidthRange(1, true);
+    TestAveragingWidthRange(20, true);
+    TestAveragingWidthRange(21, false);
 }
