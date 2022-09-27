@@ -113,8 +113,10 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(const casacore::Co
 
     // Set spectral reference value (changes if spectral range)
     casacore::Vector<casacore::Double> refval(1, spectral_refval);
+    casacore::Vector<casacore::Double> refpix(1, 0.0);
     auto spectral_coord = input_csys.spectralCoordinate();
     spectral_coord.setReferenceValue(refval);
+    spectral_coord.setReferencePixel(refpix);
 
     // Add offset and spectral coordinates
     if (reverse) {
