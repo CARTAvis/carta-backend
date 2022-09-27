@@ -76,11 +76,11 @@ struct AxisRange {
         from = from_;
         to = to_;
     }
+    bool operator==(const AxisRange& rhs) const {
+        return (from == rhs.from) && (to == rhs.to);
+    }
     bool operator!=(const AxisRange& rhs) const {
-        if ((from != rhs.from) || (to != rhs.to)) {
-            return true;
-        }
-        return false;
+        return !(*this == rhs);
     }
 };
 
@@ -171,16 +171,10 @@ struct StokesSource {
         return !IsComputedStokes(stokes);
     }
     bool operator==(const StokesSource& rhs) const {
-        if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
-            return false;
-        }
-        return true;
+        return (stokes == rhs.stokes) && (z_range == rhs.z_range) && (x_range == rhs.x_range) && (y_range == rhs.y_range);
     }
     bool operator!=(const StokesSource& rhs) const {
-        if ((stokes != rhs.stokes) || (z_range != rhs.z_range) || (x_range != rhs.x_range) || (y_range != rhs.y_range)) {
-            return true;
-        }
-        return false;
+        return !(*this == rhs);
     }
 };
 

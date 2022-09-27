@@ -34,6 +34,9 @@ struct StokesSlicer {
     bool operator==(const StokesSlicer& rhs) const {
         return (stokes_source == rhs.stokes_source) && (slicer == rhs.slicer);
     }
+    bool operator!=(const StokesSlicer& rhs) const {
+        return !(*this == rhs);
+    }
 };
 
 struct StokesRegion {
