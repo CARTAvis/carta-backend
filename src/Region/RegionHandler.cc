@@ -1297,7 +1297,7 @@ bool RegionHandler::FillSpectralProfileData(
 
                 // Return spectral profile for this requirement
                 bool report_error(true);
-                AxisRange z_range(0, _frames.at(file_id)->Depth() - 1); // all channels
+                AxisRange z_range(0, _frames.at(config_file_id)->Depth() - 1); // all channels
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
                     report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(
@@ -1360,7 +1360,6 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
     // Get 2D region with original image coordinate to check if inside image and whether to use loader
     auto lc_region = ApplyRegionToFile(region_id, file_id, StokesSource(), report_error);
-
     if (!lc_region) {
         // region outside image, send NaNs
         progress = 1.0;
