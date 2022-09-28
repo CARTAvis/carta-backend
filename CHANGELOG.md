@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Added a check of averaging width when calculating line/polyline spatial profiles or PV images ([#1174](https://github.com/CARTAvis/carta-backend/issues/1174)).
+* Added support to keep previously generated Moment images ([#1202](https://github.com/CARTAvis/carta-backend/issues/1202)).
 
 ### Fixed
 * Fixed issues with AIPS velocity axis by restoring previous casacore headers ([#1771](https://github.com/CARTAvis/carta-frontend/issues/1771)).
