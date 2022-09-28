@@ -418,7 +418,7 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     int index(0);
     EXPECT_EQ(pv_response.success(), true);
-    EXPECT_EQ(pv_image.file_id, PV_ID_MULTIPLIER + index);
+    EXPECT_EQ(pv_image.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image.name.find("pv.fits") != std::string::npos);
 
     // Request PV image, keeping the first
@@ -430,7 +430,7 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     index++;
     EXPECT_EQ(pv_response2.success(), true);
-    EXPECT_EQ(pv_image2.file_id, PV_ID_MULTIPLIER + index);
+    EXPECT_EQ(pv_image2.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image2.name.find("pv1.fits") != std::string::npos);
 
     // Request PV image, replace all and reset index
@@ -442,6 +442,6 @@ TEST_F(PvGeneratorTest, PvImageKeep) {
     // Check PV image file_id and name
     index = 0;
     EXPECT_EQ(pv_response3.success(), true);
-    EXPECT_EQ(pv_image3.file_id, PV_ID_MULTIPLIER + index);
+    EXPECT_EQ(pv_image3.file_id, PV_ID_MULTIPLIER - index);
     EXPECT_TRUE(pv_image3.name.find("pv.fits") != std::string::npos);
 }

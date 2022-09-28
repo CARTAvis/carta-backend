@@ -26,7 +26,7 @@
 using namespace carta;
 
 PvGenerator::PvGenerator(int file_id, const std::string& filename, int index = 0) {
-    _file_id = ((file_id + 1) * PV_ID_MULTIPLIER) + index;
+    _file_id = ((file_id + 1) * PV_ID_MULTIPLIER) - index;
     _name = GetPvFilename(filename, index);
 }
 
