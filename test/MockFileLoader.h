@@ -23,11 +23,11 @@ public:
     // Helper method for setting up a loader for a valid frame
     void MakeValid(casacore::IPosition shape = casacore::IPosition{30, 20, 10, 4}, int spectral_axis = 2, int z_axis = 2,
         int stokes_axis = 3, std::vector<int> render_axes = {0, 1}) {
-        EXPECT_CALL(*this, FindCoordinateAxes(_, _, _, _, _))
-            .WillOnce(DoAll(SetArgReferee<0>(shape), SetArgReferee<1>(spectral_axis), SetArgReferee<2>(z_axis),
+        ON_CALL(*this, FindCoordinateAxes(_, _, _, _, _))
+            .WillByDefault(DoAll(SetArgReferee<0>(shape), SetArgReferee<1>(spectral_axis), SetArgReferee<2>(z_axis),
                 SetArgReferee<3>(stokes_axis), Return(true)));
-        EXPECT_CALL(*this, GetRenderAxes()).WillOnce(Return(render_axes));
-        EXPECT_CALL(*this, GetSlice(_, _)).WillOnce(Return(true));
+        ON_CALL(*this, GetRenderAxes()).WillByDefault(Return(render_axes));
+        ON_CALL(*this, GetSlice(_, _)).WillByDefault(Return(true));
     }
     MOCK_METHOD(bool, CanOpenFile, (std::string & error), (override));
     MOCK_METHOD(void, OpenFile, (const std::string& hdu), (override));
