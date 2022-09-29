@@ -205,72 +205,32 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     casacore::IPosition end(_image_shape);
     end -= 1; // last position, not length
 
-    // Slice x axis
-    if (_x_axis >= 0) {
-        int start_x(x_range.from), end_x(x_range.to);
+    // Slice x, y and z axes
+    auto slice_axis = [&](int axis_index, AxisRange range, int all_value, size_t dimension) {
+        if (axis_index >= 0) {
+            int start_axis(range.from), end_axis(range.to);
 
-        // Normalize x constants
-        if (start_x == ALL_X) {
-            start_x = 0;
-        }
-        if (end_x == ALL_X) {
-            end_x = _width - 1;
-        }
+            // Normalize x constants
+            if (start_axis == all_value) {
+                start_axis = 0;
+            }
+            if (end_axis == all_value) {
+                end_axis = dimension - 1;
+            }
 
-        if (stokes_source.IsOriginalImage()) {
-            start(_x_axis) = start_x;
-            end(_x_axis) = end_x;
-        } else { // Reset the slice cut for the computed stokes image
-            start(_x_axis) = 0;
-            end(_x_axis) = end_x - start_x;
+            if (stokes_source.IsOriginalImage()) {
+                start(axis_index) = start_axis;
+                end(axis_index) = end_axis;
+            } else { // Reset the slice cut for the computed stokes image
+                start(axis_index) = 0;
+                end(axis_index) = end_axis - start_axis;
+            }
         }
-    }
+    };
 
-    // Slice y axis
-    if (_y_axis >= 0) {
-        int start_y(y_range.from), end_y(y_range.to);
-
-        // Normalize y constants
-        if (start_y == ALL_Y) {
-            start_y = 0;
-        }
-        if (end_y == ALL_Y) {
-            end_y = _height - 1;
-        }
-
-        if (stokes_source.IsOriginalImage()) {
-            start(_y_axis) = start_y;
-            end(_y_axis) = end_y;
-        } else { // Reset the slice cut for the computed stokes image
-            start(_y_axis) = 0;
-            end(_y_axis) = end_y - start_y;
-        }
-    }
-
-    // Slice z axis
-    if (_z_axis >= 0) {
-        int start_z(z_range.from), end_z(z_range.to);
-
-        // Normalize z constants
-        if (start_z == ALL_Z) {
-            start_z = 0;
-        } else if (start_z == CURRENT_Z) {
-            start_z = CurrentZ();
-        }
-        if (end_z == ALL_Z) {
-            end_z = Depth() - 1;
-        } else if (end_z == CURRENT_Z) {
-            end_z = CurrentZ();
-        }
-
-        if (stokes_source.IsOriginalImage()) {
-            start(_z_axis) = start_z;
-            end(_z_axis) = end_z;
-        } else { // Reset the slice cut for the computed stokes image
-            start(_z_axis) = 0;
-            end(_z_axis) = end_z - start_z;
-        }
-    }
+    slice_axis(_x_axis, x_range, ALL_X, _width);
+    slice_axis(_y_axis, y_range, ALL_Y, _height);
+    slice_axis(_z_axis, z_range, ALL_Z, _depth);
 
     // Slice stokes axis
     if (_stokes_axis >= 0) {
