@@ -222,8 +222,8 @@ public:
 
 protected:
     // Validate z and stokes index values
-    bool CheckZ(int z);
-    bool CheckStokes(int stokes);
+    bool ValidZ(int z);
+    bool ValidStokes(int stokes);
 
     // Check whether z or stokes has changed
     bool ZStokesChanged(int z, int stokes);

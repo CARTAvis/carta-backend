@@ -252,11 +252,11 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     return StokesSlicer(stokes_source, section);
 }
 
-bool Frame::CheckZ(int z) {
+bool Frame::ValidZ(int z) {
     return ((z >= 0) && (z < Depth()));
 }
 
-bool Frame::CheckStokes(int stokes) {
+bool Frame::ValidStokes(int stokes) {
     return (((stokes >= 0) && (stokes < NumStokes())) || IsComputedStokes(stokes));
 }
 
@@ -284,8 +284,8 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
         message = "No file loaded";
     } else {
         if ((new_z != _z_index) || (new_stokes != _stokes_index)) {
-            bool z_ok(CheckZ(new_z));
-            bool stokes_ok(CheckStokes(new_stokes));
+            bool z_ok(ValidZ(new_z));
+            bool stokes_ok(ValidStokes(new_stokes));
             if (z_ok && stokes_ok) {
                 _z_index = new_z;
                 _stokes_index = new_stokes;
@@ -1531,7 +1531,7 @@ std::shared_ptr<casacore::LCRegion> Frame::GetImageRegion(
 }
 
 bool Frame::GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region) {
-    if (!CheckZ(z_range.from) || !CheckZ(z_range.to) || !CheckStokes(stokes)) {
+    if (!ValidZ(z_range.from) || !ValidZ(z_range.to) || !ValidStokes(stokes)) {
         return false;
     }
     try {
