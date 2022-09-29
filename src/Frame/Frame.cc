@@ -235,7 +235,7 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     // Slice stokes axis
     if (_stokes_axis >= 0) {
         // Normalize stokes constant
-        stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
+        stokes = (stokes == CURRENT_STOKES ? _stokes_index : stokes);
 
         if (stokes_source.IsOriginalImage()) {
             start(_stokes_axis) = stokes;
@@ -253,11 +253,11 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
 }
 
 bool Frame::ValidZ(int z) {
-    return ((z >= 0) && (z < Depth()));
+    return ((z >= 0) && (z < _depth));
 }
 
 bool Frame::ValidStokes(int stokes) {
-    return (((stokes >= 0) && (stokes < NumStokes())) || IsComputedStokes(stokes));
+    return (((stokes >= 0) && (stokes < _num_stokes)) || IsComputedStokes(stokes));
 }
 
 bool Frame::ZStokesChanged(int z, int stokes) {
@@ -681,8 +681,8 @@ bool Frame::FillRegionHistogramData(
 
         // Set channel
         int z = histogram_config.channel;
-        if ((z == CURRENT_Z) || (Depth() == 1)) {
-            z = CurrentZ();
+        if ((z == CURRENT_Z) || (_depth == 1)) {
+            z = _z_index;
         }
 
         // Use number of bins in requirements
@@ -805,7 +805,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
             return true;
         }
 
-        if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
+        if ((z == _z_index) && (stokes == _stokes_index)) {
             // calculate histogram from image cache
             if ((_image_cache_size == 0) && !FillImageCache()) {
                 // cannot calculate
@@ -873,7 +873,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
         num_bins = AutoBinSize();
     }
 
-    if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
+    if ((z == _z_index) && (stokes == _stokes_index)) {
         // calculate histogram from current image cache
         if ((_image_cache_size == 0) && !FillImageCache()) {
             return false;
@@ -889,7 +889,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
     }
 
     // cache image histogram
-    if ((region_id == IMAGE_REGION_ID) || (Depth() == 1)) {
+    if ((region_id == IMAGE_REGION_ID) || (_depth == 1)) {
         int cache_key(CacheKey(z, stokes));
         _image_histograms[cache_key].push_back(hist);
     }
@@ -934,7 +934,7 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         return false; // not requested
     }
 
-    int z(CurrentZ()); // Use current channel
+    int z(_z_index); // Use current channel
 
     for (auto stats_config : _image_required_stats) {
         // Get stokes index
@@ -1048,7 +1048,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     }
 
     if (spatial_configs.empty()) { // Only send a spatial data message for the cursor value with current stokes
-        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), CurrentStokes(), cursor_value_with_current_stokes);
+        auto spatial_data = Message::SpatialProfileData(x, y, _z_index, _stokes_index, cursor_value_with_current_stokes);
         spatial_data_vec.push_back(spatial_data);
         return true;
     }
@@ -1071,7 +1071,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     for (auto& point_regions_spatial_config : point_regions_spatial_configs) {
         int stokes = point_regions_spatial_config.first;
 
-        bool is_current_stokes(stokes == CurrentStokes());
+        bool is_current_stokes(stokes == _stokes_index);
 
         float cursor_value(0.0);
 
@@ -1079,7 +1079,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         if (is_current_stokes) {
             cursor_value = cursor_value_with_current_stokes;
         } else {
-            StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(CurrentZ()), stokes);
+            StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(y), AxisRange(_z_index), stokes);
             const auto N = stokes_slicer.slicer.length().product();
             std::unique_ptr<float[]> data(new float[N]); // zero initialization
             if (GetSlicerData(stokes_slicer, data.get())) {
@@ -1088,7 +1088,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
         }
 
         // set message fields
-        auto spatial_data = Message::SpatialProfileData(x, y, CurrentZ(), stokes, cursor_value);
+        auto spatial_data = Message::SpatialProfileData(x, y, _z_index, stokes, cursor_value);
 
         // add profiles
         std::vector<float> profile;
@@ -1136,7 +1136,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     bounds.set_y_max(end);
                 }
 
-                have_profile = _loader->GetDownsampledRasterData(profile, CurrentZ(), stokes, bounds, mip, _image_mutex);
+                have_profile = _loader->GetDownsampledRasterData(profile, _z_index, stokes, bounds, mip, _image_mutex);
             } else {
                 if (downsample) { // Round the endpoints if we're going to decimate
                     // These values will be used to resize the decimated data
@@ -1230,9 +1230,9 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
 
                     StokesSlicer stokes_slicer;
                     if (config.coordinate().back() == 'x') {
-                        stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(CurrentZ()), stokes);
+                        stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(_z_index), stokes);
                     } else if (config.coordinate().back() == 'y') {
-                        stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(CurrentZ()), stokes);
+                        stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(_z_index), stokes);
                     }
 
                     profile.resize(stokes_slicer.slicer.length().product());
@@ -1315,7 +1315,6 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         return true;
     }
 
-    int nstokes = NumStokes();
     std::vector<SpectralConfig> new_configs;
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
@@ -1325,7 +1324,6 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         }
 
         // Set required stats for coordinate
-        size_t nstats = config.stats_types_size();
         std::vector<CARTA::StatsType> stats;
         for (size_t i = 0; i < config.stats_types_size(); ++i) {
             stats.push_back(config.stats_types(i));
@@ -1387,7 +1385,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
 
         // Create final profile message for callback
-        auto profile_message = Message::SpectralProfileData(CurrentStokes(), 1.0);
+        auto profile_message = Message::SpectralProfileData(_stokes_index, 1.0);
         auto spectral_profile = profile_message.add_profiles();
         spectral_profile->set_coordinate(config.coordinate);
         // point spectral profiles only have one stats type
@@ -1426,7 +1424,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 size_t delta_z = INIT_DELTA_Z;                         // the increment of channels for each slice (to be adjusted)
                 size_t dt_slice_target = TARGET_DELTA_TIME;            // target time elapse for each slice, in milliseconds
                 size_t dt_partial_update = TARGET_PARTIAL_CURSOR_TIME; // time increment to send an update
-                size_t profile_size = Depth();                         // profile vector size
+                size_t profile_size = _depth;                          // profile vector size
                 spectral_data.resize(profile_size, NAN);
                 float progress(0.0);
 
@@ -1488,7 +1486,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         // reset profile timer and send partial profile message
                         t_start_profile = t_end_slice;
 
-                        auto partial_data = Message::SpectralProfileData(CurrentStokes(), progress);
+                        auto partial_data = Message::SpectralProfileData(_stokes_index, progress);
                         auto partial_profile = partial_data.add_profiles();
                         partial_profile->set_stats_type(config.all_stats[0]);
                         partial_profile->set_coordinate(config.coordinate);
@@ -1687,7 +1685,7 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _z_axis, _stokes_axis, progress_callback, moment_request,
-            moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
+            moment_response, collapse_results, region_state, GetStokesType(_stokes_index));
         ulock.unlock();
     }
 
@@ -2159,7 +2157,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
                 stokes_ok = true;
             } else {
                 int assumed_stokes_index = (StokesValues[stokes_type] - 1) % 4;
-                if (NumStokes() > assumed_stokes_index) {
+                if (_num_stokes > assumed_stokes_index) {
                     stokes_index = assumed_stokes_index;
                     stokes_ok = true;
                     spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
@@ -2171,7 +2169,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
             return false;
         }
     } else {
-        stokes_index = CurrentStokes(); // current stokes
+        stokes_index = _stokes_index; // current stokes
     }
     return true;
 }
