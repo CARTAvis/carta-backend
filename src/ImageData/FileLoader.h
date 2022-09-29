@@ -39,6 +39,8 @@ struct StokesSlicer {
     }
 };
 
+std::ostream& operator<<(std::ostream& os, const StokesSlicer& s);
+
 struct StokesRegion {
     StokesSource stokes_source;
     casacore::ImageRegion image_region;

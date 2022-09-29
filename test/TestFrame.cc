@@ -20,6 +20,7 @@ using namespace carta;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Exactly;
+using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SetArgReferee;
@@ -258,7 +259,48 @@ TEST(FrameTest, TestGetImageSlicer) {
     loader->MakeValid();
     TestFrame frame(0, loader, "0");
 
-    ASSERT_EQ(frame.GetImageSlicer(AxisRange(ALL_Z), 0),
-        StokesSlicer(StokesSource(0, AxisRange(ALL_Z)),
-            casacore::Slicer(casacore::IPosition{0, 0, 0, 0}, casacore::IPosition{29, 19, 9, 0}, casacore::Slicer::endIsLast)));
+    using AR = AxisRange;
+
+    auto test_image_slicer = [&](AR x, AR y, AR z, int stokes, std::initializer_list<ssize_t> start, std::initializer_list<ssize_t> end) {
+        ASSERT_EQ(frame.GetImageSlicer(x, y, z, stokes),
+            StokesSlicer(StokesSource(stokes, z, x, y),
+                casacore::Slicer(casacore::IPosition(start), casacore::IPosition(end), casacore::Slicer::endIsLast)));
+    };
+
+    test_image_slicer(AR(ALL_X), AR(ALL_Y), AR(ALL_Z), 1, {0, 0, 0, 1}, {29, 19, 9, 1});
+    test_image_slicer(AR(0, 29), AR(0, 19), AR(0, 9), 1, {0, 0, 0, 1}, {29, 19, 9, 1});
+    test_image_slicer(AR(5, 6), AR(5, 6), AR(5, 6), 1, {5, 5, 5, 1}, {6, 6, 6, 1});
+    test_image_slicer(AR(5), AR(5), AR(5), 1, {5, 5, 5, 1}, {5, 5, 5, 1});
+    test_image_slicer(AR(5, 6), AR(5, 6), AR(5, 6), COMPUTE_STOKES_PLINEAR, {0, 0, 0, 0}, {1, 1, 1, 0});
+}
+
+TEST(FrameTest, TestGetImageSlicerTwoArgs) {
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    // Set up default dimensions and axes
+    loader->MakeValid();
+
+    // Local mock subclass of Frame
+    class MockFrame : public TestFrame {
+    public:
+        MockFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu)
+            : TestFrame(session_id, loader, hdu) {}
+        MOCK_METHOD(StokesSlicer, GetImageSlicer, (const AxisRange& z_range, int stokes), (override));
+        MOCK_METHOD(StokesSlicer, GetImageSlicer,
+            (const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes), (override));
+    };
+
+    NiceMock<MockFrame> frame(0, loader, "0");
+
+    using AR = AxisRange;
+
+    // Delegate the 2-argument method to the parent
+    ON_CALL(frame, GetImageSlicer(_, _)).WillByDefault(Invoke([&frame](const AxisRange& z_range, int stokes) {
+        return frame.Frame::GetImageSlicer(z_range, stokes);
+    }));
+    // Expect the 4-argument method to be called with these arguments
+    // Return an empty slicer from the mock 4-argument method
+    EXPECT_CALL(frame, GetImageSlicer(AR(ALL_X), AR(ALL_Y), AR(5, 6), 1)).WillOnce(Return(StokesSlicer()));
+
+    // Check that the (mock) 4-argument method output is returned from the 2-argument method
+    ASSERT_EQ(frame.GetImageSlicer(AR(5, 6), 1), StokesSlicer());
 }

@@ -26,6 +26,10 @@
 
 using namespace carta;
 
+std::ostream& carta::operator<<(std::ostream& os, const StokesSlicer& s) {
+    return (os << "StokesSlicer(" << s.stokes_source << ", " << s.slicer << ")" << std::endl);
+}
+
 FileLoader* BaseFileLoader::GetLoader(const std::string& filename, const std::string& directory) {
     if (!directory.empty()) {
         // filename is LEL expression for image(s) in directory

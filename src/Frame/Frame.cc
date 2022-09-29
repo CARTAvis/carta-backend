@@ -99,7 +99,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     }
 
     // set default histogram requirements
-    InitImageHistogramConfigs();
+    _image_histogram_configs.clear();
+    _image_histogram_configs.push_back(HistogramConfig("z", CURRENT_Z, AUTO_BIN_SIZE));
     _cube_histogram_configs.clear();
 
     try {
@@ -2234,17 +2235,6 @@ std::string Frame::GetStokesType(int stokes_index) {
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
-}
-
-void Frame::InitImageHistogramConfigs() {
-    _image_histogram_configs.clear();
-
-    // set histogram requirements for the image
-    HistogramConfig config;
-    config.coordinate = "z"; // current stokes type
-    config.channel = CURRENT_Z;
-    config.num_bins = AUTO_BIN_SIZE;
-    _image_histogram_configs.push_back(config);
 }
 
 void Frame::CloseCachedImage(const std::string& file) {

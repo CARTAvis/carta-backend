@@ -84,7 +84,7 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
 class Frame {
 public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
-    ~Frame(){};
+    virtual ~Frame() = default;
 
     bool IsValid();
     std::string GetErrorMessage();
@@ -108,8 +108,8 @@ public:
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
-    StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
-    StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
+    virtual StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
+    virtual StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
     // Image view for z index
     inline void SetAnimationViewSettings(const CARTA::AddRequiredTiles& required_animation_tiles) {
@@ -257,8 +257,6 @@ protected:
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
         casacore::IPosition region_shape, casacore::LattRegionHolder& latt_region_holder);
-
-    void InitImageHistogramConfigs();
 
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {

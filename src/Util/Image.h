@@ -58,17 +58,12 @@
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
 
-// AxisRange() defines the full axis ALL_Z
 // AxisRange(0) defines a single axis index, 0, in this example
 // AxisRange(0, 1) defines the axis range including [0, 1] in this example
 // AxisRange(0, 2) defines the axis range including [0, 1, 2] in this example
 
 struct AxisRange {
     int from, to;
-    AxisRange() {
-        from = 0;
-        to = ALL_Z;
-    }
     AxisRange(int from_and_to_) {
         from = to = from_and_to_;
     }
@@ -83,6 +78,8 @@ struct AxisRange {
         return !(*this == rhs);
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const AxisRange& ar);
 
 struct PointXy {
     // Utilities for cursor and point regions
@@ -177,5 +174,7 @@ struct StokesSource {
         return !(*this == rhs);
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const StokesSource& s);
 
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_

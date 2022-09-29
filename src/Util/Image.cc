@@ -6,6 +6,14 @@
 
 #include "Image.h"
 
+std::ostream& operator<<(std::ostream& os, const AxisRange& ar) {
+    return (os << "AxisRange(" << ar.from << ", " << ar.to << ")" << std::endl);
+}
+
+std::ostream& operator<<(std::ostream& os, const StokesSource& s) {
+    return (os << "StokesSource(" << s.stokes << ", " << s.z_range << ", " << s.x_range << ", " << s.y_range << ")" << std::endl);
+}
+
 int GetStokesValue(const CARTA::PolarizationType& stokes_type) {
     int stokes_value(-1);
     if (StokesValues.count(stokes_type)) {
