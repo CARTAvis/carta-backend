@@ -49,6 +49,9 @@ public:
     FRIEND_TEST(FrameTest, TestSpectralAxis);
     FRIEND_TEST(FrameTest, TestStokesAxis);
     FRIEND_TEST(FrameTest, TestImageShapeNotComputed);
+    FRIEND_TEST(FrameTest, TestValidZ);
+    FRIEND_TEST(FrameTest, TestValidStokes);
+    FRIEND_TEST(FrameTest, TestZStokesChanged);
 };
 
 // This macro simplifies adding tests for getters with no additional logic.
@@ -70,6 +73,8 @@ TEST(FrameTest, TestConstructorNotHDF5) {
     EXPECT_CALL(*loader, GetRenderAxes()).WillOnce(Return(std::vector<int>{0, 1}));
 
     // Does not use tile cache; will load image cache
+    // There's no easy way to mock or stub FillImageCache here because it's called from the constructor. It may be a good idea to refactor
+    // that.
     EXPECT_CALL(*loader, UseTileCache()).Times(Exactly(2));
     EXPECT_CALL(*loader, GetSlice(_, _)).WillOnce(Return(true));
     EXPECT_CALL(*loader, CloseImageIfUpdated()).Times(Exactly(2));
@@ -301,4 +306,36 @@ TEST(FrameTest, TestGetImageSlicerTwoArgs) {
 
     // Check that the (mock) 4-argument method output is returned from the 2-argument method
     ASSERT_EQ(frame.GetImageSlicer(AR(5, 6), 1), StokesSlicer());
+}
+
+TEST(FrameTest, TestValidZ) {
+    TestFrame frame(nullptr);
+    frame._depth = 10;
+    ASSERT_EQ(frame.ValidZ(0), true);
+    ASSERT_EQ(frame.ValidZ(9), true);
+    ASSERT_EQ(frame.ValidZ(5), true);
+    ASSERT_EQ(frame.ValidZ(-1), false);
+    ASSERT_EQ(frame.ValidZ(10), false);
+    ASSERT_EQ(frame.ValidZ(15), false);
+}
+
+TEST(FrameTest, TestValidStokes) {
+    TestFrame frame(nullptr);
+    frame._num_stokes = 3;
+    ASSERT_EQ(frame.ValidStokes(0), true);
+    ASSERT_EQ(frame.ValidStokes(1), true);
+    ASSERT_EQ(frame.ValidStokes(2), true);
+    ASSERT_EQ(frame.ValidStokes(COMPUTE_STOKES_PTOTAL), true);
+    ASSERT_EQ(frame.ValidStokes(3), false);
+    ASSERT_EQ(frame.ValidStokes(-1), false);
+}
+
+TEST(FrameTest, TestZStokesChanged) {
+    TestFrame frame(nullptr);
+    frame._z_index = 10;
+    frame._stokes_index = 2;
+    ASSERT_EQ(frame.ZStokesChanged(10, 2), false);
+    ASSERT_EQ(frame.ZStokesChanged(10, 3), true);
+    ASSERT_EQ(frame.ZStokesChanged(11, 2), true);
+    ASSERT_EQ(frame.ZStokesChanged(11, 3), true);
 }
