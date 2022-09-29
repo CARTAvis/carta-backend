@@ -83,7 +83,7 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
 
 class Frame {
 public:
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu);
     virtual ~Frame() = default;
 
     bool IsValid();

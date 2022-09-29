@@ -17,8 +17,7 @@
 // Allows testing of protected methods in Frame without polluting the original class
 class TestFrame : public Frame {
 public:
-    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
-        : Frame(session_id, loader, hdu, default_z) {}
+    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu) : Frame(session_id, loader, hdu) {}
     float* GetImageCacheData() {
         return _image_cache.get();
     };
