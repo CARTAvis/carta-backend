@@ -1,0 +1,36 @@
+FROM almalinux:9
+
+# Install the required packages
+RUN \
+  dnf -y install epel-release && \
+  dnf -y install 'dnf-command(config-manager)' && \
+  dnf -y config-manager --set-enabled crb && \
+  dnf -y update && \
+  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
+         gcc-c++ git git-lfs gmock-devel gsl-devel gtest-devel hdf5-devel lapack-devel libasan \
+         libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
+         python3 python3-pip pugixml-devel readline-devel subversion \
+         wget zlib-devel libuuid-devel && \
+  pip3 install numpy astropy
+
+# Install carta-casacore-devel and fits2idia from the Copr cartavis/carta repository
+# (Also install wcslib-devel and zfp-devel as those packages are not yet available from official AlmaLinux 9 repositories)
+RUN \
+  dnf -y install 'dnf-command(copr)' && \
+  dnf -y copr enable cartavis/carta && \
+  dnf -y install carta-casacore-devel fits2idia measures-data wcslib-devel zfp-devel
+
+# To work on Jenkins
+RUN \
+  yum -y install nodejs npm
+
+# Forward port so that the webapp can properly access it
+# from outside of the container
+EXPOSE 3002
+
+ENV HOME /root
+WORKDIR /root
+
+# overwrite this with 'CMD []' in a dependent Dockerfile
+CMD ["bash"]
+
