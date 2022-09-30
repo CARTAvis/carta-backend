@@ -14,7 +14,7 @@ RUN \
     libtool libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler \
     python3-numpy python3-astropy software-properties-common unzip wcslib-dev wget uuid-dev
 
-# Get carta dependencies carta-casacore, fits2idia, and zfp from cartavis-team PPA and casacore-data from KERN
+# Get carta dependencies carta-casacore, fits2idia, and zfp from the cartavis-team PPA
 RUN \
   add-apt-repository -y ppa:cartavis-team/carta-testing && \
   apt-get update && \
