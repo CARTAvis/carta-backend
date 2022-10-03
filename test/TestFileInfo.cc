@@ -115,7 +115,7 @@ public:
             } else if (computed_entries.name() == "HDU") {
                 CheckHeaderEntry(computed_entries, "0", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "Shape") {
-                CheckHeaderEntry(computed_entries, "[6, 6, 5, 1]", CARTA::EntryType::STRING);
+                CheckHeaderEntry(computed_entries, "[6, 6, 5, 1] (X, Y, Spectral, Stokes)", CARTA::EntryType::STRING);
             } else if (computed_entries.name() == "Number of channels") {
                 CheckHeaderEntry(computed_entries, "5", CARTA::EntryType::INT, 5);
             } else if (computed_entries.name() == "Number of polarizations") {
