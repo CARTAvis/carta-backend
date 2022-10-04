@@ -9,6 +9,7 @@
 using namespace carta;
 
 std::queue<TileCache*> Factories::_mock_tile_caches;
+std::queue<MomentGenerator*> Factories::_mock_moment_generators;
 
 TileCache* TileCache::GetTileCache() {
     if (!Factories::_mock_tile_caches.empty()) {
@@ -17,4 +18,14 @@ TileCache* TileCache::GetTileCache() {
         return cache;
     }
     return new PooledTileCache();
+}
+
+MomentGenerator* MomentGenerator::GetMomentGenerator(
+    const casacore::String& filename, std::shared_ptr<casacore::ImageInterface<float>> image) {
+    if (!Factories::_mock_moment_generators.empty()) {
+        auto generator = Factories::_mock_moment_generators.front();
+        Factories::_mock_moment_generators.pop();
+        return generator;
+    }
+    return new MomentGenerator(filename, image);
 }

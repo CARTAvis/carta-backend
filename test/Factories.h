@@ -9,11 +9,13 @@
 
 #include <queue>
 #include "Cache/TileCache.h"
+#include "ImageGenerators/MomentGenerator.h"
 
 namespace carta {
 
 struct Factories {
     static std::queue<TileCache*> _mock_tile_caches;
+    static std::queue<MomentGenerator*> _mock_moment_generators;
 };
 
 } // namespace carta

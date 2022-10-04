@@ -186,7 +186,7 @@ public:
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
         RegionState region_state = RegionState());
-    void StopMomentCalc();
+    virtual void StopMomentCalc();
 
     // Image fitting
     bool FitImage(

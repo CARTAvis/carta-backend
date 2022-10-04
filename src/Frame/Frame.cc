@@ -267,7 +267,7 @@ bool Frame::ZStokesChanged(int z, int stokes) {
 void Frame::WaitForTaskCancellation() {
     _connected = false; // file closed
     StopMomentCalc();
-    std::unique_lock lock(GetActiveTaskMutex());
+    std::unique_lock lock(_active_task_mutex);
 }
 
 bool Frame::IsConnected() {
@@ -1359,7 +1359,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
-    std::shared_lock lock(GetActiveTaskMutex());
+    std::shared_lock lock(_active_task_mutex);
 
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
@@ -1672,8 +1672,8 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results,
     RegionState region_state) {
-    std::shared_lock lock(GetActiveTaskMutex());
-    _moment_generator.reset(new MomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.stokes_source)));
+    std::shared_lock lock(_active_task_mutex);
+    _moment_generator.reset(MomentGenerator::GetMomentGenerator(GetFileName(), _loader->GetStokesImage(stokes_region.stokes_source)));
     _loader->CloseImageIfUpdated();
 
     if (region_state.control_points.empty()) {

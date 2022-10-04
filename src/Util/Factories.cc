@@ -5,9 +5,15 @@
 */
 
 #include "Cache/TileCache.h"
+#include "ImageGenerators/MomentGenerator.h"
 
 using namespace carta;
 
 TileCache* TileCache::GetTileCache() {
     return new PooledTileCache();
+}
+
+MomentGenerator* MomentGenerator::GetMomentGenerator(
+    const casacore::String& filename, std::shared_ptr<casacore::ImageInterface<float>> image) {
+    return new MomentGenerator(filename, image);
 }

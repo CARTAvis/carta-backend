@@ -7,6 +7,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateUtil.h>
 #include <casacore/images/Images/TempImage.h>
 #include <gtest/gtest.h>
+#include <future>
 #include <type_traits>
 
 #include "Frame/Frame.h"
@@ -14,6 +15,7 @@
 #include "CommonTestUtilities.h"
 #include "Factories.h"
 #include "MockFileLoader.h"
+#include "MockMomentGenerator.h"
 #include "MockTileCache.h"
 
 using namespace carta;
@@ -52,6 +54,8 @@ public:
     FRIEND_TEST(FrameTest, TestValidZ);
     FRIEND_TEST(FrameTest, TestValidStokes);
     FRIEND_TEST(FrameTest, TestZStokesChanged);
+    FRIEND_TEST(FrameTest, TestWaitForTaskCancellation);
+    FRIEND_TEST(FrameTest, TestWaitForTaskCancellationTimeout);
 };
 
 // This macro simplifies adding tests for getters with no additional logic.
@@ -338,4 +342,47 @@ TEST(FrameTest, TestZStokesChanged) {
     ASSERT_EQ(frame.ZStokesChanged(10, 3), true);
     ASSERT_EQ(frame.ZStokesChanged(11, 2), true);
     ASSERT_EQ(frame.ZStokesChanged(11, 3), true);
+}
+
+TEST(FrameTest, TestWaitForTaskCancellation) {
+    // Local mock subclass of Frame
+    class MockFrame : public TestFrame {
+    public:
+        MockFrame() : TestFrame(nullptr) {}
+        MOCK_METHOD(void, StopMomentCalc, (), (override));
+    };
+
+    MockFrame frame;
+    EXPECT_CALL(frame, StopMomentCalc());
+
+    frame._connected = true;
+
+    frame.WaitForTaskCancellation();
+    ASSERT_EQ(frame._connected, false);
+}
+
+TEST(FrameTest, TestWaitForTaskCancellationTimeout) {
+    // Local mock subclass of Frame
+    class MockFrame : public TestFrame {
+    public:
+        MockFrame() : TestFrame(nullptr) {}
+        MOCK_METHOD(void, StopMomentCalc, (), (override));
+    };
+
+    MockFrame frame;
+    EXPECT_CALL(frame, StopMomentCalc());
+
+    frame._connected = true;
+
+    // Get the lock to prevent the function from getting the lock
+    std::unique_lock lock(frame._active_task_mutex);
+
+    auto async_call = std::async(std::launch::async, [&]() {
+        frame.WaitForTaskCancellation();
+        return true;
+    });
+
+    ASSERT_EQ(async_call.wait_for(std::chrono::milliseconds(1000)), std::future_status::timeout);
+    ASSERT_EQ(frame._connected, false);
+    lock.unlock();
 }

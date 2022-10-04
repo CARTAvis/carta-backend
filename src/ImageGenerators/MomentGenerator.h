@@ -26,26 +26,28 @@ namespace carta {
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
     MomentGenerator(const casacore::String& filename, std::shared_ptr<casacore::ImageInterface<float>> image);
-    ~MomentGenerator() = default;
+    virtual ~MomentGenerator() = default;
 
     // Calculate moments
-    bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
+    virtual bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
         const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
         CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results, const RegionState& region_state,
         const std::string& stokes);
 
     // Stop moments calculation
-    void StopCalculation();
+    virtual void StopCalculation();
 
     // Resulting message
-    bool IsSuccess() const;
-    bool IsCancelled() const;
-    casacore::String GetErrorMessage() const;
+    virtual bool IsSuccess() const;
+    virtual bool IsCancelled() const;
+    virtual casacore::String GetErrorMessage() const;
 
     // Methods from the "casa::ImageMomentsProgressMonitor" interface
-    void setStepCount(int count);
-    void setStepsCompleted(int count);
-    void done();
+    virtual void setStepCount(int count);
+    virtual void setStepsCompleted(int count);
+    virtual void done();
+
+    static MomentGenerator* GetMomentGenerator(const casacore::String& filename, std::shared_ptr<casacore::ImageInterface<float>> image);
 
 private:
     void SetMomentAxis(const CARTA::MomentRequest& moment_request);
