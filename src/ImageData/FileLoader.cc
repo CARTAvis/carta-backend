@@ -168,8 +168,8 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(cons
     return std::make_shared<casacore::CoordinateSystem>();
 }
 
-bool FileLoader::FindCoordinateAxes(
-    casacore::IPosition& shape, std::vector<int>& direction_axes, int& spectral_axis, int& stokes_axis, int& z_axis, std::string& message) {
+bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& direction_axes, int& spectral_axis, int& stokes_axis,
+    std::vector<int>& render_axes, int& z_axis, std::string& message) {
     // Return image shape and axes for image. Spectral axis may or may not be z axis.
     // All parameters are return values.
     direction_axes.assign(2, -1);
@@ -197,7 +197,7 @@ bool FileLoader::FindCoordinateAxes(
     }
 
     // Determine which axes will be rendered
-    std::vector<int> render_axes = GetRenderAxes();
+    render_axes = GetRenderAxes();
     _width = shape(render_axes[0]);
     _height = shape(render_axes[1]);
     _image_plane_size = _width * _height;

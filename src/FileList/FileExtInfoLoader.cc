@@ -196,11 +196,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 AddDataTypeEntry(extended_info, data_type);
 
-                std::vector<int> direction_axes;
-                int spectral_axis, depth_axis, stokes_axis;
-                if (_loader->FindCoordinateAxes(image_shape, direction_axes, spectral_axis, stokes_axis, depth_axis, message)) {
+                std::vector<int> direction_axes, render_axes;
+                int spectral_axis, stokes_axis, depth_axis;
+                if (_loader->FindCoordinateAxes(
+                        image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, message)) {
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
-                    std::vector<int> render_axes = _loader->GetRenderAxes();
                     AddShapeEntries(extended_info, image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis);
                     AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
                     info_ok = true;

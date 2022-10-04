@@ -67,18 +67,16 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindCoordinateAxes(_image_shape, _direction_axes, _spectral_axis, _stokes_axis, _z_axis, log_message)) {
+    std::vector<int> direction_axes, render_axes;
+    if (!_loader->FindCoordinateAxes(_image_shape, direction_axes, _spectral_axis, _stokes_axis, render_axes, _z_axis, log_message)) {
         _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
 
-    // Determine which axes are rendered, e.g. for pV images
-    std::vector<int> render_axes = _loader->GetRenderAxes();
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
-
     _width = _image_shape(_x_axis);
     _height = _image_shape(_y_axis);
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
