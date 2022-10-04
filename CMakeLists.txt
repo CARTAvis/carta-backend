@@ -47,7 +47,19 @@ endif ()
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-FIND_PACKAGE(GSL REQUIRED)
+FIND_PACKAGE(GSL QUIET)
+if (GSL_FOUND)
+    message(STATUS "Found gsl using find_package")
+else ()
+    if(EXISTS /opt/carta-gsl)
+        message(STATUS "Found carta-gsl for el7")
+        INCLUDE_DIRECTORIES(/opt/carta-gsl/include)
+        LINK_DIRECTORIES(/opt/carta-gsl/lib)
+    else ()
+        message(FATAL_ERROR "Could not find gsl")
+    endif ()
+endif()
+
 FIND_PACKAGE(ZFP CONFIG REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
 
