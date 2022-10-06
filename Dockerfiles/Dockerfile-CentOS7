@@ -3,24 +3,24 @@ FROM centos:7
 # The carta-backend will use GCC 8 functions, so install and activate devtoolset-8 
 RUN \
   yum -y install centos-release-scl && \
-  yum install -y centos-release-scl && yum install -y devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran && \
+  yum install -y centos-release-scl && yum install -y devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran devtoolset-8-libasan-devel && \
   echo "source scl_source enable devtoolset-8" >> /etc/bashrc
 
 # Install the required packages
 RUN \
-  yum -y install centos-release-openstack-train && \
   yum -y install epel-release && \
   yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel cmake3 curl-devel flex \
-    git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
-    make openssl-devel protobuf-devel pugixml-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
+    git git-lfs hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
+    make openssl-devel pugixml-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
     zlib-devel libuuid-devel zfp-devel && \
   pip3 install numpy astropy && \
   ln -s /usr/bin/cmake3 /usr/bin/cmake
 
-# Get carta dependencies from the cartavis rpm repository
-RUN \ 
-  curl https://packages.cartavis.org/cartavis-el7.repo --output /etc/yum.repos.d/cartavis.repo && \
-  yum -y install carta-casacore-devel gtest-devel gmock-devel fits2idia measures-data
+# Install carta-casacore-devel and fits2idia from the Copr cartavis/carta repository
+RUN \
+  yum -y install yum-plugin-copr && \
+  yum -y copr enable cartavis/carta && \
+  yum -y install carta-casacore-devel carta-gsl-devel fits2idia gmock-devel gtest-devel measures-data protobuf-devel
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
@@ -34,4 +34,3 @@ WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile
 CMD ["bash"]
-
