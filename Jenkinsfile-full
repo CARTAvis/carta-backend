@@ -701,7 +701,7 @@ def BRANCH_NAME
 
 def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -720,7 +720,7 @@ def prepare_focal_ICD() {
 
 def prepare_bionic_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -739,7 +739,7 @@ def prepare_bionic_ICD() {
 
 def prepare_jammy_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -759,7 +759,7 @@ def prepare_jammy_ICD() {
 
 def prepare_rhel7_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -778,7 +778,7 @@ def prepare_rhel7_ICD() {
 
 def prepare_rhel8_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -797,7 +797,7 @@ def prepare_rhel8_ICD() {
 
 def prepare_rhel9_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -817,7 +817,7 @@ def prepare_rhel9_ICD() {
 def prepare_macos11_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "rm -rf carta-backend-ICD-rxjs"
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "git submodule init && git submodule update && npm install"
@@ -836,7 +836,7 @@ def prepare_macos11_ICD() {
 def prepare_macos12_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "rm -rf carta-backend-ICD-rxjs"
-        sh "git clone --depth 1 https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
+        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
             sh "git checkout mylin/add-tests-part1"
             sh "git submodule init && git submodule update && npm install"
@@ -867,7 +867,7 @@ def file_browser() {
                 }
                 sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 1 of 4"
                 sh "pgrep carta_backend"
-                sh "#CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 4"
+                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 4"
                 sh "sleep 3 && pgrep carta_backend"
                 sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 3 of 4"
                 sh "sleep 3 && pgrep carta_backend"
@@ -1005,21 +1005,21 @@ def pv_generator() {
                 } else {
                     ret = true
                 }
-                sh "#pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_CANCEL.test.ts # test 1 of 7"
-                sh "#sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_CASA.test.ts # test 2 of 7"
-                sh "#sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_FITS.test.ts  # test 3 of 7"
-                sh "#sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_HDF5_COMPARED_FITS.test.ts  # test 4 of 7"
-                sh "#sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_MATCH_SPATIAL.test.ts  # test 5 of 7"
-                sh "#sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_NaN.test.ts  # test 6 of 7"
-                sh "#sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/PV_GENERATOR_WIDE.test.ts  # test 7 of 7"                
-                sh "#sleep 3 && pgrep carta_backend"
+                sh "pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_CANCEL.test.ts # test 1 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_CASA.test.ts # test 2 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_FITS.test.ts  # test 3 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_HDF5_COMPARED_FITS.test.ts  # test 4 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_MATCH_SPATIAL.test.ts  # test 5 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_NaN.test.ts  # test 6 of 7"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_GENERATOR_WIDE.test.ts  # test 7 of 7"                
+                sh "sleep 3 && pgrep carta_backend"
             }
         }
     }
@@ -1084,11 +1084,11 @@ def moment() {
                 sh "pgrep carta_backend"
                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 1 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 2 of 6"
+                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 2 of 6"
                 sh "sleep 3 && pgrep carta_backend"
                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 3 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 4 of 6"
+                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 4 of 6"
                 sh "sleep 3 && pgrep carta_backend"
                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 5 of 6"
                 sh "sleep 3 && pgrep carta_backend"
