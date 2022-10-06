@@ -710,7 +710,6 @@ def prepare_focal_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') { 
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
@@ -729,7 +728,6 @@ def prepare_bionic_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') { 
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
@@ -748,7 +746,6 @@ def prepare_jammy_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
@@ -768,7 +765,6 @@ def prepare_rhel7_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
        }
@@ -787,7 +783,6 @@ def prepare_rhel8_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
        }
@@ -806,7 +801,6 @@ def prepare_rhel9_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
        }
@@ -825,7 +819,6 @@ def prepare_macos11_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
@@ -844,7 +837,6 @@ def prepare_macos12_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/serverURL0/serverURL/' config.json"
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
