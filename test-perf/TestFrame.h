@@ -4,19 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "Timer.h"
+#include "ImageData/FileLoader.h"
+#include "Frame/Frame.h"
 
 using namespace carta;
 
-Timer::Timer() {
-    Reset();
-}
-
-TimeDelta Timer::Elapsed() {
-    auto t_end = std::chrono::high_resolution_clock::now();
-    return {(double)std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count()};
-}
-
-void Timer::Reset() {
-    _t_start = std::chrono::high_resolution_clock::now();
-}
+class TestFrame : public Frame {
+public:
+    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+};
