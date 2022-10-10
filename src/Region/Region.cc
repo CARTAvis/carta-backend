@@ -75,29 +75,37 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
     // check number of points and that values are finite
     bool points_ok(false);
     size_t npoints(points.size());
+
     switch (type) {
-        case CARTA::POINT: { // [(x, y)]
+        case CARTA::POINT:
+        case CARTA::ANNPOINT: { // [(x, y)]
             points_ok = (npoints == 1) && PointsFinite(points);
             break;
         }
-        case CARTA::LINE: { // [(x, y), (x, y)] end points
+        case CARTA::LINE:
+        case CARTA::ANNLINE:
+        case CARTA::ANNVECTOR:
+        case CARTA::ANNRULER: { // [(x, y), (x, y)] end points
             points_ok = (npoints == 2) && PointsFinite(points);
             break;
         }
-        case CARTA::POLYLINE: { // any npoints > 2
+        case CARTA::POLYLINE:
+        case CARTA::POLYGON:
+        case CARTA::ANNPOLYLINE:
+        case CARTA::ANNPOLYGON: { // npoints > 2
             points_ok = (npoints > 2) && PointsFinite(points);
             break;
         }
-        case CARTA::RECTANGLE: { // [(cx,cy), (width,height)], width/height > 0
+        case CARTA::RECTANGLE:
+        case CARTA::ANNRECTANGLE:
+        case CARTA::ANNTEXT: { // [(cx,cy), (width,height)], width/height > 0
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
             break;
         }
-        case CARTA::ELLIPSE: { // [(cx,cy), (bmaj, bmin)]
+        case CARTA::ELLIPSE:
+        case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)]
+        case CARTA::ANNCOMPASS: { // [(east_end, north_end), (cx, cy)]
             points_ok = (npoints == 2) && PointsFinite(points);
-            break;
-        }
-        case CARTA::POLYGON: { // any npoints > 2
-            points_ok = (npoints > 2) && PointsFinite(points);
             break;
         }
         default:
