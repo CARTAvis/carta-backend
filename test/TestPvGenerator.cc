@@ -21,12 +21,13 @@ using ::testing::Pointwise;
 class PvGeneratorTest : public ::testing::Test, public ImageGenerator {
 public:
     static void SetPvCut(carta::RegionHandler& region_handler, int file_id, int& region_id, std::vector<float>& endpoints,
-        std::shared_ptr<casacore::CoordinateSystem> csys) {
+        std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation = false) {
         // Define RegionState for line region
         std::vector<CARTA::Point> control_points;
         control_points.push_back(Message::Point(endpoints[0], endpoints[1]));
         control_points.push_back(Message::Point(endpoints[2], endpoints[3]));
-        RegionState region_state(file_id, CARTA::RegionType::LINE, control_points, 0.0);
+        CARTA::RegionType type = is_annotation ? CARTA::RegionType::ANNLINE : CARTA::RegionType::LINE;
+        RegionState region_state(file_id, type, control_points, 0.0);
 
         // Set region
         region_handler.SetRegion(region_id, region_state, csys);
@@ -316,4 +317,29 @@ TEST_F(PvGeneratorTest, AveragingWidthRange) {
     TestAveragingWidthRange(1, true);
     TestAveragingWidthRange(20, true);
     TestAveragingWidthRange(21, false);
+}
+
+TEST_F(PvGeneratorTest, FitsPvAnnotationLine) {
+    auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
+    carta::RegionHandler region_handler;
+
+    // Set annotation line region [0, 0] to [9, 9]
+    int file_id(0), region_id(-1);
+    std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
+    auto csys = frame->CoordinateSystem();
+    bool is_annotation(true);
+    SetPvCut(region_handler, file_id, region_id, endpoints, csys, is_annotation);
+
+    // Request PV image - should fail
+    int width(3);
+    auto progress_callback = [&](float progress) {};
+    CARTA::PvResponse pv_response;
+    carta::GeneratedImage pv_image;
+    region_handler.CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image);
+
+    EXPECT_EQ(pv_response.success(), false);
+    EXPECT_EQ(pv_response.cancel(), false);
+    EXPECT_EQ(pv_image.image.get(), nullptr);
 }

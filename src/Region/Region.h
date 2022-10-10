@@ -105,18 +105,26 @@ public:
         return GetRegionState().reference_file_id;
     }
 
+    inline bool RegionChanged() { // reference image, type, points, or rotation changed
+        return _region_changed;
+    }
+
+    inline bool IsPoint() {
+        return GetRegionState().type == CARTA::RegionType::POINT;
+    }
+
+    inline bool IsLine() {
+        auto type = GetRegionState().type;
+        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
+    }
+
     inline bool IsRotbox() {
         RegionState rs = GetRegionState();
         return ((rs.type == CARTA::RegionType::RECTANGLE) && (rs.rotation != 0.0));
     }
 
-    inline bool RegionChanged() { // reference image, type, points, or rotation changed
-        return _region_changed;
-    }
-
     inline bool IsAnnotation() {
-        CARTA::RegionType type = GetRegionState().type;
-        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
+        return GetRegionState().type > CARTA::RegionType::POLYGON;
     }
 
     inline std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem() {

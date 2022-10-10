@@ -80,10 +80,12 @@ public:
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
 
-    // Spatial Requirements
+    // Tests for region type, and not annotation
     bool IsPointRegion(int region_id);
     bool IsLineRegion(int region_id);
     bool IsClosedRegion(int region_id);
+
+    // Spatial Requirements
     std::vector<int> GetSpatialReqRegionsForFile(int file_id);
     std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
@@ -100,7 +102,7 @@ private:
     int GetNextRegionId();
 
     // Check specific id or if any regions/frames set
-    bool RegionSet(int region_id);
+    bool RegionSet(int region_id, bool check_annotation = false);
     bool FrameSet(int file_id);
 
     // Requirements helpers
@@ -116,7 +118,7 @@ private:
     void ClearRegionCache(int region_id);
 
     // Apply region to image
-    bool RegionFileIdsValid(int region_id, int file_id);
+    bool RegionFileIdsValid(int region_id, int file_id, bool check_annotation = false);
     std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
         int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
