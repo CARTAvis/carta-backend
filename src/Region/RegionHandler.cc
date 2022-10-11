@@ -972,8 +972,8 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
             casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(offset_axis));
             double spectral_worldval, spectral_pixval(z_range.from); // reference value in PV image
             input_image->coordinates().spectralCoordinate().toWorld(spectral_worldval, spectral_pixval);
-            pv_success =
-                pv_generator.GetPvImage(input_image, pv_data, pv_increment, spectral_worldval, stokes_index, reverse, pv_image, message);
+            pv_success = pv_generator.GetPvImage(
+                input_image, frame->CoordinateSystem(), pv_data, pv_increment, spectral_worldval, stokes_index, reverse, pv_image, message);
 
             frame->CloseCachedImage(input_filename);
         }
