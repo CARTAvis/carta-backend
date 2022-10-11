@@ -12,4 +12,6 @@ using namespace carta;
 class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+
+    bool GetLoaderSwizzledData(std::vector<float>& data, int stokes, const AxisRange& x_range, const AxisRange& y_range);
 };

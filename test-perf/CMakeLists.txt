@@ -40,11 +40,13 @@ list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
 # Add test utilities source files
 set(TEST_UTILITIES
         ../test/CommonTestUtilities.cc
+        AxesTransformer.cc
         TestFrame.cc)
 
 # Set performance testing cases
 set(TEST_PERF_SOURCES
-        TestLoadingFile)
+        TestLoadingFile
+        TestSliceData)
 
 foreach (TEST_NAME IN LISTS TEST_PERF_SOURCES)
     add_executable(${TEST_NAME} ${TEST_NAME}.cc ${SOURCES} ${TEST_UTILITIES})

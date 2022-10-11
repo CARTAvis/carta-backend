@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     // Set logger
     fs::path user_directory("");
     int verbosity(5);
-    carta::logger::InitLogger(true, verbosity, true, false, user_directory);
+    logger::InitLogger(true, verbosity, true, false, user_directory);
 
     if (argc != 3) {
         spdlog::error("Usage: ./TestLoadingFile <full path name of the image file> <omp thread count, -1 means auto selected>");
