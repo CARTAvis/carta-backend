@@ -28,6 +28,7 @@ namespace carta {
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preferences_schema_2.json"
 #define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
 #define CARTA_SNIPPET_SCHEMA_URL "https://cartavis.github.io/schemas/snippet_schema_1.json"
+#define CARTA_WORKSPACE_SCHEMA_URL "https://cartavis.github.io/schemas/workspace_schema_1.json"
 
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;

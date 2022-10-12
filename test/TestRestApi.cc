@@ -54,6 +54,16 @@ public:
     FRIEND_TEST(RestApiTest, SetSnippet);
     FRIEND_TEST(RestApiTest, SetSnippetReadOnly);
 
+    FRIEND_TEST(RestApiTest, EmptyStartingWorkspaces);
+    FRIEND_TEST(RestApiTest, GetExistingWorkspaces);
+    FRIEND_TEST(RestApiTest, DeleteWorkspace);
+    FRIEND_TEST(RestApiTest, DeleteWorkspaceEmpty);
+    FRIEND_TEST(RestApiTest, DeleteWorkspaceInvalid);
+    FRIEND_TEST(RestApiTest, DeleteWorkspaceIgnoresInvalidKeys);
+    FRIEND_TEST(RestApiTest, DeleteWorkspaceMissingName);
+    FRIEND_TEST(RestApiTest, SetWorkspace);
+    FRIEND_TEST(RestApiTest, SetWorkspaceReadOnly);
+    
     FRIEND_TEST(RestApiTest, SendScriptingRequest);
     FRIEND_TEST(RestApiTest, SendScriptingRequestSessionNotFound);
     FRIEND_TEST(RestApiTest, SendScriptingRequestBadJson);
@@ -70,14 +80,17 @@ public:
     fs::path preferences_path;
     fs::path layouts_path;
     fs::path snippets_path;
+    fs::path workspaces_path;
     json example_options;
     json example_layout;
     json example_snippet;
+    json example_workspace;
 
     RestApiTest() {
         preferences_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/preferences.json";
         layouts_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/layouts";
         snippets_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/snippets";
+        workspaces_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/workspaces";
 
         example_options = R"({
             "$schema": "https://cartavis.github.io/schemas/preferences_schema_2.json",
@@ -114,6 +127,28 @@ public:
             "requires": [],
             "code": "console.log(\"Hello world!\");"
         })"_json;
+
+        example_workspace = R"({
+            "$schema": "https://cartavis.github.io/schemas/workspace_schema_1.json",
+            "workspaceVersion": 1,
+            "frontendVersion": "v3.0.0-beta.0",
+            "description": "Example workspace",
+            "files": [{
+                "id": 0,
+                "path": "test/A.fits",
+                "hdu": "0",
+                "spatialMatching": true,
+                "renderConfig": {
+                  "colormap": "magma"
+                }
+            }, {
+                "id": 1,
+                "path": "test/B.fits",
+                "spatialMatching": true
+            }],
+            "spatialReference": 0,
+            "spectralReference": 0
+        })"_json;
     }
     void SetUp() {
         _frontend_server.reset(new TestHttpServer(nullptr, "/", "my_test_key", false));
@@ -121,6 +156,7 @@ public:
         fs::remove(preferences_path);
         fs::remove_all(layouts_path);
         fs::remove_all(snippets_path);
+        fs::remove_all(workspaces_path);
     }
 
     void WriteDefaultPrefs() {
@@ -130,18 +166,26 @@ public:
 
     void WriteDefaultLayouts() {
         fs::create_directories(layouts_path);
-        std::ofstream((layouts_path / "test_layout.json").string()) << example_options.dump(4);
-        std::ofstream((layouts_path / "test_layout2.json").string()) << example_options.dump();
+        std::ofstream((layouts_path / "test_layout.json").string()) << example_layout.dump(4);
+        std::ofstream((layouts_path / "test_layout2.json").string()) << example_layout.dump();
         std::ofstream((layouts_path / "test_layout3.json").string()) << "this is not a json file!";
-        std::ofstream((layouts_path / "bad_layout_name").string()) << example_options.dump(4);
+        std::ofstream((layouts_path / "bad_layout_name").string()) << example_layout.dump(4);
     }
 
     void WriteDefaultSnippets() {
         fs::create_directories(snippets_path);
-        std::ofstream((snippets_path / "test_snippet.json").string()) << example_options.dump(4);
-        std::ofstream((snippets_path / "test_snippet2.json").string()) << example_options.dump();
+        std::ofstream((snippets_path / "test_snippet.json").string()) << example_snippet.dump(4);
+        std::ofstream((snippets_path / "test_snippet2.json").string()) << example_snippet.dump();
         std::ofstream((snippets_path / "test_snippet3.json").string()) << "this is not a json file!";
-        std::ofstream((snippets_path / "bad_snippet_name").string()) << example_options.dump(4);
+        std::ofstream((snippets_path / "bad_snippet_name").string()) << example_snippet.dump(4);
+    }
+    
+    void WriteDefaultWorkspaces() {
+        fs::create_directories(workspaces_path);
+        std::ofstream((workspaces_path / "test_workspace.json").string()) << example_workspace.dump(4);
+        std::ofstream((workspaces_path / "test_workspace2.json").string()) << example_workspace.dump();
+        std::ofstream((workspaces_path / "test_workspace3.json").string()) << "this is not a json file!";
+        std::ofstream((workspaces_path / "bad_workspace_name").string()) << example_workspace.dump(4);
     }
 
     void TearDown() {
@@ -149,6 +193,7 @@ public:
         fs::remove(preferences_path);
         fs::remove_all(layouts_path);
         fs::remove_all(snippets_path);
+        fs::remove_all(workspaces_path);
         fs::remove(preferences_path.parent_path());
         fs::remove(preferences_path.parent_path().parent_path());
     }
@@ -247,8 +292,8 @@ TEST_F(RestApiTest, EmptyStartingLayouts) {
 TEST_F(RestApiTest, GetExistingLayouts) {
     WriteDefaultLayouts();
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
-    EXPECT_EQ(existing_layouts["test_layout"], example_options);
-    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout"], example_layout);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
 TEST_F(RestApiTest, DeleteLayout) {
@@ -258,7 +303,7 @@ TEST_F(RestApiTest, DeleteLayout) {
     EXPECT_EQ(status, HTTP_200);
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
     EXPECT_TRUE(existing_layouts["test_layout"].is_null());
-    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
 TEST_F(RestApiTest, DeleteLayoutEmpty) {
@@ -266,8 +311,8 @@ TEST_F(RestApiTest, DeleteLayoutEmpty) {
     auto status = _frontend_server->ClearObjectFromString("layout", "");
     EXPECT_EQ(status, HTTP_400);
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
-    EXPECT_EQ(existing_layouts["test_layout"], example_options);
-    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout"], example_layout);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
 TEST_F(RestApiTest, DeleteLayoutInvalid) {
@@ -275,8 +320,8 @@ TEST_F(RestApiTest, DeleteLayoutInvalid) {
     auto status = _frontend_server->ClearObjectFromString("layout", "this_is_not_a_json_string");
     EXPECT_EQ(status, HTTP_400);
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
-    EXPECT_EQ(existing_layouts["test_layout"], example_options);
-    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout"], example_layout);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
 TEST_F(RestApiTest, DeleteLayoutIgnoresInvalidKeys) {
@@ -285,8 +330,8 @@ TEST_F(RestApiTest, DeleteLayoutIgnoresInvalidKeys) {
     auto status = _frontend_server->ClearObjectFromString("layout", body.dump());
     EXPECT_EQ(status, HTTP_400);
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
-    EXPECT_EQ(existing_layouts["test_layout"], example_options);
-    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout"], example_layout);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
 TEST_F(RestApiTest, DeleteLayoutMissingName) {
@@ -295,8 +340,8 @@ TEST_F(RestApiTest, DeleteLayoutMissingName) {
     auto status = _frontend_server->ClearObjectFromString("layout", body.dump());
     EXPECT_EQ(status, HTTP_400);
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
-    EXPECT_EQ(existing_layouts["test_layout"], example_options);
-    EXPECT_EQ(existing_layouts["test_layout2"], example_options);
+    EXPECT_EQ(existing_layouts["test_layout"], example_layout);
+    EXPECT_EQ(existing_layouts["test_layout2"], example_layout);
 }
 
 TEST_F(RestApiTest, SetLayout) {
@@ -327,8 +372,8 @@ TEST_F(RestApiTest, EmptyStartingSnippets) {
 TEST_F(RestApiTest, GetExistingSnippets) {
     WriteDefaultSnippets();
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
-    EXPECT_EQ(existing_snippets["test_snippet"], example_options);
-    EXPECT_EQ(existing_snippets["test_snippet2"], example_options);
+    EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
+    EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
 TEST_F(RestApiTest, DeleteSnippet) {
@@ -338,7 +383,7 @@ TEST_F(RestApiTest, DeleteSnippet) {
     EXPECT_EQ(status, HTTP_200);
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
     EXPECT_TRUE(existing_snippets["test_snippet"].is_null());
-    EXPECT_EQ(existing_snippets["test_snippet2"], example_options);
+    EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
 TEST_F(RestApiTest, DeleteSnippetEmpty) {
@@ -346,8 +391,8 @@ TEST_F(RestApiTest, DeleteSnippetEmpty) {
     auto status = _frontend_server->ClearObjectFromString("snippet", "");
     EXPECT_EQ(status, HTTP_400);
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
-    EXPECT_EQ(existing_snippets["test_snippet"], example_options);
-    EXPECT_EQ(existing_snippets["test_snippet2"], example_options);
+    EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
+    EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
 TEST_F(RestApiTest, DeleteSnippetInvalid) {
@@ -355,8 +400,8 @@ TEST_F(RestApiTest, DeleteSnippetInvalid) {
     auto status = _frontend_server->ClearObjectFromString("snippet", "this_is_not_a_json_string");
     EXPECT_EQ(status, HTTP_400);
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
-    EXPECT_EQ(existing_snippets["test_snippet"], example_options);
-    EXPECT_EQ(existing_snippets["test_snippet2"], example_options);
+    EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
+    EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
 TEST_F(RestApiTest, DeleteSnippetIgnoresInvalidKeys) {
@@ -365,8 +410,8 @@ TEST_F(RestApiTest, DeleteSnippetIgnoresInvalidKeys) {
     auto status = _frontend_server->ClearObjectFromString("snippet", body.dump());
     EXPECT_EQ(status, HTTP_400);
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
-    EXPECT_EQ(existing_snippets["test_snippet"], example_options);
-    EXPECT_EQ(existing_snippets["test_snippet2"], example_options);
+    EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
+    EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
 TEST_F(RestApiTest, DeleteSnippetMissingName) {
@@ -375,8 +420,8 @@ TEST_F(RestApiTest, DeleteSnippetMissingName) {
     auto status = _frontend_server->ClearObjectFromString("snippet", body.dump());
     EXPECT_EQ(status, HTTP_400);
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
-    EXPECT_EQ(existing_snippets["test_snippet"], example_options);
-    EXPECT_EQ(existing_snippets["test_snippet2"], example_options);
+    EXPECT_EQ(existing_snippets["test_snippet"], example_snippet);
+    EXPECT_EQ(existing_snippets["test_snippet2"], example_snippet);
 }
 
 TEST_F(RestApiTest, SetSnippet) {
@@ -396,6 +441,86 @@ TEST_F(RestApiTest, SetSnippetReadOnly) {
     WriteDefaultSnippets();
     body = {{"snippetName", "test_snippet"}};
     status = _frontend_server_read_only_mode->ClearObjectFromString("snippet", body.dump());
+    EXPECT_EQ(status, HTTP_400);
+}
+
+TEST_F(RestApiTest, EmptyStartingWorkspaces) {
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_TRUE(existing_workspaces.empty());
+}
+
+TEST_F(RestApiTest, GetExistingWorkspaces) {
+    WriteDefaultWorkspaces();
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_EQ(existing_workspaces["test_workspace"], example_workspace);
+    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
+}
+
+TEST_F(RestApiTest, DeleteWorkspace) {
+    WriteDefaultWorkspaces();
+    json body = {{"workspaceName", "test_workspace"}};
+    auto status = _frontend_server->ClearObjectFromString("workspace", body.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_TRUE(existing_workspaces["test_workspace"].is_null());
+    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
+}
+
+TEST_F(RestApiTest, DeleteWorkspaceEmpty) {
+    WriteDefaultWorkspaces();
+    auto status = _frontend_server->ClearObjectFromString("workspace", "");
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_EQ(existing_workspaces["test_workspace"], example_workspace);
+    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
+}
+
+TEST_F(RestApiTest, DeleteWorkspaceInvalid) {
+    WriteDefaultWorkspaces();
+    auto status = _frontend_server->ClearObjectFromString("workspace", "this_is_not_a_json_string");
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_EQ(existing_workspaces["test_workspace"], example_workspace);
+    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
+}
+
+TEST_F(RestApiTest, DeleteWorkspaceIgnoresInvalidKeys) {
+    WriteDefaultWorkspaces();
+    json body = {{"another_weird_key", "hello"}};
+    auto status = _frontend_server->ClearObjectFromString("workspace", body.dump());
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_EQ(existing_workspaces["test_workspace"], example_workspace);
+    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
+}
+
+TEST_F(RestApiTest, DeleteWorkspaceMissingName) {
+    WriteDefaultWorkspaces();
+    json body = {{"workspaceName", "thisWorkspaceIsDefinitelyMissing"}};
+    auto status = _frontend_server->ClearObjectFromString("workspace", body.dump());
+    EXPECT_EQ(status, HTTP_400);
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_EQ(existing_workspaces["test_workspace"], example_workspace);
+    EXPECT_EQ(existing_workspaces["test_workspace2"], example_workspace);
+}
+
+TEST_F(RestApiTest, SetWorkspace) {
+    json body = {{"workspaceName", "created_workspace"}, {"workspace", example_workspace}};
+    auto status = _frontend_server->SetObjectFromString("workspace", body.dump());
+    EXPECT_EQ(status, HTTP_200);
+    auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
+    EXPECT_EQ(existing_workspaces["created_workspace"], example_workspace);
+    EXPECT_TRUE(existing_workspaces["test_workspace2"].is_null());
+}
+
+TEST_F(RestApiTest, SetWorkspaceReadOnly) {
+    json body = {{"workspaceName", "created_workspace"}, {"workspace", example_workspace}};
+    auto status = _frontend_server_read_only_mode->SetObjectFromString("workspace", body.dump());
+    EXPECT_EQ(status, HTTP_400);
+
+    WriteDefaultWorkspaces();
+    body = {{"workspaceName", "test_workspace"}};
+    status = _frontend_server_read_only_mode->ClearObjectFromString("workspace", body.dump());
     EXPECT_EQ(status, HTTP_400);
 }
 

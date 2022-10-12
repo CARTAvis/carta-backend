@@ -54,16 +54,22 @@ void HttpServer::RegisterRoutes() {
     }
 
     if (_enable_database) {
-        // Dynamic routes for preferences, layouts and snippets
+        // Dynamic routes for preferences, layouts, snippets and workspaces
         app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
         app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
         app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
+
         app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
         app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
         app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+
         app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
         app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
         app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
+
+        app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
+        app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
+        app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
     } else {
         app.get("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
         app.put("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
@@ -445,6 +451,8 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
             obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
         } else if (object_type == "snippet") {
             obj["$schema"] = CARTA_SNIPPET_SCHEMA_URL;
+        } else if (object_type == "workspace") {
+            obj["$schema"] = CARTA_WORKSPACE_SCHEMA_URL;
         }
 
         auto json_string = obj.dump(4);
