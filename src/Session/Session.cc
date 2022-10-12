@@ -1310,6 +1310,7 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {
     int file_id(pv_request.file_id());
     int region_id(pv_request.region_id());
+    int width(pv_request.width());
     CARTA::PvResponse pv_response;
 
     if (_frames.count(file_id)) {
@@ -1327,7 +1328,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             auto& frame = _frames.at(file_id);
             GeneratedImage pv_image;
 
-            if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
+            if (_region_handler->CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image)) {
                 auto* open_file_ack = pv_response.mutable_open_file_ack();
                 OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
             }

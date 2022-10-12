@@ -263,9 +263,8 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_range, int stokes,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete
@@ -278,16 +277,10 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
         return false;
     }
 
-    bool all_z = spectral_range.from == 0 && (spectral_range.to == ALL_Z || spectral_range.to == _depth - 1);
-    AxisRange z_range(spectral_range.from, spectral_range.to);
-    if (all_z) {
-        z_range.to = _depth - 1;
-    }
-
-    // Check if region stats calculated; always false for temporary regions for spatial profile and pv image
+    // Check if region stats calculated
     auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
     casacore::IPosition mask_shape(mask.shape());
-    if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) && all_z &&
+    if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) &&
         _region_stats[region_stats_id].IsCompleted()) {
         results = _region_stats[region_stats_id].stats;
         progress = 1.0;
@@ -296,7 +289,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
 
     int width = mask_shape(0);
     int height = mask_shape(1);
-    int depth = z_range.to - z_range.from + 1;
+    int depth = _depth;
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
@@ -394,17 +387,16 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
                 continue;
             }
 
-            for (size_t z = z_range.from; z < z_range.to + 1; z++) {
+            for (size_t z = 0; z < depth; z++) {
                 double v = slice_data[y * depth + z];
 
                 // skip all NaN pixels
                 if (std::isfinite(v)) {
-                    size_t z_index = z - z_range.from;
-                    num_pixels[z_index] += 1;
-                    sum[z_index] += v;
-                    sum_sq[z_index] += v * v;
-                    min[z_index] = std::min(min[z_index], v);
-                    max[z_index] = std::max(max[z_index], v);
+                    num_pixels[z] += 1;
+                    sum[z] += v;
+                    sum_sq[z] += v * v;
+                    min[z] = std::min(min[z], v);
+                    max[z] = std::max(max[z], v);
                 }
             }
         }
@@ -424,12 +416,12 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     _region_stats[region_stats_id].latest_x = max_x;
 
     if (progress >= 1.0) {
+        // the stats calculation is completed
+        _region_stats[region_stats_id].completed = true;
+
         if (region_id == TEMP_REGION_ID) {
             // clear for next temp region
             _region_stats.erase(region_stats_id);
-        } else {
-            // the stats calculation is completed
-            _region_stats[region_stats_id].completed = true;
         }
     }
 
