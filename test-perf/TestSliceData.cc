@@ -11,6 +11,7 @@
 #include "ImageData/FileLoader.h"
 #include "TestFrame.h"
 #include "Timer/Timer.h"
+#include "Util/Casacore.h"
 
 using namespace carta;
 using namespace std;
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     // Load a cube image file
     std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
-    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+    auto frame = std::make_unique<TestFrame>(0, loader, "0");
 
     // Set view axis
     AxesTransformer::ViewAxis view_axis;
@@ -80,22 +81,33 @@ int main(int argc, char* argv[]) {
 
     // Get slice data from a cube image
     auto axes_ranges = transformer.GetAxesRanges(channel);
-    StokesSlicer stokes_slicer = frame->GetImageSlicer(axes_ranges["x"], axes_ranges["y"], axes_ranges["z"], stokes);
+    double pixel_per_t = std::numeric_limits<double>::quiet_NaN();
+    double dt = std::numeric_limits<double>::quiet_NaN();
 
-    auto image_data_size = stokes_slicer.slicer.length().product();
-    EXPECT_EQ(image_data_size, width * height);
+    if ((CasacoreImageType(file_path) == casacore::ImageOpener::HDF5) &&
+        (view_axis == AxesTransformer::x || view_axis == AxesTransformer::y)) {
+        std::vector<float> image_data;
 
-    auto image_data = std::make_unique<float[]>(image_data_size);
+        Timer t;
+        EXPECT_TRUE(frame->GetLoaderSwizzledData(image_data, stokes, axes_ranges["x"], axes_ranges["y"]));
+        dt = t.Elapsed().us();
 
-    Timer t;
-    EXPECT_TRUE(frame->GetSlicerData(stokes_slicer, image_data.get()));
-    auto dt = t.Elapsed().us();
+        EXPECT_TRUE(image_data.size() == width * height);
+        spdlog::info("Use HDF5 swizzled data!");
+    } else {
+        StokesSlicer stokes_slicer = frame->GetImageSlicer(axes_ranges["x"], axes_ranges["y"], axes_ranges["z"], stokes);
+        auto image_data_size = stokes_slicer.slicer.length().product();
+        auto image_data = std::make_unique<float[]>(image_data_size);
 
-    bool data_available = (image_data_size == width * height);
-    EXPECT_TRUE(data_available);
+        Timer t;
+        EXPECT_TRUE(frame->GetSlicerData(stokes_slicer, image_data.get()));
+        dt = t.Elapsed().us();
 
-    double pixel_per_t = width * height / dt;
-    spdlog::info("{} Number of pixels per unit time: {:.3f} MPix/s", view_axis_map[view_axis], pixel_per_t);
+        EXPECT_TRUE((image_data_size == width * height));
+    }
+
+    pixel_per_t = width * height / dt;
+    spdlog::info("{} {}x{} plane. Number of pixels per unit time: {:.3f} MPix/s", width, height, view_axis_map[view_axis], pixel_per_t);
 
     return 0;
 }
