@@ -19,22 +19,18 @@ namespace carta {
 
 class PvGenerator {
 public:
-    PvGenerator(int file_id, const std::string& filename, int index);
+    PvGenerator(int file_id, const std::string& filename);
 
-    // Normally set up as x=offset, y=spectral.  If reverse=true, set up x=spectral, y=offset.
-    // Returns generated pv_image or message if failure.
-    bool GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, std::shared_ptr<casacore::CoordinateSystem> input_csys,
-        const casacore::Matrix<float>& pv_data, const casacore::Quantity& offset_increment, double spectral_refval, int stokes,
-        bool reverse, GeneratedImage& pv_image, std::string& message);
+    bool GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, const casacore::Matrix<float>& pv_data,
+        const casacore::Quantity& offset_increment, int stokes, GeneratedImage& pv_image, std::string& message);
 
 private:
-    std::string GetPvFilename(const std::string& filename, int index);
+    std::string GetPvFilename(const std::string& filename);
 
-    bool SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, std::shared_ptr<casacore::CoordinateSystem> input_csys,
-        casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse,
-        std::string& message);
-    casacore::CoordinateSystem GetPvCoordinateSystem(std::shared_ptr<casacore::CoordinateSystem> input_csys, casacore::IPosition& pv_shape,
-        int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse);
+    bool SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image, casacore::IPosition& pv_shape, int stokes,
+        const casacore::Quantity& offset_increment, std::string& message);
+    casacore::CoordinateSystem GetPvCoordinateSystem(const casacore::CoordinateSystem& input_csys, casacore::IPosition& pv_shape,
+        int stokes, const casacore::Quantity& offset_increment);
     GeneratedImage GetGeneratedImage();
 
     // GeneratedImage parameters
