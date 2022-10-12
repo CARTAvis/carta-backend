@@ -63,7 +63,7 @@ public:
     FRIEND_TEST(RestApiTest, DeleteWorkspaceMissingName);
     FRIEND_TEST(RestApiTest, SetWorkspace);
     FRIEND_TEST(RestApiTest, SetWorkspaceReadOnly);
-    
+
     FRIEND_TEST(RestApiTest, SendScriptingRequest);
     FRIEND_TEST(RestApiTest, SendScriptingRequestSessionNotFound);
     FRIEND_TEST(RestApiTest, SendScriptingRequestBadJson);
@@ -179,7 +179,7 @@ public:
         std::ofstream((snippets_path / "test_snippet3.json").string()) << "this is not a json file!";
         std::ofstream((snippets_path / "bad_snippet_name").string()) << example_snippet.dump(4);
     }
-    
+
     void WriteDefaultWorkspaces() {
         fs::create_directories(workspaces_path);
         std::ofstream((workspaces_path / "test_workspace.json").string()) << example_workspace.dump(4);
