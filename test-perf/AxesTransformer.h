@@ -6,7 +6,7 @@
 
 #include <unordered_map>
 
-#include "Frame/Frame.h"
+#include "Util/Image.h"
 
 namespace carta {
 
