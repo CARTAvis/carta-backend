@@ -11,7 +11,8 @@
 
 #include <functional>
 
-#define ID_MULTIPLIER 1000
+#define MOMENT_ID_MULTIPLIER 1000
+#define PV_ID_MULTIPLIER -1000
 
 using GeneratorProgressCallback = std::function<void(float)>;
 
