@@ -53,6 +53,7 @@ set(TEST_SOURCES
 		TestLineSpatialProfiles.cc
         TestMain.cc
         TestMoment.cc
+        TestPolarizationCalculator.cc
         TestProgramSettings.cc
         TestPvGenerator.cc
         TestRestApi.cc
