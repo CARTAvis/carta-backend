@@ -6,6 +6,7 @@
 
 #include <omp.h>
 
+#include "CommonTestUtilities.h"
 #include "ImageData/FileLoader.h"
 #include "TestFrame.h"
 #include "Timer/Timer.h"
@@ -38,17 +39,29 @@ int main(int argc, char* argv[]) {
         spdlog::info("OMP thread numbers {}", omp_get_num_procs());
     }
 
+    // Set file loader
     Timer t;
-    shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-    spdlog::performance("Elapsed time to load an image file for a loader: {} (us)\n", t.Elapsed().us());
+    shared_ptr<FileLoader> loader(FileLoader::GetLoader(path_string));
+    spdlog::info("Elapsed time to load an image file for a loader: {} (us)", t.Elapsed().us());
+
+    // Set Frame
     t.Reset();
-    unique_ptr<TestFrame> frame(new TestFrame(0, loader, "0"));
-    spdlog::performance("Elapsed time to load an image file for a frame: {} (us)\n", t.Elapsed().us());
+    unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+    spdlog::info("Elapsed time to load an image file for a frame: {} (us)", t.Elapsed().us());
 
     if (!frame->IsValid()) {
         spdlog::error("Failed to open the image file!");
         return 1;
     }
+
+    // Calculate the image histogram
+    auto region_histogram_data_callback = [&](CARTA::RegionHistogramData histogram_data) { EXPECT_TRUE(histogram_data.has_histograms()); };
+
+    t.Reset();
+    bool image_histogram = frame->FillRegionHistogramData(region_histogram_data_callback, IMAGE_REGION_ID, 0);
+    spdlog::info("Elapsed time to calculate the image histogram: {} (us)", t.Elapsed().us());
+
+    EXPECT_TRUE(image_histogram);
 
     return 0;
 }
