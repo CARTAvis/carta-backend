@@ -383,6 +383,15 @@ CARTA::SetVectorOverlayParameters Message::SetVectorOverlayParameters(uint32_t f
     return message;
 }
 
+CARTA::ImageBounds Message::ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max) {
+    CARTA::ImageBounds message;
+    message.set_x_min(x_min);
+    message.set_x_max(x_max);
+    message.set_y_min(y_min);
+    message.set_y_max(y_max);
+    return message;
+}
+
 CARTA::SetRegion Message::SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info) {
     CARTA::SetRegion message;
     message.set_file_id(file_id);
