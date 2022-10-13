@@ -10,30 +10,7 @@ pipeline {
     stages {
         stage('Build') {
             parallel {
-                stage('1 Ubuntu 18.04') {
-                    agent {
-                        label "bionic-agent"
-                    }
-                    steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh "uname -a"
-                            sh "lsb_release -a"
-                            sh "git submodule update --init --recursive"
-                            dir ('build') {
-                                sh "cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
-                                sh "make -j 16"
-                                stash includes: "test/**/*", name: "bionic-unit-tests"
-                                stash includes: "carta_backend", name: "bionic-backend"
-                            }
-                        }
-                    }
-                    post {
-                        failure {
-                            slackSend color: 'danger', message: "Ubuntu 18.04 - carta-backend build - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
-                        }
-                    }
-                }
-                stage('2 Ubuntu 20.04') {
+                stage('1 Ubuntu 20.04') {
                     agent {
                         label "focal-agent"
                     }
@@ -56,7 +33,7 @@ pipeline {
                         }
                     }
                 }
-                stage('3 Ubuntu 22.04') {
+                stage('2 Ubuntu 22.04') {
                     agent {
                         label "jammy-agent"
                     }       
@@ -79,7 +56,7 @@ pipeline {
                         }
                     }
                 }
-                stage('4 macOS 11') {
+                stage('3 macOS 11') {
                     agent {
                         label "macos11-agent"
                     }
@@ -101,7 +78,7 @@ pipeline {
                         }
                     }
                 }
-                stage('5 macOS 12') {
+                stage('4 macOS 12') {
                     agent {
                         label "macos12-agent"
                     }
@@ -128,7 +105,7 @@ pipeline {
                         }
                     }
                 }
-                stage('6 RHEL7') {
+                stage('5 RHEL7') {
                     agent {
                         label "rhel7-agent"
                     }
@@ -151,7 +128,7 @@ pipeline {
                         }
                     }
                 }
-                stage('7 RHEL8') {
+                stage('6 RHEL8') {
                     agent {
                         label "rhel8-agent"
                     }
@@ -174,7 +151,7 @@ pipeline {
                         }
                     }
                 }
-                stage('8 RHEL9') {
+                stage('7 RHEL9') {
                     agent {
                         label "rhel9-agent"
                     }
@@ -201,28 +178,7 @@ pipeline {
        }
        stage('Unit Tests') {
            parallel {
-                stage('1 Ubuntu 18.04') {
-                    agent {
-                        label "bionic-agent"
-                    }
-                    steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            unstash "bionic-unit-tests"
-                            dir ('test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend_tests --gtest_output=xml:ubuntu_bionic_test_detail.xml"
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            junit 'test/ubuntu_bionic_test_detail.xml'
-                        }
-                        failure {
-                            slackSend color: 'danger', message: "Ubuntu 18.04 - Unit Tests - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
-                        }
-                    }
-                }
-                stage('2 Ubuntu 20.04') {
+                stage('1 Ubuntu 20.04') {
                     agent {
                         label "focal-agent"
                     }
@@ -243,7 +199,7 @@ pipeline {
                         }   
                     }   
                 }
-                stage('3 Ubuntu 22.04') {
+                stage('2 Ubuntu 22.04') {
                     agent {
                         label "jammy-agent"
                     }
@@ -264,7 +220,7 @@ pipeline {
                         }
                     }   
                 }
-                stage('4 macOS 11') {
+                stage('3 macOS 11') {
                     agent {
                         label "macos11-agent"
                     }
@@ -284,7 +240,7 @@ pipeline {
                         }
                     }
                 }
-                stage('5 macOS 12') {
+                stage('4 macOS 12') {
                     agent {
                         label "macos12-agent"
                     }
@@ -304,7 +260,7 @@ pipeline {
                         }
                     }
                 }
-                stage('6 RHEL7') {
+                stage('5 RHEL7') {
                     agent {
                         label "rhel7-agent"
                     }
@@ -325,7 +281,7 @@ pipeline {
                         }
                     }
                 }
-                stage('7 RHEL8') {
+                stage('6 RHEL8') {
                     agent {
                         label "rhel8-agent"
                     }
@@ -346,7 +302,7 @@ pipeline {
                         }
                     }
                 }
-                stage('8 RHEL9') {
+                stage('7 RHEL9') {
                     agent {
                         label "rhel9-agent"
                     }
@@ -371,20 +327,7 @@ pipeline {
         }
         stage('Prepare for ICD tests') {
            parallel {
-                stage('1 Ubuntu 18.04') {
-                    agent {
-                        label "bionic-agent"
-                    }
-                    steps {
-                        prepare_bionic_ICD()
-                    }
-                    post {
-                        failure {
-                            slackSend color: 'danger', message: "Ubuntu 18.04 - ICD test preparation - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
-                        }
-                    }
-                }
-                stage('2 Ubuntu 20.04') {
+                stage('1 Ubuntu 20.04') {
                     agent {
                         label "focal-agent"
                     }
@@ -397,7 +340,7 @@ pipeline {
                         }
                     }
                 }
-                stage('3 Ubuntu 22.04') {
+                stage('2 Ubuntu 22.04') {
                     agent {
                         label "jammy-agent"
                     }
@@ -410,7 +353,7 @@ pipeline {
                         }
                     }
                 }
-                stage('4 macOS 11') {
+                stage('3 macOS 11') {
                     agent {
                         label "macos11-agent"
                     }
@@ -423,7 +366,7 @@ pipeline {
                         }
                     }
                 }
-                stage('5 macOS 12') {
+                stage('4 macOS 12') {
                     agent {
                         label "macos12-agent"
                     }
@@ -436,7 +379,7 @@ pipeline {
                         }
                     }
                 }
-                stage('6 RHEL7') {
+                stage('5 RHEL7') {
                     agent {
                         label "rhel7-agent"
                     }
@@ -449,7 +392,7 @@ pipeline {
                         }
                     }
                 }
-                stage('7 RHEL8') {
+                stage('6 RHEL8') {
                     agent {
                         label "rhel8-agent"
                     }
@@ -462,7 +405,7 @@ pipeline {
                         }
                     }
                 }
-                stage('8 RHEL9') {
+                stage('7 RHEL9') {
                     agent {
                         label "rhel9-agent"
                     }
@@ -482,7 +425,7 @@ pipeline {
                 axes {
                     axis {
                         name 'PLATFORM'
-                        values 'bionic', 'focal', 'jammy', 'rhel7', 'rhel8', 'rhel9', 'macos11', 'macos12'
+                        values 'focal', 'jammy', 'rhel7', 'rhel8', 'rhel9', 'macos11', 'macos12'
                     }
                 }
                 stages {
@@ -714,24 +657,6 @@ def prepare_focal_ICD() {
             }
         }
         stash includes: "carta-backend-ICD-rxjs/**/*", name: "focal-ICD"
-    }
-}
-
-def prepare_bionic_ICD() {
-    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
-            sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
-            sh "git submodule init && git submodule update && npm install"
-            dir ('protobuf') {
-                sh "./build_proto.sh"
-            }
-            dir ('src/test') { 
-                sh "perl -p -i -e 's/3002/3112/' config.json"
-            }
-        }
-        stash includes: "carta-backend-ICD-rxjs/**/*", name: "bionic-ICD"
     }
 }
 
