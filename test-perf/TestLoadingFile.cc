@@ -50,12 +50,12 @@ int main(int argc, char* argv[]) {
     // Set FileLoader
     carta::Timer t;
     shared_ptr<FileLoader> loader(FileLoader::GetLoader(path_string));
-    spdlog::info("Elapsed time to load an image file for FileLoader: {} (us)", t.Elapsed().us());
+    spdlog::info("Elapsed time to load an image file for FileLoader: {} (ms)", t.Elapsed().ms());
 
     // Set Frame
     t.Reset();
     unique_ptr<Frame> frame(new Frame(0, loader, "0"));
-    spdlog::info("Elapsed time to load an image file for Frame: {} (us)", t.Elapsed().us());
+    spdlog::info("Elapsed time to load an image file for Frame: {} (ms)", t.Elapsed().ms());
 
     if (!frame->IsValid()) {
         spdlog::error("Failed to open the image file!");
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 
     t.Reset();
     bool image_histogram = frame->FillRegionHistogramData(region_histogram_data_callback, IMAGE_REGION_ID, 0);
-    spdlog::info("Elapsed time to calculate the image histogram: {} (us)", t.Elapsed().us());
+    spdlog::info("Elapsed time to calculate the image histogram: {} (ms)", t.Elapsed().ms());
 
     EXPECT_TRUE(image_histogram);
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    spdlog::info("Elapsed time to generate raster tile data: {} (us)", t.Elapsed().us());
+    spdlog::info("Elapsed time to generate raster tile data: {} (ms)", t.Elapsed().ms());
 
     return 0;
 }
