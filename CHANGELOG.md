@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fixed issues with AIPS velocity axis by restoring previous casacore headers ([#1771](https://github.com/CARTAvis/carta-frontend/issues/1771)).
+* Fixed error in regions when resuming session.
 
 ## [3.0.0]
 
