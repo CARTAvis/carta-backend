@@ -35,6 +35,8 @@ Ds9ImportExport::Ds9ImportExport(
     // Export regions to DS9 format
     // Set coordinate system for file header
     InitGlobalProperties();
+    AddExportRegionNames();
+
     if (pixel_coord) {
         _file_ref_frame = "physical";
     } else {
@@ -75,13 +77,25 @@ void Ds9ImportExport::InitGlobalProperties() {
     _global_properties["source"] = "1";
 }
 
+void Ds9ImportExport::AddExportRegionNames() {
+    _region_names[CARTA::RegionType::POINT] = "point";
+    _region_names[CARTA::RegionType::RECTANGLE] = "box";
+    _region_names[CARTA::RegionType::ANNPOINT] = "# point";
+    _region_names[CARTA::RegionType::ANNLINE] = "# line";
+    _region_names[CARTA::RegionType::ANNPOLYLINE] = "# polyline";
+    _region_names[CARTA::RegionType::ANNRECTANGLE] = "# box";
+    _region_names[CARTA::RegionType::ANNELLIPSE] = "# ellipse";
+    _region_names[CARTA::RegionType::ANNPOLYGON] = "# polygon";
+}
+
 // Public: for exporting regions
 
 bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) {
     // Add pixel-coord region using RegionState
+    auto type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
     float angle = region_state.rotation;
-    if (region_state.type == CARTA::RegionType::ELLIPSE) {
+    if (type == CARTA::RegionType::ELLIPSE || type == CARTA::RegionType::ANNELLIPSE) {
         angle += 90.0; // DS9 angle measured from x-axis
         if (angle > 360.0) {
             angle -= 360.0;
@@ -91,38 +105,45 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     std::string region_line;
     float one_based_x = points[0].x() + 1; // Change from 0-based to 1-based image coordinate in x
     float one_based_y = points[0].y() + 1; // Change from 0-based to 1-based image coordinate in y
-    switch (region_state.type) {
-        case CARTA::RegionType::POINT: {
+    switch (type) {
+        case CARTA::RegionType::POINT:
+        case CARTA::RegionType::ANNPOINT: {
             // point(x, y)
-            region_line = fmt::format("point({:.2f}, {:.2f})", one_based_x, one_based_y);
+            region_line = fmt::format("{}({:.2f}, {:.2f})", _region_names[type], one_based_x, one_based_y);
             break;
         }
-        case CARTA::RegionType::RECTANGLE: {
+        case CARTA::RegionType::RECTANGLE:
+        case CARTA::RegionType::ANNRECTANGLE: {
             // box(x,y,width,height,angle)
-            region_line =
-                fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y, points[1].x(), points[1].y(), angle);
+            region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", _region_names[type], one_based_x, one_based_y,
+                points[1].x(), points[1].y(), angle);
             break;
         }
-        case CARTA::RegionType::ELLIPSE: {
+        case CARTA::RegionType::ELLIPSE:
+        case CARTA::RegionType::ANNELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
             if (points[1].x() == points[1].y()) { // bmaj == bmin
-                region_line = fmt::format("circle({:.2f}, {:.2f}, {:.2f})", one_based_x, one_based_y, points[1].x());
+                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle";
+                region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f})", name, one_based_x, one_based_y, points[1].x());
             } else {
                 if (angle > 0.0) {
-                    region_line = fmt::format(
-                        "ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", one_based_x, one_based_y, points[1].x(), points[1].y(), angle);
+                    region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", _region_names[type], one_based_x, one_based_y,
+                        points[1].x(), points[1].y(), angle);
                 } else {
-                    region_line =
-                        fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f})", one_based_x, one_based_y, points[1].x(), points[1].y());
+                    region_line = fmt::format(
+                        "{}({:.2f}, {:.2f}, {:.2f}, {:.2f})", _region_names[type], one_based_x, one_based_y, points[1].x(), points[1].y());
                 }
             }
             break;
         }
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
-        case CARTA::RegionType::POLYGON: {
+        case CARTA::RegionType::POLYGON:
+        case CARTA::RegionType::ANNLINE:
+        case CARTA::RegionType::ANNPOLYLINE:
+        case CARTA::RegionType::ANNPOLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[region_state.type], one_based_x, one_based_y);
+            region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[type], one_based_x, one_based_y);
             for (size_t i = 1; i < points.size(); ++i) {
                 // Change from 0-based to 1-based image coordinate for the other points in (x, y)
                 region_line += fmt::format(", {:.2f}, {:.2f}", points[i].x() + 1, points[i].y() + 1);
@@ -873,28 +894,32 @@ std::string Ds9ImportExport::AddExportRegionPixel(
     std::string region;
 
     switch (type) {
-        case CARTA::RegionType::POINT: {
+        case CARTA::RegionType::POINT:
+        case CARTA::RegionType::ANNPOINT: {
             // point(x, y)
-            region = fmt::format("point({:.4f}, {:.4f})", control_points[0].getValue(), control_points[1].getValue());
+            region = fmt::format("{}({:.4f}, {:.4f})", _region_names[type], control_points[0].getValue(), control_points[1].getValue());
             break;
         }
-        case CARTA::RegionType::RECTANGLE: {
+        case CARTA::RegionType::RECTANGLE:
+        case CARTA::RegionType::ANNRECTANGLE: {
             // box(x,y,width,height,angle)
-            region = fmt::format("box({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", control_points[0].getValue(), control_points[1].getValue(),
-                control_points[2].getValue(), control_points[3].getValue(), angle);
+            region = fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", _region_names[type], control_points[0].getValue(),
+                control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
             break;
         }
-        case CARTA::RegionType::ELLIPSE: {
+        case CARTA::RegionType::ELLIPSE:
+        case CARTA::RegionType::ANNELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
             if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin
-                region = fmt::format("circle({:.4f}, {:.4f}, {:.4f}\")", control_points[0].getValue(), control_points[1].getValue(),
+                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle";
+                region = fmt::format("{}({:.4f}, {:.4f}, {:.4f}\")", name, control_points[0].getValue(), control_points[1].getValue(),
                     control_points[2].getValue());
             } else {
                 if (angle == 0.0) {
-                    region = fmt::format("ellipse({:.4f}, {:.4f}, {:.4f}, {:.4f})", control_points[0].getValue(),
+                    region = fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f})", _region_names[type], control_points[0].getValue(),
                         control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue());
                 } else {
-                    region = fmt::format("ellipse({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", control_points[0].getValue(),
+                    region = fmt::format("{}({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", _region_names[type], control_points[0].getValue(),
                         control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
                 }
             }
@@ -902,7 +927,10 @@ std::string Ds9ImportExport::AddExportRegionPixel(
         }
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
-        case CARTA::RegionType::POLYGON: {
+        case CARTA::RegionType::POLYGON:
+        case CARTA::RegionType::ANNLINE:
+        case CARTA::RegionType::ANNPOLYLINE:
+        case CARTA::RegionType::ANNPOLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
             region = fmt::format("{}({:.4f}", _region_names[type], control_points[0].getValue());
             for (size_t i = 1; i < control_points.size(); ++i) {
@@ -924,64 +952,70 @@ std::string Ds9ImportExport::AddExportRegionWorld(
     std::string region;
 
     switch (type) {
-        case CARTA::RegionType::POINT: {
+        case CARTA::RegionType::POINT:
+        case CARTA::RegionType::ANNPOINT: {
             // point(x, y)
             if (_file_ref_frame.empty()) { // linear coordinates
-                region = fmt::format("point({:.6f}, {:.6f})", control_points[0].getValue(), control_points[1].getValue());
+                region = fmt::format("{}({:.6f}, {:.6f})", _region_names[type], control_points[0].getValue(), control_points[1].getValue());
             } else {
-                region =
-                    fmt::format("point({:.9f}, {:.9f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
+                region = fmt::format("{}({:.9f}, {:.9f})", _region_names[type], control_points[0].get("deg").getValue(),
+                    control_points[1].get("deg").getValue());
             }
             break;
         }
-        case CARTA::RegionType::RECTANGLE: {
+        case CARTA::RegionType::RECTANGLE:
+        case CARTA::RegionType::ANNRECTANGLE: {
             // box(x,y,width,height,angle)
             casacore::Quantity cx(control_points[0]), cy(control_points[1]);
             casacore::Quantity width(control_points[2]), height(control_points[3]);
             if (_file_ref_frame.empty()) { // linear coordinates
-                region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.getValue(), cy.getValue(), width.getValue(),
-                    height.getValue(), angle);
+                region = fmt::format("{}({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", _region_names[type], cx.getValue(), cy.getValue(),
+                    width.getValue(), height.getValue(), angle);
             } else {
-                region = fmt::format("box({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
-                    width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
+                region = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[type], cx.get("deg").getValue(),
+                    cy.get("deg").getValue(), width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
             }
             break;
         }
-        case CARTA::RegionType::ELLIPSE: {
+        case CARTA::RegionType::ELLIPSE:
+        case CARTA::RegionType::ANNELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
             if (control_points[2].getValue() == control_points[3].getValue()) {
                 // circle when bmaj == bmin
+                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle";
                 if (_file_ref_frame.empty()) { // linear coordinates
-                    region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].getValue(), control_points[1].getValue(),
+                    region = fmt::format("{}({:.6f}, {:.6f}, {:.4f}\")", name, control_points[0].getValue(), control_points[1].getValue(),
                         control_points[2].getValue());
                 } else {
-                    region = fmt::format("circle({:.9f}, {:.9f}, {:.4f}\")", control_points[0].get("deg").getValue(),
+                    region = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\")", name, control_points[0].get("deg").getValue(),
                         control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
                 }
             } else {
                 if (_file_ref_frame.empty()) { // linear coordinates
-                    region = fmt::format("ellipse({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", control_points[0].getValue(),
+                    region = fmt::format("{}({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", _region_names[type], control_points[0].getValue(),
                         control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
                 } else {
-                    region = fmt::format("ellipse({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", control_points[0].get("deg").getValue(),
-                        control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue(),
-                        control_points[3].get("arcsec").getValue(), angle);
+                    region = fmt::format("{}({:.9f}, {:.9f}, {:.4f}\", {:.4f}\", {})", _region_names[type],
+                        control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue(),
+                        control_points[2].get("arcsec").getValue(), control_points[3].get("arcsec").getValue(), angle);
                 }
             }
             break;
         }
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
-        case CARTA::RegionType::POLYGON: {
+        case CARTA::RegionType::POLYGON:
+        case CARTA::RegionType::ANNLINE:
+        case CARTA::RegionType::ANNPOLYLINE:
+        case CARTA::RegionType::ANNPOLYGON: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
-            region = fmt::format("{}(", _region_names[type]);
             if (_file_ref_frame.empty()) { // linear coordinates
-                region += fmt::format("{:.4f}", control_points[0].getValue());
+                region = fmt::format("{}({:.4f}", _region_names[type], control_points[0].getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {
                     region += fmt::format(", {:.4f}", control_points[i].getValue());
                 }
             } else {
-                region += fmt::format("{:.9f}", control_points[0].get("deg").getValue());
+                region = fmt::format("{}({:.9f}", _region_names[type], control_points[0].get("deg").getValue());
                 for (size_t i = 1; i < control_points.size(); ++i) {
                     region += fmt::format(", {:.9f}", control_points[i].get("deg").getValue());
                 }

@@ -115,12 +115,13 @@ public:
 
     inline bool IsLine() {
         auto type = GetRegionState().type;
-        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
+        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE) || (type == CARTA::RegionType::ANNLINE) ||
+                (type == CARTA::RegionType::ANNPOLYLINE));
     }
 
     inline bool IsRotbox() {
         RegionState rs = GetRegionState();
-        return ((rs.type == CARTA::RegionType::RECTANGLE) && (rs.rotation != 0.0));
+        return ((rs.type == CARTA::RegionType::RECTANGLE || rs.type == CARTA::RegionType::ANNRECTANGLE) && (rs.rotation != 0.0));
     }
 
     inline bool IsAnnotation() {
@@ -192,11 +193,11 @@ private:
     casacore::TableRecord GetControlPointsRecord(const casacore::IPosition& shape);
     void CompleteLCRegionRecord(casacore::TableRecord& record, const casacore::IPosition& shape);
     casacore::TableRecord GetPointRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys, const casacore::IPosition& output_shape);
+    casacore::TableRecord GetLineRecord(
+        int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys, const casacore::IPosition& image_shape);
     casacore::TableRecord GetPolygonRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetRotboxRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
     casacore::TableRecord GetEllipseRecord(std::shared_ptr<casacore::CoordinateSystem> output_csys);
-    casacore::TableRecord GetAnnotationRegionRecord(
-        int file_id, std::shared_ptr<casacore::CoordinateSystem> image_csys, const casacore::IPosition& image_shape);
     void CompleteRegionRecord(casacore::TableRecord& record, const casacore::IPosition& image_shape);
 
     // Utilities to convert control points

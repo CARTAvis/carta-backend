@@ -38,6 +38,9 @@ public:
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
+    // Add to type:name dictionary for DS9 syntax
+    void AddExportRegionNames() override;
+
     bool AddExportRegion(CARTA::RegionType region_type, const RegionStyle& style, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) override;
 

@@ -93,46 +93,71 @@ CrtfImportExport::CrtfImportExport(
     : RegionImportExport(image_coord_sys, image_shape), _stokes_axis(stokes_axis) {
     // Export regions; will add each region to RegionTextList
     _region_list = casa::RegionTextList(*image_coord_sys, image_shape);
+    AddExportRegionNames();
+}
+
+void CrtfImportExport::AddExportRegionNames() {
+    _region_names[CARTA::RegionType::POINT] = "symbol";
+    _region_names[CARTA::RegionType::RECTANGLE] = "centerbox";
+    _region_names[CARTA::RegionType::ANNPOINT] = "ann symbol";
+    _region_names[CARTA::RegionType::ANNLINE] = "ann line";
+    _region_names[CARTA::RegionType::ANNPOLYLINE] = "ann polyline";
+    _region_names[CARTA::RegionType::ANNRECTANGLE] = "ann centerbox";
+    _region_names[CARTA::RegionType::ANNELLIPSE] = "ann ellipse";
+    _region_names[CARTA::RegionType::ANNPOLYGON] = "ann polygon";
 }
 
 // Public: for exporting regions
 
 bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) {
     // Add pixel region using RegionState
+    auto type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
     float angle = region_state.rotation;
     std::string region_line;
 
     // Print region parameters (pixel coordinates) to CRTF-format string
-    switch (region_state.type) {
-        case CARTA::RegionType::POINT: {
+    switch (type) {
+        case CARTA::RegionType::POINT:
+        case CARTA::RegionType::ANNPOINT: {
             // symbol [[x, y], .]
-            region_line = fmt::format("symbol [[{:.4f}pix, {:.4f}pix], .]", points[0].x(), points[0].y());
+            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], .]", _region_names[type], points[0].x(), points[0].y());
             break;
         }
-        case CARTA::RegionType::RECTANGLE: {
+        case CARTA::RegionType::RECTANGLE:
+        case CARTA::RegionType::ANNRECTANGLE: {
             if (angle == 0.0) {
                 // centerbox [[x, y], [width, height]]
-                region_line = fmt::format("centerbox [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", points[0].x(), points[0].y(),
-                    points[1].x(), points[1].y());
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", _region_names[type], points[0].x(),
+                    points[0].y(), points[1].x(), points[1].y());
             } else {
                 // rotbox [[x, y], [width, height], angle]
-                region_line = fmt::format("rotbox [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", points[0].x(), points[0].y(),
+                std::string name = type == CARTA::RegionType::RECTANGLE ? "rotbox" : "ann rotbox";
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", name, points[0].x(), points[0].y(),
                     points[1].x(), points[1].y(), angle);
             }
             break;
         }
-        case CARTA::RegionType::ELLIPSE: {
-            // ellipse [[x, y], [radius, radius], angle]
-            region_line = fmt::format("ellipse [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", points[0].x(), points[0].y(),
-                points[1].x(), points[1].y(), angle);
+        case CARTA::RegionType::ELLIPSE:
+        case CARTA::RegionType::ANNELLIPSE: {
+            // ellipse [[x, y], [radius, radius], angle] OR circle[[x, y], r]
+            if (points[1].x() == points[1].y()) { // bmaj == bmin
+                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "ann circle";
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], {:.4f}pix]", name, points[0].x(), points[0].y(), points[1].x());
+            } else {
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", _region_names[type], points[0].x(),
+                    points[0].y(), points[1].x(), points[1].y(), angle);
+            }
             break;
         }
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
-        case CARTA::RegionType::POLYGON: {
+        case CARTA::RegionType::POLYGON:
+        case CARTA::RegionType::ANNLINE:
+        case CARTA::RegionType::ANNPOLYLINE:
+        case CARTA::RegionType::ANNPOLYGON: {
             // e.g. poly [[x1, y1], [x2, y2], [x3, y3],...]
-            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix]", _region_names[region_state.type], points[0].x(), points[0].y());
+            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix]", _region_names[type], points[0].x(), points[0].y());
             for (size_t i = 1; i < points.size(); ++i) {
                 region_line += fmt::format(", [{:.4f}pix, {:.4f}pix]", points[i].x(), points[i].y());
             }
@@ -233,13 +258,15 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
     casa::AnnRegion* ann_region(nullptr);    // all other regions
     try {
         switch (region_type) {
-            case CARTA::RegionType::POINT: {
+            case CARTA::RegionType::POINT:
+            case CARTA::RegionType::ANNPOINT: {
                 casacore::Quantity x(control_points[0]);
                 casacore::Quantity y(control_points[1]);
                 ann_base = new casa::AnnSymbol(x, y, *_coord_sys, casa::AnnSymbol::POINT, stokes_types);
                 break;
             }
-            case CARTA::RegionType::LINE: {
+            case CARTA::RegionType::LINE:
+            case CARTA::RegionType::ANNLINE: {
                 casacore::Quantity x1(control_points[0]);
                 casacore::Quantity y1(control_points[1]);
                 casacore::Quantity x2(control_points[2]);
@@ -247,7 +274,8 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
                 ann_base = new casa::AnnLine(x1, y1, x2, y2, *_coord_sys, stokes_types);
                 break;
             }
-            case CARTA::RegionType::RECTANGLE: {
+            case CARTA::RegionType::RECTANGLE:
+            case CARTA::RegionType::ANNRECTANGLE: {
                 casacore::Quantity cx(control_points[0]);
                 casacore::Quantity cy(control_points[1]);
                 casacore::Quantity xwidth(control_points[2]);
@@ -260,7 +288,8 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
                 }
                 break;
             }
-            case CARTA::RegionType::ELLIPSE: {
+            case CARTA::RegionType::ELLIPSE:
+            case CARTA::RegionType::ANNELLIPSE: {
                 casacore::Quantity cx(control_points[0]);
                 casacore::Quantity cy(control_points[1]);
                 casacore::Quantity bmaj(control_points[2]);
@@ -274,7 +303,9 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
                 break;
             }
             case CARTA::RegionType::POLYGON:
-            case CARTA::RegionType::POLYLINE: {
+            case CARTA::RegionType::POLYLINE:
+            case CARTA::RegionType::ANNPOLYGON:
+            case CARTA::RegionType::ANNPOLYLINE: {
                 // Points are in order x1, y1, x2, y2, etc.
                 size_t npoints(control_points.size());
                 casacore::Vector<casacore::Quantity> x_coords(npoints / 2), y_coords(npoints / 2);
@@ -296,7 +327,7 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
 
         std::ostringstream oss;
         if (ann_region) {
-            ann_region->setAnnotationOnly(false);
+            ann_region->setAnnotationOnly(region_type > CARTA::RegionType::POLYGON);
             ExportStyleParameters(region_style, ann_region);
             ann_region->print(oss);
             delete ann_region;
@@ -309,10 +340,17 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
 
         // Create region string and add to export regions vector
         std::string region_line(oss.str());
+
         if (!region_line.empty()) {
-            // Change "poly" to "polyline"
             if (region_type == CARTA::RegionType::POLYLINE) {
+                // Change "poly" to "polyline"
                 region_line.insert(4, "line");
+            } else if (region_type == CARTA::RegionType::ANNPOLYLINE) {
+                // Change "ann poly" to "ann polyline"
+                region_line.insert(8, "line");
+            } else if (region_type == CARTA::RegionType::ANNPOINT || region_type == CARTA::RegionType::ANNLINE) {
+                // In CASA symbol and line are annotation only so not explicit
+                region_line = "ann " + region_line;
             }
 
             _export_regions.push_back(region_line);

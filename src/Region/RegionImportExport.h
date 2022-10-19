@@ -47,6 +47,9 @@ public:
     virtual bool ExportRegions(std::vector<std::string>& contents, std::string& error) = 0;
 
 protected:
+    // Add to type:name dictionary for CRTF/DS9
+    virtual void AddExportRegionNames() = 0;
+
     // Parse file into lines, return in string vector
     virtual std::vector<std::string> ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim = '\0');
 
@@ -80,8 +83,9 @@ protected:
     std::vector<RegionProperties> _import_regions;
     std::vector<std::string> _export_regions;
 
-    std::unordered_map<CARTA::RegionType, std::string> _region_names = {
-        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::POLYGON, "polygon"}};
+    // Common to CRTF and DS9
+    std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::RegionType::LINE, "line"},
+        {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::POLYGON, "polygon"}, {CARTA::RegionType::ELLIPSE, "ellipse"}};
 
 private:
     // Return control_points and qrotation Quantity for region type
