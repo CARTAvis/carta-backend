@@ -1036,11 +1036,17 @@ casacore::TableRecord Region::GetPointRecord(
         // wcs control points is single point (x, y)
         casacore::Vector<casacore::Double> pixel_point;
         if (ConvertWorldToPixel(_wcs_control_points, output_csys, pixel_point)) {
-            casacore::Vector<casacore::Float> blc(output_shape.size(), 0.0), trc(output_shape.asVector());
+            auto ndim = output_shape.size();
+            casacore::Vector<casacore::Float> blc(ndim), trc(ndim);
+            blc = 0.0;
             blc(0) = pixel_point(0);
             blc(1) = pixel_point(1);
             trc(0) = pixel_point(0);
             trc(1) = pixel_point(1);
+
+            for (size_t i = 2; i < ndim; ++i) {
+                trc(i) = output_shape(i) - 1;
+            }
 
             record.define("name", "LCBox");
             record.define("blc", blc);
