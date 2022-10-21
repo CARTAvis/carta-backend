@@ -86,9 +86,6 @@ public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu);
     virtual ~Frame() = default;
 
-    bool IsValid();
-    std::string GetErrorMessage();
-
     // Get the full name of image file
     std::string GetFileName();
 
@@ -265,10 +262,6 @@ protected:
 
     // Setup
     uint32_t _session_id;
-
-    // Image opened
-    bool _valid;
-    std::string _open_image_error;
 
     // Trigger job cancellation when false
     volatile bool _connected = true;

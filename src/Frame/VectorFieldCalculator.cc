@@ -13,7 +13,7 @@
 namespace carta {
 
 bool VectorFieldCalculator::DoCalculations(VectorFieldCallback& callback) {
-    if (!(frame && frame->IsValid())) {
+    if (!(frame)) {
         return false;
     }
 

@@ -39,9 +39,7 @@ public:
     FRIEND_TEST(FrameTest, TestNoLoaderShape);
     FRIEND_TEST(FrameTest, TestNoLoaderData);
     FRIEND_TEST(FrameTest, TestBadLoaderStats);
-    FRIEND_TEST(FrameTest, TestIsValid);
     FRIEND_TEST(FrameTest, TestIsConnected);
-    FRIEND_TEST(FrameTest, TestGetErrorMessage);
     FRIEND_TEST(FrameTest, TestWidth);
     FRIEND_TEST(FrameTest, TestHeight);
     FRIEND_TEST(FrameTest, TestDepth);
@@ -62,7 +60,9 @@ public:
 // The individual tests must be added as friends to TestFrame above.
 #define TEST_SIMPLE_GETTER(gtr, atr, val)                                                                              \
     TEST(FrameTest, Test##gtr) {                                                                                       \
-        TestFrame frame(nullptr);                                                                                      \
+        auto loader = std::make_shared<NiceMock<MockFileLoader>>();                                                    \
+        loader->MakeValid();                                                                                           \
+        TestFrame frame(loader);                                                                                       \
         ASSERT_TRUE((std::is_same_v<std::remove_cv_t<decltype(frame.atr)>, std::remove_cv_t<decltype(frame.gtr())>>)); \
         frame.atr = val;                                                                                               \
         ASSERT_EQ(frame.gtr(), val);                                                                                   \
@@ -86,8 +86,6 @@ TEST(FrameTest, TestConstructorNotHDF5) {
     EXPECT_CALL(*loader, LoadImageStats(_));
 
     TestFrame frame(loader);
-
-    ASSERT_EQ(frame._valid, true);
 
     ASSERT_EQ(frame._x_axis, 0);
     ASSERT_EQ(frame._y_axis, 1);
@@ -120,8 +118,6 @@ TEST(FrameTest, TestConstructorHDF5) {
 
     TestFrame frame(loader);
 
-    ASSERT_EQ(frame._valid, true);
-
     ASSERT_EQ(frame._x_axis, 0);
     ASSERT_EQ(frame._y_axis, 1);
     ASSERT_EQ(frame._width, 1000);
@@ -135,27 +131,27 @@ TEST(FrameTest, TestConstructorHDF5) {
 }
 
 TEST(FrameTest, TestNullLoader) {
-    TestFrame frame(nullptr);
-    ASSERT_EQ(frame._valid, false);
-    ASSERT_EQ(frame._open_image_error, "Problem loading image: image type not supported.");
+    ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(nullptr); }(), casacore::AipsError) {
+        ASSERT_EQ("Problem loading image: image type not supported.", e.getMesg());
+    }
 }
 
 TEST(FrameTest, TestBadLoader) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
     EXPECT_CALL(*loader, OpenFile("0")).WillOnce(Throw(casacore::AipsError("This loader is bad.")));
 
-    TestFrame frame(loader);
-    ASSERT_EQ(frame._valid, false);
-    ASSERT_EQ(frame._open_image_error, "This loader is bad.");
+    ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(loader); }(), casacore::AipsError) {
+        ASSERT_EQ("This loader is bad.", e.getMesg());
+    }
 }
 
 TEST(FrameTest, TestNoLoaderShape) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
     EXPECT_CALL(*loader, FindCoordinateAxes(_, _, _, _, _)).WillOnce(DoAll(SetArgReferee<4>("No shape!"), Return(false)));
 
-    TestFrame frame(loader);
-    ASSERT_EQ(frame._valid, false);
-    ASSERT_EQ(frame._open_image_error, "Cannot determine file shape. No shape!");
+    ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(loader); }(), casacore::AipsError) {
+        ASSERT_EQ("Cannot determine file shape. No shape!", e.getMesg());
+    }
 }
 
 TEST(FrameTest, TestNoLoaderData) {
@@ -166,9 +162,9 @@ TEST(FrameTest, TestNoLoaderData) {
     EXPECT_CALL(*loader, GetRenderAxes()).WillOnce(Return(std::vector<int>{0, 1}));
     EXPECT_CALL(*loader, GetSlice(_, _)).WillOnce(Return(false));
 
-    TestFrame frame(loader);
-    ASSERT_EQ(frame._valid, false);
-    ASSERT_EQ(frame._open_image_error, "Cannot load image data. Check log.");
+    ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(loader); }(), casacore::AipsError) {
+        ASSERT_EQ("Cannot load image data. Check log.", e.getMesg());
+    }
 }
 
 TEST(FrameTest, TestBadLoaderStats) {
@@ -177,21 +173,19 @@ TEST(FrameTest, TestBadLoaderStats) {
     EXPECT_CALL(*loader, LoadImageStats(_)).WillOnce(Throw(casacore::AipsError("These stats are bad.")));
 
     TestFrame frame(loader);
-    ASSERT_EQ(frame._valid, true);
-    ASSERT_EQ(frame._open_image_error, "Problem loading statistics from file: These stats are bad.");
+    // TODO: no side effect to test now except the log message
 }
 
 TEST(FrameTest, TestGetFileName) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
     EXPECT_CALL(*loader, GetFileName()).WillOnce(Return("somefile.fits"));
 
     TestFrame frame(loader);
     ASSERT_EQ(frame.GetFileName(), "somefile.fits");
 }
 
-TEST_SIMPLE_GETTER(IsValid, _valid, true)
 TEST_SIMPLE_GETTER(IsConnected, _connected, true)
-TEST_SIMPLE_GETTER(GetErrorMessage, _open_image_error, "test")
 
 TEST_SIMPLE_GETTER(Width, _width, 123)
 TEST_SIMPLE_GETTER(Height, _height, 123)
@@ -205,6 +199,7 @@ TEST_SIMPLE_GETTER(StokesAxis, _stokes_axis, 123)
 
 TEST(FrameTest, TestCoordinateSystem) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
     auto mock_csys =
         std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::makeCoordinateSystem(casacore::IPosition{30, 20, 10, 4}));
     EXPECT_CALL(*loader, GetCoordinateSystem(_)).WillOnce(Return(mock_csys));
@@ -217,6 +212,7 @@ TEST(FrameTest, TestCoordinateSystem) {
 
 TEST(FrameTest, TestImageShapeNotComputed) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
     TestFrame frame(loader);
     // Use cached shape on frame
     ASSERT_EQ(frame.ImageShape(), frame._image_shape);
@@ -224,6 +220,7 @@ TEST(FrameTest, TestImageShapeNotComputed) {
 
 TEST(FrameTest, TestImageShapeComputed) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
     // loader returns non-null image
     auto shape = casacore::IPosition{10, 10, 10, 1};
     auto temp_image = std::make_shared<casacore::TempImage<float>>();
@@ -239,6 +236,7 @@ TEST(FrameTest, TestImageShapeComputed) {
 
 TEST(FrameTest, TestImageShapeComputedFailure) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
     // loader returns null image
     EXPECT_CALL(*loader, GetStokesImage(_)).WillOnce(Return(nullptr));
 
@@ -251,8 +249,9 @@ TEST(FrameTest, TestImageShapeComputedFailure) {
 
 TEST(FrameTest, TestGetBeams) {
     auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
     EXPECT_CALL(*loader, GetBeams(_, _)).WillOnce(DoAll(SetArgReferee<0>(std::vector<CARTA::Beam>(3)), Return(true)));
-    EXPECT_CALL(*loader, CloseImageIfUpdated());
+    EXPECT_CALL(*loader, CloseImageIfUpdated()).Times(Exactly(3));
 
     TestFrame frame(loader);
     std::vector<CARTA::Beam> beams;
@@ -313,7 +312,9 @@ TEST(FrameTest, TestGetImageSlicerTwoArgs) {
 }
 
 TEST(FrameTest, TestValidZ) {
-    TestFrame frame(nullptr);
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    TestFrame frame(loader);
     frame._depth = 10;
     ASSERT_EQ(frame.ValidZ(0), true);
     ASSERT_EQ(frame.ValidZ(9), true);
@@ -324,7 +325,9 @@ TEST(FrameTest, TestValidZ) {
 }
 
 TEST(FrameTest, TestValidStokes) {
-    TestFrame frame(nullptr);
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    TestFrame frame(loader);
     frame._num_stokes = 3;
     ASSERT_EQ(frame.ValidStokes(0), true);
     ASSERT_EQ(frame.ValidStokes(1), true);
@@ -335,7 +338,9 @@ TEST(FrameTest, TestValidStokes) {
 }
 
 TEST(FrameTest, TestZStokesChanged) {
-    TestFrame frame(nullptr);
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    TestFrame frame(loader);
     frame._z_index = 10;
     frame._stokes_index = 2;
     ASSERT_EQ(frame.ZStokesChanged(10, 2), false);
@@ -348,11 +353,13 @@ TEST(FrameTest, TestWaitForTaskCancellation) {
     // Local mock subclass of Frame
     class MockFrame : public TestFrame {
     public:
-        MockFrame() : TestFrame(nullptr) {}
+        MockFrame(std::shared_ptr<carta::FileLoader> loader) : TestFrame(loader) {}
         MOCK_METHOD(void, StopMomentCalc, (), (override));
     };
 
-    MockFrame frame;
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    MockFrame frame(loader);
     EXPECT_CALL(frame, StopMomentCalc());
 
     frame._connected = true;
@@ -365,11 +372,13 @@ TEST(FrameTest, TestWaitForTaskCancellationTimeout) {
     // Local mock subclass of Frame
     class MockFrame : public TestFrame {
     public:
-        MockFrame() : TestFrame(nullptr) {}
+        MockFrame(std::shared_ptr<carta::FileLoader> loader) : TestFrame(loader) {}
         MOCK_METHOD(void, StopMomentCalc, (), (override));
     };
 
-    MockFrame frame;
+    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
+    loader->MakeValid();
+    MockFrame frame(loader);
     EXPECT_CALL(frame, StopMomentCalc());
 
     frame._connected = true;

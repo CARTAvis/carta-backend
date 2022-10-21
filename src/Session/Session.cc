@@ -512,16 +512,13 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 return OnOpenFile(open_file_message, request_id, silent);
             }
 
-            // create Frame for image
-            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
+            try {
+                // create Frame for image
+                auto frame = std::make_shared<Frame>(_id, loader, hdu);
 
-            // query loader for mipmap dataset
-            bool has_mipmaps(loader->HasMip(2));
+                // query loader for mipmap dataset
+                bool has_mipmaps(loader->HasMip(2));
 
-            // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
-            _loaders.Remove(fullname);
-
-            if (frame->IsValid()) {
                 // Check if the old _frames[file_id] object exists. If so, delete it.
                 if (_frames.count(file_id) > 0) {
                     DeleteFrame(file_id);
@@ -552,9 +549,12 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                     *ack.mutable_beam_table() = {beams.begin(), beams.end()};
                 }
                 success = true;
-            } else {
-                err_message = frame->GetErrorMessage();
+            } catch (casacore::AipsError& err) {
+                err_message = err.getMesg();
             }
+
+            // remove loader from the cache (if we open another copy of this file, we will need a new loader object)
+            _loaders.Remove(fullname);
         }
     }
 
@@ -588,10 +588,10 @@ bool Session::OnOpenFile(
     bool success(false);
 
     if (info_loaded) {
-        // Create Frame for image
-        auto frame = std::make_unique<Frame>(_id, image_loader, "");
+        try {
+            // Create Frame for image
+            auto frame = std::make_unique<Frame>(_id, image_loader, "");
 
-        if (frame->IsValid()) {
             if (_frames.count(file_id) > 0) {
                 DeleteFrame(file_id);
             }
@@ -610,8 +610,8 @@ bool Session::OnOpenFile(
                 *open_file_ack->mutable_beam_table() = {beams.begin(), beams.end()};
             }
             success = true;
-        } else {
-            err_message = frame->GetErrorMessage();
+        } catch (casacore::AipsError& err) {
+            err_message = err.getMesg();
         }
     }
 

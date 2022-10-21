@@ -33,7 +33,6 @@ namespace carta {
 
 Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu)
     : _session_id(session_id),
-      _valid(true),
       _loader(loader),
       _x_axis(0),
       _y_axis(1),
@@ -47,29 +46,28 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     // Initialize for operator==
     _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
 
+    std::string open_image_error;
+
     if (!_loader) {
-        _open_image_error = fmt::format("Problem loading image: image type not supported.");
-        spdlog::error("Session {}: {}", session_id, _open_image_error);
-        _valid = false;
-        return;
+        open_image_error = fmt::format("Problem loading image: image type not supported.");
+        spdlog::error("Session {}: {}", session_id, open_image_error);
+        throw(casacore::AipsError(open_image_error));
     }
 
     try {
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
-        _open_image_error = err.getMesg();
-        spdlog::error("Session {}: {}", session_id, _open_image_error);
-        _valid = false;
-        return;
+        open_image_error = err.getMesg();
+        spdlog::error("Session {}: {}", session_id, open_image_error);
+        throw(casacore::AipsError(open_image_error));
     }
 
     // Get shape and axis values from the loader
     std::string log_message;
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _z_axis, _stokes_axis, log_message)) {
-        _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
-        spdlog::error("Session {}: {}", session_id, _open_image_error);
-        _valid = false;
-        return;
+        open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
+        spdlog::error("Session {}: {}", session_id, open_image_error);
+        throw(casacore::AipsError(open_image_error));
     }
 
     // Determine which axes are rendered, e.g. for pV images
@@ -84,9 +82,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
-        _open_image_error = fmt::format("Cannot load image data. Check log.");
-        _valid = false;
-        return;
+        open_image_error = fmt::format("Cannot load image data. Check log.");
+        throw(casacore::AipsError(open_image_error));
     }
 
     // reset the tile cache if the loader will use it
@@ -108,19 +105,11 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         // A failure here shouldn't invalidate the frame
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
-        spdlog::warn("Session {}: {}", session_id, _open_image_error);
+        open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
+        spdlog::warn("Session {}: {}", session_id, open_image_error);
     }
 
     _loader->CloseImageIfUpdated();
-}
-
-bool Frame::IsValid() {
-    return _valid;
-}
-
-std::string Frame::GetErrorMessage() {
-    return _open_image_error;
 }
 
 std::string Frame::GetFileName() {
@@ -280,37 +269,34 @@ bool Frame::IsConnected() {
 bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
     bool updated(false);
 
-    if (!_valid) {
-        message = "No file loaded";
-    } else {
-        if ((new_z != _z_index) || (new_stokes != _stokes_index)) {
-            bool z_ok(ValidZ(new_z));
-            bool stokes_ok(ValidStokes(new_stokes));
-            if (z_ok && stokes_ok) {
-                _z_index = new_z;
-                _stokes_index = new_stokes;
+    if ((new_z != _z_index) || (new_stokes != _stokes_index)) {
+        bool z_ok(ValidZ(new_z));
+        bool stokes_ok(ValidStokes(new_stokes));
+        if (z_ok && stokes_ok) {
+            _z_index = new_z;
+            _stokes_index = new_stokes;
 
-                // invalidate the image cache
-                InvalidateImageCache();
+            // invalidate the image cache
+            InvalidateImageCache();
 
-                if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
-                    // Reload the full channel cache for loaders which use it
-                    FillImageCache();
-                } else {
-                    // Don't reload the full channel cache here because we may not need it
-
-                    if (_loader->UseTileCache()) {
-                        // invalidate / clear the full resolution tile cache
-                        _tile_cache->Reset(_z_index, _stokes_index);
-                    }
-                }
-
-                updated = true;
+            if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(_stokes_index)) {
+                // Reload the full channel cache for loaders which use it
+                FillImageCache();
             } else {
-                message = fmt::format("Channel {} or Stokes {} is invalid in image", new_z, new_stokes);
+                // Don't reload the full channel cache here because we may not need it
+
+                if (_loader->UseTileCache()) {
+                    // invalidate / clear the full resolution tile cache
+                    _tile_cache->Reset(_z_index, _stokes_index);
+                }
             }
+
+            updated = true;
+        } else {
+            message = fmt::format("Channel {} or Stokes {} is invalid in image", new_z, new_stokes);
         }
     }
+
     return updated;
 }
 
@@ -366,7 +352,7 @@ void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
 
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid || !_image_cache_valid) {
+    if (!_image_cache_valid) {
         return false;
     }
 
