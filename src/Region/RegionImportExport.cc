@@ -523,18 +523,36 @@ bool RegionImportExport::ConvertRecordToPolygonLine(
     // Convert casacore Record to polygon Quantity control points
     // Polygon is an LCPolygon with x, y arrays in pixel coordinates
     casacore::String region_name = region_record.asString("name");
-    casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
-    casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
+    casacore::Vector<casacore::Double> x, y;
+
+    if (region_record.dataType("x") == casacore::TpArrayFloat) {
+        casacore::Vector<casacore::Float> xf, yf;
+        xf = region_record.asArrayFloat("x");
+        yf = region_record.asArrayFloat("y");
+
+        // Convert to Double
+        auto xf_size(xf.size());
+        x.resize(xf_size);
+        y.resize(xf_size);
+        for (auto i = 0; i < xf_size; ++i) {
+            x(i) = xf(i);
+            y(i) = yf(i);
+        }
+    } else {
+        x = region_record.asArrayDouble("x");
+        y = region_record.asArrayDouble("y");
+    }
+
     size_t npoints(x.size());
     if (region_name == "LCPolygon") {
-        // ignore last point, same as the first to enclose region
+        // Ignore last point, same as the first to enclose region but not in control points
         npoints -= 1;
     }
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
-        x -= (float)1.0;
-        y -= (float)1.0;
+        x -= 1.0;
+        y -= 1.0;
     }
 
     if (pixel_coord) {
@@ -546,21 +564,13 @@ bool RegionImportExport::ConvertRecordToPolygonLine(
         return true;
     }
 
-    // For world coords, convert to Double
-    casacore::Vector<casacore::Double> x_pixel(npoints);
-    casacore::Vector<casacore::Double> y_pixel(npoints);
-    for (auto i = 0; i < npoints; ++i) {
-        x_pixel(i) = x(i);
-        y_pixel(i) = y(i);
-    }
-
     // Convert pixel coords to world coords
     size_t naxes(_image_shape.size());
-    casacore::Matrix<casacore::Double> world_coords(naxes, npoints);
-    casacore::Matrix<casacore::Double> pixel_coords(naxes, npoints);
+    casacore::Matrix<casacore::Double> world_coords(naxes, x.size());
+    casacore::Matrix<casacore::Double> pixel_coords(naxes, x.size());
     pixel_coords = 0.0;
-    pixel_coords.row(0) = x_pixel;
-    pixel_coords.row(1) = y_pixel;
+    pixel_coords.row(0) = x;
+    pixel_coords.row(1) = y;
     casacore::Vector<casacore::Bool> failures;
 
     try {
