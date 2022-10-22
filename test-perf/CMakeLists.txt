@@ -41,11 +41,13 @@ list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
 set(TEST_UTILITIES
         ../test/CommonTestUtilities.cc
         AxesTransformer.cc
+        InitTester.cc
         TestFrame.cc)
 
 # Set performance testing cases
 set(TEST_PERF_SOURCES
         TestLoadingFile
+        TestRegion
         TestSliceData)
 
 foreach (TEST_NAME IN LISTS TEST_PERF_SOURCES)
