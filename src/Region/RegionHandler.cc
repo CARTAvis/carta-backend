@@ -67,7 +67,6 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
         }
     } else {
         if (region_id == NEW_REGION_ID) {
-            // new region, assign id
             region_id = GetNextRegionId();
         }
 
