@@ -21,6 +21,7 @@
 #define CUBE_REGION_ID -2
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
+#define NEW_REGION_ID -1 // SetRegion only
 #define ALL_REGIONS -10
 #define TEMP_REGION_ID -100
 #define TEMP_FOV_REGION_ID -1000
