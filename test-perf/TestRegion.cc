@@ -18,13 +18,14 @@ using namespace carta;
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
+    if (argc != 5) {
         spdlog::error(
             "Usage: "
             "./TestRegion "
             "<full path name of the image file> "
             "<omp thread count, -1 means auto selected> "
-            "<verbosity, 4: info, 5:debug> ");
+            "<verbosity, 4: info, 5:debug> "
+            "<region width/height, -1 means equal to the image width and height>");
         return 1;
     }
 
@@ -36,6 +37,10 @@ int main(int argc, char* argv[]) {
 
     // Set OMP thread numbers
     InitOmpThreads(argv[2]);
+
+    // Set region width/height
+    string region_width_height(argv[4]);
+    int region_size = stoi(region_width_height);
 
     // Set FileLoader
     shared_ptr<FileLoader> loader(FileLoader::GetLoader(path_string));
@@ -59,11 +64,15 @@ int main(int argc, char* argv[]) {
 
     // Set a rectangle region state: // [(cx,cy), (width,height)], width/height > 0
     int region_id(1);
-    int x_size = frame->Width();
-    int y_size = frame->Height();
-    int center_x(x_size / 2);
-    int center_y(y_size / 2);
-    std::vector<CARTA::Point> points = {Message::Point(center_x, center_y), Message::Point(x_size, y_size)}; // {center, width/height}
+    int image_width = frame->Width();
+    int image_height = frame->Height();
+    int center_x(image_width / 2);
+    int center_y(image_height / 2);
+    int region_width = region_size > 0 ? region_size : image_width;
+    int region_height = region_size > 0 ? region_size : image_height;
+    spdlog::debug("Set region width/height: {}/{}", region_width, region_height);
+    std::vector<CARTA::Point> points = {
+        Message::Point(center_x, center_y), Message::Point(region_width, region_height)}; // {center, width/height}
 
     int ref_file_id(0);
     RegionState region_state(ref_file_id, CARTA::RegionType::RECTANGLE, points, 0);
