@@ -9,6 +9,7 @@
 #include "CommonTestUtilities.h"
 #include "Frame/VectorFieldCalculator.h"
 #include "ImageData/FileLoader.h"
+#include "InitTester.h"
 #include "TestFrame.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"
@@ -17,35 +18,28 @@ using namespace carta;
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
+    if (argc != 5) {
         spdlog::error(
             "Usage: "
             "./TestLoadingFile "
             "<full path name of the image file> "
             "<omp thread count, -1 means auto selected> "
+            "<mip, should be greater than 0>"
             "<verbosity, 4: info, 5:debug> ");
         return 1;
     }
 
     // Set logger
-    fs::path user_directory("");
-    string verbosity_string(argv[3]);
-    int verbosity = stoi(verbosity_string);
-    logger::InitLogger(true, verbosity, true, false, user_directory);
+    InitSpdlog(argv[4]);
+
+    // Set OMP thread numbers
+    InitOmpThreads(argv[2]);
 
     // Set image file name path
     string path_string(argv[1]);
 
-    // Set OMP thread numbers
-    string omp_thread_count_str(argv[2]);
-    int omp_thread_count = stoi(omp_thread_count_str);
-    if (omp_thread_count > 0) {
-        omp_set_num_threads(omp_thread_count);
-        spdlog::debug("OMP thread numbers {}", omp_thread_count);
-    } else {
-        omp_set_num_threads(omp_get_num_procs());
-        spdlog::debug("OMP thread numbers {}", omp_get_num_procs());
-    }
+    // Set mip
+    string mip_str(argv[3]);
 
     // Set FileLoader
     carta::Timer t;
@@ -72,7 +66,8 @@ int main(int argc, char* argv[]) {
     EXPECT_TRUE(image_histogram);
 
     // Set required tiles
-    int mip(2);
+    int mip = stoi(mip_str);
+    mip = mip > 0 ? mip : 1;
     std::vector<Tile> tiles;
     GetTiles(frame->Width(), frame->Height(), mip, tiles);
     int num_tiles = tiles.size();
