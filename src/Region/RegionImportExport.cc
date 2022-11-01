@@ -165,36 +165,34 @@ void RegionImportExport::ParseRegionParameters(
                         properties[key] = value;
                     }
                 } else if (kvpair.size() == 2) {
-                    // check if value is delimited by ' ', " ", [ ], or { }
                     std::string value = kvpair[1];
 
                     if ((key == "dashlist") || (key == "line")) {
-                        // values separated by space e.g. "dashlist=8 3" or "line=0 0"; find next space
+                        // Two values separated by space e.g. "dashlist=8 3" or "line=0 0"
+                        // Find second value.
                         current = next + 1;
-
                         if (current < end) {
                             next = region_definition.find_first_of(" ", current);
                             std::string second_arg = region_definition.substr(current, next - current);
                             properties[key] = value + " " + second_arg;
                         }
                     } else if (key == "point") {
-                        // point=shape [size] e.g. "point=circle" or "point=diamond 10" - size optional
+                        // point=shape [size] e.g. "point=circle" or "point=diamond 10"
+                        // value is shape, look for optional size if not at end of line
                         current = next + 1;
-
                         if (current < end) {
-                            // Get next string
+                            // Get next string, check if size
                             auto possible_next = region_definition.find_first_of(" ", current);
                             string possible_size = region_definition.substr(current, possible_next - current);
-
                             if (!possible_size.empty()) {
                                 // Try to convert to int
                                 char* endptr(nullptr);
                                 auto point_size = strtol(possible_size.c_str(), &endptr, 10);
 
                                 if ((point_size != 0) && (point_size != LONG_MAX) && (point_size != LONG_MIN)) {
-                                    // conversion successful - add size
-                                    next = possible_next;
+                                    // conversion successful - add size and advance pointer
                                     properties[key] = value + " " + possible_size;
+                                    next = possible_next;
                                 } else {
                                     // conversion failed - shape only
                                     properties[key] = value;
@@ -212,23 +210,14 @@ void RegionImportExport::ParseRegionParameters(
                         value.erase(0, 1); // erase start delim
 
                         if (value.back() == end_delim) {
-                            // next parser delimiter is end delimiter
+                            // next parser delimiter is end delimiter, found value
                             value.pop_back();
                             properties[key] = value;
-                        } else if ((start_delim == '\'') || (start_delim == '"')) {
-                            // quotes (not parser delimiter) used for string, find end
-                            auto end_string = value.find_first_of(end_delim);
-                            if (end_string == std::string::npos) {
-                                throw(casacore::AipsError("string syntax error in " + region_definition));
-                            }
-
-                            properties[key] = value.substr(0, end_string);
                         } else {
-                            // value has other parser delim inside outer delim
+                            // value has other parser delim (such as space) inside outer delim (such as quote/bracket)
+                            // Save first part of value, then find end delimiter for rest of value.
                             value.append(1, region_definition[next]);
                             current = next + 1;
-
-                            // Find ending delim for rest of value, append to value
                             next = region_definition.find_first_of(end_delim, current);
                             string value_end = region_definition.substr(current, next - current);
                             properties[key] = value.append(value_end);
