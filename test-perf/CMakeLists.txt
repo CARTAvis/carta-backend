@@ -47,6 +47,7 @@ set(TEST_UTILITIES
 # Set performance testing cases
 set(TEST_PERF_SOURCES
         TestLoadingFile
+        TestMoments
         TestRegion
         TestSliceData)
 
