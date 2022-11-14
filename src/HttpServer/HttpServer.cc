@@ -24,7 +24,8 @@ const std::string success_string = json({{"success", true}}).dump();
 uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
-    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
+    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
+    bool enable_runtime_config)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
@@ -32,7 +33,8 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _config_folder(user_directory / "config"),
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
-      _enable_scripting(enable_scripting) {
+      _enable_scripting(enable_scripting),
+      _enable_runtime_config(enable_runtime_config) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -80,10 +82,14 @@ void HttpServer::RegisterRoutes() {
 }
 
 void HttpServer::HandleGetConfig(Res* res, Req* req) {
-    json runtime_config = {{"apiAddress", "/api"}};
-    res->writeStatus(HTTP_200);
-    res->writeHeader("Content-Type", "application/json");
-    res->end(runtime_config.dump());
+    if (_enable_runtime_config) {
+        json runtime_config = {{"apiAddress", "/api"}};
+        res->writeStatus(HTTP_200);
+        res->writeHeader("Content-Type", "application/json");
+        res->end(runtime_config.dump());
+    } else {
+        res->writeStatus(HTTP_200)->end();
+    }
 }
 
 void HttpServer::HandleStaticRequest(Res* res, Req* req) {
