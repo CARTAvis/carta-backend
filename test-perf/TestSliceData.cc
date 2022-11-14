@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     int width = view_axes_sizes["w"];
     int height = view_axes_sizes["h"];
     int depth = view_axes_sizes["d"];
-    int channel = 1;
+    int channel = 0;
     int stokes = frame->CurrentStokes();
 
     // Get slice data from a cube image
