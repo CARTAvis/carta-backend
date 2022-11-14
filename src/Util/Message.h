@@ -104,6 +104,7 @@ public:
     static CARTA::SetVectorOverlayParameters SetVectorOverlayParameters(uint32_t file_id, uint32_t mip, bool fractional, double threshold,
         bool debiasing, double q_error, double u_error, int32_t stokes_intensity, int32_t stokes_angle,
         const CARTA::CompressionType& compression_type, float compression_quality);
+    static CARTA::ImageBounds ImageBounds(int32_t x_min, int32_t x_max, int32_t y_min, int32_t y_max);
     static CARTA::SetRegion SetRegion(int32_t file_id, int32_t region_id, const CARTA::RegionInfo& region_info);
     static CARTA::ConcatStokesFiles ConcatStokesFiles(
         int32_t file_id, const google::protobuf::RepeatedPtrField<CARTA::StokesFile>& stokes_files);

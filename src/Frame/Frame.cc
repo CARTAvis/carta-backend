@@ -652,12 +652,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         }
     } else {
         // Block averaging
-        CARTA::ImageBounds image_bounds;
-        image_bounds.set_x_min(0);
-        image_bounds.set_y_min(0);
-        image_bounds.set_x_max(_width);
-        image_bounds.set_y_max(_height);
-
+        CARTA::ImageBounds image_bounds = Message::ImageBounds(0, _width, 0, _height);
         std::vector<float> dest_vector;
         smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
         cache_lock.release();
