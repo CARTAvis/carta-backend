@@ -32,6 +32,7 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
+#include "VectorFieldCalculator.h"
 #include "VectorFieldSettings.h"
 
 namespace carta {
@@ -219,6 +220,7 @@ public:
     };
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
+    bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
 protected:
     // Validate z and stokes index values

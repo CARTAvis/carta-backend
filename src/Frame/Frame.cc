@@ -2328,4 +2328,9 @@ bool Frame::GetDownsampledRasterData(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+    VectorFieldCalculator vector_field_calculator(0, static_cast<shared_ptr<Frame>>(this));
+    return vector_field_calculator.DoCalculations(callback);
+}
+
 } // namespace carta

@@ -1826,8 +1826,7 @@ bool Session::SendVectorFieldData(int file_id) {
         };
 
         // Do PI/PA calculations
-        VectorFieldCalculator vector_field_calculator(file_id, frame);
-        if (vector_field_calculator.DoCalculations(callback)) {
+        if (frame->CalculateVectorField(callback)) {
             return true;
         }
         SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
