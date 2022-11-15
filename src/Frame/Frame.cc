@@ -2324,7 +2324,8 @@ bool Frame::GetDownsampledRasterData(
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    VectorFieldCalculator vector_field_calculator(0, static_cast<shared_ptr<Frame>>(this));
+    std::shared_lock lock(GetActiveTaskMutex());
+    VectorFieldCalculator vector_field_calculator(this);
     return vector_field_calculator.DoCalculations(callback);
 }
 

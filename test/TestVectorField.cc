@@ -11,7 +11,6 @@
 #include "DataStream/Compression.h"
 #include "DataStream/Smoothing.h"
 #include "Frame/Frame.h"
-#include "Frame/VectorFieldCalculator.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -842,8 +841,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
@@ -905,8 +903,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
@@ -950,8 +947,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         if (stokes_intensity > -1) {
             EXPECT_GE(intensity_tiles_size, 1);
@@ -1010,8 +1006,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         // =============================================================================
         // Compress the vector field data with ZFP
@@ -1041,7 +1036,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        vector_field_calculator.DoCalculations(callback2);
+        frame->CalculateVectorField(callback2);
 
         // Check the absolute mean of error
         float pi_abs_err_mean = 0;

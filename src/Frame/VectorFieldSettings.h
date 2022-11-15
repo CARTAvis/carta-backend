@@ -13,6 +13,7 @@
 #include <carta-protobuf/vector_overlay.pb.h>
 
 struct VectorFieldSettings {
+    int file_id;
     int smoothing_factor;
     bool fractional;
     double threshold;
@@ -29,6 +30,7 @@ struct VectorFieldSettings {
     }
 
     VectorFieldSettings(const CARTA::SetVectorOverlayParameters& message) {
+        file_id = (int)message.file_id();
         smoothing_factor = (int)message.smoothing_factor();
         fractional = message.fractional();
         threshold = message.threshold();
@@ -43,9 +45,9 @@ struct VectorFieldSettings {
 
     // Equality operator for checking if vector field settings have changed
     bool operator==(const VectorFieldSettings& rhs) const {
-        return (this->smoothing_factor == rhs.smoothing_factor && this->fractional == rhs.fractional && this->threshold == rhs.threshold &&
-                this->debiasing == rhs.debiasing && this->q_error == rhs.q_error && this->u_error == rhs.u_error &&
-                this->stokes_intensity == rhs.stokes_intensity && this->stokes_angle == rhs.stokes_angle &&
+        return (file_id == rhs.file_id && this->smoothing_factor == rhs.smoothing_factor && this->fractional == rhs.fractional &&
+                this->threshold == rhs.threshold && this->debiasing == rhs.debiasing && this->q_error == rhs.q_error &&
+                this->u_error == rhs.u_error && this->stokes_intensity == rhs.stokes_intensity && this->stokes_angle == rhs.stokes_angle &&
                 this->compression_type == rhs.compression_type && this->compression_quality == rhs.compression_quality);
     }
 
@@ -54,6 +56,7 @@ struct VectorFieldSettings {
     }
 
     void ClearSettings() {
+        file_id = -1;
         smoothing_factor = 0;
         fractional = false;
         threshold = std::numeric_limits<double>::quiet_NaN();

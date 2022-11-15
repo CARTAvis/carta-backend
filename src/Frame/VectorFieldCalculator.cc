@@ -22,6 +22,7 @@ bool VectorFieldCalculator::DoCalculations(const std::function<void(CARTA::Vecto
 
     // Get vector field settings
     auto vector_field_settings = frame->GetVectorFieldParameters();
+    int file_id = vector_field_settings.file_id;
     int mip = vector_field_settings.smoothing_factor;
     bool fractional = vector_field_settings.fractional;
     float threshold = (float)vector_field_settings.threshold;
