@@ -59,7 +59,6 @@ set(TEST_SOURCES
         TestSpatialProfiles.cc
         TestTileEncoding.cc
         TestUtil.cc
-        TestVectorField.cc
         TestVoTable.cc)
 
 # Add all the sources in the main project and remove Main.cc
