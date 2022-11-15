@@ -11,13 +11,7 @@
 
 namespace carta {
 
-struct VectorFieldCalculator {
-    Frame* frame;
-
-    VectorFieldCalculator(Frame* frame_) : frame(frame_) {}
-    bool DoCalculations(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-};
-
+bool DoVectorFieldCalculation(Frame* frame, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
     std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);

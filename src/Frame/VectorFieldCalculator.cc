@@ -12,7 +12,7 @@
 
 namespace carta {
 
-bool VectorFieldCalculator::DoCalculations(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool DoVectorFieldCalculation(Frame* frame, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     if (!(frame && frame->IsValid())) {
         return false;
     }
