@@ -132,7 +132,7 @@ TEST(FrameTest, TestConstructorHDF5) {
 
 TEST(FrameTest, TestNullLoader) {
     ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(nullptr); }(), casacore::AipsError) {
-        ASSERT_EQ("Problem loading image: image type not supported.", e.getMesg());
+        ASSERT_EQ("Problem loading image: image type not supported.", (std::string)e.getMesg());
     }
 }
 
@@ -141,7 +141,7 @@ TEST(FrameTest, TestBadLoader) {
     EXPECT_CALL(*loader, OpenFile("0")).WillOnce(Throw(casacore::AipsError("This loader is bad.")));
 
     ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(loader); }(), casacore::AipsError) {
-        ASSERT_EQ("This loader is bad.", e.getMesg());
+        ASSERT_EQ("This loader is bad.", (std::string)e.getMesg());
     }
 }
 
@@ -150,7 +150,7 @@ TEST(FrameTest, TestNoLoaderShape) {
     EXPECT_CALL(*loader, FindCoordinateAxes(_, _, _, _, _)).WillOnce(DoAll(SetArgReferee<4>("No shape!"), Return(false)));
 
     ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(loader); }(), casacore::AipsError) {
-        ASSERT_EQ("Cannot determine file shape. No shape!", e.getMesg());
+        ASSERT_EQ("Cannot determine file shape. No shape!", (std::string)e.getMesg());
     }
 }
 
@@ -163,7 +163,7 @@ TEST(FrameTest, TestNoLoaderData) {
     EXPECT_CALL(*loader, GetSlice(_, _)).WillOnce(Return(false));
 
     ASSERT_THROW_KEEP_AS_E([&] { TestFrame frame(loader); }(), casacore::AipsError) {
-        ASSERT_EQ("Cannot load image data. Check log.", e.getMesg());
+        ASSERT_EQ("Cannot load image data. Check log.", (std::string)e.getMesg());
     }
 }
 
