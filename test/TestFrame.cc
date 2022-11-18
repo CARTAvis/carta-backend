@@ -60,8 +60,7 @@ public:
 // The individual tests must be added as friends to TestFrame above.
 #define TEST_SIMPLE_GETTER(gtr, atr, val)                                                                              \
     TEST(FrameTest, Test##gtr) {                                                                                       \
-        auto loader = std::make_shared<NiceMock<MockFileLoader>>();                                                    \
-        loader->MakeValid();                                                                                           \
+        auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();                                           \
         TestFrame frame(loader);                                                                                       \
         ASSERT_TRUE((std::is_same_v<std::remove_cv_t<decltype(frame.atr)>, std::remove_cv_t<decltype(frame.gtr())>>)); \
         frame.atr = val;                                                                                               \
@@ -168,8 +167,7 @@ TEST(FrameTest, TestNoLoaderData) {
 }
 
 TEST(FrameTest, TestBadLoaderStats) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     EXPECT_CALL(*loader, LoadImageStats(_)).WillOnce(Throw(casacore::AipsError("These stats are bad.")));
 
     TestFrame frame(loader);
@@ -177,8 +175,7 @@ TEST(FrameTest, TestBadLoaderStats) {
 }
 
 TEST(FrameTest, TestGetFileName) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     EXPECT_CALL(*loader, GetFileName()).WillOnce(Return("somefile.fits"));
 
     TestFrame frame(loader);
@@ -198,8 +195,7 @@ TEST_SIMPLE_GETTER(SpectralAxis, _spectral_axis, 123)
 TEST_SIMPLE_GETTER(StokesAxis, _stokes_axis, 123)
 
 TEST(FrameTest, TestCoordinateSystem) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     auto mock_csys =
         std::make_shared<casacore::CoordinateSystem>(casacore::CoordinateUtil::makeCoordinateSystem(casacore::IPosition{30, 20, 10, 4}));
     EXPECT_CALL(*loader, GetCoordinateSystem(_)).WillOnce(Return(mock_csys));
@@ -211,16 +207,14 @@ TEST(FrameTest, TestCoordinateSystem) {
 }
 
 TEST(FrameTest, TestImageShapeNotComputed) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     TestFrame frame(loader);
     // Use cached shape on frame
     ASSERT_EQ(frame.ImageShape(), frame._image_shape);
 }
 
 TEST(FrameTest, TestImageShapeComputed) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     // loader returns non-null image
     auto shape = casacore::IPosition{10, 10, 10, 1};
     auto temp_image = std::make_shared<casacore::TempImage<float>>();
@@ -235,8 +229,7 @@ TEST(FrameTest, TestImageShapeComputed) {
 }
 
 TEST(FrameTest, TestImageShapeComputedFailure) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     // loader returns null image
     EXPECT_CALL(*loader, GetStokesImage(_)).WillOnce(Return(nullptr));
 
@@ -248,8 +241,7 @@ TEST(FrameTest, TestImageShapeComputedFailure) {
 }
 
 TEST(FrameTest, TestGetBeams) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     EXPECT_CALL(*loader, GetBeams(_, _)).WillOnce(DoAll(SetArgReferee<0>(std::vector<CARTA::Beam>(3)), Return(true)));
     EXPECT_CALL(*loader, CloseImageIfUpdated()).Times(Exactly(3));
 
@@ -261,9 +253,8 @@ TEST(FrameTest, TestGetBeams) {
 }
 
 TEST(FrameTest, TestGetImageSlicer) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
     // Set up default dimensions and axes
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     TestFrame frame(loader);
 
     using AR = AxisRange;
@@ -282,9 +273,8 @@ TEST(FrameTest, TestGetImageSlicer) {
 }
 
 TEST(FrameTest, TestGetImageSlicerTwoArgs) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
     // Set up default dimensions and axes
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
 
     // Local mock subclass of Frame
     class MockFrame : public TestFrame {
@@ -312,8 +302,7 @@ TEST(FrameTest, TestGetImageSlicerTwoArgs) {
 }
 
 TEST(FrameTest, TestValidZ) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     TestFrame frame(loader);
     frame._depth = 10;
     ASSERT_EQ(frame.ValidZ(0), true);
@@ -325,8 +314,7 @@ TEST(FrameTest, TestValidZ) {
 }
 
 TEST(FrameTest, TestValidStokes) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     TestFrame frame(loader);
     frame._num_stokes = 3;
     ASSERT_EQ(frame.ValidStokes(0), true);
@@ -338,8 +326,7 @@ TEST(FrameTest, TestValidStokes) {
 }
 
 TEST(FrameTest, TestZStokesChanged) {
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     TestFrame frame(loader);
     frame._z_index = 10;
     frame._stokes_index = 2;
@@ -357,8 +344,7 @@ TEST(FrameTest, TestWaitForTaskCancellation) {
         MOCK_METHOD(void, StopMomentCalc, (), (override));
     };
 
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     MockFrame frame(loader);
     EXPECT_CALL(frame, StopMomentCalc());
 
@@ -376,8 +362,7 @@ TEST(FrameTest, TestWaitForTaskCancellationTimeout) {
         MOCK_METHOD(void, StopMomentCalc, (), (override));
     };
 
-    auto loader = std::make_shared<NiceMock<MockFileLoader>>();
-    loader->MakeValid();
+    auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     MockFrame frame(loader);
     EXPECT_CALL(frame, StopMomentCalc());
 
