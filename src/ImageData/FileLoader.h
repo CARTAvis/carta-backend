@@ -78,7 +78,7 @@ public:
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
     bool FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& direction_axes, int& spectral_axis, int& stokes_axis,
         std::vector<int>& render_axes, int& z_axis, std::string& message);
-    std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
+    std::vector<int> GetRenderAxes(bool get_dir_axes = false); // Determine axes used for image raster data
 
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
@@ -99,9 +99,9 @@ public:
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
     // Check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
-    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
-        float& progress);
+    virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
+        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(
