@@ -1844,18 +1844,15 @@ bool RegionHandler::IsPointRegion(int region_id) {
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
+    // Is a line type but not an annotation
     if (RegionSet(region_id, true)) {
-        return GetRegion(region_id)->IsLine();
+        return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
     return false;
 }
 
 bool RegionHandler::IsClosedRegion(int region_id) {
-    if (RegionSet(region_id, true)) {
-        auto region = GetRegion(region_id);
-        return !region->IsPoint() && !region->IsLine();
-    }
-    return false;
+    return RegionSet(region_id, true) && !IsPointRegion(region_id) && !IsLineRegion(region_id);
 }
 
 std::vector<int> RegionHandler::GetSpatialReqRegionsForFile(int file_id) {

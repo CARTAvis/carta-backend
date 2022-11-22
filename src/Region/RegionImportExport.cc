@@ -55,6 +55,7 @@ bool RegionImportExport::AddExportRegion(
     switch (region_state.type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT:
+        case CARTA::RegionType::ANNTEXT:
             converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
             break;
         case CARTA::RegionType::RECTANGLE:
@@ -63,14 +64,17 @@ bool RegionImportExport::AddExportRegion(
             break;
         case CARTA::RegionType::ELLIPSE:
         case CARTA::RegionType::ANNELLIPSE:
+        case CARTA::RegionType::ANNCOMPASS:
             converted = ConvertRecordToEllipse(region_state, region_record, pixel_coord, control_points, rotation);
             break;
-        case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::LINE:
         case CARTA::RegionType::POLYLINE:
-        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::ANNLINE:
         case CARTA::RegionType::ANNPOLYLINE:
+        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::ANNVECTOR:
+        case CARTA::RegionType::ANNRULER:
             converted = ConvertRecordToPolygonLine(region_record, pixel_coord, control_points);
             break;
         default:

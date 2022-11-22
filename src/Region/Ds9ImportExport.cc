@@ -80,12 +80,15 @@ void Ds9ImportExport::InitGlobalProperties() {
 void Ds9ImportExport::AddExportRegionNames() {
     _region_names[CARTA::RegionType::POINT] = "point";
     _region_names[CARTA::RegionType::RECTANGLE] = "box";
+    _region_names[CARTA::RegionType::POLYGON] = "polygon";
     _region_names[CARTA::RegionType::ANNPOINT] = "# point";
     _region_names[CARTA::RegionType::ANNLINE] = "# line";
     _region_names[CARTA::RegionType::ANNPOLYLINE] = "# polyline";
     _region_names[CARTA::RegionType::ANNRECTANGLE] = "# box";
     _region_names[CARTA::RegionType::ANNELLIPSE] = "# ellipse";
     _region_names[CARTA::RegionType::ANNPOLYGON] = "# polygon";
+    _region_names[CARTA::RegionType::ANNVECTOR] = "# vector";
+    _region_names[CARTA::RegionType::ANNTEXT] = "# text";
 }
 
 // Public: for exporting regions
@@ -107,7 +110,8 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     float one_based_y = points[0].y() + 1; // Change from 0-based to 1-based image coordinate in y
     switch (type) {
         case CARTA::RegionType::POINT:
-        case CARTA::RegionType::ANNPOINT: {
+        case CARTA::RegionType::ANNPOINT:
+        case CARTA::RegionType::ANNTEXT: {
             // point(x, y)
             region_line = fmt::format("{}({:.2f}, {:.2f})", _region_names[type], one_based_x, one_based_y);
             break;
@@ -120,10 +124,14 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
             break;
         }
         case CARTA::RegionType::ELLIPSE:
-        case CARTA::RegionType::ANNELLIPSE: {
-            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
-            if (points[1].x() == points[1].y()) { // bmaj == bmin
-                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle";
+        case CARTA::RegionType::ANNELLIPSE:
+        case CARTA::RegionType::ANNCOMPASS: {
+            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius) OR compass(x,y,length)
+            if (points[1].x() == points[1].y()) { // bmaj == bmin or compass length == length
+                std::string name = _region_names[type];
+                if (type != CARTA::ANNCOMPASS) {
+                    name = (type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle");
+                }
                 region_line = fmt::format("{}({:.2f}, {:.2f}, {:.2f})", name, one_based_x, one_based_y, points[1].x());
             } else {
                 if (angle > 0.0) {
@@ -141,7 +149,9 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
         case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::ANNLINE:
         case CARTA::RegionType::ANNPOLYLINE:
-        case CARTA::RegionType::ANNPOLYGON: {
+        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::ANNVECTOR:
+        case CARTA::RegionType::ANNRULER: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
             region_line = fmt::format("{}({:.2f}, {:.2f}", _region_names[type], one_based_x, one_based_y);
             for (size_t i = 1; i < points.size(); ++i) {
@@ -895,7 +905,8 @@ std::string Ds9ImportExport::AddExportRegionPixel(
 
     switch (type) {
         case CARTA::RegionType::POINT:
-        case CARTA::RegionType::ANNPOINT: {
+        case CARTA::RegionType::ANNPOINT:
+        case CARTA::RegionType::ANNTEXT: {
             // point(x, y)
             region = fmt::format("{}({:.4f}, {:.4f})", _region_names[type], control_points[0].getValue(), control_points[1].getValue());
             break;
@@ -908,10 +919,14 @@ std::string Ds9ImportExport::AddExportRegionPixel(
             break;
         }
         case CARTA::RegionType::ELLIPSE:
-        case CARTA::RegionType::ANNELLIPSE: {
-            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
+        case CARTA::RegionType::ANNELLIPSE:
+        case CARTA::RegionType::ANNCOMPASS: {
+            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius) OR compass(x,y,length)
             if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin
-                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle";
+                std::string name = _region_names[type];
+                if (type != CARTA::ANNCOMPASS) {
+                    name = (type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle");
+                }
                 region = fmt::format("{}({:.4f}, {:.4f}, {:.4f}\")", name, control_points[0].getValue(), control_points[1].getValue(),
                     control_points[2].getValue());
             } else {
@@ -930,7 +945,9 @@ std::string Ds9ImportExport::AddExportRegionPixel(
         case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::ANNLINE:
         case CARTA::RegionType::ANNPOLYLINE:
-        case CARTA::RegionType::ANNPOLYGON: {
+        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::ANNVECTOR:
+        case CARTA::RegionType::ANNRULER: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
             region = fmt::format("{}({:.4f}", _region_names[type], control_points[0].getValue());
             for (size_t i = 1; i < control_points.size(); ++i) {
@@ -953,7 +970,8 @@ std::string Ds9ImportExport::AddExportRegionWorld(
 
     switch (type) {
         case CARTA::RegionType::POINT:
-        case CARTA::RegionType::ANNPOINT: {
+        case CARTA::RegionType::ANNPOINT:
+        case CARTA::RegionType::ANNTEXT: {
             // point(x, y)
             if (_file_ref_frame.empty()) { // linear coordinates
                 region = fmt::format("{}({:.6f}, {:.6f})", _region_names[type], control_points[0].getValue(), control_points[1].getValue());
@@ -978,11 +996,15 @@ std::string Ds9ImportExport::AddExportRegionWorld(
             break;
         }
         case CARTA::RegionType::ELLIPSE:
-        case CARTA::RegionType::ANNELLIPSE: {
-            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
+        case CARTA::RegionType::ANNELLIPSE:
+        case CARTA::RegionType::ANNCOMPASS: {
+            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius) OR compass(x,y,length)
             if (control_points[2].getValue() == control_points[3].getValue()) {
-                // circle when bmaj == bmin
-                std::string name = type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle";
+                // circle when bmaj == bmin or compass length
+                std::string name = _region_names[type];
+                if (type != CARTA::ANNCOMPASS) {
+                    name = (type == CARTA::RegionType::ELLIPSE ? "circle" : "# circle");
+                }
                 if (_file_ref_frame.empty()) { // linear coordinates
                     region = fmt::format("{}({:.6f}, {:.6f}, {:.4f}\")", name, control_points[0].getValue(), control_points[1].getValue(),
                         control_points[2].getValue());
@@ -1007,7 +1029,9 @@ std::string Ds9ImportExport::AddExportRegionWorld(
         case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::ANNLINE:
         case CARTA::RegionType::ANNPOLYLINE:
-        case CARTA::RegionType::ANNPOLYGON: {
+        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::ANNVECTOR:
+        case CARTA::RegionType::ANNRULER: {
             // polygon(x1,y1,x2,y2,x3,y3,...)
             if (_file_ref_frame.empty()) { // linear coordinates
                 region = fmt::format("{}({:.4f}", _region_names[type], control_points[0].getValue());

@@ -84,8 +84,8 @@ protected:
     std::vector<std::string> _export_regions;
 
     // Common to CRTF and DS9
-    std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::RegionType::LINE, "line"},
-        {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::POLYGON, "polygon"}, {CARTA::RegionType::ELLIPSE, "ellipse"}};
+    std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::LINE, "line"}, {CARTA::POLYLINE, "polyline"},
+        {CARTA::ELLIPSE, "ellipse"}, {CARTA::ANNRULER, "# ruler"}, {CARTA::ANNCOMPASS, "# compass"}};
 
 private:
     // Return control_points and qrotation Quantity for region type

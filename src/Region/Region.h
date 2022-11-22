@@ -29,9 +29,11 @@
 namespace carta {
 
 inline std::string RegionName(CARTA::RegionType type) {
-    std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::RegionType::POINT, "point"},
-        {CARTA::RegionType::LINE, "line"}, {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::RECTANGLE, "rectangle"},
-        {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNULUS, "annulus"}, {CARTA::RegionType::POLYGON, "polygon"}};
+    std::unordered_map<CARTA::RegionType, std::string> region_names = {{CARTA::POINT, "point"}, {CARTA::LINE, "line"},
+        {CARTA::POLYLINE, "polyline"}, {CARTA::RECTANGLE, "rectangle"}, {CARTA::ELLIPSE, "ellipse"}, {CARTA::ANNULUS, "annulus"},
+        {CARTA::POLYGON, "polygon"}, {CARTA::ANNPOINT, "ann point"}, {CARTA::ANNLINE, "ann line"}, {CARTA::ANNPOLYLINE, "ann polyline"},
+        {CARTA::ANNRECTANGLE, "ann rectangle"}, {CARTA::ANNELLIPSE, "ann ellipse"}, {CARTA::ANNPOLYGON, "ann polygon"},
+        {CARTA::ANNVECTOR, "vector"}, {CARTA::ANNRULER, "ruler"}, {CARTA::ANNTEXT, "text"}, {CARTA::ANNCOMPASS, "compass"}};
     return region_names[type];
 }
 
@@ -42,7 +44,7 @@ struct RegionState {
     std::vector<CARTA::Point> control_points;
     float rotation;
 
-    RegionState() : reference_file_id(-1), type(CARTA::RegionType::POINT), rotation(0) {}
+    RegionState() : reference_file_id(-1), type(CARTA::POINT), rotation(0) {}
     RegionState(int ref_file_id_, CARTA::RegionType type_, const std::vector<CARTA::Point>& control_points_, float rotation_)
         : reference_file_id(ref_file_id_), type(type_), control_points(control_points_), rotation(rotation_) {}
 
@@ -110,22 +112,24 @@ public:
     }
 
     inline bool IsPoint() {
-        return GetRegionState().type == CARTA::RegionType::POINT;
+        return GetRegionState().type == CARTA::POINT;
     }
 
-    inline bool IsLine() {
+    inline bool IsLineType() {
+        // Not enclosed region defined by 2 or more points
+        std::vector<CARTA::RegionType> line_types{
+            CARTA::LINE, CARTA::POLYLINE, CARTA::ANNLINE, CARTA::ANNPOLYLINE, CARTA::ANNVECTOR, CARTA::ANNRULER};
         auto type = GetRegionState().type;
-        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE) || (type == CARTA::RegionType::ANNLINE) ||
-                (type == CARTA::RegionType::ANNPOLYLINE));
+        return std::find(line_types.begin(), line_types.end(), type) != line_types.end();
     }
 
     inline bool IsRotbox() {
         RegionState rs = GetRegionState();
-        return ((rs.type == CARTA::RegionType::RECTANGLE || rs.type == CARTA::RegionType::ANNRECTANGLE) && (rs.rotation != 0.0));
+        return ((rs.type == CARTA::RECTANGLE || rs.type == CARTA::ANNRECTANGLE) && (rs.rotation != 0.0));
     }
 
     inline bool IsAnnotation() {
-        return GetRegionState().type > CARTA::RegionType::POLYGON;
+        return GetRegionState().type > CARTA::POLYGON;
     }
 
     inline std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem() {

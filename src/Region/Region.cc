@@ -78,14 +78,14 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
 
     switch (type) {
         case CARTA::POINT:
-        case CARTA::ANNPOINT: { // [(x, y)]
+        case CARTA::ANNPOINT: { // [(x,y)] single point
             points_ok = (npoints == 1) && PointsFinite(points);
             break;
         }
         case CARTA::LINE:
         case CARTA::ANNLINE:
         case CARTA::ANNVECTOR:
-        case CARTA::ANNRULER: { // [(x, y), (x, y)] end points
+        case CARTA::ANNRULER: { // [(x1, y1), (x2, y2)] two points
             points_ok = (npoints == 2) && PointsFinite(points);
             break;
         }
@@ -96,16 +96,13 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             points_ok = (npoints > 2) && PointsFinite(points);
             break;
         }
-        case CARTA::RECTANGLE:
-        case CARTA::ANNRECTANGLE:
-        case CARTA::ANNTEXT: { // [(cx,cy), (width,height)], width/height > 0
+        case CARTA::RECTANGLE:    // [(cx, cy), (width, height)] w/h > 0
+        case CARTA::ANNRECTANGLE: // [(cx, cy), (width, height)] w/h > 0
+        case CARTA::ELLIPSE:      // [(cx,cy), (bmaj, bmin)] bmaj/bmin > 0
+        case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)] bmaj/bmin > 0
+        case CARTA::ANNTEXT:      // [(cx, cy), (width, height)] w/h > 0
+        case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)] length > 0
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
-            break;
-        }
-        case CARTA::ELLIPSE:
-        case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)]
-        case CARTA::ANNCOMPASS: { // [(east_end, north_end), (cx, cy)]
-            points_ok = (npoints == 2) && PointsFinite(points);
             break;
         }
         default:
@@ -158,7 +155,8 @@ void Region::SetReferenceRegion() {
     try {
         switch (type) {
             case CARTA::POINT:
-            case CARTA::ANNPOINT: { // [(x, y)] single point
+            case CARTA::ANNPOINT:
+            case CARTA::ANNTEXT: {
                 if (ConvertCartaPointToWorld(pixel_points[0], _wcs_control_points)) {
                     // WCBox blc and trc are same point
                     std::lock_guard<std::mutex> guard(_region_mutex);
@@ -209,7 +207,8 @@ void Region::SetReferenceRegion() {
                 break;
             }
             case CARTA::ELLIPSE:
-            case CARTA::ANNELLIPSE: { // [(cx,cy), (bmaj, bmin)]
+            case CARTA::ANNELLIPSE:   // [(cx, cy), (bmaj, bmin)]
+            case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)}
                 float ellipse_rotation;
                 if (EllipsePointsToWorld(pixel_points, _wcs_control_points, ellipse_rotation)) {
                     // control points are in order: xcenter, ycenter, major axis, minor axis
@@ -797,7 +796,7 @@ casacore::TableRecord Region::GetImageRegionRecord(
     // Return Record describing Region applied to output coord sys and image_shape in pixel coordinates
     casacore::TableRecord record;
 
-    if (IsLine()) {
+    if (IsLineType()) {
         record = GetLineRecord(file_id, output_csys, output_shape);
     } else {
         // Get converted LCRegion (only for enclosed regions)
@@ -974,7 +973,9 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
         case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::ANNLINE:
         case CARTA::RegionType::ANNPOLYLINE:
-        case CARTA::RegionType::ANNPOLYGON: {
+        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::ANNVECTOR:
+        case CARTA::RegionType::ANNRULER: {
             // Define "x" and "y" pixel values
             size_t npoints(region_state.control_points.size());
             casacore::Vector<casacore::Float> x(npoints), y(npoints);
@@ -994,6 +995,12 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
             } else if (region_type == CARTA::RegionType::LINE || region_type == CARTA::RegionType::ANNLINE) {
                 // CARTA USE ONLY, name not implemented in casacore
                 record.define("name", "Line");
+            } else if (region_type == CARTA::RegionType::ANNVECTOR) {
+                // CARTA USE ONLY, name not implemented in casacore
+                record.define("name", "Vector");
+            } else if (region_type == CARTA::RegionType::ANNRULER) {
+                // CARTA USE ONLY, name not implemented in casacore
+                record.define("name", "Ruler");
             } else {
                 // CARTA USE ONLY, name not implemented in casacore
                 record.define("name", "Polyline");
@@ -1263,6 +1270,10 @@ casacore::TableRecord Region::GetLineRecord(
                 record.define("name", "Line");
             } else if (region_type == CARTA::RegionType::POLYLINE || region_type == CARTA::RegionType::ANNPOLYLINE) {
                 record.define("name", "Polyline");
+            } else if (region_type == CARTA::RegionType::ANNVECTOR) {
+                record.define("name", "Vector");
+            } else if (region_type == CARTA::RegionType::ANNRULER) {
+                record.define("name", "Ruler");
             } else {
                 return record;
             }
