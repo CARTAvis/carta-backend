@@ -192,12 +192,6 @@ int ImageFitter::SolveSystem() {
 
     gsl_multifit_nlinear_free(work);
     gsl_matrix_free(covar);
-
-    for (size_t i = 0; i < _num_components; i++) {
-        gsl_vector_set(_fit_values, i * 6, gsl_vector_get(_fit_values, i * 6) + _fit_data.offset_x);
-        gsl_vector_set(_fit_values, i * 6 + 1, gsl_vector_get(_fit_values, i * 6 + 1) + _fit_data.offset_y);
-    }
-
     return status;
 }
 
