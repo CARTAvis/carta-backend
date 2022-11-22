@@ -1714,10 +1714,10 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
-bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)
-    return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
+    return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress);
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
@@ -1760,6 +1760,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
     if (_image_fitter) {
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
+        std::vector<bool> fixed_params(fitting_request.fixed_params().begin(), fitting_request.fixed_params().end());
 
         if (stokes_region != nullptr) {
             casacore::IPosition region_shape = GetRegionShape(*stokes_region);
@@ -1776,12 +1777,12 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), initial_values,
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), initial_values, fixed_params,
                 fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback,
                 region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_request.create_model_image(),
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fixed_params, fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 

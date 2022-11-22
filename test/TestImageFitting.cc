@@ -39,6 +39,10 @@ public:
         }
     }
 
+    void SetFixedParams(std::vector<bool> fixed_params) {
+        _fixed_params = fixed_params;
+    }
+
     void SetFov(CARTA::RegionType region_type, std::vector<float> control_points, float rotation) {
         _fov_info.set_region_type(region_type);
         for (size_t i = 0; i < control_points.size() / 2; i++) {
@@ -56,8 +60,8 @@ public:
 
         CARTA::FittingResponse fitting_response;
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
-        bool success =
-            image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, fitting_response);
+        bool success = image_fitter->FitImage(
+            frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, _fixed_params, fitting_response);
 
         CompareResults(fitting_response, success, failed_message);
     }
@@ -73,6 +77,9 @@ public:
         for (size_t i = 0; i < _initial_values.size(); i++) {
             *fitting_request.add_initial_values() = _initial_values[i];
         }
+        for (size_t i = 0; i < _fixed_params.size(); i++) {
+            fitting_request.add_fixed_params(_fixed_params[i]);
+        }
         *fitting_request.mutable_fov_info() = _fov_info;
 
         CARTA::FittingResponse fitting_response;
@@ -84,6 +91,7 @@ public:
 
 private:
     std::vector<CARTA::GaussianComponent> _initial_values;
+    std::vector<bool> _fixed_params;
     CARTA::RegionInfo _fov_info;
 
     static std::string GetGeneratedFilePath(std::vector<float> gaussian_model) {
@@ -121,7 +129,9 @@ private:
 
 TEST_F(ImageFittingTest, OneComponentFitting) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    std::vector<bool> fixed_params(6, false);
     SetInitialValues(gaussian_model);
+    SetFixedParams(fixed_params);
     FitImage(gaussian_model);
 
     std::vector<float> bad_inital = {1, 64, 64, 20, 0, 0, 135};
@@ -131,7 +141,9 @@ TEST_F(ImageFittingTest, OneComponentFitting) {
 
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
     std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 210, 32, 32, 20, 20, 10, 210, 96, 96, 20, 20, 10, 210};
+    std::vector<bool> fixed_params(18, false);
     SetInitialValues(gaussian_model);
+    SetFixedParams(fixed_params);
     FitImage(gaussian_model);
 
     std::vector<float> bad_inital = {3, 64, 64, 20, 20, 10, 210, 64, 64, 20, 20, 10, 210, 96, 96, 20, 0, 0, 210};
@@ -139,9 +151,19 @@ TEST_F(ImageFittingTest, ThreeComponentFitting) {
     FitImage(gaussian_model, "fit did not converge");
 }
 
+TEST_F(ImageFittingTest, CenterFixedFitting) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    std::vector<bool> fixed_params = {true, true, false, false, false, false};
+    SetInitialValues(gaussian_model);
+    SetFixedParams(fixed_params);
+    FitImage(gaussian_model);
+}
+
 TEST_F(ImageFittingTest, FittingWithFov) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    std::vector<bool> fixed_params(6, false);
     SetInitialValues(gaussian_model);
+    SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 64, 64}, 10);
     FitImageWithFov(gaussian_model, 0);
 }
@@ -168,7 +190,9 @@ TEST_F(ImageFittingTest, FovOutsideImage) {
 
 TEST_F(ImageFittingTest, insufficientData) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    std::vector<bool> fixed_params(6, false);
     SetInitialValues(gaussian_model);
+    SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 2, 2}, 0);
     FitImageWithFov(gaussian_model, 0, "insufficient data points");
 }

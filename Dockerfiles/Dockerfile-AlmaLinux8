@@ -1,4 +1,4 @@
-FROM almalinux:latest
+FROM almalinux:8
 
 # Install the required packages
 RUN \
@@ -7,16 +7,17 @@ RUN \
   dnf -y config-manager --set-enabled powertools && \
   dnf -y update && \
   dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
-         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel \
+         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libasan \
          libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
          python36 python3-pip pugixml-devel readline-devel subversion \
          wcslib-devel wget zlib-devel libuuid-devel zfp-devel && \
   pip3 install numpy astropy
 
-# Get carta dependencies from the cartavis rpm repository
+# Install carta-casacore-devel and fits2idia from the Copr cartavis/carta repository
 RUN \
-  curl https://packages.cartavis.org/cartavis-el8.repo --output /etc/yum.repos.d/cartavis.repo && \
-  yum -y install carta-casacore-devel gtest-devel gmock-devel fits2idia measures-data
+  dnf -y install 'dnf-command(copr)' && \
+  dnf -y copr enable cartavis/carta && \
+  dnf -y install carta-casacore-devel fits2idia gmock-devel gtest-devel measures-data
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
