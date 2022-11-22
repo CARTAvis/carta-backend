@@ -47,33 +47,16 @@ protected:
         const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) override;
 
 private:
-    // Import RegionTextList Annotation regions to RegionState vector
-    void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
-    RegionState ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionState ImportAnnLine(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionState ImportAnnPolyline(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionState ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionState ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionState ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionState ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    RegionStyle ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-
-    // Manual region import to RegionState
-    // (workaround for imageanalysis RegionTextList exception for linear coord sys)
     void ProcessFileLines(std::vector<std::string>& lines);
-    casacore::String GetRegionDirectionFrame(std::unordered_map<std::string, std::string>& properties);
-    RegionState ImportAnnSymbol(std::vector<std::string>& parameters, casacore::String& coord_frame);
-    RegionState ImportAnnBox(std::vector<std::string>& parameters, casacore::String& coord_frame);
-    RegionState ImportAnnEllipse(std::vector<std::string>& parameters, casacore::String& coord_frame);
-    RegionState ImportAnnPolygonLine(std::vector<std::string>& parameters, casacore::String& coord_frame);
-    RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
     void ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties);
+    std::string GetRegionDirectionFrame(std::unordered_map<std::string, std::string>& properties);
+    RegionState ImportAnnSymbol(std::vector<std::string>& parameters, std::string& coord_frame);
+    RegionState ImportAnnBox(std::vector<std::string>& parameters, std::string& coord_frame);
+    RegionState ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame);
+    RegionState ImportAnnPolygonLine(std::vector<std::string>& parameters, std::string& coord_frame);
+    RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Rectangle import helpers
-    // Convert AnnPolygon pixel vertices to CARTA Control Points (center and size)
-    bool RectangleControlPointsFromVertices(
-        std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points);
-    // Determine control points from box parameters
     bool GetBoxControlPoints(std::string& box_definition, std::vector<CARTA::Point>& control_points, float& rotation);
     bool GetBoxControlPoints(
         std::vector<std::string>& parameters, std::string& region_frame, std::vector<CARTA::Point>& control_points, float& rotation);
@@ -93,7 +76,7 @@ private:
     std::string GetCrtfVersionHeader();
 
     // Imported globals
-    std::map<casa::AnnotationBase::Keyword, casacore::String> _global_properties;
+    std::unordered_map<std::string, std::string> _global_properties;
 
     // For export: add regions to list then print them
     casa::RegionTextList _region_list;
