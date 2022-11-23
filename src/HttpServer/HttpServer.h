@@ -79,6 +79,7 @@ private:
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);
     void HandleScriptingAction(Res* res, Req* req);
     void NotImplemented(Res* res, Req* req);
+    void DefaultSuccess(Res* res, Req* req);
 
     fs::path _http_root_folder;
     fs::path _config_folder;

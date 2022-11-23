@@ -73,7 +73,11 @@ void HttpServer::RegisterRoutes() {
     }
 
     if (_enable_frontend) {
-        app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        if (_enable_runtime_config) {
+            app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        } else {
+            app.get("/config", [&](auto res, auto req) { DefaultSuccess(res, req); });
+        }
         // Static routes for all other files
         app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
     } else {
@@ -82,14 +86,10 @@ void HttpServer::RegisterRoutes() {
 }
 
 void HttpServer::HandleGetConfig(Res* res, Req* req) {
-    if (_enable_runtime_config) {
-        json runtime_config = {{"apiAddress", "/api"}};
-        res->writeStatus(HTTP_200);
-        res->writeHeader("Content-Type", "application/json");
-        res->end(runtime_config.dump());
-    } else {
-        res->writeStatus(HTTP_200)->end();
-    }
+    json runtime_config = {{"apiAddress", "/api"}};
+    res->writeStatus(HTTP_200);
+    res->writeHeader("Content-Type", "application/json");
+    res->end(runtime_config.dump());
 }
 
 void HttpServer::HandleStaticRequest(Res* res, Req* req) {
@@ -669,6 +669,11 @@ void HttpServer::OnScriptingAbort(int session_id, uint32_t scripting_request_id)
 
 void HttpServer::NotImplemented(Res* res, Req* req) {
     res->writeStatus(HTTP_501)->end();
+    return;
+}
+
+void HttpServer::DefaultSuccess(Res* res, Req* req) {
+    res->writeStatus(HTTP_200)->end();
     return;
 }
 
