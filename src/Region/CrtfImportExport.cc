@@ -321,7 +321,7 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         } else if (region.find("poly") != std::string::npos) {
             region_state = ImportAnnPolygonLine(parameters, coord_frame);
         } else if (region == "global") {
-            ImportGlobalParameters(properties);
+            _global_properties = properties;
         } else {
             _import_errors.append(region + " not supported.\n");
         }
@@ -333,18 +333,6 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
             // Set RegionProperties and add to list
             RegionProperties region_properties(region_state, region_style);
             _import_regions.push_back(region_properties);
-        }
-    }
-}
-
-void CrtfImportExport::ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties) {
-    // Import properties from global file line to map
-    std::vector<std::string> global_keywords = {"coord", "range", "frame", "corr", "veltype", "restfreq", "linewidth", "linestyle",
-        "symsize", "symthick", "color", "font", "fontsize", "fontstyle", "usetex", "label", "labelcolor", "labelpos", "labeloff"};
-
-    for (auto& property : properties) {
-        if (std::find(global_keywords.begin(), global_keywords.end(), property.first) != global_keywords.end()) {
-            _global_properties[property.first] = property.second;
         }
     }
 }

@@ -48,7 +48,6 @@ protected:
 
 private:
     void ProcessFileLines(std::vector<std::string>& lines);
-    void ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties);
     std::string GetRegionDirectionFrame(std::unordered_map<std::string, std::string>& properties);
     RegionState ImportAnnSymbol(std::vector<std::string>& parameters, std::string& coord_frame);
     RegionState ImportAnnBox(std::vector<std::string>& parameters, std::string& coord_frame);
