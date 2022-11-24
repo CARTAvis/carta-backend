@@ -45,6 +45,7 @@ struct ProgramSettings {
     bool no_http = false; // Deprecated
     bool no_frontend = false;
     bool no_database = false;
+    bool no_runtime_config = false;
     bool debug_no_auth = false;
     bool no_browser = false;
     bool no_log = false;
@@ -87,7 +88,8 @@ struct ProgramSettings {
         {"read_only_mode", &read_only_mode},
         {"enable_scripting", &enable_scripting},
         {"no_frontend", &no_frontend},
-        {"no_database", &no_database}
+        {"no_database", &no_database},
+        {"no_runtime_config", &no_runtime_config}
     };
 
     std::unordered_map<std::string, std::string*> strings_keys_map{
