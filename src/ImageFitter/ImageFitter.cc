@@ -93,15 +93,21 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
 }
 
 bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region, int file_id, const std::string& filename,
-    GeneratedImage& model_image, GeneratedImage& residual_image) {
+    GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response) {
+    if (file_id < 0) {
+        fitting_response.set_message("generating images from generated PV and model/residual images is not supported");
+        return false;
+    }
+
     // Todo: find another better way to assign the temp file Id
-    int id = (file_id + 1) * MOMENT_ID_MULTIPLIER - 1;
+    int model_id = (file_id + 1) * FITTING_ID_MULTIPLIER + 1;
+    int residual_id = model_id + 1;
 
     if (_create_model_data) {
-        model_image = GeneratedImage(id, GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
+        model_image = GeneratedImage(model_id, GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
     }
     if (_create_residual_data) {
-        residual_image = GeneratedImage(id - 1, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
+        residual_image = GeneratedImage(residual_id, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
     }
     return true;
 }
