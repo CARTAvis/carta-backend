@@ -47,12 +47,12 @@ public:
     using ImageRef = std::shared_ptr<casacore::ImageInterface<float>>;
 
     // directory only for ExprLoader, is_gz only for FitsLoader
-    FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false);
+    FileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename, const std::string& directory = "");
     // Access an image from the memory, not from the disk
-    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
+    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
@@ -134,6 +134,7 @@ protected:
     std::string _filename, _directory;
     std::string _hdu;
     bool _is_gz;
+    bool _is_generated;
     unsigned int _modify_time;
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
