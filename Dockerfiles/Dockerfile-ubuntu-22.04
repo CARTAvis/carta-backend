@@ -1,0 +1,31 @@
+FROM ubuntu:22.04
+# Note: kern PPA has been temporarily disabled until kernsuite provide 'jammy' packages. 
+# Until then, the 'casacore-data' package may not be fully up-to-date.
+
+# Install the basic packages
+RUN \
+  apt-get update && \
+  apt-get -y upgrade && \
+  DEBIAN_FRONTEND=noninteractive \
+  apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex gcc g++ \
+    gdb gfortran git git-lfs libgmock-dev googletest libblas-dev libcfitsio-dev \
+    libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
+    libprotobuf-dev libpugixml-dev libreadline-dev libssl-dev libstarlink-ast-dev \
+    libtool libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler \
+    python3-numpy python3-astropy software-properties-common unzip wcslib-dev wget uuid-dev
+
+# Get carta dependencies carta-casacore, fits2idia, and zfp from the cartavis-team PPA
+RUN \
+  add-apt-repository -y ppa:cartavis-team/carta-testing && \
+  apt-get update && \
+  apt-get -y install carta-casacore-dev fits2idia libzfp-dev
+
+# Forward port so that the webapp can properly access it from outside of the container
+EXPOSE 3002
+
+ENV HOME /root
+WORKDIR /root
+
+# Overwrite this with 'CMD []' in a dependent Dockerfile
+CMD ["bash"]
+
