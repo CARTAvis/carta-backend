@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added PV generator features for spectral range, reversed axes, and keeping previous image ([#1175](https://github.com/CARTAvis/carta-backend/issues/1175), [#1176](https://github.com/CARTAvis/carta-backend/issues/1176), [#1177](https://github.com/CARTAvis/carta-backend/issues/1177)).
 * Added a debug config flag for disabling runtime config ([#1213](https://github.com/CARTAvis/carta-backend/issues/1213)).
 
+### Changed
+* Removed CASA CRTF parser for performance and annotation region support ([#1219](https://github.com/CARTAvis/carta-backend/issues/1219)).
+
 ### Fixed
 * Fixed issues with AIPS velocity axis by restoring previous casacore headers ([#1771](https://github.com/CARTAvis/carta-frontend/issues/1771)).
 * Fixed error in regions when resuming session. ([#1210](https://github.com/CARTAvis/carta-backend/issues/1210)).
