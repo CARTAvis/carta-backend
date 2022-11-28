@@ -71,7 +71,14 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
 }
 
 FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz, bool is_generated)
-    : _filename(filename), _directory(directory), _is_gz(is_gz), _is_generated(is_generated), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
+    : _filename(filename),
+      _directory(directory),
+      _is_gz(is_gz),
+      _is_generated(is_generated),
+      _modify_time(0),
+      _num_dims(0),
+      _has_pixel_mask(false),
+      _stokes_cdelt(0) {
     // Set initial modify time
     ImageUpdated();
 }

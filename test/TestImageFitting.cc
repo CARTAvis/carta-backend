@@ -60,9 +60,9 @@ public:
 
         CARTA::FittingResponse fitting_response;
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
-        auto progress_callback = [&](float progress) { };
-        bool success = image_fitter->FitImage(
-            frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, _fixed_params, false, false, fitting_response, progress_callback);
+        auto progress_callback = [&](float progress) {};
+        bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, _fixed_params,
+            false, false, fitting_response, progress_callback);
 
         CompareResults(fitting_response, success, failed_message);
     }
@@ -87,7 +87,7 @@ public:
         carta::RegionHandler region_handler;
         GeneratedImage model_image;
         GeneratedImage residual_image;
-        auto progress_callback = [&](float progress) { };
+        auto progress_callback = [&](float progress) {};
         bool success = region_handler.FitImage(fitting_request, fitting_response, frame, model_image, residual_image, progress_callback);
 
         CompareResults(fitting_response, success, failed_message);

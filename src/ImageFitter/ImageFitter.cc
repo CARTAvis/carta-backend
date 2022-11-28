@@ -67,7 +67,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
         } else if (status) {
             fitting_response.set_message(gsl_strerror(status));
         }
-    
+
         if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
             success = true;
             spdlog::info("Writing fitting results and log.");
@@ -105,10 +105,13 @@ bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageReg
     int residual_id = model_id + 1;
 
     if (_create_model_data) {
-        model_image = GeneratedImage(model_id, is_moment ? GetGeneratedMomentFilename(filename, "model") : GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
+        model_image = GeneratedImage(model_id, is_moment ? GetGeneratedMomentFilename(filename, "model") : GetFilename(filename, "model"),
+            GetImageData(image, image_region, _model_data));
     }
     if (_create_residual_data) {
-        residual_image = GeneratedImage(residual_id, is_moment ? GetGeneratedMomentFilename(filename, "residual") : GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
+        residual_image =
+            GeneratedImage(residual_id, is_moment ? GetGeneratedMomentFilename(filename, "residual") : GetFilename(filename, "residual"),
+                GetImageData(image, image_region, _residual_data));
     }
     return true;
 }

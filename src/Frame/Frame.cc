@@ -1782,8 +1782,8 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fixed_params, fitting_request.create_model_image(),
-                fitting_request.create_residual_image(), fitting_response, progress_callback);
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fixed_params,
+                fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
