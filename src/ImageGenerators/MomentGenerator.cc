@@ -77,7 +77,7 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
                         // Set a temp moment file Id.
                         // With each name index, advance by number of moment types to avoid duplicates.
-                        int moment_file_id = (file_id + 1) * ID_MULTIPLIER + (name_index * _moment_map.size()) + moment_type;
+                        int moment_file_id = (file_id + 1) * MOMENT_ID_MULTIPLIER + (name_index * _moment_map.size()) + moment_type;
 
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
