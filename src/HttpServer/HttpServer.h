@@ -39,7 +39,8 @@ typedef std::function<bool(int&, uint32_t&, std::string&, std::string&, std::str
 class HttpServer {
 public:
     HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory, std::string auth_token,
-        bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false);
+        bool read_only_mode = false, bool enable_frontend = true, bool enable_database = true, bool enable_scripting = false,
+        bool enable_runtime_config = true);
     bool CanServeFrontend() {
         return _frontend_found;
     }
@@ -79,6 +80,7 @@ private:
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);
     void HandleScriptingAction(Res* res, Req* req);
     void NotImplemented(Res* res, Req* req);
+    void DefaultSuccess(Res* res, Req* req);
 
     fs::path _http_root_folder;
     fs::path _config_folder;
@@ -88,6 +90,7 @@ private:
     bool _enable_frontend;
     bool _enable_database;
     bool _enable_scripting;
+    bool _enable_runtime_config;
     std::shared_ptr<SessionManager> _session_manager;
     static uint32_t _scripting_request_id;
 };

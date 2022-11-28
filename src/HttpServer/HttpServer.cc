@@ -24,7 +24,8 @@ const std::string success_string = json({{"success", true}}).dump();
 uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
-    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
+    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
+    bool enable_runtime_config)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
@@ -32,7 +33,8 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _config_folder(user_directory / "config"),
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
-      _enable_scripting(enable_scripting) {
+      _enable_scripting(enable_scripting),
+      _enable_runtime_config(enable_runtime_config) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -77,7 +79,11 @@ void HttpServer::RegisterRoutes() {
     }
 
     if (_enable_frontend) {
-        app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        if (_enable_runtime_config) {
+            app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        } else {
+            app.get("/config", [&](auto res, auto req) { DefaultSuccess(res, req); });
+        }
         // Static routes for all other files
         app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
     } else {
@@ -671,6 +677,11 @@ void HttpServer::OnScriptingAbort(int session_id, uint32_t scripting_request_id)
 
 void HttpServer::NotImplemented(Res* res, Req* req) {
     res->writeStatus(HTTP_501)->end();
+    return;
+}
+
+void HttpServer::DefaultSuccess(Res* res, Req* req) {
+    res->writeStatus(HTTP_200)->end();
     return;
 }
 
