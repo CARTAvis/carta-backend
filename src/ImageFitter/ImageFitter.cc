@@ -100,14 +100,15 @@ bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageReg
     }
 
     // Todo: find another better way to assign the temp file Id
-    int model_id = (file_id + 1) * FITTING_ID_MULTIPLIER + 1;
+    bool is_moment = file_id > 999;
+    int model_id = (file_id + 1) * (is_moment ? FITTING_WITH_MOMENT_ID_MULTIPLIER : FITTING_ID_MULTIPLIER) + 1;
     int residual_id = model_id + 1;
 
     if (_create_model_data) {
-        model_image = GeneratedImage(model_id, GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
+        model_image = GeneratedImage(model_id, is_moment ? GetGeneratedMomentFilename(filename, "model") : GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
     }
     if (_create_residual_data) {
-        residual_image = GeneratedImage(residual_id, GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
+        residual_image = GeneratedImage(residual_id, is_moment ? GetGeneratedMomentFilename(filename, "residual") : GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
     }
     return true;
 }
@@ -276,6 +277,12 @@ std::string ImageFitter::GetFilename(const std::string& filename, std::string su
     output_filename += "_" + suffix;
     output_filename += filepath.extension();
     return output_filename.string();
+}
+
+std::string ImageFitter::GetGeneratedMomentFilename(const std::string& filename, std::string suffix) {
+    std::string output_filename = filename.substr(0, filename.find(".moment."));
+    std::string moment_suffix = filename.substr(filename.find(".moment."), -1);
+    return GetFilename(output_filename, suffix) + moment_suffix;
 }
 
 int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector* f) {

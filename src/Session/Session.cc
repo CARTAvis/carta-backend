@@ -586,12 +586,11 @@ bool Session::OnOpenFile(
     CARTA::FileInfoExtended file_info_extended;
     bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, image_loader);
     bool success(false);
-    spdlog::error("filename {}", name);
 
     if (info_loaded) {
         // Create Frame for image
         auto frame = std::make_unique<Frame>(_id, image_loader, "");
-        spdlog::error("filename {}", frame->GetFileName());
+
         if (frame->IsValid()) {
             if (_frames.count(file_id) > 0) {
                 DeleteFrame(file_id);

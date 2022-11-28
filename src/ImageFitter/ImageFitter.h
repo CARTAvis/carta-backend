@@ -74,6 +74,7 @@ private:
     std::string GetLog();
     casa::SPIIF GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data);
     std::string GetFilename(const std::string& filename, std::string suffix);
+    std::string GetGeneratedMomentFilename(const std::string& filename, std::string suffix);
 
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);
