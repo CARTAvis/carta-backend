@@ -320,6 +320,7 @@ std::vector<int> FileLoader::GetRenderAxes(bool get_dir_axes) {
                         valid_axes.push_back(axis);
                     }
                 }
+
                 if (spectral_axis > 0) { // not reversed
                     valid_axes.push_back(spectral_axis);
                 }

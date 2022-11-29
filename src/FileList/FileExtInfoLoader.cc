@@ -596,7 +596,7 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     casacore::IPosition shape;
     std::vector<int> direction_axes(2, -1);
     int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
-    std::vector<std::string> spectral_ctypes = {"FREQ", "WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
+    std::vector<std::string> spectral_ctypes = {"WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
     casacore::DataType data_type(casacore::DataType::TpFloat);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
@@ -630,12 +630,13 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
                 direction_axes[1] = axis_num;
             } else if (entry_value.find("STOKES") == 0) {
                 stokes_axis = axis_num;
-            } else if (std::any_of(spectral_ctypes.begin(), spectral_ctypes.end(),
+            } else if ((entry_value.find("FREQ") == 0) ||
+                       std::any_of(spectral_ctypes.begin(), spectral_ctypes.end(),
                            [&](const std::string& key_word) { return (entry_value.find(key_word) != std::string::npos); })) {
                 spectral_axis = axis_num;
             }
 
-            // Depth axis is non-render axis that is not stokes (if any)
+            // Depth axis is not the first two axes [0, 1], i.e., non-render axis that is not stokes (if any)
             if (axis_num > 1 && axis_num != stokes_axis) {
                 depth_axis = axis_num;
             }
