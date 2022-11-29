@@ -7,6 +7,7 @@
 #include "HttpServer.h"
 
 #include <fstream>
+#include <map>
 #include <regex>
 #include <vector>
 
@@ -61,15 +62,21 @@ void HttpServer::RegisterRoutes() {
         app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
         app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
+        app.get("/api/database/list/layouts", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
         app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
+        app.get("/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject("layout",res, req); });
         app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
         app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
 
+        app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
         app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
+        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("layout",res, req); });
         app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
         app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
 
+        app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
         app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
+        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("layout",res, req); });
         app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
         app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
     } else {
@@ -363,6 +370,20 @@ void HttpServer::HandleClearPreferences(Res* res, Req* req) {
     });
 }
 
+void HttpServer::HandleGetObjectList(const std::string& object_type, Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    json existing_objects = GetExistingObjectList(object_type);
+    res->writeStatus(HTTP_200);
+    AddNoCacheHeaders(res);
+    res->writeHeader("Content-Type", "application/json");
+    json body = {{"success", true}, {(object_type + "s"), existing_objects}};
+    res->end(body.dump());
+}
+
 void HttpServer::HandleGetObjects(const std::string& object_type, Res* res, Req* req) {
     if (!IsAuthenticated(req)) {
         res->writeStatus(HTTP_403)->end();
@@ -374,6 +395,27 @@ void HttpServer::HandleGetObjects(const std::string& object_type, Res* res, Req*
     AddNoCacheHeaders(res);
     res->writeHeader("Content-Type", "application/json");
     json body = {{"success", true}, {(object_type + "s"), existing_objects}};
+    res->end(body.dump());
+}
+
+void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* req) {
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    std::string_view object_name = req->getParameter(0);;
+
+    if (object_name.empty()) {
+        res->writeStatus(HTTP_404)->end();
+        return;
+    }
+
+    json existing_object = GetExistingObject(object_type, std::string(object_name));
+    res->writeStatus(HTTP_200);
+    AddNoCacheHeaders(res);
+    res->writeHeader("Content-Type", "application/json");
+    json body = {{"success", true}, {object_type, existing_object}};
     res->end(body.dump());
 }
 
@@ -413,6 +455,58 @@ void HttpServer::HandleClearObject(const std::string& object_type, Res* res, Req
             res->end();
         }
     });
+}
+
+nlohmann::json HttpServer::GetExistingObjectList(const std::string& object_type) {
+    auto object_folder = _config_folder / (object_type + "s");
+    std::map<std::string, json> ordered_array;
+    std::error_code error_code;
+
+    if (fs::exists(object_folder, error_code)) {
+        for (auto& p : fs::directory_iterator(object_folder)) {
+            try {
+                std::string filename = p.path().filename().string();
+                std::regex object_regex(R"(^(.+)\.json$)");
+                std::smatch sm;
+                if (fs::is_regular_file(p, error_code) && regex_search(filename, sm, object_regex) && sm.size() == 2) {
+                    std::string object_name = sm[1];
+                    // Get modified date and fill JSON object
+                    struct stat file_stats;
+                    stat(p.path().c_str(), &file_stats);
+                    json object = json::object();
+                    object["name"] = object_name;
+                    object["date"] = file_stats.st_mtim.tv_sec;
+                    ordered_array[object_name] = object;
+                }
+            } catch (json::exception e) {
+                spdlog::warn(e.what());
+            }
+        }
+    }
+
+    json list = json::array();
+    for (auto const& [name, entry] : ordered_array) {
+        list.push_back(entry);
+    }
+    return list;
+}
+
+nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, const std::string& object_name) {
+    auto object_path = _config_folder / (object_type + "s") / (object_name + ".json");
+    std::error_code error_code;
+
+    try {
+        std::string filename = object_path.filename().string();
+        if (fs::is_regular_file(object_path, error_code)) {
+            std::ifstream file(object_path);
+            std::string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            json obj = json::parse(json_string);
+            return obj;
+        }
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+    }
+    return json::object();
 }
 
 nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {

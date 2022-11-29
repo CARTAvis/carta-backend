@@ -52,7 +52,9 @@ protected:
     nlohmann::json GetExistingPreferences();
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
+    nlohmann::json GetExistingObjectList(const std::string& object_type);
     nlohmann::json GetExistingObjects(const std::string& object_type);
+    nlohmann::json GetExistingObject(const std::string& object_type, const std::string& object_name);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
@@ -75,6 +77,8 @@ private:
     void HandleGetPreferences(Res* res, Req* req);
     void HandleSetPreferences(Res* res, Req* req);
     void HandleClearPreferences(Res* res, Req* req);
+    void HandleGetObjectList(const std::string& object_type, Res* res, Req* req);
+    void HandleGetObject(const std::string& object_type, Res* res, Req* req);
     void HandleGetObjects(const std::string& object_type, Res* res, Req* req);
     void HandleSetObject(const std::string& object_type, Res* res, Req* req);
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);

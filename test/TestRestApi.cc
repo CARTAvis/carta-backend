@@ -35,6 +35,8 @@ public:
     FRIEND_TEST(RestApiTest, SetPrefsReadOnly);
 
     FRIEND_TEST(RestApiTest, EmptyStartingLayouts);
+    FRIEND_TEST(RestApiTest, GetExistingLayoutList);
+    FRIEND_TEST(RestApiTest, GetExistingLayout);
     FRIEND_TEST(RestApiTest, GetExistingLayouts);
     FRIEND_TEST(RestApiTest, DeleteLayout);
     FRIEND_TEST(RestApiTest, DeleteLayoutEmpty);
@@ -45,6 +47,8 @@ public:
     FRIEND_TEST(RestApiTest, SetLayoutReadOnly);
 
     FRIEND_TEST(RestApiTest, EmptyStartingSnippets);
+    FRIEND_TEST(RestApiTest, GetExistingSnippetList);
+    FRIEND_TEST(RestApiTest, GetExistingSnippet);
     FRIEND_TEST(RestApiTest, GetExistingSnippets);
     FRIEND_TEST(RestApiTest, DeleteSnippet);
     FRIEND_TEST(RestApiTest, DeleteSnippetEmpty);
@@ -55,6 +59,8 @@ public:
     FRIEND_TEST(RestApiTest, SetSnippetReadOnly);
 
     FRIEND_TEST(RestApiTest, EmptyStartingWorkspaces);
+    FRIEND_TEST(RestApiTest, GetExistingWorkspaceList);
+    FRIEND_TEST(RestApiTest, GetExistingWorkspace);
     FRIEND_TEST(RestApiTest, GetExistingWorkspaces);
     FRIEND_TEST(RestApiTest, DeleteWorkspace);
     FRIEND_TEST(RestApiTest, DeleteWorkspaceEmpty);
@@ -289,6 +295,20 @@ TEST_F(RestApiTest, EmptyStartingLayouts) {
     EXPECT_TRUE(existing_layouts.empty());
 }
 
+TEST_F(RestApiTest, GetExistingLayoutList) {
+    WriteDefaultLayouts();
+    auto existing_layouts = _frontend_server->GetExistingObjectList("layout");
+    EXPECT_EQ(existing_layouts[0]["name"], "test_layout");
+    EXPECT_EQ(existing_layouts[1]["name"], "test_layout2");
+    EXPECT_EQ(existing_layouts[2]["name"], "test_layout3");
+}
+
+TEST_F(RestApiTest, GetExistingLayout) {
+    WriteDefaultLayouts();
+    auto existing_layout = _frontend_server->GetExistingObject("layout", "test_layout");
+    EXPECT_EQ(existing_layout, example_layout);
+}
+
 TEST_F(RestApiTest, GetExistingLayouts) {
     WriteDefaultLayouts();
     auto existing_layouts = _frontend_server->GetExistingObjects("layout");
@@ -369,6 +389,20 @@ TEST_F(RestApiTest, EmptyStartingSnippets) {
     EXPECT_TRUE(existing_snippets.empty());
 }
 
+TEST_F(RestApiTest, GetExistingSnippetList) {
+    WriteDefaultSnippets();
+    auto existing_snippets = _frontend_server->GetExistingObjectList("snippet");
+    EXPECT_EQ(existing_snippets[0]["name"], "test_snippet");
+    EXPECT_EQ(existing_snippets[1]["name"], "test_snippet2");
+    EXPECT_EQ(existing_snippets[2]["name"], "test_snippet3");
+}
+
+TEST_F(RestApiTest, GetExistingSnippet) {
+    WriteDefaultSnippets();
+    auto existing_snippet = _frontend_server->GetExistingObject("snippet", "test_snippet");
+    EXPECT_EQ(existing_snippet, example_snippet);
+}
+
 TEST_F(RestApiTest, GetExistingSnippets) {
     WriteDefaultSnippets();
     auto existing_snippets = _frontend_server->GetExistingObjects("snippet");
@@ -447,6 +481,20 @@ TEST_F(RestApiTest, SetSnippetReadOnly) {
 TEST_F(RestApiTest, EmptyStartingWorkspaces) {
     auto existing_workspaces = _frontend_server->GetExistingObjects("workspace");
     EXPECT_TRUE(existing_workspaces.empty());
+}
+
+TEST_F(RestApiTest, GetExistingWorkspaceList) {
+    WriteDefaultWorkspaces();
+    auto existing_workspaces = _frontend_server->GetExistingObjectList("workspace");
+    EXPECT_EQ(existing_workspaces[0]["name"], "test_workspace");
+    EXPECT_EQ(existing_workspaces[1]["name"], "test_workspace2");
+    EXPECT_EQ(existing_workspaces[2]["name"], "test_workspace3");
+}
+
+TEST_F(RestApiTest, GetExistingWorkspace) {
+    WriteDefaultWorkspaces();
+    auto existing_workspace = _frontend_server->GetExistingObject("workspace", "test_workspace");
+    EXPECT_EQ(existing_workspace, example_workspace);
 }
 
 TEST_F(RestApiTest, GetExistingWorkspaces) {
