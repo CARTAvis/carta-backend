@@ -182,23 +182,25 @@ int ImageFitter::SolveSystem() {
     int status = gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, Callback, &iteration_progress_callback, &_fit_status.info, work);
     if (!_fit_data.stop_fitting) {
         iteration_progress_callback(_max_iter);
+
+        gsl_blas_ddot(f, f, &_fit_status.chisq);
+        gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
+        gsl_vector_memcpy(_fit_values, y);
+
+        gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
+        gsl_multifit_nlinear_covar(jac, 0.0, covar);
+        const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
+        for (size_t i = 0; i < p; i++) {
+            gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
+        }
+
+        _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
+        _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
+
+        if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
+            CalculateImageData(f);
+        }
     }
-
-    gsl_blas_ddot(f, f, &_fit_status.chisq);
-    gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
-    gsl_vector_memcpy(_fit_values, y);
-
-    gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
-    gsl_multifit_nlinear_covar(jac, 0.0, covar);
-    const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
-    for (size_t i = 0; i < p; i++) {
-        gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
-    }
-
-    _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
-    _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
-
-    CalculateImageData(f);
 
     gsl_multifit_nlinear_free(work);
     gsl_matrix_free(covar);
@@ -284,7 +286,7 @@ std::string ImageFitter::GetFilename(const std::string& filename, std::string su
 
 std::string ImageFitter::GetGeneratedMomentFilename(const std::string& filename, std::string suffix) {
     std::string output_filename = filename.substr(0, filename.find(".moment."));
-    std::string moment_suffix = filename.substr(filename.find(".moment."), -1);
+    std::string moment_suffix = filename.substr(filename.find(".moment."));
     return GetFilename(output_filename, suffix) + moment_suffix;
 }
 

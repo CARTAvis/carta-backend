@@ -129,6 +129,8 @@ public:
     // Handle images created from LEL expression
     virtual bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message);
 
+    bool IsGenerated() {return _is_generated;};
+
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;

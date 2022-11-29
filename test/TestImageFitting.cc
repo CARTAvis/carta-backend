@@ -4,6 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#define SQ_FWHM_TO_SIGMA 1 / 8 / log(2)
+#define DEG_TO_RAD M_PI / 180.0
+
 #include <gtest/gtest.h>
 
 #include "Frame/Frame.h"
@@ -62,9 +65,43 @@ public:
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
         auto progress_callback = [&](float progress) {};
         bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, _fixed_params,
-            false, false, fitting_response, progress_callback);
+            true, true, fitting_response, progress_callback);
 
         CompareResults(fitting_response, success, failed_message);
+
+        if (success) {
+            GeneratedImage model_image;
+            GeneratedImage residual_image;
+            int file_id(0);
+            StokesRegion output_stokes_region;
+            frame->GetImageRegion(file_id, AxisRange(frame->CurrentZ()), frame->CurrentStokes(), output_stokes_region);
+            casa::SPIIF image(loader->GetStokesImage(output_stokes_region.stokes_source));
+            success = image_fitter->GetGeneratedImages(
+                image, output_stokes_region.image_region, file_id, frame->GetFileName(), model_image, residual_image, fitting_response);
+
+            std::string filename = frame->GetFileName().substr(frame->GetFileName().find_last_of('/') + 1);
+            std::vector<float> model_data;
+            GetImageData(model_data, model_image.image, 0);
+            std::vector<float> residual_data;
+            GetImageData(residual_data, residual_image.image, 0);
+            std::vector<CARTA::GaussianComponent> result_values(
+                fitting_response.result_values().begin(), fitting_response.result_values().end());
+            std::vector<float> expect_model_data = Gaussian(result_values);
+
+            EXPECT_EQ(model_image.file_id, -999);
+            EXPECT_EQ(model_image.name, filename.substr(0, filename.length() - 5) + "_model.fits");
+            EXPECT_EQ(model_data.size(), 128 * 128);
+            for (size_t i = 0; i < model_data.size(); i++) {
+                EXPECT_NEAR(model_data[i], expect_model_data[i], 1e-6);
+            }
+
+            EXPECT_EQ(residual_image.file_id, -998);
+            EXPECT_EQ(residual_image.name, filename.substr(0, filename.length() - 5) + "_residual.fits");
+            EXPECT_EQ(residual_data.size(), 128 * 128);
+            for (size_t i = 0; i < residual_data.size(); i++) {
+                EXPECT_NEAR(residual_data[i], frame->GetImageCacheData()[i] - expect_model_data[i], 1e-6);
+            }
+        }
     }
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
@@ -128,6 +165,36 @@ private:
             EXPECT_EQ(fitting_response.success(), False);
             EXPECT_EQ(fitting_response.message(), failed_message);
         }
+    }
+
+    static std::vector<float> Gaussian(const std::vector<CARTA::GaussianComponent>& result_values) {
+        std::vector<float> result(128 * 128, 0.0); 
+        size_t n = result_values.size();
+        for (size_t k = 0; k < n; k++) {
+             CARTA::GaussianComponent component = result_values[k];
+            double center_x = component.center().x();
+            double center_y = component.center().y();
+            double amp = component.amp();
+            double fwhm_x = component.fwhm().x();
+            double fwhm_y = component.fwhm().y();
+            double pa = component.pa();
+
+            const double dbl_sq_std_x = 2 * fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA;
+            const double dbl_sq_std_y = 2 * fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA;
+            const double theta_radian = (pa - 90.0) * DEG_TO_RAD; // counterclockwise rotation
+            const double a = cos(theta_radian) * cos(theta_radian) / dbl_sq_std_x + sin(theta_radian) * sin(theta_radian) / dbl_sq_std_y;
+            const double dbl_b = 2 * (sin(2 * theta_radian) / (2 * dbl_sq_std_x) - sin(2 * theta_radian) / (2 * dbl_sq_std_y));
+            const double c = sin(theta_radian) * sin(theta_radian) / dbl_sq_std_x + cos(theta_radian) * cos(theta_radian) / dbl_sq_std_y;
+            
+            for (size_t i = 0; i < 128; i++) {
+                for (size_t j = 0; j < 128; j++) {
+                    double dx = i - center_x;
+                    double dy = j - center_y;
+                    result[j * 128 + i] += amp * exp(-(a * dx * dx + dbl_b * dx * dy + c * dy * dy));
+                }
+            }
+        }
+        return result;
     }
 };
 
