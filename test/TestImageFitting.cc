@@ -69,7 +69,7 @@ public:
 
         CompareResults(fitting_response, success, failed_message);
 
-        if (success) {
+        if (failed_message.length() == 0) {
             GeneratedImage model_image;
             GeneratedImage residual_image;
             int file_id(0);
@@ -79,28 +79,7 @@ public:
             success = image_fitter->GetGeneratedImages(
                 image, output_stokes_region.image_region, file_id, frame->GetFileName(), model_image, residual_image, fitting_response);
 
-            std::string filename = frame->GetFileName().substr(frame->GetFileName().find_last_of('/') + 1);
-            std::vector<float> model_data;
-            GetImageData(model_data, model_image.image, 0);
-            std::vector<float> residual_data;
-            GetImageData(residual_data, residual_image.image, 0);
-            std::vector<CARTA::GaussianComponent> result_values(
-                fitting_response.result_values().begin(), fitting_response.result_values().end());
-            std::vector<float> expect_model_data = Gaussian(result_values);
-
-            EXPECT_EQ(model_image.file_id, -999);
-            EXPECT_EQ(model_image.name, filename.substr(0, filename.length() - 5) + "_model.fits");
-            EXPECT_EQ(model_data.size(), 128 * 128);
-            for (size_t i = 0; i < model_data.size(); i++) {
-                EXPECT_NEAR(model_data[i], expect_model_data[i], 1e-6);
-            }
-
-            EXPECT_EQ(residual_image.file_id, -998);
-            EXPECT_EQ(residual_image.name, filename.substr(0, filename.length() - 5) + "_residual.fits");
-            EXPECT_EQ(residual_data.size(), 128 * 128);
-            for (size_t i = 0; i < residual_data.size(); i++) {
-                EXPECT_NEAR(residual_data[i], frame->GetImageCacheData()[i] - expect_model_data[i], 1e-6);
-            }
+            CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());
         }
     }
 
@@ -164,6 +143,31 @@ private:
             EXPECT_EQ(success, False);
             EXPECT_EQ(fitting_response.success(), False);
             EXPECT_EQ(fitting_response.message(), failed_message);
+        }
+    }
+
+    void CompareImageResults(const GeneratedImage model_image, const GeneratedImage residual_image, const CARTA::FittingResponse fitting_response, const std::string file_path, float* image) {
+        std::string filename = file_path.substr(file_path.find_last_of('/') + 1);
+        std::vector<float> model_data;
+        GetImageData(model_data, model_image.image, 0);
+        std::vector<float> residual_data;
+        GetImageData(residual_data, residual_image.image, 0);
+        std::vector<CARTA::GaussianComponent> result_values(
+            fitting_response.result_values().begin(), fitting_response.result_values().end());
+        std::vector<float> expect_model_data = Gaussian(result_values);
+
+        EXPECT_EQ(model_image.file_id, -999);
+        EXPECT_EQ(model_image.name, filename.substr(0, filename.length() - 5) + "_model.fits");
+        EXPECT_EQ(model_data.size(), 128 * 128);
+        for (size_t i = 0; i < model_data.size(); i++) {
+            EXPECT_NEAR(model_data[i], expect_model_data[i], 1e-6);
+        }
+
+        EXPECT_EQ(residual_image.file_id, -998);
+        EXPECT_EQ(residual_image.name, filename.substr(0, filename.length() - 5) + "_residual.fits");
+        EXPECT_EQ(residual_data.size(), 128 * 128);
+        for (size_t i = 0; i < residual_data.size(); i++) {
+            EXPECT_NEAR(residual_data[i], image[i] - expect_model_data[i], 1e-6);
         }
     }
 
