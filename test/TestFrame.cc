@@ -243,6 +243,7 @@ TEST(FrameTest, TestImageShapeComputedFailure) {
 TEST(FrameTest, TestGetBeams) {
     auto loader = std::make_shared<NiceMock<ValidMockFitsFileLoader>>();
     EXPECT_CALL(*loader, GetBeams(_, _)).WillOnce(DoAll(SetArgReferee<0>(std::vector<CARTA::Beam>(3)), Return(true)));
+    // Twice in the constructor; once in GetBeams
     EXPECT_CALL(*loader, CloseImageIfUpdated()).Times(Exactly(3));
 
     TestFrame frame(loader);
