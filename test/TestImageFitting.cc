@@ -147,7 +147,7 @@ private:
     }
 
     void CompareImageResults(const GeneratedImage model_image, const GeneratedImage residual_image, const CARTA::FittingResponse fitting_response, const std::string file_path, float* image) {
-        std::string filename = file_path.substr(file_path.find_last_of('/') + 1);
+        std::string filename = file_path.substr(file_path.rfind('/') + 1);
         std::vector<float> model_data;
         GetImageData(model_data, model_image.image, 0);
         std::vector<float> residual_data;

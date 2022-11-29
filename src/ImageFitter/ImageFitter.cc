@@ -285,8 +285,8 @@ std::string ImageFitter::GetFilename(const std::string& filename, std::string su
 }
 
 std::string ImageFitter::GetGeneratedMomentFilename(const std::string& filename, std::string suffix) {
-    std::string output_filename = filename.substr(0, filename.find(".moment."));
-    std::string moment_suffix = filename.substr(filename.find(".moment."));
+    std::string output_filename = filename.substr(0, filename.rfind(".moment."));
+    std::string moment_suffix = filename.substr(filename.rfind(".moment."));
     return GetFilename(output_filename, suffix) + moment_suffix;
 }
 
