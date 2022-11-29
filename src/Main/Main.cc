@@ -113,8 +113,9 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            http_server = std::make_unique<HttpServer>(session_manager, frontend_path, settings.user_directory, auth_token,
-                settings.read_only_mode, !settings.no_frontend, !settings.no_database, settings.enable_scripting);
+            http_server =
+                std::make_unique<HttpServer>(session_manager, frontend_path, settings.user_directory, auth_token, settings.read_only_mode,
+                    !settings.no_frontend, !settings.no_database, settings.enable_scripting, !settings.no_runtime_config);
             http_server->RegisterRoutes();
 
             if (!settings.no_frontend && !http_server->CanServeFrontend()) {
