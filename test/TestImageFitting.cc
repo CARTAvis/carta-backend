@@ -79,8 +79,21 @@ public:
             success = image_fitter->GetGeneratedImages(
                 image, output_stokes_region.image_region, file_id, frame->GetFileName(), model_image, residual_image, fitting_response);
 
+            EXPECT_TRUE(success);
             CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());
         }
+    }
+
+    void GetGeneratedImageWithIncorrectFileId() {
+        std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
+        GeneratedImage model_image;
+        GeneratedImage residual_image;
+        CARTA::FittingResponse fitting_response;
+        bool success = image_fitter->GetGeneratedImages(
+                nullptr, casacore::ImageRegion(), -1001, "",model_image, residual_image, fitting_response);
+        
+        EXPECT_FALSE(success);
+        EXPECT_EQ(fitting_response.message(), "generating images from generated PV and model/residual images is not supported");
     }
 
     void FitImageWithFov(std::vector<float> gaussian_model, int region_id, std::string failed_message = "") {
@@ -88,6 +101,7 @@ public:
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(file_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
 
+        // TODO: avoid using higher level function region_handler.FitImage
         CARTA::FittingRequest fitting_request;
         fitting_request.set_file_id(0);
         fitting_request.set_region_id(region_id);
@@ -106,6 +120,7 @@ public:
         auto progress_callback = [&](float progress) {};
         bool success = region_handler.FitImage(fitting_request, fitting_response, frame, model_image, residual_image, progress_callback);
 
+        // TODO: test generated model/residual images
         CompareResults(fitting_response, success, failed_message);
     }
 
@@ -128,8 +143,8 @@ private:
 
     void CompareResults(const CARTA::FittingResponse fitting_response, const bool success, const std::string failed_message) {
         if (failed_message.length() == 0) {
-            EXPECT_EQ(success, True);
-            EXPECT_EQ(fitting_response.success(), True);
+            EXPECT_TRUE(success);
+            EXPECT_TRUE(fitting_response.success());
             for (size_t i = 0; i < _initial_values.size(); i++) {
                 CARTA::GaussianComponent component = fitting_response.result_values(i);
                 EXPECT_EQ(std::round(component.center().x()), _initial_values[i].center().x());
@@ -140,8 +155,8 @@ private:
                 EXPECT_EQ(std::round(component.pa()), _initial_values[i].pa());
             }
         } else {
-            EXPECT_EQ(success, False);
-            EXPECT_EQ(fitting_response.success(), False);
+            EXPECT_FALSE(success);
+            EXPECT_FALSE(fitting_response.success());
             EXPECT_EQ(fitting_response.message(), failed_message);
         }
     }
@@ -232,6 +247,10 @@ TEST_F(ImageFittingTest, CenterFixedFitting) {
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     FitImage(gaussian_model);
+}
+
+TEST_F(ImageFittingTest, IncorrectFileId) {
+    GetGeneratedImageWithIncorrectFileId();
 }
 
 TEST_F(ImageFittingTest, FittingWithFov) {
