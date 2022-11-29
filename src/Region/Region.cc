@@ -889,6 +889,10 @@ casacore::TableRecord Region::GetRegionPointsRecord(
     if (file_id == region_state.reference_file_id) {
         record = GetControlPointsRecord(output_shape);
     } else {
+        if (_wcs_control_points.empty()) {
+            SetReferenceRegion();
+        }
+
         switch (region_state.type) {
             case CARTA::RegionType::POINT:
                 record = GetPointRecord(output_csys, output_shape);
@@ -915,15 +919,24 @@ casacore::TableRecord Region::GetRegionPointsRecord(
 }
 
 casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& shape) {
+<<<<<<< HEAD
     // Return region Record in pixel coords in format of LCRegion::toRecord(); no conversion (for reference image).
     // ndim needed for LCBox Record for point region
+=======
+    // Return region Record in pixel coords in format of LCRegion::toRecord() for reference image (no conversion)
+    // Shape needed for LCBox Record for point region
+>>>>>>> dev
     casacore::TableRecord record;
     auto region_state = GetRegionState();
     auto region_type = region_state.type;
 
     switch (region_type) {
+<<<<<<< HEAD
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
+=======
+        case CARTA::RegionType::POINT: {
+>>>>>>> dev
             // Box with blc=trc
             auto ndim = shape.size();
             casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim, 0.0);
@@ -984,7 +997,11 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 y(i) = region_state.control_points[i].y();
             }
 
+<<<<<<< HEAD
             if (region_type == CARTA::RegionType::POLYGON || region_type == CARTA::RegionType::ANNPOLYGON) {
+=======
+            if (region_type == CARTA::RegionType::POLYGON) {
+>>>>>>> dev
                 // LCPolygon::toRecord includes first point as last point to close region
                 x.resize(npoints + 1, true);
                 x(npoints) = region_state.control_points[0].x();
@@ -992,7 +1009,11 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 y(npoints) = region_state.control_points[0].y();
 
                 record.define("name", "LCPolygon");
+<<<<<<< HEAD
             } else if (region_type == CARTA::RegionType::LINE || region_type == CARTA::RegionType::ANNLINE) {
+=======
+            } else if (region_type == CARTA::RegionType::LINE) {
+>>>>>>> dev
                 // CARTA USE ONLY, name not implemented in casacore
                 record.define("name", "Line");
             } else if (region_type == CARTA::RegionType::ANNVECTOR) {
@@ -1062,11 +1083,17 @@ casacore::TableRecord Region::GetPointRecord(
         // wcs control points is single point (x, y)
         casacore::Vector<casacore::Double> pixel_point;
         if (ConvertWorldToPixel(_wcs_control_points, output_csys, pixel_point)) {
-            casacore::Vector<casacore::Float> blc(output_shape.size(), 0.0), trc(output_shape.asVector());
+            auto ndim = output_shape.size();
+            casacore::Vector<casacore::Float> blc(ndim), trc(ndim);
+            blc = 0.0;
             blc(0) = pixel_point(0);
             blc(1) = pixel_point(1);
             trc(0) = pixel_point(0);
             trc(1) = pixel_point(1);
+
+            for (size_t i = 2; i < ndim; ++i) {
+                trc(i) = output_shape(i) - 1;
+            }
 
             record.define("name", "LCBox");
             record.define("blc", blc);
@@ -1089,8 +1116,7 @@ casacore::TableRecord Region::GetPolygonRecord(std::shared_ptr<casacore::Coordin
 
     try {
         size_t npoints(_wcs_control_points.size() / 2);
-        // Record fields
-        casacore::Vector<casacore::Float> x(npoints), y(npoints);
+        casacore::Vector<casacore::Float> x(npoints), y(npoints); // Record fields
 
         // Convert each wcs control point to pixel coords in output csys
         for (size_t i = 0; i < _wcs_control_points.size(); i += 2) {
