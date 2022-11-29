@@ -89,9 +89,9 @@ public:
         GeneratedImage model_image;
         GeneratedImage residual_image;
         CARTA::FittingResponse fitting_response;
-        bool success = image_fitter->GetGeneratedImages(
-                nullptr, casacore::ImageRegion(), -1001, "",model_image, residual_image, fitting_response);
-        
+        bool success =
+            image_fitter->GetGeneratedImages(nullptr, casacore::ImageRegion(), -1001, "", model_image, residual_image, fitting_response);
+
         EXPECT_FALSE(success);
         EXPECT_EQ(fitting_response.message(), "generating images from generated PV and model/residual images is not supported");
     }
@@ -161,7 +161,8 @@ private:
         }
     }
 
-    void CompareImageResults(const GeneratedImage model_image, const GeneratedImage residual_image, const CARTA::FittingResponse fitting_response, const std::string file_path, float* image) {
+    void CompareImageResults(const GeneratedImage model_image, const GeneratedImage residual_image,
+        const CARTA::FittingResponse fitting_response, const std::string file_path, float* image) {
         std::string filename = file_path.substr(file_path.rfind('/') + 1);
         std::vector<float> model_data;
         GetImageData(model_data, model_image.image, 0);
@@ -187,10 +188,10 @@ private:
     }
 
     static std::vector<float> Gaussian(const std::vector<CARTA::GaussianComponent>& result_values) {
-        std::vector<float> result(128 * 128, 0.0); 
+        std::vector<float> result(128 * 128, 0.0);
         size_t n = result_values.size();
         for (size_t k = 0; k < n; k++) {
-             CARTA::GaussianComponent component = result_values[k];
+            CARTA::GaussianComponent component = result_values[k];
             double center_x = component.center().x();
             double center_y = component.center().y();
             double amp = component.amp();
@@ -204,7 +205,7 @@ private:
             const double a = cos(theta_radian) * cos(theta_radian) / dbl_sq_std_x + sin(theta_radian) * sin(theta_radian) / dbl_sq_std_y;
             const double dbl_b = 2 * (sin(2 * theta_radian) / (2 * dbl_sq_std_x) - sin(2 * theta_radian) / (2 * dbl_sq_std_y));
             const double c = sin(theta_radian) * sin(theta_radian) / dbl_sq_std_x + cos(theta_radian) * cos(theta_radian) / dbl_sq_std_y;
-            
+
             for (size_t i = 0; i < 128; i++) {
                 for (size_t j = 0; j < 128; j++) {
                     double dx = i - center_x;
