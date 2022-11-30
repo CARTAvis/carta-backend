@@ -66,12 +66,8 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             ClearRegionCache(region_id);
         }
     } else {
-<<<<<<< HEAD
         if (region_id > TEMP_REGION_ID && region_id < CURSOR_REGION_ID) {
             // new region, assign id
-=======
-        if (region_id == NEW_REGION_ID) {
->>>>>>> dev
             region_id = GetNextRegionId();
         }
 

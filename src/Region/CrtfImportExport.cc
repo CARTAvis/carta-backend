@@ -379,8 +379,16 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
     casa::AnnotationBase::unitInit(); // enable "pix" unit
 
     for (auto& line : lines) {
-        if (line.empty() || (line[0] == '#')) {
-            continue; // ignore blank lines and comments
+        if (line.empty()) {
+            continue;
+        }
+
+        if (line[0] == '#') {
+            if (line.find("# compass") == 0 || line.find("# ruler") == 0) {
+                line.erase(0, 2);
+            } else {
+                continue;
+            }
         }
 
         // Parse line
@@ -389,21 +397,20 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         ParseRegionParameters(line, parameters, properties);
 
         // Coordinate frame for world coordinates conversion
-        std::string coord_frame = GetRegionDirectionFrame(properties);
-
-        std::string region(parameters[0]);
         RegionState region_state;
-        if (region == "symbol") {
+        auto region = parameters[0] == "ann" ? parameters[1] : parameters[0];
+        auto coord_frame = GetRegionDirectionFrame(properties);
+
+        if ((region == "symbol") || (region == "text")) {
             region_state = ImportAnnSymbol(parameters, coord_frame);
-        } else if (region == "line") {
-            region_state = ImportAnnPolygonLine(parameters, coord_frame);
-        } else if (region.find("box") != std::string::npos) {
-            // Handles "box", "centerbox", "rotbox"
+        } else if ((region == "line") || (region == "vector") || (region == "ruler")) {
+            region_state = ImportAnnPoly(parameters, coord_frame);
+        } else if (region.find("box") != std::string::npos) { // "box", "centerbox", "rotbox"
             region_state = ImportAnnBox(parameters, coord_frame);
-        } else if ((region == "ellipse") || (region == "circle")) {
+        } else if ((region == "ellipse") || (region == "circle") || (region == "compass")) {
             region_state = ImportAnnEllipse(parameters, coord_frame);
-        } else if (region.find("poly") != std::string::npos) {
-            region_state = ImportAnnPolygonLine(parameters, coord_frame);
+        } else if (region.find("poly") != std::string::npos) { // "poly", "polyline"
+            region_state = ImportAnnPoly(parameters, coord_frame);
         } else if (region == "global") {
             _global_properties = properties;
         } else {
@@ -439,16 +446,18 @@ std::string CrtfImportExport::GetRegionDirectionFrame(std::unordered_map<std::st
 RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& parameters, std::string& coord_frame) {
     // Import AnnSymbol in pixel coordinates to RegionState
     RegionState region_state;
+    bool is_annotation = parameters[0] == "ann";
+    std::string region = is_annotation ? parameters[1] : parameters[0];
 
-    if (parameters.size() >= 3) { // symbol x y, optional symbol shape
+    if (parameters.size() >= 3) { // "(ann) symbol x y" or "text x y", optional symbol shape or text string
         // Convert string to Quantities
         casacore::Quantity x, y;
         try {
             casacore::readQuantity(x, parameters[1]);
             casacore::readQuantity(y, parameters[2]);
         } catch (const casacore::AipsError& err) {
-            spdlog::error("symbol import Quantity error: {}", err.getMesg());
-            _import_errors.append("symbol parameters invalid.\n");
+            spdlog::error("{} import Quantity error: {}", region, err.getMesg());
+            _import_errors.append(region + " parameters invalid.\n");
             return region_state;
         }
 
@@ -464,19 +473,29 @@ RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& paramete
                 control_points.push_back(Message::Point(pixel_coords));
 
                 // Set RegionState
-                CARTA::RegionType type(CARTA::RegionType::POINT);
+                CARTA::RegionType type;
+                if (region == "symbol") {
+                    type = is_annotation ? CARTA::ANNPOINT : CARTA::POINT;
+                } else if (region == "text") {
+                    type = CARTA::ANNTEXT;
+                } else {
+                    spdlog::error("Unknown region {} import failed", region);
+                    _import_errors.append("Unknown region " + region + " import failed.\n");
+                    return region_state;
+                }
+
                 float rotation(0.0);
                 region_state = RegionState(_file_id, type, control_points, rotation);
             } else {
-                spdlog::error("symbol import conversion to pixel failed");
-                _import_errors.append("symbol import failed.\n");
+                spdlog::error("{} import conversion to pixel failed", region);
+                _import_errors.append(region + " import failed.\n");
             }
         } catch (const casacore::AipsError& err) {
-            spdlog::error("symbol import error: {}", err.getMesg());
-            _import_errors.append("symbol import failed.\n");
+            spdlog::error("{} import error: {}", region, err.getMesg());
+            _import_errors.append(region + " import failed.\n");
         }
     } else {
-        _import_errors.append("symbol syntax invalid.\n");
+        _import_errors.append(region + " syntax invalid.\n");
     }
     return region_state;
 }
@@ -570,26 +589,36 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
     return region_state;
 }
 
-RegionState CrtfImportExport::ImportAnnPolygonLine(std::vector<std::string>& parameters, std::string& coord_frame) {
-    // Import AnnPolygon, AnnPolyline, or AnnLine in pixel coordinates to RegionState
+RegionState CrtfImportExport::ImportAnnPoly(std::vector<std::string>& parameters, std::string& coord_frame) {
+    // Import polygon, polyline, or line-like regions (line, vector, ruler) in pixel coordinates to RegionState
     RegionState region_state;
-    std::string region(parameters[0]);
+    bool is_annotation = parameters[0] == "ann";
+    std::string region = is_annotation ? parameters[1] : parameters[0];
 
     if (parameters.size() >= 5) {
-        // poly x1 y1 x2 y2 x3 y3 ...
-        // polyline x1 y1 x2 y2 x3 y3...
-        // line x1 y1 x2 y2
+        // (ann) poly x1 y1 x2 y2 x3 y3 ...
+        // (ann) polyline x1 y1 x2 y2 x3 y3...
+        // (ann) line x1 y1 x2 y2
+        // vector x1 y1 x2 y2
+        // ruler x1 y1 x2 y2
 
-        // poly check: at least 3 points
-        if ((region.find("poly") != std::string::npos) && (parameters.size() < 7)) {
+        // Check: poly at least 3 points, line etc two points
+        if (region.find("poly") == 0) {
+            if (parameters.size() < 7) {
+                _import_errors.append(region + " syntax invalid.\n");
+                return region_state;
+            }
+        } else if (parameters.size() < 5) {
             _import_errors.append(region + " syntax invalid.\n");
             return region_state;
         }
 
         try {
             std::vector<CARTA::Point> control_points;
+            size_t param_start = is_annotation ? 2 : 1;
+
             // Convert parameters in x,y pairs
-            for (size_t i = 1; i < parameters.size(); i += 2) {
+            for (size_t i = param_start; i < parameters.size(); i += 2) {
                 casacore::Quantity x, y;
                 casacore::readQuantity(x, parameters[i]);
                 casacore::readQuantity(y, parameters[i + 1]);
@@ -610,11 +639,21 @@ RegionState CrtfImportExport::ImportAnnPolygonLine(std::vector<std::string>& par
             }
 
             // Set type
-            CARTA::RegionType type(CARTA::RegionType::POLYGON);
-            if (region == "line") {
-                type = CARTA::RegionType::LINE;
+            CARTA::RegionType type;
+            if (region == "poly" || region == "polygon") {
+                type = is_annotation ? CARTA::ANNPOLYGON : CARTA::POLYGON;
             } else if (region == "polyline") {
-                type = CARTA::RegionType::POLYLINE;
+                type = is_annotation ? CARTA::ANNPOLYLINE : CARTA::POLYLINE;
+            } else if (region == "line") {
+                type = is_annotation ? CARTA::ANNLINE : CARTA::LINE;
+            } else if (region == "vector") {
+                type = CARTA::ANNVECTOR;
+            } else if (region == "ruler") {
+                type = CARTA::ANNRULER;
+            } else {
+                spdlog::error("Unknown region {} import failed", region);
+                _import_errors.append("Unknown region " + region + " import failed.\n");
+                return region_state;
             }
 
             // Create RegionState and add to vector

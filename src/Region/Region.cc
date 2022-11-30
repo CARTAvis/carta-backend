@@ -919,24 +919,15 @@ casacore::TableRecord Region::GetRegionPointsRecord(
 }
 
 casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& shape) {
-<<<<<<< HEAD
-    // Return region Record in pixel coords in format of LCRegion::toRecord(); no conversion (for reference image).
-    // ndim needed for LCBox Record for point region
-=======
     // Return region Record in pixel coords in format of LCRegion::toRecord() for reference image (no conversion)
     // Shape needed for LCBox Record for point region
->>>>>>> dev
     casacore::TableRecord record;
     auto region_state = GetRegionState();
     auto region_type = region_state.type;
 
     switch (region_type) {
-<<<<<<< HEAD
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
-=======
-        case CARTA::RegionType::POINT: {
->>>>>>> dev
             // Box with blc=trc
             auto ndim = shape.size();
             casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim, 0.0);
@@ -997,11 +988,7 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 y(i) = region_state.control_points[i].y();
             }
 
-<<<<<<< HEAD
             if (region_type == CARTA::RegionType::POLYGON || region_type == CARTA::RegionType::ANNPOLYGON) {
-=======
-            if (region_type == CARTA::RegionType::POLYGON) {
->>>>>>> dev
                 // LCPolygon::toRecord includes first point as last point to close region
                 x.resize(npoints + 1, true);
                 x(npoints) = region_state.control_points[0].x();
@@ -1009,11 +996,7 @@ casacore::TableRecord Region::GetControlPointsRecord(const casacore::IPosition& 
                 y(npoints) = region_state.control_points[0].y();
 
                 record.define("name", "LCPolygon");
-<<<<<<< HEAD
             } else if (region_type == CARTA::RegionType::LINE || region_type == CARTA::RegionType::ANNLINE) {
-=======
-            } else if (region_type == CARTA::RegionType::LINE) {
->>>>>>> dev
                 // CARTA USE ONLY, name not implemented in casacore
                 record.define("name", "Line");
             } else if (region_type == CARTA::RegionType::ANNVECTOR) {
