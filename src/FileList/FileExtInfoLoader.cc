@@ -1405,24 +1405,24 @@ void FileExtInfoLoader::AddCoordRanges(
             std::string y_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, y_max, 1, true, true);
 
             // Set x and y coordinate names
-            if (axis_names(0) == "Right Ascension") {
-                axis_names(0) = "RA";
-            } else if (axis_names(0) == "Longitude") {
-                axis_names(0) = "LON";
+            if (axis_names(direction_axes[0]) == "Right Ascension") {
+                axis_names(direction_axes[0]) = "RA";
+            } else if (axis_names(direction_axes[0]) == "Longitude") {
+                axis_names(direction_axes[0]) = "LON";
             }
-            if (axis_names(1) == "Declination") {
-                axis_names(1) = "DEC";
-            } else if (axis_names(1) == "Latitude") {
-                axis_names(1) = "LAT";
+            if (axis_names(direction_axes[1]) == "Declination") {
+                axis_names(direction_axes[1]) = "DEC";
+            } else if (axis_names(direction_axes[1]) == "Latitude") {
+                axis_names(direction_axes[1]) = "LAT";
             }
 
             auto* x_entry = extended_info.add_computed_entries();
-            x_entry->set_name(fmt::format("{} range", axis_names(0)));
+            x_entry->set_name(fmt::format("{} range", axis_names(direction_axes[0])));
             x_entry->set_value(fmt::format("[{}, {}]", x_start, x_end));
             x_entry->set_entry_type(CARTA::EntryType::STRING);
 
             auto* y_entry = extended_info.add_computed_entries();
-            y_entry->set_name(fmt::format("{} range", axis_names(1)));
+            y_entry->set_name(fmt::format("{} range", axis_names(direction_axes[1])));
             y_entry->set_value(fmt::format("[{}, {}]", y_start, y_end));
             y_entry->set_entry_type(CARTA::EntryType::STRING);
         }
