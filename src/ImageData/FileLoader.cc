@@ -169,7 +169,7 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(cons
 }
 
 bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& direction_axes, int& spectral_axis, int& stokes_axis,
-    std::vector<int>& render_axes, int& z_axis, std::string& message) {
+    std::vector<int>& render_axes, int& z_axis, casacore::Vector<casacore::String>& axis_names, std::string& message) {
     // Return image shape and axes for image. Spectral axis may or may not be z axis.
     // All parameters are return values.
     direction_axes.assign(2, -1);
@@ -195,6 +195,9 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
         return false;
     }
+
+    // Get world axis names
+    axis_names = _coord_sys->worldAxisNames();
 
     // Determine which axes will be rendered
     render_axes = GetRenderAxes();

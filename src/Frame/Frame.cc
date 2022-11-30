@@ -68,7 +68,9 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     // Get shape and axis values from the loader
     std::string log_message;
     std::vector<int> direction_axes, render_axes;
-    if (!_loader->FindCoordinateAxes(_image_shape, direction_axes, _spectral_axis, _stokes_axis, render_axes, _z_axis, log_message)) {
+    casacore::Vector<casacore::String> axis_names;
+    if (!_loader->FindCoordinateAxes(
+            _image_shape, direction_axes, _spectral_axis, _stokes_axis, render_axes, _z_axis, axis_names, log_message)) {
         _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;

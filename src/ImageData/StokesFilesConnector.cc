@@ -301,6 +301,7 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
 
     casacore::IPosition ref_shape(0);
     std::vector<int> ref_direction_axes, ref_render_axes;
+    casacore::Vector<casacore::String> ref_axis_names;
     int ref_spectral_axis = -1;
     int ref_z_axis = -1;
     int ref_stokes_axis = -1;
@@ -309,14 +310,15 @@ bool StokesFilesConnector::StokesFilesValid(std::string& err, int& stokes_axis) 
     for (auto& loader : _loaders) {
         casacore::IPosition shape;
         std::vector<int> direction_axes, render_axes;
+        casacore::Vector<casacore::String> axis_names;
         int spectral_axis;
         int z_axis;
 
         if (ref_index == 0) {
             loader.second->FindCoordinateAxes(
-                ref_shape, ref_direction_axes, ref_spectral_axis, ref_stokes_axis, ref_render_axes, ref_z_axis, err);
+                ref_shape, ref_direction_axes, ref_spectral_axis, ref_stokes_axis, ref_render_axes, ref_z_axis, ref_axis_names, err);
         } else {
-            loader.second->FindCoordinateAxes(shape, direction_axes, spectral_axis, stokes_axis, render_axes, z_axis, err);
+            loader.second->FindCoordinateAxes(shape, direction_axes, spectral_axis, stokes_axis, render_axes, z_axis, axis_names, err);
             if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
                 (ref_stokes_axis != stokes_axis)) {
                 err = "Image shapes or axes are not consistent!";
