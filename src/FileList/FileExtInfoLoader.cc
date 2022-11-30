@@ -716,6 +716,8 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
             axis_types[direction_axes[0]] = "RA";
         } else if (axis_names(direction_axes[0]) == "Longitude") {
             axis_types[direction_axes[0]] = "LON";
+        } else {
+            axis_types[direction_axes[0]] = axis_names(direction_axes[0]);
         }
     }
 
@@ -724,6 +726,8 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
             axis_types[direction_axes[1]] = "DEC";
         } else if (axis_names(direction_axes[1]) == "Latitude") {
             axis_types[direction_axes[1]] = "LAT";
+        } else {
+            axis_types[direction_axes[1]] = axis_names(direction_axes[1]);
         }
     }
 
