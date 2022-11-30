@@ -734,21 +734,19 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     if (depth_axis >= 0) {
         // header entry for number of channels
-        unsigned int nchan = shape(depth_axis);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of channels");
-        entry->set_value(std::to_string(nchan));
+        entry->set_value(std::to_string(depth));
         entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(nchan);
+        entry->set_numeric_value(depth);
     }
     if (stokes_axis >= 0) {
         // header entry for number of stokes
-        unsigned int nstokes = shape(stokes_axis);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of polarizations");
-        entry->set_value(std::to_string(nstokes));
+        entry->set_value(std::to_string(stokes));
         entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(nstokes);
+        entry->set_numeric_value(stokes);
     }
 }
 

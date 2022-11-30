@@ -298,10 +298,12 @@ std::vector<int> FileLoader::GetRenderAxes(bool get_dir_axes) {
 
     if (_image_shape.size() > 2) {
         // Normally, use direction axes
-        if (get_dir_axes && _coord_sys->hasDirectionCoordinate()) {
-            casacore::Vector<casacore::Int> dir_axes = _coord_sys->directionAxesNumbers();
-            axes[0] = dir_axes[0];
-            axes[1] = dir_axes[1];
+        if (_coord_sys->hasDirectionCoordinate()) {
+            if (get_dir_axes) {
+                casacore::Vector<casacore::Int> dir_axes = _coord_sys->directionAxesNumbers();
+                axes[0] = dir_axes[0];
+                axes[1] = dir_axes[1];
+            }
         } else if (_coord_sys->hasLinearCoordinate()) {
             // Check for PV image: usually [Linear, Spectral] axes but could be reversed
             // Returns -1 if no spectral axis
