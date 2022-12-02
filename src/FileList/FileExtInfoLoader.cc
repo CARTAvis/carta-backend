@@ -747,9 +747,9 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     // For PV image
     if (spectral_axis == 0 && axis_types[1] == "NA") {
-        axis_types[1] = "Spatial";
+        axis_types[1] = "OFFSET";
     } else if (spectral_axis == 1 && axis_types[0] == "NA") {
-        axis_types[0] = "Spatial";
+        axis_types[0] = "OFFSET";
     }
 
     // shape computed_entry
