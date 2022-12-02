@@ -45,10 +45,10 @@ struct VectorFieldSettings {
 
     // Equality operator for checking if vector field settings have changed
     bool operator==(const VectorFieldSettings& rhs) const {
-        return (file_id == rhs.file_id && this->smoothing_factor == rhs.smoothing_factor && this->fractional == rhs.fractional &&
-                this->threshold == rhs.threshold && this->debiasing == rhs.debiasing && this->q_error == rhs.q_error &&
-                this->u_error == rhs.u_error && this->stokes_intensity == rhs.stokes_intensity && this->stokes_angle == rhs.stokes_angle &&
-                this->compression_type == rhs.compression_type && this->compression_quality == rhs.compression_quality);
+        return (file_id == rhs.file_id && smoothing_factor == rhs.smoothing_factor && fractional == rhs.fractional &&
+                threshold == rhs.threshold && debiasing == rhs.debiasing && q_error == rhs.q_error && u_error == rhs.u_error &&
+                stokes_intensity == rhs.stokes_intensity && stokes_angle == rhs.stokes_angle && compression_type == rhs.compression_type &&
+                compression_quality == rhs.compression_quality);
     }
 
     bool operator!=(const VectorFieldSettings& rhs) const {
