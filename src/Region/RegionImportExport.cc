@@ -40,8 +40,8 @@ std::vector<RegionProperties> RegionImportExport::GetImportedRegions(std::string
     return _import_regions;
 }
 
-bool RegionImportExport::AddExportRegion(
-    const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord) {
+bool RegionImportExport::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
+    const casacore::RecordInterface& region_record, bool pixel_coord) {
     // Convert Record to Quantities for region type then set region
     // Record is in pixel coords; convert to world coords if needed
     if (pixel_coord) {
@@ -82,7 +82,7 @@ bool RegionImportExport::AddExportRegion(
     }
 
     if (converted) {
-        return AddExportRegion(region_state.type, region_style, control_points, rotation); // CRTF or DS9 export
+        return AddExportRegion(region_state.type, control_points, rotation, region_style); // CRTF or DS9 export
     }
 
     return converted;
@@ -321,24 +321,6 @@ double RegionImportExport::WorldToPixelLength(casacore::Quantity input, unsigned
     // Find pixel length
     casacore::Vector<casacore::Double> increments(_coord_sys->increment());
     return fabs(input.getValue() / increments[pixel_axis]);
-}
-
-std::string RegionImportExport::FormatColor(const std::string& color) {
-    // Capitalize and add prefix if hex; else return same string
-    std::string hex_color(color);
-    if (color[0] == '#') {
-        // Do conversion without prefix
-        hex_color = color.substr(1);
-    }
-
-    // Check if can convert entire string to hex number
-    char* endptr(nullptr);
-    if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
-        std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
-        hex_color = "#" + hex_color;
-    }
-
-    return hex_color;
 }
 
 bool RegionImportExport::ConvertRecordToPoint(
@@ -590,5 +572,67 @@ bool RegionImportExport::ConvertRecordToPolygonLine(
     } catch (const casacore::AipsError& err) {
         spdlog::error("Export error: polygon Record conversion failed: {}", err.getMesg());
         return false;
+    }
+}
+
+std::string RegionImportExport::FormatColor(const std::string& color) {
+    // Capitalize and add prefix if hex; else return same string
+    std::string hex_color(color);
+    if (color[0] == '#') {
+        // Do conversion without prefix
+        hex_color = color.substr(1);
+    }
+
+    // Check if can convert entire string to hex number
+    char* endptr(nullptr);
+    if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
+        std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
+        hex_color = "#" + hex_color;
+    }
+
+    return hex_color;
+}
+
+void RegionImportExport::ExportAnnotationStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+    // Append ruler and compass parameters in DS9 style (no # to separate region from style)
+    if (!region_style.has_annotation_style()) {
+        return;
+    }
+
+    auto coordinate_system = region_style.annotation_style().coordinate_system();
+    std::transform(coordinate_system.begin(), coordinate_system.end(), coordinate_system.begin(), ::tolower);
+
+    if (region_line.find("ruler") != std::string::npos) {
+        region_line.append(" ruler=");
+        if (!coordinate_system.empty()) {
+            region_line.append(coordinate_system);
+        }
+
+        // Ruler unit
+        switch (region_style.annotation_style().ruler_unit()) {
+            case CARTA::PIXELS:
+                region_line.append(" pixels");
+                break;
+            case CARTA::DEGREES:
+                region_line.append(" degrees");
+                break;
+            case CARTA::ARCMIN:
+                region_line.append(" arcmin");
+                break;
+            case CARTA::ARCSEC:
+                region_line.append(" arcsec");
+                break;
+        }
+    } else if (region_line.find("compass") != std::string::npos) {
+        region_line.append(" compass=");
+        if (!coordinate_system.empty()) {
+            region_line.append(coordinate_system);
+        }
+
+        // North and east labels and arrows
+        region_line.append(" {" + region_style.annotation_style().text_label0() + "}");
+        region_line.append(" {" + region_style.annotation_style().text_label1() + "}");
+        region_line.append((region_style.annotation_style().is_arrow0() ? " 1" : " 0"));
+        region_line.append((region_style.annotation_style().is_arrow1() ? " 1" : " 0"));
     }
 }

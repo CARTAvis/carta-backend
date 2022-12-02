@@ -93,7 +93,7 @@ void Ds9ImportExport::AddExportRegionNames() {
 
 // Public: for exporting regions
 
-bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) {
+bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     // Add pixel-coord region using RegionState
     auto type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
@@ -168,6 +168,7 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     // Add region style and add to list
     if (!region_line.empty()) {
         AddExportStyleParameters(region_style, region_line);
+        region_line.append("\n");
         _export_regions.push_back(region_line);
         return true;
     }
@@ -175,8 +176,8 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const Reg
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(const CARTA::RegionType region_type, const RegionStyle& region_style,
-    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+bool Ds9ImportExport::AddExportRegion(const CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+    const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) {
     // Add region using Quantities
     float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
@@ -190,6 +191,7 @@ bool Ds9ImportExport::AddExportRegion(const CARTA::RegionType region_type, const
     // Add region style and add to list
     if (!region_line.empty()) {
         AddExportStyleParameters(region_style, region_line);
+        region_line.append("\n");
         _export_regions.push_back(region_line);
         return true;
     }
@@ -410,7 +412,7 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
 
     if (region_state.RegionDefined()) {
         // Set RegionStyle
-        RegionStyle region_style = ImportStyleParameters(properties);
+        CARTA::RegionStyle region_style = ImportStyleParameters(properties);
 
         // Add RegionProperties to list
         RegionProperties region_properties(region_state, region_style);
@@ -746,31 +748,31 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
     return region_state;
 }
 
-RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
+CARTA::RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
     // Get style params from properties
-    RegionStyle style;
+    CARTA::RegionStyle style;
 
     // name
     if (properties.count("text")) {
-        style.name = properties["text"];
+        style.set_name(properties["text"]);
     }
 
     // color
     if (properties.count("color")) {
-        style.color = FormatColor(properties["color"]);
+        style.set_color(FormatColor(properties["color"]));
     } else if (_global_properties.count("color")) {
-        style.color = FormatColor(_global_properties["color"]);
+        style.set_color(FormatColor(_global_properties["color"]));
     } else {
-        style.color = REGION_COLOR;
+        style.set_color(REGION_COLOR);
     }
 
     // width
     if (properties.count("width")) {
-        style.line_width = std::stoi(properties["width"]);
+        style.set_line_width(std::stoi(properties["width"]));
     } else if (_global_properties.count("width")) {
-        style.line_width = std::stoi(_global_properties["width"]);
+        style.set_line_width(std::stoi(_global_properties["width"]));
     } else {
-        style.line_width = REGION_LINE_WIDTH;
+        style.set_line_width(REGION_LINE_WIDTH);
     }
 
     // dash
@@ -782,15 +784,12 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
     }
 
     if (!dashlist.empty()) {
-        // Convert string to vector then to int
+        // Convert string to int values
         std::vector<std::string> dash_values;
         SplitString(dashlist, ' ', dash_values);
-
-        std::vector<int> dash_list;
-        for (auto& value : dash_values) {
-            dash_list.push_back(std::stoi(value));
+        for (size_t i = 0; i < dash_values.size(); ++i) {
+            style.set_dash_list(i, std::stoi(dash_values[i]));
         }
-        style.dash_list = dash_list;
     }
 
     return style;
@@ -1054,23 +1053,20 @@ std::string Ds9ImportExport::AddExportRegionWorld(
     return region;
 }
 
-void Ds9ImportExport::AddExportStyleParameters(const RegionStyle& region_style, std::string& region_line) {
-    // Add region style properties from RegionState to line
-    region_line.append(" #");
+void Ds9ImportExport::AddExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+    // Add common region style properties from RegionStyle to line string
+    region_line.append(" # color=" + FormatColor(region_style.color()));
+    region_line.append(" width=" + std::to_string(region_style.line_width()));
 
-    // color
-    region_line.append(" color=" + FormatColor(region_style.color));
-    // line width
-    region_line.append(" width=" + std::to_string(region_style.line_width));
-    // name
-    if (!region_style.name.empty()) {
-        region_line.append(" text={" + region_style.name + "}");
+    if (!region_style.name().empty()) {
+        region_line.append(" text={" + region_style.name() + "}");
     }
+
     // dash list for enclosed regions
-    if (!region_style.dash_list.empty() && (region_style.dash_list[0] != 0)) {
-        std::string dash_on(std::to_string(region_style.dash_list[0]));
-        std::string dash_off = (region_style.dash_list.size() == 2 ? std::to_string(region_style.dash_list[1]) : dash_on);
-        region_line.append(" dash=1 dashlist=" + dash_on + " " + dash_off);
+    if ((!region_style.dash_list_size() > 0) && (region_style.dash_list(0) != 0)) {
+        auto dash_on = region_style.dash_list(0);
+        auto dash_off = region_style.dash_list_size() == 2 ? region_style.dash_list(1) : dash_on;
+        auto dash_list = fmt::format(" dash=1 dashlist={} {}", dash_on, dash_off);
+        region_line.append(dash_list);
     }
-    region_line.append("\n");
 }

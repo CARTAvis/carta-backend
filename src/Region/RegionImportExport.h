@@ -34,13 +34,10 @@ public:
     // Retrieve imported regions as RegionState vector
     std::vector<RegionProperties> GetImportedRegions(std::string& error);
 
-    // Add region to export:
-    // RegionState control points for pixel coords in reference image
-    virtual bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) = 0;
-
-    // Record for LCRegion in pixel coords
-    bool AddExportRegion(
-        const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord);
+    // Add region to export using RegionState for reference image or casacore::Record for matched region
+    virtual bool AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) = 0;
+    bool AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
+        const casacore::RecordInterface& region_record, bool pixel_coord);
 
     // Perform export; ostream could be for output file (ofstream) or string (ostringstream)
     virtual bool ExportRegions(std::string& filename, std::string& error) = 0;
@@ -61,8 +58,8 @@ protected:
         std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
 
     // Quantities for converted control points
-    virtual bool AddExportRegion(CARTA::RegionType region_type, const RegionStyle& region_style,
-        const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) = 0;
+    virtual bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+        const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) = 0;
 
     // Convert wcs -> pixel
     bool ConvertPointToPixels(
@@ -71,6 +68,7 @@ protected:
 
     // Format hex string e.g. "10161a" -> "#10161A"
     std::string FormatColor(const std::string& color);
+    virtual void ExportAnnotationStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
 
     // Image info to which region is applied
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
@@ -88,7 +86,7 @@ protected:
         {CARTA::ELLIPSE, "ellipse"}, {CARTA::ANNRULER, "# ruler"}, {CARTA::ANNCOMPASS, "# compass"}};
 
 private:
-    // Return control_points and qrotation Quantity for region type
+    // Return control_points and rotation Quantity for region type
     bool ConvertRecordToPoint(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
     bool ConvertRecordToRectangle(

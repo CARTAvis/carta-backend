@@ -183,8 +183,10 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto region_info_map = import_ack.mutable_regions();
     auto region_style_map = import_ack.mutable_region_styles();
     for (auto& imported_region : region_list) {
-        auto region_csys = frame->CoordinateSystem();
         auto region_state = imported_region.state;
+        auto region_style = imported_region.style;
+
+        auto region_csys = frame->CoordinateSystem();
         auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
 
         if (region && region->IsValid()) {
@@ -193,21 +195,14 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             region_lock.unlock();
 
             // Set CARTA::RegionInfo
-            CARTA::RegionInfo carta_region_info;
-            carta_region_info.set_region_type(region_state.type);
-            *carta_region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-            carta_region_info.set_rotation(region_state.rotation);
-            // Set CARTA::RegionStyle
-            auto region_style = imported_region.style;
-            CARTA::RegionStyle carta_region_style;
-            carta_region_style.set_name(region_style.name);
-            carta_region_style.set_color(region_style.color);
-            carta_region_style.set_line_width(region_style.line_width);
-            *carta_region_style.mutable_dash_list() = {region_style.dash_list.begin(), region_style.dash_list.end()};
+            CARTA::RegionInfo region_info;
+            region_info.set_region_type(region_state.type);
+            *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
+            region_info.set_rotation(region_state.rotation);
 
             // Add info and style to import_ack; increment region id for next region
-            (*region_info_map)[region_id] = carta_region_info;
-            (*region_style_map)[region_id++] = carta_region_style;
+            (*region_info_map)[region_id] = region_info;
+            (*region_style_map)[region_id++] = region_style;
         }
     }
 }
@@ -265,21 +260,15 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             break;
     }
 
-    // Add regions to export from map<region_id, RegionStyle>
     std::string error; // append region errors here
     for (auto& region_id_style : region_styles) {
-        int region_id = region_id_style.first;
+        auto region_id = region_id_style.first;
+        auto region_style = region_id_style.second;
 
         if (RegionSet(region_id)) {
             bool region_added(false);
             auto region = GetRegion(region_id);
-
-            // Get state from Region, style from input map
-            RegionState region_state = region->GetRegionState();
-
-            CARTA::RegionStyle carta_region_style = region_id_style.second;
-            std::vector<int> dash_list = {carta_region_style.dash_list().begin(), carta_region_style.dash_list().end()};
-            RegionStyle region_style(carta_region_style.name(), carta_region_style.color(), carta_region_style.line_width(), dash_list);
+            auto region_state = region->GetRegionState();
 
             if ((region_state.reference_file_id == file_id) && pixel_coord) {
                 // Use RegionState control points with reference file id for pixel export

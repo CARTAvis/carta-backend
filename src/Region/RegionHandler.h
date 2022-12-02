@@ -18,23 +18,12 @@
 
 namespace carta {
 
-struct RegionStyle {
-    std::string name;
-    std::string color;
-    int line_width;
-    std::vector<int> dash_list;
-
-    RegionStyle() {}
-    RegionStyle(const std::string& name_, const std::string& color_, int line_width_, const std::vector<int> dash_list_)
-        : name(name_), color(color_), line_width(line_width_), dash_list(dash_list_) {}
-};
-
 struct RegionProperties {
     RegionProperties() {}
-    RegionProperties(RegionState& region_state, RegionStyle& region_style) : state(region_state), style(region_style) {}
+    RegionProperties(RegionState& region_state, CARTA::RegionStyle& region_style) : state(region_state), style(region_style) {}
 
     RegionState state;
-    RegionStyle style;
+    CARTA::RegionStyle style;
 };
 
 class RegionHandler {

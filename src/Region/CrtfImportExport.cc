@@ -22,7 +22,6 @@
 #include <imageanalysis/Annotations/AnnRectBox.h>
 #include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
-#include <imageanalysis/Annotations/AnnSymbol.h>
 #include <imageanalysis/Annotations/AnnText.h>
 #include <imageanalysis/Annotations/AnnVector.h>
 
@@ -74,7 +73,7 @@ void CrtfImportExport::AddExportRegionNames() {
 
 // Public: for exporting regions
 
-bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) {
+bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     // Add pixel region using RegionState
     auto type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
@@ -87,11 +86,18 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
         case CARTA::RegionType::ANNPOINT:
         case CARTA::RegionType::ANNTEXT: {
             // symbol [[x, y], .] or text [[x, y], '{name}']
-            std::string symbol(".");
-            if (type == CARTA::ANNTEXT) {
-                symbol = "'" + region_style.name + "'";
+            std::string symbol_or_text(".");
+
+            if (region_style.has_annotation_style()) {
+                if (type == CARTA::ANNTEXT) {
+                    // Match style of imageanalysis AnnText::print() - double quotes
+                    symbol_or_text = "\"" + region_style.annotation_style().text_label0() + "\"";
+                } else {
+                    symbol_or_text = GetAnnSymbolCharacter(region_style.annotation_style().point_shape());
+                }
             }
-            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], {}]", _region_names[type], points[0].x(), points[0].y(), symbol);
+
+            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], {}]", _region_names[type], points[0].x(), points[0].y(), symbol_or_text);
             break;
         }
         case CARTA::RegionType::RECTANGLE:
@@ -147,6 +153,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
     // Add to export region vector
     if (!region_line.empty()) {
         ExportStyleParameters(region_style, region_line);
+        ExportAnnotationStyleParameters(region_style, region_line); // regions not supported by CRTF; in DS9 format
         _export_regions.push_back(region_line);
         return true;
     }
@@ -219,8 +226,8 @@ bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::st
 
 // Protected: for exporting regions in world coordinates
 
-bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const RegionStyle& region_style,
-    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+    const casacore::Quantity& rotation, const CARTA::RegionStyle& region_style) {
     // Create casa::AnnotationBase region from control point Quantities to print in export format
     if (control_points.empty()) {
         return false;
@@ -239,11 +246,21 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
             case CARTA::RegionType::ANNTEXT: {
                 casacore::Quantity x(control_points[0]);
                 casacore::Quantity y(control_points[1]);
+                casa::AnnSymbol::Symbol symbol(casa::AnnSymbol::POINT);
+                std::string text("");
+
+                if (region_style.has_annotation_style()) {
+                    if (region_type == CARTA::ANNTEXT) {
+                        text = region_style.annotation_style().text_label0();
+                    } else {
+                        symbol = GetAnnSymbol(region_style.annotation_style().point_shape());
+                    }
+                }
 
                 if (region_type == CARTA::ANNTEXT) {
-                    ann_base = new casa::AnnText(x, y, *_coord_sys, region_style.name, stokes_types);
+                    ann_base = new casa::AnnText(x, y, *_coord_sys, text, stokes_types);
                 } else {
-                    ann_base = new casa::AnnSymbol(x, y, *_coord_sys, casa::AnnSymbol::POINT, stokes_types);
+                    ann_base = new casa::AnnSymbol(x, y, *_coord_sys, symbol, stokes_types);
                 }
                 break;
             }
@@ -330,14 +347,19 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
         if (ann_base) {
             ExportStyleParameters(region_style, ann_base);
             ann_base->print(oss);
-            delete ann_region;
+            delete ann_base;
         }
 
         // Create region string and add to export regions vector
         std::string region_line(oss.str());
 
+        // Bug in imageanalysis: exports misspelled fontstyle, imports different string!
+        if (region_line.find("itatlic_bold") != std::string::npos) {
+            region_line.replace(region_line.find("itatlic_bold"), 12, "bold-italic", 11);
+        }
+
         if (!region_line.empty()) {
-            // Fix unsupported region types
+            // "Fix" unsupported region types
             switch (region_type) {
                 case CARTA::RegionType::POLYLINE:
                     region_line.insert(4, "line"); // "poly" -> "polyline"
@@ -358,6 +380,8 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const Regi
                 default:
                     break;
             }
+
+            ExportAnnotationStyleParameters(region_style, region_line); // DS9 regions not supported by CRTF
 
             _export_regions.push_back(region_line);
         } else {
@@ -419,7 +443,7 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
 
         if (region_state.RegionDefined()) {
             // Set RegionStyle
-            RegionStyle region_style = ImportStyleParameters(properties);
+            auto region_style = ImportStyleParameters(properties);
 
             // Set RegionProperties and add to list
             RegionProperties region_properties(region_state, region_style);
@@ -670,13 +694,13 @@ RegionState CrtfImportExport::ImportAnnPoly(std::vector<std::string>& parameters
     return region_state;
 }
 
-RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
-    // Get RegionStyle parameters from properties map
-    RegionStyle style;
+CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
+    // Get CARTA::RegionStyle parameters from properties map
+    CARTA::RegionStyle region_style;
 
     // name
     if (properties.count("label")) {
-        style.name = properties["label"];
+        region_style.set_name(properties["label"]);
     }
 
     // color
@@ -690,15 +714,15 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
         // add prefix if hex
         import_color = "#" + import_color;
     }
-    style.color = import_color;
+    region_style.set_color(import_color);
 
     // linewidth
     if (properties.count("linewidth")) {
-        style.line_width = std::stoi(properties["linewidth"]);
+        region_style.set_line_width(std::stoi(properties["linewidth"]));
     } else if (_global_properties.count("linewidth")) {
-        style.line_width = std::stoi(_global_properties["linewidth"]);
+        region_style.set_line_width(std::stoi(_global_properties["linewidth"]));
     } else {
-        style.line_width = 1; // CRTF default
+        region_style.set_line_width(casa::AnnotationBase::DEFAULT_LINEWIDTH);
     }
 
     // linestyle
@@ -709,12 +733,12 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
         linestyle = _global_properties["linestyle"];
     }
     if (linestyle == "-") { // solid line
-        style.dash_list = {0, 0};
+        region_style.add_dash_list(0);
     } else {
-        style.dash_list = {REGION_DASH_LENGTH, REGION_DASH_LENGTH};
+        region_style.add_dash_list(REGION_DASH_LENGTH); // CARTA default
     }
 
-    return style;
+    return region_style;
 }
 
 // Private import helpers for rectangles
@@ -815,67 +839,188 @@ bool CrtfImportExport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quan
 
 // Private: for exporting regions
 
-void CrtfImportExport::ExportStyleParameters(const RegionStyle& region_style, std::string& region_line) {
-    // Add standard CRTF keywords with default values or optional label to region_line
+std::string CrtfImportExport::GetRegionColor(const CARTA::RegionStyle& region_style) {
+    std::string region_color = region_style.color();
+    if (region_color[0] == '#') {
+        region_color = region_color.substr(1);
+    }
+    std::transform(region_color.begin(), region_color.end(), region_color.begin(), ::tolower);
+    return region_color;
+}
+
+casa::AnnotationBase::LineStyle CrtfImportExport::GetRegionLineStyle(const CARTA::RegionStyle& region_style) {
+    casa::AnnotationBase::LineStyle line_style(casa::AnnotationBase::SOLID);
+    if ((region_style.dash_list_size() > 0) && (region_style.dash_list(0) != 0)) {
+        line_style = casa::AnnotationBase::DASHED;
+    }
+    return line_style;
+}
+
+void CrtfImportExport::GetAnnotationFontParameters(
+    const CARTA::RegionStyle& region_style, std::string& font, unsigned int& font_size, casa::AnnotationBase::FontStyle& font_style) {
+    font = casa::AnnotationBase::DEFAULT_FONT;
+    font_size = casa::AnnotationBase::DEFAULT_FONTSIZE;
+    font_style = casa::AnnotationBase::DEFAULT_FONTSTYLE;
+
+    if (region_style.has_annotation_style()) {
+        auto region_style_font = region_style.annotation_style().font();
+        if (!region_style_font.empty()) {
+            font = region_style_font;
+        }
+
+        auto region_style_fontsize = region_style.annotation_style().font_size();
+        if (region_style_fontsize > 0) {
+            font_size = region_style_fontsize;
+        }
+
+        std::unordered_map<std::string, casa::AnnotationBase::FontStyle> font_style_map{{"", casa::AnnotationBase::NORMAL},
+            {"Normal", casa::AnnotationBase::NORMAL}, {"Bold", casa::AnnotationBase::BOLD}, {"Italic", casa::AnnotationBase::ITALIC},
+            {"Italic Bold", casa::AnnotationBase::ITALIC_BOLD}};
+        auto region_style_fontstyle = region_style.annotation_style().font_style();
+        if (font_style_map.find(region_style_fontstyle) != font_style_map.end()) {
+            font_style = font_style_map[region_style_fontstyle];
+        }
+    }
+}
+
+casa::AnnSymbol::Symbol CrtfImportExport::GetAnnSymbol(CARTA::PointAnnotationShape point_shape) {
+    switch (point_shape) {
+        case CARTA::PointAnnotationShape::SQUARE:
+        case CARTA::PointAnnotationShape::BOX:
+            return casa::AnnSymbol::SQUARE;
+        case CARTA::PointAnnotationShape::CIRCLE:
+        case CARTA::PointAnnotationShape::CIRCLE_LINED:
+            return casa::AnnSymbol::CIRCLE;
+        case CARTA::PointAnnotationShape::DIAMOND:
+        case CARTA::PointAnnotationShape::DIAMOND_LINED:
+            return casa::AnnSymbol::DIAMOND;
+        case CARTA::PointAnnotationShape::CROSS:
+            return casa::AnnSymbol::PLUS;
+        case CARTA::PointAnnotationShape::X:
+            return casa::AnnSymbol::X;
+        default:
+            return casa::AnnSymbol::POINT;
+    }
+}
+
+char CrtfImportExport::GetAnnSymbolCharacter(CARTA::PointAnnotationShape point_shape) {
+    switch (point_shape) {
+        case CARTA::PointAnnotationShape::SQUARE:
+        case CARTA::PointAnnotationShape::BOX:
+            return 's';
+        case CARTA::PointAnnotationShape::CIRCLE:
+        case CARTA::PointAnnotationShape::CIRCLE_LINED:
+            return 'o';
+        case CARTA::PointAnnotationShape::DIAMOND:
+        case CARTA::PointAnnotationShape::DIAMOND_LINED:
+            return 'd';
+        case CARTA::PointAnnotationShape::CROSS:
+            return '+';
+        case CARTA::PointAnnotationShape::X:
+            return 'x';
+        default:
+            return '.';
+    }
+}
+
+void CrtfImportExport::GetAnnotationSymbolParameters(
+    const CARTA::RegionStyle& region_style, unsigned int& symbol_size, unsigned int& symbol_thickness) {
+    symbol_size = casa::AnnotationBase::DEFAULT_SYMBOLSIZE;
+    symbol_thickness = casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS;
+
+    if (region_style.has_annotation_style()) {
+        auto point_width = region_style.annotation_style().point_width();
+        if (point_width > 0) {
+            symbol_size = point_width;
+        }
+
+        auto point_shape = region_style.annotation_style().point_shape();
+        if (point_shape == CARTA::BOX || point_shape == CARTA::CIRCLE_LINED || point_shape == CARTA::DIAMOND_LINED) {
+            symbol_thickness = 0;
+        }
+    }
+}
+
+void CrtfImportExport::ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
+    // Add standard CRTF keywords or region type-specific parameters and optional label to region_line
     std::ostringstream oss;
 
-    oss << " linewidth=" << std::to_string(region_style.line_width) << ", ";
-    casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
-    if (!region_style.dash_list.empty() && (region_style.dash_list[0] != 0)) {
-        style = casa::AnnotationBase::DASHED;
-    }
-    oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(style) << ", ";
+    oss << " linewidth=" << region_style.line_width();
+    oss << ", linestyle=" << casa::AnnotationBase::lineStyleToString(GetRegionLineStyle(region_style));
+    auto region_color = GetRegionColor(region_style);
+    oss << ", color=" << region_color;
 
-    oss << "symsize=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLSIZE) << ", ";
-    oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
-
-    // color: lowercase with no leading #
-    std::string hex_color = region_style.color;
-    if (hex_color[0] == '#') {
-        hex_color = hex_color.substr(1);
-    }
-    std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::tolower);
-    oss << "color=" << hex_color << ", ";
-
-    oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
-    oss << "fontsize=" << std::to_string(casa::AnnotationBase::DEFAULT_FONTSIZE) << ", ";
-    oss << "fontstyle=" << casa::AnnotationBase::fontStyleToString(casa::AnnotationBase::DEFAULT_FONTSTYLE) << ", ";
-    oss << "usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
-
-    if (!region_style.name.empty()) {
-        oss << ", label=\"" << region_style.name << "\", ";
-        oss << "labelcolor=green, ";
-        oss << "labelpos=" << casa::AnnotationBase::DEFAULT_LABELPOS;
+    // label
+    if (!region_style.name().empty()) {
+        oss << ", label=\"" << region_style.name() << "\"";
+        oss << ", labelcolor=" << region_color;
+        oss << ", labelpos=" << casa::AnnotationBase::DEFAULT_LABELPOS;
     }
 
+    // font
+    if (!region_style.name().empty() || (region_style.has_annotation_style() && !region_style.annotation_style().font().empty())) {
+        std::string font;
+        unsigned int font_size;
+        casa::AnnotationBase::FontStyle font_style;
+        GetAnnotationFontParameters(region_style, font, font_size, font_style);
+
+        // Bug in imageanalysis code: exports as "itatlic_bold" but imports as "bold-italic"
+        auto fontstyle_str = casa::AnnotationBase::fontStyleToString(font_style);
+        if (fontstyle_str == "itatlic_bold") {
+            fontstyle_str = "bold-italic";
+        }
+
+        oss << ", font=" << font;
+        oss << ", fontsize=" << font_size;
+        oss << ", fontstyle=" << fontstyle_str;
+        oss << ", usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
+    }
+
+    // symbol size, thickness
+    if (region_line.find("symbol") != std::string::npos) {
+        unsigned int symbol_size, symbol_thickness;
+        GetAnnotationSymbolParameters(region_style, symbol_size, symbol_thickness);
+        oss << ", symsize=" << symbol_size;
+        oss << ", symthick=" << symbol_thickness;
+    }
     region_line.append(oss.str());
 }
 
-void CrtfImportExport::ExportStyleParameters(const RegionStyle& region_style, casa::AnnotationBase* region) {
-    // Set region style parameters in region
+void CrtfImportExport::ExportStyleParameters(const CARTA::RegionStyle& region_style, casa::AnnotationBase* region) {
+    // Set region style parameters in input region
+    region->setLineWidth(region_style.line_width());
+    region->setLineStyle(GetRegionLineStyle(region_style));
+    auto region_color = GetRegionColor(region_style);
+    region->setColor(region_color);
+
     // label
-    if (!region_style.name.empty()) {
-        region->setLabel(region_style.name);
-        region->setLabelColor(casa::AnnotationBase::DEFAULT_LABELCOLOR);
+    if (!region_style.name().empty()) {
+        region->setLabel(region_style.name());
+        region->setLabelColor(region_color);
         region->setLabelPosition(casa::AnnotationBase::DEFAULT_LABELPOS);
     }
 
-    // color: remove leading '#', keep lower case
-    std::string color = region_style.color;
-    if (color[0] == '#') {
-        color = color.substr(1);
-    }
-    region->setColor(color);
+    // symsize, symthick
+    if (region->getType() == casa::AnnotationBase::SYMBOL) {
+        unsigned int symbol_size, symbol_thickness;
+        GetAnnotationSymbolParameters(region_style, symbol_size, symbol_thickness);
 
-    // linewidth
-    region->setLineWidth(region_style.line_width);
-
-    // linestyle
-    casa::AnnotationBase::LineStyle line_style(casa::AnnotationBase::SOLID);
-    if (!region_style.dash_list.empty() && region_style.dash_list[0] != 0) {
-        line_style = casa::AnnotationBase::DASHED;
+        region->setSymbolSize(symbol_size);
+        region->setSymbolThickness(symbol_thickness);
     }
-    region->setLineStyle(line_style);
+
+    // font
+    if (!region_style.name().empty() || (region_style.has_annotation_style() && !region_style.annotation_style().font().empty())) {
+        std::string font;
+        unsigned int font_size;
+        casa::AnnotationBase::FontStyle font_style;
+        GetAnnotationFontParameters(region_style, font, font_size, font_style);
+
+        region->setFont(font);
+        region->setFontSize(font_size);
+        region->setFontStyle(font_style);
+        region->setUseTex(casa::AnnotationBase::DEFAULT_USETEX);
+    }
 }
 
 // Private: export helpers

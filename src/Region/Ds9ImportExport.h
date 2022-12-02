@@ -31,7 +31,7 @@ public:
 
     // Export regions
     // RegionState control points for pixel coords in reference image
-    bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) override;
+    bool AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
 
     // Print regions to file or vector
     bool ExportRegions(std::string& filename, std::string& error) override;
@@ -41,8 +41,8 @@ protected:
     // Add to type:name dictionary for DS9 syntax
     void AddExportRegionNames() override;
 
-    bool AddExportRegion(CARTA::RegionType region_type, const RegionStyle& style, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation) override;
+    bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+        const casacore::Quantity& rotation, const CARTA::RegionStyle& style) override;
 
 private:
     // Default global properties
@@ -65,7 +65,7 @@ private:
     RegionState ImportEllipseRegion(std::vector<std::string>& parameters);
     RegionState ImportRectangleRegion(std::vector<std::string>& parameters);
     RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters);
-    RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
+    CARTA::RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Convert DS9 syntax -> CASA
     bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
@@ -75,7 +75,7 @@ private:
     void AddHeader();
     std::string AddExportRegionPixel(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
     std::string AddExportRegionWorld(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
-    void AddExportStyleParameters(const RegionStyle& region_style, std::string& region_line);
+    void AddExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
 
     // DS9/CASA conversion map
     std::unordered_map<std::string, std::string> _coord_map;
