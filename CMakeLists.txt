@@ -63,18 +63,6 @@ endif()
 FIND_PACKAGE(ZFP CONFIG REQUIRED)
 FIND_PACKAGE(PkgConfig REQUIRED)
 
-FIND_PACKAGE(PUGIXML QUIET)
-if (PUGIXML_FOUND)
-    message(STATUS "Found pugixml using find_package")
-else ()
-        PKG_SEARCH_MODULE(PUGIXML REQUIRED pugixml)
-        if (PUGIXML_FOUND)
-        message(STATUS "Found pugixml using pkg-config")
-    else ()
-        message(FATAL_ERROR "Could not find pugixml")
-    endif ()
-endif()
-
 FIND_PACKAGE(CFITSIO QUIET)
 if (CFITSIO_FOUND)
     message(STATUS "Found cfitsio using find_package")
@@ -165,6 +153,13 @@ endif ()
 # Include uWebSockets headers and build the uSockets lib
 include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
+
+#pugixml
+SET(PUGIXML_COMPACT ON CACHE BOOL "" FORCE)
+add_subdirectory(third-party/pugixml)
+include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
+
+#spdlog
 add_subdirectory(third-party/spdlog)
 
 set(LINK_LIBS
