@@ -325,6 +325,7 @@ protected:
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;
+    int _moment_name_index;
 
     // Image fitter
     std::unique_ptr<ImageFitter> _image_fitter;
