@@ -64,19 +64,19 @@ void HttpServer::RegisterRoutes() {
 
         app.get("/api/database/list/layouts", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
         app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
-        app.get("/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject("layout",res, req); });
+        app.get("/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
         app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
         app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
 
         app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
         app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
-        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("layout",res, req); });
+        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
         app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
         app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
 
         app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
         app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
-        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("layout",res, req); });
+        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
         app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
         app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
     } else {
@@ -404,7 +404,8 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
         return;
     }
 
-    std::string_view object_name = req->getParameter(0);;
+    std::string_view object_name = req->getParameter(0);
+    ;
 
     if (object_name.empty()) {
         res->writeStatus(HTTP_404)->end();
