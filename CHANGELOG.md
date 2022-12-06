@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added support for image fitting with fixed parameters ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
 * Added PV generator features for spectral range, reversed axes, and keeping previous image ([#1175](https://github.com/CARTAvis/carta-backend/issues/1175), [#1176](https://github.com/CARTAvis/carta-backend/issues/1176), [#1177](https://github.com/CARTAvis/carta-backend/issues/1177)).
 * Added a debug config flag for disabling runtime config ([#1213](https://github.com/CARTAvis/carta-backend/issues/1213)).
+* Added automatically generated documentation with Doxygen ([#1215](https://github.com/CARTAvis/carta-backend/issues/1215)).
 
 ### Changed
 * Removed CASA CRTF parser for performance and annotation region support ([#1219](https://github.com/CARTAvis/carta-backend/issues/1219)).
