@@ -745,11 +745,15 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
         axis_types[stokes_axis] = "STOKES";
     }
 
-    // For PV image
-    if (spectral_axis == 0 && axis_types[1] == "NA") {
-        axis_types[1] = "OFFSET";
-    } else if (spectral_axis == 1 && axis_types[0] == "NA") {
-        axis_types[0] = "OFFSET";
+    // For rest of non-direction axes (like PV images)
+    if (spectral_axis == 0 && axis_types[1] == "NA" && !axis_names[1].empty()) {
+        std::string name = axis_names[1];
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
+        axis_types[1] = name;
+    } else if (spectral_axis == 1 && axis_types[0] == "NA" && !axis_names[0].empty()) {
+        std::string name = axis_names[0];
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
+        axis_types[0] = name;
     }
 
     // shape computed_entry
