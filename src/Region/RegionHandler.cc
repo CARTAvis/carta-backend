@@ -793,7 +793,7 @@ void RegionHandler::ClearRegionCache(int region_id) {
 
 bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     // Check error conditions and preconditions
-    if (((region_id < 0) && (file_id == ALL_FILES)) || (region_id == 0)) { // not allowed
+    if (((region_id == ALL_REGIONS) && (file_id == ALL_FILES)) || (region_id == CURSOR_REGION_ID)) { // not allowed
         return false;
     }
     if (!RegionSet(region_id)) { // no Region(s) for this id or Region is closing
