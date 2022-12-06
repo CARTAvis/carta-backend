@@ -199,8 +199,8 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
     // Get world axis names
     axis_names = _coord_sys->worldAxisNames();
 
-    // Determine which axes will be rendered
-    render_axes = GetRenderAxes();
+    // Determine axes [0, 1] will be rendered
+    render_axes.assign({0, 1});
     _width = shape(render_axes[0]);
     _height = shape(render_axes[1]);
     _image_plane_size = _width * _height;
@@ -285,61 +285,6 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
     }
 
     return true;
-}
-
-std::vector<int> FileLoader::GetRenderAxes(bool get_dir_axes) {
-    // Determine which axes will be rendered
-    std::vector<int> axes;
-
-    if (!_render_axes.empty()) {
-        axes = _render_axes;
-        return axes;
-    }
-
-    // Default unless PV image
-    axes.assign({0, 1});
-
-    if (_image_shape.size() > 2) {
-        // Normally, use direction axes
-        if (_coord_sys->hasDirectionCoordinate()) {
-            if (get_dir_axes) {
-                casacore::Vector<casacore::Int> dir_axes = _coord_sys->directionAxesNumbers();
-                axes[0] = dir_axes[0];
-                axes[1] = dir_axes[1];
-            }
-        } else if (_coord_sys->hasLinearCoordinate()) {
-            // Check for PV image: usually [Linear, Spectral] axes but could be reversed
-            // Returns -1 if no spectral axis
-            int spectral_axis = _coord_sys->spectralAxisNumber();
-
-            if (spectral_axis >= 0) {
-                // Find valid (not -1) linear axes
-                std::vector<int> valid_axes;
-                if (spectral_axis == 0) { // reversed
-                    valid_axes.push_back(spectral_axis);
-                }
-
-                casacore::Vector<casacore::Int> lin_axes = _coord_sys->linearAxesNumbers();
-                for (auto axis : lin_axes) {
-                    if (axis >= 0) {
-                        valid_axes.push_back(axis);
-                    }
-                }
-
-                if (spectral_axis > 0) { // not reversed
-                    valid_axes.push_back(spectral_axis);
-                }
-
-                // One linear + spectral axis = pV image
-                if (valid_axes.size() == 2) {
-                    axes = valid_axes;
-                }
-            }
-        }
-    }
-
-    _render_axes = axes;
-    return axes;
 }
 
 bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer) {
