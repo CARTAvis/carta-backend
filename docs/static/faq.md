@@ -8,7 +8,7 @@ Enabling tests in the build:
 
 ```shell
 cd build
-cmake -Dtests=ON ..
+cmake -Dtest=ON ..
 make -j4
 ```
 
