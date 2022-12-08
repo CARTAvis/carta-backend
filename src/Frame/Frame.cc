@@ -2349,7 +2349,8 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     return DoVectorFieldCalculation(settings, callback);
 }
 
-bool Frame::DoVectorFieldCalculation(VectorFieldSettings settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(
+    const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Prevent deleting the Frame while the loop is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
