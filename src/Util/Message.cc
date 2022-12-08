@@ -266,7 +266,7 @@ CARTA::FloatBounds Message::FloatBounds(float min, float max) {
 }
 
 CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
-    CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range) {
+    CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range, bool keep) {
     CARTA::MomentRequest moment_request;
     moment_request.set_file_id(file_id);
     moment_request.set_region_id(region_id);
@@ -291,6 +291,7 @@ CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id,
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+    moment_request.set_keep(keep);
     return moment_request;
 }
 

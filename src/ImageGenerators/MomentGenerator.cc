@@ -19,8 +19,9 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, std::shared_p
 }
 
 bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
-    const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    std::vector<GeneratedImage>& collapse_results, const RegionState& region_state, const std::string& stokes) {
+    int name_index, const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
+    CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results, const RegionState& region_state,
+    const std::string& stokes) {
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
     _progress_callback = progress_callback;
@@ -66,12 +67,17 @@ bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion&
 
                     for (int i = 0; i < result_images.size(); ++i) {
                         // Set temp moment file name
-                        std::string moment_suffix = GetMomentSuffix(_moments[i]);
+                        int moment_type = _moments[i];
+                        std::string moment_suffix = GetMomentSuffix(moment_type);
                         std::string out_file_name = std::string(file_base_name) + "." + moment_suffix;
 
-                        // Set a temp moment file Id. Todo: find another better way to assign the temp file Id
-                        int moment_type = _moments[i];
-                        int moment_file_id = (file_id + 1) * MOMENT_ID_MULTIPLIER + moment_type + 1;
+                        if (name_index > 0) {
+                            out_file_name += std::to_string(name_index);
+                        }
+
+                        // Set a temp moment file Id.
+                        // With each name index, advance by number of moment types to avoid duplicates.
+                        int moment_file_id = (file_id + 1) * MOMENT_ID_MULTIPLIER + (name_index * _moment_map.size()) + moment_type;
 
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
