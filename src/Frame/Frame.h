@@ -21,6 +21,7 @@
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
+#include "DataStream/VectorField.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -32,8 +33,6 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 #include "Util/Message.h"
-#include "VectorFieldCalculator.h"
-#include "VectorFieldSettings.h"
 
 namespace carta {
 
@@ -212,12 +211,6 @@ public:
 
     // Polarization vector field
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
-    inline VectorFieldSettings& GetVectorFieldParameters() {
-        return _vector_field_settings;
-    };
-    inline void ClearVectorFieldParameters() {
-        _vector_field_settings.ClearSettings();
-    };
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
@@ -266,6 +259,9 @@ protected:
     inline int CacheKey(int z, int stokes) {
         return (z * 10) + stokes;
     }
+
+    // Do vector field calculation
+    bool DoVectorFieldCalculation(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // Setup
     uint32_t _session_id;

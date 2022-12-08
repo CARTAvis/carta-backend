@@ -202,13 +202,12 @@ set(SOURCE_FILES
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc
         src/DataStream/Tile.cc
+        src/DataStream/VectorField.cc
         src/FileList/FileExtInfoLoader.cc
         src/FileList/FileInfoLoader.cc
         src/FileList/FileListHandler.cc
         src/FileList/FitsHduList.cc
         src/Frame/Frame.cc
-        src/Frame/VectorFieldCalculator.cc
-        src/Frame/VectorFieldSettings.cc
         src/HttpServer/HttpServer.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc

@@ -23,7 +23,6 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
-#include "Frame/VectorFieldCalculator.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
@@ -1804,28 +1803,14 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 }
 
 bool Session::SendVectorFieldData(int file_id) {
-    if (_frames.count(file_id)) {
-        auto frame = _frames.at(file_id);
-        auto settings = frame->GetVectorFieldParameters();
-        if (settings.smoothing_factor < 1) {
-            return true;
-        }
-
-        if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
-            auto empty_response = Message::VectorOverlayTileData(file_id, frame->CurrentZ(), settings.stokes_intensity,
-                settings.stokes_angle, settings.compression_type, settings.compression_quality);
-            empty_response.set_progress(1.0);
-            SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, empty_response);
-            return true;
-        }
-
+    if (_frames.count(file_id) && _frames.at(file_id)->IsValid()) {
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
             SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, partial_response);
         };
 
         // Do PI/PA calculations
-        if (frame->CalculateVectorField(callback)) {
+        if (_frames.at(file_id)->CalculateVectorField(callback)) {
             return true;
         }
         SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);
