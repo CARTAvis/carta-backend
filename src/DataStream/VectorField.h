@@ -4,13 +4,17 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__FRAME_VECTORFIELDSETTINGS_H_
-#define CARTA_BACKEND__FRAME_VECTORFIELDSETTINGS_H_
-
-#include <cmath>
+#ifndef CARTA_BACKEND__FRAME_VECTORFIELD_H_
+#define CARTA_BACKEND__FRAME_VECTORFIELD_H_
 
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
+
+#include "DataStream/Compression.h"
+#include "DataStream/Tile.h"
+#include "Util/Image.h"
+
+namespace carta {
 
 struct VectorFieldSettings {
     int file_id;
@@ -70,4 +74,11 @@ struct VectorFieldSettings {
     }
 };
 
-#endif // CARTA_BACKEND__FRAME_VECTORFIELDSETTINGS_H_
+void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
+void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
+    std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
+CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
+
+} // namespace carta
+
+#endif // CARTA_BACKEND__FRAME_VECTORFIELD_H_
