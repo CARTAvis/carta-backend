@@ -27,8 +27,6 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
-#define FLOAT_NAN std::numeric_limits<float>::quiet_NaN()
-
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
@@ -2346,12 +2344,71 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
         return true;
     }
 
+    if (_stokes_axis < 0) { // Consider the case if an image has no stokes axis
+        return FillDownsampledData(settings, callback);
+    }
     return DoVectorFieldCalculation(settings, callback);
+}
+
+bool Frame::FillDownsampledData(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+    // Prevent deleting the Frame while this task is not finished yet
+    std::shared_lock lock(GetActiveTaskMutex());
+
+    // Get vector field settings
+    int file_id = settings.file_id;
+    int mip = settings.smoothing_factor;
+    float threshold = (float)settings.threshold;
+    CARTA::CompressionType compression_type = settings.compression_type;
+    float compression_quality = settings.compression_quality;
+    int stokes_intensity = settings.stokes_intensity;
+    int stokes_angle = settings.stokes_angle;
+
+    // Set response messages
+    auto response =
+        Message::VectorOverlayTileData(file_id, _z_index, stokes_intensity, stokes_angle, compression_type, compression_quality);
+    auto* tile_pi = response.add_intensity_tiles();
+    auto* tile_pa = response.add_angle_tiles();
+
+    // Get tiles
+    std::vector<Tile> tiles;
+    GetTiles(_width, _height, mip, tiles);
+
+    // Get image tiles data
+    for (int i = 0; i < tiles.size(); ++i) {
+        auto& tile = tiles[i];
+        auto bounds = GetImageBounds(tile, _width, _height, mip);
+
+        // Get downsampled 2D pixel data
+        std::vector<float> current_stokes_data;
+        int width, height;
+        if (!GetDownsampledRasterData(current_stokes_data, width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
+            return false;
+        }
+        // Apply a threshold cut
+        ApplyThreshold(current_stokes_data, threshold);
+
+        if (stokes_angle > -1) {
+            // Fill PA tiles protobuf data
+            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
+                compression_quality);
+        }
+        if (stokes_intensity > -1) {
+            // Fill PI tiles protobuf data
+            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
+                compression_quality);
+        }
+
+        // Send partial results to the frontend
+        double progress = (double)(i + 1) / tiles.size();
+        response.set_progress(progress);
+        callback(response);
+    }
+    return true;
 }
 
 bool Frame::DoVectorFieldCalculation(
     const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // Prevent deleting the Frame while the loop is not finished yet
+    // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
     // Get vector field settings
@@ -2379,53 +2436,6 @@ bool Frame::DoVectorFieldCalculation(
     // Get tiles
     std::vector<Tile> tiles;
     GetTiles(_width, _height, mip, tiles);
-
-    auto apply_threshold_on_data = [&](std::vector<float>& tmp_data) {
-        if (!std::isnan(threshold)) {
-            for (auto& value : tmp_data) {
-                if (!std::isnan(value) && (value < threshold)) {
-                    value = FLOAT_NAN;
-                }
-            }
-        }
-    };
-
-    // Consider the case if an image has no stokes axis
-    if (_stokes_axis < 0) {
-        // Get image tiles data
-        for (int i = 0; i < tiles.size(); ++i) {
-            auto& tile = tiles[i];
-            auto bounds = GetImageBounds(tile, _width, _height, mip);
-
-            // Get downsampled 2D pixel data
-            std::vector<float> current_stokes_data;
-            int width, height;
-            if (!GetDownsampledRasterData(current_stokes_data, width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
-                return false;
-            }
-            // Apply a threshold cut
-            apply_threshold_on_data(current_stokes_data);
-
-            if (stokes_angle > -1) {
-                // Fill PA tiles protobuf data
-                FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
-                    compression_quality);
-            }
-            if (stokes_intensity > -1) {
-                // Fill PI tiles protobuf data
-                FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
-                    compression_quality);
-            }
-
-            // Send partial results to the frontend
-            double progress = (double)(i + 1) / tiles.size();
-            response.set_progress(progress);
-            callback(response);
-        }
-        return true;
-    }
-
-    // Consider the case if an image has stokes axis
 
     // Set requirements
     bool calculate_pi(stokes_intensity == 1), calculate_pa(stokes_angle == 1);
@@ -2469,22 +2479,15 @@ bool Frame::DoVectorFieldCalculation(
                 return false;
             }
             // Apply a threshold cut
-            apply_threshold_on_data(current_stokes_data);
+            ApplyThreshold(current_stokes_data, threshold);
         }
 
-        // Lambda functions for calculating PI, fractional PI, and PA
-        auto is_valid = [](float a, float b) { return (!std::isnan(a) && !std::isnan(b)); };
-
+        // Lambda function to calculate PI, errors are applied
         auto calc_pi = [&](float q, float u) {
-            return (is_valid(q, u)
-                        ? ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0))
-                        : FLOAT_NAN);
-        };
-
-        auto calc_fpi = [&](float i, float pi) { return (is_valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN); };
-
-        auto calc_pa = [&](float q, float u) {
-            return (is_valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
+            if (!std::isnan(q) && !std::isnan(u)) {
+                return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
+            }
+            return FLOAT_NAN;
         };
 
         auto apply_threshold = [&](float i, float result) {
@@ -2498,13 +2501,13 @@ bool Frame::DoVectorFieldCalculation(
             pi.resize(width * height);
             std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
             if (fractional) { // Calculate fractional PI
-                std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), calc_fpi);
+                std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), CalcFpi);
             }
         }
 
         if (calculate_pa) {
             pa.resize(width * height);
-            std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
+            std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), CalcPa);
         }
 
         // Set NAN for PI/FPI if stokes I is NAN or below the threshold

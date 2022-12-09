@@ -209,7 +209,7 @@ public:
     // Close image with cached data
     void CloseCachedImage(const std::string& file);
 
-    // Polarization vector field
+    // For vector field setting and calculation
     bool SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
     bool GetDownsampledRasterData(
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
@@ -260,7 +260,8 @@ protected:
         return (z * 10) + stokes;
     }
 
-    // Do vector field calculation
+    // For vector field calculation
+    bool FillDownsampledData(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
     bool DoVectorFieldCalculation(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // Setup
