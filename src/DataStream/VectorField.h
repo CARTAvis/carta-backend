@@ -14,6 +14,8 @@
 #include "DataStream/Tile.h"
 #include "Util/Image.h"
 
+#define FLOAT_NAN std::numeric_limits<float>::quiet_NaN()
+
 namespace carta {
 
 struct VectorFieldSettings {
@@ -78,6 +80,12 @@ void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Til
 void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
     std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
+void ApplyThreshold(std::vector<float>& data, float threshold);
+
+// Functions to calculate fractional PI and PA
+bool Valid(float a, float b);
+float CalcFpi(float i, float pi);
+float CalcPa(float q, float u);
 
 } // namespace carta
 

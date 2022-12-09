@@ -4,6 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <casacore/casa/BasicSL/Constants.h>
+
 #include "VectorField.h"
 
 namespace carta {
@@ -57,6 +59,28 @@ CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_h
     bounds.set_y_min(std::min(std::max(0, tile.y * tile_size_original), image_height));
     bounds.set_y_max(std::min(image_height, (tile.y + 1) * tile_size_original));
     return bounds;
+}
+
+void ApplyThreshold(std::vector<float>& data, float threshold) {
+    if (!std::isnan(threshold)) {
+        for (auto& value : data) {
+            if (!std::isnan(value) && (value < threshold)) {
+                value = FLOAT_NAN;
+            }
+        }
+    }
+}
+
+bool Valid(float a, float b) {
+    return (!std::isnan(a) && !std::isnan(b));
+}
+
+float CalcFpi(float i, float pi) {
+    return (Valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
+}
+
+float CalcPa(float q, float u) {
+    return (Valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
 }
 
 } // namespace carta
