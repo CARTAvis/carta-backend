@@ -437,7 +437,7 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     rotation.convert("deg"); // CASA rotang, from x-axis
 
     CARTA::Point ellipse_axes = region_state.control_points[1];
-    bool reversed((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
+    bool reversed((region_state.type == CARTA::RegionType::ELLIPSE) && (ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
@@ -593,46 +593,22 @@ std::string RegionImportExport::FormatColor(const std::string& color) {
     return hex_color;
 }
 
-void RegionImportExport::ExportAnnotationStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
-    // Append ruler and compass parameters in DS9 style (no # to separate region from style)
-    if (!region_style.has_annotation_style()) {
-        return;
+void RegionImportExport::ExportAnnCompassStyle(
+    const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line) {
+    auto north_label = region_style.annotation_style().text_label0();
+    auto east_label = region_style.annotation_style().text_label1();
+    auto north_arrow = (region_style.annotation_style().is_arrow0() ? "1" : "0");
+    auto east_arrow = (region_style.annotation_style().is_arrow1() ? "1" : "0");
+
+    region_line += " compass=";
+    if (!ann_coord_sys.empty()) {
+        region_line += ann_coord_sys;
     }
-
-    auto coordinate_system = region_style.annotation_style().coordinate_system();
-    std::transform(coordinate_system.begin(), coordinate_system.end(), coordinate_system.begin(), ::tolower);
-
-    if (region_line.find("ruler") != std::string::npos) {
-        region_line.append(" ruler=");
-        if (!coordinate_system.empty()) {
-            region_line.append(coordinate_system);
-        }
-
-        // Ruler unit
-        switch (region_style.annotation_style().ruler_unit()) {
-            case CARTA::PIXELS:
-                region_line.append(" pixels");
-                break;
-            case CARTA::DEGREES:
-                region_line.append(" degrees");
-                break;
-            case CARTA::ARCMIN:
-                region_line.append(" arcmin");
-                break;
-            case CARTA::ARCSEC:
-                region_line.append(" arcsec");
-                break;
-        }
-    } else if (region_line.find("compass") != std::string::npos) {
-        region_line.append(" compass=");
-        if (!coordinate_system.empty()) {
-            region_line.append(coordinate_system);
-        }
-
-        // North and east labels and arrows
-        region_line.append(" {" + region_style.annotation_style().text_label0() + "}");
-        region_line.append(" {" + region_style.annotation_style().text_label1() + "}");
-        region_line.append((region_style.annotation_style().is_arrow0() ? " 1" : " 0"));
-        region_line.append((region_style.annotation_style().is_arrow1() ? " 1" : " 0"));
+    if (!north_label.empty()) {
+        region_line += fmt::format(" {{{}}}", north_label);
     }
+    if (!east_label.empty()) {
+        region_line += fmt::format(" {{{}}}", east_label);
+    }
+    region_line += fmt::format(" {} {}", north_arrow, east_arrow);
 }

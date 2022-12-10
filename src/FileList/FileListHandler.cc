@@ -16,7 +16,6 @@
 
 #include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
-#include "Region/Ds9ImportExport.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"

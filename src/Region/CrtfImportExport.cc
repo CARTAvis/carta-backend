@@ -52,8 +52,7 @@ CrtfImportExport::CrtfImportExport(std::shared_ptr<casacore::CoordinateSystem> i
 CrtfImportExport::CrtfImportExport(
     std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis)
     : RegionImportExport(image_coord_sys, image_shape), _stokes_axis(stokes_axis) {
-    // Export regions; will add each region to RegionTextList
-    _region_list = casa::RegionTextList(*image_coord_sys, image_shape);
+    // Export regions; will add each region to _export_regions list
     AddExportRegionNames();
 }
 
@@ -75,13 +74,13 @@ void CrtfImportExport::AddExportRegionNames() {
 
 bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) {
     // Add pixel region using RegionState
-    auto type = region_state.type;
+    auto region_type = region_state.type;
     std::vector<CARTA::Point> points = region_state.control_points;
     float angle = region_state.rotation;
     std::string region_line;
 
     // Print region parameters (pixel coordinates) to CRTF-format string
-    switch (type) {
+    switch (region_type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT:
         case CARTA::RegionType::ANNTEXT: {
@@ -89,7 +88,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
             std::string symbol_or_text(".");
 
             if (region_style.has_annotation_style()) {
-                if (type == CARTA::ANNTEXT) {
+                if (region_type == CARTA::ANNTEXT) {
                     // Match style of imageanalysis AnnText::print() - double quotes
                     symbol_or_text = "\"" + region_style.annotation_style().text_label0() + "\"";
                 } else {
@@ -97,37 +96,40 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
                 }
             }
 
-            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], {}]", _region_names[type], points[0].x(), points[0].y(), symbol_or_text);
+            region_line =
+                fmt::format("{} [[{:.4f}pix, {:.4f}pix], {}]", _region_names[region_type], points[0].x(), points[0].y(), symbol_or_text);
             break;
         }
         case CARTA::RegionType::RECTANGLE:
         case CARTA::RegionType::ANNRECTANGLE: {
             if (angle == 0.0) {
                 // centerbox [[x, y], [width, height]]
-                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", _region_names[type], points[0].x(),
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", _region_names[region_type], points[0].x(),
                     points[0].y(), points[1].x(), points[1].y());
             } else {
                 // rotbox [[x, y], [width, height], angle]
-                std::string name = type == CARTA::RegionType::RECTANGLE ? "rotbox" : "ann rotbox";
+                std::string name = region_type == CARTA::RegionType::RECTANGLE ? "rotbox" : "ann rotbox";
                 region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", name, points[0].x(), points[0].y(),
                     points[1].x(), points[1].y(), angle);
             }
             break;
         }
         case CARTA::RegionType::ELLIPSE:
-        case CARTA::RegionType::ANNELLIPSE:
-        case CARTA::RegionType::ANNCOMPASS: {
+        case CARTA::RegionType::ANNELLIPSE: {
             // ellipse [[x, y], [radius, radius], angle] OR circle[[x, y], r] OR "## compass[[x, y], length]"
-            if (points[1].x() == points[1].y()) { // bmaj == bmin, or length == length
-                std::string name = _region_names[type];
-                if (name != _region_names[CARTA::ANNCOMPASS]) {
-                    name = (type == CARTA::RegionType::ELLIPSE ? "circle" : "ann circle");
-                }
+            if (points[1].x() == points[1].y()) { // bmaj == bmin
+                std::string name = (region_type == CARTA::RegionType::ELLIPSE ? "circle" : "ann circle");
                 region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], {:.4f}pix]", name, points[0].x(), points[0].y(), points[1].x());
             } else {
-                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", _region_names[type], points[0].x(),
-                    points[0].y(), points[1].x(), points[1].y(), angle);
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", _region_names[region_type],
+                    points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
             }
+            break;
+        }
+        case CARTA::RegionType::ANNCOMPASS: {
+            // # compass [[x, y], length]
+            region_line = fmt::format(
+                "{} [[{:.4f}pix, {:.4f}pix], {:.4f}pix]", _region_names[region_type], points[0].x(), points[0].y(), points[1].x());
             break;
         }
         case CARTA::RegionType::LINE:
@@ -139,7 +141,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
         case CARTA::RegionType::ANNVECTOR:
         case CARTA::RegionType::ANNRULER: {
             // e.g. poly [[x1, y1], [x2, y2], [x3, y3],...]
-            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix]", _region_names[type], points[0].x(), points[0].y());
+            region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix]", _region_names[region_type], points[0].x(), points[0].y());
             for (size_t i = 1; i < points.size(); ++i) {
                 region_line += fmt::format(", [{:.4f}pix, {:.4f}pix]", points[i].x(), points[i].y());
             }
@@ -153,7 +155,16 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
     // Add to export region vector
     if (!region_line.empty()) {
         ExportStyleParameters(region_style, region_line);
-        ExportAnnotationStyleParameters(region_style, region_line); // regions not supported by CRTF; in DS9 format
+
+        if (region_type == CARTA::RegionType::ANNRULER) {
+            auto anno_csys = GetAnnotationCoordinateSystem(true);
+            if (!anno_csys.empty()) {
+                region_line += fmt::format(" ruler={}", anno_csys);
+            }
+        } else if (region_type == CARTA::RegionType::ANNCOMPASS) {
+            ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(true), region_line);
+        }
+
         _export_regions.push_back(region_line);
         return true;
     }
@@ -163,25 +174,14 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
 
 bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) {
     // Print regions to CRTF file
-    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
+    if (_export_regions.empty()) {
         error = "Export region failed: no regions to export.";
         return false;
     }
 
     std::ofstream export_file(filename);
-    if (_region_list.nLines() > 0) {
-        try {
-            // Includes header and Annotation region lines
-            _region_list.print(export_file);
-        } catch (const casacore::AipsError& err) {
-            export_file.close();
-            error = err.getMesg();
-            return false;
-        }
-    } else {
-        // Print header
-        export_file << GetCrtfVersionHeader();
-    }
+    // Print header
+    export_file << GetCrtfVersionHeader();
 
     // With workarounds, may have combination of Annotation region lines and export region strings.
     // Print any region strings
@@ -195,30 +195,15 @@ bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) 
 
 bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::string& error) {
     // Print regions to CRTF file lines in vector
-    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
+    if (_export_regions.empty()) {
         error = "Export region failed: no regions to export.";
         return false;
     }
 
     // Print header
     contents.push_back(GetCrtfVersionHeader());
-
-    if (_region_list.nLines() > 0) {
-        try {
-            for (unsigned int i = 0; i < _region_list.nLines(); ++i) {
-                casa::AsciiAnnotationFileLine file_line = _region_list.lineAt(i);
-                std::ostringstream export_stream;
-                file_line.print(export_stream);
-                contents.push_back(export_stream.str());
-            }
-        } catch (const casacore::AipsError& err) {
-            error = err.getMesg();
-            return false;
-        }
-    } else {
-        for (auto& region : _export_regions) {
-            contents.push_back(region);
-        }
+    for (auto& region : _export_regions) {
+        contents.push_back(region);
     }
 
     return true;
@@ -371,17 +356,22 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const std:
                 case CARTA::RegionType::ANNLINE:
                     region_line = "ann " + region_line; // add explicit "ann"
                     break;
-                case CARTA::RegionType::ANNRULER:
+                case CARTA::RegionType::ANNRULER: {
                     region_line.replace(0, 4, _region_names[region_type]); // "line" -> "# ruler"
+                    std::string anno_csys = GetAnnotationCoordinateSystem(false);
+                    if (!anno_csys.empty()) {
+                        region_line += fmt::format(" ruler={}", anno_csys);
+                    }
                     break;
-                case CARTA::RegionType::ANNCOMPASS:
+                }
+                case CARTA::RegionType::ANNCOMPASS: {
                     region_line.replace(0, 10, _region_names[region_type]); // "ann circle" -> "# compass"
+                    ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(false), region_line);
                     break;
+                }
                 default:
                     break;
             }
-
-            ExportAnnotationStyleParameters(region_style, region_line); // DS9 regions not supported by CRTF
 
             _export_regions.push_back(region_line);
         } else {
@@ -394,6 +384,17 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const std:
     }
 
     return true;
+}
+
+// Private: for import and export
+
+std::string CrtfImportExport::GetImageDirectionFrame() {
+    std::string dir_frame;
+    if (_coord_sys->hasDirectionCoordinate()) {
+        casacore::MDirection::Types mdir_type = _coord_sys->directionCoordinate().directionType();
+        dir_frame = casacore::MDirection::showType(mdir_type);
+    }
+    return dir_frame;
 }
 
 // Private: for importing regions
@@ -459,9 +460,8 @@ std::string CrtfImportExport::GetRegionDirectionFrame(std::unordered_map<std::st
         dir_frame = properties["coord"];
     } else if (_global_properties.count("coord")) {
         dir_frame = _global_properties["coord"];
-    } else if (_coord_sys->hasDirectionCoordinate()) {
-        casacore::MDirection::Types mdir_type = _coord_sys->directionCoordinate().directionType();
-        dir_frame = casacore::MDirection::showType(mdir_type);
+    } else {
+        dir_frame = GetImageDirectionFrame();
     }
 
     return dir_frame;
@@ -748,9 +748,7 @@ bool CrtfImportExport::GetBoxControlPoints(std::string& box_definition, std::vec
     std::vector<std::string> parameters;
     std::unordered_map<std::string, std::string> properties;
     ParseRegionParameters(box_definition, parameters, properties);
-
     auto coord_frame = GetRegionDirectionFrame(properties);
-
     return GetBoxControlPoints(parameters, coord_frame, control_points, rotation);
 }
 
@@ -839,6 +837,46 @@ bool CrtfImportExport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quan
 
 // Private: for exporting regions
 
+casa::AnnSymbol::Symbol CrtfImportExport::GetAnnSymbol(CARTA::PointAnnotationShape point_shape) {
+    switch (point_shape) {
+        case CARTA::PointAnnotationShape::SQUARE:
+        case CARTA::PointAnnotationShape::BOX:
+            return casa::AnnSymbol::SQUARE;
+        case CARTA::PointAnnotationShape::CIRCLE:
+        case CARTA::PointAnnotationShape::CIRCLE_LINED:
+            return casa::AnnSymbol::CIRCLE;
+        case CARTA::PointAnnotationShape::DIAMOND:
+        case CARTA::PointAnnotationShape::DIAMOND_LINED:
+            return casa::AnnSymbol::DIAMOND;
+        case CARTA::PointAnnotationShape::CROSS:
+            return casa::AnnSymbol::PLUS;
+        case CARTA::PointAnnotationShape::X:
+            return casa::AnnSymbol::X;
+        default:
+            return casa::AnnSymbol::POINT;
+    }
+}
+
+char CrtfImportExport::GetAnnSymbolCharacter(CARTA::PointAnnotationShape point_shape) {
+    switch (point_shape) {
+        case CARTA::PointAnnotationShape::SQUARE:
+        case CARTA::PointAnnotationShape::BOX:
+            return 's';
+        case CARTA::PointAnnotationShape::CIRCLE:
+        case CARTA::PointAnnotationShape::CIRCLE_LINED:
+            return 'o';
+        case CARTA::PointAnnotationShape::DIAMOND:
+        case CARTA::PointAnnotationShape::DIAMOND_LINED:
+            return 'D';
+        case CARTA::PointAnnotationShape::CROSS:
+            return '+';
+        case CARTA::PointAnnotationShape::X:
+            return 'x';
+        default:
+            return '.';
+    }
+}
+
 std::string CrtfImportExport::GetRegionColor(const CARTA::RegionStyle& region_style) {
     std::string region_color = region_style.color();
     if (region_color[0] == '#') {
@@ -883,46 +921,6 @@ void CrtfImportExport::GetAnnotationFontParameters(
     }
 }
 
-casa::AnnSymbol::Symbol CrtfImportExport::GetAnnSymbol(CARTA::PointAnnotationShape point_shape) {
-    switch (point_shape) {
-        case CARTA::PointAnnotationShape::SQUARE:
-        case CARTA::PointAnnotationShape::BOX:
-            return casa::AnnSymbol::SQUARE;
-        case CARTA::PointAnnotationShape::CIRCLE:
-        case CARTA::PointAnnotationShape::CIRCLE_LINED:
-            return casa::AnnSymbol::CIRCLE;
-        case CARTA::PointAnnotationShape::DIAMOND:
-        case CARTA::PointAnnotationShape::DIAMOND_LINED:
-            return casa::AnnSymbol::DIAMOND;
-        case CARTA::PointAnnotationShape::CROSS:
-            return casa::AnnSymbol::PLUS;
-        case CARTA::PointAnnotationShape::X:
-            return casa::AnnSymbol::X;
-        default:
-            return casa::AnnSymbol::POINT;
-    }
-}
-
-char CrtfImportExport::GetAnnSymbolCharacter(CARTA::PointAnnotationShape point_shape) {
-    switch (point_shape) {
-        case CARTA::PointAnnotationShape::SQUARE:
-        case CARTA::PointAnnotationShape::BOX:
-            return 's';
-        case CARTA::PointAnnotationShape::CIRCLE:
-        case CARTA::PointAnnotationShape::CIRCLE_LINED:
-            return 'o';
-        case CARTA::PointAnnotationShape::DIAMOND:
-        case CARTA::PointAnnotationShape::DIAMOND_LINED:
-            return 'd';
-        case CARTA::PointAnnotationShape::CROSS:
-            return '+';
-        case CARTA::PointAnnotationShape::X:
-            return 'x';
-        default:
-            return '.';
-    }
-}
-
 void CrtfImportExport::GetAnnotationSymbolParameters(
     const CARTA::RegionStyle& region_style, unsigned int& symbol_size, unsigned int& symbol_thickness) {
     symbol_size = casa::AnnotationBase::DEFAULT_SYMBOLSIZE;
@@ -941,9 +939,28 @@ void CrtfImportExport::GetAnnotationSymbolParameters(
     }
 }
 
+std::string CrtfImportExport::GetAnnotationCoordinateSystem(bool export_pixel_coord) {
+    std::string ann_coord_sys;
+    if (export_pixel_coord) {
+        ann_coord_sys = "image";
+    } else {
+        ann_coord_sys = GetImageDirectionFrame();
+
+        if (ann_coord_sys.empty() && _coord_sys->hasLinearCoordinate()) {
+            ann_coord_sys = "linear";
+        }
+    }
+    return ann_coord_sys;
+}
+
 void CrtfImportExport::ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line) {
     // Add standard CRTF keywords or region type-specific parameters and optional label to region_line
     std::ostringstream oss;
+
+    std::string dir_frame = GetImageDirectionFrame();
+    if (!dir_frame.empty()) {
+        oss << " coord=" << dir_frame;
+    }
 
     oss << " linewidth=" << region_style.line_width();
     oss << ", linestyle=" << casa::AnnotationBase::lineStyleToString(GetRegionLineStyle(region_style));
@@ -987,7 +1004,7 @@ void CrtfImportExport::ExportStyleParameters(const CARTA::RegionStyle& region_st
 }
 
 void CrtfImportExport::ExportStyleParameters(const CARTA::RegionStyle& region_style, casa::AnnotationBase* region) {
-    // Set region style parameters in input region
+    // Set region style parameters in AnnotationBase region
     region->setLineWidth(region_style.line_width());
     region->setLineStyle(GetRegionLineStyle(region_style));
     auto region_color = GetRegionColor(region_style);

@@ -73,9 +73,12 @@ private:
 
     // Export: add header string to _export_regions
     void AddHeader();
-    std::string AddExportRegionPixel(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
-    std::string AddExportRegionWorld(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
-    void AddExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    std::string AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle);
+    std::string AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle);
+    void ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportFontParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportAnnotationStyleParameters(CARTA::RegionType region_type, const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportAnnPointParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
 
     // DS9/CASA conversion map
     std::unordered_map<std::string, std::string> _coord_map;

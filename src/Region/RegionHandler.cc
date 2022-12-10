@@ -2263,7 +2263,7 @@ bool RegionHandler::CheckLinearOffsets(
 
 double RegionHandler::GetPointSeparation(
     std::shared_ptr<CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2) {
-    // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
+    // Returns angular separation in arcsec. Both points must be inside image or returns zero (use toWorldLength instead, not as accurate).
     // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     double separation(0.0);
 

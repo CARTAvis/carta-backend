@@ -68,7 +68,7 @@ protected:
 
     // Format hex string e.g. "10161a" -> "#10161A"
     std::string FormatColor(const std::string& color);
-    virtual void ExportAnnotationStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportAnnCompassStyle(const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line);
 
     // Image info to which region is applied
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
@@ -82,8 +82,9 @@ protected:
     std::vector<std::string> _export_regions;
 
     // Common to CRTF and DS9
-    std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::LINE, "line"}, {CARTA::POLYLINE, "polyline"},
-        {CARTA::ELLIPSE, "ellipse"}, {CARTA::ANNRULER, "# ruler"}, {CARTA::ANNCOMPASS, "# compass"}};
+    std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::RegionType::LINE, "line"},
+        {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNRULER, "# ruler"},
+        {CARTA::RegionType::ANNCOMPASS, "# compass"}};
 
 private:
     // Return control_points and rotation Quantity for region type
