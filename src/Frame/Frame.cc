@@ -75,9 +75,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
-    // Set stokes axis number for vector field settings
-    _vector_field_settings.SetStokesAxis(_stokes_axis);
-
     // Determine which axes are rendered, e.g. for pV images
     std::vector<int> render_axes = _loader->GetRenderAxes();
     _x_axis = render_axes[0];
@@ -2269,7 +2266,7 @@ void Frame::CloseCachedImage(const std::string& file) {
 }
 
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    VectorFieldSettings new_settings(message);
+    VectorFieldSettings new_settings(message, _stokes_axis);
     if (_vector_field_settings != new_settings) {
         _vector_field_settings = new_settings;
         return true;
@@ -2350,7 +2347,8 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     return DoVectorFieldCalculation(settings, callback);
 }
 
-bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(
+    const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
@@ -2358,10 +2356,10 @@ bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::f
     int mip = settings.smoothing_factor;
     bool fractional = settings.fractional;
     float threshold = (float)settings.threshold;
-    bool calculate_pi = settings.CalculatePi();
-    bool calculate_pa = settings.CalculatePa();
-    bool current_stokes_as_pi = settings.CurrentStokesAsPi();
-    bool current_stokes_as_pa = settings.CurrentStokesAsPa();
+    bool calculate_pi = settings.calculate_pi;
+    bool calculate_pa = settings.calculate_pa;
+    bool current_stokes_as_pi = settings.current_stokes_as_pi;
+    bool current_stokes_as_pa = settings.current_stokes_as_pa;
 
     // Get tiles
     std::vector<Tile> tiles;
