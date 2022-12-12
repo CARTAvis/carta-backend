@@ -72,43 +72,7 @@ void ApplyThreshold(std::vector<float>& data, float threshold) {
     }
 }
 
-void FillCurrentStokesData(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data, const Tile& tile, int width,
-    int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // Get vector field settings
-    int file_id = settings.file_id;
-    int mip = settings.smoothing_factor;
-    float threshold = (float)settings.threshold;
-    CARTA::CompressionType compression_type = settings.compression_type;
-    float compression_quality = settings.compression_quality;
-    int stokes_intensity = settings.stokes_intensity;
-    int stokes_angle = settings.stokes_angle;
-
-    // Set requirements
-    bool current_stokes_as_pi(stokes_intensity > -1);
-    bool current_stokes_as_pa(stokes_angle > -1);
-
-    // Apply a threshold cut
-    ApplyThreshold(current_stokes_data, threshold);
-
-    // Set response messages
-    auto response = Message::VectorOverlayTileData(file_id, z_index, stokes_intensity, stokes_angle, compression_type, compression_quality);
-    auto* tile_pi = response.add_intensity_tiles();
-    auto* tile_pa = response.add_angle_tiles();
-
-    if (current_stokes_as_pa) {
-        FillTileData(tile_pa, tile.x, tile.y, tile.layer, mip, width, height, current_stokes_data, compression_type, compression_quality);
-    }
-
-    if (current_stokes_as_pi) {
-        FillTileData(tile_pi, tile.x, tile.y, tile.layer, mip, width, height, current_stokes_data, compression_type, compression_quality);
-    }
-
-    // Send partial results
-    response.set_progress(progress);
-    callback(response);
-}
-
-void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
+void CalculatePiPa(VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
     std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
     int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Get vector field settings
@@ -120,16 +84,12 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& curr
     float compression_quality = settings.compression_quality;
     int stokes_intensity = settings.stokes_intensity;
     int stokes_angle = settings.stokes_angle;
-    double q_error = settings.q_error;
-    double u_error = settings.u_error;
-    bool debiasing = settings.debiasing;
-    if (!debiasing) {
-        q_error = u_error = 0;
-    }
-
-    // Set requirements
-    bool calculate_pi(stokes_intensity == 1), calculate_pa(stokes_angle == 1);
-    bool current_stokes_as_pi(stokes_intensity == 0), current_stokes_as_pa(stokes_angle == 0);
+    double q_error = settings.GetQError();
+    double u_error = settings.GetUError();
+    bool calculate_pi = settings.CalculatePi();
+    bool calculate_pa = settings.CalculatePa();
+    bool current_stokes_as_pi = settings.CurrentStokesAsPi();
+    bool current_stokes_as_pa = settings.CurrentStokesAsPa();
 
     // Set response messages
     auto response = Message::VectorOverlayTileData(file_id, z_index, stokes_intensity, stokes_angle, compression_type, compression_quality);
@@ -153,7 +113,6 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& curr
     }
 
     // Calculate PI and PA using stokes data I, Q or U
-
     // Lambda function to apply a threshold
     auto apply_threshold = [&](float i, float result) {
         return ((std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) ? FLOAT_NAN : result);
@@ -179,7 +138,6 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& curr
         if (stokes_flag["I"]) { // Set NAN for PI/FPI if stokes I is NAN or below the threshold
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), apply_threshold);
         }
-
         FillTileData(tile_pi, tile.x, tile.y, tile.layer, mip, width, height, pi, compression_type, compression_quality);
     }
 
@@ -191,7 +149,6 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& curr
         if (stokes_flag["I"]) { // Set NAN for PA if stokes I is NAN or below the threshold
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), apply_threshold);
         }
-
         FillTileData(tile_pa, tile.x, tile.y, tile.layer, mip, width, height, pa, compression_type, compression_quality);
     }
 

@@ -261,8 +261,7 @@ protected:
     }
 
     // For vector field calculation
-    bool FillDownsampledData(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-    bool DoVectorFieldCalculation(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+    bool DoVectorFieldCalculation(VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // Setup
     uint32_t _session_id;
