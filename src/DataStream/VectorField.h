@@ -30,9 +30,8 @@ struct VectorFieldSettings {
     int stokes_angle;
     CARTA::CompressionType compression_type;
     float compression_quality;
-    int stokes_axis; // stokes axis number from the image file
 
-    VectorFieldSettings() : stokes_axis(-1) {
+    VectorFieldSettings() {
         ClearSettings();
     }
 
@@ -75,30 +74,6 @@ struct VectorFieldSettings {
         compression_type = CARTA::CompressionType::NONE;
         compression_quality = 0;
     }
-
-    void SetStokesAxis(int stokes_axis_) {
-        stokes_axis = stokes_axis_;
-    }
-
-    double GetQError() {
-        return (debiasing ? q_error : 0);
-    }
-    double GetUError() {
-        return (debiasing ? u_error : 0);
-    }
-
-    bool CalculatePi() {
-        return (stokes_intensity == 1 && stokes_axis > -1);
-    }
-    bool CalculatePa() {
-        return (stokes_angle == 1 && stokes_axis > -1);
-    }
-    bool CurrentStokesAsPi() {
-        return ((stokes_intensity == 0 && stokes_axis > -1) || stokes_axis < 0);
-    }
-    bool CurrentStokesAsPa() {
-        return ((stokes_angle == 0 && stokes_axis > -1) || stokes_axis < 0);
-    }
 };
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
@@ -107,8 +82,12 @@ void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, in
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 void ApplyThreshold(std::vector<float>& data, float threshold);
 
+// Function to fill current stokes data as PI or PA
+void FillCurrentStokesData(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data, const Tile& tile, int width,
+    int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+
 // Functions to calculate fractional PI and PA
-void CalculatePiPa(VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
+void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
     std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
     int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 bool Valid(float a, float b);
