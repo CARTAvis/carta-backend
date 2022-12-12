@@ -32,14 +32,12 @@ struct VectorFieldSettings {
     float compression_quality;
 
     // Extra variables to be determined based on the existence of stokes axis
-    int stokes_axis; // Stokes axis number from the image file
     bool calculate_pi;
     bool calculate_pa;
     bool current_stokes_as_pi;
     bool current_stokes_as_pa;
 
-    VectorFieldSettings()
-        : stokes_axis(-1), calculate_pi(false), calculate_pa(false), current_stokes_as_pi(false), current_stokes_as_pa(false) {
+    VectorFieldSettings() : calculate_pi(false), calculate_pa(false), current_stokes_as_pi(false), current_stokes_as_pa(false) {
         ClearSettings();
     }
 
