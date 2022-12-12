@@ -94,9 +94,9 @@ CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int 
 void ApplyThreshold(std::vector<float>& data, float threshold);
 
 // Functions to calculate fractional PI and PA
-void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
-    std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
-    int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::string, std::vector<float>>& stokes_data,
+    std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,
+    const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 bool Valid(float a, float b);
 float CalcFpi(float i, float pi);
 float CalcPa(float q, float u);

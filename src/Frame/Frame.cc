@@ -2384,14 +2384,13 @@ bool Frame::DoVectorFieldCalculation(
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, _width, _height, mip);
         int width, height;
-        std::vector<float> current_stokes_data;
         std::unordered_map<std::string, std::vector<float>> stokes_data{
-            {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
+            {"CUR", std::vector<float>()}, {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
         if (current_stokes_as_pi || current_stokes_as_pa) {
-            if (!GetDownsampledRasterData(current_stokes_data, width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
+            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
                 return false;
             }
         }
@@ -2408,7 +2407,7 @@ bool Frame::DoVectorFieldCalculation(
         }
 
         // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(settings, current_stokes_data, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        CalculatePiPa(settings, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
     }
     return true;
 }
