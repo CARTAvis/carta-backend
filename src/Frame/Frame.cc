@@ -75,6 +75,9 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
+    // Set stokes axis number for vector field settings
+    _vector_field_settings.SetStokesAxis(_stokes_axis);
+
     // Determine which axes are rendered, e.g. for pV images
     std::vector<int> render_axes = _loader->GetRenderAxes();
     _x_axis = render_axes[0];
@@ -2344,108 +2347,29 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
         return true;
     }
 
-    if (_stokes_axis < 0) { // Consider the case if an image has no stokes axis
-        return FillDownsampledData(settings, callback);
-    }
     return DoVectorFieldCalculation(settings, callback);
 }
 
-bool Frame::FillDownsampledData(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
     // Get vector field settings
-    int file_id = settings.file_id;
-    int mip = settings.smoothing_factor;
-    float threshold = (float)settings.threshold;
-    CARTA::CompressionType compression_type = settings.compression_type;
-    float compression_quality = settings.compression_quality;
-    int stokes_intensity = settings.stokes_intensity;
-    int stokes_angle = settings.stokes_angle;
-
-    // Set response messages
-    auto response =
-        Message::VectorOverlayTileData(file_id, _z_index, stokes_intensity, stokes_angle, compression_type, compression_quality);
-    auto* tile_pi = response.add_intensity_tiles();
-    auto* tile_pa = response.add_angle_tiles();
-
-    // Get tiles
-    std::vector<Tile> tiles;
-    GetTiles(_width, _height, mip, tiles);
-
-    // Get image tiles data
-    for (int i = 0; i < tiles.size(); ++i) {
-        auto& tile = tiles[i];
-        auto bounds = GetImageBounds(tile, _width, _height, mip);
-
-        // Get downsampled 2D pixel data
-        std::vector<float> current_stokes_data;
-        int width, height;
-        if (!GetDownsampledRasterData(current_stokes_data, width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
-            return false;
-        }
-        // Apply a threshold cut
-        ApplyThreshold(current_stokes_data, threshold);
-
-        if (stokes_angle > -1) {
-            // Fill PA tiles protobuf data
-            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
-                compression_quality);
-        }
-        if (stokes_intensity > -1) {
-            // Fill PI tiles protobuf data
-            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
-                compression_quality);
-        }
-
-        // Send partial results to the frontend
-        double progress = (double)(i + 1) / tiles.size();
-        response.set_progress(progress);
-        callback(response);
-    }
-    return true;
-}
-
-bool Frame::DoVectorFieldCalculation(
-    const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // Prevent deleting the Frame while this task is not finished yet
-    std::shared_lock lock(GetActiveTaskMutex());
-
-    // Get vector field settings
-    int file_id = settings.file_id;
     int mip = settings.smoothing_factor;
     bool fractional = settings.fractional;
     float threshold = (float)settings.threshold;
-    CARTA::CompressionType compression_type = settings.compression_type;
-    float compression_quality = settings.compression_quality;
-    int stokes_intensity = settings.stokes_intensity;
-    int stokes_angle = settings.stokes_angle;
-    double q_error = settings.q_error;
-    double u_error = settings.u_error;
-    bool debiasing = settings.debiasing;
-    if (!debiasing) {
-        q_error = u_error = 0;
-    }
-
-    // Set response messages
-    auto response =
-        Message::VectorOverlayTileData(file_id, _z_index, stokes_intensity, stokes_angle, compression_type, compression_quality);
-    auto* tile_pi = response.add_intensity_tiles();
-    auto* tile_pa = response.add_angle_tiles();
+    bool calculate_pi = settings.CalculatePi();
+    bool calculate_pa = settings.CalculatePa();
+    bool current_stokes_as_pi = settings.CurrentStokesAsPi();
+    bool current_stokes_as_pa = settings.CurrentStokesAsPa();
 
     // Get tiles
     std::vector<Tile> tiles;
     GetTiles(_width, _height, mip, tiles);
-
-    // Set requirements
-    bool calculate_pi(stokes_intensity == 1), calculate_pa(stokes_angle == 1);
-    bool current_stokes_as_pi(stokes_intensity == 0), current_stokes_as_pa(stokes_angle == 0);
 
     // Initialize stokes maps for their flags, indices and data
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
     std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
-    std::unordered_map<std::string, std::vector<float>> stokes_data{
-        {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
 
     // Set stokes flags and get their indices
     stokes_flag["I"] = (fractional || !std::isnan(threshold));
@@ -2461,87 +2385,32 @@ bool Frame::DoVectorFieldCalculation(
     for (int i = 0; i < tiles.size(); ++i) {
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, _width, _height, mip);
-
-        // Get downsampled raster tile data
         int width, height;
-        for (auto one : stokes_flag) {
-            std::string stokes = one.first;
-            if (stokes_flag[stokes] &&
-                !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
-                return false;
-            }
-        }
-
-        // Calculate the current stokes as polarized intensity or polarized angle
         std::vector<float> current_stokes_data;
+        std::unordered_map<std::string, std::vector<float>> stokes_data{
+            {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
+        double progress = (double)(i + 1) / tiles.size();
+
+        // Get current stokes data
         if (current_stokes_as_pi || current_stokes_as_pa) {
             if (!GetDownsampledRasterData(current_stokes_data, width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
                 return false;
             }
-            // Apply a threshold cut
-            ApplyThreshold(current_stokes_data, threshold);
         }
 
-        // Lambda function to calculate PI, errors are applied
-        auto calc_pi = [&](float q, float u) {
-            if (!std::isnan(q) && !std::isnan(u)) {
-                return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
-            }
-            return FLOAT_NAN;
-        };
-
-        auto apply_threshold = [&](float i, float result) {
-            return ((std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) ? FLOAT_NAN : result);
-        };
-
-        // Calculate polarized intensity (pi) or polarized angle (pa) if required
-        std::vector<float> pi, pa;
-
-        if (calculate_pi) {
-            pi.resize(width * height);
-            std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
-            if (fractional) { // Calculate fractional PI
-                std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), CalcFpi);
+        // Get stokes data I, Q, or U
+        if (calculate_pi || calculate_pa) {
+            for (auto one : stokes_flag) {
+                std::string stokes = one.first;
+                if (stokes_flag[stokes] &&
+                    !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
+                    return false;
+                }
             }
         }
 
-        if (calculate_pa) {
-            pa.resize(width * height);
-            std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), CalcPa);
-        }
-
-        // Set NAN for PI/FPI if stokes I is NAN or below the threshold
-        if (calculate_pi && stokes_flag["I"]) {
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), apply_threshold);
-        }
-
-        // Set NAN for PA if stokes I is NAN or below the threshold
-        if (calculate_pa && stokes_flag["I"]) {
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), apply_threshold);
-        }
-
-        // Fill polarized intensity tiles protobuf data
-        if (calculate_pi) { // Send PI as polarized intensity
-            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, pi, compression_type, compression_quality);
-        }
-        if (current_stokes_as_pi) { // Send current stokes data as polarized intensity
-            FillTileData(tile_pi, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
-                compression_quality);
-        }
-
-        // Fill polarized angle tiles protobuf data
-        if (calculate_pa) { // Send PA as polarized angle
-            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, pa, compression_type, compression_quality);
-        }
-        if (current_stokes_as_pa) { // Send current stokes data as polarized angle
-            FillTileData(tile_pa, tiles[i].x, tiles[i].y, tiles[i].layer, mip, width, height, current_stokes_data, compression_type,
-                compression_quality);
-        }
-
-        // Send partial results to the frontend
-        double progress = (double)(i + 1) / tiles.size();
-        response.set_progress(progress);
-        callback(response);
+        // Calculate PI or PA and then send a partial response message
+        CalculatePiPa(settings, current_stokes_data, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
     }
     return true;
 }

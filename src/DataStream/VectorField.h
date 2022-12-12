@@ -30,8 +30,9 @@ struct VectorFieldSettings {
     int stokes_angle;
     CARTA::CompressionType compression_type;
     float compression_quality;
+    int stokes_axis; // stokes axis number from the image file
 
-    VectorFieldSettings() {
+    VectorFieldSettings() : stokes_axis(-1) {
         ClearSettings();
     }
 
@@ -74,6 +75,30 @@ struct VectorFieldSettings {
         compression_type = CARTA::CompressionType::NONE;
         compression_quality = 0;
     }
+
+    void SetStokesAxis(int stokes_axis_) {
+        stokes_axis = stokes_axis_;
+    }
+
+    double GetQError() {
+        return (debiasing ? q_error : 0);
+    }
+    double GetUError() {
+        return (debiasing ? u_error : 0);
+    }
+
+    bool CalculatePi() {
+        return (stokes_intensity == 1 && stokes_axis > -1);
+    }
+    bool CalculatePa() {
+        return (stokes_angle == 1 && stokes_axis > -1);
+    }
+    bool CurrentStokesAsPi() {
+        return ((stokes_intensity == 0 && stokes_axis > -1) || stokes_axis < 0);
+    }
+    bool CurrentStokesAsPa() {
+        return ((stokes_angle == 0 && stokes_axis > -1) || stokes_axis < 0);
+    }
 };
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
@@ -83,6 +108,9 @@ CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int 
 void ApplyThreshold(std::vector<float>& data, float threshold);
 
 // Functions to calculate fractional PI and PA
+void CalculatePiPa(VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
+    std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
+    int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 bool Valid(float a, float b);
 float CalcFpi(float i, float pi);
 float CalcPa(float q, float u);
