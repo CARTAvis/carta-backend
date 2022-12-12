@@ -82,14 +82,11 @@ void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, in
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
 void ApplyThreshold(std::vector<float>& data, float threshold);
 
-// Function to fill current stokes data as PI or PA
-void FillCurrentStokesData(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data, const Tile& tile, int width,
-    int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-
 // Functions to calculate fractional PI and PA
-void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
+void CalculatePiPa(VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
     std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
-    int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+    int width, int height, int z_index, int stokes_axis, double progress,
+    const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 bool Valid(float a, float b);
 float CalcFpi(float i, float pi);
 float CalcPa(float q, float u);

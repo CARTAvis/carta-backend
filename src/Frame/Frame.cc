@@ -2344,42 +2344,10 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
         return true;
     }
 
-    if (_stokes_axis < 0) { // Consider the case if an image has no stokes axis
-        return FillDownsampledData(settings, callback);
-    }
     return DoVectorFieldCalculation(settings, callback);
 }
 
-bool Frame::FillDownsampledData(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    // Prevent deleting the Frame while this task is not finished yet
-    std::shared_lock lock(GetActiveTaskMutex());
-
-    // Get tiles
-    int mip = settings.smoothing_factor;
-    std::vector<Tile> tiles;
-    GetTiles(_width, _height, mip, tiles);
-
-    // Get image tiles data
-    for (int i = 0; i < tiles.size(); ++i) {
-        auto& tile = tiles[i];
-        auto bounds = GetImageBounds(tile, _width, _height, mip);
-        std::vector<float> current_stokes_data;
-        int width, height;
-        double progress = (double)(i + 1) / tiles.size();
-
-        // Get current stokes data
-        if (!GetDownsampledRasterData(current_stokes_data, width, height, _z_index, CURRENT_STOKES, bounds, mip)) {
-            return false;
-        }
-
-        // Fill current stokes data as PI or PA and then send a partial response message
-        FillCurrentStokesData(settings, current_stokes_data, tile, width, height, _z_index, progress, callback);
-    }
-    return true;
-}
-
-bool Frame::DoVectorFieldCalculation(
-    const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
@@ -2387,16 +2355,14 @@ bool Frame::DoVectorFieldCalculation(
     int mip = settings.smoothing_factor;
     bool fractional = settings.fractional;
     float threshold = (float)settings.threshold;
-    int stokes_intensity = settings.stokes_intensity;
-    int stokes_angle = settings.stokes_angle;
+    bool calculate_pi = settings.stokes_intensity == 1 && _stokes_axis > -1;
+    bool calculate_pa = settings.stokes_angle == 1 && _stokes_axis > -1;
+    bool current_stokes_as_pi = (settings.stokes_intensity == 0 && _stokes_axis > -1) || _stokes_axis < 0;
+    bool current_stokes_as_pa = (settings.stokes_angle == 0 && _stokes_axis > -1) || _stokes_axis < 0;
 
     // Get tiles
     std::vector<Tile> tiles;
     GetTiles(_width, _height, mip, tiles);
-
-    // Set requirements
-    bool calculate_pi(stokes_intensity == 1), calculate_pa(stokes_angle == 1);
-    bool current_stokes_as_pi(stokes_intensity == 0), current_stokes_as_pa(stokes_angle == 0);
 
     // Initialize stokes maps for their flags, indices and data
     std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
@@ -2441,7 +2407,8 @@ bool Frame::DoVectorFieldCalculation(
         }
 
         // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(settings, current_stokes_data, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        CalculatePiPa(
+            settings, current_stokes_data, stokes_data, stokes_flag, tile, width, height, _z_index, _stokes_axis, progress, callback);
     }
     return true;
 }
