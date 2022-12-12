@@ -2266,7 +2266,7 @@ void Frame::CloseCachedImage(const std::string& file) {
 }
 
 bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    VectorFieldSettings new_settings(message);
+    VectorFieldSettings new_settings(message, _stokes_axis);
     if (_vector_field_settings != new_settings) {
         _vector_field_settings = new_settings;
         return true;
@@ -2347,7 +2347,8 @@ bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTi
     return DoVectorFieldCalculation(settings, callback);
 }
 
-bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::DoVectorFieldCalculation(
+    const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
@@ -2355,10 +2356,10 @@ bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::f
     int mip = settings.smoothing_factor;
     bool fractional = settings.fractional;
     float threshold = (float)settings.threshold;
-    bool calculate_pi = settings.stokes_intensity == 1 && _stokes_axis > -1;
-    bool calculate_pa = settings.stokes_angle == 1 && _stokes_axis > -1;
-    bool current_stokes_as_pi = (settings.stokes_intensity == 0 && _stokes_axis > -1) || _stokes_axis < 0;
-    bool current_stokes_as_pa = (settings.stokes_angle == 0 && _stokes_axis > -1) || _stokes_axis < 0;
+    bool calculate_pi = settings.calculate_pi;
+    bool calculate_pa = settings.calculate_pa;
+    bool current_stokes_as_pi = settings.current_stokes_as_pi;
+    bool current_stokes_as_pa = settings.current_stokes_as_pa;
 
     // Get tiles
     std::vector<Tile> tiles;
@@ -2407,8 +2408,7 @@ bool Frame::DoVectorFieldCalculation(VectorFieldSettings& settings, const std::f
         }
 
         // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(
-            settings, current_stokes_data, stokes_data, stokes_flag, tile, width, height, _z_index, _stokes_axis, progress, callback);
+        CalculatePiPa(settings, current_stokes_data, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
     }
     return true;
 }

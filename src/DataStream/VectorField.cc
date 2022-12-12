@@ -72,10 +72,9 @@ void ApplyThreshold(std::vector<float>& data, float threshold) {
     }
 }
 
-void CalculatePiPa(VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
+void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
     std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
-    int width, int height, int z_index, int stokes_axis, double progress,
-    const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+    int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Get vector field settings
     int file_id = settings.file_id;
     int mip = settings.smoothing_factor;
@@ -87,10 +86,10 @@ void CalculatePiPa(VectorFieldSettings& settings, std::vector<float>& current_st
     int stokes_angle = settings.stokes_angle;
     double q_error = settings.debiasing ? settings.q_error : 0;
     double u_error = settings.debiasing ? settings.u_error : 0;
-    bool calculate_pi = settings.stokes_intensity == 1 && stokes_axis > -1;
-    bool calculate_pa = settings.stokes_angle == 1 && stokes_axis > -1;
-    bool current_stokes_as_pi = (settings.stokes_intensity == 0 && stokes_axis > -1) || stokes_axis < 0;
-    bool current_stokes_as_pa = (settings.stokes_angle == 0 && stokes_axis > -1) || stokes_axis < 0;
+    bool calculate_pi = settings.calculate_pi;
+    bool calculate_pa = settings.calculate_pa;
+    bool current_stokes_as_pi = settings.current_stokes_as_pi;
+    bool current_stokes_as_pa = settings.current_stokes_as_pa;
 
     // Set response messages
     auto response = Message::VectorOverlayTileData(file_id, z_index, stokes_intensity, stokes_angle, compression_type, compression_quality);
