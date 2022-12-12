@@ -72,9 +72,9 @@ void ApplyThreshold(std::vector<float>& data, float threshold) {
     }
 }
 
-void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& current_stokes_data,
-    std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile,
-    int width, int height, int z_index, double progress, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::string, std::vector<float>>& stokes_data,
+    std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,
+    const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Get vector field settings
     int file_id = settings.file_id;
     int mip = settings.smoothing_factor;
@@ -97,18 +97,17 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::vector<float>& curr
     auto* tile_pa = response.add_angle_tiles();
 
     // Current stokes data as PI or PA
-    if ((current_stokes_as_pi || current_stokes_as_pa) && !current_stokes_data.empty()) {
+    if (current_stokes_as_pi || current_stokes_as_pa) {
         // Apply a threshold cut
-        ApplyThreshold(current_stokes_data, threshold);
+        ApplyThreshold(stokes_data["CUR"], threshold);
 
         if (current_stokes_as_pi) {
             FillTileData(
-                tile_pi, tile.x, tile.y, tile.layer, mip, width, height, current_stokes_data, compression_type, compression_quality);
+                tile_pi, tile.x, tile.y, tile.layer, mip, width, height, stokes_data["CUR"], compression_type, compression_quality);
         }
-
         if (current_stokes_as_pa) {
             FillTileData(
-                tile_pa, tile.x, tile.y, tile.layer, mip, width, height, current_stokes_data, compression_type, compression_quality);
+                tile_pa, tile.x, tile.y, tile.layer, mip, width, height, stokes_data["CUR"], compression_type, compression_quality);
         }
     }
 
