@@ -84,8 +84,8 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
     float compression_quality = settings.compression_quality;
     int stokes_intensity = settings.stokes_intensity;
     int stokes_angle = settings.stokes_angle;
-    double q_error = settings.debiasing ? settings.q_error : 0;
-    double u_error = settings.debiasing ? settings.u_error : 0;
+    double q_error = settings.q_error;
+    double u_error = settings.u_error;
     bool calculate_pi = settings.calculate_pi;
     bool calculate_pa = settings.calculate_pa;
     bool current_stokes_as_pi = settings.current_stokes_as_pi;

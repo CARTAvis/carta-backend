@@ -2384,8 +2384,7 @@ bool Frame::DoVectorFieldCalculation(
         auto& tile = tiles[i];
         auto bounds = GetImageBounds(tile, _width, _height, mip);
         int width, height;
-        std::unordered_map<std::string, std::vector<float>> stokes_data{
-            {"CUR", std::vector<float>()}, {"I", std::vector<float>()}, {"Q", std::vector<float>()}, {"U", std::vector<float>()}};
+        std::unordered_map<std::string, std::vector<float>> stokes_data;
         double progress = (double)(i + 1) / tiles.size();
 
         // Get current stokes data
