@@ -47,8 +47,8 @@ struct VectorFieldSettings {
         fractional = message.fractional();
         threshold = message.threshold();
         debiasing = message.debiasing();
-        q_error = message.q_error();
-        u_error = message.u_error();
+        q_error = message.debiasing() ? message.q_error() : 0;
+        u_error = message.debiasing() ? message.u_error() : 0;
         stokes_intensity = message.stokes_intensity();
         stokes_angle = message.stokes_angle();
         compression_type = message.compression_type();
