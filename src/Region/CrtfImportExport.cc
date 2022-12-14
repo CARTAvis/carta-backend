@@ -157,12 +157,9 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
         ExportStyleParameters(region_style, region_line);
 
         if (region_type == CARTA::RegionType::ANNRULER) {
-            auto anno_csys = GetAnnotationCoordinateSystem(true);
-            if (!anno_csys.empty()) {
-                region_line += fmt::format(" ruler={}", anno_csys);
-            }
+            region_line += fmt::format(" ruler={} image", GetAnnotationCoordinateSystem());
         } else if (region_type == CARTA::RegionType::ANNCOMPASS) {
-            ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(true), region_line);
+            ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(), region_line);
         }
 
         _export_regions.push_back(region_line);
@@ -358,15 +355,12 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const std:
                     break;
                 case CARTA::RegionType::ANNRULER: {
                     region_line.replace(0, 4, _region_names[region_type]); // "line" -> "# ruler"
-                    std::string anno_csys = GetAnnotationCoordinateSystem(false);
-                    if (!anno_csys.empty()) {
-                        region_line += fmt::format(" ruler={}", anno_csys);
-                    }
+                    region_line += fmt::format(" ruler={} degrees", GetAnnotationCoordinateSystem());
                     break;
                 }
                 case CARTA::RegionType::ANNCOMPASS: {
                     region_line.replace(0, 10, _region_names[region_type]); // "ann circle" -> "# compass"
-                    ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(false), region_line);
+                    ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(), region_line);
                     break;
                 }
                 default:
@@ -939,16 +933,10 @@ void CrtfImportExport::GetAnnotationSymbolParameters(
     }
 }
 
-std::string CrtfImportExport::GetAnnotationCoordinateSystem(bool export_pixel_coord) {
-    std::string ann_coord_sys;
-    if (export_pixel_coord) {
-        ann_coord_sys = "image";
-    } else {
-        ann_coord_sys = GetImageDirectionFrame();
-
-        if (ann_coord_sys.empty() && _coord_sys->hasLinearCoordinate()) {
-            ann_coord_sys = "linear";
-        }
+std::string CrtfImportExport::GetAnnotationCoordinateSystem() {
+    std::string ann_coord_sys = GetImageDirectionFrame();
+    if (ann_coord_sys.empty() && _coord_sys->hasLinearCoordinate()) {
+        ann_coord_sys = "linear";
     }
     return ann_coord_sys;
 }

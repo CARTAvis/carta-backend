@@ -1155,12 +1155,7 @@ void Ds9ImportExport::ExportAnnotationStyleParameters(
             break;
         }
         case CARTA::RegionType::ANNRULER: {
-            // DS9 viewer does not support "pixels"; need image ref frame for compass directions
-            std::string unit("arcsec");
-            if (_image_ref_frame == "galactic" || _image_ref_frame == "ecliptic") {
-                unit = "degrees";
-            }
-
+            std::string unit = (_pixel_coord ? "image" : "degrees");
             region_line += fmt::format(" ruler={} {}", _image_ref_frame, unit);
             break;
         }

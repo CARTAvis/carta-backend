@@ -79,7 +79,7 @@ private:
     void GetAnnotationFontParameters(
         const CARTA::RegionStyle& region_style, std::string& font, unsigned int& font_size, casa::AnnotationBase::FontStyle& font_style);
     void GetAnnotationSymbolParameters(const CARTA::RegionStyle& region_style, unsigned int& symbol_size, unsigned int& symbol_thickness);
-    std::string GetAnnotationCoordinateSystem(bool export_pixel_coords);
+    std::string GetAnnotationCoordinateSystem();
     void ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
     void ExportStyleParameters(const CARTA::RegionStyle& region_style, casa::AnnotationBase* region);
 
