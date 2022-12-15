@@ -198,12 +198,10 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 std::vector<int> direction_axes, render_axes;
                 int spectral_axis, stokes_axis, depth_axis;
-                casacore::Vector<casacore::String> axis_names;
                 if (_loader->FindCoordinateAxes(
-                        image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axis_names, message)) {
+                        image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, message)) {
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
-                    AddShapeEntries(
-                        extended_info, image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axis_names);
+                    AddShapeEntries(extended_info, image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis);
                     AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
                     info_ok = true;
                 }
@@ -600,7 +598,6 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
     std::vector<std::string> spectral_ctypes = {"FREQ", "WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
     casacore::DataType data_type(casacore::DataType::TpFloat);
-    casacore::Vector<casacore::String> axis_names(4, "NA");
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto header_entry = extended_info.header_entries(i);
@@ -627,24 +624,15 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
             auto entry_value = header_entry.value();
             std::transform(entry_value.begin(), entry_value.end(), entry_value.begin(), [](unsigned char c) { return std::toupper(c); });
 
-            if (entry_value.find("RA") == 0 || entry_value.find("GLON") == 0) {
+            if (entry_value.find("RA") == 0 || entry_value.find("GLON") == 0 || entry_value.find("UU") == 0) {
                 direction_axes[0] = axis_num;
-                axis_names[direction_axes[0]] = entry_value.find("RA") == 0 ? "RA" : "GLON";
-            } else if (entry_value.find("DEC") == 0 || entry_value.find("GLAT") == 0) {
+            } else if (entry_value.find("DEC") == 0 || entry_value.find("GLAT") == 0 || entry_value.find("VV") == 0) {
                 direction_axes[1] = axis_num;
-                axis_names[direction_axes[1]] = entry_value.find("DEC") == 0 ? "DEC" : "GLAT";
             } else if (entry_value.find("STOKES") == 0) {
                 stokes_axis = axis_num;
-                axis_names[stokes_axis] = "STOKES";
             } else if (std::any_of(spectral_ctypes.begin(), spectral_ctypes.end(),
                            [&](const std::string& key_word) { return (entry_value.find(key_word) != std::string::npos); })) {
                 spectral_axis = axis_num;
-                for (const auto& type : spectral_ctypes) {
-                    if (entry_value.find(type) != std::string::npos) {
-                        axis_names[spectral_axis] = type;
-                        break;
-                    }
-                }
             }
 
             // Depth axis is not the first two axes [0, 1], i.e., non-render axis that is not stokes (if any)
@@ -663,7 +651,7 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     }
 
     AddDataTypeEntry(extended_info, data_type);
-    AddShapeEntries(extended_info, shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axis_names);
+    AddShapeEntries(extended_info, shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis);
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
@@ -686,8 +674,7 @@ void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info,
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape,
-    const std::vector<int>& direction_axes, int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
-    const casacore::Vector<casacore::String>& axis_names) {
+    const std::vector<int>& direction_axes, int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
     int width(shape(render_axes[0]));
@@ -711,49 +698,29 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     // Set axis types with respect to axis numbers 0~3
     std::vector<std::string> axis_types(4, "NA");
-    if (direction_axes[0] > -1 && direction_axes[0] < axis_names.size()) {
-        if (axis_names(direction_axes[0]) == "Right Ascension") {
-            axis_types[direction_axes[0]] = "RA";
-        } else if (axis_names(direction_axes[0]) == "Longitude") {
-            axis_types[direction_axes[0]] = "LON";
-        } else {
-            axis_types[direction_axes[0]] = axis_names(direction_axes[0]);
+    for (int i = 0; i < extended_info.header_entries_size(); ++i) {
+        auto header_entry = extended_info.header_entries(i);
+        auto entry_name = header_entry.name();
+        if (entry_name.find("CTYPE") == 0) {
+            auto entry_value = header_entry.value();
+            if (!entry_value.empty()) {
+                entry_value = entry_value.substr(0, entry_value.find("-", 0));
+                if (entry_name.back() == '1') {
+                    axis_types[0] = entry_value;
+                } else if (entry_name.back() == '2') {
+                    axis_types[1] = entry_value;
+                } else if (entry_name.back() == '3') {
+                    axis_types[2] = entry_value;
+                } else if (entry_name.back() == '4') {
+                    axis_types[3] = entry_value;
+                }
+            }
         }
     }
 
-    if (direction_axes[1] > -1 && direction_axes[1] < axis_names.size()) {
-        if (axis_names(direction_axes[1]) == "Declination") {
-            axis_types[direction_axes[1]] = "DEC";
-        } else if (axis_names(direction_axes[1]) == "Latitude") {
-            axis_types[direction_axes[1]] = "LAT";
-        } else {
-            axis_types[direction_axes[1]] = axis_names(direction_axes[1]);
-        }
-    }
-
-    if (spectral_axis > -1 && spectral_axis < axis_names.size()) {
-        std::string name = axis_names(spectral_axis);
-        auto len = name.length() > 3 ? 4 : name.length();
-        if (len > 0) {
-            name = name.substr(0, len);
-            std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
-            axis_types[spectral_axis] = name;
-        }
-    }
-
-    if (stokes_axis > -1) {
+    // In case if the stokes axis name is not available from the header info
+    if (stokes_axis > -1 && axis_types[stokes_axis] == "NA") {
         axis_types[stokes_axis] = "STOKES";
-    }
-
-    // For rest of non-direction axes (like PV images)
-    if (spectral_axis == 0 && axis_types[1] == "NA" && !axis_names[1].empty()) {
-        std::string name = axis_names[1];
-        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
-        axis_types[1] = name;
-    } else if (spectral_axis == 1 && axis_types[0] == "NA" && !axis_names[0].empty()) {
-        std::string name = axis_names[0];
-        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
-        axis_types[0] = name;
     }
 
     // shape computed_entry
