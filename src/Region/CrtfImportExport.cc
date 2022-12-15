@@ -25,9 +25,8 @@
 #include <imageanalysis/Annotations/AnnText.h>
 #include <imageanalysis/Annotations/AnnVector.h>
 
-#include <iomanip>
-
-#include "../Logger/Logger.h"
+#include "Logger/Logger.h"
+#include "Util/String.h"
 
 using namespace carta;
 
@@ -402,12 +401,8 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
             continue;
         }
 
-        if (line[0] == '#') {
-            if (line.find("# compass") == 0 || line.find("# ruler") == 0) {
-                line.erase(0, 2);
-            } else {
-                continue;
-            }
+        if (line[0] == '#' && line.find("# compass") == std::string::npos && line.find("# ruler") == std::string::npos) {
+            continue;
         }
 
         // Parse line
@@ -438,7 +433,17 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
 
         if (region_state.RegionDefined()) {
             // Set RegionStyle
-            auto region_style = ImportStyleParameters(properties);
+            auto region_type = region_state.type;
+            auto region_style = ImportStyleParameters(region_type, properties);
+
+            if (region_type == CARTA::RegionType::ANNPOINT && parameters.size() == 5) {
+                auto symbol_char = parameters[4]; // ann, symbol, x, y, char
+                int symthick = 1;                 // default
+                if (properties.find("symthick") != properties.end()) {
+                    symthick = stoi(properties["symthick"]);
+                }
+                ImportPointShape(symbol_char, symthick, region_style.mutable_annotation_style());
+            }
 
             // Set RegionProperties and add to list
             RegionProperties region_properties(region_state, region_style);
@@ -462,17 +467,18 @@ std::string CrtfImportExport::GetRegionDirectionFrame(std::unordered_map<std::st
 }
 
 RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& parameters, std::string& coord_frame) {
-    // Import AnnSymbol in pixel coordinates to RegionState
+    // Import AnnSymbol to RegionState
     RegionState region_state;
     bool is_annotation = parameters[0] == "ann";
-    std::string region = is_annotation ? parameters[1] : parameters[0];
+    int param_index = is_annotation ? 1 : 0;
+    std::string region = parameters[param_index++];
 
     if (parameters.size() >= 3) { // "(ann) symbol x y" or "text x y", optional symbol shape or text string
         // Convert string to Quantities
         casacore::Quantity x, y;
         try {
-            casacore::readQuantity(x, parameters[1]);
-            casacore::readQuantity(y, parameters[2]);
+            casacore::readQuantity(x, parameters[param_index++]);
+            casacore::readQuantity(y, parameters[param_index++]);
         } catch (const casacore::AipsError& err) {
             spdlog::error("{} import Quantity error: {}", region, err.getMesg());
             _import_errors.append(region + " parameters invalid.\n");
@@ -524,7 +530,8 @@ RegionState CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters,
 
     if (parameters.size() >= 5) {
         // [box blcx blcy trcx trcy], [centerbox cx cy width height], or [rotbox cx cy width height angle]
-        std::string region(parameters[0]);
+        bool is_annotation = parameters[0] == "ann";
+        CARTA::RegionType type = (is_annotation ? CARTA::RegionType::ANNRECTANGLE : CARTA::RegionType::RECTANGLE);
 
         // Use parameters to get control points and rotation
         std::vector<CARTA::Point> control_points;
@@ -534,7 +541,6 @@ RegionState CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters,
         }
 
         // Create RegionState and add to vector
-        CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
         region_state = RegionState(_file_id, type, control_points, rotation);
     } else {
         _import_errors.append("box syntax invalid.\n");
@@ -546,7 +552,9 @@ RegionState CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters,
 RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame) {
     // Import AnnEllipse in pixel coordinates to RegionState
     RegionState region_state;
-    std::string region(parameters[0]);
+    bool is_annotation = parameters[0] == "ann";
+    int param_index = is_annotation ? 1 : 0;
+    std::string region = parameters[param_index++];
 
     if (parameters.size() >= 4) {
         // [ellipse cx cy bmaj bmin angle] or [circle cx cy r]
@@ -554,15 +562,15 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
         float rotation(0.0);
         try {
             // Center point
-            casacore::readQuantity(cx, parameters[1]);
-            casacore::readQuantity(cy, parameters[2]);
-            casacore::readQuantity(p3, parameters[3]);
+            casacore::readQuantity(cx, parameters[param_index++]);
+            casacore::readQuantity(cy, parameters[param_index++]);
+            casacore::readQuantity(p3, parameters[param_index++]);
 
             if (region == "ellipse") {
-                casacore::readQuantity(p4, parameters[4]);
+                casacore::readQuantity(p4, parameters[param_index++]);
 
                 // rotation
-                casacore::readQuantity(p5, parameters[5]);
+                casacore::readQuantity(p5, parameters[param_index]);
                 rotation = p5.get("deg").getValue();
             }
         } catch (const casacore::AipsError& err) {
@@ -590,7 +598,11 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
                 }
 
                 // Create RegionState and add to vector
-                CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
+                CARTA::RegionType type = (is_annotation ? CARTA::RegionType::ANNELLIPSE : CARTA::RegionType::ELLIPSE);
+                if (region == "compass") {
+                    type = CARTA::RegionType::ANNCOMPASS;
+                }
+
                 region_state = RegionState(_file_id, type, control_points, rotation);
             } else {
                 spdlog::error("{} import conversion to pixel failed", region);
@@ -611,7 +623,8 @@ RegionState CrtfImportExport::ImportAnnPoly(std::vector<std::string>& parameters
     // Import polygon, polyline, or line-like regions (line, vector, ruler) in pixel coordinates to RegionState
     RegionState region_state;
     bool is_annotation = parameters[0] == "ann";
-    std::string region = is_annotation ? parameters[1] : parameters[0];
+    int param_index = is_annotation ? 1 : 0;
+    std::string region = parameters[param_index++];
 
     if (parameters.size() >= 5) {
         // (ann) poly x1 y1 x2 y2 x3 y3 ...
@@ -633,10 +646,9 @@ RegionState CrtfImportExport::ImportAnnPoly(std::vector<std::string>& parameters
 
         try {
             std::vector<CARTA::Point> control_points;
-            size_t param_start = is_annotation ? 2 : 1;
 
             // Convert parameters in x,y pairs
-            for (size_t i = param_start; i < parameters.size(); i += 2) {
+            for (size_t i = param_index; i < parameters.size(); i += 2) {
                 casacore::Quantity x, y;
                 casacore::readQuantity(x, parameters[i]);
                 casacore::readQuantity(y, parameters[i + 1]);
@@ -688,13 +700,19 @@ RegionState CrtfImportExport::ImportAnnPoly(std::vector<std::string>& parameters
     return region_state;
 }
 
-CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
+CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(
+    CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties) {
     // Get CARTA::RegionStyle parameters from properties map
     CARTA::RegionStyle region_style;
 
+    // Common parameters
     // name
     if (properties.count("label")) {
-        region_style.set_name(properties["label"]);
+        auto name = properties["label"];
+        if (name.front() == '"' && name.back() == '"') {
+            name = name.substr(1, name.length() - 2);
+        }
+        region_style.set_name(name);
     }
 
     // color
@@ -732,7 +750,87 @@ CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<st
         region_style.add_dash_list(REGION_DASH_LENGTH); // CARTA default
     }
 
+    //  Annotation region style parameters
+    if (region_type > CARTA::RegionType::POLYGON) {
+        ImportAnnotationStyleParameters(region_type, properties, region_style.mutable_annotation_style());
+    }
+
     return region_style;
+}
+
+void CrtfImportExport::ImportAnnotationStyleParameters(
+    CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
+    switch (region_type) {
+        case CARTA::RegionType::ANNPOINT: {
+            if (properties.find("symsize") != properties.end()) {
+                int symsize = stoi(properties["symsize"]);
+                annotation_style->set_point_width(symsize);
+            }
+            break;
+        }
+        case CARTA::RegionType::ANNCOMPASS: {
+            if (properties.find("compass") != properties.end()) {
+                auto compass_properties = properties["compass"];
+                std::vector<std::string> params;
+                SplitString(compass_properties, ' ', params);
+                if (params.size() == 5) { // compass=<coordinate system> <north label> <east label> [0|1] [0|1]
+                    annotation_style->set_coordinate_system(params[0]);
+                    auto north_label = params[1];
+                    if (north_label.front() == '{' && north_label.back() == '}') {
+                        north_label = north_label.substr(1, north_label.length() - 2);
+                    }
+                    annotation_style->set_text_label0(north_label);
+                    auto east_label = params[2];
+                    if (east_label.front() == '{' && east_label.back() == '}') {
+                        east_label = east_label.substr(1, east_label.length() - 2);
+                    }
+                    annotation_style->set_text_label1(east_label);
+                    annotation_style->set_is_arrow0(params[3] == "1" ? true : false);
+                    annotation_style->set_is_arrow1(params[4] == "1" ? true : false);
+                }
+            }
+            break;
+        }
+        case CARTA::RegionType::ANNRULER: {
+            if (properties.find("ruler") != properties.end()) {
+                auto ruler_properties = properties["ruler"];
+                std::vector<std::string> params;
+                SplitString(ruler_properties, ' ', params);
+                if (params.size() == 2) { // ruler=<coordinate system> [image|degrees|arcmin|arcsec]
+                    annotation_style->set_coordinate_system(params[0]);
+                    std::unordered_map<std::string, CARTA::RulerAnnotationUnit> ruler_unit_map{
+                        {"image", CARTA::RulerAnnotationUnit::PIXELS}, {"degrees", CARTA::RulerAnnotationUnit::DEGREES},
+                        {"arcmin", CARTA::RulerAnnotationUnit::ARCMIN}, {"arcsec", CARTA::RulerAnnotationUnit::ARCSEC}};
+                    auto ruler_unit = params[1];
+                    if (ruler_unit_map.find(ruler_unit) != ruler_unit_map.end()) {
+                        annotation_style->set_ruler_unit(ruler_unit_map[ruler_unit]);
+                    }
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void CrtfImportExport::ImportPointShape(const std::string& symbol_char, int symthick, CARTA::AnnotationStyle* annotation_style) {
+    // Set point shape from region parameters.
+    CARTA::PointAnnotationShape point_shape(CARTA::PointAnnotationShape::SQUARE);
+
+    if (symbol_char == "o") {
+        point_shape = (symthick ? CARTA::PointAnnotationShape::CIRCLE : CARTA::PointAnnotationShape::CIRCLE_LINED);
+    } else if (symbol_char == "s") {
+        point_shape = (symthick ? CARTA::PointAnnotationShape::SQUARE : CARTA::PointAnnotationShape::BOX);
+    } else if (symbol_char == "d" || symbol_char == "D") {
+        point_shape = (symthick ? CARTA::PointAnnotationShape::DIAMOND : CARTA::PointAnnotationShape::DIAMOND_LINED);
+    } else if (symbol_char == "+") {
+        point_shape = CARTA::PointAnnotationShape::CROSS;
+    } else if (symbol_char == "x") {
+        point_shape = CARTA::PointAnnotationShape::X;
+    }
+
+    annotation_style->set_point_shape(point_shape);
 }
 
 // Private import helpers for rectangles
@@ -755,18 +853,21 @@ bool CrtfImportExport::GetBoxControlPoints(
     // - import rectangle to linear coord sys (must be pixel)
     // - import when CRTF file contains "polyline" not supported by casa
     // Returns false if conversion from string to Quantity fails
-    std::string region(parameters[0]);
+    bool is_annotation = parameters[0] == "ann";
+    int param_index = is_annotation ? 1 : 0;
+    std::string region(parameters[param_index++]);
     casacore::Quantity p1, p2, p3, p4;
+
     try {
         // Convert parameters to Quantity:
-        casacore::readQuantity(p1, parameters[1]);
-        casacore::readQuantity(p2, parameters[2]);
-        casacore::readQuantity(p3, parameters[3]);
-        casacore::readQuantity(p4, parameters[4]);
+        casacore::readQuantity(p1, parameters[param_index++]);
+        casacore::readQuantity(p2, parameters[param_index++]);
+        casacore::readQuantity(p3, parameters[param_index++]);
+        casacore::readQuantity(p4, parameters[param_index++]);
 
         if (region == "rotbox") {
             casacore::Quantity angle;
-            casacore::readQuantity(angle, parameters[5]);
+            casacore::readQuantity(angle, parameters[param_index++]);
             rotation = angle.get("deg").getValue();
         } else {
             rotation = 0.0;

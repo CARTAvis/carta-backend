@@ -256,7 +256,7 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         }
 
         // skip comment
-        if (line[0] == '#') {
+        if (line[0] == '#' && !IsAnnotationRegionLine(line)) {
             continue;
         }
 
@@ -361,6 +361,20 @@ void Ds9ImportExport::SetImageReferenceFrame() {
 
 // Import regions into RegionState vector
 
+bool Ds9ImportExport::IsAnnotationRegionLine(const std::string& line) {
+    if (line.length() < 2 || line.substr(0, 2) != "# ") {
+        // Require "# something"
+        return false;
+    }
+
+    std::unordered_set<std::string> annotation_regions{
+        "point", "line", "polyline", "box", "ellipse", "circle", "polygon", "vector", "text", "ruler", "compass"};
+    size_t region_end = line.find_first_of(" (", 2);
+    std::string line_region = line.substr(2, region_end);
+    std::cerr << "Detected possible region: " << line_region << std::endl;
+    return (annotation_regions.find(line_region) != annotation_regions.end());
+}
+
 void Ds9ImportExport::SetGlobals(std::string& global_line) {
     // Set global properties
     std::vector<std::string> parameters;
@@ -383,6 +397,7 @@ void Ds9ImportExport::SetGlobals(std::string& global_line) {
 void Ds9ImportExport::SetRegion(std::string& region_definition) {
     // Convert ds9 region description into RegionState
     // Split into region definition, properties
+    bool is_annotation_region(region_definition[0] == '#');
     std::vector<std::string> parameters;
     std::unordered_map<std::string, std::string> properties;
     ParseRegionParameters(region_definition, parameters, properties);
@@ -1155,8 +1170,7 @@ void Ds9ImportExport::ExportAnnotationStyleParameters(
             break;
         }
         case CARTA::RegionType::ANNRULER: {
-            std::string unit = (_pixel_coord ? "image" : "degrees");
-            region_line += fmt::format(" ruler={} {}", _image_ref_frame, unit);
+            region_line += fmt::format(" ruler={} degrees", _image_ref_frame);
             break;
         }
         case CARTA::RegionType::ANNTEXT: {

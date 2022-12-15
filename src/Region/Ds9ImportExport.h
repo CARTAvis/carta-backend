@@ -58,6 +58,7 @@ private:
     void SetImageReferenceFrame();
 
     // Import regions
+    bool IsAnnotationRegionLine(const std::string& line);
     void SetGlobals(std::string& global_line);
     void SetRegion(std::string& region_definition);
     RegionState ImportPointRegion(std::vector<std::string>& parameters);

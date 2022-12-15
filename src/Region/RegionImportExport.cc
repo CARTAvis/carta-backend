@@ -132,12 +132,17 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
 void RegionImportExport::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
+    if (region_definition[0] == '#') {
+        region_definition = region_definition.substr(2);
+    }
 
     // Remove spaces around = to recognize properties
     std::regex equals_spaces("[ ]+=[ ]+");
     region_definition = std::regex_replace(region_definition, equals_spaces, "=");
 
     size_t next(0), current(0), end(region_definition.size());
+    bool is_property(false);
+    std::string property_key;
 
     while (current < end) {
         next = region_definition.find_first_of(_parser_delim, current);
@@ -147,94 +152,21 @@ void RegionImportExport::ParseRegionParameters(
         }
 
         if ((next - current) > 0) {
-            // Section of region_definition between parser delimiters
-            std::string parse_string = region_definition.substr(current, next - current);
+            // Item is region_definition between parser delimiters
+            std::string item = region_definition.substr(current, next - current);
 
-            if (parse_string.find("=") == std::string::npos) {
-                // Assume region parameter (region type)
-                parameters.push_back(parse_string);
-            } else {
+            if (item.find("=") != std::string::npos) {
                 // Assume region property (kv pair)
                 std::vector<std::string> kvpair;
-                SplitString(parse_string, '=', kvpair);
-                std::string key = kvpair[0];
-
-                if (kvpair.size() == 1) {
-                    // value starts with delim
-                    current = next + 1;
-
-                    if (region_definition[next] == '[') { // e.g. corr=[I, Q]
-                        next = region_definition.find_first_of("]", current);
-                    } else { // e.g. color=#00ffff
-                        next = region_definition.find_first_of(" ", current);
-                    }
-
-                    if ((next != std::string::npos) && (next - current > 0)) {
-                        std::string value = region_definition.substr(current, next - current);
-                        properties[key] = value;
-                    }
-                } else if (kvpair.size() == 2) {
-                    std::string value = kvpair[1];
-
-                    if ((key == "dashlist") || (key == "line")) {
-                        // Two values separated by space e.g. "dashlist=8 3" or "line=0 0"
-                        // Find second value.
-                        current = next + 1;
-                        if (current < end) {
-                            next = region_definition.find_first_of(" ", current);
-                            std::string second_arg = region_definition.substr(current, next - current);
-                            properties[key] = value + " " + second_arg;
-                        }
-                    } else if (key == "point") {
-                        // point=shape [size] e.g. "point=circle" or "point=diamond 10"
-                        // value is shape, look for optional size if not at end of line
-                        current = next + 1;
-                        if (current < end) {
-                            // Get next string, check if size
-                            auto possible_next = region_definition.find_first_of(" ", current);
-                            string possible_size = region_definition.substr(current, possible_next - current);
-                            if (!possible_size.empty()) {
-                                // Try to convert to int
-                                char* endptr(nullptr);
-                                auto point_size = strtol(possible_size.c_str(), &endptr, 10);
-
-                                if ((point_size != 0) && (point_size != LONG_MAX) && (point_size != LONG_MIN)) {
-                                    // conversion successful - add size and advance pointer
-                                    properties[key] = value + " " + possible_size;
-                                    next = possible_next;
-                                } else {
-                                    // conversion failed - shape only
-                                    properties[key] = value;
-                                }
-                            }
-                        } else {
-                            // end of line
-                            properties[key] = value;
-                        }
-                    } else if (value.find_first_of("'\"[{(", 0) == 0) {
-                        // value delimited by special chars; find end and strip delimiters
-                        char start_delim = value.front();
-                        std::unordered_map<char, char> delim_map = {{'\'', '\''}, {'"', '"'}, {'[', ']'}, {'{', '}'}, {'(', ')'}};
-                        char end_delim = delim_map[start_delim];
-                        value.erase(0, 1); // erase start delim
-
-                        if (value.back() == end_delim) {
-                            // next parser delimiter is end delimiter, found value
-                            value.pop_back();
-                            properties[key] = value;
-                        } else {
-                            // value has other parser delim (such as space) inside outer delim (such as quote/bracket)
-                            // Save first part of value, then find end delimiter for rest of value.
-                            value.append(1, region_definition[next]);
-                            current = next + 1;
-                            next = region_definition.find_first_of(end_delim, current);
-                            string value_end = region_definition.substr(current, next - current);
-                            properties[key] = value.append(value_end);
-                            next++; // Advance past end delim
-                        }
-                    } else {
-                        properties[key] = value;
-                    }
+                SplitString(item, '=', kvpair);
+                property_key = kvpair[0];
+                properties[property_key] = kvpair[1];
+                is_property = true;
+            } else {
+                if (!is_property) {
+                    parameters.push_back(item);
+                } else {
+                    properties[property_key] += " " + item;
                 }
             }
         }
