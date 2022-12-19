@@ -69,6 +69,8 @@ protected:
     // Format hex string e.g. "10161a" -> "#10161A"
     std::string FormatColor(const std::string& color);
     void ExportAnnCompassStyle(const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line);
+    void ImportCompassStyle(std::string& compass_properties, std::string& coordinate_system, CARTA::AnnotationStyle* annotation_style);
+    void ImportRulerStyle(std::string& ruler_properties, std::string& coordinate_system);
 
     // Image info to which region is applied
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;

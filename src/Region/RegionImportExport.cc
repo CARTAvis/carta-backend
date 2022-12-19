@@ -160,7 +160,14 @@ void RegionImportExport::ParseRegionParameters(
                 std::vector<std::string> kvpair;
                 SplitString(item, '=', kvpair);
                 property_key = kvpair[0];
-                properties[property_key] = kvpair[1];
+                if (kvpair.size() == 1) {
+                    // value starts with delim
+                    current = next + 1;
+                    next = region_definition.find_first_of(_parser_delim, current);
+                    properties[property_key] = region_definition.substr(current, next - current);
+                } else {
+                    properties[property_key] = kvpair[1];
+                }
                 is_property = true;
             } else {
                 if (!is_property) {
@@ -240,7 +247,7 @@ bool RegionImportExport::ConvertPointToPixels(
 }
 
 double RegionImportExport::WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis) {
-    // world->pixel conversion of ellipse/circle radius or box width.
+    // world->pixel conversion of ellipse/circle radius, box width/height, or compass length.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
     if (input.getUnit() == "pix") {
         return input.getValue();
@@ -543,4 +550,40 @@ void RegionImportExport::ExportAnnCompassStyle(
         region_line += fmt::format(" {{{}}}", east_label);
     }
     region_line += fmt::format(" {} {}", north_arrow, east_arrow);
+}
+
+void RegionImportExport::ImportCompassStyle(
+    std::string& compass_properties, std::string& coordinate_system, CARTA::AnnotationStyle* annotation_style) {
+    // Parse compass properties into AnnotationStyle fields
+    std::vector<std::string> params;
+    SplitString(compass_properties, ' ', params);
+
+    if (params.size() == 5) { // compass=<coordinate system> <north label> <east label> [0|1] [0|1]
+        coordinate_system = params[0];
+
+        auto north_label = params[1];
+        if (north_label.front() == '{' && north_label.back() == '}') {
+            north_label = north_label.substr(1, north_label.length() - 2);
+        }
+        annotation_style->set_text_label0(north_label);
+
+        auto east_label = params[2];
+        if (east_label.front() == '{' && east_label.back() == '}') {
+            east_label = east_label.substr(1, east_label.length() - 2);
+        }
+        annotation_style->set_text_label1(east_label);
+
+        annotation_style->set_is_arrow0(params[3] == "1" ? true : false);
+        annotation_style->set_is_arrow1(params[4] == "1" ? true : false);
+    }
+}
+
+void RegionImportExport::ImportRulerStyle(std::string& ruler_properties, std::string& coordinate_system) {
+    // Parse ruler properties for coordinate system; unit unused in carta (frontend sets dynamically)
+    std::vector<std::string> params;
+    SplitString(ruler_properties, ' ', params);
+
+    if (params.size() == 2) { // ruler=<coordinate system> [image|degrees|arcmin|arcsec]
+        coordinate_system = params[0];
+    }
 }

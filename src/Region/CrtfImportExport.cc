@@ -156,7 +156,9 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
         ExportStyleParameters(region_style, region_line);
 
         if (region_type == CARTA::RegionType::ANNRULER) {
-            region_line += fmt::format(" ruler={} image", GetAnnotationCoordinateSystem());
+            auto coord_sys = GetAnnotationCoordinateSystem();
+            std::string unit = (coord_sys == "image" || coord_sys == "linear" ? "image" : "degrees");
+            region_line += fmt::format(" ruler={} {}", coord_sys, unit);
         } else if (region_type == CARTA::RegionType::ANNCOMPASS) {
             ExportAnnCompassStyle(region_style, GetAnnotationCoordinateSystem(), region_line);
         }
@@ -354,7 +356,9 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const std:
                     break;
                 case CARTA::RegionType::ANNRULER: {
                     region_line.replace(0, 4, _region_names[region_type]); // "line" -> "# ruler"
-                    region_line += fmt::format(" ruler={} degrees", GetAnnotationCoordinateSystem());
+                    auto coord_sys = GetAnnotationCoordinateSystem();
+                    std::string unit = (coord_sys == "image" || coord_sys == "linear" ? "image" : "degrees");
+                    region_line += fmt::format(" ruler={} {}", coord_sys, unit);
                     break;
                 }
                 case CARTA::RegionType::ANNCOMPASS: {
@@ -438,11 +442,7 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
 
             if (region_type == CARTA::RegionType::ANNPOINT && parameters.size() == 5) {
                 auto symbol_char = parameters[4]; // ann, symbol, x, y, char
-                int symthick = 1;                 // default
-                if (properties.find("symthick") != properties.end()) {
-                    symthick = stoi(properties["symthick"]);
-                }
-                ImportPointShape(symbol_char, symthick, region_style.mutable_annotation_style());
+                ImportPointStyleParameters(symbol_char, properties, region_style.mutable_annotation_style());
             }
 
             // Set RegionProperties and add to list
@@ -729,13 +729,19 @@ CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(
     region_style.set_color(import_color);
 
     // linewidth
-    if (properties.count("linewidth")) {
-        region_style.set_line_width(std::stoi(properties["linewidth"]));
-    } else if (_global_properties.count("linewidth")) {
-        region_style.set_line_width(std::stoi(_global_properties["linewidth"]));
-    } else {
-        region_style.set_line_width(casa::AnnotationBase::DEFAULT_LINEWIDTH);
+    int line_width(casa::AnnotationBase::DEFAULT_LINEWIDTH);
+    if (properties.find("linewidth") != properties.end()) {
+        int linewidth;
+        if (StringToInt(properties["linewidth"], linewidth)) {
+            line_width = linewidth;
+        }
+    } else if (_global_properties.find("linewidth") != _global_properties.end()) {
+        int linewidth;
+        if (StringToInt(properties["linewidth"], linewidth)) {
+            line_width = linewidth;
+        }
     }
+    region_style.set_line_width(line_width);
 
     // linestyle
     std::string linestyle("-"); // solid
@@ -750,73 +756,47 @@ CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(
         region_style.add_dash_list(REGION_DASH_LENGTH); // CARTA default
     }
 
-    //  Annotation region style parameters
-    if (region_type > CARTA::RegionType::POLYGON) {
-        ImportAnnotationStyleParameters(region_type, properties, region_style.mutable_annotation_style());
-    }
+    // font
+    ImportFontStyleParameters(properties, region_style.mutable_annotation_style());
 
     return region_style;
 }
 
-void CrtfImportExport::ImportAnnotationStyleParameters(
-    CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
-    switch (region_type) {
-        case CARTA::RegionType::ANNPOINT: {
-            if (properties.find("symsize") != properties.end()) {
-                int symsize = stoi(properties["symsize"]);
-                annotation_style->set_point_width(symsize);
-            }
-            break;
+void CrtfImportExport::ImportFontStyleParameters(
+    std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
+    if (properties.find("font") != properties.end()) {
+        annotation_style->set_font(properties["font"]);
+    }
+    if (properties.find("fontsize") != properties.end()) {
+        int fontsize;
+        if (StringToInt(properties["fontsize"], fontsize)) {
+            annotation_style->set_font_size(fontsize);
         }
-        case CARTA::RegionType::ANNCOMPASS: {
-            if (properties.find("compass") != properties.end()) {
-                auto compass_properties = properties["compass"];
-                std::vector<std::string> params;
-                SplitString(compass_properties, ' ', params);
-                if (params.size() == 5) { // compass=<coordinate system> <north label> <east label> [0|1] [0|1]
-                    annotation_style->set_coordinate_system(params[0]);
-                    auto north_label = params[1];
-                    if (north_label.front() == '{' && north_label.back() == '}') {
-                        north_label = north_label.substr(1, north_label.length() - 2);
-                    }
-                    annotation_style->set_text_label0(north_label);
-                    auto east_label = params[2];
-                    if (east_label.front() == '{' && east_label.back() == '}') {
-                        east_label = east_label.substr(1, east_label.length() - 2);
-                    }
-                    annotation_style->set_text_label1(east_label);
-                    annotation_style->set_is_arrow0(params[3] == "1" ? true : false);
-                    annotation_style->set_is_arrow1(params[4] == "1" ? true : false);
-                }
-            }
-            break;
+    }
+    if (properties.find("fontstyle") != properties.end()) {
+        auto font_style = properties["fontstyle"];
+        if (font_style == "bold-italic") {
+            font_style = "bold_italic";
         }
-        case CARTA::RegionType::ANNRULER: {
-            if (properties.find("ruler") != properties.end()) {
-                auto ruler_properties = properties["ruler"];
-                std::vector<std::string> params;
-                SplitString(ruler_properties, ' ', params);
-                if (params.size() == 2) { // ruler=<coordinate system> [image|degrees|arcmin|arcsec]
-                    annotation_style->set_coordinate_system(params[0]);
-                    std::unordered_map<std::string, CARTA::RulerAnnotationUnit> ruler_unit_map{
-                        {"image", CARTA::RulerAnnotationUnit::PIXELS}, {"degrees", CARTA::RulerAnnotationUnit::DEGREES},
-                        {"arcmin", CARTA::RulerAnnotationUnit::ARCMIN}, {"arcsec", CARTA::RulerAnnotationUnit::ARCSEC}};
-                    auto ruler_unit = params[1];
-                    if (ruler_unit_map.find(ruler_unit) != ruler_unit_map.end()) {
-                        annotation_style->set_ruler_unit(ruler_unit_map[ruler_unit]);
-                    }
-                }
-            }
-            break;
-        }
-        default:
-            break;
+        annotation_style->set_font_style(font_style);
     }
 }
 
-void CrtfImportExport::ImportPointShape(const std::string& symbol_char, int symthick, CARTA::AnnotationStyle* annotation_style) {
+void CrtfImportExport::ImportPointStyleParameters(
+    const std::string& symbol_char, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
     // Set point shape from region parameters.
     CARTA::PointAnnotationShape point_shape(CARTA::PointAnnotationShape::SQUARE);
+    bool symthick(true);
+    if (properties.find("symthick") != properties.end()) {
+        symthick = (properties["symthick"] == "1" ? true : false);
+    }
+    int sym_size(1);
+    if (properties.find("symsize") != properties.end()) {
+        int symsize;
+        if (StringToInt(properties["symsize"], symsize)) {
+            sym_size = symsize;
+        }
+    }
 
     if (symbol_char == "o") {
         point_shape = (symthick ? CARTA::PointAnnotationShape::CIRCLE : CARTA::PointAnnotationShape::CIRCLE_LINED);
@@ -831,6 +811,7 @@ void CrtfImportExport::ImportPointShape(const std::string& symbol_char, int symt
     }
 
     annotation_style->set_point_shape(point_shape);
+    annotation_style->set_point_width(sym_size);
 }
 
 // Private import helpers for rectangles

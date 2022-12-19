@@ -61,16 +61,24 @@ private:
     bool IsAnnotationRegionLine(const std::string& line);
     void SetGlobals(std::string& global_line);
     void SetRegion(std::string& region_definition);
-    RegionState ImportPointRegion(std::vector<std::string>& parameters);
-    RegionState ImportCircleRegion(std::vector<std::string>& parameters);
-    RegionState ImportEllipseRegion(std::vector<std::string>& parameters);
-    RegionState ImportRectangleRegion(std::vector<std::string>& parameters);
-    RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters);
-    CARTA::RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
+    RegionState ImportPointRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportCircleRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportEllipseRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportRectangleRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportVectorRegion(std::vector<std::string>& parameters);
+    RegionState ImportRulerRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style);
+    RegionState ImportCompassRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style);
+    CARTA::RegionStyle ImportStyleParameters(CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties);
+    void ImportPointStyleParameters(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
+    void ImportFontStyleParameters(std::string& font_properties, CARTA::AnnotationStyle* annotation_style);
 
-    // Convert DS9 syntax -> CASA
-    bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
-    void ConvertTimeFormatToDeg(std::string& parameter);
+    // Convert DS9 syntax -> CASA to read casacore::Quantity
+    bool ParamToQuantity(std::string& param, bool is_angle, bool is_xy, std::string& region_name, casacore::Quantity& param_quantity);
+    bool Ds9ToCasacoreUnit(std::string& parameter, const std::string& region_type);
+    void ConvertTimeFormatToAngle(std::string& parameter);
 
     // Export: add header string to _export_regions
     void AddHeader();

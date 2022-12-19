@@ -59,9 +59,9 @@ private:
     RegionState ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame);
     RegionState ImportAnnPoly(std::vector<std::string>& parameters, std::string& coord_frame);
     CARTA::RegionStyle ImportStyleParameters(CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties);
-    void ImportAnnotationStyleParameters(
-        CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
-    void ImportPointShape(const std::string& symbol_char, int symthick, CARTA::AnnotationStyle* annotation_style);
+    void ImportFontStyleParameters(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
+    void ImportPointStyleParameters(
+        const std::string& symbol_char, std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
 
     // Rectangle import helpers
     bool GetBoxControlPoints(std::string& box_definition, std::vector<CARTA::Point>& control_points, float& rotation);
