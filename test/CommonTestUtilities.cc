@@ -431,3 +431,8 @@ bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2)
 
     return true;
 }
+
+void GetVectorData(std::vector<float>& data, const float* data_ptr, size_t data_size) {
+    data.resize(data_size);
+    memcpy(data.data(), data_ptr, data_size * sizeof(float));
+}

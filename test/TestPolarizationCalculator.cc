@@ -63,16 +63,9 @@ public:
             for (int channel = 0; channel < spectral_axis_size; ++channel) {
                 for (const auto& stokes : COMPUTED_STOKES) {
                     frame->SetImageChannels(channel, stokes, message);
-                    GetImageData(data, frame->_image_cache.get(), frame->_image_cache_size);
+                    GetVectorData(data, frame->_image_cache.get(), frame->_image_cache_size);
                     CheckImageCache(image, channel, stokes, data);
                 }
-            }
-        }
-
-        static void GetImageData(std::vector<float>& data, const float* data_ptr, size_t data_size) {
-            data.resize(data_size);
-            for (int i = 0; i < data_size; ++i) {
-                data[i] = data_ptr[i];
             }
         }
     };

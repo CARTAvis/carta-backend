@@ -49,6 +49,7 @@ set(TEST_PERF_SOURCES
         TestLoadingFile
         TestMoments
         TestRegion
+        TestFitsSliceData
         TestSliceData)
 
 foreach (TEST_NAME IN LISTS TEST_PERF_SOURCES)
