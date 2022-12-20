@@ -821,8 +821,10 @@ RegionState Ds9ImportExport::ImportVectorRegion(std::vector<std::string>& parame
 
             // (length, angle) to (x2, y2)
             auto length = param_quantities[2];
-            auto dx = WorldToPixelLength(length * cos(angle_rad), 0);
-            auto dy = WorldToPixelLength(length * sin(angle_rad), 1);
+            auto xlength = cos(angle_rad);
+            auto ylength = sin(angle_rad);
+            auto dx = WorldToPixelLength(length * xlength, 0) * (xlength < 0 ? -1.0 : 1.0);
+            auto dy = WorldToPixelLength(length * ylength, 1) * (ylength < 0 ? -1.0 : 1.0);
             control_points.push_back(Message::Point(pixel_coords[0] + dx, pixel_coords[1] + dy));
         }
 
