@@ -967,7 +967,11 @@ std::string CrtfImportExport::GetRegionColor(const CARTA::RegionStyle& region_st
 casa::AnnotationBase::LineStyle CrtfImportExport::GetRegionLineStyle(const CARTA::RegionStyle& region_style) {
     casa::AnnotationBase::LineStyle line_style(casa::AnnotationBase::SOLID);
     if ((region_style.dash_list_size() > 0) && (region_style.dash_list(0) != 0)) {
-        line_style = casa::AnnotationBase::DASHED;
+        if (region_style.dash_list(0) > 1) {
+            line_style = casa::AnnotationBase::DASHED;
+        } else {
+            line_style = casa::AnnotationBase::DOTTED;
+        }
     }
     return line_style;
 }
