@@ -752,6 +752,8 @@ CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(
     }
     if (linestyle == "-") { // solid line
         region_style.add_dash_list(0);
+    } else if (linestyle == ":") { // dotted line
+        region_style.add_dash_list(1);
     } else {
         region_style.add_dash_list(REGION_DASH_LENGTH); // CARTA default
     }
