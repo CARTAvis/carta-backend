@@ -951,14 +951,17 @@ CARTA::RegionStyle Ds9ImportExport::ImportStyleParameters(
 
     if (!dashlist.empty()) {
         // Convert string to int values
-        std::vector<std::string> dash_values;
-        SplitString(dashlist, ' ', dash_values);
-        for (size_t i = 0; i < dash_values.size(); ++i) {
+        std::vector<std::string> dash_list_str;
+        SplitString(dashlist, ' ', dash_list_str);
+        std::vector<int> dash_list;
+
+        for (size_t i = 0; i < dash_list_str.size(); ++i) {
             int val;
-            if (StringToInt(dash_values[i], val)) {
-                region_style.set_dash_list(i, val);
+            if (StringToInt(dash_list_str[i], val)) {
+                dash_list.push_back(val);
             }
         }
+        *region_style.mutable_dash_list() = {dash_list.begin(), dash_list.end()};
     }
 
     if (region_type == CARTA::RegionType::ANNPOINT) {
