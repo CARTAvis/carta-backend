@@ -207,6 +207,11 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         auto tmp_axes = _coord_sys->directionAxesNumbers();
         direction_axes[0] = tmp_axes[0];
         direction_axes[1] = tmp_axes[1];
+    } else if (_coord_sys->hasLinearCoordinate()) {
+        auto tmp_axes = _coord_sys->linearAxesNumbers();
+        for (int i = 0; i < casacore::min(tmp_axes.size(), 2); ++i) { // Assume the first two linear axes are direction axes, if any
+            direction_axes[i] = tmp_axes[i];
+        }
     }
 
     // Spectral and stokes axis
