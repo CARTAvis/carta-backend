@@ -561,6 +561,13 @@ CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress) {
     return message;
 }
 
+CARTA::FittingProgress Message::FittingProgress(int32_t file_id, float progress) {
+    CARTA::FittingProgress message;
+    message.set_file_id(file_id);
+    message.set_progress(progress);
+    return message;
+}
+
 CARTA::RegionHistogramData Message::RegionHistogramData(
     int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress) {
     CARTA::RegionHistogramData message;
