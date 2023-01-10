@@ -25,8 +25,12 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    const std::vector<bool>& fixed_params, CARTA::FittingResponse& fitting_response, size_t offset_x, size_t offset_y) {
+    const std::vector<bool>& fixed_params, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
+    GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
+    _fit_data.stop_fitting = false;
+    _model_data.clear();
+    _residual_data.clear();
 
     _fit_data.width = width;
     _fit_data.n = width * height;
@@ -34,6 +38,9 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
+    _create_model_data = create_model_image;
+    _create_residual_data = create_residual_image;
+    _progress_callback = progress_callback;
 
     CalculateNanNum();
     SetInitialValues(initial_values, fixed_params);
@@ -52,33 +59,65 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
         _fit_values->size);
     int status = SolveSystem();
 
-    if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
-        fitting_response.set_message("fit did not converge");
-    } else if (status) {
-        fitting_response.set_message(gsl_strerror(status));
-    }
-
-    if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
-        success = true;
-        spdlog::info("Writing fitting results and log.");
-        for (size_t i = 0; i < _num_components; i++) {
-            auto values = GetGaussianParams(
-                _fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, _fit_data.offset_x, _fit_data.offset_y);
-            fitting_response.add_result_values();
-            *fitting_response.mutable_result_values(i) = GetGaussianComponent(values);
-
-            std::vector<double> zeros(6, 0.0);
-            auto errors = GetGaussianParams(_fit_errors, i * 6, _fit_data.fit_values_indexes, zeros);
-            fitting_response.add_result_errors();
-            *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
+    if (_fit_data.stop_fitting) {
+        fitting_response.set_message("task cancelled");
+    } else {
+        if (status == GSL_EMAXITER && _fit_status.num_iter < _max_iter) {
+            fitting_response.set_message("fit did not converge");
+        } else if (status) {
+            fitting_response.set_message(gsl_strerror(status));
         }
-        fitting_response.set_log(GetLog());
+
+        if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
+            success = true;
+            spdlog::info("Writing fitting results and log.");
+            for (size_t i = 0; i < _num_components; i++) {
+                auto values = GetGaussianParams(
+                    _fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, _fit_data.offset_x, _fit_data.offset_y);
+                fitting_response.add_result_values();
+                *fitting_response.mutable_result_values(i) = GetGaussianComponent(values);
+
+                std::vector<double> zeros(6, 0.0);
+                auto errors = GetGaussianParams(_fit_errors, i * 6, _fit_data.fit_values_indexes, zeros);
+                fitting_response.add_result_errors();
+                *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
+            }
+            fitting_response.set_log(GetLog());
+        }
     }
     fitting_response.set_success(success);
 
     gsl_vector_free(_fit_values);
     gsl_vector_free(_fit_errors);
     return success;
+}
+
+bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region, int file_id, const std::string& filename,
+    GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response) {
+    if (file_id < 0) {
+        fitting_response.set_message("generating images from generated PV and model/residual images is not supported");
+        return false;
+    }
+
+    // Todo: find another better way to assign the temp file Id
+    bool is_moment = file_id > 999;
+    int model_id = (file_id + 1) * (is_moment ? FITTING_WITH_MOMENT_ID_MULTIPLIER : FITTING_ID_MULTIPLIER) + 1;
+    int residual_id = model_id + 1;
+
+    if (_create_model_data) {
+        model_image = GeneratedImage(model_id, is_moment ? GetGeneratedMomentFilename(filename, "model") : GetFilename(filename, "model"),
+            GetImageData(image, image_region, _model_data));
+    }
+    if (_create_residual_data) {
+        residual_image =
+            GeneratedImage(residual_id, is_moment ? GetGeneratedMomentFilename(filename, "residual") : GetFilename(filename, "residual"),
+                GetImageData(image, image_region, _residual_data));
+    }
+    return true;
+}
+
+void ImageFitter::StopFitting() {
+    _fit_data.stop_fitting = true;
 }
 
 void ImageFitter::CalculateNanNum() {
@@ -127,7 +166,6 @@ int ImageFitter::SolveSystem() {
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
-    const bool print_iter = false;
     const size_t n = _fdf.n;
     const size_t p = _fdf.p;
     gsl_multifit_nlinear_workspace* work = gsl_multifit_nlinear_alloc(T, &fdf_params, n, p);
@@ -137,26 +175,50 @@ int ImageFitter::SolveSystem() {
 
     gsl_multifit_nlinear_init(_fit_values, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
-    int status =
-        gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, print_iter ? Callback : nullptr, nullptr, &_fit_status.info, work);
-    gsl_blas_ddot(f, f, &_fit_status.chisq);
-    gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
-    gsl_vector_memcpy(_fit_values, y);
 
-    gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
-    gsl_multifit_nlinear_covar(jac, 0.0, covar);
-    const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
-    for (size_t i = 0; i < p; i++) {
-        gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
+    GeneratorProgressCallback iteration_progress_callback = [&](size_t iter) {
+        _progress_callback((iter + 1.0) / (_max_iter + 2.0)); // 2 for preparing fitting and generating results
+    };
+    int status = gsl_multifit_nlinear_driver(_max_iter, xtol, gtol, ftol, Callback, &iteration_progress_callback, &_fit_status.info, work);
+    if (!_fit_data.stop_fitting) {
+        iteration_progress_callback(_max_iter);
+
+        gsl_blas_ddot(f, f, &_fit_status.chisq);
+        gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
+        gsl_vector_memcpy(_fit_values, y);
+
+        gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
+        gsl_multifit_nlinear_covar(jac, 0.0, covar);
+        const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
+        for (size_t i = 0; i < p; i++) {
+            gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
+        }
+
+        _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
+        _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
+
+        if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
+            CalculateImageData(f);
+        }
     }
-
-    _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
-    _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
 
     gsl_multifit_nlinear_free(work);
     gsl_matrix_free(covar);
-
     return status;
+}
+
+void ImageFitter::CalculateImageData(const gsl_vector* residual) {
+    size_t size = residual->size;
+    _model_data.resize(size);
+    _residual_data.resize(size);
+    for (size_t i = 0; i < size; i++) {
+        if (_create_model_data) {
+            _model_data[i] = _fit_data.data[i] - gsl_vector_get(residual, i);
+        }
+        if (_create_residual_data) {
+            _residual_data[i] = isnan(_fit_data.data[i]) ? _fit_data.data[i] : gsl_vector_get(residual, i);
+        }
+    }
 }
 
 std::string ImageFitter::GetLog() {
@@ -190,10 +252,54 @@ std::string ImageFitter::GetLog() {
     return log;
 }
 
+casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data) {
+    casa::SPIIF sub_image(new casacore::SubImage<casacore::Float>(*image, image_region));
+    casacore::CoordinateSystem csys = sub_image->coordinates();
+    casacore::IPosition shape = sub_image->shape();
+    casa::SPIIF output_image(new casacore::TempImage<casacore::Float>(casacore::TiledShape(shape), csys));
+    output_image->setUnits(sub_image->units());
+    output_image->setMiscInfo(sub_image->miscInfo());
+    output_image->appendLog(sub_image->logger());
+
+    auto image_info = sub_image->imageInfo();
+    if (image_info.hasMultipleBeams()) {
+        // Use first beam, per imageanalysis ImageCollapser
+        auto beam = *(image_info.getBeamSet().getBeams().begin());
+        image_info.removeRestoringBeam();
+        image_info.setRestoringBeam(beam);
+    }
+    output_image->setImageInfo(image_info);
+
+    casacore::Array<float> data_array(shape, image_data.data());
+    output_image->put(data_array);
+    output_image->flush();
+    return output_image;
+}
+
+std::string ImageFitter::GetFilename(const std::string& filename, std::string suffix) {
+    fs::path filepath(filename);
+    fs::path output_filename = filepath.stem();
+    output_filename += "_" + suffix;
+    output_filename += filepath.extension();
+    return output_filename.string();
+}
+
+std::string ImageFitter::GetGeneratedMomentFilename(const std::string& filename, std::string suffix) {
+    std::string output_filename = filename.substr(0, filename.rfind(".moment."));
+    std::string moment_suffix = filename.substr(filename.rfind(".moment."));
+    return GetFilename(output_filename, suffix) + moment_suffix;
+}
+
 int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector* f) {
     struct FitData* d = (struct FitData*)fit_data;
 
     for (size_t k = 0; k < d->fit_values_indexes.size(); k += 6) {
+        // set residuals to zero to stop fitting procedure
+        if (d->stop_fitting) {
+            gsl_vector_set_zero(f);
+            return GSL_SUCCESS;
+        }
+
         double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
         std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) = GetGaussianParams(fit_values, k, d->fit_values_indexes, d->initial_values);
 
@@ -226,6 +332,8 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
 }
 
 void ImageFitter::Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w) {
+    (*(GeneratorProgressCallback*)params)(iter);
+
     gsl_vector* f = gsl_multifit_nlinear_residual(w);
     gsl_vector* x = gsl_multifit_nlinear_position(w);
     double avratio = gsl_multifit_nlinear_avratio(w);
