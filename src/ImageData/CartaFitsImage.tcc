@@ -29,6 +29,15 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
         inc.push_back(slicer_stride[i]);
     }
 
+    bool xy_plane_data(false);
+    casacore::IPosition image_shape = shape();
+    if (image_shape.size() >= 2) {
+        casacore::IPosition delta = slicer_end - slicer_start + 1;
+        if (delta[0] == image_shape[0] && delta[1] == image_shape[1] && inc[0] == 1 && inc[1] == 1) {
+            xy_plane_data = true;
+        }
+    }
+
     // Read data into temporary buffer
     casacore::IPosition buffer_shape = section.length();
     auto buffer_size = buffer_shape.product();
@@ -42,29 +51,53 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
 
     switch (datatype) {
         case 8: {
-            fits_read_subset(fptr, TBYTE, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            if (xy_plane_data) {
+                fits_read_pix(fptr, TBYTE, start.data(), buffer_size, &null_val, tmp_buffer.data(), &anynul, &status);
+            } else {
+                fits_read_subset(fptr, TBYTE, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            }
             break;
         }
         case 16: {
-            fits_read_subset(fptr, TSHORT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            if (xy_plane_data) {
+                fits_read_pix(fptr, TSHORT, start.data(), buffer_size, &null_val, tmp_buffer.data(), &anynul, &status);
+            } else {
+                fits_read_subset(fptr, TSHORT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            }
             break;
         }
         case 32: {
-            fits_read_subset(fptr, TINT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            if (xy_plane_data) {
+                fits_read_pix(fptr, TINT, start.data(), buffer_size, &null_val, tmp_buffer.data(), &anynul, &status);
+            } else {
+                fits_read_subset(fptr, TINT, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            }
             break;
         }
         case 64: {
-            fits_read_subset(fptr, TLONGLONG, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            if (xy_plane_data) {
+                fits_read_pix(fptr, TLONGLONG, start.data(), buffer_size, &null_val, tmp_buffer.data(), &anynul, &status);
+            } else {
+                fits_read_subset(fptr, TLONGLONG, start.data(), end.data(), inc.data(), &null_val, tmp_buffer.data(), &anynul, &status);
+            }
             break;
         }
         case -32: {
-            float fnull_val(NAN);
-            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
+            if (xy_plane_data) {
+                fits_read_pix(fptr, TFLOAT, start.data(), buffer_size, &null_val, tmp_buffer.data(), &anynul, &status);
+            } else {
+                float fnull_val(NAN);
+                fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
+            }
             break;
         }
         case -64: {
-            double dnull_val(NAN);
-            fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &dnull_val, tmp_buffer.data(), &anynul, &status);
+            if (xy_plane_data) {
+                fits_read_pix(fptr, TDOUBLE, start.data(), buffer_size, &null_val, tmp_buffer.data(), &anynul, &status);
+            } else {
+                double dnull_val(NAN);
+                fits_read_subset(fptr, TDOUBLE, start.data(), end.data(), inc.data(), &dnull_val, tmp_buffer.data(), &anynul, &status);
+            }
             break;
         }
     }
