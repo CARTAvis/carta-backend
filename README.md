@@ -50,7 +50,6 @@ The backend build depends on the following libraries:
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu). The Debian package `protobuf-compiler` may also be required.
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
 * [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication). Debian package `uuid-dev`.
-* [pugixml](https://pugixml.org/) for parsing catalog data. Debian package: `libpugixml-dev`. On Ubuntu 16.04, build from source. On newer versions you can also build from source to save memory: use the `PUGIXML_COMPACT` and `PUGIXML_NO_XPATH` flags.
 * [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/) library for I/O with FITS format data files. Debian package: `libcfitsio-dev`.
 * [wcslib](https://www.gnu.org/software/gnuastro/manual/html_node/WCSLIB.html) library to handle world coordinate system. Debian package: `wcslib-dev`.
 
