@@ -320,7 +320,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
+        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image, filename));
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
@@ -1354,15 +1354,36 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
 
     if (_frames.count(file_id)) {
         Timer t;
+        bool success(false);
         int region_id(fitting_request.region_id());
+        GeneratedImage model_image;
+        GeneratedImage residual_image;
+
+        // Set fitting progress callback function
+        auto progress_callback = [&](float progress) {
+            auto fitting_progress = Message::FittingProgress(file_id, progress);
+            SendEvent(CARTA::EventType::FITTING_PROGRESS, request_id, fitting_progress);
+        };
+
         if (region_id != IMAGE_REGION_ID) {
             if (!_region_handler) {
-                // created on demand only
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-            _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id));
+            success = _region_handler->FitImage(
+                fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image, progress_callback);
         } else {
-            _frames.at(file_id)->FitImage(fitting_request, fitting_response);
+            success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image, progress_callback);
+        }
+
+        if (success) {
+            if (fitting_request.create_model_image()) {
+                auto* model_image_open_file_ack = fitting_response.mutable_model_image();
+                OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
+            }
+            if (fitting_request.create_residual_image()) {
+                auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
+                OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
+            }
         }
 
         spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed().ms());
@@ -1370,6 +1391,13 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"Fitting"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnStopFitting(const CARTA::StopFitting& stop_fitting) {
+    int file_id(stop_fitting.file_id());
+    if (_frames.count(file_id)) {
+        _frames.at(file_id)->StopFitting();
     }
 }
 

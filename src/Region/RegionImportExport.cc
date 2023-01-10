@@ -536,8 +536,8 @@ void RegionImportExport::ExportAnnCompassStyle(
     const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line) {
     auto north_label = region_style.annotation_style().text_label0();
     auto east_label = region_style.annotation_style().text_label1();
-    auto north_arrow = (region_style.annotation_style().is_arrow0() ? "1" : "0");
-    auto east_arrow = (region_style.annotation_style().is_arrow1() ? "1" : "0");
+    auto north_arrow = (region_style.annotation_style().is_north_arrow() ? "1" : "0");
+    auto east_arrow = (region_style.annotation_style().is_east_arrow() ? "1" : "0");
 
     region_line += " compass=";
     if (!ann_coord_sys.empty()) {
@@ -573,8 +573,8 @@ void RegionImportExport::ImportCompassStyle(
         }
         annotation_style->set_text_label1(east_label);
 
-        annotation_style->set_is_arrow0(params[3] == "1" ? true : false);
-        annotation_style->set_is_arrow1(params[4] == "1" ? true : false);
+        annotation_style->set_is_north_arrow(params[3] == "1" ? true : false);
+        annotation_style->set_is_east_arrow(params[4] == "1" ? true : false);
     }
 }
 

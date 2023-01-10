@@ -793,7 +793,7 @@ void RegionHandler::ClearRegionCache(int region_id) {
 
 bool RegionHandler::RegionFileIdsValid(int region_id, int file_id, bool check_annotation) {
     // Check error conditions and preconditions
-    if (((region_id < 0) && (file_id < 0)) || (region_id == 0)) { // not allowed
+    if (((region_id == ALL_REGIONS) && (file_id == ALL_FILES)) || (region_id == CURSOR_REGION_ID)) { // not allowed
         return false;
     }
     if (!RegionSet(region_id, check_annotation)) { // ID not found, Region is closing, or is annotation
@@ -1001,8 +1001,9 @@ void RegionHandler::StopPvCalc(int file_id) {
     }
 }
 
-bool RegionHandler::FitImage(
-    const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame) {
+bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response,
+    std::shared_ptr<Frame> frame, GeneratedImage& model_image, GeneratedImage& residual_image,
+    GeneratorProgressCallback progress_callback) {
     int file_id(fitting_request.file_id());
     int region_id(fitting_request.region_id());
 
@@ -1042,7 +1043,7 @@ bool RegionHandler::FitImage(
     }
 
     bool success = false;
-    success = frame->FitImage(fitting_request, fitting_response, &stokes_region);
+    success = frame->FitImage(fitting_request, fitting_response, model_image, residual_image, progress_callback, &stokes_region);
 
     if (region_id == TEMP_FOV_REGION_ID) {
         RemoveRegion(region_id);
