@@ -68,15 +68,15 @@ void HttpServer::RegisterRoutes() {
         app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
         app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
 
-        app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
+        app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("snippet", res, req); });
         app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
-        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
+        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("snippet", res, req); });
         app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
         app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
 
-        app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
+        app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("workspace", res, req); });
         app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
-        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
+        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("workspace", res, req); });
         app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
         app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
     } else {
