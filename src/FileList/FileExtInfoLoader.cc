@@ -696,6 +696,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     int width(shape(render_axes[0]));
     int height(shape(render_axes[1]));
     int depth(depth_axis >= 0 ? shape(depth_axis) : 1);
+    int channels(spectral_axis >= 0 ? shape(spectral_axis) : 1);
     int stokes(stokes_axis >= 0 ? shape(stokes_axis) : 1);
 
     extended_info.set_dimensions(num_dims);
@@ -737,13 +738,13 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     shape_entry->set_value(shape_string);
     shape_entry->set_entry_type(CARTA::EntryType::STRING);
 
-    if (depth_axis >= 0) {
+    if (spectral_axis >= 0) {
         // header entry for number of channels
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of channels");
-        entry->set_value(std::to_string(depth));
+        entry->set_value(std::to_string(channels));
         entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(depth);
+        entry->set_numeric_value(channels);
     }
     if (stokes_axis >= 0) {
         // header entry for number of stokes
