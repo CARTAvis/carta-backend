@@ -113,21 +113,14 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
 
     // Calculate PI and PA using stokes data I, Q or U
     // Lambda function to apply a threshold
-    auto apply_threshold = [&](float i, float result) {
-        return ((std::isnan(i) || (!std::isnan(threshold) && (i < threshold))) ? FLOAT_NAN : result);
-    };
+    ThresholdCut threshold_cut(threshold);
 
     if (calculate_pi) {
         std::vector<float> pi;
         pi.resize(width * height);
 
         // Lambda function to calculate PI, errors are applied
-        auto calc_pi = [&](float q, float u) {
-            if (!std::isnan(q) && !std::isnan(u)) {
-                return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
-            }
-            return FLOAT_NAN;
-        };
+        CalcPi calc_pi(q_error, u_error);
 
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
         if (fractional) { // Calculate fractional PI
@@ -135,7 +128,7 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
         }
 
         if (stokes_flag["I"]) { // Set NAN for PI/FPI if stokes I is NAN or below the threshold
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), apply_threshold);
+            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), threshold_cut);
         }
         FillTileData(tile_pi, tile.x, tile.y, tile.layer, mip, width, height, pi, compression_type, compression_quality);
     }
@@ -146,7 +139,7 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), CalcPa);
 
         if (stokes_flag["I"]) { // Set NAN for PA if stokes I is NAN or below the threshold
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), apply_threshold);
+            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
         }
         FillTileData(tile_pa, tile.x, tile.y, tile.layer, mip, width, height, pa, compression_type, compression_quality);
     }

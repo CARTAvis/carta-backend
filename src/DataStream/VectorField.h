@@ -87,6 +87,30 @@ struct VectorFieldSettings {
     }
 };
 
+struct ThresholdCut {
+    float threshold;
+
+    ThresholdCut(float threshold_) : threshold(threshold_) {}
+
+    float operator()(float data, float result) {
+        return ((std::isnan(data) || (!std::isnan(threshold) && (data < threshold))) ? FLOAT_NAN : result);
+    }
+};
+
+struct CalcPi {
+    double q_error;
+    double u_error;
+
+    CalcPi(double q_error_, double u_error_) : q_error(q_error_), u_error(u_error_) {}
+
+    float operator()(float q, float u) {
+        if (!std::isnan(q) && !std::isnan(u)) {
+            return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
+        }
+        return FLOAT_NAN;
+    }
+};
+
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
     std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
