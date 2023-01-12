@@ -19,3 +19,6 @@
 [submodule "test/image-generator"]
 	path = third-party/image-generator
 	url = https://github.com/idia-astro/image-generator
+[submodule "third-party/pugixml"]
+	path = third-party/pugixml
+	url = https://github.com/zeux/pugixml.git

@@ -390,7 +390,7 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     if (bitpix > 0) {
         std::string key("BLANK");
         int blank_value;
-        char* comment(nullptr);
+        char* comment(nullptr); // ignore
         status = 0;
         fits_read_key(fptr, TLONG, key.c_str(), &blank_value, comment, &status);
         _has_blanks = !status;
@@ -1296,8 +1296,7 @@ void CartaFitsImage::ReadBeamsTable(casacore::ImageInfo& image_info) {
     }
 
     // Check nchan and npol
-    char* comment(nullptr);
-
+    char* comment(nullptr); // ignore
     std::string key("NCHAN");
     status = 0;
     fits_read_key(fptr, TINT, key.c_str(), &nchan, comment, &status);
@@ -1320,7 +1319,7 @@ void CartaFitsImage::ReadBeamsTable(casacore::ImageInfo& image_info) {
 
     std::unordered_map<string, string> beam_units;
     for (int i = 0; i < tfields; ++i) {
-        char name[10], unit[10];
+        char name[FLEN_VALUE], unit[FLEN_VALUE]; // cfitsio constant: max value length
         std::string index_str = std::to_string(i + 1);
 
         key = "TTYPE" + index_str;

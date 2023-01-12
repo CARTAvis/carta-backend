@@ -61,17 +61,24 @@ FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string
     return nullptr;
 }
 
-FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) {
     if (image) {
-        return new ImagePtrLoader(image);
+        return new ImagePtrLoader(image, filename);
     } else {
         spdlog::error("Fail to assign an image pointer!");
         return nullptr;
     }
 }
 
-FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
-    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
+FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz, bool is_generated)
+    : _filename(filename),
+      _directory(directory),
+      _is_gz(is_gz),
+      _is_generated(is_generated),
+      _modify_time(0),
+      _num_dims(0),
+      _has_pixel_mask(false),
+      _stokes_cdelt(0) {
     // Set initial modify time
     ImageUpdated();
 }
@@ -109,7 +116,7 @@ bool FileLoader::ImageUpdated() {
 
     // Do not close compressed image, or run getstat on generated image (no filename, in memory only) or
     // LEL ImageExpr (directory is set, filename is LEL expression)
-    if (_is_gz || _filename.empty() || !_directory.empty()) {
+    if (_is_gz || _is_generated || !_directory.empty()) {
         return changed;
     }
 

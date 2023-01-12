@@ -24,7 +24,7 @@ namespace std {
 template <>
 struct hash<carta::TileCacheKey> {
     std::size_t operator()(const carta::TileCacheKey& k) const {
-        return std::hash<int32_t>()(k.x) ^ (std::hash<int32_t>()(k.x) << 1);
+        return std::hash<int32_t>()(k.x) ^ (std::hash<int32_t>()(k.y) << 1);
     }
 };
 } // namespace std

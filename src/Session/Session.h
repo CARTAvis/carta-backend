@@ -106,6 +106,7 @@ public:
     void OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id);
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
+    void OnStopFitting(const CARTA::StopFitting& stop_fitting);
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
