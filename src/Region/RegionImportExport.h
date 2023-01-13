@@ -45,13 +45,13 @@ public:
 
 protected:
     // Add to type:name dictionary for CRTF/DS9
-    virtual void AddExportRegionNames() = 0;
+    virtual void AddRegionNames() = 0;
 
     // Parse file into lines, return in string vector
     virtual std::vector<std::string> ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim = '\0');
 
     // Some commented lines are carta regions
-    virtual bool LineIsComment(const std::string& line);
+    virtual bool IsCommentLine(const std::string& line);
 
     // Parse file line into region name and parameters
     virtual inline void SetParserDelim(const std::string& delim) {

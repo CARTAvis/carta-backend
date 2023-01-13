@@ -129,18 +129,23 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
     return split_lines;
 }
 
-bool RegionImportExport::LineIsComment(const std::string& line) {
-    if (line[0] == '#') {
-        std::vector<std::string> carta_regions{"# ruler", "# compass", "# textbox"};
-        for (auto& region : carta_regions) {
-            if (line.find(region) == 0) {
-                return false;
-            }
-        }
-        return true;
+bool RegionImportExport::IsCommentLine(const std::string& line) {
+    // Determine if line starts with "# " + a region name.
+    // Requires that _region_names map is complete (with AddRegionNames)
+    if (line[0] != '#') {
+        return false;
+    }
+    if (line.find("# textbox") == 0) { // not in map, no type for it
+        return false;
     }
 
-    return false;
+    for (auto& name : _region_names) { // map {RegionType, string}
+        if (line.find(name.second) == 0) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void RegionImportExport::ParseRegionParameters(
@@ -228,7 +233,7 @@ void RegionImportExport::ParseRegionParameters(
 
 void RegionImportExport::AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties) {
     // Add imported text style to existing textbox region properties.
-    // Textbox defined state and style: name, text_position
+    // Textbox defines state and style: name, text_position
     // Text defines style: color, text label, font
     textbox_properties.style.set_color(text_style.color());
     auto annotation_style = textbox_properties.style.mutable_annotation_style();

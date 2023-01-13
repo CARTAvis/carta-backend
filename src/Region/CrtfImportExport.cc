@@ -36,6 +36,7 @@ CrtfImportExport::CrtfImportExport(std::shared_ptr<casacore::CoordinateSystem> i
     // Import regions from CRTF region file
     // Set delimiters for parsing file lines
     SetParserDelim(" ,[]");
+    AddRegionNames(); // map <type, string>
 
     try {
         std::vector<std::string> file_lines = ReadRegionFile(file, file_is_filename);
@@ -52,10 +53,10 @@ CrtfImportExport::CrtfImportExport(
     std::shared_ptr<casacore::CoordinateSystem> image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis)
     : RegionImportExport(image_coord_sys, image_shape), _stokes_axis(stokes_axis) {
     // Export regions; will add each region to _export_regions list
-    AddExportRegionNames();
+    AddRegionNames(); // map <type, string>
 }
 
-void CrtfImportExport::AddExportRegionNames() {
+void CrtfImportExport::AddRegionNames() {
     _region_names[CARTA::RegionType::POINT] = "symbol";
     _region_names[CARTA::RegionType::RECTANGLE] = "centerbox";
     _region_names[CARTA::RegionType::POLYGON] = "poly";
@@ -94,22 +95,23 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
         case CARTA::RegionType::RECTANGLE:
         case CARTA::RegionType::ANNRECTANGLE:
         case CARTA::RegionType::ANNTEXT: {
+            std::string region_name;
             if (angle == 0.0) {
-                // centerbox [[x, y], [width, height]]
-                std::string region_name;
-                if (region_type == CARTA::RegionType::ANNTEXT) {
-                    region_name = "# textbox";
-                } else {
-                    region_name = _region_names[region_type];
-                }
-
+                // centerbox [[x, y], [width, height]] or textbox
+                region_name = (region_type == CARTA::RegionType::ANNTEXT ? "# textbox" : _region_names[region_type]);
                 region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", region_name, points[0].x(), points[0].y(),
                     points[1].x(), points[1].y());
             } else {
-                // rotbox [[x, y], [width, height], angle]
-                std::string name = region_type == CARTA::RegionType::RECTANGLE ? "rotbox" : "ann rotbox";
-                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", name, points[0].x(), points[0].y(),
-                    points[1].x(), points[1].y(), angle);
+                // rotbox [[x, y], [width, height], angle] or textbox with angle
+                if (region_type == CARTA::RegionType::RECTANGLE) {
+                    region_name = "rotbox";
+                } else if (region_type == CARTA::RegionType::ANNRECTANGLE) {
+                    region_name = "ann rotbox";
+                } else {
+                    region_name = "# textbox";
+                }
+                region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix], {}deg]", region_name, points[0].x(),
+                    points[0].y(), points[1].x(), points[1].y(), angle);
             }
             break;
         }
@@ -377,8 +379,12 @@ bool CrtfImportExport::AddExportRegion(CARTA::RegionType region_type, const std:
                     break;
                 }
                 case CARTA::RegionType::ANNTEXT: {
-                    // Add textbox line (formatted like centerbox)
-                    region_line.replace(0, 13, "# textbox", 9); // "ann centerbox" -> "# textbox"
+                    // Add textbox line (formatted like centerbox/rotbox)
+                    if (region_line.find("centerbox") != std::string::npos) {
+                        region_line.replace(0, 13, "# textbox", 9); // "ann centerbox" -> "# textbox"
+                    } else {
+                        region_line.replace(0, 10, "# textbox", 9); // "ann rotbox" -> "# textbox"
+                    }
                     region_line += fmt::format(" align={}", _text_positions[region_style.annotation_style().text_position()]);
                     _export_regions.push_back(region_line);
 
@@ -436,11 +442,8 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
     RegionProperties region_properties;
 
     for (auto& line : lines) {
-        if (line.empty()) {
-            continue;
-        }
-
-        if (LineIsComment(line)) {
+        // skip blank line and comment (check for non-CRTF carta region)
+        if (line.empty() || IsCommentLine(line)) {
             continue;
         }
 
@@ -597,7 +600,7 @@ RegionState CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters,
 
     if (parameters.size() >= 5) {
         // [box blcx blcy trcx trcy], [centerbox cx cy width height], [rotbox cx cy width height angle],
-        // or [textbox cx cy width height]
+        // or [textbox cx cy width height angle]
         CARTA::RegionType type;
         auto first_param = parameters[0];
         if (first_param == "ann") {
@@ -923,7 +926,7 @@ bool CrtfImportExport::GetBoxControlPoints(
         casacore::readQuantity(p3, parameters[param_index++]);
         casacore::readQuantity(p4, parameters[param_index++]);
 
-        if (region == "rotbox") {
+        if ((region == "rotbox") || (region == "textbox" && parameters.size() > 5)) {
             casacore::Quantity angle;
             casacore::readQuantity(angle, parameters[param_index++]);
             rotation = angle.get("deg").getValue();

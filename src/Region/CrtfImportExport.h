@@ -42,7 +42,7 @@ public:
 
 protected:
     // Add to type:name dictionary for CRTF syntax
-    void AddExportRegionNames() override;
+    void AddRegionNames() override;
 
     // Export using Quantities
     bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
