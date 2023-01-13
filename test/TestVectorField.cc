@@ -24,7 +24,7 @@ class TestVectorField : public VectorField {
 public:
     TestVectorField() : VectorField() {}
 
-    static void TestVectorFieldSettings() {
+    void TestVectorFieldSettings() {
         auto msg = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
         auto msg1 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
         auto msg2 = Message::SetVectorOverlayParameters(0, 4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
@@ -38,30 +38,18 @@ public:
         auto msg10 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1);
         auto msg11 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2);
 
-        VectorFieldSettings settings(msg);
-        VectorFieldSettings settings1(msg1);
-        VectorFieldSettings settings2(msg2);
-        VectorFieldSettings settings3(msg3);
-        VectorFieldSettings settings4(msg4);
-        VectorFieldSettings settings5(msg5);
-        VectorFieldSettings settings6(msg6);
-        VectorFieldSettings settings7(msg7);
-        VectorFieldSettings settings8(msg8);
-        VectorFieldSettings settings9(msg9);
-        VectorFieldSettings settings10(msg10);
-        VectorFieldSettings settings11(msg11);
-
-        EXPECT_TRUE(settings == settings1);
-        EXPECT_TRUE(settings != settings2);
-        EXPECT_TRUE(settings != settings3);
-        EXPECT_TRUE(settings != settings4);
-        EXPECT_TRUE(settings != settings5);
-        EXPECT_TRUE(settings != settings6);
-        EXPECT_TRUE(settings != settings7);
-        EXPECT_TRUE(settings != settings8);
-        EXPECT_TRUE(settings != settings9);
-        EXPECT_TRUE(settings != settings10);
-        EXPECT_TRUE(settings != settings11);
+        EXPECT_TRUE(SetParameters(msg, -1));
+        EXPECT_FALSE(SetParameters(msg1, -1));
+        EXPECT_TRUE(SetParameters(msg2, -1));
+        EXPECT_TRUE(SetParameters(msg3, -1));
+        EXPECT_TRUE(SetParameters(msg4, -1));
+        EXPECT_TRUE(SetParameters(msg5, -1));
+        EXPECT_TRUE(SetParameters(msg6, -1));
+        EXPECT_TRUE(SetParameters(msg7, -1));
+        EXPECT_TRUE(SetParameters(msg8, -1));
+        EXPECT_TRUE(SetParameters(msg9, -1));
+        EXPECT_TRUE(SetParameters(msg10, -1));
+        EXPECT_TRUE(SetParameters(msg11, -1));
     }
 };
 
@@ -1342,7 +1330,8 @@ TEST_F(VectorFieldTest, TestTileCalc) {
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldSettings) {
-    TestVectorField::TestVectorFieldSettings();
+    TestVectorField test_vector_field;
+    test_vector_field.TestVectorFieldSettings();
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc) {
