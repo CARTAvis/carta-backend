@@ -54,7 +54,7 @@ private:
     // Import
     void ProcessFileLines(std::vector<std::string>& lines);
     std::string GetRegionDirectionFrame(std::unordered_map<std::string, std::string>& properties);
-    RegionState ImportAnnSymbol(std::vector<std::string>& parameters, std::string& coord_frame);
+    RegionState ImportAnnSymbolText(std::vector<std::string>& parameters, std::string& coord_frame);
     RegionState ImportAnnBox(std::vector<std::string>& parameters, std::string& coord_frame);
     RegionState ImportAnnEllipse(std::vector<std::string>& parameters, std::string& coord_frame);
     RegionState ImportAnnPoly(std::vector<std::string>& parameters, std::string& coord_frame);

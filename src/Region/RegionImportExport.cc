@@ -55,11 +55,11 @@ bool RegionImportExport::AddExportRegion(const RegionState& region_state, const 
     switch (region_state.type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT:
-        case CARTA::RegionType::ANNTEXT:
             converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
             break;
         case CARTA::RegionType::RECTANGLE:
         case CARTA::RegionType::ANNRECTANGLE:
+        case CARTA::RegionType::ANNTEXT:
             converted = ConvertRecordToRectangle(region_record, pixel_coord, control_points);
             break;
         case CARTA::RegionType::ELLIPSE:
@@ -129,9 +129,24 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
     return split_lines;
 }
 
+bool RegionImportExport::LineIsComment(const std::string& line) {
+    if (line[0] == '#') {
+        std::vector<std::string> carta_regions{"# ruler", "# compass", "# textbox"};
+        for (auto& region : carta_regions) {
+            if (line.find(region) == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    return false;
+}
+
 void RegionImportExport::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
+    // Some annotation regions have comment syntax; remove leading #
     if (region_definition[0] == '#') {
         region_definition = region_definition.substr(2);
     }
@@ -141,7 +156,7 @@ void RegionImportExport::ParseRegionParameters(
     region_definition = std::regex_replace(region_definition, equals_spaces, "=");
 
     size_t next(0), current(0), end(region_definition.size());
-    bool is_property(false);
+    bool is_property(false), is_quoted_string(false);
     std::string property_key;
 
     while (current < end) {
@@ -155,18 +170,43 @@ void RegionImportExport::ParseRegionParameters(
             // Item is region_definition between parser delimiters
             std::string item = region_definition.substr(current, next - current);
 
-            if (item.find("=") != std::string::npos) {
+            if ((item.front() == '"' || item.front() == '\'') && !(item.back() == '"' || item.back() == '\'')) {
+                // find closing quote
+                is_quoted_string = true;
+                current = next;
+                next = region_definition.find_first_of(item[0], current);
+                item += region_definition.substr(current, next - current);
+                item.erase(0, 1); // remove initial quote
+            } else {
+                is_quoted_string = false;
+            }
+
+            if (!is_quoted_string && item.find('=') != std::string::npos) {
                 // Assume region property (kv pair)
                 std::vector<std::string> kvpair;
                 SplitString(item, '=', kvpair);
                 property_key = kvpair[0];
+
                 if (kvpair.size() == 1) {
                     // value starts with delim
                     current = next + 1;
                     next = region_definition.find_first_of(_parser_delim, current);
                     properties[property_key] = region_definition.substr(current, next - current);
                 } else {
-                    properties[property_key] = kvpair[1];
+                    std::string value = kvpair[1];
+
+                    if (value.front() == '"' || value.front() == '\'') {
+                        value.erase(0, 1); // remove initial quote
+                        if (value.back() == '"' || value.back() == '\'') {
+                            value.pop_back(); // remove closing quote
+                        } else {
+                            // find closing quote
+                            current = next;
+                            next = region_definition.find_first_of(value[0], current);
+                            value += region_definition.substr(current, next - current);
+                        }
+                    }
+                    properties[property_key] = value;
                 }
                 is_property = true;
             } else {
@@ -184,6 +224,18 @@ void RegionImportExport::ParseRegionParameters(
             current = next;
         }
     }
+}
+
+void RegionImportExport::AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties) {
+    // Add imported text style to existing textbox region properties.
+    // Textbox defined state and style: name, text_position
+    // Text defines style: color, text label, font
+    textbox_properties.style.set_color(text_style.color());
+    auto annotation_style = textbox_properties.style.mutable_annotation_style();
+    annotation_style->set_text_label0(text_style.annotation_style().text_label0());
+    annotation_style->set_font_style(text_style.annotation_style().font_style());
+    annotation_style->set_font(text_style.annotation_style().font());
+    annotation_style->set_font_size(text_style.annotation_style().font_size());
 }
 
 bool RegionImportExport::ConvertPointToPixels(
@@ -534,6 +586,7 @@ std::string RegionImportExport::FormatColor(const std::string& color) {
 
 void RegionImportExport::ExportAnnCompassStyle(
     const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line) {
+    // Append compass labels and arrows to region line
     auto north_label = region_style.annotation_style().text_label0();
     auto east_label = region_style.annotation_style().text_label1();
     auto north_arrow = (region_style.annotation_style().is_north_arrow() ? "1" : "0");

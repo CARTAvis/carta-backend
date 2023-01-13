@@ -50,12 +50,18 @@ protected:
     // Parse file into lines, return in string vector
     virtual std::vector<std::string> ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim = '\0');
 
+    // Some commented lines are carta regions
+    virtual bool LineIsComment(const std::string& line);
+
     // Parse file line into region name and parameters
     virtual inline void SetParserDelim(const std::string& delim) {
         _parser_delim = delim;
     }
     virtual void ParseRegionParameters(
         std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+
+    // Add to existing imported RegionProperties for combo region (textbox + text)
+    void AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties);
 
     // Quantities for converted control points
     virtual bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
@@ -68,6 +74,7 @@ protected:
 
     // Format hex string e.g. "10161a" -> "#10161A"
     std::string FormatColor(const std::string& color);
+
     void ExportAnnCompassStyle(const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line);
     void ImportCompassStyle(std::string& compass_properties, std::string& coordinate_system, CARTA::AnnotationStyle* annotation_style);
     void ImportRulerStyle(std::string& ruler_properties, std::string& coordinate_system);
@@ -83,10 +90,15 @@ protected:
     std::vector<RegionProperties> _import_regions;
     std::vector<std::string> _export_regions;
 
-    // Common to CRTF and DS9
+    // Common to CRTF and DS9: region names and text positions
     std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::RegionType::LINE, "line"},
         {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNRULER, "# ruler"},
         {CARTA::RegionType::ANNCOMPASS, "# compass"}};
+    std::unordered_map<CARTA::TextAnnotationPosition, std::string> _text_positions = {{CARTA::TextAnnotationPosition::CENTER, "center"},
+        {CARTA::TextAnnotationPosition::UPPER_LEFT, "uleft"}, {CARTA::TextAnnotationPosition::UPPER_RIGHT, "uright"},
+        {CARTA::TextAnnotationPosition::LOWER_LEFT, "lleft"}, {CARTA::TextAnnotationPosition::LOWER_RIGHT, "lright"},
+        {CARTA::TextAnnotationPosition::TOP, "top"}, {CARTA::TextAnnotationPosition::BOTTOM, "bottom"},
+        {CARTA::TextAnnotationPosition::LEFT, "left"}, {CARTA::TextAnnotationPosition::RIGHT, "right"}};
 
 private:
     // Return control_points and rotation Quantity for region type
