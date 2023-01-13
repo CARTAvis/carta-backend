@@ -88,69 +88,76 @@ struct VectorFieldSettings {
     }
 };
 
-struct Valid {
-    bool operator()(float a, float b) {
-        return (!std::isnan(a) && !std::isnan(b));
-    }
-};
+class VectorField {
+public:
+    VectorField(const VectorFieldSettings& settings);
 
-struct ThresholdCut {
-    float threshold;
-    Valid valid;
+    void CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data, std::unordered_map<std::string, bool>& stokes_flag,
+        const Tile& tile, int width, int height, int z_index, double progress,
+        const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    ThresholdCut(float threshold_) : threshold(threshold_) {}
-
-    float operator()(float data, float result) {
-        return (std::isnan(data) || (!std::isnan(threshold) && (data < threshold))) ? FLOAT_NAN : result;
-    }
-
-    void operator()(float& data) {
-        if (valid(threshold, data) && data < threshold) {
-            data = FLOAT_NAN;
+private:
+    struct Valid {
+        bool operator()(float a, float b) {
+            return (!std::isnan(a) && !std::isnan(b));
         }
-    }
-};
+    };
 
-struct CalcPi {
-    double q_error;
-    double u_error;
-    Valid valid;
+    struct ThresholdCut {
+        float threshold;
+        Valid valid;
 
-    CalcPi(double q_error_, double u_error_) : q_error(q_error_), u_error(u_error_) {}
+        ThresholdCut(float threshold_) : threshold(threshold_) {}
 
-    float operator()(float q, float u) {
-        if (valid(q, u)) {
-            return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
+        float operator()(float data, float result) {
+            return (std::isnan(data) || (!std::isnan(threshold) && (data < threshold))) ? FLOAT_NAN : result;
         }
-        return FLOAT_NAN;
-    }
-};
 
-struct CalcFpi {
-    Valid valid;
+        void operator()(float& data) {
+            if (valid(threshold, data) && data < threshold) {
+                data = FLOAT_NAN;
+            }
+        }
+    };
 
-    float operator()(float i, float pi) {
-        return (valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
-    }
-};
+    struct CalcPi {
+        double q_error;
+        double u_error;
+        Valid valid;
 
-struct CalcPa {
-    Valid valid;
+        CalcPi(double q_error_, double u_error_) : q_error(q_error_), u_error(u_error_) {}
 
-    float operator()(float q, float u) {
-        return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
-    }
+        float operator()(float q, float u) {
+            if (valid(q, u)) {
+                return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
+            }
+            return FLOAT_NAN;
+        }
+    };
+
+    struct CalcFpi {
+        Valid valid;
+
+        float operator()(float i, float pi) {
+            return (valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
+        }
+    };
+
+    struct CalcPa {
+        Valid valid;
+
+        float operator()(float q, float u) {
+            return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
+        }
+    };
+
+    VectorFieldSettings _sets;
 };
 
 void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Tile>& tiles);
 void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
     std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
-
-// Functions to calculate fractional PI and PA
-void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::string, std::vector<float>>& stokes_data,
-    std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,
-    const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
 } // namespace carta
 

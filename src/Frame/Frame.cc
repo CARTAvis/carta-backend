@@ -2429,7 +2429,8 @@ bool Frame::DoVectorFieldCalculation(
         }
 
         // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(settings, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        VectorField vector_field(settings);
+        vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
     }
     return true;
 }
