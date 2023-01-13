@@ -62,16 +62,6 @@ CARTA::ImageBounds GetImageBounds(const Tile& tile, int image_width, int image_h
     return bounds;
 }
 
-void ApplyThreshold(std::vector<float>& data, float threshold) {
-    if (!std::isnan(threshold)) {
-        for (auto& value : data) {
-            if (!std::isnan(value) && (value < threshold)) {
-                value = FLOAT_NAN;
-            }
-        }
-    }
-}
-
 void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::string, std::vector<float>>& stokes_data,
     std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,
     const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
@@ -96,10 +86,13 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
     auto* tile_pi = response.add_intensity_tiles();
     auto* tile_pa = response.add_angle_tiles();
 
+    // Threshold cut operator to be applied
+    ThresholdCut threshold_cut(threshold);
+
     // Current stokes data as PI or PA
     if (current_stokes_as_pi || current_stokes_as_pa) {
         // Apply a threshold cut
-        ApplyThreshold(stokes_data["CUR"], threshold);
+        std::for_each(stokes_data["CUR"].begin(), stokes_data["CUR"].end(), threshold_cut);
 
         if (current_stokes_as_pi) {
             FillTileData(
@@ -112,8 +105,6 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
     }
 
     // Calculate PI and PA using stokes data I, Q or U
-    // Lambda function to apply a threshold
-    ThresholdCut threshold_cut(threshold);
 
     if (calculate_pi) {
         std::vector<float> pi;

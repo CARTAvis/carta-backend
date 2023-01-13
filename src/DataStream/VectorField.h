@@ -93,7 +93,13 @@ struct ThresholdCut {
     ThresholdCut(float threshold_) : threshold(threshold_) {}
 
     float operator()(float data, float result) {
-        return ((std::isnan(data) || (!std::isnan(threshold) && (data < threshold))) ? FLOAT_NAN : result);
+        return (std::isnan(data) || (!std::isnan(threshold) && (data < threshold))) ? FLOAT_NAN : result;
+    }
+
+    void operator()(float& data) {
+        if (!std::isnan(threshold) && !std::isnan(data) && data < threshold) {
+            data = FLOAT_NAN;
+        }
     }
 };
 
@@ -115,7 +121,6 @@ void GetTiles(int image_width, int image_height, int mip, std::vector<carta::Til
 void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
     std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality);
 CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int image_height, int mip);
-void ApplyThreshold(std::vector<float>& data, float threshold);
 
 // Functions to calculate fractional PI and PA
 void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::string, std::vector<float>>& stokes_data,
