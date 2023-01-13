@@ -4,10 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <casacore/casa/BasicSL/Constants.h>
-
-#include "Util/Message.h"
 #include "VectorField.h"
+#include "Util/Message.h"
 
 namespace carta {
 
@@ -115,7 +113,8 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
 
         std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pi.begin(), calc_pi);
         if (fractional) { // Calculate fractional PI
-            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), CalcFpi);
+            CalcFpi calc_fpi;
+            std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pi.begin(), pi.begin(), calc_fpi);
         }
 
         if (stokes_flag["I"]) { // Set NAN for PI/FPI if stokes I is NAN or below the threshold
@@ -127,7 +126,8 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
     if (calculate_pa) {
         std::vector<float> pa;
         pa.resize(width * height);
-        std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), CalcPa);
+        CalcPa calc_pa;
+        std::transform(stokes_data["Q"].begin(), stokes_data["Q"].end(), stokes_data["U"].begin(), pa.begin(), calc_pa);
 
         if (stokes_flag["I"]) { // Set NAN for PA if stokes I is NAN or below the threshold
             std::transform(stokes_data["I"].begin(), stokes_data["I"].end(), pa.begin(), pa.begin(), threshold_cut);
@@ -138,18 +138,6 @@ void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::
     // Send response message
     response.set_progress(progress);
     callback(response);
-}
-
-bool Valid(float a, float b) {
-    return (!std::isnan(a) && !std::isnan(b));
-}
-
-float CalcFpi(float i, float pi) {
-    return (Valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
-}
-
-float CalcPa(float q, float u) {
-    return (Valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
 }
 
 } // namespace carta

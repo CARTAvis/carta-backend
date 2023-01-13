@@ -9,6 +9,7 @@
 
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/vector_overlay.pb.h>
+#include <casacore/casa/BasicSL/Constants.h>
 
 #include "DataStream/Compression.h"
 #include "DataStream/Tile.h"
@@ -87,8 +88,15 @@ struct VectorFieldSettings {
     }
 };
 
+struct Valid {
+    bool operator()(float a, float b) {
+        return (!std::isnan(a) && !std::isnan(b));
+    }
+};
+
 struct ThresholdCut {
     float threshold;
+    Valid valid;
 
     ThresholdCut(float threshold_) : threshold(threshold_) {}
 
@@ -97,7 +105,7 @@ struct ThresholdCut {
     }
 
     void operator()(float& data) {
-        if (!std::isnan(threshold) && !std::isnan(data) && data < threshold) {
+        if (valid(threshold, data) && data < threshold) {
             data = FLOAT_NAN;
         }
     }
@@ -106,14 +114,31 @@ struct ThresholdCut {
 struct CalcPi {
     double q_error;
     double u_error;
+    Valid valid;
 
     CalcPi(double q_error_, double u_error_) : q_error(q_error_), u_error(u_error_) {}
 
     float operator()(float q, float u) {
-        if (!std::isnan(q) && !std::isnan(u)) {
+        if (valid(q, u)) {
             return ((float)std::sqrt(std::pow(q, 2) + std::pow(u, 2) - (std::pow(q_error, 2) + std::pow(u_error, 2)) / 2.0));
         }
         return FLOAT_NAN;
+    }
+};
+
+struct CalcFpi {
+    Valid valid;
+
+    float operator()(float i, float pi) {
+        return (valid(i, pi) ? (float)100.0 * (pi / i) : FLOAT_NAN);
+    }
+};
+
+struct CalcPa {
+    Valid valid;
+
+    float operator()(float q, float u) {
+        return (valid(q, u) ? ((float)(180.0 / casacore::C::pi) * std::atan2(u, q) / 2) : FLOAT_NAN);
     }
 };
 
@@ -126,9 +151,6 @@ CARTA::ImageBounds GetImageBounds(const carta::Tile& tile, int image_width, int 
 void CalculatePiPa(const VectorFieldSettings& settings, std::unordered_map<std::string, std::vector<float>>& stokes_data,
     std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,
     const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
-bool Valid(float a, float b);
-float CalcFpi(float i, float pi);
-float CalcPa(float q, float u);
 
 } // namespace carta
 
