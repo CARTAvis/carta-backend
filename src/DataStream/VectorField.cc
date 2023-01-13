@@ -14,7 +14,7 @@ VectorField::VectorField() : _calculate_pi(false), _calculate_pa(false), _curren
 }
 
 bool VectorField::SetParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
-    if (!isEqual(message)) {
+    if (!IsEqual(message)) {
         RenewParameters(message, stokes_axis);
         return true;
     }
@@ -115,7 +115,7 @@ void VectorField::ClearSettings() {
     _compression_quality = 0;
 }
 
-bool VectorField::isEqual(const CARTA::SetVectorOverlayParameters& message) {
+bool VectorField::IsEqual(const CARTA::SetVectorOverlayParameters& message) {
     int file_id = message.file_id();
     int smoothing_factor = message.smoothing_factor();
     bool fractional = message.fractional();
@@ -152,24 +152,8 @@ void VectorField::RenewParameters(const CARTA::SetVectorOverlayParameters& messa
     _current_stokes_as_pa = (_stokes_angle == 0 && stokes_axis > -1) || stokes_axis < 0;
 }
 
-void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles) {
-    int tile_size_original = TILE_SIZE * mip;
-    int num_tile_columns = ceil((double)image_width / tile_size_original);
-    int num_tile_rows = ceil((double)image_height / tile_size_original);
-    int32_t tile_layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
-    tiles.resize(num_tile_rows * num_tile_columns);
-
-    for (int j = 0; j < num_tile_rows; ++j) {
-        for (int i = 0; i < num_tile_columns; ++i) {
-            tiles[j * num_tile_columns + i].x = i;
-            tiles[j * num_tile_columns + i].y = j;
-            tiles[j * num_tile_columns + i].layer = tile_layer;
-        }
-    }
-}
-
-void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
-    std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality) {
+void VectorField::FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width,
+    int32_t tile_height, std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality) {
     if (tile) {
         tile->set_x(x);
         tile->set_y(y);
@@ -189,6 +173,22 @@ void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, in
             tile->set_image_data(compression_buffer.data(), compressed_size);
         } else {
             tile->set_image_data(array.data(), sizeof(float) * array.size());
+        }
+    }
+}
+
+void GetTiles(int image_width, int image_height, int mip, std::vector<Tile>& tiles) {
+    int tile_size_original = TILE_SIZE * mip;
+    int num_tile_columns = ceil((double)image_width / tile_size_original);
+    int num_tile_rows = ceil((double)image_height / tile_size_original);
+    int32_t tile_layer = Tile::MipToLayer(mip, image_width, image_height, TILE_SIZE, TILE_SIZE);
+    tiles.resize(num_tile_rows * num_tile_columns);
+
+    for (int j = 0; j < num_tile_rows; ++j) {
+        for (int i = 0; i < num_tile_columns; ++i) {
+            tiles[j * num_tile_columns + i].x = i;
+            tiles[j * num_tile_columns + i].y = j;
+            tiles[j * num_tile_columns + i].layer = tile_layer;
         }
     }
 }
