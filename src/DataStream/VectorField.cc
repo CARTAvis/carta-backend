@@ -9,7 +9,36 @@
 
 namespace carta {
 
-VectorField::VectorField(const VectorFieldSettings& settings) : _sets(settings) {}
+VectorField::VectorField() {
+    _sets.ClearSettings();
+}
+
+bool VectorField::SetParameters(const CARTA::SetVectorOverlayParameters& message, int stokes_axis) {
+    VectorFieldSettings new_sets(message, stokes_axis);
+    if (_sets != new_sets) {
+        _sets = new_sets;
+        return true;
+    }
+    return false;
+}
+
+bool VectorField::ClearSets(const std::function<void(CARTA::VectorOverlayTileData&)>& callback, int z_index) {
+    auto& settings = _sets;
+    if (settings.smoothing_factor < 1) {
+        return true;
+    }
+
+    if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
+        _sets.ClearSettings();
+        auto empty_response = Message::VectorOverlayTileData(settings.file_id, z_index, settings.stokes_intensity, settings.stokes_angle,
+            settings.compression_type, settings.compression_quality);
+        empty_response.set_progress(1.0);
+        callback(empty_response);
+        return true;
+    }
+
+    return false;
+}
 
 void VectorField::CalculatePiPa(std::unordered_map<std::string, std::vector<float>>& stokes_data,
     std::unordered_map<std::string, bool>& stokes_flag, const Tile& tile, int width, int height, int z_index, double progress,

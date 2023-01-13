@@ -20,6 +20,51 @@ static const std::string IMAGE_SHAPE = "1110 1110 25 4";
 static const std::string IMAGE_OPTS = "-s 0";
 static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
 
+class TestVectorField : public VectorField {
+public:
+    TestVectorField() : VectorField() {}
+
+    static void TestVectorFieldSettings() {
+        auto msg = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg1 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg2 = Message::SetVectorOverlayParameters(0, 4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg3 = Message::SetVectorOverlayParameters(0, 2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg4 = Message::SetVectorOverlayParameters(0, 2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg5 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg6 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg7 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg8 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg9 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1);
+        auto msg10 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1);
+        auto msg11 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2);
+
+        VectorFieldSettings settings(msg);
+        VectorFieldSettings settings1(msg1);
+        VectorFieldSettings settings2(msg2);
+        VectorFieldSettings settings3(msg3);
+        VectorFieldSettings settings4(msg4);
+        VectorFieldSettings settings5(msg5);
+        VectorFieldSettings settings6(msg6);
+        VectorFieldSettings settings7(msg7);
+        VectorFieldSettings settings8(msg8);
+        VectorFieldSettings settings9(msg9);
+        VectorFieldSettings settings10(msg10);
+        VectorFieldSettings settings11(msg11);
+
+        EXPECT_TRUE(settings == settings1);
+        EXPECT_TRUE(settings != settings2);
+        EXPECT_TRUE(settings != settings3);
+        EXPECT_TRUE(settings != settings4);
+        EXPECT_TRUE(settings != settings5);
+        EXPECT_TRUE(settings != settings6);
+        EXPECT_TRUE(settings != settings7);
+        EXPECT_TRUE(settings != settings8);
+        EXPECT_TRUE(settings != settings9);
+        EXPECT_TRUE(settings != settings10);
+        EXPECT_TRUE(settings != settings11);
+    }
+};
+
 class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
@@ -1297,43 +1342,7 @@ TEST_F(VectorFieldTest, TestTileCalc) {
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldSettings) {
-    auto msg = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg1 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg2 = Message::SetVectorOverlayParameters(0, 4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg3 = Message::SetVectorOverlayParameters(0, 2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg4 = Message::SetVectorOverlayParameters(0, 2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg5 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg6 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg7 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg8 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg9 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1);
-    auto msg10 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1);
-    auto msg11 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2);
-
-    VectorFieldSettings settings(msg);
-    VectorFieldSettings settings1(msg1);
-    VectorFieldSettings settings2(msg2);
-    VectorFieldSettings settings3(msg3);
-    VectorFieldSettings settings4(msg4);
-    VectorFieldSettings settings5(msg5);
-    VectorFieldSettings settings6(msg6);
-    VectorFieldSettings settings7(msg7);
-    VectorFieldSettings settings8(msg8);
-    VectorFieldSettings settings9(msg9);
-    VectorFieldSettings settings10(msg10);
-    VectorFieldSettings settings11(msg11);
-
-    EXPECT_TRUE(settings == settings1);
-    EXPECT_TRUE(settings != settings2);
-    EXPECT_TRUE(settings != settings3);
-    EXPECT_TRUE(settings != settings4);
-    EXPECT_TRUE(settings != settings5);
-    EXPECT_TRUE(settings != settings6);
-    EXPECT_TRUE(settings != settings7);
-    EXPECT_TRUE(settings != settings8);
-    EXPECT_TRUE(settings != settings9);
-    EXPECT_TRUE(settings != settings10);
-    EXPECT_TRUE(settings != settings11);
+    TestVectorField::TestVectorFieldSettings();
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc) {

@@ -262,7 +262,7 @@ protected:
     }
 
     // For vector field calculation
-    bool DoVectorFieldCalculation(const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
+    bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // Setup
     uint32_t _session_id;
@@ -329,7 +329,7 @@ protected:
     std::unique_ptr<ImageFitter> _image_fitter;
 
     // Vector field settings
-    VectorFieldSettings _vector_field_settings;
+    VectorField _vector_field;
 };
 
 } // namespace carta
