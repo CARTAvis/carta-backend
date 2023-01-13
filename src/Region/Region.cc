@@ -96,16 +96,13 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
             points_ok = (npoints > 2) && PointsFinite(points);
             break;
         }
-        case CARTA::RECTANGLE:    // [(cx, cy), (width, height)] w/h > 0
-        case CARTA::ANNRECTANGLE: // [(cx, cy), (width, height)] w/h > 0
-        case CARTA::ELLIPSE:      // [(cx,cy), (bmaj, bmin)] bmaj/bmin > 0
-        case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)] bmaj/bmin > 0
-        case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)] length > 0
+        case CARTA::RECTANGLE:    // [(cx, cy), (width, height)]
+        case CARTA::ANNRECTANGLE: // [(cx, cy), (width, height)]
+        case CARTA::ELLIPSE:      // [(cx,cy), (bmaj, bmin)]
+        case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)]
+        case CARTA::ANNCOMPASS:   // [(cx, cy), (length, length)]
+        case CARTA::ANNTEXT: {    // [(cx, cy), (width, height)]
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
-            break;
-        }
-        case CARTA::ANNTEXT: { // [x, y] when set from import or [(x, y), (width, height)] when set from frontend
-            points_ok = PointsFinite(points) && (npoints == 1 || (npoints == 2 && points[1].x() > 0 && points[1].y() > 0));
             break;
         }
         default:
@@ -158,8 +155,7 @@ void Region::SetReferenceRegion() {
     try {
         switch (type) {
             case CARTA::POINT:
-            case CARTA::ANNPOINT:
-            case CARTA::ANNTEXT: {
+            case CARTA::ANNPOINT: {
                 if (ConvertCartaPointToWorld(pixel_points[0], _wcs_control_points)) {
                     // WCBox blc and trc are same point
                     std::lock_guard<std::mutex> guard(_region_mutex);
@@ -167,11 +163,12 @@ void Region::SetReferenceRegion() {
                 }
                 break;
             }
-            case CARTA::RECTANGLE:    // [(x, y)] for 4 corners
-            case CARTA::POLYGON:      // [(x, y)] for vertices
-            case CARTA::ANNRECTANGLE: // [(x, y)] for 4 corners
-            case CARTA::ANNPOLYGON: { // [(x, y)] for vertices
-                if (type == CARTA::RECTANGLE || type == CARTA::ANNRECTANGLE) {
+            case CARTA::RECTANGLE:    // 4 corners
+            case CARTA::POLYGON:      // vertices
+            case CARTA::ANNRECTANGLE: // 4 corners
+            case CARTA::ANNPOLYGON:   // vertices
+            case CARTA::ANNTEXT: {    // 4 corners of text box
+                if (type == CARTA::RECTANGLE || type == CARTA::ANNRECTANGLE || type == CARTA::ANNTEXT) {
                     if (!RectanglePointsToWorld(pixel_points, _wcs_control_points)) {
                         _wcs_control_points.clear();
                     }
