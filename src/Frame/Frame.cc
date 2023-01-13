@@ -2288,15 +2288,6 @@ void Frame::CloseCachedImage(const std::string& file) {
     }
 }
 
-bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    VectorFieldSettings new_settings(message, _stokes_axis);
-    if (_vector_field_settings != new_settings) {
-        _vector_field_settings = new_settings;
-        return true;
-    }
-    return false;
-}
-
 bool Frame::GetDownsampledRasterData(
     std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip) {
     int tile_original_width = bounds.x_max() - bounds.x_min();
@@ -2352,37 +2343,29 @@ bool Frame::GetDownsampledRasterData(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
 }
 
-bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    auto& settings = _vector_field_settings;
-    if (settings.smoothing_factor < 1) {
-        return true;
-    }
-
-    if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
-        _vector_field_settings.ClearSettings();
-        auto empty_response = Message::VectorOverlayTileData(settings.file_id, _z_index, settings.stokes_intensity, settings.stokes_angle,
-            settings.compression_type, settings.compression_quality);
-        empty_response.set_progress(1.0);
-        callback(empty_response);
-        return true;
-    }
-
-    return DoVectorFieldCalculation(settings, callback);
+bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
+    return _vector_field.SetParameters(message, _stokes_axis);
 }
 
-bool Frame::DoVectorFieldCalculation(
-    const VectorFieldSettings& settings, const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+    if (_vector_field.ClearSets(callback, _z_index)) {
+        return true;
+    }
+    return DoVectorFieldCalculation(callback);
+}
+
+bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
     // Prevent deleting the Frame while this task is not finished yet
     std::shared_lock lock(GetActiveTaskMutex());
 
     // Get vector field settings
-    int mip = settings.smoothing_factor;
-    bool fractional = settings.fractional;
-    float threshold = (float)settings.threshold;
-    bool calculate_pi = settings.calculate_pi;
-    bool calculate_pa = settings.calculate_pa;
-    bool current_stokes_as_pi = settings.current_stokes_as_pi;
-    bool current_stokes_as_pa = settings.current_stokes_as_pa;
+    int mip = _vector_field.Mip();
+    bool fractional = _vector_field.Fractional();
+    float threshold = _vector_field.Threshold();
+    bool calculate_pi = _vector_field.CalculatePi();
+    bool calculate_pa = _vector_field.CalculatePa();
+    bool current_stokes_as_pi = _vector_field.CurrStokesAsPi();
+    bool current_stokes_as_pa = _vector_field.CurrStokesAsPa();
 
     // Get tiles
     std::vector<Tile> tiles;
@@ -2429,7 +2412,7 @@ bool Frame::DoVectorFieldCalculation(
         }
 
         // Calculate PI or PA and then send a partial response message
-        CalculatePiPa(settings, stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
     }
     return true;
 }
