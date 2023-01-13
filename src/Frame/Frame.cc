@@ -2348,7 +2348,7 @@ bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& 
 }
 
 bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
-    if (_vector_field.ClearSets(callback, _z_index)) {
+    if (_vector_field.ClearParameters(callback, _z_index)) {
         return true;
     }
     return DoVectorFieldCalculation(callback);
