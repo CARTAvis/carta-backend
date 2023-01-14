@@ -39,7 +39,7 @@ public:
 
 protected:
     // Add to type:name dictionary for DS9 syntax
-    void AddExportRegionNames() override;
+    void AddRegionNames() override;
 
     bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation, const CARTA::RegionStyle& style) override;
@@ -58,9 +58,8 @@ private:
     void SetImageReferenceFrame();
 
     // Import regions
-    bool IsAnnotationRegionLine(const std::string& line);
     void SetGlobals(std::string& global_line);
-    void SetRegion(std::string& region_definition);
+    RegionProperties SetRegion(std::string& region_definition);
     RegionState ImportPointRegion(std::vector<std::string>& parameters, bool is_annotation = false);
     RegionState ImportCircleRegion(std::vector<std::string>& parameters, bool is_annotation = false);
     RegionState ImportEllipseRegion(std::vector<std::string>& parameters, bool is_annotation = false);
@@ -82,9 +81,12 @@ private:
 
     // Export: add header string to _export_regions
     void AddHeader();
-    std::string AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle);
-    std::string AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle);
+    std::string AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle,
+        const CARTA::RegionStyle& region_style);
+    std::string AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle,
+        const CARTA::RegionStyle& region_style);
     void ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportTextboxStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
     void ExportFontParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
     void ExportAnnotationStyleParameters(CARTA::RegionType region_type, const CARTA::RegionStyle& region_style, std::string& region_line);
     void ExportAnnPointParameters(const CARTA::RegionStyle& region_style, std::string& region_line);

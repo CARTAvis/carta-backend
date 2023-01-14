@@ -201,7 +201,6 @@ void RegionImportExport::ParseRegionParameters(
                     std::string value = kvpair[1];
 
                     if (value.front() == '"' || value.front() == '\'') {
-                        value.erase(0, 1); // remove initial quote
                         if (value.back() == '"' || value.back() == '\'') {
                             value.pop_back(); // remove closing quote
                         } else {
@@ -210,6 +209,7 @@ void RegionImportExport::ParseRegionParameters(
                             next = region_definition.find_first_of(value[0], current);
                             value += region_definition.substr(current, next - current);
                         }
+                        value.erase(0, 1); // remove initial quote
                     }
                     properties[property_key] = value;
                 }
