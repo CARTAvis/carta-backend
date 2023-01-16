@@ -646,7 +646,7 @@ def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -664,7 +664,7 @@ def prepare_jammy_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -683,7 +683,7 @@ def prepare_rhel7_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -701,7 +701,7 @@ def prepare_rhel8_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -719,7 +719,7 @@ def prepare_rhel9_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -738,7 +738,7 @@ def prepare_macos11_ICD() {
         sh "rm -rf carta-backend-ICD-rxjs"
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
@@ -756,7 +756,7 @@ def prepare_macos12_ICD() {
         sh "rm -rf carta-backend-ICD-rxjs"
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/add-tests-part1"
+            sh "git checkout dev"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
