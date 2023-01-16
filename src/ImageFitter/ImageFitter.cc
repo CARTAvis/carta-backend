@@ -25,8 +25,8 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    const std::vector<bool>& fixed_params, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
-    GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
+    const std::vector<bool>& fixed_params, float background_offset, bool create_model_image, bool create_residual_image,
+    CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
     _fit_data.stop_fitting = false;
     _model_data.clear();
@@ -35,6 +35,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _fit_data.width = width;
     _fit_data.n = width * height;
     _fit_data.data = image;
+    _fit_data.background_offset = std::isnan(background_offset) ? 0 : background_offset;
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
@@ -312,7 +313,7 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
 
 #pragma omp parallel for
         for (size_t i = 0; i < d->n; i++) {
-            float data_i = d->data[i];
+            float data_i = d->data[i] - d->background_offset;
             if (!isnan(data_i)) {
                 double dx = i % d->width - center_x;
                 double dy = i / d->width - center_y;
