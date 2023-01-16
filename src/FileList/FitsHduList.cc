@@ -12,7 +12,7 @@
 
 #include <casacore/casa/Exceptions/Error.h>
 
-#include "../Logger/Logger.h"
+#include "Logger/Logger.h"
 #include "Util/File.h"
 
 using namespace carta;
@@ -62,7 +62,7 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
 
         // Common arguments for fits_read_key
         std::string key;
-        char comment[70];
+        char* comment(nullptr); // unused
 
         bool is_image(false), is_fz(false);
 
@@ -112,7 +112,7 @@ void FitsHduList::CheckFitsHeaders(fitsfile* fptr, std::vector<std::string>& hdu
                 } else {
                     // Get extension name
                     key = "EXTNAME";
-                    char extname[70];
+                    char extname[FLEN_VALUE]; // cfitsio constant: max value length
                     status = 0;
                     fits_read_key(fptr, TSTRING, key.c_str(), extname, comment, &status);
 
