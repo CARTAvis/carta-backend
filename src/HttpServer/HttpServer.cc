@@ -96,6 +96,12 @@ void HttpServer::RegisterRoutes() {
     } else {
         app.get("/*", [&](auto res, auto req) { NotImplemented(res, req); });
     }
+
+    // CORS support for the API
+    app.options("/api/*", [&](auto res, auto req) {
+        AddCorsHeaders(res);
+        res->end();
+    });
 }
 
 void HttpServer::HandleGetConfig(Res* res, Req* req) {
@@ -190,6 +196,14 @@ void HttpServer::AddNoCacheHeaders(Res* res) {
     res->writeHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
     res->writeHeader("Expires", "-1");
     res->writeHeader("Pragma", "no-cache");
+    AddCorsHeaders(res);
+}
+
+void HttpServer::AddCorsHeaders(Res* res) {
+    res->writeHeader("Access-Control-Allow-Origin", "*");
+    res->writeHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res->writeHeader("Access-Control-Allow-Headers", "origin, content-type, accept, x-requested-with");
+    res->writeHeader("Access-Control-Max-Age", "3600");
 }
 
 json HttpServer::GetExistingPreferences() {

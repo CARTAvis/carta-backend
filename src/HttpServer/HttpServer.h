@@ -67,6 +67,7 @@ private:
     static bool IsValidFrontendFolder(fs::path folder);
     bool IsAuthenticated(Req* req);
     void AddNoCacheHeaders(Res* res);
+    void AddCorsHeaders(Res* res);
 
     bool WritePreferencesFile(nlohmann::json& obj);
     bool WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj);
