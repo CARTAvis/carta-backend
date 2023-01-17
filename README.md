@@ -1,4 +1,3 @@
-
 # CARTA Image Viewer (Backend)
 
 ![code coverage](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fcarta.asiaa.sinica.edu.tw%2Fcoverage%2Fpercentage.json)
@@ -68,5 +67,9 @@ For more detailed example commands for installing the dependencies and performin
 ## Running the backend process
 
 Command-line arguments are in the format `--arg=value` or `--arg value`. Run `carta_backend --help` for a list of options. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Hosting of the frontend can be disabled with the `--no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `--debug_no_auth` argument.
+
+## Developer documentation
+
+Automatically generated Doxygen documentation can be found at [cartavis.org/carta-backend](https://cartavis.org/carta-backend/).
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3377984.svg)](https://doi.org/10.5281/zenodo.3377984)
