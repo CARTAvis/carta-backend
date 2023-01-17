@@ -25,8 +25,9 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    const std::vector<bool>& fixed_params, float background_offset, bool create_model_image, bool create_residual_image,
-    CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
+    const std::vector<bool>& fixed_params, float background_offset, CARTA::FittingSolverType solver, bool create_model_image,
+    bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x,
+    size_t offset_y) {
     bool success = false;
     _fit_data.stop_fitting = false;
     _model_data.clear();
@@ -58,7 +59,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
 
     spdlog::info("Fitting image ({} data points) with {} Gaussian component(s) ({} parameter(s)).", _fit_data.n_notnan, _num_components,
         _fit_values->size);
-    int status = SolveSystem();
+    int status = SolveSystem(solver);
 
     if (_fit_data.stop_fitting) {
         fitting_response.set_message("task cancelled");
@@ -160,10 +161,25 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
     _fdf.p = p;
 }
 
-int ImageFitter::SolveSystem() {
+int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
     gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
     const gsl_multifit_nlinear_type* T = gsl_multifit_nlinear_trust;
-    fdf_params.solver = gsl_multifit_nlinear_solver_cholesky;
+    switch (solver) {
+        case CARTA::FittingSolverType::Qr:
+            fdf_params.solver = gsl_multifit_nlinear_solver_qr;
+            break;
+        case CARTA::FittingSolverType::Mcholesky:
+            fdf_params.solver = gsl_multifit_nlinear_solver_mcholesky;
+            break;
+        case CARTA::FittingSolverType::Svd:
+            fdf_params.solver = gsl_multifit_nlinear_solver_svd;
+            break;
+        case CARTA::FittingSolverType::Cholesky:
+        default:
+            fdf_params.solver = gsl_multifit_nlinear_solver_cholesky;
+            break;
+    }
+
     const double xtol = 1.0e-8;
     const double gtol = 1.0e-8;
     const double ftol = 1.0e-8;
