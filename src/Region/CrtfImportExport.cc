@@ -454,16 +454,12 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
 
         // Coordinate frame for world coordinates conversion
         RegionState region_state;
+        CARTA::RegionStyle region_style;
         auto region = parameters[0] == "ann" ? parameters[1] : parameters[0];
         auto coord_frame = GetRegionDirectionFrame(properties);
 
         if (region == "symbol") {
             region_state = ImportAnnSymbolText(parameters, coord_frame);
-        } else if (region == "text") {
-            if (!is_combo_region) {
-                // only get text region state if no textbox already defined
-                region_state = ImportAnnSymbolText(parameters, coord_frame);
-            }
         } else if ((region == "line") || (region == "vector") || (region == "ruler")) {
             region_state = ImportAnnPoly(parameters, coord_frame);
         } else if (region.find("box") != std::string::npos) { // "box", "centerbox", "rotbox", "textbox"
@@ -471,8 +467,15 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
             region_state = ImportAnnBox(parameters, coord_frame);
         } else if ((region == "ellipse") || (region == "circle") || (region == "compass")) {
             region_state = ImportAnnEllipse(parameters, coord_frame);
-        } else if (region.find("poly") != std::string::npos) { // "poly", "polyline"
+        } else if (region.find("poly") != std::string::npos) { // "poly(gon)", "polyline"
             region_state = ImportAnnPoly(parameters, coord_frame);
+        } else if (region == "text") {
+            if (is_combo_region) {
+                region_state.type = CARTA::RegionType::ANNTEXT;
+            } else {
+                // only get text control points if no textbox already defined
+                region_state = ImportAnnSymbolText(parameters, coord_frame);
+            }
         } else if (region == "global") {
             _global_properties = properties;
         } else {
@@ -482,25 +485,46 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         if (region_state.RegionDefined() || is_combo_region) {
             // Set RegionStyle
             auto region_type = region_state.type;
-            auto region_style = ImportStyleParameters(region_type, properties);
+            region_style = ImportStyleParameters(region_type, properties);
 
-            if (region_type == CARTA::RegionType::ANNPOINT && parameters.size() == 5) {
-                auto symbol_char = parameters[4]; // ann, symbol, x, y, char
-                ImportPointStyleParameters(symbol_char, properties, region_style.mutable_annotation_style());
-            } else if (region == "text" && parameters.size() == 4) { // text, x, y, "text"
-                region_style.mutable_annotation_style()->set_text_label0(parameters[3]);
-            } else if (region == "textbox") { // set text position from "align" property
-                CARTA::TextAnnotationPosition position(CARTA::TextAnnotationPosition::CENTER);
-                if (properties.find("align") != properties.end()) {
-                    auto alignment = properties["align"];
-                    for (auto& text_position : _text_positions) {
-                        if (text_position.second == alignment) {
-                            position = text_position.first;
-                            break;
+            // Set AnnotationStyle fields for some regions
+            switch (region_type) {
+                case CARTA::RegionType::ANNPOINT: {
+                    // Add point shape, size
+                    auto symbol_char = parameters[parameters.size() - 1]; // [ann], symbol, x, y, char
+                    ImportPointStyleParameters(symbol_char, properties, region_style.mutable_annotation_style());
+                    break;
+                }
+                case CARTA::RegionType::ANNTEXT: {
+                    // Add text label, position
+                    if (region == "text") {
+                        if (parameters.size() == 4) { // text, x, y, "text"
+                            region_style.mutable_annotation_style()->set_text_label0(parameters[3]);
+                        }
+                    } else {
+                        CARTA::TextAnnotationPosition position(CARTA::TextAnnotationPosition::CENTER);
+                        if (properties.find("align") != properties.end()) {
+                            auto alignment = properties["align"];
+                            for (auto& text_position : _text_positions) {
+                                if (text_position.second == alignment) {
+                                    position = text_position.first;
+                                    break;
+                                }
+                            }
+                            region_style.mutable_annotation_style()->set_text_position(position);
                         }
                     }
+                    break;
                 }
-                region_style.mutable_annotation_style()->set_text_position(position);
+                case CARTA::RegionType::ANNCOMPASS: {
+                    if (properties.find("compass") != properties.end()) {
+                        std::string coordinate_system; // same as "coord" property, not needed for CRTF
+                        ImportCompassStyle(properties["compass"], coordinate_system, region_style.mutable_annotation_style());
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
 
             // Set RegionProperties and add to list
@@ -782,10 +806,10 @@ RegionState CrtfImportExport::ImportAnnPoly(std::vector<std::string>& parameters
 
 CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(
     CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties) {
+    // Import parameters common to all regions
     // Get CARTA::RegionStyle parameters from properties map
     CARTA::RegionStyle region_style;
 
-    // Common parameters
     // name
     if (properties.count("label")) {
         auto name = properties["label"];
