@@ -1,0 +1,4 @@
+<map id="carta::TileCache::LoadChunk" name="carta::TileCache::LoadChunk">
+<area shape="rect" id="node1" title="Load a chunk from the file into the cache." alt="" coords="5,5,212,32"/>
+<area shape="rect" id="node2" href="$classcarta_1_1TileCache.html#a75bc5452ceb7180fabcc601bb5a2533e" title="Update the access time of a tile." alt="" coords="260,5,432,32"/>
+</map>

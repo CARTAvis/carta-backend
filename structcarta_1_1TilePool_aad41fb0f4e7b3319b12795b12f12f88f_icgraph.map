@@ -1,0 +1,4 @@
+<map id="carta::TilePool::Create" name="carta::TilePool::Create">
+<area shape="rect" id="node1" title="Allocate a new tile object." alt="" coords="200,5,367,32"/>
+<area shape="rect" id="node2" href="$structcarta_1_1TilePool.html#a36dcf5cd457723eafb7f436addd7ea3a" title="Request a tile object from the pool." alt="" coords="5,5,152,32"/>
+</map>

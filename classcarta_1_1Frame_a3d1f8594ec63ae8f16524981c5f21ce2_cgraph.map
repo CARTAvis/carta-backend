@@ -1,0 +1,24 @@
+<map id="carta::Frame::FillSpatialProfileData" name="carta::Frame::FillSpatialProfileData">
+<area shape="rect" id="node1" title=" " alt="" coords="5,343,181,384"/>
+<area shape="rect" id="node2" href="$classcarta_1_1TileCache.html#a33c4defad803515b8b2213511e097044" title="Calculate the key for the chunk that contains the given tile." alt="" coords="496,17,696,43"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a30b016834ce04378ba3d0a34f373db3f" title=" " alt="" coords="495,274,697,301"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a1eda290558f3e9a6be5d4149c06e1b7b" title=" " alt="" coords="251,118,420,145"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="255,169,415,195"/>
+<area shape="rect" id="node6" href="$classcarta_1_1TileCache.html#a4eda64cc5324f96a16c6b877ab4ce7cc" title="Retrieve a tile from the cache." alt="" coords="256,67,415,94"/>
+<area shape="rect" id="node10" href="$classcarta_1_1Frame.html#a9e748d02f7394ed01b69276b61a79825" title=" " alt="" coords="229,270,441,297"/>
+<area shape="rect" id="node11" href="$classcarta_1_1Frame.html#a79c789ebc62771151da94673a325a31a" title=" " alt="" coords="234,321,437,347"/>
+<area shape="rect" id="node12" href="$classcarta_1_1Frame.html#aad7fc7f3462a849a9cea9562fb45e220" title=" " alt="" coords="231,372,439,413"/>
+<area shape="rect" id="node13" href="$Image_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="525,434,667,461"/>
+<area shape="rect" id="node15" href="$structPointXy.html#ae53c1507f25ca4218505925d7505b464" title=" " alt="" coords="269,489,401,515"/>
+<area shape="rect" id="node16" href="$structPointXy.html#a8346106fda170e511b843f0d47fe3dfa" title=" " alt="" coords="531,523,661,550"/>
+<area shape="rect" id="node17" href="$structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" title=" " alt="" coords="256,590,415,617"/>
+<area shape="rect" id="node18" href="$classcarta_1_1queuing__rw__mutex__scoped.html#a54adaa778387baae91e6da63ae892ca6" title=" " alt="" coords="242,641,429,683"/>
+<area shape="rect" id="node22" href="$classMessage.html#afc5c954ad1784b8c550c42331df6dd2c" title=" " alt="" coords="233,707,438,734"/>
+<area shape="rect" id="node7" href="$classcarta_1_1TileCache.html#a32436ee71719f6852e8e07891f8aecf7" title="Load a chunk from the file into the cache." alt="" coords="493,169,699,195"/>
+<area shape="rect" id="node8" href="$classcarta_1_1TileCache.html#a75bc5452ceb7180fabcc601bb5a2533e" title="Update the access time of a tile." alt="" coords="758,118,930,145"/>
+<area shape="rect" id="node9" href="$classcarta_1_1TileCache.html#a2d177c8da40cd3050f42848ca8f661d3" title="Retrieve a tile from the cache." alt="" coords="489,118,703,145"/>
+<area shape="rect" id="node14" href="$classcarta_1_1Frame.html#a98d7c0c04b6d04f7617c41e6068362a9" title=" " alt="" coords="503,379,689,406"/>
+<area shape="rect" id="node19" href="$classcarta_1_1queuing__rw__mutex.html#a604cdab74206f5521604334d5dc0d634" title=" " alt="" coords="503,592,689,633"/>
+<area shape="rect" id="node21" href="$classcarta_1_1queuing__rw__mutex.html#ae90899b9fc49562d1c53fac3b786b12d" title=" " alt="" coords="503,657,689,699"/>
+<area shape="rect" id="node20" href="$classcarta_1_1queuing__rw__mutex.html#af7d20dfc496517e34f93151e4032a9c9" title=" " alt="" coords="751,624,937,665"/>
+</map>

@@ -1,0 +1,25 @@
+var classcarta_1_1Column =
+[
+    [ "Column", "classcarta_1_1Column.html#aea7e3a2008ce54f52b67c1885d99c597", null ],
+    [ "~Column", "classcarta_1_1Column.html#a13990b7ee170cce3d726248b85d2e32b", null ],
+    [ "FillColumnData", "classcarta_1_1Column.html#a6e3693ce04580591856dae1fce2db4cd", null ],
+    [ "FillFromBuffer", "classcarta_1_1Column.html#a9e47f62f301e8aa183eb4bd2db724e33", null ],
+    [ "FilterIndices", "classcarta_1_1Column.html#aaab77c078586ede33eb6a14f0945c11a", null ],
+    [ "FromField", "classcarta_1_1Column.html#a8d71da2b6ddb31d356a1b0836ac81409", null ],
+    [ "FromFitsPtr", "classcarta_1_1Column.html#a7ad943a3b7cb58607b5bd38c84317d05", null ],
+    [ "FromValues", "classcarta_1_1Column.html#a2df953c1e95a4a397a8bd8254e8c34c6", null ],
+    [ "NumEntries", "classcarta_1_1Column.html#a67245941f2ccebabd2e37de41acc55ec", null ],
+    [ "Resize", "classcarta_1_1Column.html#a52eb2e759904fe4ce28392d9f3e10845", null ],
+    [ "SetEmpty", "classcarta_1_1Column.html#a7b55549c0c41dd141938660a6c191d5e", null ],
+    [ "SetFromText", "classcarta_1_1Column.html#a45725119cefc511de5c7e4ec25ffeef1", null ],
+    [ "SortIndices", "classcarta_1_1Column.html#a98290f4faaf24784702aa9062d0c0ff5", null ],
+    [ "_is_logical_field", "classcarta_1_1Column.html#a30bd024fad0036baa8fc88de11216cde", null ],
+    [ "data_offset", "classcarta_1_1Column.html#a0fe01d3667c0596bbc9b66d9cbd59485", null ],
+    [ "data_type", "classcarta_1_1Column.html#a1a918dc0a1a9e0d3362e7eac786c971c", null ],
+    [ "data_type_size", "classcarta_1_1Column.html#a843235f37a9ec09a6cfbb55d2c740d3f", null ],
+    [ "description", "classcarta_1_1Column.html#a41e678823a6ef30983a90129d5276d91", null ],
+    [ "id", "classcarta_1_1Column.html#acc777a54950f2bbf2f7a1c147c775f5b", null ],
+    [ "name", "classcarta_1_1Column.html#a2030946fcec850a5f9ee48d37600638e", null ],
+    [ "ucd", "classcarta_1_1Column.html#a116cb0c85162dc17547381919e804af0", null ],
+    [ "unit", "classcarta_1_1Column.html#af33f6855bcdef5a78152407caf8de2db", null ]
+];

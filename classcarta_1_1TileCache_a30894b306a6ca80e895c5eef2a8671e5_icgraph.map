@@ -1,0 +1,5 @@
+<map id="carta::TileCache::Reset" name="carta::TileCache::Reset">
+<area shape="rect" id="node1" title="Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles." alt="" coords="288,31,460,57"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a7c5b058faaa1622f53b38c64af50efbc" title=" " alt="" coords="46,5,199,32"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#ab9d76715b355e3d68f6280bc031ba7da" title=" " alt="" coords="5,56,240,83"/>
+</map>

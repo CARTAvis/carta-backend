@@ -1,0 +1,7 @@
+<map id="carta::TileCache::Get" name="carta::TileCache::Get">
+<area shape="rect" id="node1" title="Retrieve a tile from the cache." alt="" coords="5,81,164,108"/>
+<area shape="rect" id="node2" href="$classcarta_1_1TileCache.html#a33c4defad803515b8b2213511e097044" title="Calculate the key for the chunk that contains the given tile." alt="" coords="219,5,419,32"/>
+<area shape="rect" id="node3" href="$classcarta_1_1TileCache.html#a32436ee71719f6852e8e07891f8aecf7" title="Load a chunk from the file into the cache." alt="" coords="215,56,422,83"/>
+<area shape="rect" id="node4" href="$classcarta_1_1TileCache.html#a75bc5452ceb7180fabcc601bb5a2533e" title="Update the access time of a tile." alt="" coords="473,81,645,108"/>
+<area shape="rect" id="node5" href="$classcarta_1_1TileCache.html#a2d177c8da40cd3050f42848ca8f661d3" title="Retrieve a tile from the cache." alt="" coords="212,157,425,184"/>
+</map>

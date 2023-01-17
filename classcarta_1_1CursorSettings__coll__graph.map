@@ -1,0 +1,42 @@
+<map id="carta::CursorSettings" name="carta::CursorSettings">
+<area shape="rect" id="node1" title=" " alt="" coords="1053,181,1211,208"/>
+<area shape="rect" id="node11" href="$classcarta_1_1Session.html" title=" " alt="" coords="1488,955,1601,981"/>
+<area shape="rect" id="node2" title=" " alt="" coords="622,178,819,219"/>
+<area shape="rect" id="node3" title=" " alt="" coords="305,207,412,233"/>
+<area shape="rect" id="node4" title=" " alt="" coords="321,141,396,168"/>
+<area shape="rect" id="node5" href="$classcarta_1_1queuing__rw__mutex.html" title=" " alt="" coords="627,337,814,364"/>
+<area shape="rect" id="node6" title=" " alt="" coords="287,277,430,304"/>
+<area shape="rect" id="node7" title=" " alt="" coords="331,337,386,364"/>
+<area shape="rect" id="node8" title=" " alt="" coords="313,1040,405,1067"/>
+<area shape="rect" id="node18" title=" " alt="" coords="1056,827,1208,869"/>
+<area shape="rect" id="node31" href="$classcarta_1_1LoaderCache.html" title=" " alt="" coords="1059,1461,1205,1488"/>
+<area shape="rect" id="node9" title=" " alt="" coords="272,389,445,430"/>
+<area shape="rect" id="node10" title=" " alt="" coords="5,396,159,423"/>
+<area shape="rect" id="node12" title=" " alt="" coords="1061,283,1203,309"/>
+<area shape="rect" id="node13" href="$classcarta_1_1SessionContext.html" title=" " alt="" coords="1050,232,1214,259"/>
+<area shape="rect" id="node14" title=" " alt="" coords="695,408,746,435"/>
+<area shape="rect" id="node23" title=" " alt="" coords="1056,470,1208,511"/>
+<area shape="rect" id="node15" title=" " alt="" coords="1049,535,1215,577"/>
+<area shape="rect" id="node16" title=" " alt="" coords="1049,601,1215,642"/>
+<area shape="rect" id="node17" title=" " alt="" coords="1107,667,1157,693"/>
+<area shape="rect" id="node19" title=" " alt="" coords="701,924,740,951"/>
+<area shape="rect" id="node20" title=" " alt="" coords="1031,717,1233,803"/>
+<area shape="rect" id="node24" title=" " alt="" coords="1053,1132,1211,1188"/>
+<area shape="rect" id="node27" title=" " alt="" coords="1004,1037,1260,1107"/>
+<area shape="rect" id="node21" href="$classcarta_1_1concurrent__queue.html" title=" " alt="" coords="612,696,829,752"/>
+<area shape="rect" id="node22" title=" " alt="" coords="1086,985,1178,1012"/>
+<area shape="rect" id="node25" title=" " alt="" coords="637,1141,804,1182"/>
+<area shape="rect" id="node26" title=" " alt="" coords="1049,1213,1215,1254"/>
+<area shape="rect" id="node28" title=" " alt="" coords="602,1043,839,1099"/>
+<area shape="rect" id="node29" title=" " alt="" coords="1040,1330,1224,1371"/>
+<area shape="rect" id="node30" title=" " alt="" coords="1038,1395,1226,1437"/>
+<area shape="rect" id="node32" title=" " alt="" coords="599,1392,843,1448"/>
+<area shape="rect" id="node33" title=" " alt="" coords="315,1476,402,1503"/>
+<area shape="rect" id="node36" title=" " alt="" coords="638,1472,803,1499"/>
+<area shape="rect" id="node34" title=" " alt="" coords="13,1469,151,1510"/>
+<area shape="rect" id="node35" title=" " alt="" coords="275,1378,442,1419"/>
+<area shape="rect" id="node37" href="$classcarta_1_1concurrent__queue.html" title=" " alt="" coords="1043,1563,1221,1619"/>
+<area shape="rect" id="node38" title=" " alt="" coords="1049,1643,1215,1685"/>
+<area shape="rect" id="node39" title=" " alt="" coords="1100,1709,1164,1736"/>
+<area shape="rect" id="node40" title=" " alt="" coords="1086,1760,1178,1787"/>
+</map>

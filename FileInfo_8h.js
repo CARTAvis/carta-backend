@@ -1,0 +1,37 @@
+var FileInfo_8h =
+[
+    [ "ImageStats", "structcarta_1_1FileInfo_1_1ImageStats.html", "structcarta_1_1FileInfo_1_1ImageStats" ],
+    [ "RegionStatsId", "structcarta_1_1FileInfo_1_1RegionStatsId.html", "structcarta_1_1FileInfo_1_1RegionStatsId" ],
+    [ "RegionSpectralStats", "structcarta_1_1FileInfo_1_1RegionSpectralStats.html", "structcarta_1_1FileInfo_1_1RegionSpectralStats" ],
+    [ "Data", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7", [
+      [ "Image", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7abe53a0541a6d36f6ecb879fa2c584b08", null ],
+      [ "XY", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a74c53bcd3dcb2bb79993b2fec37d362a", null ],
+      [ "XYZ", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7ae65075d550f9b5bf9992fa1d71a131be", null ],
+      [ "XYZW", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a5b9d516ed57aa77d585a3cc0ab5ffb55", null ],
+      [ "YX", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a923db922542fbe09e7ff87bb31b2f310", null ],
+      [ "ZYX", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a6811254e01b3550bdb2dc46f204730dc", null ],
+      [ "ZYXW", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a7e1e1680da9d615838bfc407b2fa4552", null ],
+      [ "SWIZZLED", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7abbecd0f2ddba90a95b6b45308c63219a", null ],
+      [ "STATS", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a426708f5e123b45ded3bdc67cd895db5", null ],
+      [ "RANKS", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7acec3572bbb7f69ff61fc1a1f55762c76", null ],
+      [ "STATS_2D", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a2547e7b93df96358f9ea3ec4c0185eb6", null ],
+      [ "STATS_2D_MIN", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a8ab3ff9a5b9776458099495e1e25bfdc", null ],
+      [ "STATS_2D_MAX", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a547d3621f6756a69c89507ec987bb73f", null ],
+      [ "STATS_2D_SUM", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a39d40d06b8d28393e216cc57a417cb32", null ],
+      [ "STATS_2D_SUMSQ", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a85541a831629ee4ef8b86e011e8beb50", null ],
+      [ "STATS_2D_NANS", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7afbeb48c1706b453b69da6dc6d867096d", null ],
+      [ "STATS_2D_HIST", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7aa84e39b88b735d6c17e42d316d620d8b", null ],
+      [ "STATS_2D_PERCENT", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a10a9d2d404999499c0b4227bb1b09bae", null ],
+      [ "STATS_3D", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a56314f8c0daadc8a1a5dead118b0d538", null ],
+      [ "STATS_3D_MIN", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a78c14c14c727aa5184e877d2e6baf5f5", null ],
+      [ "STATS_3D_MAX", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7ab67cd4b52c5c75014dd38ddf233c7517", null ],
+      [ "STATS_3D_SUM", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a32ff801e53b5f4f0f2895f2502ce8517", null ],
+      [ "STATS_3D_SUMSQ", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a29b3b717043d5ee3ab1e57f2102fad9f", null ],
+      [ "STATS_3D_NANS", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a5c8e8078d799e20f618ef910674d10cf", null ],
+      [ "STATS_3D_HIST", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a9a16843769c326cfc275905ed9b6c3db", null ],
+      [ "STATS_3D_PERCENT", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7ae8f134b8a52901141769a93f81f0e09f", null ],
+      [ "MASK", "FileInfo_8h.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a0a9501840acacfc8efe7522f5340000c", null ]
+    ] ],
+    [ "ConvertFitsStokesValue", "FileInfo_8h.html#adb5dd85385b249a9f718ee5c87dfd57e", null ],
+    [ "GetFitsHdu", "FileInfo_8h.html#a9d39a2471bd27de0ee08bc5d6d3af17e", null ]
+];

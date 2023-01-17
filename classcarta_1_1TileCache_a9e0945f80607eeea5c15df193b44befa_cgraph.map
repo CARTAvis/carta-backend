@@ -1,0 +1,4 @@
+<map id="carta::TileCache::Peek" name="carta::TileCache::Peek">
+<area shape="rect" id="node1" title="Retrieve a tile from the cache without modifying its access time." alt="" coords="5,5,172,32"/>
+<area shape="rect" id="node2" href="$classcarta_1_1TileCache.html#a2d177c8da40cd3050f42848ca8f661d3" title="Retrieve a tile from the cache." alt="" coords="220,5,433,32"/>
+</map>

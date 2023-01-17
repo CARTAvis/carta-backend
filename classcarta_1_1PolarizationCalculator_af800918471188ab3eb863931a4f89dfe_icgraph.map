@@ -1,0 +1,10 @@
+<map id="carta::PolarizationCalculator::MakePolarizedIntensityNode" name="carta::PolarizationCalculator::MakePolarizedIntensityNode">
+<area shape="rect" id="node1" title=" " alt="" coords="919,71,1135,112"/>
+<area shape="rect" id="node2" href="$classcarta_1_1PolarizationCalculator.html#af6937bd807c038cf00fd0cc89ae9c2e8" title=" " alt="" coords="600,37,871,79"/>
+<area shape="rect" id="node8" href="$classcarta_1_1PolarizationCalculator.html#a2cb6200df64e7dde3eacf173a97f894c" title=" " alt="" coords="632,103,839,144"/>
+<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a5680d87d09f6ddb4cc1bb1a3d713d2c3" title=" " alt="" coords="413,71,552,112"/>
+<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c" title=" " alt="" coords="200,5,365,47"/>
+<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0" title=" " alt="" coords="213,71,352,112"/>
+<area shape="rect" id="node7" href="$classcarta_1_1FileLoader.html#a96c849a9ee61ae91b8f8e7393d54133c" title=" " alt="" coords="213,136,352,177"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Hdf5Loader.html#af2e0b172ffce7502373066db92815ced" title=" " alt="" coords="5,71,152,112"/>
+</map>

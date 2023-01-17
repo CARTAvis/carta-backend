@@ -1,0 +1,9 @@
+<map id="carta::Frame::Frame" name="carta::Frame::Frame">
+<area shape="rect" id="node1" title=" " alt="" coords="5,115,159,141"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a6ad0a2d3fbde3a9f346684e5ce541da6" title=" " alt="" coords="222,56,434,83"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Frame.html#a69a52aa8315bc300f5772b47694c8ba8" title=" " alt="" coords="207,107,449,149"/>
+<area shape="rect" id="node7" href="$classcarta_1_1TileCache.html#a30894b306a6ca80e895c5eef2a8671e5" title="Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles." alt="" coords="242,173,414,200"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="523,5,683,32"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a9e748d02f7394ed01b69276b61a79825" title=" " alt="" coords="497,56,709,83"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#a79c789ebc62771151da94673a325a31a" title=" " alt="" coords="502,107,705,133"/>
+</map>

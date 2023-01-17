@@ -1,0 +1,13 @@
+<map id="carta::PolarizationCalculator::FiddleStokesCoordinate" name="carta::PolarizationCalculator::FiddleStokesCoordinate">
+<area shape="rect" id="node1" title=" " alt="" coords="919,136,1125,177"/>
+<area shape="rect" id="node2" href="$classcarta_1_1PolarizationCalculator.html#af6937bd807c038cf00fd0cc89ae9c2e8" title=" " alt="" coords="600,5,871,47"/>
+<area shape="rect" id="node8" href="$classcarta_1_1PolarizationCalculator.html#ab48307d44c2a4541caa908d24a3683a0" title=" " alt="" coords="632,71,839,112"/>
+<area shape="rect" id="node9" href="$classcarta_1_1PolarizationCalculator.html#a2cb6200df64e7dde3eacf173a97f894c" title=" " alt="" coords="632,136,839,177"/>
+<area shape="rect" id="node10" href="$classcarta_1_1PolarizationCalculator.html#a5285a6db684ea0071d71b95458923c4c" title=" " alt="" coords="613,202,857,258"/>
+<area shape="rect" id="node11" href="$classcarta_1_1PolarizationCalculator.html#a0c5c13e6761ffb096ac20ab00190367a" title=" " alt="" coords="617,283,854,324"/>
+<area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a5680d87d09f6ddb4cc1bb1a3d713d2c3" title=" " alt="" coords="413,136,552,177"/>
+<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#a6c78d61804342a45dbf7e3e668357f2c" title=" " alt="" coords="200,71,365,112"/>
+<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#a1ef8462007320a75dcdc04929cdb28b0" title=" " alt="" coords="213,136,352,177"/>
+<area shape="rect" id="node7" href="$classcarta_1_1FileLoader.html#a96c849a9ee61ae91b8f8e7393d54133c" title=" " alt="" coords="213,201,352,243"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Hdf5Loader.html#af2e0b172ffce7502373066db92815ced" title=" " alt="" coords="5,136,152,177"/>
+</map>

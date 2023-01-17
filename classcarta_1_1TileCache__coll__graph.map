@@ -1,0 +1,13 @@
+<map id="carta::TileCache" name="carta::TileCache">
+<area shape="rect" id="node1" title="A cache for full&#45;resolution image tiles." alt="" coords="799,227,925,253"/>
+<area shape="rect" id="node2" title=" " alt="" coords="453,61,624,131"/>
+<area shape="rect" id="node3" href="$structcarta_1_1TileCacheKey.html" title="Key for tiles used in TileCache." alt="" coords="189,64,340,91"/>
+<area shape="rect" id="node4" title=" " alt="" coords="7,37,74,64"/>
+<area shape="rect" id="node5" title=" " alt="" coords="191,115,339,141"/>
+<area shape="rect" id="node6" title=" " alt="" coords="5,115,76,141"/>
+<area shape="rect" id="node7" title=" " alt="" coords="455,219,622,261"/>
+<area shape="rect" id="node8" title=" " alt="" coords="493,285,585,312"/>
+<area shape="rect" id="node9" title=" " alt="" coords="519,336,558,363"/>
+<area shape="rect" id="node10" title=" " alt="" coords="463,387,614,413"/>
+<area shape="rect" id="node11" title=" " alt="" coords="239,387,290,413"/>
+</map>

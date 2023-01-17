@@ -1,0 +1,4 @@
+<map id="carta::TilePool::TilePtrDeleter" name="carta::TilePool::TilePtrDeleter">
+<area shape="rect" id="node1" title="The custom deleter which allows discarded tiles to be returned to the pool." alt="" coords="5,109,171,151"/>
+<area shape="rect" id="node2" title=" " alt="" coords="9,5,167,47"/>
+</map>

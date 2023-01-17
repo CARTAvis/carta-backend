@@ -1,0 +1,14 @@
+<map id="ValidateAuthToken" name="ValidateAuthToken">
+<area shape="rect" id="node1" title="Validate an HTTP request." alt="" coords="640,341,783,367"/>
+<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="436,235,577,276"/>
+<area shape="rect" id="node11" href="$classcarta_1_1SessionManager.html#a3b33c1d0f82ffefade16372d54c7f236" title=" " alt="" coords="421,365,592,407"/>
+<area shape="rect" id="node3" href="$classcarta_1_1HttpServer.html#aef99e62efe9a7250f3f0a867d114f426" title=" " alt="" coords="212,5,356,47"/>
+<area shape="rect" id="node5" href="$classcarta_1_1HttpServer.html#a45673f54c55bb8e02fbacf5fb3340f93" title=" " alt="" coords="195,71,373,112"/>
+<area shape="rect" id="node6" href="$classcarta_1_1HttpServer.html#a94f3006427469ddabb14f8dce474b4fc" title=" " alt="" coords="213,136,355,177"/>
+<area shape="rect" id="node7" href="$classcarta_1_1HttpServer.html#a1e384962e1f326c9226477361c9c6e90" title=" " alt="" coords="200,201,368,243"/>
+<area shape="rect" id="node8" href="$classcarta_1_1HttpServer.html#a412683874c457522cd4df4dc960ab4e2" title=" " alt="" coords="201,267,367,308"/>
+<area shape="rect" id="node9" href="$classcarta_1_1HttpServer.html#a5a834bd534d12e1e534098fa2e10bc33" title=" " alt="" coords="213,332,355,373"/>
+<area shape="rect" id="node10" href="$classcarta_1_1HttpServer.html#ac68951fe0785a7f62d39420c8f628533" title=" " alt="" coords="201,397,367,439"/>
+<area shape="rect" id="node4" href="$classcarta_1_1HttpServer.html#a63128482ebdede9e4da3e24fd4bf0c7e" title=" " alt="" coords="5,201,147,243"/>
+<area shape="rect" id="node12" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="199,463,369,504"/>
+</map>

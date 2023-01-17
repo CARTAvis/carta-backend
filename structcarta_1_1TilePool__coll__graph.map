@@ -1,0 +1,7 @@
+<map id="carta::TilePool" name="carta::TilePool">
+<area shape="rect" id="node1" title="This struct stores the memory allocated for cached tile data." alt="" coords="267,109,381,136"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,179,47"/>
+<area shape="rect" id="node3" title=" " alt="" coords="203,13,295,39"/>
+<area shape="rect" id="node4" title=" " alt="" coords="320,13,477,39"/>
+<area shape="rect" id="node5" title=" " alt="" coords="502,13,541,39"/>
+</map>
