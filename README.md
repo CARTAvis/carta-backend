@@ -1,4 +1,3 @@
-
 # CARTA Image Viewer (Backend)
 
 ![code coverage](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fcarta.asiaa.sinica.edu.tw%2Fcoverage%2Fpercentage.json)
@@ -50,7 +49,6 @@ The backend build depends on the following libraries:
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu). The Debian package `protobuf-compiler` may also be required.
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
 * [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication). Debian package `uuid-dev`.
-* [pugixml](https://pugixml.org/) for parsing catalog data. Debian package: `libpugixml-dev`. On Ubuntu 16.04, build from source. On newer versions you can also build from source to save memory: use the `PUGIXML_COMPACT` and `PUGIXML_NO_XPATH` flags.
 * [cfitsio](https://heasarc.gsfc.nasa.gov/fitsio/) library for I/O with FITS format data files. Debian package: `libcfitsio-dev`.
 * [wcslib](https://www.gnu.org/software/gnuastro/manual/html_node/WCSLIB.html) library to handle world coordinate system. Debian package: `wcslib-dev`.
 
@@ -69,5 +67,9 @@ For more detailed example commands for installing the dependencies and performin
 ## Running the backend process
 
 Command-line arguments are in the format `--arg=value` or `--arg value`. Run `carta_backend --help` for a list of options. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Hosting of the frontend can be disabled with the `--no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `--debug_no_auth` argument.
+
+## Developer documentation
+
+Automatically generated Doxygen documentation can be found at [cartavis.org/carta-backend](https://cartavis.org/carta-backend/).
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3377984.svg)](https://doi.org/10.5281/zenodo.3377984)

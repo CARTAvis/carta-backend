@@ -61,17 +61,24 @@ FileLoader* FileLoader::GetLoader(const std::string& filename, const std::string
     return nullptr;
 }
 
-FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) {
     if (image) {
-        return new ImagePtrLoader(image);
+        return new ImagePtrLoader(image, filename);
     } else {
         spdlog::error("Fail to assign an image pointer!");
         return nullptr;
     }
 }
 
-FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz)
-    : _filename(filename), _directory(directory), _is_gz(is_gz), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
+FileLoader::FileLoader(const std::string& filename, const std::string& directory, bool is_gz, bool is_generated)
+    : _filename(filename),
+      _directory(directory),
+      _is_gz(is_gz),
+      _is_generated(is_generated),
+      _modify_time(0),
+      _num_dims(0),
+      _has_pixel_mask(false),
+      _stokes_cdelt(0) {
     // Set initial modify time
     ImageUpdated();
 }
@@ -109,7 +116,7 @@ bool FileLoader::ImageUpdated() {
 
     // Do not close compressed image, or run getstat on generated image (no filename, in memory only) or
     // LEL ImageExpr (directory is set, filename is LEL expression)
-    if (_is_gz || _filename.empty() || !_directory.empty()) {
+    if (_is_gz || _is_generated || !_directory.empty()) {
         return changed;
     }
 
@@ -294,13 +301,17 @@ std::vector<int> FileLoader::GetRenderAxes() {
             axes[0] = dir_axes[0];
             axes[1] = dir_axes[1];
         } else if (_coord_sys->hasLinearCoordinate()) {
-            // Check for PV image: [Linear, Spectral] axes
+            // Check for PV image: usually [Linear, Spectral] axes but could be reversed
             // Returns -1 if no spectral axis
             int spectral_axis = _coord_sys->spectralAxisNumber();
 
             if (spectral_axis >= 0) {
                 // Find valid (not -1) linear axes
                 std::vector<int> valid_axes;
+                if (spectral_axis == 0) { // reversed
+                    valid_axes.push_back(spectral_axis);
+                }
+
                 casacore::Vector<casacore::Int> lin_axes = _coord_sys->linearAxesNumbers();
                 for (auto axis : lin_axes) {
                     if (axis >= 0) {
@@ -308,9 +319,12 @@ std::vector<int> FileLoader::GetRenderAxes() {
                     }
                 }
 
-                // One linear + spectral axis = pV image
-                if (valid_axes.size() == 1) {
+                if (spectral_axis > 0) { // not reversed
                     valid_axes.push_back(spectral_axis);
+                }
+
+                // One linear + spectral axis = pV image
+                if (valid_axes.size() == 2) {
                     axes = valid_axes;
                 }
             }
@@ -837,8 +851,9 @@ bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool FileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }

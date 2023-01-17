@@ -14,7 +14,11 @@
 #include <vector>
 
 #include <carta-protobuf/fitting_request.pb.h>
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/images/Images/TempImage.h>
+#include <imageanalysis/ImageTypedefs.h>
 
+#include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
 
 namespace carta {
@@ -26,6 +30,9 @@ struct FitData {
     size_t n_notnan; // number of pixels excluding nan pixels
     size_t offset_x;
     size_t offset_y;
+    std::vector<int> fit_values_indexes;
+    std::vector<double> initial_values;
+    bool stop_fitting;
 };
 
 struct FitStatus {
@@ -39,7 +46,11 @@ class ImageFitter {
 public:
     ImageFitter();
     bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-        CARTA::FittingResponse& fitting_response, size_t offset_x = 0, size_t offset_y = 0);
+        const std::vector<bool>& fixed_params, bool create_model_image, bool create_residual_image,
+        CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x = 0, size_t offset_y = 0);
+    bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region, int file_id,
+        const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response);
+    void StopFitting();
 
 private:
     FitData _fit_data;
@@ -48,18 +59,29 @@ private:
     gsl_vector* _fit_errors;
     gsl_multifit_nlinear_fdf _fdf;
     FitStatus _fit_status;
+    bool _create_model_data;
+    bool _create_residual_data;
+    std::vector<float> _model_data;
+    std::vector<float> _residual_data;
     const size_t _max_iter = 200;
+    GeneratorProgressCallback _progress_callback;
 
     void CalculateNanNum();
-    void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values);
+    void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params);
     int SolveSystem();
+    void CalculateImageData(const gsl_vector* residual);
     void SetResults();
     std::string GetLog();
+    casa::SPIIF GetImageData(casa::SPIIF image, const casacore::ImageRegion& image_region, std::vector<float> image_data);
+    std::string GetFilename(const std::string& filename, std::string suffix);
+    std::string GetGeneratedMomentFilename(const std::string& filename, std::string suffix);
 
     static int FuncF(const gsl_vector* fit_params, void* fit_data, gsl_vector* f);
     static void Callback(const size_t iter, void* params, const gsl_multifit_nlinear_workspace* w);
     static void ErrorHandler(const char* reason, const char* file, int line, int gsl_errno);
-    static CARTA::GaussianComponent GetGaussianComponent(gsl_vector* value_vector, size_t index);
+    static std::tuple<double, double, double, double, double, double> GetGaussianParams(const gsl_vector* value_vector, size_t index,
+        std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
+    static CARTA::GaussianComponent GetGaussianComponent(std::tuple<double, double, double, double, double, double> params);
 };
 
 } // namespace carta
