@@ -100,9 +100,13 @@ bool Region::CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionT
         case CARTA::ANNRECTANGLE: // [(cx, cy), (width, height)]
         case CARTA::ELLIPSE:      // [(cx,cy), (bmaj, bmin)]
         case CARTA::ANNELLIPSE:   // [(cx,cy), (bmaj, bmin)]
-        case CARTA::ANNCOMPASS:   // [(cx, cy), (length, length)]
-        case CARTA::ANNTEXT: {    // [(cx, cy), (width, height)]
+        case CARTA::ANNCOMPASS: { // [(cx, cy), (length, length)]
             points_ok = (npoints == 2) && PointsFinite(points) && (points[1].x() > 0) && (points[1].y() > 0);
+            break;
+        }
+        case CARTA::ANNTEXT: { // [(cx, cy), (width, height)]
+            // width/height may be 0 on import, frontend will dynamically size textbox
+            points_ok = (npoints == 2) && PointsFinite(points);
             break;
         }
         default:

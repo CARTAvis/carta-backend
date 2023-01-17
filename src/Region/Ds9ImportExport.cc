@@ -519,6 +519,8 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
     CARTA::RegionType type = (is_annotation ? CARTA::RegionType::ANNPOINT : CARTA::RegionType::POINT);
     if (region_name == "text") {
         type = CARTA::RegionType::ANNTEXT;
+        // Set width/height of textbox to 0 for dynamic sizing in frontend
+        control_points.push_back(Message::Point(0.0, 0.0));
     }
     float rotation(0.0);
     return RegionState(_file_id, type, control_points, rotation);
@@ -892,10 +894,12 @@ CARTA::RegionStyle Ds9ImportExport::ImportStyleParameters(
         if (name.front() == '{' && name.back() == '}') {
             name = name.substr(1, name.length() - 2);
         }
-        region_style.set_name(name);
 
+        // "text" property used for text not name
         if (region_type == CARTA::RegionType::ANNTEXT) {
             annotation_style->set_text_label0(name);
+        } else {
+            region_style.set_name(name);
         }
     }
 

@@ -83,7 +83,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
     switch (region_type) {
         case CARTA::RegionType::POINT:
         case CARTA::RegionType::ANNPOINT: {
-            // symbol [[x, y], .] or text [[x, y], '{name}']
+            // symbol [[x, y], .]
             std::string symbol(".");
             if (region_style.has_annotation_style()) {
                 symbol = GetAnnSymbolCharacter(region_style.annotation_style().point_shape());
@@ -97,7 +97,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const CA
         case CARTA::RegionType::ANNTEXT: {
             std::string region_name;
             if (angle == 0.0) {
-                // centerbox [[x, y], [width, height]] or textbox
+                // centerbox [[x, y], [width, height]] or textbox [[x, y], [width, height]]
                 region_name = (region_type == CARTA::RegionType::ANNTEXT ? "# textbox" : _region_names[region_type]);
                 region_line = fmt::format("{} [[{:.4f}pix, {:.4f}pix], [{:.4f}pix, {:.4f}pix]]", region_name, points[0].x(), points[0].y(),
                     points[1].x(), points[1].y());
@@ -572,6 +572,8 @@ RegionState CrtfImportExport::ImportAnnSymbolText(std::vector<std::string>& para
                     type = is_annotation ? CARTA::ANNPOINT : CARTA::POINT;
                 } else if (region == "text") {
                     type = CARTA::ANNTEXT;
+                    // Set width/height of textbox to 0 for dynamic sizing in frontend
+                    control_points.push_back(Message::Point(0.0, 0.0));
                 } else {
                     spdlog::error("Unknown region {} import failed", region);
                     _import_errors.append("Unknown region " + region + " import failed.\n");
