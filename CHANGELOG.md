@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added a debug config flag for disabling runtime config ([#1213](https://github.com/CARTAvis/carta-backend/issues/1213)).
 * Added support to keep previously generated moment images ([#1202](https://github.com/CARTAvis/carta-backend/issues/1202)).
 * Added pugixml as a third-party library with the option PUGIXML_COMPACT enabled ([#1217](https://github.com/CARTAvis/carta-backend/issues/1217)).
+* Added automatically generated documentation with Doxygen ([#1215](https://github.com/CARTAvis/carta-backend/issues/1215)).
 * Added support for annotation regions ([#340](https://github.com/CARTAvis/carta-backend/issues/340)).
-=======
 
 ### Changed
 * Removed CASA CRTF parser for performance and annotation region support ([#1219](https://github.com/CARTAvis/carta-backend/issues/1219)).
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed error in regions when resuming session. ([#1210](https://github.com/CARTAvis/carta-backend/issues/1210)).
 * Fixed crash when exporting matched region ([#1205](https://github.com/CARTAvis/carta-backend/issues/1205), [#1208](https://github.com/CARTAvis/carta-backend/issues/1208)).
 * Fixed region import with space in region name ([#1188](https://github.com/CARTAvis/carta-backend/issues/1188));
+* Fixed cfitsio 4.2.0 fits_read_key abort ([#1231](https://github.com/CARTAvis/carta-backend/issues/1231));
 
 ## [3.0.0]
 
