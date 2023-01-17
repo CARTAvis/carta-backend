@@ -1,6 +1,5 @@
 var NAVTREEINDEX2 =
 {
-"classcarta_1_1AnimationTask.html#a5849dbfbf04270fa8f3d0531edc6977d":[3,0,0,71,0],
 "classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271":[3,0,0,71,2],
 "classcarta_1_1BasicStatsCalculator.html":[3,0,0,54],
 "classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44":[3,0,0,54,3],
@@ -249,5 +248,6 @@ var NAVTREEINDEX2 =
 "classcarta_1_1DataColumn.html#af8468b372116a0f0322f27689b9aa46f":[3,0,0,80,13],
 "classcarta_1_1DataColumn.html#afa212cb97743dcb0a915559796be1feb":[3,0,0,80,3],
 "classcarta_1_1DataColumn.html#afcd532deb4b217a0d612c6ab6ceacd90":[3,0,0,80,12],
-"classcarta_1_1Ds9ImportExport.html":[3,0,0,59]
+"classcarta_1_1Ds9ImportExport.html":[3,0,0,59],
+"classcarta_1_1Ds9ImportExport.html#a0880d0f323730974dd2acfa7fa0f0fda":[3,0,0,59,19]
 };

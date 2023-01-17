@@ -1,6 +1,5 @@
 var NAVTREEINDEX4 =
 {
-"classcarta_1_1Frame.html#a7c0bb58338a53775150fb75c3d97ea6f":[3,0,0,22,27],
 "classcarta_1_1Frame.html#a7c5b058faaa1622f53b38c64af50efbc":[3,0,0,22,0],
 "classcarta_1_1Frame.html#a8075c3310541d8a14cdc9dc8fc37b117":[3,0,0,22,67],
 "classcarta_1_1Frame.html#a810937ee7606b48419b7f5d3ded16155":[3,0,0,22,69],
@@ -249,5 +248,6 @@ var NAVTREEINDEX4 =
 "classcarta_1_1ListProgressReporter.html":[3,0,0,91],
 "classcarta_1_1ListProgressReporter.html#a032288c16c1caaf570954ec18c940537":[3,0,0,91,5],
 "classcarta_1_1ListProgressReporter.html#a10a2db7d423b702b8a3f7537b348de1d":[3,0,0,91,2],
-"classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b":[3,0,0,91,3]
+"classcarta_1_1ListProgressReporter.html#a17c680d1a817a7aa98f2703a4de34b9b":[3,0,0,91,3],
+"classcarta_1_1ListProgressReporter.html#a405d8a20ad9166bbd9491698b344bee8":[3,0,0,91,7]
 };
