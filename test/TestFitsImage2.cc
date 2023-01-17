@@ -14,7 +14,7 @@
 using namespace carta;
 
 // Load a FITS image and get 2D slice data via the "fits_read_pix" function
-int UsePureCfitsio(string file_path, int dims, vector<float>& image_data) {
+double UsePureCfitsio(string file_path, int dims, vector<float>& image_data) {
     int status = 0;
     fitsfile* fptr;
 
@@ -49,12 +49,12 @@ int UsePureCfitsio(string file_path, int dims, vector<float>& image_data) {
     GetVectorData(image_data, data_ptr, num_pixels);
     delete[] data_ptr;
 
-    return status;
+    return pixel_per_t;
 }
 
 class FitsImageTest2 : public ::testing::Test, public ImageGenerator {
 public:
-    void Load2DSliceData(const vector<int>& shape, bool compressed) {
+    static void Load2DSliceData(const vector<int>& shape, bool compressed) {
         // Generate a FITS image
         string image_shape;
         for (int i = 0; i < shape.size(); ++i) {
@@ -87,7 +87,7 @@ public:
 
         // Check the elapsed time to get a 2D slice data
         Timer t;
-        EXPECT_TRUE(frame->GetSlicerData(stokes_slicer, image_data.get()));
+        frame->GetSlicerData(stokes_slicer, image_data.get());
         double dt = t.Elapsed().us();
 
         EXPECT_TRUE((image_data_size == width * height));
@@ -104,9 +104,12 @@ public:
 
         // Get 2D slice data with pure cfitsio
         vector<float> image_data2;
-        UsePureCfitsio(file_path, shape.size(), image_data2);
+        double pixel_per_t2 = UsePureCfitsio(file_path, shape.size(), image_data2);
 
         CmpVectors(image_data1, image_data2);
+
+        auto message2 = fmt::format("Compare the performances [CARTA]/[CFITSIO] = {:.3f}", pixel_per_t / pixel_per_t2);
+        std::cout << message2 << endl;
     }
 };
 
