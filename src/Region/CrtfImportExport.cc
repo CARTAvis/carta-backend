@@ -496,23 +496,18 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
                     break;
                 }
                 case CARTA::RegionType::ANNTEXT: {
-                    // Add text label, position
                     if (region == "text") {
+                        // Set text label for text region
                         if (parameters.size() == 4) { // text, x, y, "text"
                             region_style.mutable_annotation_style()->set_text_label0(parameters[3]);
                         }
                     } else {
-                        CARTA::TextAnnotationPosition position(CARTA::TextAnnotationPosition::CENTER);
+                        // Set text position for textbox region
+                        std::string align;
                         if (properties.find("align") != properties.end()) {
-                            auto alignment = properties["align"];
-                            for (auto& text_position : _text_positions) {
-                                if (text_position.second == alignment) {
-                                    position = text_position.first;
-                                    break;
-                                }
-                            }
-                            region_style.mutable_annotation_style()->set_text_position(position);
+                            align = properties["align"];
                         }
+                        region_style.mutable_annotation_style()->set_text_position(GetTextPosition(align));
                     }
                     break;
                 }

@@ -453,6 +453,14 @@ RegionProperties Ds9ImportExport::SetRegion(std::string& region_definition) {
             region_style = ImportStyleParameters(region_state.type, properties);
         }
 
+        if (region_name == "textbox") {
+            std::string align;
+            if (properties.find("align") != properties.end()) {
+                align = properties["align"];
+            }
+            region_style.mutable_annotation_style()->set_text_position(GetTextPosition(align));
+        }
+
         region_properties = RegionProperties(region_state, region_style);
     } else {
         std::vector<std::string> unsupported_regions{"projection", "annulus", "panda", "epanda", "bpanda", "composite"};

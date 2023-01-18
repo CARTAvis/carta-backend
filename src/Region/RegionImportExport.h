@@ -60,7 +60,8 @@ protected:
     virtual void ParseRegionParameters(
         std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
 
-    // Add to existing imported RegionProperties for combo region (textbox + text)
+    // Handle combo region (textbox + text)
+    CARTA::TextAnnotationPosition GetTextPosition(const std::string& position);
     void AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties);
 
     // Quantities for converted control points

@@ -231,6 +231,20 @@ void RegionImportExport::ParseRegionParameters(
     }
 }
 
+CARTA::TextAnnotationPosition RegionImportExport::GetTextPosition(const std::string& position) {
+    // Return position enum for string, or default CENTER
+    CARTA::TextAnnotationPosition anno_position(CARTA::TextAnnotationPosition::CENTER);
+    if (!position.empty()) {
+        for (auto& text_position : _text_positions) {
+            if (text_position.second == position) {
+                anno_position = text_position.first;
+                break;
+            }
+        }
+    }
+    return anno_position;
+}
+
 void RegionImportExport::AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties) {
     // Add imported text style to existing textbox region properties.
     // Textbox defines state and style: name, text_position
