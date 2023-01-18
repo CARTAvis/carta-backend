@@ -607,9 +607,10 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
             type = CARTA::RegionType::ANNCOMPASS;
         }
 
-        float rotation(0.0);
-        if (nparam > 5) {
-            rotation = param_quantities[4].getValue();
+        // nparam includes region name, param_quantities does not!
+        float rotation = (nparam > 5 ? param_quantities[4].getValue() : 0.0);
+        if (control_points[1].x() != control_points[1].y()) {
+            // Adjust rotation for ellipse
             rotation -= 90.0;
             if (rotation < 0.0) {
                 rotation += 360.0;

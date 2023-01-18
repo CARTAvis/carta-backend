@@ -448,7 +448,8 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     rotation.convert("deg"); // CASA rotang, from x-axis
 
     CARTA::Point ellipse_axes = region_state.control_points[1];
-    bool reversed((region_state.type == CARTA::RegionType::ELLIPSE) && (ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
+    bool reversed = (region_state.type == CARTA::RegionType::ELLIPSE || region_state.type == CARTA::RegionType::ANNELLIPSE) &&
+                    ((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
