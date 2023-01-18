@@ -1182,11 +1182,11 @@ std::string Ds9ImportExport::AddExportRegionPixel(CARTA::RegionType region_type,
             // # textbox(x,y,width,height)
             auto cx = control_points[0].getValue();
             auto cy = control_points[1].getValue();
-            region_line = fmt::format("# textbox({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", cx, cy, control_points[1].getValue(),
-                control_points[2].getValue(), control_points[3].getValue(), angle);
+            region_line = fmt::format(
+                "# textbox({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", cx, cy, control_points[2].getValue(), control_points[3].getValue(), angle);
             ExportTextboxStyleParameters(region_style, region_line);
             // # text(x,y)
-            region_line += fmt::format("{}({:.4f}, {:.4f})", cx, cy);
+            region_line += fmt::format("{}({:.4f}, {:.4f})", _region_names[region_type], cx, cy);
             if (angle > 0.0) {
                 region_line += fmt::format(" textangle={}", angle);
             }
