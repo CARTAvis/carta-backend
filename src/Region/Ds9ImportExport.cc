@@ -535,7 +535,7 @@ RegionState Ds9ImportExport::ImportPointRegion(std::vector<std::string>& paramet
 }
 
 RegionState Ds9ImportExport::ImportCircleRegion(std::vector<std::string>& parameters, bool is_annotation) {
-    // Import DS9 circle into RegionState
+    // Import DS9 circle and compass into RegionState
     // circle x y radius or compass x1 y1 length
     // Convert params to ellipse region (CARTA only has ellipse region) with no angle
     RegionState region_state;

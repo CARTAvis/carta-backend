@@ -91,10 +91,11 @@ protected:
     std::vector<RegionProperties> _import_regions;
     std::vector<std::string> _export_regions;
 
-    // Common to CRTF and DS9: region names and text positions
+    // Region names and text positions common to CRTF and DS9 (additional names defined in subclasses)
     std::unordered_map<CARTA::RegionType, std::string> _region_names = {{CARTA::RegionType::LINE, "line"},
         {CARTA::RegionType::POLYLINE, "polyline"}, {CARTA::RegionType::ELLIPSE, "ellipse"}, {CARTA::RegionType::ANNRULER, "# ruler"},
         {CARTA::RegionType::ANNCOMPASS, "# compass"}};
+
     std::unordered_map<CARTA::TextAnnotationPosition, std::string> _text_positions = {{CARTA::TextAnnotationPosition::CENTER, "center"},
         {CARTA::TextAnnotationPosition::UPPER_LEFT, "uleft"}, {CARTA::TextAnnotationPosition::UPPER_RIGHT, "uright"},
         {CARTA::TextAnnotationPosition::LOWER_LEFT, "lleft"}, {CARTA::TextAnnotationPosition::LOWER_RIGHT, "lright"},

@@ -135,7 +135,8 @@ bool RegionImportExport::IsCommentLine(const std::string& line) {
     if (line[0] != '#') {
         return false;
     }
-    if (line.find("# textbox") == 0) { // not in map, no type for it
+    if (line.find("# textbox") == 0 || line.find("# circle") == 0) {
+        // not in map, are type RECTANGLE (CRTF "centerbox", DS9 "box") and ELLIPSE ("ellipse")
         return false;
     }
 
