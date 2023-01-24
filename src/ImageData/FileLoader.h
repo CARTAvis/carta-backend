@@ -78,7 +78,7 @@ public:
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) = 0;
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) = 0;
-    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
         float& progress) = 0;
     virtual bool GetDownsampledRasterData(
@@ -111,11 +111,11 @@ protected:
 class BaseFileLoader : public FileLoader {
 public:
     // directory only for ExprLoader, is_gz only for FitsLoader
-    BaseFileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false);
+    BaseFileLoader(const std::string& filename, const std::string& directory = "", bool is_gz = false, bool is_generated = false);
 
     static FileLoader* GetLoader(const std::string& filename, const std::string& directory = "");
     // Access an image from the memory, not from the disk
-    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
+    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     bool CanOpenFile(std::string& error) override;
@@ -162,7 +162,7 @@ public:
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
     // Check if one can apply swizzled data under such image format and region condition
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
-    bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
         float& progress) override;
     bool GetDownsampledRasterData(
@@ -191,11 +191,16 @@ public:
     // Handle images created from LEL expression
     bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) override;
 
+    bool IsGenerated() {
+        return _is_generated;
+    };
+
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;
     std::string _hdu;
     bool _is_gz;
+    bool _is_generated;
     unsigned int _modify_time;
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;

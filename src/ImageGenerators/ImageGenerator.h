@@ -11,7 +11,10 @@
 
 #include <functional>
 
-#define ID_MULTIPLIER 1000
+#define MOMENT_ID_MULTIPLIER 1000
+#define PV_ID_MULTIPLIER -1000
+#define FITTING_ID_MULTIPLIER -1000
+#define FITTING_WITH_MOMENT_ID_MULTIPLIER -10
 
 using GeneratorProgressCallback = std::function<void(float)>;
 

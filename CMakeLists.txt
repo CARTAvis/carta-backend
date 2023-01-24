@@ -47,21 +47,21 @@ endif ()
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-FIND_PACKAGE(GSL REQUIRED)
-FIND_PACKAGE(ZFP CONFIG REQUIRED)
-FIND_PACKAGE(PkgConfig REQUIRED)
-
-FIND_PACKAGE(PUGIXML QUIET)
-if (PUGIXML_FOUND)
-    message(STATUS "Found pugixml using find_package")
+FIND_PACKAGE(GSL QUIET)
+if (GSL_FOUND)
+    message(STATUS "Found gsl using find_package")
 else ()
-        PKG_SEARCH_MODULE(PUGIXML REQUIRED pugixml)
-        if (PUGIXML_FOUND)
-        message(STATUS "Found pugixml using pkg-config")
+    if(EXISTS /opt/carta-gsl)
+        message(STATUS "Found carta-gsl for el7")
+        INCLUDE_DIRECTORIES(/opt/carta-gsl/include)
+        LINK_DIRECTORIES(/opt/carta-gsl/lib)
     else ()
-        message(FATAL_ERROR "Could not find pugixml")
+        message(FATAL_ERROR "Could not find gsl")
     endif ()
 endif()
+
+FIND_PACKAGE(ZFP CONFIG REQUIRED)
+FIND_PACKAGE(PkgConfig REQUIRED)
 
 FIND_PACKAGE(CFITSIO QUIET)
 if (CFITSIO_FOUND)
@@ -153,6 +153,13 @@ endif ()
 # Include uWebSockets headers and build the uSockets lib
 include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
+
+#pugixml
+SET(PUGIXML_COMPACT ON CACHE BOOL "" FORCE)
+add_subdirectory(third-party/pugixml)
+include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
+
+#spdlog
 add_subdirectory(third-party/spdlog)
 
 set(LINK_LIBS

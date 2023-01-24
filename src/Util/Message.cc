@@ -266,7 +266,7 @@ CARTA::FloatBounds Message::FloatBounds(float min, float max) {
 }
 
 CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
-    CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range) {
+    CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range, bool keep) {
     CARTA::MomentRequest moment_request;
     moment_request.set_file_id(file_id);
     moment_request.set_region_id(region_id);
@@ -291,6 +291,7 @@ CARTA::MomentRequest Message::MomentsRequest(int32_t file_id, int32_t region_id,
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+    moment_request.set_keep(keep);
     return moment_request;
 }
 
@@ -536,8 +537,32 @@ CARTA::MomentProgress Message::MomentProgress(int32_t file_id, float progress) {
     return message;
 }
 
+CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t width, int z_min, int32_t z_max, bool reverse, bool keep) {
+    CARTA::PvRequest message;
+    message.set_file_id(file_id);
+    message.set_region_id(region_id);
+    message.set_width(width);
+
+    if (z_min >= 0 && z_max >= 0) {
+        auto spectral_range = message.mutable_spectral_range();
+        spectral_range->set_min(z_min);
+        spectral_range->set_max(z_max);
+    }
+
+    message.set_reverse(reverse);
+    message.set_keep(keep);
+    return message;
+}
+
 CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress) {
     CARTA::PvProgress message;
+    message.set_file_id(file_id);
+    message.set_progress(progress);
+    return message;
+}
+
+CARTA::FittingProgress Message::FittingProgress(int32_t file_id, float progress) {
+    CARTA::FittingProgress message;
     message.set_file_id(file_id);
     message.set_progress(progress);
     return message;

@@ -10,8 +10,6 @@
 
 #include "Util/Image.h"
 
-// TILE POOL
-
 using namespace carta;
 
 TileCache::Key TileCache::ChunkKey(Key tile_key) {

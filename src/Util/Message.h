@@ -91,7 +91,7 @@ public:
     static CARTA::IntBounds IntBounds(int32_t min, int32_t max);
     static CARTA::FloatBounds FloatBounds(float min, float max);
     static CARTA::MomentRequest MomentsRequest(int32_t file_id, int32_t region_id, CARTA::MomentAxis moments_axis,
-        CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range);
+        CARTA::MomentMask moment_mask, CARTA::IntBounds spectral_range, CARTA::FloatBounds pixel_range, bool keep = false);
     static CARTA::ImageProperties ImageProperties(std::string directory, std::string file, std::string hdu, int32_t file_id,
         CARTA::RenderMode render_mode, int32_t channel, int32_t stokes);
     static CARTA::ResumeSession ResumeSession(std::vector<CARTA::ImageProperties> images);
@@ -127,7 +127,10 @@ public:
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
+    static CARTA::PvRequest PvRequest(
+        int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress);
+    static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(
         int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress);
     static CARTA::ContourImageData ContourImageData(

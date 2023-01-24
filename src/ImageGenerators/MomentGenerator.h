@@ -29,7 +29,7 @@ public:
     virtual ~MomentGenerator() = default;
 
     // Calculate moments
-    virtual bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
+    virtual bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis, int name_index,
         const GeneratorProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
         CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results, const RegionState& region_state,
         const std::string& stokes);
