@@ -75,7 +75,14 @@ FileLoader* BaseFileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<f
 }
 
 BaseFileLoader::BaseFileLoader(const std::string& filename, const std::string& directory, bool is_gz, bool is_generated)
-    : _filename(filename), _directory(directory), _is_gz(is_gz), _is_generated(is_generated), _modify_time(0), _num_dims(0), _has_pixel_mask(false), _stokes_cdelt(0) {
+    : _filename(filename),
+      _directory(directory),
+      _is_gz(is_gz),
+      _is_generated(is_generated),
+      _modify_time(0),
+      _num_dims(0),
+      _has_pixel_mask(false),
+      _stokes_cdelt(0) {
     // Set initial modify time
     ImageUpdated();
 }
@@ -849,8 +856,9 @@ bool BaseFileLoader::UseRegionSpectralData(const casacore::IPosition& region_sha
     return false;
 }
 
-bool BaseFileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool BaseFileLoader::GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
+    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }

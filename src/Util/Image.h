@@ -65,6 +65,10 @@
 
 struct AxisRange {
     int from, to;
+    AxisRange() {
+        from = 0;
+        to = ALL_Z;
+    }
     AxisRange(int from_and_to_) {
         from = to = from_and_to_;
     }

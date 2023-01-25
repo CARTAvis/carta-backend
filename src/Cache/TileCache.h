@@ -25,16 +25,14 @@ using TilePtr = std::shared_ptr<std::vector<float>>;
 
 /** @brief A cache for full-resolution image tiles.
  *  @details A tile cache is used by Frame instead of a full image cache if its FileLoader reports that it should be used. Currently only
- * the Hdf5Loader implements this. This implementation uses a pool to store reusable tile objects. This is an LRU cache: when tile capacity
- * is reached, the least recently used tile is discarded first.
+ * the Hdf5Loader implements this.
  *  @see FileLoader::UseTileCache
- *  @see TilePool
  *  @see TileCacheKey
  */
 class TileCache {
 public:
     using Key = TileCacheKey;
-    
+
     /** @brief Default destructor */
     virtual ~TileCache() = default;
 
@@ -47,7 +45,7 @@ public:
      *  @param key The tile key
      */
     virtual TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) = 0;
-    
+
     /** @brief Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles.
      *  @param z The new Z coordinate
      *  @param stokes The new Stokes coordinate
@@ -63,32 +61,38 @@ public:
      *  @see LoadChunk
      */
     static Key ChunkKey(Key tile_key);
-    
+
     /** @brief Factory which returns a tile cache
      *  @return A new tile cache
-     *  @details The default implementation always returns a PooledTileCache. A different implementation is used in the unit tests to allow a mock tile cache to be injected into a Frame.
+     *  @details The default implementation always returns a PooledTileCache. A different implementation is used in the unit tests to allow
+     * a mock tile cache to be injected into a Frame.
      *  @see Util/Factories.cc
      */
     static TileCache* GetTileCache();
 };
 
+/** @brief A cache for full-resolution image tiles.
+ *  @details This implementation uses a pool to store reusable tile objects. This is an LRU cache: when tile capacity
+ * is reached, the least recently used tile is discarded first.
+ *  @see TilePool
+ */
 class PooledTileCache : public TileCache {
 public:
     /** @brief Default constructor */
     PooledTileCache();
-    
+
     /** @brief Retrieve a tile from the cache without modifying its access time
      *  @param key The tile key
      *  @details This is a read-only operation and does not lock the cache.
      */
     TilePtr Peek(Key key) override;
-    
+
     /** @brief Retrieve a tile from the cache
      *  @param key The tile key
      *  @details This function locks the cache because it modifies the cache state.
      */
     TilePtr Get(Key key, std::shared_ptr<FileLoader> loader, std::mutex& image_mutex) override;
-    
+
     /** @brief Reset the cache for a new Z coordinate and/or Stokes coordinate, clearing all tiles.
      *  @param z The new Z coordinate
      *  @param stokes The new Stokes coordinate
@@ -106,13 +110,13 @@ private:
      *  @details This function does not lock the cache, and assumes that the tile is in the cache.
      */
     TilePtr UnsafePeek(Key key);
-    
+
     /** @brief Update the access time of a tile.
      *  @param key The tile key
      *  @details This function does not lock the cache, and assumes that the tile is in the cache.
      */
     void Touch(Key key);
-    
+
     /** @brief Load a chunk from the file into the cache.
      *  @param chunk_key The key of the chunk.
      *  @param loader The file loader.

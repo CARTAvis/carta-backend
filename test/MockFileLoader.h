@@ -45,8 +45,9 @@ public:
         (std::vector<float> & data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex), (override));
     MOCK_METHOD(bool, UseRegionSpectralData, (const casacore::IPosition& region_shape, std::mutex& image_mutex), (override));
     MOCK_METHOD(bool, GetRegionSpectralData,
-        (int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-            std::mutex& image_mutex, (std::map<CARTA::StatsType, std::vector<double>>)&results, float& progress),
+        (int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+            const casacore::IPosition& origin, std::mutex& image_mutex, (std::map<CARTA::StatsType, std::vector<double>>)&results,
+            float& progress),
         (override));
     MOCK_METHOD(bool, GetDownsampledRasterData,
         (std::vector<float> & data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex), (override));
@@ -63,6 +64,7 @@ public:
     MOCK_METHOD(void, SetStokesCdelt, (int stokes_cdelt), (override));
     MOCK_METHOD(bool, GetStokesTypeIndex, (const CARTA::PolarizationType& stokes_type, int& stokes_index), (override));
     MOCK_METHOD(bool, SaveFile, (const CARTA::FileType type, const std::string& output_filename, std::string& message), (override));
+    MOCK_METHOD(bool, IsGenerated, (), (override));
     MOCK_METHOD(const casacore::IPosition, GetStatsDataShape, (FileInfo::Data ds), (override));
     MOCK_METHOD(std::unique_ptr<casacore::ArrayBase>, GetStatsData, (FileInfo::Data ds), (override));
     MOCK_METHOD(void, LoadStats2DBasic, (FileInfo::Data ds), (override));

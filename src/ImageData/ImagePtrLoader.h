@@ -18,7 +18,8 @@ public:
     void OpenFile(const std::string& hdu) override;
 };
 
-ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename) : BaseFileLoader(filename) {
+ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image, const std::string& filename)
+    : BaseFileLoader(filename) {
     _image = image;
 
     _image_shape = _image->shape();

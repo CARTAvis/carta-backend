@@ -327,7 +327,7 @@ TEST_F(PvGeneratorTest, AveragingWidthRange) {
 TEST_F(PvGeneratorTest, PvImageSpectralRange) {
     // FITS
     auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
 
@@ -357,7 +357,7 @@ TEST_F(PvGeneratorTest, PvImageSpectralRange) {
 
 TEST_F(PvGeneratorTest, PvImageReversedAxes) {
     auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
 
@@ -397,7 +397,7 @@ TEST_F(PvGeneratorTest, PvImageReversedAxes) {
 
 TEST_F(PvGeneratorTest, PvImageKeep) {
     auto image_path = TestRoot() / "data/images/fits/noise_3d.fits"; // 10x10x10 image
-    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
+    std::shared_ptr<carta::FileLoader> loader(carta::BaseFileLoader::GetLoader(image_path));
     std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
     auto csys = frame->CoordinateSystem();
 

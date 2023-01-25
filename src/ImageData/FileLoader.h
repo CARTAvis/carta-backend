@@ -78,9 +78,9 @@ public:
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) = 0;
     virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) = 0;
-    virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
-        float& progress) = 0;
+    virtual bool GetRegionSpectralData(int region_id, const AxisRange& z_range, int stokes,
+        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) = 0;
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) = 0;
     virtual bool GetChunk(
@@ -95,6 +95,7 @@ public:
     virtual std::unordered_map<CARTA::PolarizationType, int> GetStokesIndices() = 0;
     virtual bool ImageUpdated() = 0;
     virtual bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) = 0;
+    virtual bool IsGenerated() = 0;
 
 protected:
     virtual const casacore::IPosition GetStatsDataShape(FileInfo::Data ds) = 0;
@@ -191,7 +192,7 @@ public:
     // Handle images created from LEL expression
     bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) override;
 
-    bool IsGenerated() {
+    bool IsGenerated() override {
         return _is_generated;
     };
 
