@@ -2304,21 +2304,20 @@ bool Frame::GetDownsampledRasterData(
     // Check does the (HDF5) loader has the right (mip) downsampled data
     if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
         return true;
-    } else {
-        // Check is there another downsampled data that we can use to downsample
-        for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
-            if (mip % sub_mip == 0) {
-                int loader_mip = mip / sub_mip;
-                if (_loader->HasMip(loader_mip) &&
-                    _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
-                    use_loader_downsampled_data = true;
-                    // Reset mip
-                    mip = sub_mip;
-                    // Reset the original tile width and height
-                    tile_original_width = std::ceil((float)tile_original_width / loader_mip);
-                    tile_original_height = std::ceil((float)tile_original_height / loader_mip);
-                    break;
-                }
+    }
+
+    // Check is there another downsampled data that we can use to downsample
+    for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
+        if (mip % sub_mip == 0) {
+            int loader_mip = mip / sub_mip;
+            if (_loader->HasMip(loader_mip) && _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
+                use_loader_downsampled_data = true;
+                // Reset mip
+                mip = sub_mip;
+                // Reset the original tile width and height
+                tile_original_width = std::ceil((float)tile_original_width / loader_mip);
+                tile_original_height = std::ceil((float)tile_original_height / loader_mip);
+                break;
             }
         }
     }
