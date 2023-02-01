@@ -65,7 +65,7 @@ public:
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
         auto progress_callback = [&](float progress) {};
         bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, _fixed_params,
-            true, true, fitting_response, progress_callback);
+            0.0, CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
 
         CompareResults(fitting_response, success, failed_message);
 
@@ -265,8 +265,8 @@ TEST_F(ImageFittingTest, FittingWithFov) {
 
 TEST_F(ImageFittingTest, IncorrectRegionId) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
-    FitImageWithFov(gaussian_model, IMAGE_REGION_ID, "region not supported");
-    FitImageWithFov(gaussian_model, 1, "region not supported");
+    FitImageWithFov(gaussian_model, IMAGE_REGION_ID, "region id not found");
+    FitImageWithFov(gaussian_model, 1, "region id not found");
 }
 
 TEST_F(ImageFittingTest, IncorrectFov) {
