@@ -646,7 +646,7 @@ def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -664,7 +664,7 @@ def prepare_jammy_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -683,7 +683,7 @@ def prepare_rhel7_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -701,7 +701,7 @@ def prepare_rhel8_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -719,7 +719,7 @@ def prepare_rhel9_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -738,7 +738,7 @@ def prepare_macos11_ICD() {
         sh "rm -rf carta-backend-ICD-rxjs"
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
@@ -756,7 +756,7 @@ def prepare_macos12_ICD() {
         sh "rm -rf carta-backend-ICD-rxjs"
         sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
         dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout dev"
+            sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
@@ -1111,14 +1111,17 @@ def image_fitting() {
                      ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_BAD.test.ts # test 1 of 4"
+                sh "CI=true npm test src/test/IMAGE_FITTING_BAD.test.ts # test 1 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_CASA.test.ts # test 2 of 4"
+                sh "CI=true npm test src/test/IMAGE_FITTING_CASA.test.ts # test 2 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_FITS.test.ts # test 3 of 4"
+                sh "CI=true npm test src/test/IMAGE_FITTING_FITS.test.ts # test 3 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_HDF5.test.ts # test 4 of 4"
+                sh "CI=true npm test src/test/IMAGE_FITTING_HDF5.test.ts # test 4 of 5"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/IMAGE_FITTING_CANCEL.test.ts # test 5 of 5"
                 sh "pgrep carta_backend"
+
             }
         }
     }
