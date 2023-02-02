@@ -105,7 +105,35 @@ pipeline {
                         }
                     }
                 }
-                stage('5 RHEL7') {
+                stage('5 macOS 13') {
+                    agent {
+                        label "macos13-agent"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            sh "git submodule update --init --recursive"
+                            script {
+                                COMMIT_ID_SHORT = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                                COMMIT_ID_LONG = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                                BRANCH_NAME = sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD').trim()
+                            }
+                            dir ('build') {
+                                sh "rm -rf *"
+                                sh "cmake .. -Dtest=on -DDevSuppressExternalWarnings=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' "
+                                sh "make -j 8"
+                                stash includes: "carta_backend", name: "macos13-backend"
+                            }
+                        }
+                    }
+                    post {
+                        failure {
+                            slackSend color: 'danger', message: "macOS 13 - carta-backend build - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
+                        }
+                    }
+                }
+
+                stage('6 RHEL7') {
                     agent {
                         label "rhel7-agent"
                     }
@@ -128,7 +156,7 @@ pipeline {
                         }
                     }
                 }
-                stage('6 RHEL8') {
+                stage('7 RHEL8') {
                     agent {
                         label "rhel8-agent"
                     }
@@ -151,7 +179,7 @@ pipeline {
                         }
                     }
                 }
-                stage('7 RHEL9') {
+                stage('8 RHEL9') {
                     agent {
                         label "rhel9-agent"
                     }
@@ -260,7 +288,27 @@ pipeline {
                         }
                     }
                 }
-                stage('5 RHEL7') {
+                stage('5 macOS 13') {
+                    agent {
+                        label "macos13-agent"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            dir ('build/test') {
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            junit 'build/test/macos13_test_detail.xml'
+                        }
+                        failure {
+                            slackSend color: 'danger', message: "macOS 13 - Unit Tests - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
+                        }
+                    }
+                }
+                stage('6 RHEL7') {
                     agent {
                         label "rhel7-agent"
                     }
@@ -281,7 +329,7 @@ pipeline {
                         }
                     }
                 }
-                stage('6 RHEL8') {
+                stage('7 RHEL8') {
                     agent {
                         label "rhel8-agent"
                     }
@@ -302,7 +350,7 @@ pipeline {
                         }
                     }
                 }
-                stage('7 RHEL9') {
+                stage('8 RHEL9') {
                     agent {
                         label "rhel9-agent"
                     }
@@ -379,7 +427,20 @@ pipeline {
                         }
                     }
                 }
-                stage('5 RHEL7') {
+                stage('5 macOS 13') {
+                    agent {
+                        label "macos13-agent"
+                    }
+                    steps {
+                        prepare_macos13_ICD()
+                    }
+                    post {
+                        failure {
+                            slackSend color: 'danger', message: "macOS 13 - ICD test preparation - Fail - ${BRANCH_NAME} <${env.RUN_DISPLAY_URL}|${COMMIT_ID_SHORT}>";
+                        }
+                    }
+                }
+                stage('6 RHEL7') {
                     agent {
                         label "rhel7-agent"
                     }
@@ -392,7 +453,7 @@ pipeline {
                         }
                     }
                 }
-                stage('6 RHEL8') {
+                stage('7 RHEL8') {
                     agent {
                         label "rhel8-agent"
                     }
@@ -405,7 +466,7 @@ pipeline {
                         }
                     }
                 }
-                stage('7 RHEL9') {
+                stage('8 RHEL9') {
                     agent {
                         label "rhel9-agent"
                     }
@@ -425,7 +486,7 @@ pipeline {
                 axes {
                     axis {
                         name 'PLATFORM'
-                        values 'focal', 'jammy', 'rhel7', 'rhel8', 'rhel9', 'macos11', 'macos12'
+                        values 'focal', 'jammy', 'rhel7', 'rhel8', 'rhel9', 'macos11', 'macos12', 'macos13'
                     }
                 }
                 stages {
@@ -644,9 +705,9 @@ def BRANCH_NAME
 
 def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -656,15 +717,15 @@ def prepare_focal_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
-        stash includes: "carta-backend-ICD-rxjs/**/*", name: "focal-ICD"
+        stash includes: "ICD-RxJS/**/*", name: "focal-ICD"
     }
 }
 
 def prepare_jammy_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -674,16 +735,16 @@ def prepare_jammy_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
-        stash includes: "carta-backend-ICD-rxjs/**/*", name: "jammy-ICD"
+        stash includes: "ICD-RxJS/**/*", name: "jammy-ICD"
     }
 }
 
 
 def prepare_rhel7_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -693,15 +754,15 @@ def prepare_rhel7_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
        }
-       stash includes: "carta-backend-ICD-rxjs/**/*", name: "rhel7-ICD"
+       stash includes: "ICD-RxJS/**/*", name: "rhel7-ICD"
     }
 }
 
 def prepare_rhel8_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJ"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -711,15 +772,15 @@ def prepare_rhel8_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
        }
-       stash includes: "carta-backend-ICD-rxjs/**/*", name: "rhel8-ICD"
+       stash includes: "ICD-RxJS/**/*", name: "rhel8-ICD"
     }
 }
 
 def prepare_rhel9_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -729,16 +790,16 @@ def prepare_rhel9_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
        }
-       stash includes: "carta-backend-ICD-rxjs/**/*", name: "rhel9-ICD"
+       stash includes: "ICD-RxJS/**/*", name: "rhel9-ICD"
     }
 }
 
 def prepare_macos11_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "rm -rf carta-backend-ICD-rxjs"
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+        sh "rm -rf ICD-RxJS"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
@@ -747,15 +808,33 @@ def prepare_macos11_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
-        stash includes: "carta-backend-ICD-rxjs/**/*", name: "macos11-ICD"
+        stash includes: "ICD-RxJS/**/*", name: "macos11-ICD"
     }
 }
 
 def prepare_macos12_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "rm -rf carta-backend-ICD-rxjs"
-        sh "git clone https://github.com/acdo2002/carta-backend-ICD-rxjs.git"
-        dir ('carta-backend-ICD-rxjs') {
+        sh "rm -rf ICD-RxJS"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
+            sh "git checkout dev"
+            sh "git submodule init && git submodule update && npm install"
+            dir ('protobuf') {
+                sh "./build_proto.sh"
+            }
+            dir ('src/test') {
+                sh "perl -p -i -e 's/3002/3112/' config.json"
+            }
+        }
+        stash includes: "ICD-RxJS/**/*", name: "macos12-ICD"
+    }
+}
+
+def prepare_macos13_ICD() {
+    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        sh "rm -rf ICD-RxJS"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
+        dir ('ICD-RxJS') {
             sh "git checkout mylin/#7_add_new_image_fitting_tests"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -765,13 +844,13 @@ def prepare_macos12_ICD() {
                 sh "perl -p -i -e 's/3002/3112/' config.json"
             }
         }
-        stash includes: "carta-backend-ICD-rxjs/**/*", name: "macos12-ICD"
+        stash includes: "ICD-RxJS/**/*", name: "macos13-ICD"
     }
 }
 
 def file_browser() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -797,7 +876,7 @@ def file_browser() {
 
 def animator() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -826,7 +905,7 @@ def animator() {
 
 def region_statistics() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -851,7 +930,7 @@ def region_statistics() {
 
 def region_manipulation() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -886,7 +965,7 @@ def region_manipulation() {
 
 def cube_histogram() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -911,7 +990,7 @@ def cube_histogram() {
 
 def pv_generator() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -944,7 +1023,7 @@ def pv_generator() {
 
 def raster_tiles() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -967,7 +1046,7 @@ def raster_tiles() {
 
 def catalog() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -987,7 +1066,7 @@ def catalog() {
 
 def moment() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -1018,7 +1097,7 @@ def moment() {
 
 def resume() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -1045,7 +1124,7 @@ def resume() {
 
 def match() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -1070,7 +1149,7 @@ def match() {
 
 def close_file() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
@@ -1099,7 +1178,7 @@ def close_file() {
 
 def image_fitting() {
     script {
-        dir ('carta-backend-ICD-rxjs') {
+        dir ('ICD-RxJS') {
             sh "npm install && ./protobuf/build_proto.sh"
             ret = false
             retry(3) {
