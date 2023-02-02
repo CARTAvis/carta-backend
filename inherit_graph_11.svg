@@ -8,9 +8,9 @@
  viewBox="0.00 0.00 312.00 66.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 62)">
 <title>Graphical Class Hierarchy</title>
-<!-- Node50 -->
+<!-- Node53 -->
 <g id="node1" class="node">
-<title>Node50</title>
+<title>Node53</title>
 <g id="a_node1"><a xlink:title=" ">
 <polygon fill="none" stroke="#bfbfbf" points="0,-19.5 0,-38.5 140,-38.5 140,-19.5 0,-19.5"/>
 <text text-anchor="middle" x="70" y="-26.5" font-family="Helvetica,sans-Serif" font-size="10.00">casacore::ImageInterface</text>
@@ -26,24 +26,24 @@
 </a>
 </g>
 </g>
-<!-- Node50&#45;&gt;Node0 -->
+<!-- Node53&#45;&gt;Node0 -->
 <g id="edge1" class="edge">
-<title>Node50&#45;&gt;Node0</title>
+<title>Node53&#45;&gt;Node0</title>
 <path fill="none" stroke="midnightblue" d="M150.3,-37.97C159.95,-39.06 169.67,-40.16 178.97,-41.21"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="150.63,-34.48 140.3,-36.84 149.85,-41.44 150.63,-34.48"/>
 </g>
-<!-- Node52 -->
+<!-- Node55 -->
 <g id="node3" class="node">
-<title>Node52</title>
+<title>Node55</title>
 <g id="a_node3"><a xlink:href="classcarta_1_1CartaHdf5Image.html" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="176,-0.5 176,-19.5 304,-19.5 304,-0.5 176,-0.5"/>
 <text text-anchor="middle" x="240" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CartaHdf5Image</text>
 </a>
 </g>
 </g>
-<!-- Node50&#45;&gt;Node52 -->
+<!-- Node53&#45;&gt;Node55 -->
 <g id="edge2" class="edge">
-<title>Node50&#45;&gt;Node52</title>
+<title>Node53&#45;&gt;Node55</title>
 <path fill="none" stroke="midnightblue" d="M150.29,-20.03C158.84,-19.07 167.46,-18.09 175.78,-17.15"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="149.85,-16.56 140.3,-21.16 150.63,-23.52 149.85,-16.56"/>
 </g>

@@ -1,6 +1,8 @@
 <map id="carta::Frame::GetActiveTaskMutex" name="carta::Frame::GetActiveTaskMutex">
-<area shape="rect" id="node1" title=" " alt="" coords="288,57,493,98"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a141a8029b71bbbb13ee36461d73fdcf8" title=" " alt="" coords="5,5,240,32"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="31,57,215,98"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#a3e6e012a72b5c2315d4e61a91d977b31" title=" " alt="" coords="27,122,218,163"/>
+<area shape="rect" id="node1" title=" " alt="" coords="551,90,756,131"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a141a8029b71bbbb13ee36461d73fdcf8" title=" " alt="" coords="268,5,503,32"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918" title=" " alt="" coords="284,57,487,98"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101" title=" " alt="" coords="293,122,477,163"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Frame.html#a3e6e012a72b5c2315d4e61a91d977b31" title=" " alt="" coords="290,187,481,229"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45" title=" " alt="" coords="5,57,220,98"/>
 </map>

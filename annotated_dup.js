@@ -22,13 +22,13 @@ var annotated_dup =
       [ "TileCacheKey", "structcarta_1_1TileCacheKey.html", "structcarta_1_1TileCacheKey" ],
       [ "TilePool", "structcarta_1_1TilePool.html", "structcarta_1_1TilePool" ],
       [ "Tile", "structcarta_1_1Tile.html", "structcarta_1_1Tile" ],
+      [ "VectorField", "classcarta_1_1VectorField.html", "classcarta_1_1VectorField" ],
       [ "FileExtInfoLoader", "classcarta_1_1FileExtInfoLoader.html", "classcarta_1_1FileExtInfoLoader" ],
       [ "FileInfoLoader", "classcarta_1_1FileInfoLoader.html", "classcarta_1_1FileInfoLoader" ],
       [ "FileListHandler", "classcarta_1_1FileListHandler.html", "classcarta_1_1FileListHandler" ],
       [ "FitsHduList", "classcarta_1_1FitsHduList.html", "classcarta_1_1FitsHduList" ],
       [ "ContourSettings", "structcarta_1_1ContourSettings.html", "structcarta_1_1ContourSettings" ],
       [ "Frame", "classcarta_1_1Frame.html", "classcarta_1_1Frame" ],
-      [ "VectorFieldCalculator", "structcarta_1_1VectorFieldCalculator.html", "structcarta_1_1VectorFieldCalculator" ],
       [ "HttpServer", "classcarta_1_1HttpServer.html", "classcarta_1_1HttpServer" ],
       [ "CartaFitsImage", "classcarta_1_1CartaFitsImage.html", "classcarta_1_1CartaFitsImage" ],
       [ "CartaHdf5Image", "classcarta_1_1CartaHdf5Image.html", "classcarta_1_1CartaHdf5Image" ],
@@ -113,6 +113,5 @@ var annotated_dup =
     [ "AxisRange", "structAxisRange.html", "structAxisRange" ],
     [ "Message", "classMessage.html", "classMessage" ],
     [ "PointXy", "structPointXy.html", "structPointXy" ],
-    [ "StokesSource", "structStokesSource.html", "structStokesSource" ],
-    [ "VectorFieldSettings", "structVectorFieldSettings.html", "structVectorFieldSettings" ]
+    [ "StokesSource", "structStokesSource.html", "structStokesSource" ]
 ];

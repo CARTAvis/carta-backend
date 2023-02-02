@@ -12,6 +12,9 @@ var hierarchy =
     [ "carta::BeamTableInfo", "structcarta_1_1BeamTableInfo.html", null ],
     [ "carta::CacheId", "structcarta_1_1CacheId.html", null ],
     [ "carta::CacheIdHash", "structcarta_1_1CacheIdHash.html", null ],
+    [ "carta::VectorField::CalcFpi", "structcarta_1_1VectorField_1_1CalcFpi.html", null ],
+    [ "carta::VectorField::CalcPa", "structcarta_1_1VectorField_1_1CalcPa.html", null ],
+    [ "carta::VectorField::CalcPi", "structcarta_1_1VectorField_1_1CalcPi.html", null ],
     [ "carta::Column", "classcarta_1_1Column.html", [
       [ "carta::DataColumn< T >", "classcarta_1_1DataColumn.html", null ]
     ] ],
@@ -120,13 +123,14 @@ var hierarchy =
     [ "carta::TableView", "classcarta_1_1TableView.html", null ],
     [ "carta::TableViewCache", "structcarta_1_1TableViewCache.html", null ],
     [ "carta::ThreadManager", "classcarta_1_1ThreadManager.html", null ],
+    [ "carta::VectorField::ThresholdCut", "structcarta_1_1VectorField_1_1ThresholdCut.html", null ],
     [ "carta::Tile", "structcarta_1_1Tile.html", null ],
     [ "carta::TileCache", "classcarta_1_1TileCache.html", null ],
     [ "carta::TileCacheKey", "structcarta_1_1TileCacheKey.html", null ],
     [ "carta::TilePool::TilePtrDeleter", "structcarta_1_1TilePool_1_1TilePtrDeleter.html", null ],
     [ "carta::TimeDelta", "structcarta_1_1TimeDelta.html", null ],
     [ "carta::Timer", "classcarta_1_1Timer.html", null ],
-    [ "carta::VectorFieldCalculator", "structcarta_1_1VectorFieldCalculator.html", null ],
-    [ "VectorFieldSettings", "structVectorFieldSettings.html", null ],
+    [ "carta::VectorField::Valid", "structcarta_1_1VectorField_1_1Valid.html", null ],
+    [ "carta::VectorField", "classcarta_1_1VectorField.html", null ],
     [ "carta::WebBrowser", "classcarta_1_1WebBrowser.html", null ]
 ];

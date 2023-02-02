@@ -18,6 +18,7 @@ var classMessage =
     [ "FittingProgress", "classMessage.html#acf019d8e44d9d951556251563d02a31b", null ],
     [ "FloatBounds", "classMessage.html#ae4c7fdc05c8b782e3ebfe8a76770d646", null ],
     [ "GaussianComponent", "classMessage.html#a0ed9dfcb0fca84572479e2b4abb7af52", null ],
+    [ "ImageBounds", "classMessage.html#a2db1e87dde5d0eb661c819b9a6f02604", null ],
     [ "ImageProperties", "classMessage.html#aaf243e8ddf5a936578279be8467923e1", null ],
     [ "ImportRegionAck", "classMessage.html#a0db7f4318b8c6ee01d0601c7cd509f97", null ],
     [ "IntBounds", "classMessage.html#ab373996aae29831d488a8327c8dd96cc", null ],

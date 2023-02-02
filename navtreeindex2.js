@@ -1,9 +1,5 @@
 var NAVTREEINDEX2 =
 {
-"classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271":[3,0,0,71,2],
-"classcarta_1_1BasicStatsCalculator.html":[3,0,0,54],
-"classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44":[3,0,0,54,3],
-"classcarta_1_1BasicStatsCalculator.html#a26f063897a33e16c5155c0efa6d6575c":[3,0,0,54,9],
 "classcarta_1_1BasicStatsCalculator.html#a29d141b4a8a8e26a6ef58c982447efea":[3,0,0,54,1],
 "classcarta_1_1BasicStatsCalculator.html#a5535501aad2cc1c88ed049f014a3c3ef":[3,0,0,54,8],
 "classcarta_1_1BasicStatsCalculator.html#a63202f05fbe1f7cb917fb56de6381596":[3,0,0,54,10],
@@ -249,5 +245,9 @@ var NAVTREEINDEX2 =
 "classcarta_1_1DataColumn.html#afa212cb97743dcb0a915559796be1feb":[3,0,0,80,3],
 "classcarta_1_1DataColumn.html#afcd532deb4b217a0d612c6ab6ceacd90":[3,0,0,80,12],
 "classcarta_1_1Ds9ImportExport.html":[3,0,0,59],
-"classcarta_1_1Ds9ImportExport.html#a0880d0f323730974dd2acfa7fa0f0fda":[3,0,0,59,19]
+"classcarta_1_1Ds9ImportExport.html#a0880d0f323730974dd2acfa7fa0f0fda":[3,0,0,59,19],
+"classcarta_1_1Ds9ImportExport.html#a24098fce6d296906d3afa1e7127d54c7":[3,0,0,59,22],
+"classcarta_1_1Ds9ImportExport.html#a243633c10af2d243889fd070f5376a19":[3,0,0,59,4],
+"classcarta_1_1Ds9ImportExport.html#a3563843bb792fa94b6925db2ebedb0c0":[3,0,0,59,28],
+"classcarta_1_1Ds9ImportExport.html#a37e4646b85ca0e2ff439b8dbaf70b80f":[3,0,0,59,14]
 };

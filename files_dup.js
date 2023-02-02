@@ -245,12 +245,8 @@ var files_dup =
     ] ],
     [ "Token.cc", "Token_8cc.html", "Token_8cc" ],
     [ "Token.h", "Token_8h.html", "Token_8h" ],
-    [ "VectorFieldCalculator.cc", "VectorFieldCalculator_8cc.html", "VectorFieldCalculator_8cc" ],
-    [ "VectorFieldCalculator.h", "VectorFieldCalculator_8h.html", "VectorFieldCalculator_8h" ],
-    [ "VectorFieldSettings.cc", "VectorFieldSettings_8cc.html", null ],
-    [ "VectorFieldSettings.h", "VectorFieldSettings_8h.html", [
-      [ "VectorFieldSettings", "structVectorFieldSettings.html", "structVectorFieldSettings" ]
-    ] ],
+    [ "VectorField.cc", "VectorField_8cc.html", "VectorField_8cc" ],
+    [ "VectorField.h", "VectorField_8h.html", "VectorField_8h" ],
     [ "WebBrowser.cc", "WebBrowser_8cc.html", null ],
     [ "WebBrowser.h", "WebBrowser_8h.html", [
       [ "WebBrowser", "classcarta_1_1WebBrowser.html", "classcarta_1_1WebBrowser" ]

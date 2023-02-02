@@ -230,12 +230,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af33942ea80f54a479f9777dcc385d71a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a417351073847f379144fb3beb1d72dac"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a417351073847f379144fb3beb1d72dac">SetVectorOverlayParameters</a> (const CARTA::SetVectorOverlayParameters &amp;message)</td></tr>
 <tr class="separator:a417351073847f379144fb3beb1d72dac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0ebfce0a2ecfb4fe4d3c34c193494d0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structVectorFieldSettings.html">VectorFieldSettings</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#aa0ebfce0a2ecfb4fe4d3c34c193494d0">GetVectorFieldParameters</a> ()</td></tr>
-<tr class="separator:aa0ebfce0a2ecfb4fe4d3c34c193494d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ab1706854897c94f718d56b09a852b3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a0ab1706854897c94f718d56b09a852b3">ClearVectorFieldParameters</a> ()</td></tr>
-<tr class="separator:a0ab1706854897c94f718d56b09a852b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:addae4d13342b22a4b5e6790f2cc7275d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#addae4d13342b22a4b5e6790f2cc7275d">GetDownsampledRasterData</a> (std::vector&lt; float &gt; &amp;data, int &amp;downsampled_width, int &amp;downsampled_height, int z, int stokes, CARTA::ImageBounds &amp;bounds, int mip)</td></tr>
 <tr class="separator:addae4d13342b22a4b5e6790f2cc7275d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3ee51cc1bda05842764364c3f49db45"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45">CalculateVectorField</a> (const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt; &amp;callback)</td></tr>
+<tr class="separator:ae3ee51cc1bda05842764364c3f49db45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -283,6 +281,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a69a52aa8315bc300f5772b47694c8ba8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1614c68dbc09df9dd7212cbcf909fa43"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1614c68dbc09df9dd7212cbcf909fa43">CacheKey</a> (int z, int stokes)</td></tr>
 <tr class="separator:a1614c68dbc09df9dd7212cbcf909fa43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa0556decdd99bffc1dd869599f4db918"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918">DoVectorFieldCalculation</a> (const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt; &amp;callback)</td></tr>
+<tr class="separator:aa0556decdd99bffc1dd869599f4db918"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -374,8 +374,8 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a50f57b7cabe1887f311ea05c5bffc0d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a664c9fd4c9a6e1b64349c045577e1af2"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classcarta_1_1ImageFitter.html">ImageFitter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a664c9fd4c9a6e1b64349c045577e1af2">_image_fitter</a></td></tr>
 <tr class="separator:a664c9fd4c9a6e1b64349c045577e1af2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a779097d7b37f81602dfa1d284bd0f997"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structVectorFieldSettings.html">VectorFieldSettings</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a779097d7b37f81602dfa1d284bd0f997">_vector_field_settings</a></td></tr>
-<tr class="separator:a779097d7b37f81602dfa1d284bd0f997"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5cd16a584069531909999b70778e4b3d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1VectorField.html">VectorField</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a5cd16a584069531909999b70778e4b3d">_vector_field</a></td></tr>
+<tr class="separator:a5cd16a584069531909999b70778e4b3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a7c5b058faaa1622f53b38c64af50efbc"></a>
@@ -707,6 +707,30 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
+<a id="ae3ee51cc1bda05842764364c3f49db45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3ee51cc1bda05842764364c3f49db45">&#9670;&nbsp;</a></span>CalculateVectorField()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::Frame::CalculateVectorField </td>
+          <td>(</td>
+          <td class="paramtype">const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt; &amp;&#160;</td>
+          <td class="paramname"><em>callback</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_ae3ee51cc1bda05842764364c3f49db45_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
 <a id="a3872d048935ea5600bcabfff67fa7214"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3872d048935ea5600bcabfff67fa7214">&#9670;&nbsp;</a></span>CheckStokes()</h2>
 
@@ -778,37 +802,6 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a197494c0f0b5dc6ab6414e2dec20c088_icgraph.svg" width="455" height="88"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-
-</div>
-</div>
-<a id="a0ab1706854897c94f718d56b09a852b3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ab1706854897c94f718d56b09a852b3">&#9670;&nbsp;</a></span>ClearVectorFieldParameters()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::Frame::ClearVectorFieldParameters </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a0ab1706854897c94f718d56b09a852b3_cgraph.svg" width="392" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -950,6 +943,44 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_ad0db7c41f9da68619616cccb059edbb4_icgraph.svg" width="100%" height="492"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="aa0556decdd99bffc1dd869599f4db918"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0556decdd99bffc1dd869599f4db918">&#9670;&nbsp;</a></span>DoVectorFieldCalculation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::Frame::DoVectorFieldCalculation </td>
+          <td>(</td>
+          <td class="paramtype">const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt; &amp;&#160;</td>
+          <td class="paramname"><em>callback</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aa0556decdd99bffc1dd869599f4db918_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aa0556decdd99bffc1dd869599f4db918_icgraph.svg" width="476" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1585,7 +1616,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a782b43032306bd215aed9f3b24ae8af6_icgraph.svg" width="499" height="170"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a782b43032306bd215aed9f3b24ae8af6_icgraph.svg" width="100%" height="476"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1890,6 +1921,12 @@ Here is the caller graph for this function:</div>
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_addae4d13342b22a4b5e6790f2cc7275d_cgraph.svg" width="100%" height="429"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_addae4d13342b22a4b5e6790f2cc7275d_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -2602,7 +2639,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a79c789ebc62771151da94673a325a31a_icgraph.svg" width="100%" height="552"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a79c789ebc62771151da94673a325a31a_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -2724,34 +2761,9 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aad7fc7f3462a849a9cea9562fb45e220_icgraph.svg" width="454" height="314"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aad7fc7f3462a849a9cea9562fb45e220_icgraph.svg" width="100%" height="584"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
-
-</div>
-</div>
-<a id="aa0ebfce0a2ecfb4fe4d3c34c193494d0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa0ebfce0a2ecfb4fe4d3c34c193494d0">&#9670;&nbsp;</a></span>GetVectorFieldParameters()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structVectorFieldSettings.html">VectorFieldSettings</a>&amp; carta::Frame::GetVectorFieldParameters </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -3300,6 +3312,12 @@ Here is the call graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a417351073847f379144fb3beb1d72dac_cgraph.svg" width="615" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 
 </div>
 </div>
@@ -4390,8 +4408,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a779097d7b37f81602dfa1d284bd0f997"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a779097d7b37f81602dfa1d284bd0f997">&#9670;&nbsp;</a></span>_vector_field_settings</h2>
+<a id="a5cd16a584069531909999b70778e4b3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5cd16a584069531909999b70778e4b3d">&#9670;&nbsp;</a></span>_vector_field</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -4400,7 +4418,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structVectorFieldSettings.html">VectorFieldSettings</a> carta::Frame::_vector_field_settings</td>
+          <td class="memname"><a class="el" href="classcarta_1_1VectorField.html">VectorField</a> carta::Frame::_vector_field</td>
         </tr>
       </table>
   </td>

@@ -140,6 +140,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Tile.html">Tile</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1VectorField.html">VectorField</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html">FileExtInfoLoader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileInfoLoader.html">FileInfoLoader</a></td></tr>
@@ -151,8 +153,6 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1ContourSettings.html">ContourSettings</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html">Frame</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1VectorFieldCalculator.html">VectorFieldCalculator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1HttpServer.html">HttpServer</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -303,8 +303,6 @@ Typedefs</h2></td></tr>
 <tr class="separator:a6e7de940705eaee735758c84974dc53b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e349f6da0c1715066c9ebb1173d1f29"><td class="memItemLeft" align="right" valign="top">typedef const std::function&lt; void(double, double, const std::vector&lt; float &gt; &amp;, const std::vector&lt; int32_t &gt; &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a2e349f6da0c1715066c9ebb1173d1f29">ContourCallback</a></td></tr>
 <tr class="separator:a2e349f6da0c1715066c9ebb1173d1f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aedb1cb291619c9f20790855bef9d00b6"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aedb1cb291619c9f20790855bef9d00b6">VectorFieldCallback</a> = const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt;</td></tr>
-<tr class="separator:aedb1cb291619c9f20790855bef9d00b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a734df587cce5cbf3b5b11348f2b1ff08"><td class="memItemLeft" align="right" valign="top">typedef uWS::HttpRequest&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a734df587cce5cbf3b5b11348f2b1ff08">Req</a></td></tr>
 <tr class="separator:a734df587cce5cbf3b5b11348f2b1ff08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a9fe0f86f7e331bd55b6875dd3ce036"><td class="memItemLeft" align="right" valign="top">typedef uWS::HttpResponse&lt; false &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a9a9fe0f86f7e331bd55b6875dd3ce036">Res</a></td></tr>
@@ -379,8 +377,6 @@ Functions</h2></td></tr>
 <tr class="separator:a9357dcf90b947224b971067e616c8a9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a564d69915ebb8e5d130798efdf5fc32a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a564d69915ebb8e5d130798efdf5fc32a">GetTiles</a> (int image_width, int image_height, int mip, std::vector&lt; <a class="el" href="structcarta_1_1Tile.html">Tile</a> &gt; &amp;tiles)</td></tr>
 <tr class="separator:a564d69915ebb8e5d130798efdf5fc32a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf048df5c4177b17e68eb0cbcd5fbb3a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aaf048df5c4177b17e68eb0cbcd5fbb3a">FillTileData</a> (CARTA::TileData *tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height, std::vector&lt; float &gt; &amp;array, CARTA::CompressionType compression_type, float compression_quality)</td></tr>
-<tr class="separator:aaf048df5c4177b17e68eb0cbcd5fbb3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95828b5aa32c7a2363d7679a2cb91b77"><td class="memItemLeft" align="right" valign="top">CARTA::ImageBounds&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a95828b5aa32c7a2363d7679a2cb91b77">GetImageBounds</a> (const <a class="el" href="structcarta_1_1Tile.html">Tile</a> &amp;tile, int image_width, int image_height, int mip)</td></tr>
 <tr class="separator:a95828b5aa32c7a2363d7679a2cb91b77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96f7cab56516141317895bada342c0b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a96f7cab56516141317895bada342c0b1">CalcBasicStats</a> (<a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;stats, const float *data, const size_t data_size)</td></tr>
@@ -519,20 +515,6 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef std::shared_ptr&lt; std::vector&lt; float &gt; &gt; <a class="el" href="namespacecarta.html#a6e7de940705eaee735758c84974dc53b">carta::TilePtr</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aedb1cb291619c9f20790855bef9d00b6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aedb1cb291619c9f20790855bef9d00b6">&#9670;&nbsp;</a></span>VectorFieldCallback</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="namespacecarta.html#aedb1cb291619c9f20790855bef9d00b6">carta::VectorFieldCallback</a> = typedef const std::function&lt;void(CARTA::VectorOverlayTileData&amp;)&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -680,7 +662,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a5e8e9ea12c8402698a665a81e97cf13f_icgraph.svg" width="100%" height="402"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a5e8e9ea12c8402698a665a81e97cf13f_icgraph.svg" width="100%" height="421"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -762,7 +744,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_aead2ccf135cb75c1b5d5f5d8b5a64849_icgraph.svg" width="100%" height="402"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_aead2ccf135cb75c1b5d5f5d8b5a64849_icgraph.svg" width="100%" height="421"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -844,7 +826,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a3d79fcec84ed84bfc770c589c2f12ea1_icgraph.svg" width="100%" height="402"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a3d79fcec84ed84bfc770c589c2f12ea1_icgraph.svg" width="100%" height="421"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1080,7 +1062,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a10f0d86089ef00182ca768e7971e1657_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a10f0d86089ef00182ca768e7971e1657_icgraph.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1224,94 +1206,6 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aaf048df5c4177b17e68eb0cbcd5fbb3a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaf048df5c4177b17e68eb0cbcd5fbb3a">&#9670;&nbsp;</a></span>FillTileData()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::FillTileData </td>
-          <td>(</td>
-          <td class="paramtype">CARTA::TileData *&#160;</td>
-          <td class="paramname"><em>tile</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>x</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>y</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>layer</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>mip</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>tile_width</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int32_t&#160;</td>
-          <td class="paramname"><em>tile_height</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; float &gt; &amp;&#160;</td>
-          <td class="paramname"><em>array</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">CARTA::CompressionType&#160;</td>
-          <td class="paramname"><em>compression_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>compression_quality</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_aaf048df5c4177b17e68eb0cbcd5fbb3a_cgraph.svg" width="411" height="88"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_aaf048df5c4177b17e68eb0cbcd5fbb3a_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
-
-</div>
-</div>
 <a id="a3ae47208421b1d4f81037729f3c08fc7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3ae47208421b1d4f81037729f3c08fc7">&#9670;&nbsp;</a></span>GaussianSmooth()</h2>
 
@@ -1422,7 +1316,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a95828b5aa32c7a2363d7679a2cb91b77_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a95828b5aa32c7a2363d7679a2cb91b77_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1468,7 +1362,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a6f90f0f5fadc7ab7bfad3fdc20058cef_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a6f90f0f5fadc7ab7bfad3fdc20058cef_icgraph.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1554,7 +1448,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a564d69915ebb8e5d130798efdf5fc32a_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a564d69915ebb8e5d130798efdf5fc32a_icgraph.svg" width="642" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1586,7 +1480,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a64f1569d1c90db30af9f2d719f9ffe59_icgraph.svg" width="100%" height="416"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a64f1569d1c90db30af9f2d719f9ffe59_icgraph.svg" width="100%" height="419"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 

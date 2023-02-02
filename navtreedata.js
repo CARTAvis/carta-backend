@@ -75,14 +75,14 @@ var NAVTREEINDEX =
 [
 "AnimationObject_8h.html",
 "Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce",
-"classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271",
-"classcarta_1_1Ds9ImportExport.html#a24098fce6d296906d3afa1e7127d54c7",
-"classcarta_1_1Frame.html#a7c5b058faaa1622f53b38c64af50efbc",
-"classcarta_1_1ListProgressReporter.html#a864563565300b6df405a7b176d7da5dd",
-"classcarta_1_1RegionHandler.html#afd06fd1f23a82495b43c1f736936b8f1",
-"classcarta_1_1Table.html#a97145cb48bd8a9a8903cc703851ed8b2",
-"namespacecarta.html#a13be33c4c61fc2acef8d41a09410fd9e",
-"structcarta_1_1GeneratedImage.html#a145228ec4c28a713fde2c25b7666930c"
+"classcarta_1_1BasicStatsCalculator.html#a29d141b4a8a8e26a6ef58c982447efea",
+"classcarta_1_1Ds9ImportExport.html#a3a09f36f96e82699233e2772d6bc7fb3",
+"classcarta_1_1Frame.html#a858ea876a75693a7df9a235b53e00d6a",
+"classcarta_1_1ListProgressReporter.html#adc4497d9d624c79158ce95c2edb0f178",
+"classcarta_1_1RegionImportExport.html#a08f0b0cd978303552143fcbd616897f6",
+"classcarta_1_1Table.html#aae4a4105ced9a877586e2f6bf561449a",
+"functions_vars_x.html",
+"structcarta_1_1FitData.html#afef66e0a43156be8b50f1f4a67eb5b91"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
