@@ -10,8 +10,6 @@
 
 #include "Util/Image.h"
 
-// TILE POOL
-
 using namespace carta;
 
 TileCache::TileCache(int capacity) : _capacity(capacity), _z(0), _stokes(0), _pool(std::make_shared<TilePool>()) {
