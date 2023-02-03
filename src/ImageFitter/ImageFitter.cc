@@ -168,9 +168,6 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
         case CARTA::FittingSolverType::Qr:
             fdf_params.solver = gsl_multifit_nlinear_solver_qr;
             break;
-        case CARTA::FittingSolverType::Mcholesky:
-            fdf_params.solver = gsl_multifit_nlinear_solver_mcholesky;
-            break;
         case CARTA::FittingSolverType::Svd:
             fdf_params.solver = gsl_multifit_nlinear_solver_svd;
             break;
