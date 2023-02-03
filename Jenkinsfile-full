@@ -295,7 +295,7 @@ pipeline {
                     steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             dir ('build/test') {
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos12_test_detail.xml"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp:detect_container_overflow=0 ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer ./carta_backend_tests --gtest_output=xml:macos13_test_detail.xml"
                             }
                         }
                     }
@@ -760,7 +760,7 @@ def prepare_rhel7_ICD() {
 
 def prepare_rhel8_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh "git clone https://github.com/CARTAvis/ICD-RxJ"
+        sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
             sh "git checkout dev"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
@@ -835,7 +835,7 @@ def prepare_macos13_ICD() {
         sh "rm -rf ICD-RxJS"
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout mylin/#7_add_new_image_fitting_tests"
+            sh "git checkout dev"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
