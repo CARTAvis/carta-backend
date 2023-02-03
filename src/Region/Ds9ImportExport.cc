@@ -421,7 +421,6 @@ RegionProperties Ds9ImportExport::SetRegion(std::string& region_definition) {
     if ((region_name[0] == '+') || (region_name[0] == '-')) {
         region_name = region_name.substr(1);
     }
-
     RegionState region_state;
     CARTA::RegionStyle region_style;
 
@@ -467,7 +466,10 @@ RegionProperties Ds9ImportExport::SetRegion(std::string& region_definition) {
         if (std::find(unsupported_regions.begin(), unsupported_regions.end(), region_name) != unsupported_regions.end()) {
             _import_errors.append("DS9 " + region_name + " region not supported.\n");
         } else {
-            throw(casacore::AipsError("Invalid DS9 region or syntax: " + region_name));
+            bool is_annulus = (region_name == "ellipse" || region_name == "box") && parameters.size() > 6;
+            if (!is_annulus) { // error already appended
+                _import_errors.append("Invalid DS9 region syntax: " + region_definition);
+            }
         }
     }
 
@@ -617,9 +619,9 @@ RegionState Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& param
             }
         }
         region_state = RegionState(_file_id, type, control_points, rotation);
-    } else if (nparam > 6) {
+    } else if (region_name == "ellipse" && nparam > 6) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
-        _import_errors.append("Unsupported " + region_name + " definition.\n");
+        _import_errors.append("DS9 ellipse annulus region not supported.\n");
     } else {
         _import_errors.append(region_name + " syntax error.\n");
     }
@@ -685,7 +687,7 @@ RegionState Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& par
         region_state = RegionState(_file_id, type, control_points, rotation);
     } else if (nparam > 6) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
-        _import_errors.append("Unsupported box definition.\n");
+        _import_errors.append("DS9 box annulus region not supported.\n");
     } else {
         _import_errors.append("box syntax error.\n");
     }
