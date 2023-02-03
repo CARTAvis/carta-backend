@@ -5,7 +5,12 @@ pipeline {
         timeout(time: 2, unit: 'HOURS') 
     }
     triggers {
-        cron('0 8 * * *')
+        cron('0 19 * * *')
+    }
+    environment {
+        min = 4000
+        max = 8000
+        PORT = "${Math.abs(new Random().nextInt(max-min+1)+min)}"
     }
     stages {
         stage('Build') {
@@ -498,7 +503,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: "ICD test session and file_browser failure") {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 file_browser()
                             }
@@ -512,7 +517,7 @@ pipeline {
                              warnError(catchInterruptions: true, message: 'ICD test animator failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 animator()
                             }
@@ -526,7 +531,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test region_statistics failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_statistics()
                             }
@@ -540,7 +545,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test region_manipulation failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 region_manipulation()
                             }
@@ -554,7 +559,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test cube_histogram failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 cube_histogram()
                             }
@@ -568,7 +573,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test pv_generator failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 pv_generator()
                             }
@@ -582,7 +587,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test raster_tiles failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 raster_tiles()
                             }
@@ -596,7 +601,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test catalog failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 catalog()
                             }
@@ -610,7 +615,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test moment failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 moment()
                             }
@@ -624,7 +629,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test resume failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 resume()
                             }
@@ -638,7 +643,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test match failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 match()
                             }
@@ -652,7 +657,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test close_file failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 close_file()
                             }
@@ -666,7 +671,7 @@ pipeline {
                             warnError(catchInterruptions: true, message: 'ICD test image_fitting failure') {
                                 unstash "${PLATFORM}-backend"
                                 sh "rm -f /root/.carta/log/carta.log"
-                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port 3112 --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
                                 unstash "${PLATFORM}-ICD"
                                 image_fitting()
                             }
@@ -714,7 +719,7 @@ def prepare_focal_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') { 
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
         }
         stash includes: "ICD-RxJS/**/*", name: "focal-ICD"
@@ -732,7 +737,7 @@ def prepare_jammy_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
         }
         stash includes: "ICD-RxJS/**/*", name: "jammy-ICD"
@@ -751,7 +756,7 @@ def prepare_rhel7_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
        }
        stash includes: "ICD-RxJS/**/*", name: "rhel7-ICD"
@@ -769,7 +774,7 @@ def prepare_rhel8_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
        }
        stash includes: "ICD-RxJS/**/*", name: "rhel8-ICD"
@@ -787,7 +792,7 @@ def prepare_rhel9_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
        }
        stash includes: "ICD-RxJS/**/*", name: "rhel9-ICD"
@@ -805,7 +810,7 @@ def prepare_macos11_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
         }
         stash includes: "ICD-RxJS/**/*", name: "macos11-ICD"
@@ -823,7 +828,7 @@ def prepare_macos12_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
         }
         stash includes: "ICD-RxJS/**/*", name: "macos12-ICD"
@@ -841,7 +846,7 @@ def prepare_macos13_ICD() {
                 sh "./build_proto.sh"
             }
             dir ('src/test') {
-                sh "perl -p -i -e 's/3002/3112/' config.json"
+                sh "perl -p -i -e 's/3002/${env.PORT}/' config.json"
             }
         }
         stash includes: "ICD-RxJS/**/*", name: "macos13-ICD"
