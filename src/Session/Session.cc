@@ -1831,7 +1831,7 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 }
 
 bool Session::SendVectorFieldData(int file_id) {
-    if (_frames.count(file_id) && _frames.at(file_id)->IsValid()) {
+    if (_frames.count(file_id)) {
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
             SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, partial_response);

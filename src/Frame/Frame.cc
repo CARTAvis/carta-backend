@@ -2319,7 +2319,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 
         // Get current stokes data
         if (current_stokes_as_pi || current_stokes_as_pa) {
-            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
+            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, _stokes_index, bounds, mip)) {
                 return false;
             }
         }
