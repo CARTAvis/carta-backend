@@ -8,6 +8,7 @@ pipeline {
         cron('0 19 * * *')
     }
     environment {
+        BRANCH = "dev"
         min = 4000
         max = 8000
         PORT = "${Math.abs(new Random().nextInt(max-min+1)+min)}"
@@ -712,7 +713,7 @@ def prepare_focal_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -730,7 +731,7 @@ def prepare_jammy_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -749,7 +750,7 @@ def prepare_rhel7_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -767,7 +768,7 @@ def prepare_rhel8_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -785,7 +786,7 @@ def prepare_rhel9_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "sed -i '4 i\\    \"type\": \"module\",' package.json"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
@@ -804,7 +805,7 @@ def prepare_macos11_ICD() {
         sh "rm -rf ICD-RxJS"
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
@@ -820,10 +821,9 @@ def prepare_macos11_ICD() {
 def prepare_macos12_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "rm -rf ICD-RxJS"
-        sh "sync && sudo purge"
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
@@ -841,7 +841,7 @@ def prepare_macos13_ICD() {
         sh "rm -rf ICD-RxJS"
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
-            sh "git checkout dev"
+            sh "git checkout ${env.BRANCH}"
             sh "git submodule init && git submodule update && npm install"
             dir ('protobuf') {
                 sh "./build_proto.sh"
