@@ -813,7 +813,8 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
         return nullptr;
     }
 
-    if (!IsClosedRegion(region_id)) {
+    auto region = GetRegion(region_id);
+    if (!region || (region->IsAnnotation() || region->IsLineType())) {
         return nullptr;
     }
 
