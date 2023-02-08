@@ -435,7 +435,7 @@ RegionProperties Ds9ImportExport::SetRegion(std::string& region_definition) {
         region_state = ImportCircleRegion(parameters, is_annotation);
     } else if (region_name == "box" || region_name == "textbox") {
         region_state = ImportRectangleRegion(parameters, is_annotation);
-    } else if (region_name == "line" || region_name == "polyline" || region_name == "polygon") {
+    } else if (region_name == "line" || region_name == "polyline" || region_name == "polygon" || region_name == "segment") {
         region_state = ImportPolygonLineRegion(parameters, is_annotation);
     } else if (region_name == "vector") {
         region_state = ImportVectorRegion(parameters);
@@ -746,7 +746,7 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
     CARTA::RegionType type;
     if (region_name == "line") {
         type = (is_annotation ? CARTA::RegionType::ANNLINE : CARTA::RegionType::LINE);
-    } else if (region_name == "polyline") {
+    } else if (region_name == "polyline" || region_name == "segment") {
         type = (is_annotation ? CARTA::RegionType::ANNPOLYLINE : CARTA::RegionType::POLYLINE);
     } else if (region_name == "polygon") {
         type = (is_annotation ? CARTA::RegionType::ANNPOLYGON : CARTA::RegionType::POLYGON);
