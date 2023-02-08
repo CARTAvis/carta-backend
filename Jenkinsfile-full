@@ -821,6 +821,7 @@ def prepare_macos11_ICD() {
 def prepare_macos12_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "rm -rf ICD-RxJS"
+        sh "sync && sudo purge"
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
             sh "git checkout ${env.BRANCH}"
