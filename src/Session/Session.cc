@@ -1327,8 +1327,10 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             GeneratedImage pv_image;
 
             if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
-                auto* open_file_ack = pv_response.mutable_open_file_ack();
-                OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                if (pv_response.has_open_file_ack()) {
+                    auto* open_file_ack = pv_response.mutable_open_file_ack();
+                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                }
             }
             spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed().ms());
         }
@@ -1344,6 +1346,13 @@ void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
     int file_id(stop_pv_calc.file_id());
     if (_region_handler) {
         _region_handler->StopPvCalc(file_id);
+    }
+}
+
+void Session::OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview) {
+    int file_id(stop_pv_preview.file_id());
+    if (_region_handler) {
+        _region_handler->StopPvPreview(file_id);
     }
 }
 

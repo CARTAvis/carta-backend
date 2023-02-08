@@ -105,6 +105,7 @@ public:
     bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
     void OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id);
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
+    void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
     void OnStopFitting(const CARTA::StopFitting& stop_fitting);
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);

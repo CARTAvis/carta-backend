@@ -467,6 +467,14 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     }
                     break;
                 }
+                case CARTA::EventType::STOP_PV_PREVIEW: {
+                    CARTA::StopPvPreview message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopPvPreview(message);
+                        message_parsed = true;
+                    }
+                    break;
+                }
                 case CARTA::EventType::FITTING_REQUEST: {
                     CARTA::FittingRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
