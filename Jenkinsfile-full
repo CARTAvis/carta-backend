@@ -8,7 +8,6 @@ pipeline {
         cron('0 19 * * *')
     }
     environment {
-        BRANCH = "dev"
         min = 4000
         max = 8000
         PORT = "${Math.abs(new Random().nextInt(max-min+1)+min)}"
@@ -821,7 +820,6 @@ def prepare_macos11_ICD() {
 def prepare_macos12_ICD() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh "rm -rf ICD-RxJS"
-        sh "sync && sudo purge"
         sh "git clone https://github.com/CARTAvis/ICD-RxJS.git"
         dir ('ICD-RxJS') {
             sh "git checkout ${env.BRANCH}"
