@@ -746,8 +746,10 @@ RegionState Ds9ImportExport::ImportPolygonLineRegion(std::vector<std::string>& p
     CARTA::RegionType type;
     if (region_name == "line") {
         type = (is_annotation ? CARTA::RegionType::ANNLINE : CARTA::RegionType::LINE);
-    } else if (region_name == "polyline" || region_name == "segment") {
+    } else if (region_name == "polyline") {
         type = (is_annotation ? CARTA::RegionType::ANNPOLYLINE : CARTA::RegionType::POLYLINE);
+    } else if (region_name == "segment") {
+        type = CARTA::RegionType::ANNPOLYLINE;
     } else if (region_name == "polygon") {
         type = (is_annotation ? CARTA::RegionType::ANNPOLYGON : CARTA::RegionType::POLYGON);
     } else if (region_name == "ruler") {
