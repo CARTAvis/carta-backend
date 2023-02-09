@@ -65,9 +65,19 @@ struct HistogramConfig {
     std::string coordinate;
     int channel;
     int num_bins;
+    bool fixed_bounds;
+    float min_val;
+    float max_val;
 
-    HistogramConfig() {}
-    HistogramConfig(const std::string& coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
+    HistogramConfig() : coordinate("z"), channel(CURRENT_Z), num_bins(AUTO_BIN_SIZE), fixed_bounds(false), min_val(0), max_val(0) {}
+
+    HistogramConfig(const CARTA::SetHistogramRequirements_HistogramConfig& config)
+        : coordinate(config.coordinate()),
+          channel(config.channel()),
+          num_bins(config.num_bins()),
+          fixed_bounds(config.fixed_bounds()),
+          min_val(config.bounds().min()),
+          max_val(config.bounds().max()) {}
 };
 
 struct RegionHistogramConfig {
@@ -75,7 +85,7 @@ struct RegionHistogramConfig {
 };
 
 struct HistogramCache {
-    BasicStats<float> stats;
+    BasicStats<float> stats;                       // Statistics data without fixed bounds
     std::unordered_map<int, Histogram> histograms; // key is num_bins
 
     HistogramCache() {}
@@ -92,10 +102,13 @@ struct HistogramCache {
         stats = stats_;
     }
 
-    bool GetHistogram(int num_bins_, Histogram& histogram_) {
+    bool GetHistogram(int num_bins_, float min_val, float max_val, Histogram& histogram_) {
         if (histograms.count(num_bins_)) {
-            histogram_ = histograms.at(num_bins_);
-            return true;
+            const auto& hist = histograms.at(num_bins_);
+            if (AreEqual(hist.GetMinVal(), min_val) && AreEqual(hist.GetMaxVal(), max_val)) {
+                histogram_ = hist;
+                return true;
+            }
         }
         return false;
     }

@@ -185,4 +185,6 @@ struct StokesSource {
     }
 };
 
+bool AreEqual(float val1, float val2);
+
 #endif // CARTA_BACKEND__UTIL_IMAGE_H_

@@ -29,3 +29,7 @@ bool IsComputedStokes(int stokes) {
 bool IsComputedStokes(const std::string& stokes) {
     return IsComputedStokes(StokesValues[StokesStringTypes[stokes]]);
 }
+
+bool AreEqual(float val1, float val2) {
+    return fabs(val1 - val2) < 1e-6;
+}
