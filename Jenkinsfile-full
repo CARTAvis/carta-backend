@@ -5,7 +5,7 @@ pipeline {
         timeout(time: 2, unit: 'HOURS') 
     }
     triggers {
-        cron('0 19 * * *')
+        cron('0 8 * * *')
     }
     environment {
         min = 4000
