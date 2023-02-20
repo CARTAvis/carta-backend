@@ -68,7 +68,8 @@ private:
     GeneratorProgressCallback _progress_callback;
 
     void CalculateNanNum();
-    void SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params);
+    void SetInitialValues(
+        const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params);
     int SolveSystem(CARTA::FittingSolverType solver);
     void CalculateImageData(const gsl_vector* residual);
     void SetResults();

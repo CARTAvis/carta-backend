@@ -85,8 +85,9 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
             }
 
             size_t last_index = _fit_data.fit_values_indexes.size() - 1;
-            int background_offset_index =  _fit_data.fit_values_indexes[last_index];
-            double background_offset = background_offset_index < 0 ? _fit_data.initial_values[last_index] : gsl_vector_get(_fit_values, background_offset_index);
+            int background_offset_index = _fit_data.fit_values_indexes[last_index];
+            double background_offset =
+                background_offset_index < 0 ? _fit_data.initial_values[last_index] : gsl_vector_get(_fit_values, background_offset_index);
             double background_offset_error = background_offset_index < 0 ? 0.0 : gsl_vector_get(_fit_errors, background_offset_index);
             fitting_response.set_offset_value(background_offset);
             fitting_response.set_offset_error(background_offset_error);
@@ -137,7 +138,8 @@ void ImageFitter::CalculateNanNum() {
     }
 }
 
-void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params) {
+void ImageFitter::SetInitialValues(
+    const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params) {
     _num_components = initial_values.size();
     _fit_data.initial_values.clear();
     for (size_t i = 0; i < _num_components; i++) {
@@ -328,8 +330,9 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
     struct FitData* d = (struct FitData*)fit_data;
 
     size_t last_index = d->fit_values_indexes.size() - 1;
-    int background_offset_index =  d->fit_values_indexes[last_index];
-    double background_offset = background_offset_index < 0 ? d->initial_values[last_index] : gsl_vector_get(fit_values, background_offset_index);
+    int background_offset_index = d->fit_values_indexes[last_index];
+    double background_offset =
+        background_offset_index < 0 ? d->initial_values[last_index] : gsl_vector_get(fit_values, background_offset_index);
 
     for (size_t k = 0; k < d->fit_values_indexes.size() - 1; k += 6) {
         // set residuals to zero to stop fitting procedure
