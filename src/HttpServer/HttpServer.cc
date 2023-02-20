@@ -16,6 +16,10 @@
 #include "Util/String.h"
 #include "Util/Token.h"
 
+#if defined(__APPLE__)
+#define st_mtim st_mtimespec
+#endif
+
 using json = nlohmann::json;
 
 namespace carta {
