@@ -154,6 +154,7 @@ private:
                 EXPECT_EQ(std::round(component.fwhm().y()), _initial_values[i].fwhm().y());
                 EXPECT_EQ(std::round(component.pa()), _initial_values[i].pa());
             }
+            EXPECT_EQ(std::round(fitting_response.offset_value()), 0);
         } else {
             EXPECT_FALSE(success);
             EXPECT_FALSE(fitting_response.success());
@@ -221,6 +222,7 @@ private:
 TEST_F(ImageFittingTest, OneComponentFitting) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params(6, false);
+    fixed_params.push_back(true);
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     FitImage(gaussian_model);
@@ -233,6 +235,7 @@ TEST_F(ImageFittingTest, OneComponentFitting) {
 TEST_F(ImageFittingTest, ThreeComponentFitting) {
     std::vector<float> gaussian_model = {3, 64, 64, 20, 20, 10, 210, 32, 32, 20, 20, 10, 210, 96, 96, 20, 20, 10, 210};
     std::vector<bool> fixed_params(18, false);
+    fixed_params.push_back(true);
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     FitImage(gaussian_model);
@@ -244,7 +247,15 @@ TEST_F(ImageFittingTest, ThreeComponentFitting) {
 
 TEST_F(ImageFittingTest, CenterFixedFitting) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
-    std::vector<bool> fixed_params = {true, true, false, false, false, false};
+    std::vector<bool> fixed_params = {true, true, false, false, false, false, true};
+    SetInitialValues(gaussian_model);
+    SetFixedParams(fixed_params);
+    FitImage(gaussian_model);
+}
+
+TEST_F(ImageFittingTest, BackgroundUnfixedFitting) {
+    std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
+    std::vector<bool> fixed_params = {false, false, false, false, false, false, false};
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     FitImage(gaussian_model);
@@ -257,6 +268,7 @@ TEST_F(ImageFittingTest, IncorrectFileId) {
 TEST_F(ImageFittingTest, FittingWithFov) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params(6, false);
+    fixed_params.push_back(true);
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 64, 64}, 10);
@@ -286,6 +298,7 @@ TEST_F(ImageFittingTest, FovOutsideImage) {
 TEST_F(ImageFittingTest, insufficientData) {
     std::vector<float> gaussian_model = {1, 64, 64, 20, 20, 10, 135};
     std::vector<bool> fixed_params(6, false);
+    fixed_params.push_back(true);
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
     SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 2, 2}, 0);

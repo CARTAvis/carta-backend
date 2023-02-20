@@ -25,7 +25,7 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    const std::vector<bool>& fixed_params, float background_offset, CARTA::FittingSolverType solver, bool create_model_image,
+    const std::vector<bool>& fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image,
     bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x,
     size_t offset_y) {
     bool success = false;
@@ -36,7 +36,6 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _fit_data.width = width;
     _fit_data.n = width * height;
     _fit_data.data = image;
-    _fit_data.background_offset = std::isnan(background_offset) ? 0 : background_offset;
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
@@ -45,7 +44,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _progress_callback = progress_callback;
 
     CalculateNanNum();
-    SetInitialValues(initial_values, fixed_params);
+    SetInitialValues(initial_values, background_offset, fixed_params);
 
     // avoid SolveSystem crashes with insufficient data points
     if (_fit_data.n_notnan < _fit_values->size) {
@@ -84,6 +83,13 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
                 fitting_response.add_result_errors();
                 *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
             }
+
+            size_t last_index = _fit_data.fit_values_indexes.size() - 1;
+            int background_offset_index =  _fit_data.fit_values_indexes[last_index];
+            double background_offset = background_offset_index < 0 ? _fit_data.initial_values[last_index] : gsl_vector_get(_fit_values, background_offset_index);
+            double background_offset_error = background_offset_index < 0 ? 0.0 : gsl_vector_get(_fit_errors, background_offset_index);
+            fitting_response.set_offset_value(background_offset);
+            fitting_response.set_offset_error(background_offset_error);
             fitting_response.set_log(GetLog());
         }
     }
@@ -131,7 +137,7 @@ void ImageFitter::CalculateNanNum() {
     }
 }
 
-void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params) {
+void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params) {
     _num_components = initial_values.size();
     _fit_data.initial_values.clear();
     for (size_t i = 0; i < _num_components; i++) {
@@ -143,19 +149,33 @@ void ImageFitter::SetInitialValues(const std::vector<CARTA::GaussianComponent>& 
         _fit_data.initial_values.push_back(component.fwhm().y());
         _fit_data.initial_values.push_back(component.pa());
     }
+    _fit_data.initial_values.push_back(std::isnan(background_offset) ? 0 : background_offset);
 
-    size_t p = std::count(fixed_params.begin(), fixed_params.end(), false);
-    _fit_values = gsl_vector_alloc(p);
-    _fit_errors = gsl_vector_alloc(p);
-    size_t iter = 0;
     _fit_data.fit_values_indexes.clear();
-    for (size_t i = 0; i < fixed_params.size(); i++) {
-        if (!fixed_params[i]) {
-            _fit_data.fit_values_indexes.push_back(iter);
-            gsl_vector_set(_fit_values, iter, _fit_data.initial_values[i]);
-            iter++;
-        } else {
-            _fit_data.fit_values_indexes.push_back(-1);
+    size_t p;
+    if (fixed_params.size() != _fit_data.initial_values.size()) {
+        spdlog::warn("Invalid length of the fixed parameter array. Fit with all parameters unfixed except the offset.");
+        p = _fit_data.initial_values.size() - 1;
+        _fit_values = gsl_vector_alloc(p);
+        _fit_errors = gsl_vector_alloc(p);
+        for (size_t i = 0; i < p - 1; i++) {
+            _fit_data.fit_values_indexes.push_back(i);
+            gsl_vector_set(_fit_values, i, _fit_data.initial_values[i]);
+        }
+        _fit_data.fit_values_indexes.push_back(-1);
+    } else {
+        p = std::count(fixed_params.begin(), fixed_params.end(), false);
+        _fit_values = gsl_vector_alloc(p);
+        _fit_errors = gsl_vector_alloc(p);
+        size_t iter = 0;
+        for (size_t i = 0; i < fixed_params.size(); i++) {
+            if (!fixed_params[i]) {
+                _fit_data.fit_values_indexes.push_back(iter);
+                gsl_vector_set(_fit_values, iter, _fit_data.initial_values[i]);
+                iter++;
+            } else {
+                _fit_data.fit_values_indexes.push_back(-1);
+            }
         }
     }
     _fdf.p = p;
@@ -307,7 +327,11 @@ std::string ImageFitter::GetGeneratedMomentFilename(const std::string& filename,
 int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector* f) {
     struct FitData* d = (struct FitData*)fit_data;
 
-    for (size_t k = 0; k < d->fit_values_indexes.size(); k += 6) {
+    size_t last_index = d->fit_values_indexes.size() - 1;
+    int background_offset_index =  d->fit_values_indexes[last_index];
+    double background_offset = background_offset_index < 0 ? d->initial_values[last_index] : gsl_vector_get(fit_values, background_offset_index);
+
+    for (size_t k = 0; k < d->fit_values_indexes.size() - 1; k += 6) {
         // set residuals to zero to stop fitting procedure
         if (d->stop_fitting) {
             gsl_vector_set_zero(f);
@@ -326,7 +350,7 @@ int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector*
 
 #pragma omp parallel for
         for (size_t i = 0; i < d->n; i++) {
-            float data_i = d->data[i] - d->background_offset;
+            float data_i = d->data[i] - background_offset;
             if (!isnan(data_i)) {
                 double dx = i % d->width - center_x;
                 double dy = i / d->width - center_y;
