@@ -382,22 +382,11 @@ void Ds9ImportExport::SetImageReferenceFrame() {
 // Import regions into RegionState vector
 
 void Ds9ImportExport::SetGlobals(std::string& global_line) {
-    // Set global properties
+    // Set global properties using file line parser
     std::vector<std::string> parameters;
-    SplitString(global_line, ' ', parameters);
-    for (int i = 0; i < parameters.size(); ++i) {
-        std::string property = parameters[i];
-        size_t equals_pos = property.find('=');
-        if (equals_pos != std::string::npos) {
-            std::string key = property.substr(0, equals_pos);
-            std::string value = property.substr(equals_pos + 1, property.size() - equals_pos);
-            if (key == "dashlist") { // add next parameter
-                ++i;
-                value += " " + parameters[i];
-            }
-            _global_properties[key] = value;
-        }
-    }
+    std::unordered_map<std::string, std::string> properties;
+    ParseRegionParameters(global_line, parameters, properties);
+    _global_properties = properties;
 }
 
 RegionProperties Ds9ImportExport::SetRegion(std::string& region_definition) {
@@ -961,8 +950,8 @@ CARTA::RegionStyle Ds9ImportExport::ImportStyleParameters(
     if (region_type == CARTA::RegionType::ANNPOINT) {
         ImportPointStyleParameters(properties, annotation_style); // point shape/size, only for ann region
     }
-    if ((region_type > CARTA::RegionType::POLYGON) && (properties.find("font") != properties.end())) {
-        ImportFontStyleParameters(properties["font"], annotation_style); // only for ann regions
+    if (region_type > CARTA::RegionType::POLYGON) {
+        ImportFontStyleParameters(properties, annotation_style); // only for ann regions
     }
 
     return region_style;
@@ -1007,27 +996,44 @@ void Ds9ImportExport::ImportPointStyleParameters(
     }
 }
 
-void Ds9ImportExport::ImportFontStyleParameters(std::string& font_properties, CARTA::AnnotationStyle* annotation_style) {
+void Ds9ImportExport::ImportFontStyleParameters(
+    std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style) {
     // DS9 combines parameters in one string
-    std::vector<std::string> params;
-    SplitString(font_properties, ' ', params);
+    std::string font_settings;
 
-    if (params.size() == 4) { // font, size, weight, slant
-        annotation_style->set_font(params[0]);
-        int fontsize;
-        if (StringToInt(params[1], fontsize)) {
-            annotation_style->set_font_size(fontsize);
-        }
-        bool is_bold = (params[2] == "bold");
-        bool is_italic = (params[3] == "italic");
-        if (is_bold && is_italic) {
-            annotation_style->set_font_style("bold_italic");
-        } else if (is_bold) {
-            annotation_style->set_font_style("bold");
-        } else if (is_italic) {
-            annotation_style->set_font_style("italic");
-        } else {
-            annotation_style->set_font_style("normal");
+    if (properties.find("font") != properties.end()) {
+        font_settings = properties["font"];
+    } else if (_global_properties.find("font") != _global_properties.end()) {
+        font_settings = _global_properties["font"];
+    }
+
+    if (!font_settings.empty()) {
+        std::vector<std::string> font_parameters;
+        SplitString(font_settings, ' ', font_parameters);
+        if (font_parameters.size() == 4) {
+            // font
+            auto font = font_parameters[0];
+            font[0] = std::toupper(font[0]);
+            annotation_style->set_font(font);
+            // size
+            int fontsize(0);
+            if (StringToInt(font_parameters[1], fontsize)) {
+                annotation_style->set_font_size(fontsize);
+            }
+            // weight
+            bool is_bold = (font_parameters[2] == "bold");
+            // slant
+            bool is_italic = (font_parameters[3] == "italic");
+
+            if (is_bold && is_italic) {
+                annotation_style->set_font_style("bold_italic");
+            } else if (is_bold) {
+                annotation_style->set_font_style("bold");
+            } else if (is_italic) {
+                annotation_style->set_font_style("italic");
+            } else {
+                annotation_style->set_font_style("normal");
+            }
         }
     }
 }

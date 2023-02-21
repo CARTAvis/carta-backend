@@ -45,7 +45,7 @@ protected:
         const casacore::Quantity& rotation, const CARTA::RegionStyle& style) override;
 
 private:
-    // Default global properties
+    // Default global properties for export
     void InitGlobalProperties();
 
     // Parse each file line and set coord sys or region
@@ -72,7 +72,7 @@ private:
         std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style);
     CARTA::RegionStyle ImportStyleParameters(CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties);
     void ImportPointStyleParameters(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
-    void ImportFontStyleParameters(std::string& font_properties, CARTA::AnnotationStyle* annotation_style);
+    void ImportFontStyleParameters(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
 
     // Convert DS9 syntax -> CASA to read casacore::Quantity
     bool ParamToQuantity(std::string& param, bool is_angle, bool is_xy, std::string& region_name, casacore::Quantity& param_quantity);
@@ -100,7 +100,7 @@ private:
     bool _pixel_coord;
 
     // Default properties
-    std::map<std::string, std::string> _global_properties;
+    std::unordered_map<std::string, std::string> _global_properties;
 };
 
 } // namespace carta
