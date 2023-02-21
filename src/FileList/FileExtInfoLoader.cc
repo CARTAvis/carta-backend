@@ -1503,14 +1503,18 @@ bool FileExtInfoLoader::GetFITSHeader(std::shared_ptr<casacore::ImageInterface<f
     GetSpectralCoordPreferences(image.get(), prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
 
     casacore::String origin_string;
-    bool stokes_last(false), degenerate_last(false), verbose(false), allow_append(false), history(true);
+    bool stokes_last(false), degenerate_last(false), verbose(true), allow_append(false), history(true);
     bool prim_head(hdu == "0");
     int bit_pix(-32);
     float min_pix(1.0), max_pix(-1.0);
 
-    if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *(image.get()), prefer_velocity, optical_velocity, bit_pix,
-            min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head, allow_append,
-            origin_string, history)) {
+    bool ok = casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *(image.get()), prefer_velocity, optical_velocity, bit_pix,
+        min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head, allow_append, origin_string,
+        history);
+
+    // ok can be false when unrecognized keyword or have to shorten keyword/value, but keyword list is still set.
+    // Return false only if no keyword list set.
+    if (!ok && fhi.kw.isempty()) {
         return false;
     }
 
