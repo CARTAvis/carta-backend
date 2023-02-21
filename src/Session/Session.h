@@ -105,10 +105,11 @@ public:
     bool OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
     void OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id);
     void OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc);
-    void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
     void OnFittingRequest(const CARTA::FittingRequest& fitting_request, uint32_t request_id);
     void OnStopFitting(const CARTA::StopFitting& stop_fitting);
     void OnSetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message);
+    void OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview);
+    void OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview);
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -263,6 +264,7 @@ protected:
     void SendSpatialProfileDataByRegionId(int region_id);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
+    bool SendPvPreview(int file_id, int region_id);
     void UpdateImageData(int file_id, bool send_image_histogram, bool z_changed, bool stokes_changed);
     void UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed);
     bool SendVectorFieldData(int file_id);

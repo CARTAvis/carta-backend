@@ -1323,13 +1323,37 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
             };
 
+            bool is_preview(pv_request.has_preview_settings());
             auto& frame = _frames.at(file_id);
             GeneratedImage pv_image;
 
-            if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
-                if (pv_response.has_open_file_ack()) {
-                    auto* open_file_ack = pv_response.mutable_open_file_ack();
-                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+            if (is_preview) {
+                std::vector<float> preview_image_data;
+                if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image, preview_image_data)) {
+                    // Fill response PvPreviewImage
+                    std::shared_ptr<FileLoader> loader(FileLoader::GetLoader(pv_image.image, pv_image.name));
+                    if (loader) {
+                        FileExtInfoLoader ext_info_loader(loader);
+                        CARTA::FileInfoExtended extended_info;
+                        std::string message;
+                        if (ext_info_loader.FillFileExtInfo(extended_info, pv_image.name, "", message)) {
+                            auto* preview_image = pv_response.mutable_preview_image();
+                            *preview_image->mutable_file_info_extended() = extended_info;
+                            preview_image->set_raw_values_fp32(preview_image_data.data(), preview_image_data.size() * sizeof(float));
+                        } else {
+                            pv_response.set_success(false);
+                            pv_response.set_message("Failed to load PV preview image headers.");
+                        }
+                    } else {
+                        pv_response.set_success(false);
+                        pv_response.set_message("Failed to load PV preview image.");
+                    }
+                } else {
+                    if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
+                        // Fill response OpenFileAck
+                        auto* open_file_ack = pv_response.mutable_open_file_ack();
+                        OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
+                    }
                 }
             }
             spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed().ms());
@@ -1350,9 +1374,16 @@ void Session::OnStopPvCalc(const CARTA::StopPvCalc& stop_pv_calc) {
 }
 
 void Session::OnStopPvPreview(const CARTA::StopPvPreview& stop_pv_preview) {
-    int file_id(stop_pv_preview.file_id());
+    int preview_id(stop_pv_preview.preview_id());
     if (_region_handler) {
-        _region_handler->StopPvPreview(file_id);
+        _region_handler->StopPvPreview(preview_id);
+    }
+}
+
+void Session::OnClosePvPreview(const CARTA::ClosePvPreview& close_pv_preview) {
+    int preview_id(close_pv_preview.preview_id());
+    if (_region_handler) {
+        _region_handler->ClosePvPreview(preview_id);
     }
 }
 
@@ -1714,6 +1745,17 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
+bool Session::SendPvPreview(int file_id, int region_id) {
+    // return true if data sent
+    auto pv_preview_callback = [&](CARTA::PvResponse pv_response) {
+        if (pv_response.has_preview_image()) {
+            SendFileEvent(file_id, CARTA::EventType::PV_RESPONSE, 0, pv_response);
+        }
+    };
+
+    return _region_handler->UpdatePvPreview(file_id, region_id, pv_preview_callback);
+}
+
 bool Session::SendContourData(int file_id, bool ignore_empty) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
@@ -1824,6 +1866,8 @@ void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool 
         SendSpectralProfileData(file_id, region_id, stokes_changed);
         SendRegionStatsData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
+        // Only update preview when PV cut changes, not when stokes changes
+        SendPvPreview(file_id, region_id);
     }
 }
 
