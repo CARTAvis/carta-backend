@@ -1195,15 +1195,15 @@ def image_fitting() {
                      ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_BAD.test.ts # test 1 of 5"
+                sh "CI=true npm test src/test/IMAGE_FITTING_CASA.test.ts # test 1 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_CASA.test.ts # test 2 of 5"
+                sh "CI=true npm test src/test/IMAGE_FITTING_FITS.test.ts # test 2 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_FITS.test.ts # test 3 of 5"
+                sh "CI=true npm test src/test/IMAGE_FITTING_HDF5.test.ts # test 3 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_HDF5.test.ts # test 4 of 5"
+                sh "CI=true npm test src/test/IMAGE_FITTING_CANCEL.test.ts # test 4 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/IMAGE_FITTING_CANCEL.test.ts # test 5 of 5"
+                sh "CI=true npm test src/test/IMAGE_FITTING_BAD.test.ts # test 5 of 5"
                 sh "pgrep carta_backend"
 
             }
