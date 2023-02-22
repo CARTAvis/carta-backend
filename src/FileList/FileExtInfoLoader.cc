@@ -200,7 +200,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 int spectral_axis, stokes_axis, depth_axis;
                 if (_loader->FindCoordinateAxes(
                         image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, message)) {
-                    auto axes_names = _loader->GetCoordinateSystem()->worldAxisNames();
+                    casacore::Vector<casacore::String> axes_names;
                     AddShapeEntries(
                         extended_info, image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
@@ -712,6 +712,30 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
     axes_numbers_info->set_spectral(spectral_axis + 1);
     axes_numbers_info->set_stokes(stokes_axis + 1);
     axes_numbers_info->set_depth(depth_axis + 1);
+
+    if (axes_names.empty()) {
+        // Set axis names with respect to axis numbers 1~4
+        axes_names.resize(4, "NA");
+        for (int i = 0; i < extended_info.header_entries_size(); ++i) {
+            auto header_entry = extended_info.header_entries(i);
+            auto entry_name = header_entry.name();
+            if (entry_name.find("CTYPE") == 0) {
+                auto entry_value = header_entry.value();
+                if (!entry_value.empty()) {
+                    entry_value = entry_value.substr(0, entry_value.find("-", 0));
+                    if (entry_name.back() == '1') {
+                        axes_names[0] = entry_value;
+                    } else if (entry_name.back() == '2') {
+                        axes_names[1] = entry_value;
+                    } else if (entry_name.back() == '3') {
+                        axes_names[2] = entry_value;
+                    } else if (entry_name.back() == '4') {
+                        axes_names[3] = entry_value;
+                    }
+                }
+            }
+        }
+    }
 
     // In case if the stokes axis name is not available from the header info
     if (stokes_axis > -1 && axes_names[stokes_axis] == "NA") {
