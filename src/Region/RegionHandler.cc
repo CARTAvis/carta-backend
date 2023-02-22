@@ -895,16 +895,32 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
 bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
+    std::vector<float> preview_data;
+    return CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image, preview_data);
+}
+
+bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame,
+    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image,
+    std::vector<float>& preview_data) {
     // Generate PV image by approximating line as box regions and getting spectral profile for each.
+    // Sends updates via progress callback.
+    // Return parameters PvResponse (success, cancel, optional error message) and GeneratedImage.
     // Returns whether PV image was generated.
     pv_response.set_success(false);
     pv_response.set_cancel(false);
+
+    // Check if image has spectral axis before unpacking request
+    if (frame->SpectralAxis() < 0) {
+        pv_response.set_message("No spectral axis for generating PV image.");
+        return false;
+    }
 
     int region_id(pv_request.region_id());
     int file_id(pv_request.file_id());
     int width(pv_request.width());
     bool reverse(pv_request.reverse());
     bool keep(pv_request.keep());
+    bool is_preview(pv_request.has_preview_settings());
 
     AxisRange z_range;
     if (pv_request.has_spectral_range()) {
@@ -912,80 +928,103 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     } else {
         z_range = AxisRange(0, frame->Depth() - 1); // all channels
     }
+    int start_chan(z_range.from); // Used for reference value in returned PV image
 
     // Checks for valid request:
     // 1. Region is set
     if (!RegionSet(region_id)) {
-        pv_response.set_message("PV image generator requested for invalid region.");
+        pv_response.set_message("PV image requested for invalid region.");
         return false;
     }
 
-    // 2. Region is line type but not polyline
-    if (!IsLineRegion(region_id)) {
-        pv_response.set_message("Region type not supported for PV image generator.");
+    // 2. Region is line
+    if (GetRegion(region_id)->GetRegionState().type != CARTA::RegionType::LINE) {
+        pv_response.set_message("Region type not supported for PV cut.");
         return false;
     }
 
-    if (GetRegion(region_id)->GetRegionState().type == CARTA::RegionType::POLYLINE) {
-        pv_response.set_message("Region type POLYLINE not supported for PV image generator.");
-        return false;
-    }
-
-    // 3. Image has spectral axis
-    if (frame->SpectralAxis() < 0) {
-        pv_response.set_message("No spectral axis for generating PV image.");
-        return false;
-    }
-
-    // Reset stop flag
-    _stop_pv[file_id] = false;
-
-    if (!FrameSet(file_id)) {
-        _frames[file_id] = frame;
-    }
-
-    bool per_z(true), pv_success(false), cancelled(false);
-    int stokes_index = frame->CurrentStokes();
-    double increment(0.0);           // Increment between box centers returned in arcsec
-    casacore::Matrix<float> pv_data; // Spectral profiles for each box region: shape=[num_regions, num_channels]
-    std::string message;
-
-    if (GetLineProfiles(file_id, region_id, width, z_range, per_z, stokes_index, "", progress_callback, increment, pv_data, cancelled,
-            message, reverse)) {
-        if (!_stop_pv[file_id]) {
-            // Set PV image name from image filename and optional index suffix (_pv1, _pv2, etc) to keep previous PV image
-            auto input_filename = frame->GetFileName();
-
-            int name_index(0);
-            if (keep && (_pv_name_index.find(file_id) != _pv_name_index.end())) {
-                name_index = ++_pv_name_index[file_id];
-            }
-
-            _pv_name_index[file_id] = name_index;
-
-            // Use PV generator to create PV image
-            PvGenerator pv_generator(file_id, input_filename, name_index);
-
-            auto input_image = frame->GetImage();
-            int offset_axis = reverse ? 1 : 0;
-            casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(offset_axis));
-            double spectral_worldval, spectral_pixval(z_range.from); // reference value in PV image
-            input_image->coordinates().spectralCoordinate().toWorld(spectral_worldval, spectral_pixval);
-            pv_success = pv_generator.GetPvImage(
-                input_image, frame->CoordinateSystem(), pv_data, pv_increment, spectral_worldval, stokes_index, reverse, pv_image, message);
-
-            frame->CloseCachedImage(input_filename);
+    // 3. Preview region (if set) is closed
+    if (is_preview) {
+        int preview_region_id = pv_request.preview_settings().region_id();
+        if (preview_region_id > 0 && !IsClosedRegion(preview_region_id)) {
+            pv_response.set_message("PV preview requested for invalid preview region.");
+            return false;
         }
     }
 
-    if (cancelled || _stop_pv[file_id]) {
+    int frame_id(file_id);
+    // Set up preview image
+    if (is_preview) {
+        frame_id = pv_request.preview_settings().preview_id();
+        // TODO here:
+        // 1. Update or create preview subimage (set preview settings and/or pv cut info), with progress
+        // --> check for stop flag during setup!
+        // 2. Get preview loader/frame for subimage (close input frame, no longer needed)
+        // _frames[frame_id] = preview_frame;
+        // frame->CloseCachedImage(frame->GetFileName());
+
+        // TODO: is using preview id reassigning image frame?
+        _frames[frame_id] = frame; // using full image initially...!
+        _stop_preview[frame_id] = false;
+    } else {
+        if (!FrameSet(frame_id)) {
+            _frames[frame_id] = frame;
+        }
+        _stop_pv[frame_id] = false;
+    }
+
+    // Common parameters for PV and preview
+    bool per_z(true), pv_success(false), cancelled(false);
+    int stokes_index = frame->CurrentStokes();
+    double increment(0.0);             // Increment between box centers
+    int offset_axis = reverse ? 1 : 0; // Index into PV data shape
+    std::string message;
+
+    // Set pv data from line profiles
+    // TODO: check for stop_preview
+    casacore::Matrix<float> pv_data;
+    if (GetLineProfiles(frame_id, region_id, width, z_range, per_z, stokes_index, "", progress_callback, pv_data, increment, cancelled,
+            message, reverse)) {
+        // TODO: pass increment to GetLineProfiles as Quantity not double
+        PvGenerator pv_generator;
+        auto pv_shape = pv_data.shape();
+        casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(offset_axis));
+
+        if (is_preview) {
+            // Create GeneratedImage in PvGenerator for image headers only, no data
+            preview_data = pv_data.tovector();
+            casacore::Matrix<float> no_data;
+            pv_success =
+                pv_generator.GetPvImage(frame, no_data, pv_shape, pv_increment, start_chan, stokes_index, reverse, pv_image, message);
+            cancelled |= _stop_preview[frame_id];
+            _stop_preview[frame_id] = false;
+        } else {
+            // Set PV index suffix (_pv1, _pv2, etc) to keep previously opened PV image
+            int name_index(0);
+            if (keep && (_pv_name_index.find(frame_id) != _pv_name_index.end())) {
+                name_index = ++_pv_name_index[frame_id];
+            }
+            _pv_name_index[frame_id] = name_index;
+            auto input_filename = frame->GetFileName();
+
+            // Create GeneratedImage with id and name in PvGenerator
+            pv_generator.SetFileIdName(frame_id, name_index, input_filename);
+            pv_success =
+                pv_generator.GetPvImage(frame, pv_data, pv_shape, pv_increment, start_chan, stokes_index, reverse, pv_image, message);
+            cancelled &= _stop_pv[frame_id];
+
+            // Cleanup
+            _stop_pv.erase(frame_id);
+            frame->CloseCachedImage(frame->GetFileName()); // on disk
+        }
+    }
+
+    if (cancelled) {
         pv_success = false;
         message = "PV image generator cancelled.";
         cancelled = true;
         spdlog::debug(message);
     }
-
-    _stop_pv.erase(file_id);
 
     // Complete message
     pv_response.set_success(pv_success);
@@ -995,14 +1034,23 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     return pv_success;
 }
 
-void RegionHandler::StopPvCalc(int file_id) {
-    _stop_pv[file_id] = true;
+void RegionHandler::StopPvCalc(int file_id, bool is_preview) {
+    if (is_preview) {
+        _stop_preview[file_id] = true;
+        // TODO: set stop flag in preview subimage
+    } else {
+        _stop_pv[file_id] = true;
+    }
 
-    // Stop spectral profile in progress - clear requirements. Returns if region ID not set.
+    // Stop any spectral profiles in progress by clearing requirements for temporary region.
     if (FrameSet(file_id)) {
         std::vector<CARTA::SetSpectralRequirements_SpectralConfig> no_profiles;
         SetSpectralRequirements(TEMP_REGION_ID, file_id, _frames.at(file_id), no_profiles);
     }
+}
+
+void RegionHandler::StopPvPreview(int preview_id) {
+    StopPvCalc(preview_id, true);
 }
 
 bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response,
@@ -1834,7 +1882,7 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
     casacore::Matrix<float> line_profile;
     std::string message;
 
-    if (GetLineProfiles(file_id, region_id, width, z_range, per_z, stokes_index, coordinate, progress_callback, increment, line_profile,
+    if (GetLineProfiles(file_id, region_id, width, z_range, per_z, stokes_index, coordinate, progress_callback, line_profile, increment,
             cancelled, message)) {
         // Check for cancel
         if (!HasSpatialRequirements(region_id, file_id, coordinate, width)) {
@@ -1877,7 +1925,7 @@ bool RegionHandler::IsLineRegion(int region_id) {
 bool RegionHandler::IsClosedRegion(int region_id) {
     if (RegionSet(region_id)) {
         auto type = GetRegion(region_id)->GetRegionState().type;
-        return (type != CARTA::RegionType::LINE) && (type != CARTA::RegionType::POLYLINE) && (type != CARTA::RegionType::POINT);
+        return (type == CARTA::RegionType::RECTANGLE) || (type == CARTA::RegionType::ELLIPSE) || (type == CARTA::RegionType::POLYGON);
     }
     return false;
 }
@@ -1909,7 +1957,7 @@ std::vector<int> RegionHandler::GetSpatialReqFilesForRegion(int region_id) {
 }
 
 bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, bool per_z, int stokes_index,
-    const std::string& coordinate, std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles,
+    const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment,
     bool& cancelled, std::string& message, bool reverse) {
     // Generate box regions to approximate a line with a width (pixels), and get mean of each box (per z else current z).
     // Input parameters: file_id, region_id, width, z_range. z_range must be valid channel numbers, not CURRENT_Z or ALL_Z.
@@ -1931,7 +1979,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     auto reference_csys = region->CoordinateSystem();
 
     if (per_z && (region_state.type == CARTA::RegionType::POLYLINE)) {
-        message = "Polyline region not supported for line spectral profiles.";
+        message = "Polyline region not supported for PV images.";
         return false;
     }
 

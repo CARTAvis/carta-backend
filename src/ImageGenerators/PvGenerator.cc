@@ -6,50 +6,52 @@
 
 #include "PvGenerator.h"
 
-#include <chrono>
-
-#include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
-#include <casacore/lattices/LRegions/LCExtension.h>
-#include <casacore/lattices/LRegions/LCIntersection.h>
-#include <casacore/lattices/LRegions/LCPolygon.h>
-#include <casacore/lattices/LRegions/LCRegionFixed.h>
 #include <casacore/measures/Measures/Stokes.h>
-
-#include "../ImageStats/StatsCalculator.h"
-#include "../Logger/Logger.h"
-#include "Util/FileSystem.h"
-#include "Util/Image.h"
 
 using namespace carta;
 
-PvGenerator::PvGenerator(int file_id, const std::string& filename, int index = 0) {
+PvGenerator::PvGenerator() : _file_id(0), _name("") {}
+
+void PvGenerator::SetFileIdName(int file_id, int index, const std::string& filename) {
+    // Optional (not for preview) file id and name for PV image
     _file_id = ((file_id + 1) * PV_ID_MULTIPLIER) - index;
-    _name = GetPvFilename(filename, index);
+    SetPvImageName(filename, index);
 }
 
-bool PvGenerator::GetPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image,
-    std::shared_ptr<casacore::CoordinateSystem> input_csys, const casacore::Matrix<float>& pv_data,
-    const casacore::Quantity& offset_increment, double spectral_refval, int stokes, bool reverse, GeneratedImage& pv_image,
-    std::string& message) {
-    // Create PV image with input data. Returns PvResponse and GeneratedImage (generated file_id, pv filename, image).
-    // Create casacore::TempImage
-    casacore::IPosition pv_shape = pv_data.shape();
-    if (!SetupPvImage(input_image, input_csys, pv_shape, stokes, offset_increment, spectral_refval, reverse, message)) {
+bool PvGenerator::GetPvImage(std::shared_ptr<Frame>& frame, const casacore::Matrix<float>& pv_data, casacore::IPosition& pv_shape,
+    const casacore::Quantity& offset_increment, int start_chan, int stokes, bool reverse, GeneratedImage& pv_image, std::string& message) {
+    // Create PV image with input data.
+    auto input_csys = frame->CoordinateSystem();
+    if (!input_csys->hasSpectralAxis()) {
+        // This should be checked before generating pv data.
+        message = "Cannot generate PV image with no valid spectral axis.";
         return false;
     }
 
-    _image->put(pv_data);
-    _image->flush();
+    // Convert spectral reference pixel value to world coordinates
+    double spectral_refval, spectral_pixval(start_chan);
+    input_csys->spectralCoordinate().toWorld(spectral_refval, spectral_pixval);
+
+    // Create casacore::TempImage coordinate system and other image info
+    auto image = SetupPvImage(frame->GetImage(), input_csys, pv_shape, stokes, offset_increment, spectral_refval, reverse, message);
+    if (!image) {
+        message = "PV image setup failed.";
+        return false;
+    }
+
+    // Add data to TempImage
+    image->put(pv_data);
+    image->flush();
 
     // Set returned image
-    pv_image = GetGeneratedImage();
+    pv_image = GeneratedImage(_file_id, _name, image);
     return true;
 }
 
-std::string PvGenerator::GetPvFilename(const std::string& filename, int index) {
+void PvGenerator::SetPvImageName(const std::string& filename, int index) {
     // Index appended when multiple PV images shown for one input image
     // image.ext -> image_pv[index].ext
     fs::path input_filepath(filename);
@@ -57,30 +59,25 @@ std::string PvGenerator::GetPvFilename(const std::string& filename, int index) {
     // Assemble new filename
     auto pv_path = input_filepath.stem();
     pv_path += "_pv";
-
     if (index > 0) {
         pv_path += std::to_string(index);
     }
-
     pv_path += input_filepath.extension();
-
-    return pv_path.string();
+    _name = pv_path.string();
 }
 
-bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image,
-    std::shared_ptr<casacore::CoordinateSystem> input_csys, casacore::IPosition& pv_shape, int stokes,
-    const casacore::Quantity& offset_increment, double spectral_refval, bool reverse, std::string& message) {
-    // Create coordinate system and temp image _image
-    if (!input_csys->hasSpectralAxis()) {
-        message = "Cannot generate PV image with no valid spectral axis.";
-        return false;
-    }
-
+std::shared_ptr<casacore::ImageInterface<casacore::Float>> PvGenerator::SetupPvImage(
+    std::shared_ptr<casacore::ImageInterface<float>> input_image, std::shared_ptr<casacore::CoordinateSystem> input_csys,
+    casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse,
+    std::string& message) {
+    // Create temporary image (no data) using input image.  Return casacore::TempImage.
     casacore::CoordinateSystem pv_csys = GetPvCoordinateSystem(input_csys, pv_shape, stokes, offset_increment, spectral_refval, reverse);
-    _image.reset(new casacore::TempImage<casacore::Float>(casacore::TiledShape(pv_shape), pv_csys));
-    _image->setUnits(input_image->units());
-    _image->setMiscInfo(input_image->miscInfo());
 
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> image(
+        new casacore::TempImage<casacore::Float>(casacore::TiledShape(pv_shape), pv_csys));
+
+    image->setUnits(input_image->units());
+    image->setMiscInfo(input_image->miscInfo());
     auto image_info = input_image->imageInfo();
     if (image_info.hasMultipleBeams()) {
         // Use first beam, per imageanalysis ImageCollapser
@@ -88,9 +85,9 @@ bool PvGenerator::SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> 
         image_info.removeRestoringBeam();
         image_info.setRestoringBeam(beam);
     }
-    _image->setImageInfo(image_info);
+    image->setImageInfo(image_info);
 
-    return true;
+    return image;
 }
 
 casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<casacore::CoordinateSystem> input_csys,
@@ -142,11 +139,4 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<ca
     pv_csys.setObsInfo(input_csys->obsInfo());
 
     return pv_csys;
-}
-
-GeneratedImage PvGenerator::GetGeneratedImage() {
-    // Set GeneratedImage struct
-    GeneratedImage pv_image(_file_id, _name, _image);
-    _image.reset(); // release ownership
-    return pv_image;
 }

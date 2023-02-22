@@ -563,9 +563,10 @@ CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t 
     return message;
 }
 
-CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress) {
+CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress, int32_t preview_id) {
     CARTA::PvProgress message;
     message.set_file_id(file_id);
+    message.set_preview_id(preview_id);
     message.set_progress(progress);
     return message;
 }

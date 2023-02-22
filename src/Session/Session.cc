@@ -1317,17 +1317,18 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             pv_response.set_message("Invalid region id.");
         } else {
             Timer t;
-            // Set pv progress callback function
-            auto progress_callback = [&](float progress) {
-                auto pv_progress = Message::PvProgress(file_id, progress);
-                SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
-            };
-
             bool is_preview(pv_request.has_preview_settings());
             auto& frame = _frames.at(file_id);
             GeneratedImage pv_image;
 
             if (is_preview) {
+                // Set pv progress callback function
+                auto preview_id = pv_request.preview_settings().preview_id();
+                auto progress_callback = [&](float progress) {
+                    auto pv_progress = Message::PvProgress(file_id, progress, preview_id);
+                    SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+                };
+
                 std::vector<float> preview_image_data;
                 if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image, preview_image_data)) {
                     // Fill response PvPreviewImage
@@ -1338,6 +1339,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                         std::string message;
                         if (ext_info_loader.FillFileExtInfo(extended_info, pv_image.name, "", message)) {
                             auto* preview_image = pv_response.mutable_preview_image();
+                            preview_image->set_preview_id(preview_id);
                             *preview_image->mutable_file_info_extended() = extended_info;
                             preview_image->set_raw_values_fp32(preview_image_data.data(), preview_image_data.size() * sizeof(float));
                         } else {
@@ -1348,12 +1350,18 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                         pv_response.set_success(false);
                         pv_response.set_message("Failed to load PV preview image.");
                     }
-                } else {
-                    if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
-                        // Fill response OpenFileAck
-                        auto* open_file_ack = pv_response.mutable_open_file_ack();
-                        OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
-                    }
+                }
+            } else {
+                // Set pv progress callback function
+                auto progress_callback = [&](float progress) {
+                    auto pv_progress = Message::PvProgress(file_id, progress);
+                    SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
+                };
+
+                if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
+                    // Fill response OpenFileAck
+                    auto* open_file_ack = pv_response.mutable_open_file_ack();
+                    OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
                 }
             }
             spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed().ms());

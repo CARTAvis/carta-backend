@@ -90,7 +90,16 @@ public:
     // Generate PV image
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
-    void StopPvCalc(int file_id);
+    bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+        CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data); // return preview data
+    bool UpdatePvPreview(int file_id, int region_id, std::function<void(CARTA::PvResponse pv_response)> cb) {
+        return false; // TODO
+    }
+    void StopPvCalc(int file_id, bool is_preview = false);
+    void StopPvPreview(int preview_id);
+    inline void ClosePvPreview(int preview_id) {
+        // TODO: release resources (frame if not shared, stop flag) for this preview
+    }
 
     // Image fitting
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame,
@@ -137,7 +146,7 @@ private:
     // Generate box regions to approximate a line with a width, and get mean of each box for z-range.
     // Used for pv generator and spatial profiles.
     bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, bool per_z, int stokes_index,
-        const std::string& coordinate, std::function<void(float)>& progress_callback, double& increment, casacore::Matrix<float>& profiles,
+        const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment,
         bool& cancelled, std::string& message, bool reverse = false);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
@@ -205,8 +214,9 @@ private:
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
         CARTA::StatsType::Extrema, CARTA::StatsType::NumPixels};
 
-    // PV generator: key is file_id
+    // PV generator/preview: stop flag key is file_id/preview_id. Index only applies to PV generator.
     std::unordered_map<int, bool> _stop_pv;
+    std::unordered_map<int, bool> _stop_preview;
     std::unordered_map<int, int> _pv_name_index;
 
     // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate

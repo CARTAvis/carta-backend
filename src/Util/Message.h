@@ -130,7 +130,7 @@ public:
     static CARTA::MomentProgress MomentProgress(int32_t file_id, float progress);
     static CARTA::PvRequest PvRequest(
         int32_t file_id, int32_t region_id, int32_t width, int z_min = -1, int32_t z_max = -1, bool reverse = false, bool keep = false);
-    static CARTA::PvProgress PvProgress(int32_t file_id, float progress);
+    static CARTA::PvProgress PvProgress(int32_t file_id, float progress, int32_t preview_id = 0);
     static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(
         int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress);
