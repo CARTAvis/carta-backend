@@ -1325,6 +1325,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 // Set pv progress callback function
                 auto preview_id = pv_request.preview_settings().preview_id();
                 auto progress_callback = [&](float progress) {
+                    spdlog::debug("Progress file id={} progress={} preview id={}", file_id, progress, preview_id);
                     auto pv_progress = Message::PvProgress(file_id, progress, preview_id);
                     SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
                 };
@@ -1338,10 +1339,19 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                         CARTA::FileInfoExtended extended_info;
                         std::string message;
                         if (ext_info_loader.FillFileExtInfo(extended_info, pv_image.name, "", message)) {
+                            spdlog::debug("PV response success={} message={} cancel={}", pv_response.success(), pv_response.message(),
+                                pv_response.cancel());
                             auto* preview_image = pv_response.mutable_preview_image();
                             preview_image->set_preview_id(preview_id);
                             *preview_image->mutable_file_info_extended() = extended_info;
                             preview_image->set_raw_values_fp32(preview_image_data.data(), preview_image_data.size() * sizeof(float));
+
+                            if (pv_response.has_preview_image()) {
+                                spdlog::debug("Response preview image id={}", pv_response.preview_image().preview_id());
+                                spdlog::debug("Response preview image file info nheaders={]",
+                                    pv_response.preview_image().file_info_extended().header_entries_size());
+                                spdlog::debug("Response preview image data size={}", preview_image_data.size());
+                            }
                         } else {
                             pv_response.set_success(false);
                             pv_response.set_message("Failed to load PV preview image headers.");
