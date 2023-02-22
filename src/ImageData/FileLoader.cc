@@ -203,8 +203,18 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
         return false;
     }
 
-    // Determine axes [0, 1] will be rendered
-    render_axes.assign({0, 1});
+    // Get spectral and stokes axis
+    spectral_axis = _coord_sys->spectralAxisNumber();
+    stokes_axis = _coord_sys->polarizationAxisNumber();
+
+    // Set render axes are the first two axes that are not stokes
+    render_axes.resize(0);
+    for (int i = 0; i < _num_dims && render_axes.size() < 2; ++i) {
+        if (i != stokes_axis) {
+            render_axes.push_back(i);
+        }
+    }
+
     _width = shape(render_axes[0]);
     _height = shape(render_axes[1]);
     _image_plane_size = _width * _height;
@@ -220,10 +230,6 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
             direction_axes[i] = tmp_axes[i];
         }
     }
-
-    // Spectral and stokes axis
-    spectral_axis = _coord_sys->spectralAxisNumber();
-    stokes_axis = _coord_sys->polarizationAxisNumber();
 
     // 2D image
     if (_num_dims == 2) {
