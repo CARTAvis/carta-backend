@@ -955,7 +955,8 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     int frame_id(file_id);
     // Set up preview image
     if (is_preview) {
-        frame_id = pv_request.preview_settings().preview_id();
+        // Do not overwrite frame for existing file_id
+        frame_id = TEMP_FILE_ID + pv_request.preview_settings().preview_id();
         // TODO here:
         // 1. Update or create preview subimage (set preview settings and/or pv cut info), with progress
         // --> check for stop flag during setup!
