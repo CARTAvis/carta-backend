@@ -843,8 +843,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             entry->set_value(format_coords);
             entry->set_entry_type(CARTA::EntryType::STRING);
 
-            bool coord0IsDir(coord0.isConform("deg")), coord1IsDir(coord1.isConform("deg"));
-            if (coord0IsDir || coord1IsDir) {
+            bool is_coord0_dir(coord0.isConform("deg")), is_coord1_dir(coord1.isConform("deg"));
+            if (is_coord0_dir || is_coord1_dir) {
                 // Reference coord(s) converted to deg
                 std::string ref_coords_deg = ConvertCoordsToDeg(coord0, coord1);
                 // Add ref coords in deg
@@ -1305,19 +1305,22 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
         return fmt::format("{:.6g} {}", val, unit);
     }
 
-    casacore::Quantity quant1(val, unit);
+    casacore::Quantity quant1(val, unit), pi2(360, "deg");
+    if (format == casacore::MVAngle::ANGLE && quant1.get("deg").getValue() < 0) {
+        quant1 += pi2;
+    }
     casacore::MVAngle mva(quant1);
     return mva.string(format, 10);
 }
 
 std::string FileExtInfoLoader::ConvertCoordsToDeg(const casacore::Quantity& coord0, const casacore::Quantity& coord1) {
     // If possible, convert quantities to degrees. Return formatted string
-    casacore::Quantity coord0_deg(coord0), coord1_deg(coord1);
+    casacore::Quantity coord0_deg(coord0), coord1_deg(coord1), pi2(360, "deg");
     if (coord0.isConform("deg")) {
-        coord0_deg = coord0.get("deg");
+        coord0_deg = coord0.get("deg").getValue() < 0 ? (coord0 + pi2).get("deg") : coord0.get("deg");
     }
     if (coord1.isConform("deg")) {
-        coord1_deg = coord1.get("deg");
+        coord1_deg = coord1.get("deg").getValue() < 0 ? (coord1 + pi2).get("deg") : coord1.get("deg");
     }
 
     return fmt::format("[{}, {}]", coord0_deg, coord1_deg);
