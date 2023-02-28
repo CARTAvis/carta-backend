@@ -715,7 +715,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     if (axes_names.empty()) {
         // Set axis names with respect to axis numbers 1~4
-        axes_names.resize(4, "NA");
+        axes_names.assign(casacore::Vector<casacore::String>(4, "NA"));
         for (int i = 0; i < extended_info.header_entries_size(); ++i) {
             auto header_entry = extended_info.header_entries(i);
             auto entry_name = header_entry.name();
