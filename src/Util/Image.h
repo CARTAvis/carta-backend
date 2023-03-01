@@ -77,6 +77,12 @@ struct AxisRange {
         from = from_;
         to = to_;
     }
+    bool operator==(const AxisRange& rhs) const {
+        if ((from == rhs.from) || (to == rhs.to)) {
+            return true;
+        }
+        return false;
+    }
     bool operator!=(const AxisRange& rhs) const {
         if ((from != rhs.from) || (to != rhs.to)) {
             return true;

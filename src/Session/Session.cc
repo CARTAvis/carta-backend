@@ -579,11 +579,12 @@ bool Session::OnOpenFile(
     int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image, CARTA::OpenFileAck* open_file_ack) {
     // Response message for opening a file
     open_file_ack->set_file_id(file_id);
-    string err_message;
-    std::shared_ptr<FileLoader> image_loader;
 
     CARTA::FileInfoExtended file_info_extended;
+    string err_message;
+    std::shared_ptr<FileLoader> image_loader;
     bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message, image_loader);
+
     bool success(false);
 
     if (info_loaded) {
@@ -1325,40 +1326,32 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                 // Set pv progress callback function
                 auto preview_id = pv_request.preview_settings().preview_id();
                 auto progress_callback = [&](float progress) {
-                    spdlog::debug("Progress file id={} progress={} preview id={}", file_id, progress, preview_id);
+                    // TODO: remove debug logging
+                    spdlog::info("PV preview progress: file id={} progress={} preview id={}", file_id, progress, preview_id);
+
                     auto pv_progress = Message::PvProgress(file_id, progress, preview_id);
                     SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
                 };
 
                 std::vector<float> preview_image_data;
                 if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image, preview_image_data)) {
-                    // Fill response PvPreviewImage
-                    std::shared_ptr<FileLoader> loader(FileLoader::GetLoader(pv_image.image, pv_image.name));
-                    if (loader) {
-                        FileExtInfoLoader ext_info_loader(loader);
-                        CARTA::FileInfoExtended extended_info;
-                        std::string message;
-                        if (ext_info_loader.FillFileExtInfo(extended_info, pv_image.name, "", message)) {
-                            spdlog::debug("PV response success={} message={} cancel={}", pv_response.success(), pv_response.message(),
-                                pv_response.cancel());
-                            auto* preview_image = pv_response.mutable_preview_image();
-                            preview_image->set_preview_id(preview_id);
-                            *preview_image->mutable_file_info_extended() = extended_info;
-                            preview_image->set_raw_values_fp32(preview_image_data.data(), preview_image_data.size() * sizeof(float));
+                    // Fill response PvPreviewImage with extended file info, preview data
+                    CARTA::FileInfoExtended file_info_extended;
+                    string err_message;
+                    std::shared_ptr<FileLoader> image_loader;
+                    if (FillExtendedFileInfo(file_info_extended, pv_image.image, pv_image.name, err_message, image_loader)) {
+                        auto* preview_data = pv_response.mutable_preview_data();
+                        preview_data->set_preview_id(preview_id);
+                        *preview_data->mutable_image_info() = file_info_extended;
+                        preview_data->set_image_data(preview_image_data.data(), preview_image_data.size() * sizeof(float));
 
-                            if (pv_response.has_preview_image()) {
-                                spdlog::debug("Response preview image id={}", pv_response.preview_image().preview_id());
-                                spdlog::debug("Response preview image file info nheaders={]",
-                                    pv_response.preview_image().file_info_extended().header_entries_size());
-                                spdlog::debug("Response preview image data size={}", preview_image_data.size());
-                            }
-                        } else {
-                            pv_response.set_success(false);
-                            pv_response.set_message("Failed to load PV preview image headers.");
-                        }
+                        // TODO: remove debug logging
+                        spdlog::info("PV preview id={}", pv_response.preview_data().preview_id());
+                        spdlog::info("PV preview file info nheaders={}", pv_response.preview_data().image_info().header_entries_size());
+                        spdlog::info("PV preview data size={}", preview_image_data.size());
                     } else {
                         pv_response.set_success(false);
-                        pv_response.set_message("Failed to load PV preview image.");
+                        pv_response.set_message("Failed to load PV preview image headers.");
                     }
                 }
             } else {
@@ -1765,9 +1758,22 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
 
 bool Session::SendPvPreview(int file_id, int region_id) {
     // return true if data sent
-    auto pv_preview_callback = [&](CARTA::PvResponse pv_response) {
-        if (pv_response.has_preview_image()) {
-            SendFileEvent(file_id, CARTA::EventType::PV_RESPONSE, 0, pv_response);
+    auto pv_preview_callback = [&](int preview_id, GeneratedImage pv_image, const std::vector<float>& preview_data) {
+        if (!preview_data.empty()) {
+            CARTA::FileInfoExtended file_info_extended;
+            string err_message;
+            std::shared_ptr<FileLoader> image_loader;
+
+            if (FillExtendedFileInfo(file_info_extended, pv_image.image, pv_image.name, err_message, image_loader)) {
+                // Create and send data stream message
+                // TODO: remove debug logging
+                spdlog::info("PV preview update: id={}, data size={}", preview_id, preview_data.size());
+                CARTA::PvPreviewData pv_preview_data;
+                pv_preview_data.set_preview_id(preview_id);
+                *pv_preview_data.mutable_image_info() = file_info_extended;
+                pv_preview_data.set_image_data(preview_data.data(), preview_data.size() * sizeof(float));
+                SendFileEvent(file_id, CARTA::EventType::PV_PREVIEW_DATA, 0, pv_preview_data);
+            }
         }
     };
 

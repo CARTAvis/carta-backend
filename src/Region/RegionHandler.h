@@ -14,6 +14,8 @@
 #include "Cache/RequirementsCache.h"
 #include "Frame/Frame.h"
 #include "ImageGenerators/PvGenerator.h"
+#include "ImageGenerators/PvPreviewCube.h"
+#include "ImageGenerators/PvPreviewSettings.h"
 #include "Region.h"
 
 namespace carta {
@@ -90,16 +92,15 @@ public:
     // Generate PV image
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
+    // Generate PV preview image
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-        CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data); // return preview data
-    bool UpdatePvPreview(int file_id, int region_id, std::function<void(CARTA::PvResponse pv_response)> cb) {
-        return false; // TODO
-    }
+        CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data);
+    // Update PV preview image
+    bool UpdatePvPreview(int file_id, int region_id,
+        std::function<void(int preview_id, GeneratedImage pv_image, const std::vector<float>& preview_data)> cb);
     void StopPvCalc(int file_id, bool is_preview = false);
     void StopPvPreview(int preview_id);
-    inline void ClosePvPreview(int preview_id) {
-        // TODO: release resources (frame if not shared, stop flag) for this preview
-    }
+    void ClosePvPreview(int preview_id);
 
     // Image fitting
     bool FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, std::shared_ptr<Frame> frame,
@@ -188,6 +189,13 @@ private:
     bool GetComputedStokesProfiles(
         ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data);
 
+    // PV generator/preview
+    int GetPvPreviewFrameId(int preview_id);
+    // Can be called for pv request or preview update
+    bool CalculatePvImage(int file_id, int region_id, int width, const AxisRange& spectral_range, bool reverse, bool keep, int preview_id,
+        PvPreviewCube& preview_cube, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
+        CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data);
+
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
     std::mutex _region_mutex;
@@ -214,10 +222,14 @@ private:
         CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max,
         CARTA::StatsType::Extrema, CARTA::StatsType::NumPixels};
 
-    // PV generator/preview: stop flag key is file_id/preview_id. Index only applies to PV generator.
-    std::unordered_map<int, bool> _stop_pv;
-    std::unordered_map<int, bool> _stop_preview;
-    std::unordered_map<int, int> _pv_name_index;
+    // PV generator, key is file_id.
+    std::unordered_map<int, bool> _stop_pv;      // cancel
+    std::unordered_map<int, int> _pv_name_index; // name suffix for "keep"
+    // PV preview, key is preview_id.
+    std::unordered_map<int, bool> _stop_pv_preview;
+    std::unordered_map<int, PvPreviewSettings> _pv_preview_settings;
+    // Downsampled settings and cubes, may be shared with multiple previews
+    std::vector<PvPreviewCube> _pv_preview_cubes;
 
     // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
     std::mutex _pix_mvdir_mutex;
