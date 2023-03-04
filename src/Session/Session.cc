@@ -1763,9 +1763,7 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
 
 bool Session::SendPvPreview(int file_id, int region_id) {
     // return true if data sent
-    spdlog::debug("*************************** Send PV preview update: file id={} region id={}", file_id, region_id);
     auto pv_preview_callback = [&](CARTA::PvResponse& message, GeneratedImage& pv_image) {
-        spdlog::debug("*************************** Got PV preview callback: has preview data=", message.has_preview_data());
         if (message.has_preview_data()) {
             // TODO: remove debug logging
             auto data_message = message.mutable_preview_data();

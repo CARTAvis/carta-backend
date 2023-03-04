@@ -973,7 +973,6 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
             break;
         }
     }
-    spdlog::debug("CalculatePvPreviewImage found cube={}", found_cube_settings);
     if (!found_cube_settings) {
         _pv_preview_cubes.push_back(pv_preview_cube);
     }
@@ -1117,13 +1116,11 @@ bool RegionHandler::UpdatePvPreview(
         return preview_updated;
     }
 
-    spdlog::debug("Find pv preview cut in {} cuts", _pv_preview_cuts.size());
     for (auto& preview_cut : _pv_preview_cuts) {
         // Find and update pv preview settings with input file and region
         if ((file_id == ALL_FILES || preview_cut.second.file_id == file_id) && preview_cut.second.region_id == region_id) {
             int preview_id = preview_cut.first;
             // Find preview cube for this preview id
-            spdlog::debug("Find pv preview cube in {} cubes", _pv_preview_cubes.size());
             for (auto& preview_cube : _pv_preview_cubes) {
                 if (preview_cube.HasPreviewId(preview_id)) {
                     spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
