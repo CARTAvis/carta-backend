@@ -625,7 +625,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         _spectral_cache.clear();
         _stats_cache.clear();
 
-        _pv_preview_settings.clear();
+        _pv_preview_cuts.clear();
         _pv_preview_cubes.clear();
     } else {
         // Iterate through requirements and remove those for given region_id
@@ -689,10 +689,10 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
 
-        for (auto it = _pv_preview_settings.begin(); it != _pv_preview_settings.end();) {
+        for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
             if ((*it).second.region_id == region_id) {
                 // Erase PV preview settings with this region id (PV cut)
-                it = _pv_preview_settings.erase(it);
+                it = _pv_preview_cuts.erase(it);
             } else {
                 ++it;
             }
@@ -906,58 +906,15 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
 bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame,
     GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
-    // For generator: add preview data vector and send it along
-    std::vector<float> preview_data;
-    return CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image, preview_data);
-}
-
-bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame,
-    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image,
-    std::vector<float>& preview_data) {
     // Unpack request message and send it along
     int file_id(pv_request.file_id());
     int region_id(pv_request.region_id());
     int width(pv_request.width());
+    bool reverse(pv_request.reverse());
+    bool keep(pv_request.keep());
     AxisRange spectral_range;
     if (pv_request.has_spectral_range()) {
         spectral_range = AxisRange(pv_request.spectral_range().min(), pv_request.spectral_range().max());
-    } else {
-        spectral_range = AxisRange(0, frame->Depth() - 1); // all channels
-    }
-    bool reverse(pv_request.reverse());
-    bool keep(pv_request.keep());
-    bool is_preview(pv_request.has_preview_settings());
-
-    int preview_id(-1);
-    PvPreviewCube preview_cube;
-    if (is_preview) {
-        auto preview_settings = pv_request.preview_settings();
-        preview_id = preview_settings.preview_id();
-        int cube_region_id(preview_settings.region_id());
-        int rebin_xy(preview_settings.rebin_xy());
-        int rebin_z(preview_settings.rebin_z());
-        auto stokes = frame->CurrentStokes();
-        preview_cube = PvPreviewCube(file_id, cube_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_id);
-    }
-
-    return CalculatePvImage(file_id, region_id, width, spectral_range, reverse, keep, preview_id, preview_cube, frame, progress_callback,
-        pv_response, pv_image, preview_data);
-}
-
-bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, const AxisRange& spectral_range, bool reverse, bool keep,
-    int preview_id, PvPreviewCube& preview_cube, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-    CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data) {
-    // Generate PV image by approximating line as box regions and getting spectral profile for each.
-    // Sends updates via progress callback.
-    // Return parameters: PvResponse, GeneratedImage, and preview data if is preview.
-    // Returns whether PV image was generated.
-    pv_response.set_success(false);
-    pv_response.set_cancel(false);
-
-    // Check if image has spectral axis before unpacking request
-    if (frame->SpectralAxis() < 0) {
-        pv_response.set_message("No spectral axis for generating PV image.");
-        return false;
     }
 
     // Checks for valid request:
@@ -968,93 +925,173 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, cons
     }
 
     // 2. Region is line
-    auto region_state = GetRegion(region_id)->GetRegionState();
-    if (region_state.type != CARTA::RegionType::LINE) {
+    if (GetRegion(region_id)->GetRegionState().type != CARTA::RegionType::LINE) {
         pv_response.set_message("Region type not supported for PV cut.");
         return false;
     }
 
-    bool is_preview(preview_cube.IsSet());
-    int frame_id(file_id);
+    // 3. Image has spectral axis
+    if (frame->SpectralAxis() < 0) {
+        pv_response.set_message("No spectral axis for generating PV image.");
+        return false;
+    }
 
-    if (is_preview) {
-        // Save PV settings for updates
-        _pv_preview_settings[preview_id] = PvPreviewSettings(file_id, region_id, region_state, width, reverse);
-        bool found_cube_settings(false);
-        for (auto& cube_settings : _pv_preview_cubes) {
-            if (cube_settings == preview_cube) { // same file, region, spectral range, rebin factors, and stokes
-                cube_settings.AddPreviewId(preview_id);
-                found_cube_settings = true;
-                break;
-            }
-        }
-        if (!found_cube_settings) {
-            _pv_preview_cubes.push_back(preview_cube);
-        }
-
-        // TODO here:
-        // 1. Get or create preview subimage, with progress
-        // --> check for stop flag during setup!
-        // 2. Get preview loader/frame for subimage, set in frames map
-        // _frames[frame_id] = preview_frame;
-        // 3. Close source frame, no longer needed
-        // frame->CloseCachedImage(frame->GetFileName());
-
-        // Do not overwrite frame for existing file_id
-        frame_id = GetPvPreviewFrameId(preview_id);
-        _frames[frame_id] = frame; // using full image initially...!
-        _stop_pv_preview[frame_id] = false;
+    if (pv_request.has_preview_settings()) {
+        return CalculatePvPreviewImage(file_id, region_id, width, spectral_range, reverse, frame, pv_request.preview_settings(),
+            progress_callback, pv_response, pv_image);
     } else {
-        if (!FrameSet(frame_id)) {
-            _frames[frame_id] = frame;
+        return CalculatePvImage(file_id, region_id, width, spectral_range, reverse, keep, frame, progress_callback, pv_response, pv_image);
+    }
+}
+
+bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
+    std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
+    CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
+    // Unpack preview settings
+    int preview_id(preview_settings.preview_id());
+    int preview_region_id(preview_settings.region_id());
+    int rebin_xy(preview_settings.rebin_xy());
+    int rebin_z(preview_settings.rebin_z());
+
+    return CalculatePvPreviewImage(file_id, region_id, width, spectral_range, reverse, frame, preview_id, preview_region_id, rebin_xy,
+        rebin_z, progress_callback, pv_response, pv_image);
+}
+
+bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
+    std::shared_ptr<Frame>& frame, int preview_id, int preview_region_id, int rebin_xy, int rebin_z,
+    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
+    // Save settings for updates
+    _pv_preview_cuts[preview_id] = PvPreviewCut(file_id, region_id, width, reverse);
+    auto pv_preview_cube = PvPreviewCube(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, frame->CurrentStokes(), preview_id);
+
+    bool found_cube_settings(false);
+    for (auto& cached_preview_cube : _pv_preview_cubes) {
+        if (cached_preview_cube == pv_preview_cube) {
+            cached_preview_cube.AddPreviewId(preview_id);
+            pv_preview_cube = cached_preview_cube;
+            found_cube_settings = true;
+            break;
         }
-        _stop_pv[frame_id] = false;
+    }
+    spdlog::debug("CalculatePvPreviewImage found cube={}", found_cube_settings);
+    if (!found_cube_settings) {
+        _pv_preview_cubes.push_back(pv_preview_cube);
+    }
+
+    // Assign new id so can delete its frame when no longer needed
+    auto frame_id = GetPvPreviewFrameId(preview_id);
+
+    // TODO: make downsampled cube and get frame for it
+    // auto preview_frame = pv_preview_cube.GetPreviewCubeFrame();
+    // _frames[frame_id] = preview_frame;
+    // For now, use full image
+    spectral_range = AxisRange(0, frame->Depth() - 1); // all channels in preview cube
+
+    // TODO: Apply PV cut region to downsampled cube
+    // For now, use existing region
+    // Set region and get new region id for it.
+    int pv_cut_id(NEW_REGION_ID);
+    RegionState pv_cut_region_state = GetRegion(region_id)->GetRegionState();
+    pv_cut_region_state.reference_file_id = frame_id;
+    if (!SetRegion(pv_cut_id, pv_cut_region_state, frame->CoordinateSystem())) {
+        pv_response.set_message("Failed to set line region in preview cube.");
+        return false;
+    }
+
+    _stop_pv_preview[frame_id] = false;
+
+    bool pv_success =
+        CalculatePvImage(frame_id, pv_cut_id, width, spectral_range, reverse, false, frame, progress_callback, pv_response, pv_image);
+
+    // Fill response PvPreviewData submessage except file info
+    auto* data_message = pv_response.mutable_preview_data();
+    data_message->set_preview_id(preview_id);
+
+    if (pv_success) {
+        auto preview_data = pv_image.image->get();
+        bool delete_storage(false); // remains false if array is contiguous
+        const float* data_ptr = preview_data.getStorage(delete_storage);
+        auto data_size = preview_data.size();
+        auto data_shape = preview_data.shape();
+
+        // Get histogram fields
+        int num_bins = int(std::max(sqrt(data_shape(0) * data_shape(1)), 2.0));
+        BasicStats<float> basic_stats;
+        CalcBasicStats(basic_stats, data_ptr, data_size);
+        Histogram hist = CalcHistogram(num_bins, basic_stats, data_ptr, data_size);
+
+        CARTA::FloatBounds hist_bounds;
+        hist_bounds.set_min(hist.GetMinVal());
+        hist_bounds.set_max(hist.GetMaxVal());
+
+        // Fill submessage
+        data_message->set_image_data(data_ptr, data_size * sizeof(float));
+        data_message->set_width(data_shape(0));
+        data_message->set_height(data_shape(1));
+        *data_message->mutable_histogram_bounds() = hist_bounds;
+        preview_data.freeStorage(data_ptr, delete_storage);
+    } else {
+        data_message->set_width(0);
+        data_message->set_height(0);
+    }
+
+    RemoveRegion(pv_cut_id); // TODO: keep/remove region? (could be used again, depending what user changes for next preview)
+    return pv_success;
+}
+
+bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse, bool keep,
+    std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
+    // Generate PV image by approximating line as box regions and getting spectral profile for each.
+    // Sends updates via progress callback.
+    // Return parameters: PvResponse, GeneratedImage, and preview data if is preview.
+    // Returns whether PV image was generated.
+    pv_response.set_success(false);
+    pv_response.set_cancel(false);
+
+    // Reset stop flag
+    _stop_pv[file_id] = false;
+
+    if (!FrameSet(file_id)) {
+        _frames[file_id] = frame;
     }
 
     // Common parameters for PV and preview
     bool per_z(true), pv_success(false), cancelled(false);
     int stokes_index = frame->CurrentStokes();
-    double increment(0.0);             // Increment between box centers
-    int offset_axis = reverse ? 1 : 0; // Index into PV data shape
-    std::string message;
-
-    // Set pv data from line profiles
-    // TODO: check for stop_pv_preview
+    casacore::Quantity offset_increment;
     casacore::Matrix<float> pv_data;
-    if (GetLineProfiles(frame_id, region_id, width, spectral_range, per_z, stokes_index, "", progress_callback, pv_data, increment,
+    std::string message;
+    if (spectral_range.to == ALL_Z) {
+        spectral_range.to = frame->Depth() - 1;
+    }
+
+    if (GetLineProfiles(file_id, region_id, width, spectral_range, per_z, stokes_index, "", progress_callback, pv_data, offset_increment,
             cancelled, message, reverse)) {
-        // TODO: pass increment to GetLineProfiles as Quantity not double
         PvGenerator pv_generator;
         auto pv_shape = pv_data.shape();
-        casacore::Quantity pv_increment = AdjustIncrementUnit(increment, pv_data.shape()(offset_axis));
         int start_chan(spectral_range.from); // Used for reference value in returned PV image
 
-        if (is_preview) {
-            // Create GeneratedImage in PvGenerator for image headers only, no data
-            preview_data = pv_data.tovector();
-            casacore::Matrix<float> no_data;
-            pv_success =
-                pv_generator.GetPvImage(frame, no_data, pv_shape, pv_increment, start_chan, stokes_index, reverse, pv_image, message);
-            cancelled |= _stop_pv_preview[frame_id];
-            _stop_pv_preview[frame_id] = false;
-        } else {
-            // Set PV index suffix (_pv1, _pv2, etc) to keep previously opened PV image
-            int name_index(0);
-            if (keep && (_pv_name_index.find(frame_id) != _pv_name_index.end())) {
-                name_index = ++_pv_name_index[frame_id];
-            }
-            _pv_name_index[frame_id] = name_index;
-            auto input_filename = frame->GetFileName();
+        // Set PV index suffix (_pv1, _pv2, etc) to keep previously opened PV image
+        int name_index(0);
+        if (keep && (_pv_name_index.find(file_id) != _pv_name_index.end())) {
+            name_index = ++_pv_name_index[file_id];
+        }
+        _pv_name_index[file_id] = name_index;
+        auto input_filename = frame->GetFileName();
 
-            // Create GeneratedImage with id and name in PvGenerator
-            pv_generator.SetFileIdName(frame_id, name_index, input_filename);
-            pv_success =
-                pv_generator.GetPvImage(frame, pv_data, pv_shape, pv_increment, start_chan, stokes_index, reverse, pv_image, message);
-            cancelled &= _stop_pv[frame_id];
+        // Create GeneratedImage with id and name in PvGenerator
+        pv_generator.SetFileIdName(file_id, name_index, input_filename);
+        pv_success =
+            pv_generator.GetPvImage(frame, pv_data, pv_shape, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
+        cancelled &= _stop_pv[file_id];
 
-            // Cleanup
-            _stop_pv.erase(frame_id);
-            frame->CloseCachedImage(frame->GetFileName()); // on disk
+        // Cleanup
+        _stop_pv.erase(file_id);
+
+        // Close file if on disk
+        auto filename = frame->GetFileName();
+        if (!filename.empty()) {
+            frame->CloseCachedImage(filename);
         }
     }
 
@@ -1069,52 +1106,50 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, cons
     pv_response.set_success(pv_success);
     pv_response.set_message(message);
     pv_response.set_cancel(cancelled);
-
     return pv_success;
 }
 
 bool RegionHandler::UpdatePvPreview(
-    int file_id, int region_id, std::function<void(int preview_id, GeneratedImage pv_image, const std::vector<float>& preview_data)> cb) {
+    int file_id, int region_id, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb) {
     // Update all previews using the region_id pv cut
+    bool preview_updated(false);
     if (!RegionSet(region_id)) {
-        return false;
+        return preview_updated;
     }
 
-    bool preview_updated(false);
-    auto region_state = GetRegion(region_id)->GetRegionState();
-
-    for (auto& preview_settings : _pv_preview_settings) {
+    spdlog::debug("Find pv preview cut in {} cuts", _pv_preview_cuts.size());
+    for (auto& preview_cut : _pv_preview_cuts) {
         // Find and update pv preview settings with input file and region
-        if (preview_settings.second.UpdateRegion(file_id, region_id, region_state)) {
-            int preview_id = preview_settings.first;
-            auto pv_preview_settings = preview_settings.second;
-
+        if ((file_id == ALL_FILES || preview_cut.second.file_id == file_id) && preview_cut.second.region_id == region_id) {
+            int preview_id = preview_cut.first;
             // Find preview cube for this preview id
+            spdlog::debug("Find pv preview cube in {} cubes", _pv_preview_cubes.size());
             for (auto& preview_cube : _pv_preview_cubes) {
                 if (preview_cube.HasPreviewId(preview_id)) {
+                    spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
+                    // Get parameters from cached PvPreviewCut and PvPreviewCube structs
+                    auto pv_cut = preview_cut.second;
+
                     auto frame_id = GetPvPreviewFrameId(preview_id);
-
-                    if (_frames.find(frame_id) != _frames.end()) {
-                        // frame should exist for preview id, unless preview closed
-                        spdlog::debug("***** Updating preview {} for region {}", preview_id, region_id);
-                        auto frame = _frames.at(frame_id);
-                        CARTA::PvResponse pv_response;
-                        GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
-                        GeneratedImage pv_image;
-                        std::vector<float> preview_data;
-
-                        // Calculate new preview
-                        if (CalculatePvImage(pv_preview_settings.file_id, pv_preview_settings.region_id, pv_preview_settings.width,
-                                preview_cube.spectral_range, pv_preview_settings.reverse, false, preview_id, preview_cube, frame,
-                                progress_callback, pv_response, pv_image, preview_data)) {
-                            cb(preview_id, pv_image, preview_data);
-                            preview_updated = true;
-                        }
+                    if (_frames.find(frame_id) == _frames.end()) {
+                        return false;
                     }
+                    auto frame = _frames.at(frame_id);
+
+                    GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
+                    CARTA::PvResponse pv_response;
+                    GeneratedImage pv_image;
+
+                    // Calculate new preview with existing settings and updated pv cut position
+                    preview_updated = CalculatePvPreviewImage(file_id, region_id, pv_cut.width, preview_cube.spectral_range, pv_cut.reverse,
+                        frame, preview_id, preview_cube.region_id, preview_cube.rebin_xy, preview_cube.rebin_z, progress_callback,
+                        pv_response, pv_image);
+                    cb(pv_response, pv_image);
                 }
             }
         }
     }
+
     return preview_updated;
 }
 
@@ -1154,8 +1189,9 @@ void RegionHandler::ClosePvPreview(int preview_id) {
     StopPvPreview(preview_id);
 
     // Remove preview settings for this id
-    if (_pv_preview_settings.find(preview_id) != _pv_preview_settings.end()) {
-        _pv_preview_settings.erase(preview_id);
+    if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end()) {
+        // TODO: Remove PV cut region set in preview cube
+        _pv_preview_cuts.erase(preview_id);
     }
 
     // Remove preview id from preview cube; or remove cube if not shared
@@ -1975,15 +2011,14 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
             continue;
         }
 
-        profile_ok =
-            GetLineSpatialData(file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float> profile, double increment) {
+        profile_ok = GetLineSpatialData(
+            file_id, region_id, coordinate, stokes_index, width, [&](std::vector<float>& profile, casacore::Quantity& increment) {
                 auto profile_size = profile.size();
                 int end = profile_size - 1;
                 float crpix = profile_size / 2;
-                auto adjusted_increment = AdjustIncrementUnit(increment, profile_size);
-                float cdelt = adjusted_increment.getValue();
+                float cdelt = increment.getValue();
                 float crval = (axis_type == CARTA::ProfileAxisType::Offset ? 0.0 : crpix * cdelt);
-                std::string unit = adjusted_increment.getUnit();
+                std::string unit = increment.getUnit();
 
                 auto profile_message = Message::SpatialProfileData(file_id, region_id, x, y, channel, stokes_index, value, start, end,
                     profile, coordinate, mip, axis_type, crpix, crval, cdelt, unit);
@@ -1995,11 +2030,11 @@ bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::
 }
 
 bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
-    const std::function<void(std::vector<float>, double)>& spatial_profile_callback) {
+    const std::function<void(std::vector<float>&, casacore::Quantity&)>& spatial_profile_callback) {
     AxisRange z_range(_frames.at(file_id)->CurrentZ());
     bool per_z(false), cancelled(false);
     GeneratorProgressCallback progress_callback = [](float progress) {}; // no callback for spatial profile
-    double increment(0.0);
+    casacore::Quantity increment;
     casacore::Matrix<float> line_profile;
     std::string message;
 
@@ -2078,8 +2113,8 @@ std::vector<int> RegionHandler::GetSpatialReqFilesForRegion(int region_id) {
 }
 
 bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, bool per_z, int stokes_index,
-    const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment,
-    bool& cancelled, std::string& message, bool reverse) {
+    const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
+    casacore::Quantity& increment, bool& cancelled, std::string& message, bool reverse) {
     // Generate box regions to approximate a line with a width (pixels), and get mean of each box (per z else current z).
     // Input parameters: file_id, region_id, width, z_range. z_range must be valid channel numbers, not CURRENT_Z or ALL_Z.
     // Calls progress_callback after each profile.
@@ -2115,25 +2150,30 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         return false;
     }
 
-    bool profiles_complete = GetFixedPixelRegionProfiles(file_id, region_id, width, per_z, z_range, stokes_index, coordinate, region_state,
-        reference_csys, progress_callback, profiles, increment, cancelled, reverse);
+    AxisRange spectral_range(z_range);
+    double profile_increment;
+    bool profiles_complete = GetFixedPixelRegionProfiles(file_id, region_id, width, per_z, spectral_range, stokes_index, coordinate,
+        region_state, reference_csys, progress_callback, profiles, profile_increment, cancelled, reverse);
 
     if (profiles_complete) {
         spdlog::debug("Region {}: Using fixed pixel increment for line profiles.", region_id);
-        return true;
-    }
+    } else {
+        // Check for cancel again
+        if (cancelled || CancelLineProfiles(region_id, file_id, region_state)) {
+            cancelled = true;
+            return false;
+        }
 
-    // Check for cancel again
-    if (cancelled || CancelLineProfiles(region_id, file_id, region_state)) {
-        cancelled = true;
-        return false;
+        profiles_complete = GetFixedAngularRegionProfiles(file_id, region_id, width, per_z, spectral_range, stokes_index, coordinate,
+            region_state, reference_csys, progress_callback, profiles, profile_increment, cancelled, message, reverse);
+        if (profiles_complete) {
+            spdlog::debug("Region {}: Using fixed angular increment for line profiles.", region_id);
+        }
     }
-
-    profiles_complete = GetFixedAngularRegionProfiles(file_id, region_id, width, per_z, z_range, stokes_index, coordinate, region_state,
-        reference_csys, progress_callback, profiles, increment, cancelled, message, reverse);
 
     if (profiles_complete) {
-        spdlog::debug("Region {}: Using fixed angular increment for line profiles.", region_id);
+        int offset_axis = reverse ? 1 : 0;
+        increment = AdjustIncrementUnit(profile_increment, profiles.shape()(offset_axis));
     }
 
     return profiles_complete;
@@ -2259,7 +2299,8 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             double num_pixels(0.0);
             casacore::Vector<float> region_profile =
                 GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
-            spdlog::debug("Line profile {} max num pixels={}", iregion, num_pixels);
+            spdlog::debug(
+                "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iregion, num_regions, num_pixels);
 
             if (profiles.empty()) {
                 if (reverse) {
@@ -2590,7 +2631,8 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile = GetTemporaryRegionProfile(
                     iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
-                // spdlog::debug("Line profile {} max num pixels={}", iregion, num_pixels);
+                spdlog::debug(
+                    "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iregion, num_regions, num_pixels);
 
                 profiles.row(iregion) = region_profile;
             }
@@ -2862,13 +2904,17 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         return profile;
     }
 
+    std::lock_guard<std::mutex> guard(_line_profile_mutex);
     int region_id(TEMP_REGION_ID);
     if (!per_z) {
         // Unique ID for multiple line profiles
         region_id -= region_idx;
+    } else {
+        while (_regions.find(region_id) != _regions.end()) {
+            --region_id;
+        }
     }
 
-    std::lock_guard<std::mutex> guard(_line_profile_mutex);
     SetRegion(region_id, region_state, reference_csys);
 
     if (!RegionSet(region_id)) {
@@ -2901,8 +2947,9 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         // Get region spectral profiles converted to file_id image if necessary
         GetRegionSpectralData(region_id, file_id, z_range, coordinate, stokes_index, required_stats, report_error,
             [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+                // Callback only sets return values when progress is complete.
                 if (progress == 1.0) {
-                    // Get mean spectral profile and max NumPixels for small region.  Callback does nothing, not needed.
+                    // Get mean spectral profile and max NumPixels for small region.
                     auto npix_per_chan = results[CARTA::StatsType::NumPixels];
                     num_pixels = *max_element(npix_per_chan.begin(), npix_per_chan.end());
                     profile = results[CARTA::StatsType::Mean];

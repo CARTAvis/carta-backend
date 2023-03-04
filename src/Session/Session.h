@@ -321,7 +321,7 @@ protected:
     // context that enables all tasks associated with a session to be cancelled.
     SessionContext _base_context;
 
-    // TBB context to cancel histogram calculations.
+    // context to cancel histogram calculations.
     SessionContext _histogram_context;
 
     SessionContext _animation_context;

@@ -15,7 +15,7 @@
 #include "Frame/Frame.h"
 #include "ImageGenerators/PvGenerator.h"
 #include "ImageGenerators/PvPreviewCube.h"
-#include "ImageGenerators/PvPreviewSettings.h"
+#include "ImageGenerators/PvPreviewCut.h"
 #include "Region.h"
 
 namespace carta {
@@ -89,15 +89,11 @@ public:
     std::vector<int> GetSpatialReqRegionsForFile(int file_id);
     std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
-    // Generate PV image
+    // Generate PV image or preview image
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
-    // Generate PV preview image
-    bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-        CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data);
-    // Update PV preview image
-    bool UpdatePvPreview(int file_id, int region_id,
-        std::function<void(int preview_id, GeneratedImage pv_image, const std::vector<float>& preview_data)> cb);
+    // Update PV preview image when PV cut region (region_id) changes
+    bool UpdatePvPreview(int file_id, int region_id, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
     void StopPvCalc(int file_id, bool is_preview = false);
     void StopPvPreview(int preview_id);
     void ClosePvPreview(int preview_id);
@@ -142,13 +138,13 @@ private:
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
     bool GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
-        const std::function<void(std::vector<float>, double)>& spatial_profile_callback);
+        const std::function<void(std::vector<float>&, casacore::Quantity&)>& spatial_profile_callback);
 
     // Generate box regions to approximate a line with a width, and get mean of each box for z-range.
-    // Used for pv generator and spatial profiles.
+    // Used for pv generator and spatial profiles (reverse only applies to PV).
     bool GetLineProfiles(int file_id, int region_id, int width, const AxisRange& z_range, bool per_z, int stokes_index,
-        const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment,
-        bool& cancelled, std::string& message, bool reverse = false);
+        const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
+        casacore::Quantity& increment, bool& cancelled, std::string& message, bool reverse = false);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
     float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
     bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
@@ -189,12 +185,18 @@ private:
     bool GetComputedStokesProfiles(
         ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data);
 
-    // PV generator/preview
+    // PV generator or preview
+    bool CalculatePvImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse, bool keep,
+        std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
+        GeneratedImage& pv_image);
+    // PV preview
     int GetPvPreviewFrameId(int preview_id);
-    // Can be called for pv request or preview update
-    bool CalculatePvImage(int file_id, int region_id, int width, const AxisRange& spectral_range, bool reverse, bool keep, int preview_id,
-        PvPreviewCube& preview_cube, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
-        CARTA::PvResponse& pv_response, GeneratedImage& pv_image, std::vector<float>& preview_data);
+    bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
+        std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
+        CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
+    bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
+        std::shared_ptr<Frame>& frame, int preview_id, int preview_region_id, int rebin_xy, int rebin_z,
+        GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
@@ -227,7 +229,7 @@ private:
     std::unordered_map<int, int> _pv_name_index; // name suffix for "keep"
     // PV preview, key is preview_id.
     std::unordered_map<int, bool> _stop_pv_preview;
-    std::unordered_map<int, PvPreviewSettings> _pv_preview_settings;
+    std::unordered_map<int, PvPreviewCut> _pv_preview_cuts;
     // Downsampled settings and cubes, may be shared with multiple previews
     std::vector<PvPreviewCube> _pv_preview_cubes;
 

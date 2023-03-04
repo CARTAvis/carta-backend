@@ -8,17 +8,24 @@
 #define CARTA_BACKEND_IMAGEGENERATORS_PVPREVIEWCUBE_H_
 
 #include "Region/Region.h"
+#include "Util/File.h"
 
 namespace carta {
 
 struct PvPreviewCube {
+    // Cube parameters
     int file_id;
     int region_id;
     AxisRange spectral_range;
     int rebin_xy;
     int rebin_z;
     int stokes;
+
+    // Which previews are using this cube
     std::vector<int> preview_ids;
+    // Frame id (key for frames map) for this preview cube
+    int frame_id;
+    // Flag to stop downsampling image
     bool stop_cube;
 
     PvPreviewCube() : file_id(-1) {}
@@ -34,8 +41,9 @@ struct PvPreviewCube {
     }
 
     bool operator==(const PvPreviewCube& other) {
-        return ((file_id == other.file_id) && (region_id == other.region_id) && (spectral_range == other.spectral_range) &&
-                (rebin_xy == other.rebin_xy) && (rebin_z == other.rebin_z) && (stokes == other.stokes));
+        return ((other.file_id == ALL_FILES || file_id == other.file_id) && (region_id == other.region_id) &&
+                (spectral_range == other.spectral_range) && (rebin_xy == other.rebin_xy) && (rebin_z == other.rebin_z) &&
+                (stokes == other.stokes));
     }
 
     bool IsSet() {
