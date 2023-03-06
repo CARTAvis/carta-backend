@@ -81,31 +81,70 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
     {CARTA::PolarizationType::PFlinear, "Fractional linear polarization intensity"},
     {CARTA::PolarizationType::Pangle, "Polarization angle"}};
 
+/** @brief This class represents a single image open in the viewer. */
 class Frame {
 public:
+    /** @brief Constructor
+        @param session_id the identifier of the session in which this image is open
+        @param loader a shared pointer to the loader used to load data for this image from disk
+        @param hdu the HDU (or equivalent identifier) to load from a file which contains multiple images
+     */
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu);
+    /** @brief Default destructor */
     virtual ~Frame() = default;
 
-    // Get the full name of image file
+    /** @brief The full name of image file */
     std::string GetFileName();
 
-    // Returns shared ptr to CoordinateSystem
+    /** @brief A shared pointer to the coordinate system of this image
+     *  @details A computed Stokes image can be used as the source instead, if the appropriate Stokes source parameter is provided.
+     *  @param stokes_source the Stokes source
+     */
     std::shared_ptr<casacore::CoordinateSystem> CoordinateSystem(const StokesSource& stokes_source = StokesSource());
 
-    // Image/Frame info
+    /** @brief The shape of this image
+     *  @details A computed Stokes image can be used as the source instead, if the appropriate Stokes source parameter is provided.
+     *  @param stokes_source the Stokes source
+     */
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
-    size_t Width();     // length of x axis
-    size_t Height();    // length of y axis
-    size_t Depth();     // length of z axis
-    size_t NumStokes(); // if no stokes axis, nstokes=1
+    
+    /** @brief The length of the X axis */
+    size_t Width();
+    /** @brief The length of the Y axis */
+    size_t Height();
+    /** @brief The length of the Z axis 
+     * @details Images without a Z axis have a depth of 1.
+     */
+    size_t Depth();
+    /** @brief The length of the Stokes axis 
+     *  @details Images without a Stokes axis have a Stokes dimension of 1.
+     */
+    size_t NumStokes();
+    /** @brief The currently visible Z axis layer */
     int CurrentZ();
+    /** @brief The currently visible Stokes layer */
     int CurrentStokes();
+    /** @brief The index of the spectral axis */
     int SpectralAxis();
+    /** @brief The index of the Stokes axis */
     int StokesAxis();
+    
+    /** @brief Retrieve the beams for this image
+     *  @param beams the vector where the beam data should be stored
+     */
     bool GetBeams(std::vector<CARTA::Beam>& beams);
-
-    // Slicer to set z and stokes ranges with full xy plane
-    virtual StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);
+    
+    /** @brief Get a slicer for this image, using the full XY plane
+     *  @param z_range the Z axis range
+     *  @param stokes the Stokes index
+     */
+    virtual StokesSlicer GetImageSlicer(const AxisRange& z_range, int stokes);    
+    /** @brief Get a slicer for this image, using a section of the XY plane
+     *  @param x_range the X axis range
+     *  @param y_range the Y axis range
+     *  @param z_range the Z axis range
+     *  @param stokes the Stokes index
+     */
     virtual StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
 
     // Image view for z index
@@ -214,8 +253,11 @@ public:
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
 protected:
-    // Validate z and stokes index values
+    /** @brief The provided Z axis index is within the Z axis range of the image */
     bool ValidZ(int z);
+    /** @brief The provided Stokes index is within the Stokes axis range of the image, or is a valid computed Stokes index 
+     *  @details This function does not verify that a given computed Stokes can be computed from the real Stokes data in the image. This must be validated elsewhere.
+     */
     bool ValidStokes(int stokes);
 
     // Check whether z or stokes has changed

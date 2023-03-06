@@ -321,6 +321,7 @@ TEST(FrameTest, TestValidStokes) {
     ASSERT_EQ(frame.ValidStokes(0), true);
     ASSERT_EQ(frame.ValidStokes(1), true);
     ASSERT_EQ(frame.ValidStokes(2), true);
+    // TODO: we don't check that the specified computed Stokes can be computed from the real Stokes in the file. This makes this function inconsistent.
     ASSERT_EQ(frame.ValidStokes(COMPUTE_STOKES_PTOTAL), true);
     ASSERT_EQ(frame.ValidStokes(3), false);
     ASSERT_EQ(frame.ValidStokes(-1), false);
