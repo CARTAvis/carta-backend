@@ -10,10 +10,11 @@
 #include "Region/Region.h"
 #include "Util/File.h"
 
+#include <casacore/images/Images/SubImage.h>
+
 namespace carta {
 
-struct PvPreviewCube {
-    // Cube parameters
+struct PreviewCubeParameters {
     int file_id;
     int region_id;
     AxisRange spectral_range;
@@ -21,69 +22,55 @@ struct PvPreviewCube {
     int rebin_z;
     int stokes;
 
-    // Which previews are using this cube
-    std::vector<int> preview_ids;
-    // Frame id (key for frames map) for this preview cube
-    int frame_id;
-    // Flag to stop downsampling image
-    bool stop_cube;
-
-    PvPreviewCube() : file_id(-1) {}
-    PvPreviewCube(int file_id_, int region_id_, const AxisRange& spectral_range_, int rebin_xy_, int rebin_z_, int stokes_, int preview_id_)
+    PreviewCubeParameters() : file_id(-1) {}
+    PreviewCubeParameters(int file_id_, int region_id_, const AxisRange& spectral_range_, int rebin_xy_, int rebin_z_, int stokes_)
         : file_id(file_id_),
           region_id(region_id_),
           spectral_range(spectral_range_),
           rebin_xy(rebin_xy_),
           rebin_z(rebin_z_),
-          stokes(stokes_),
-          stop_cube(false) {
-        AddPreviewId(preview_id_);
-    }
+          stokes(stokes_) {}
 
-    bool operator==(const PvPreviewCube& other) {
+    bool operator==(const PreviewCubeParameters& other) {
         return ((other.file_id == ALL_FILES || file_id == other.file_id) && (region_id == other.region_id) &&
                 (spectral_range == other.spectral_range) && (rebin_xy == other.rebin_xy) && (rebin_z == other.rebin_z) &&
                 (stokes == other.stokes));
     }
+};
 
-    bool IsSet() {
-        return file_id >= 0;
-    }
+class PvPreviewCube {
+public:
+    PvPreviewCube(int file_id_, int region_id_, const AxisRange& spectral_range_, int rebin_xy_, int rebin_z_, int stokes_);
+    PvPreviewCube(const PreviewCubeParameters& parameters);
 
-    void StopCube() {
-        stop_cube = true;
-    }
+    // Cube parameters
+    bool HasSameParameters(const PreviewCubeParameters& parameters);
 
-    // ********************************************************************
-    // Manage preview IDs
-    void AddPreviewId(int preview_id) {
-        if (!HasPreviewId(preview_id)) {
-            preview_ids.push_back(preview_id);
-        }
-    }
+    // blc of preview region's bounding box in source image
+    void SetPreviewRegionOrigin(const casacore::IPosition& origin);
+    casacore::IPosition PreviewRegionOrigin();
 
-    void RemovePreviewId(int preview_id) {
-        for (auto it = preview_ids.begin(); it != preview_ids.end(); ++it) {
-            if (*it == preview_id) {
-                preview_ids.erase(it);
-                break;
-            }
-        }
-    }
+    // Return stored preview image (or nullptr)
+    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage();
 
-    bool NoPreviewIds() {
-        return preview_ids.size() == 0;
-    }
+    // Create preview image by applying rebinning to SubImage, and store it.
+    // Input SubImage is preview region and spectral range applied to source image.
+    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(casacore::SubImage<float>& sub_image);
 
-    bool HasPreviewId(int preview_id) {
-        for (auto it = preview_ids.begin(); it != preview_ids.end(); ++it) {
-            if (*it == preview_id) {
-                return true;
-            }
-        }
-        return false;
-    }
-    // ********************************************************************
+    void StopCube();
+
+private:
+    // Cube parameters
+    PreviewCubeParameters _cube_parameters;
+
+    // Origin (blc) of preview region in source image
+    casacore::IPosition _origin;
+
+    // Preview image cube: SubImage with downsampling applied
+    std::shared_ptr<casacore::ImageInterface<float>> _preview_image;
+
+    // Flag to stop downsampling image
+    bool _stop_cube;
 };
 
 } // namespace carta

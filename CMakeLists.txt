@@ -216,6 +216,7 @@ set(SOURCE_FILES
         src/ImageData/StokesFilesConnector.cc
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc
+        src/ImageGenerators/PvPreviewCube.cc
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
         src/Logger/Logger.cc
