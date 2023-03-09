@@ -771,6 +771,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     auto file_id(message.file_id());
     auto region_id(message.region_id());
     auto region_info(message.region_info());
+    auto preview_region(message.preview_region());
     std::string err_message;
     bool success(false);
 
@@ -803,8 +804,12 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
     // update data streams if requirements set and region changed
     if (success && _region_handler->RegionChanged(region_id)) {
-        OnMessageTask* tsk = new RegionDataStreamsTask(this, ALL_FILES, region_id);
-        ThreadManager::QueueTask(tsk);
+        if (preview_region) {
+            SendPvPreview(file_id, region_id);
+        } else {
+            OnMessageTask* tsk = new RegionDataStreamsTask(this, ALL_FILES, region_id);
+            ThreadManager::QueueTask(tsk);
+        }
     }
 
     return success;
@@ -1325,12 +1330,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             if (is_preview) {
                 // Set pv progress callback function
                 auto preview_id = pv_request.preview_settings().preview_id();
-                spdlog::debug("*************************** PV preview requested: file id={} region id={} preview id={}", file_id, region_id,
-                    preview_id);
                 auto progress_callback = [&](float progress) {
-                    // TODO: remove debug logging
-                    spdlog::debug("PV preview progress: file id={} preview id={} progress={}", file_id, preview_id, progress);
-
                     auto pv_progress = Message::PvProgress(file_id, progress, preview_id);
                     SendEvent(CARTA::EventType::PV_PROGRESS, request_id, pv_progress);
                 };
@@ -1346,14 +1346,6 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                         // Fill response PvPreviewData submessage file info
                         auto* data_message = pv_response.mutable_preview_data();
                         *data_message->mutable_image_info() = file_info_extended;
-
-                        // TODO: remove debug logging
-                        spdlog::debug("PV preview id={}", data_message->preview_id());
-                        spdlog::debug("PV preview file info: nheaders={}", data_message->image_info().header_entries_size());
-                        spdlog::debug("PV preview data: size={} width={} height={}", data_message->image_data().size() / 4,
-                            data_message->width(), data_message->height());
-                        spdlog::debug("PV preview histogram bounds=[{}, {}]", data_message->histogram_bounds().min(),
-                            data_message->histogram_bounds().max());
                     } else {
                         pv_response.set_success(false);
                         pv_response.set_message("Failed to load PV preview image headers.");
@@ -1765,22 +1757,14 @@ bool Session::SendPvPreview(int file_id, int region_id) {
     // return true if data sent
     auto pv_preview_callback = [&](CARTA::PvResponse& message, GeneratedImage& pv_image) {
         if (message.has_preview_data()) {
-            // TODO: remove debug logging
             auto data_message = message.mutable_preview_data();
-            spdlog::debug("PV preview update id={}", data_message->preview_id());
-            spdlog::debug("PV preview update data: size={} width={} height={}", data_message->image_data().size() / 4,
-                data_message->width(), data_message->height());
-            spdlog::debug("PV preview update histogram bounds=[{}, {}]", data_message->histogram_bounds().min(),
-                data_message->histogram_bounds().max());
             if (pv_image.image) {
                 // Complete data stream message with pv image file info
                 CARTA::FileInfoExtended file_info_extended;
                 string err_message;
                 std::shared_ptr<FileLoader> image_loader;
-
                 if (FillExtendedFileInfo(file_info_extended, pv_image.image, pv_image.name, err_message, image_loader)) {
                     *(data_message->mutable_image_info()) = file_info_extended;
-                    spdlog::debug("PV preview update file info: nheaders={}", data_message->image_info().header_entries_size());
                 }
             }
 
