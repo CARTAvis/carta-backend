@@ -2379,7 +2379,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
         // Set matrix size to fill in rows; ncol = image depth (PV data) or 1 (spatial profile)
         auto profile_depth = per_z ? (z_range.to - z_range.from + 1) : 1;
-        profiles.resize(casacore::IPosition(2, num_regions, profile_depth));
+        if (reverse) {
+            profiles.resize(casacore::IPosition(2, profile_depth, num_regions));
+        } else {
+            profiles.resize(casacore::IPosition(2, num_regions, profile_depth));
+        }
 
         int start_idx, end_idx;                                 // for start and end of overlapping box regions
         float rotation = GetLineRotation(line_start, line_end); // for temporary RegionState
@@ -2411,7 +2415,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
             if (region_start.empty() || region_end.empty()) {
                 // Likely part of line off image
-                profiles.row(iregion) = NAN;
+                if (reverse) {
+                    profiles.column(iregion) = NAN;
+                } else {
+                    profiles.row(iregion) = NAN;
+                }
             } else {
                 // Set temporary region for reference image and get profile for requested file_id
                 // pix_mvdir_mutex is not needed, locked in function while determining polygon corners
@@ -2423,7 +2431,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                     iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
                 spdlog::debug("Line profile {} max num pixels={}", iregion, num_pixels);
 
-                profiles.row(iregion) = region_profile;
+                if (reverse) {
+                    profiles.column(iregion) = region_profile;
+                } else {
+                    profiles.row(iregion) = region_profile;
+                }
             }
 
             progress = float(iregion + 1) / float(num_regions);
@@ -2442,7 +2454,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
     } else {
         // Polyline profiles, for spatial profile only
         bool trim_line(false); // Whether to skip first region after vertex
-        int profile_row(0);
+        int profile_idx(0);
 
         for (size_t iline = 0; iline < num_lines; iline++) {
             // Check if requirements removed
@@ -2514,7 +2526,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 if (iregion == 0) {
                     // Add rows for this line's region profiles
                     auto num_line_profiles = trim_line ? num_regions - 1 : num_regions;
-                    profiles.resize(casacore::IPosition(2, profiles.nrow() + num_line_profiles, 1), true);
+                    if (reverse) {
+                        profiles.resize(casacore::IPosition(2, 1, profiles.nrow() + num_line_profiles), true);
+                    } else {
+                        profiles.resize(casacore::IPosition(2, profiles.nrow() + num_line_profiles, 1), true);
+                    }
 
                     if (trim_line) {
                         spdlog::debug("Polyline segment {} trimmed", iline);
@@ -2529,7 +2545,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
 
                 if (region_start.empty() || region_end.empty()) {
                     // Likely part of line off image
-                    profiles.row(profile_row++) = NAN;
+                    if (reverse) {
+                        profiles.column(profile_idx++) = NAN;
+                    } else {
+                        profiles.row(profile_idx++) = NAN;
+                    }
                 } else {
                     // Set temporary region for reference image and get profile for requested file_id
                     // pix_mvdir_mutex is not needed, locked in function while determining polygon corners
@@ -2541,7 +2561,11 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                         iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
                     spdlog::debug("Polyline segment {} profile {} max num pixels={}", iline, iregion, num_pixels);
 
-                    profiles.row(profile_row++) = region_profile;
+                    if (reverse) {
+                        profiles.column(profile_idx++) = region_profile;
+                    } else {
+                        profiles.row(profile_idx++) = region_profile;
+                    }
                 }
             } // Done with regions along line segment
 
