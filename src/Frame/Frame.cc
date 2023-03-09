@@ -1600,13 +1600,21 @@ casacore::IPosition Frame::GetRegionShape(const StokesRegion& stokes_region) {
     return lattice_region.shape();
 }
 
+bool Frame::GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
+    std::lock_guard<std::mutex> ulock(_image_mutex);
+    return _loader->GetSubImage(stokes_region, sub_image);
+}
+
+bool Frame::GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
+    std::lock_guard<std::mutex> ulock(_image_mutex);
+    return _loader->GetSubImage(stokes_slicer, sub_image);
+}
+
 bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data) {
     // Get image data with a region applied
     Timer t;
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
-    ulock.unlock();
+    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
 
     if (!subimage_ok) {
         return false;
@@ -1672,10 +1680,8 @@ bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
+    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
     _loader->CloseImageIfUpdated();
-    ulock.unlock();
 
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
@@ -1689,10 +1695,8 @@ bool Frame::GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA:
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_slicer, sub_image);
+    bool subimage_ok = GetSlicerSubImage(stokes_slicer, sub_image);
     _loader->CloseImageIfUpdated();
-    ulock.unlock();
 
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
@@ -1879,8 +1883,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     //// Todo: support saving computed stokes images
     if (image_shape.size() == 2) {
-        if (region) {
-            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image);
+        if (region && GetRegionSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image)) {
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }

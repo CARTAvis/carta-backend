@@ -168,6 +168,8 @@ public:
         int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region);
     casacore::IPosition GetRegionShape(const StokesRegion& stokes_region);
+    bool GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
+    bool GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
     // Returns data vector
     bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data);
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
