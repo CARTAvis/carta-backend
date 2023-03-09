@@ -1,5 +1,6 @@
 var NAVTREEINDEX8 =
 {
+"functions_vars_w.html":[3,3,2,20],
 "functions_vars_x.html":[3,3,2,21],
 "functions_vars_y.html":[3,3,2,22],
 "functions_vars_z.html":[3,3,2,23],
@@ -14,8 +15,8 @@ var NAVTREEINDEX8 =
 "globals_type.html":[4,1,3],
 "globals_vars.html":[4,1,2],
 "hierarchy.html":[3,2],
-"index.html":[],
 "index.html":[0],
+"index.html":[],
 "index.html#autotoc_md3":[0,0],
 "md_docs_static_faq.html":[1],
 "md_docs_static_faq.html#autotoc_md0":[1,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX8 =
 "structcarta_1_1FitData.html#a60f3e4db41efafd0df57bc9fea53219d":[3,0,0,45,7],
 "structcarta_1_1FitData.html#a669040e12f28612e62d77f9100cd89d7":[3,0,0,45,4],
 "structcarta_1_1FitData.html#a85c9b69309102575f9c5cd1e90b1edb8":[3,0,0,45,2],
-"structcarta_1_1FitData.html#ad985393f8238177fd5b7c9c4b09d3d4e":[3,0,0,45,0],
-"structcarta_1_1FitData.html#af5cd18a9d90b09a73063fcf4ccd567d9":[3,0,0,45,6]
+"structcarta_1_1FitData.html#ad985393f8238177fd5b7c9c4b09d3d4e":[3,0,0,45,0]
 };
