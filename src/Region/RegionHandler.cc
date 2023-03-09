@@ -15,6 +15,7 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
+#include "ImageData/FileLoader.h"
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
@@ -832,9 +833,11 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
     return _frames.at(file_id)->GetImageRegion(file_id, region, stokes_source, report_error);
 }
 
-bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
-    std::shared_ptr<casacore::LCRegion> region_2D) {
-    // Returns 3D ImageRegion for region applied to image and extended by z-range and stokes index
+bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes,
+    std::shared_ptr<casacore::LCRegion> lc_region, StokesRegion& stokes_region) {
+    // LCRegion applied to image then extended by z-range and stokes index.
+    // LCRegion can be supplied, or will be set using region and file IDs.
+    // Returns StokesRegion struct with StokesSource and 3D ImageRegion.
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
@@ -842,7 +845,7 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
     try {
         StokesSource stokes_source(stokes, z_range);
         stokes_region.stokes_source = stokes_source;
-        auto applied_region = region_2D;
+        auto applied_region = lc_region;
         if (!applied_region) {
             applied_region = ApplyRegionToFile(region_id, file_id, stokes_source);
         }
@@ -897,7 +900,7 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
     int z_max(moment_request.spectral_range().max());
 
     // Do calculations
-    if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), stokes_region, lc_region)) {
+    if (ApplyRegionToFile(region_id, file_id, AxisRange(z_min, z_max), frame->CurrentStokes(), lc_region, stokes_region)) {
         frame->CalculateMoments(file_id, progress_callback, stokes_region, moment_request, moment_response, collapse_results,
             _regions.at(region_id)->GetRegionState());
     }
@@ -947,94 +950,207 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
 bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
     std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
+    // Find or set cached preview cube, then send it along.
     // Unpack preview settings
     int preview_id(preview_settings.preview_id());
     int preview_region_id(preview_settings.region_id());
     int rebin_xy(preview_settings.rebin_xy());
     int rebin_z(preview_settings.rebin_z());
 
-    return CalculatePvPreviewImage(file_id, region_id, width, spectral_range, reverse, frame, preview_id, preview_region_id, rebin_xy,
-        rebin_z, progress_callback, pv_response, pv_image);
-}
+    // Prepare response if checks fail.
+    pv_response.set_success(false);
+    pv_response.set_cancel(false);
 
-bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
-    std::shared_ptr<Frame>& frame, int preview_id, int preview_region_id, int rebin_xy, int rebin_z,
-    GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
-    // Save settings for updates
-    _pv_preview_cuts[preview_id] = PvPreviewCut(file_id, region_id, width, reverse);
-    auto pv_preview_cube = PvPreviewCube(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, frame->CurrentStokes(), preview_id);
-
-    bool found_cube_settings(false);
-    for (auto& cached_preview_cube : _pv_preview_cubes) {
-        if (cached_preview_cube == pv_preview_cube) {
-            cached_preview_cube.AddPreviewId(preview_id);
-            pv_preview_cube = cached_preview_cube;
-            found_cube_settings = true;
-            break;
+    // Check preview region if not entire image xy plane
+    bool is_image_region(preview_region_id == IMAGE_REGION_ID);
+    if (!is_image_region) {
+        if (!RegionSet(preview_region_id)) {
+            pv_response.set_message("PV preview cube requested for invalid region id.");
+            return false;
+        }
+        if (!IsClosedRegion(preview_region_id)) {
+            pv_response.set_message("PV preview cube requested for invalid region type.");
+            return false;
         }
     }
-    if (!found_cube_settings) {
-        _pv_preview_cubes.push_back(pv_preview_cube);
-    }
 
-    // Assign new id so can delete its frame when no longer needed
+    // Save settings for updates
+    _pv_preview_cuts[preview_id] = PvPreviewCut(file_id, region_id, width, reverse);
+    auto stokes = frame->CurrentStokes();
+    auto cube_parameters = PreviewCubeParameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes);
+
+    // Use cached preview cube if same settings, else reset frame and set new preview cube.
+    bool preview_cube_set(false);
     auto frame_id = GetPvPreviewFrameId(preview_id);
 
-    // TODO: make downsampled cube and get frame for it
-    // auto preview_frame = pv_preview_cube.GetPreviewCubeFrame();
-    // _frames[frame_id] = preview_frame;
-    // For now, use full image
-    spectral_range = AxisRange(0, frame->Depth() - 1); // all channels in preview cube
+    if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
+        // Check if existing settings are valid
+        preview_cube_set = _pv_preview_cubes.at(preview_id)->HasSameParameters(cube_parameters);
+    }
 
-    // TODO: Apply PV cut region to downsampled cube
-    // For now, use existing region
-    // Set region and get new region id for it.
-    int pv_cut_id(NEW_REGION_ID);
-    RegionState pv_cut_region_state = GetRegion(region_id)->GetRegionState();
-    pv_cut_region_state.reference_file_id = frame_id;
-    if (!SetRegion(pv_cut_id, pv_cut_region_state, frame->CoordinateSystem())) {
+    if (!preview_cube_set) {
+        // frame is also invalid if settings were invalid.
+        if (_frames.find(frame_id) != _frames.end()) {
+            _frames.at(frame_id).reset();
+        }
+
+        // Check if other cached preview cube can be used.
+        for (auto& preview_cube : _pv_preview_cubes) {
+            if (preview_cube.second->HasSameParameters(cube_parameters)) {
+                _pv_preview_cubes[preview_id] = preview_cube.second;
+                preview_cube_set = true;
+
+                // Also set cached frame for this preview cube
+                int cached_preview_id = preview_cube.first;
+                int cached_frame_id = GetPvPreviewFrameId(cached_preview_id);
+                if (_frames.find(cached_frame_id) != _frames.end() && _frames.at(cached_frame_id)) {
+                    _frames[frame_id] = _frames.at(cached_frame_id);
+                }
+                break;
+            }
+        }
+
+        if (!preview_cube_set) {
+            // Cache new settings for this preview
+            _pv_preview_cubes[preview_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+        }
+    }
+
+    // Preview cube is now set.
+    auto preview_cube = _pv_preview_cubes.at(preview_id);
+
+    // Check if frame for preview frame_id is set.
+    if (_frames.find(frame_id) == _frames.end() || !_frames.at(frame_id)) {
+        // Create frame to hold preview image.
+        // Get cached image (downsampled subimage) from PvPreviewCube, or create one.
+        auto preview_image = preview_cube->GetPreviewImage();
+
+        if (!preview_image) {
+            // Apply preview region and/or spectral range to get SubImage.
+            casacore::SubImage<float> sub_image;
+
+            if (is_image_region) {
+                // Slice spectral and stokes axes to get SubImage
+                auto slicer = frame->GetImageSlicer(spectral_range, frame->CurrentStokes());
+                if (!frame->GetSlicerSubImage(slicer, sub_image)) {
+                    pv_response.set_message("Failed to set spectral range in preview cube.");
+                    return false;
+                }
+
+                // Origin (blc) for setting pv cut in cube
+                casacore::IPosition origin(2, 0, 0);
+                preview_cube->SetPreviewRegionOrigin(origin);
+            } else {
+                // Apply preview region to source image to get LCRegion
+                StokesSource stokes_source(stokes, spectral_range);
+                std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(preview_region_id, file_id, stokes_source);
+
+                // Origin (blc) for setting pv cut in cube
+                auto origin = lc_region->boundingBox().start();
+                preview_cube->SetPreviewRegionOrigin(origin);
+
+                // Apply LCRegion and spectral range to source image to get StokesRegion
+                StokesRegion stokes_region;
+                if (!ApplyRegionToFile(preview_region_id, file_id, spectral_range, stokes, lc_region, stokes_region)) {
+                    pv_response.set_message("Failed to set preview region or spectral range in image for preview cube.");
+                    return false;
+                }
+
+                // Apply StokesRegion to source image to get SubImage
+                if (!frame->GetRegionSubImage(stokes_region, sub_image)) {
+                    pv_response.set_message("Failed to set preview region in image for preview cube.");
+                    return false;
+                }
+            }
+
+            // Apply downsampling to SubImage to get preview image.
+            preview_image = preview_cube->GetPreviewImage(sub_image);
+        }
+
+        if (!preview_image) {
+            pv_response.set_message("PV preview cube failed.");
+            return false;
+        }
+
+        // Preview image is now set, make frame to access it.
+        auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
+        auto preview_session_id(-1);
+        auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
+        _frames[frame_id] = preview_frame;
+    }
+
+    // Parameters to calculate PV image
+    RegionState region_state = GetRegion(region_id)->GetRegionState();
+    auto preview_region_origin = preview_cube->PreviewRegionOrigin();
+
+    return CalculatePvPreviewImage(
+        frame_id, region_state, width, reverse, preview_id, preview_region_origin, progress_callback, pv_response, pv_image);
+}
+
+bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& region_state, int width, bool reverse, int preview_id,
+    const casacore::IPosition& preview_region_origin, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
+    GeneratedImage& pv_image) {
+    // Set pv cut region in preview image (referenced by frame id), then start pv image calculations.
+    // This method is the entry point for pv preview updates, where only pv cut changed and the rest was cached.
+    // Input RegionState is for PV cut in source image.
+
+    // Set control points for the pv cut region in the preview image cube, using the preview region's origin.
+    std::vector<CARTA::Point> preview_points;
+    float blc_x(preview_region_origin[0]), blc_y(preview_region_origin[1]);
+    for (auto& point : region_state.control_points) {
+        auto preview_point = Message::Point(point.x() - blc_x, point.y() - blc_y);
+        preview_points.push_back(preview_point);
+    }
+
+    // Set new pv cut region in preview image frame. This region and frame used for pv calculations.
+    auto preview_frame = _frames.at(frame_id);
+    int preview_cut_id(NEW_REGION_ID);
+    auto preview_region_state = RegionState(frame_id, region_state.type, preview_points, region_state.rotation);
+    if (!SetRegion(preview_cut_id, preview_region_state, preview_frame->CoordinateSystem())) {
         pv_response.set_message("Failed to set line region in preview cube.");
         return false;
     }
 
+    AxisRange z_range; // all channels in preview frame (spectral range already applied)
     _stop_pv_preview[frame_id] = false;
 
+    // Calculations common to PV generator and PV preview:
     bool pv_success =
-        CalculatePvImage(frame_id, pv_cut_id, width, spectral_range, reverse, false, frame, progress_callback, pv_response, pv_image);
+        CalculatePvImage(frame_id, preview_cut_id, width, z_range, reverse, false, preview_frame, progress_callback, pv_response, pv_image);
 
-    // Fill response PvPreviewData submessage except file info
+    // Add response PvPreviewData submessage (file info completed in Session)
     auto* data_message = pv_response.mutable_preview_data();
     data_message->set_preview_id(preview_id);
 
     if (pv_success) {
+        // PV image data parameters
         auto preview_data = pv_image.image->get();
-        bool delete_storage(false); // remains false if array is contiguous
+        auto data_shape = preview_data.shape();
+        bool delete_storage(false); // remains false if array is contiguous in memory
         const float* data_ptr = preview_data.getStorage(delete_storage);
         auto data_size = preview_data.size();
-        auto data_shape = preview_data.shape();
 
-        // Get histogram fields
+        // Histogram bounds
         int num_bins = int(std::max(sqrt(data_shape(0) * data_shape(1)), 2.0));
         BasicStats<float> basic_stats;
         CalcBasicStats(basic_stats, data_ptr, data_size);
         Histogram hist = CalcHistogram(num_bins, basic_stats, data_ptr, data_size);
-
         CARTA::FloatBounds hist_bounds;
         hist_bounds.set_min(hist.GetMinVal());
         hist_bounds.set_max(hist.GetMaxVal());
 
-        // Fill submessage
         data_message->set_image_data(data_ptr, data_size * sizeof(float));
         data_message->set_width(data_shape(0));
         data_message->set_height(data_shape(1));
         *data_message->mutable_histogram_bounds() = hist_bounds;
+
         preview_data.freeStorage(data_ptr, delete_storage);
     } else {
         data_message->set_width(0);
         data_message->set_height(0);
     }
 
-    RemoveRegion(pv_cut_id); // TODO: keep/remove region? (could be used again, depending what user changes for next preview)
+    RemoveRegion(preview_cut_id);
     return pv_success;
 }
 
@@ -1115,35 +1231,37 @@ bool RegionHandler::UpdatePvPreview(
     if (!RegionSet(region_id)) {
         return preview_updated;
     }
+    auto region_state = _regions.at(region_id)->GetRegionState();
 
     for (auto& preview_cut : _pv_preview_cuts) {
         // Find and update pv preview settings with input file and region
         if ((file_id == ALL_FILES || preview_cut.second.file_id == file_id) && preview_cut.second.region_id == region_id) {
-            int preview_id = preview_cut.first;
-            // Find preview cube for this preview id
-            for (auto& preview_cube : _pv_preview_cubes) {
-                if (preview_cube.HasPreviewId(preview_id)) {
-                    spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
-                    // Get parameters from cached PvPreviewCut and PvPreviewCube structs
-                    auto pv_cut = preview_cut.second;
+            auto preview_id = preview_cut.first;
+            auto pv_cut = preview_cut.second;
+            auto width = pv_cut.width;
+            auto reverse = pv_cut.reverse;
 
-                    auto frame_id = GetPvPreviewFrameId(preview_id);
-                    if (_frames.find(frame_id) == _frames.end()) {
-                        return false;
-                    }
-                    auto frame = _frames.at(frame_id);
-
-                    GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
-                    CARTA::PvResponse pv_response;
-                    GeneratedImage pv_image;
-
-                    // Calculate new preview with existing settings and updated pv cut position
-                    preview_updated = CalculatePvPreviewImage(file_id, region_id, pv_cut.width, preview_cube.spectral_range, pv_cut.reverse,
-                        frame, preview_id, preview_cube.region_id, preview_cube.rebin_xy, preview_cube.rebin_z, progress_callback,
-                        pv_response, pv_image);
-                    cb(pv_response, pv_image);
-                }
+            if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end()) {
+                spdlog::debug("No preview cube found");
+                return preview_updated;
             }
+
+            auto frame_id = GetPvPreviewFrameId(preview_id);
+            if (_frames.find(frame_id) == _frames.end()) {
+                spdlog::debug("No preview cube frame found");
+                return preview_updated;
+            }
+
+            spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
+            auto preview_region_origin = _pv_preview_cubes.at(preview_id)->PreviewRegionOrigin();
+            GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
+            CARTA::PvResponse pv_response;
+            GeneratedImage pv_image;
+
+            // We no longer need the region id since we have its state.  A new region will be set in the preview image.
+            preview_updated = CalculatePvPreviewImage(
+                frame_id, region_state, width, reverse, preview_id, preview_region_origin, progress_callback, pv_response, pv_image);
+            cb(pv_response, pv_image);
         }
     }
 
@@ -1171,12 +1289,12 @@ void RegionHandler::StopPvCalc(int file_id, bool is_preview) {
 
 void RegionHandler::StopPvPreview(int preview_id) {
     // Cancel preview cube creation
-    for (auto it = _pv_preview_cubes.begin(); it != _pv_preview_cubes.end();) {
-        if (it->HasPreviewId(preview_id)) {
-            it->StopCube();
-        }
+    if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end()) {
+        return;
     }
-    // Cancel any preview image calculations in progress
+
+    // Cancel any preview image rebinning and calculations in progress
+    _pv_preview_cubes.at(preview_id)->StopCube();
     auto frame_id = GetPvPreviewFrameId(preview_id);
     StopPvCalc(frame_id, true);
 }
@@ -1187,18 +1305,10 @@ void RegionHandler::ClosePvPreview(int preview_id) {
 
     // Remove preview settings for this id
     if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end()) {
-        // TODO: Remove PV cut region set in preview cube
         _pv_preview_cuts.erase(preview_id);
     }
-
-    // Remove preview id from preview cube; or remove cube if not shared
-    for (auto it = _pv_preview_cubes.begin(); it != _pv_preview_cubes.end();) {
-        it->RemovePreviewId(preview_id);
-        if (it->NoPreviewIds()) {
-            it = _pv_preview_cubes.erase(it);
-        } else {
-            ++it;
-        }
+    if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
+        _pv_preview_cubes.erase(preview_id);
     }
 
     // Remove frame and flag for frame id
@@ -1242,7 +1352,7 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
     StokesRegion stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
 
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
         fitting_response.set_message("region is outside image or is not closed");
         fitting_response.set_success(false);
         return false;
@@ -1367,7 +1477,7 @@ bool RegionHandler::GetRegionHistogramData(
         auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
 
         // Get image region
-        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
+        if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
             // region outside image, send default histogram
             auto* default_histogram = histogram_message.mutable_histograms();
             std::vector<int> histogram_bins(1, 0);
@@ -1715,7 +1825,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes) {
             StokesRegion stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
-            return (ApplyRegionToFile(region_id, file_id, partial_z_range, tmp_stokes, stokes_region, lc_region) &&
+            return (ApplyRegionToFile(region_id, file_id, partial_z_range, tmp_stokes, lc_region, stokes_region) &&
                     _frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles));
         };
 
@@ -1896,7 +2006,7 @@ bool RegionHandler::GetRegionStatsData(
     AxisRange z_range(z);
     StokesRegion stokes_region;
     std::shared_ptr<casacore::LCRegion> lc_region;
-    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {
+    if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
         // region outside image: NaN results
         std::map<CARTA::StatsType, double> stats_results;
         for (const auto& carta_stat : required_stats) {
@@ -2296,8 +2406,8 @@ bool RegionHandler::GetFixedPixelRegionProfiles(int file_id, int region_id, int 
             double num_pixels(0.0);
             casacore::Vector<float> region_profile =
                 GetTemporaryRegionProfile(iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
-            spdlog::debug(
-                "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iregion, num_regions, num_pixels);
+            // spdlog::debug(
+            //    "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iregion, num_regions, num_pixels);
 
             if (profiles.empty()) {
                 if (reverse) {
@@ -2628,8 +2738,8 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                 double num_pixels(0.0);
                 casacore::Vector<float> region_profile = GetTemporaryRegionProfile(
                     iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
-                spdlog::debug(
-                    "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iregion, num_regions, num_pixels);
+                // spdlog::debug(
+                //    "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iregion, num_regions, num_pixels);
 
                 profiles.row(iregion) = region_profile;
             }
@@ -2747,7 +2857,7 @@ bool RegionHandler::GetFixedAngularRegionProfiles(int file_id, int region_id, in
                     double num_pixels(0.0);
                     casacore::Vector<float> region_profile = GetTemporaryRegionProfile(
                         iregion, file_id, temp_region_state, reference_csys, per_z, z_range, stokes_index, num_pixels);
-                    spdlog::debug("Polyline segment {} profile {} max num pixels={}", iline, iregion, num_pixels);
+                    // spdlog::debug("Polyline segment {} profile {} max num pixels={}", iline, iregion, num_pixels);
 
                     profiles.row(profile_row++) = region_profile;
                 }
@@ -2957,7 +3067,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         // Get region
         StokesRegion stokes_region;
         std::shared_ptr<casacore::LCRegion> lc_region;
-        if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, stokes_region, lc_region)) {
+        if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, lc_region, stokes_region)) {
             // Get region data
             std::vector<float> region_data;
             if (_frames.at(file_id)->GetRegionData(stokes_region, region_data)) {

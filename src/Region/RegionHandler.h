@@ -124,10 +124,13 @@ private:
 
     // Apply region to image
     bool RegionFileIdsValid(int region_id, int file_id);
+    // Returns 2D LCRegion
     std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
         int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
-    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
-        std::shared_ptr<casacore::LCRegion> region_2D);
+    // Returns StokesRegion struct with StokesSource and ImageRegion.
+    // Uses LCRegion if supplied, else sets LCRegion to get ImageRegion
+    bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, std::shared_ptr<casacore::LCRegion> lc_region,
+        StokesRegion& stokes_region);
 
     // Data stream helpers
     bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
@@ -194,9 +197,9 @@ private:
     bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
         std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
-    bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
-        std::shared_ptr<Frame>& frame, int preview_id, int preview_region_id, int rebin_xy, int rebin_z,
-        GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
+    bool CalculatePvPreviewImage(int frame_id, const RegionState& region_state, int width, bool reverse, int preview_id,
+        const casacore::IPosition& preview_region_origin, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
+        GeneratedImage& pv_image);
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
@@ -230,8 +233,7 @@ private:
     // PV preview, key is preview_id.
     std::unordered_map<int, bool> _stop_pv_preview;
     std::unordered_map<int, PvPreviewCut> _pv_preview_cuts;
-    // Downsampled settings and cubes, may be shared with multiple previews
-    std::vector<PvPreviewCube> _pv_preview_cubes;
+    std::unordered_map<int, std::shared_ptr<PvPreviewCube>> _pv_preview_cubes;
 
     // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
     std::mutex _pix_mvdir_mutex;
