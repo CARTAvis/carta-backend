@@ -21,6 +21,10 @@ bool PvPreviewCube::HasSameParameters(const PreviewCubeParameters& parameters) {
     return _cube_parameters == parameters;
 }
 
+bool PvPreviewCube::UseFullImage(int num_channels) {
+    return _cube_parameters.UseFullImage(num_channels);
+}
+
 void PvPreviewCube::SetPreviewRegionOrigin(const casacore::IPosition& origin) {
     // Preview region's blc in source image
     _origin = origin;
@@ -57,8 +61,8 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     auto rebin_xy = std::max(_cube_parameters.rebin_xy, 1);
     auto rebin_z = std::max(_cube_parameters.rebin_z, 1);
 
-    if (rebin_xy == 1 && rebin_z == 1) {
-        // No downsampling, use create preview image from SubImage only
+    if (rebin_xy <= 1 && rebin_z <= 1) {
+        // No downsampling, create preview image from SubImage only
         _preview_image.reset(new casacore::SubImage<float>(sub_image));
         return _preview_image;
     }

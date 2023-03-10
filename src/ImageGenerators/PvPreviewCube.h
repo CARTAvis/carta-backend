@@ -9,6 +9,7 @@
 
 #include "Region/Region.h"
 #include "Util/File.h"
+#include "Util/Image.h"
 
 #include <casacore/images/Images/SubImage.h>
 
@@ -36,6 +37,12 @@ struct PreviewCubeParameters {
                 (spectral_range == other.spectral_range) && (rebin_xy == other.rebin_xy) && (rebin_z == other.rebin_z) &&
                 (stokes == other.stokes));
     }
+
+    bool UseFullImage(int num_channels) {
+        // true if image region, full spectral range, and no rebin
+        return (region_id == IMAGE_REGION_ID) && (spectral_range.from == 0) && (spectral_range.to == num_channels - 1) &&
+            (rebin_xy == 0) && (rebin_z == 0);
+    }
 };
 
 class PvPreviewCube {
@@ -45,6 +52,7 @@ public:
 
     // Cube parameters
     bool HasSameParameters(const PreviewCubeParameters& parameters);
+    bool UseFullImage(int num_channels);
 
     // blc of preview region's bounding box in source image
     void SetPreviewRegionOrigin(const casacore::IPosition& origin);
