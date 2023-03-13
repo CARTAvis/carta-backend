@@ -225,6 +225,7 @@ set(SOURCE_FILES
         src/Main/WebBrowser.cc
         src/Region/CrtfImportExport.cc
         src/Region/Ds9ImportExport.cc
+		src/Region/LineBoxRegions.cc
         src/Region/Region.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc

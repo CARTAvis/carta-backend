@@ -149,27 +149,8 @@ private:
         const std::string& coordinate, std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles,
         casacore::Quantity& increment, bool& cancelled, std::string& message, bool reverse = false);
     bool CancelLineProfiles(int region_id, int file_id, RegionState& region_state);
-    float GetLineRotation(const std::vector<double>& line_start, const std::vector<double>& line_end);
-    bool GetFixedPixelRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
-        const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
-        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled, bool reverse);
-    bool CheckLinearOffsets(
-        const std::vector<std::vector<double>>& box_centers, std::shared_ptr<casacore::CoordinateSystem> csys, double& increment);
-    double GetPointSeparation(
-        std::shared_ptr<CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2);
-    double GetSeparationTolerance(std::shared_ptr<casacore::CoordinateSystem> csys);
-    bool GetFixedAngularRegionProfiles(int file_id, int region_id, int width, bool per_z, const AxisRange& z_range, int stokes_index,
-        const std::string& coordinate, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> reference_csys,
-        std::function<void(float)>& progress_callback, casacore::Matrix<float>& profiles, double& increment, bool& cancelled,
-        std::string& message, bool reverse);
-    std::vector<double> FindPointAtTargetSeparation(std::shared_ptr<casacore::CoordinateSystem> coord_sys,
-        const std::vector<double>& start_point, const std::vector<double>& end_point, double target_separation, double tolerance);
-    RegionState GetTemporaryRegionState(std::shared_ptr<casacore::CoordinateSystem> coord_sys, int file_id,
-        const std::vector<double>& box_start, const std::vector<double>& box_end, int pixel_width, double angular_width,
-        float line_rotation, double tolerance);
     casacore::Vector<float> GetTemporaryRegionProfile(int region_idx, int file_id, RegionState& region_state,
         std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, const AxisRange& z_range, int stokes_index, double& num_pixels);
-    casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
 
     // Get computed stokes profiles for a region
     using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
@@ -234,9 +215,6 @@ private:
     std::unordered_map<int, bool> _stop_pv_preview;
     std::unordered_map<int, PvPreviewCut> _pv_preview_cuts;
     std::unordered_map<int, std::shared_ptr<PvPreviewCube>> _pv_preview_cubes;
-
-    // For pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
-    std::mutex _pix_mvdir_mutex;
 
     // Prevent crash during line profiles
     std::mutex _line_profile_mutex;

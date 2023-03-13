@@ -40,8 +40,8 @@ struct PreviewCubeParameters {
 
     bool UseFullImage(int num_channels) {
         // true if image region, full spectral range, and no rebin
-        return (region_id == IMAGE_REGION_ID) && (spectral_range.from == 0) && (spectral_range.to == num_channels - 1) &&
-            (rebin_xy == 0) && (rebin_z == 0);
+        return (region_id == IMAGE_REGION_ID) && (spectral_range.from == 0) && (spectral_range.to == num_channels - 1) && (rebin_xy == 0) &&
+               (rebin_z == 0);
     }
 };
 
