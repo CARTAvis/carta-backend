@@ -50,7 +50,7 @@ private:
 
     // Computed entries
     void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type);
-    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const std::vector<int>& direction_axes,
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const std::vector<int>& spatial_axes,
         int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
         casacore::Vector<casacore::String>& axes_names);
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,

@@ -76,7 +76,7 @@ public:
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
-    bool FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& direction_axes, int& spectral_axis, int& stokes_axis,
+    bool FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& spatial_axes, int& spectral_axis, int& stokes_axis,
         std::vector<int>& render_axes, int& z_axis, std::string& message);
 
     // Slice image data (with mask applied)

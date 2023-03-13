@@ -196,13 +196,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
                 AddDataTypeEntry(extended_info, data_type);
 
-                std::vector<int> direction_axes, render_axes;
+                std::vector<int> spatial_axes, render_axes;
                 int spectral_axis, stokes_axis, depth_axis;
-                if (_loader->FindCoordinateAxes(
-                        image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, message)) {
+                if (_loader->FindCoordinateAxes(image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, message)) {
                     casacore::Vector<casacore::String> axes_names;
                     AddShapeEntries(
-                        extended_info, image_shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
+                        extended_info, image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
                     AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
@@ -597,7 +596,7 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 
     // Use header entries to determine computed entries
     casacore::IPosition shape;
-    std::vector<int> direction_axes(2, -1);
+    std::vector<int> spatial_axes(2, -1);
     int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
     casacore::Vector<casacore::String> axes_names(4, "NA");
     std::vector<std::string> spectral_ctypes = {"FREQ", "WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
@@ -639,9 +638,9 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 
                 // Assign axis numbers for different types
                 if (entry_value.find("RA") == 0 || entry_value.find("GLON") == 0 || entry_value.find("UU") == 0) {
-                    direction_axes[0] = axis_num;
+                    spatial_axes[0] = axis_num;
                 } else if (entry_value.find("DEC") == 0 || entry_value.find("GLAT") == 0 || entry_value.find("VV") == 0) {
-                    direction_axes[1] = axis_num;
+                    spatial_axes[1] = axis_num;
                 } else if (entry_value.find("STOKES") == 0) {
                     stokes_axis = axis_num;
                 } else if (std::any_of(spectral_ctypes.begin(), spectral_ctypes.end(),
@@ -666,7 +665,7 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     }
 
     AddDataTypeEntry(extended_info, data_type);
-    AddShapeEntries(extended_info, shape, direction_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
+    AddShapeEntries(extended_info, shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
@@ -689,7 +688,7 @@ void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info,
 }
 
 void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape,
-    const std::vector<int>& direction_axes, int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
+    const std::vector<int>& spatial_axes, int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
     casacore::Vector<casacore::String>& axes_names) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
@@ -707,8 +706,8 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     auto* axes_numbers_info = extended_info.mutable_axes_numbers();
     // Change to 1-based axis indices
-    axes_numbers_info->set_dir_x(direction_axes[0] + 1);
-    axes_numbers_info->set_dir_y(direction_axes[1] + 1);
+    axes_numbers_info->set_dir_x(spatial_axes[0] + 1);
+    axes_numbers_info->set_dir_y(spatial_axes[1] + 1);
     axes_numbers_info->set_spectral(spectral_axis + 1);
     axes_numbers_info->set_stokes(stokes_axis + 1);
     axes_numbers_info->set_depth(depth_axis + 1);
@@ -1395,7 +1394,7 @@ void FileExtInfoLoader::AddCoordRanges(
     if (coord_system.hasDirectionCoordinate()) {
         auto direction_coord = coord_system.directionCoordinate();
         if (direction_coord.referenceValue().size() == 2) {
-            casacore::Vector<int> direction_axes = coord_system.directionAxesNumbers();
+            casacore::Vector<int> spatial_axes = coord_system.directionAxesNumbers();
             casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
             casacore::Vector<double> pixels(2, 0);
             casacore::Vector<double> world(2, 0);
@@ -1422,8 +1421,8 @@ void FileExtInfoLoader::AddCoordRanges(
                 }
             };
 
-            double x_max_pixel = image_shape[direction_axes[0]] - 1;
-            double y_max_pixel = image_shape[direction_axes[1]] - 1;
+            double x_max_pixel = image_shape[spatial_axes[0]] - 1;
+            double y_max_pixel = image_shape[spatial_axes[1]] - 1;
             get_xy_minmax(0, 0);
             get_xy_minmax(x_max_pixel, y_max_pixel);
             get_xy_minmax(0, y_max_pixel);
@@ -1438,26 +1437,26 @@ void FileExtInfoLoader::AddCoordRanges(
             std::string y_end = direction_coord.format(units, casacore::Coordinate::DEFAULT, y_max, 1, true, true);
 
             // Set x and y coordinate names
-            if (direction_axes[0] > -1 && direction_axes[0] < axis_names.size()) {
-                if (axis_names(direction_axes[0]) == "Right Ascension") {
-                    axis_names(direction_axes[0]) = "RA";
-                } else if (axis_names(direction_axes[0]) == "Longitude") {
-                    axis_names(direction_axes[0]) = "LON";
+            if (spatial_axes[0] > -1 && spatial_axes[0] < axis_names.size()) {
+                if (axis_names(spatial_axes[0]) == "Right Ascension") {
+                    axis_names(spatial_axes[0]) = "RA";
+                } else if (axis_names(spatial_axes[0]) == "Longitude") {
+                    axis_names(spatial_axes[0]) = "LON";
                 }
                 auto* x_entry = extended_info.add_computed_entries();
-                x_entry->set_name(fmt::format("{} range", axis_names(direction_axes[0])));
+                x_entry->set_name(fmt::format("{} range", axis_names(spatial_axes[0])));
                 x_entry->set_value(fmt::format("[{}, {}]", x_start, x_end));
                 x_entry->set_entry_type(CARTA::EntryType::STRING);
             }
 
-            if (direction_axes[1] > -1 && direction_axes[1] < axis_names.size()) {
-                if (axis_names(direction_axes[1]) == "Declination") {
-                    axis_names(direction_axes[1]) = "DEC";
-                } else if (axis_names(direction_axes[1]) == "Latitude") {
-                    axis_names(direction_axes[1]) = "LAT";
+            if (spatial_axes[1] > -1 && spatial_axes[1] < axis_names.size()) {
+                if (axis_names(spatial_axes[1]) == "Declination") {
+                    axis_names(spatial_axes[1]) = "DEC";
+                } else if (axis_names(spatial_axes[1]) == "Latitude") {
+                    axis_names(spatial_axes[1]) = "LAT";
                 }
                 auto* y_entry = extended_info.add_computed_entries();
-                y_entry->set_name(fmt::format("{} range", axis_names(direction_axes[1])));
+                y_entry->set_name(fmt::format("{} range", axis_names(spatial_axes[1])));
                 y_entry->set_value(fmt::format("[{}, {}]", y_start, y_end));
                 y_entry->set_entry_type(CARTA::EntryType::STRING);
             }
