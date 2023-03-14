@@ -845,7 +845,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             bool is_coord0_dir(coord0.isConform("deg")), is_coord1_dir(coord1.isConform("deg"));
             if (is_coord0_dir || is_coord1_dir) {
                 // Reference coord(s) converted to deg
-                std::string ref_coords_deg = ConvertCoordsToDeg(coord0, coord1);
+                std::string ref_coords_deg = ConvertCoordsToDeg(axis_names(display_axis0), coord0, axis_names(display_axis1), coord1);
                 // Add ref coords in deg
                 entry = extended_info.add_computed_entries();
                 entry->set_name("Image ref coords (deg)");
@@ -1140,7 +1140,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         bool q1IsDir(q1.isConform("deg")), q2IsDir(q2.isConform("deg"));
         if (q1IsDir || q2IsDir) {
             // Reference coord(s) converted to deg
-            std::string ref_coords_deg = ConvertCoordsToDeg(q1, q2);
+            std::string ref_coords_deg = ConvertCoordsToDeg(coord_name1, q1, coord_name2, q2);
             auto comp_entry = extended_info.add_computed_entries();
             comp_entry->set_name("Image ref coords (deg)");
             comp_entry->set_value(ref_coords_deg);
@@ -1305,21 +1305,22 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     }
 
     casacore::Quantity quant1(val, unit), pi2(360, "deg");
-    if (format == casacore::MVAngle::ANGLE && quant1.get("deg").getValue() < 0) {
+    if (type.find("Longitude") != std::string::npos && quant1.get("deg").getValue() < 0) {
         quant1 += pi2;
     }
     casacore::MVAngle mva(quant1);
     return mva.string(format, 10);
 }
 
-std::string FileExtInfoLoader::ConvertCoordsToDeg(const casacore::Quantity& coord0, const casacore::Quantity& coord1) {
+std::string FileExtInfoLoader::ConvertCoordsToDeg(
+    const std::string& type0, const casacore::Quantity& coord0, const std::string& type1, const casacore::Quantity& coord1) {
     // If possible, convert quantities to degrees. Return formatted string
     casacore::Quantity coord0_deg(coord0), coord1_deg(coord1), pi2(360, "deg");
     if (coord0.isConform("deg")) {
-        coord0_deg = coord0.get("deg").getValue() < 0 ? (coord0 + pi2).get("deg") : coord0.get("deg");
+        coord0_deg = (type0 == "Longitude" && coord0.get("deg").getValue() < 0) ? (coord0 + pi2).get("deg") : coord0.get("deg");
     }
     if (coord1.isConform("deg")) {
-        coord1_deg = coord1.get("deg").getValue() < 0 ? (coord1 + pi2).get("deg") : coord1.get("deg");
+        coord1_deg = (type1 == "Longitude" && coord1.get("deg").getValue() < 0) ? (coord1 + pi2).get("deg") : coord1.get("deg");
     }
 
     return fmt::format("[{}, {}]", coord0_deg, coord1_deg);
