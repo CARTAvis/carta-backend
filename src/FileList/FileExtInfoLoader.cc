@@ -706,8 +706,8 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 
     auto* axes_numbers_info = extended_info.mutable_axes_numbers();
     // Change to 1-based axis indices
-    axes_numbers_info->set_dir_x(spatial_axes[0] + 1);
-    axes_numbers_info->set_dir_y(spatial_axes[1] + 1);
+    axes_numbers_info->set_spatial_x(spatial_axes[0] + 1);
+    axes_numbers_info->set_spatial_y(spatial_axes[1] + 1);
     axes_numbers_info->set_spectral(spectral_axis + 1);
     axes_numbers_info->set_stokes(stokes_axis + 1);
     axes_numbers_info->set_depth(depth_axis + 1);
