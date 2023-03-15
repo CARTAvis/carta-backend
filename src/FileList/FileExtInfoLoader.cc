@@ -845,7 +845,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
             bool is_coord0_dir(coord0.isConform("deg")), is_coord1_dir(coord1.isConform("deg"));
             if (is_coord0_dir || is_coord1_dir) {
                 // Reference coord(s) converted to deg
-                std::string ref_coords_deg = ConvertCoordsToDeg(axis_names(display_axis0), coord0, axis_names(display_axis1), coord1);
+                std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(axis_names(display_axis0), coord0),
+                    ConvertCoordsToDeg(axis_names(display_axis1), coord1));
                 // Add ref coords in deg
                 entry = extended_info.add_computed_entries();
                 entry->set_name("Image ref coords (deg)");
@@ -1140,7 +1141,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         bool q1IsDir(q1.isConform("deg")), q2IsDir(q2.isConform("deg"));
         if (q1IsDir || q2IsDir) {
             // Reference coord(s) converted to deg
-            std::string ref_coords_deg = ConvertCoordsToDeg(coord_name1, q1, coord_name2, q2);
+            std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(coord_name1, q1), ConvertCoordsToDeg(coord_name2, q2));
             auto comp_entry = extended_info.add_computed_entries();
             comp_entry->set_name("Image ref coords (deg)");
             comp_entry->set_value(ref_coords_deg);
@@ -1312,18 +1313,13 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     return mva.string(format, 10);
 }
 
-std::string FileExtInfoLoader::ConvertCoordsToDeg(
-    const std::string& type0, const casacore::Quantity& coord0, const std::string& type1, const casacore::Quantity& coord1) {
+std::string FileExtInfoLoader::ConvertCoordsToDeg(const std::string& type, const casacore::Quantity& coord) {
     // If possible, convert quantities to degrees. Return formatted string
-    casacore::Quantity coord0_deg(coord0), coord1_deg(coord1), pi2(360, "deg");
-    if (coord0.isConform("deg")) {
-        coord0_deg = (type0 == "Longitude" && coord0.get("deg").getValue() < 0) ? (coord0 + pi2).get("deg") : coord0.get("deg");
+    casacore::Quantity coord_deg(coord), pi2(360, "deg");
+    if (coord.isConform("deg")) {
+        coord_deg = (type == "Longitude" && coord.get("deg").getValue() < 0) ? (coord + pi2).get("deg") : coord.get("deg");
     }
-    if (coord1.isConform("deg")) {
-        coord1_deg = (type1 == "Longitude" && coord1.get("deg").getValue() < 0) ? (coord1 + pi2).get("deg") : coord1.get("deg");
-    }
-
-    return fmt::format("[{}, {}]", coord0_deg, coord1_deg);
+    return fmt::format("{}", coord_deg);
 }
 
 std::string FileExtInfoLoader::ConvertIncrementToArcsec(const casacore::Quantity& inc0, const casacore::Quantity& inc1) {

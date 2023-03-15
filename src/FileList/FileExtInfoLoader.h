@@ -67,8 +67,7 @@ private:
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);
 
     // Convert Quantities and return formatted string
-    std::string ConvertCoordsToDeg(
-        const std::string& type0, const casacore::Quantity& coord0, const std::string& type1, const casacore::Quantity& coord1);
+    std::string ConvertCoordsToDeg(const std::string& type, const casacore::Quantity& coord);
     std::string ConvertIncrementToArcsec(const casacore::Quantity& inc0, const casacore::Quantity& inc1);
 
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
