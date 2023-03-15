@@ -1,6 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c":[4,0,74,11],
 "Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce":[4,0,74,1],
 "Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,74,7],
 "Logger_8h.html#aae919ba7488e6353a8c239b5f081247c":[4,0,74,3],
@@ -249,5 +248,6 @@ var NAVTREEINDEX1 =
 "classcarta_1_1AnimationTask.html#a5849dbfbf04270fa8f3d0531edc6977d":[3,0,0,71,0],
 "classcarta_1_1AnimationTask.html#a92a52915589d226cf4afd3428ffea271":[3,0,0,71,2],
 "classcarta_1_1BasicStatsCalculator.html":[3,0,0,54],
-"classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44":[3,0,0,54,3]
+"classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44":[3,0,0,54,3],
+"classcarta_1_1BasicStatsCalculator.html#a26f063897a33e16c5155c0efa6d6575c":[3,0,0,54,9]
 };
