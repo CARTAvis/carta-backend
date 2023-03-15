@@ -31,7 +31,7 @@ static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -86,7 +86,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (load_image_cache && !(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
