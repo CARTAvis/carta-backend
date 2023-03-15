@@ -22,37 +22,32 @@ struct PreviewCubeParameters {
     int rebin_xy;
     int rebin_z;
     int stokes;
+    RegionState region_state;
 
     PreviewCubeParameters() : file_id(-1) {}
-    PreviewCubeParameters(int file_id_, int region_id_, const AxisRange& spectral_range_, int rebin_xy_, int rebin_z_, int stokes_)
+    PreviewCubeParameters(int file_id_, int region_id_, const AxisRange& spectral_range_, int rebin_xy_, int rebin_z_, int stokes_,
+        RegionState& region_state_)
         : file_id(file_id_),
           region_id(region_id_),
           spectral_range(spectral_range_),
           rebin_xy(rebin_xy_),
           rebin_z(rebin_z_),
-          stokes(stokes_) {}
+          stokes(stokes_),
+          region_state(region_state_) {}
 
     bool operator==(const PreviewCubeParameters& other) {
         return ((other.file_id == ALL_FILES || file_id == other.file_id) && (region_id == other.region_id) &&
                 (spectral_range == other.spectral_range) && (rebin_xy == other.rebin_xy) && (rebin_z == other.rebin_z) &&
-                (stokes == other.stokes));
-    }
-
-    bool UseFullImage(int num_channels) {
-        // true if image region, full spectral range, and no rebin
-        return (region_id == IMAGE_REGION_ID) && (spectral_range.from == 0) && (spectral_range.to == num_channels - 1) && (rebin_xy == 0) &&
-               (rebin_z == 0);
+                (stokes == other.stokes) && (region_state == other.region_state));
     }
 };
 
 class PvPreviewCube {
 public:
-    PvPreviewCube(int file_id_, int region_id_, const AxisRange& spectral_range_, int rebin_xy_, int rebin_z_, int stokes_);
     PvPreviewCube(const PreviewCubeParameters& parameters);
 
     // Cube parameters
     bool HasSameParameters(const PreviewCubeParameters& parameters);
-    bool UseFullImage(int num_channels);
 
     // blc of preview region's bounding box in source image
     void SetPreviewRegionOrigin(const casacore::IPosition& origin);
@@ -63,7 +58,11 @@ public:
 
     // Create preview image by applying rebinning to SubImage, and store it.
     // Input SubImage is preview region and spectral range applied to source image.
-    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(casacore::SubImage<float>& sub_image);
+    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(casacore::SubImage<float>& sub_image, std::string& error);
+
+    // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels
+    bool GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
+        std::vector<float>& profile, double& num_pixels);
 
     void StopCube();
 
@@ -76,6 +75,8 @@ private:
 
     // Preview image cube: SubImage with downsampling applied
     std::shared_ptr<casacore::ImageInterface<float>> _preview_image;
+
+    casacore::Array<float> _cube_data;
 
     // Flag to stop downsampling image
     bool _stop_cube;
