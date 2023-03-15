@@ -1755,6 +1755,7 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
 
 bool Session::SendPvPreview(int file_id, int region_id) {
     // return true if data sent
+    Timer t;
     auto pv_preview_callback = [&](CARTA::PvResponse& message, GeneratedImage& pv_image) {
         if (message.has_preview_data()) {
             auto data_message = message.mutable_preview_data();
@@ -1769,6 +1770,7 @@ bool Session::SendPvPreview(int file_id, int region_id) {
             }
 
             // Send message with preview id, even if failed
+            spdlog::performance("Update pv image in {:.3f} ms", t.Elapsed().ms());
             SendEvent(CARTA::EventType::PV_PREVIEW_DATA, 0, *data_message);
         }
     };
