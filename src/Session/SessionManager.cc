@@ -16,6 +16,14 @@ namespace carta {
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
+Session* SessionManager::findSession(uint32_t session_id) {
+    std::unique_lock<std::mutex> ulock(_sessions_mutex);
+    if (_sessions.count(session_id)) {
+        return _sessions[session_id];
+    }
+    return nullptr;
+}
+
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
     if (!_sessions.count(session_id)) {
@@ -91,7 +99,6 @@ void SessionManager::OnConnect(WSType* ws) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
     _sessions[session_id] = new Session(ws, loop, session_id, address, _settings.top_level_folder, _settings.starting_folder,
         _file_list_handler, _settings.read_only_mode, _settings.enable_scripting);
-    ulock.unlock();
 
     _sessions[session_id]->IncreaseRefCount();
 
@@ -111,8 +118,9 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
 
     // Delete the Session
-    if (_sessions.count(session_id)) {
-        _sessions[session_id]->DecreaseRefCount();
+    auto session = findSession(session_id);
+    if (session) {
+        session->DecreaseRefCount();
         DeleteSession(session_id);
     }
 
@@ -122,7 +130,7 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
 
 void SessionManager::OnDrain(WSType* ws) {
     uint32_t session_id = ws->getUserData()->session_id;
-    Session* session = _sessions[session_id];
+    Session* session = findSession(session_id);
     if (session) {
         spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
             session->GetAddress(), ws->getBufferedAmount());
@@ -133,7 +141,7 @@ void SessionManager::OnDrain(WSType* ws) {
 
 void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    Session* session = _sessions[session_id];
+    Session* session = findSession(session_id);
     if (!session) {
         spdlog::error("Missing session!");
         return;
@@ -575,7 +583,7 @@ void SessionManager::RunApp() {
 bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action,
     std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
     ScriptingSessionClosedCallback session_closed_callback) {
-    Session* session = _sessions[session_id];
+    Session* session = findSession(session_id);
     if (!session) {
         return false;
     }
@@ -586,7 +594,7 @@ bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_r
 }
 
 void SessionManager::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
-    Session* session = _sessions[session_id];
+    Session* session = findSession(session_id);
     if (!session) {
         return; // Session is gone; nothing to do
     }
