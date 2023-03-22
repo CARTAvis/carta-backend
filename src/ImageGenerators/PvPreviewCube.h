@@ -52,6 +52,10 @@ public:
     // Stokes from cube parameters, for preview image
     int GetStokes();
 
+    // Filename of source image for preview image name
+    void SetSourceFileName(const std::string& name);
+    std::string GetSourceFileName();
+
     // blc of preview region's bounding box in source image
     void SetPreviewRegionOrigin(const casacore::IPosition& origin);
     bool UsePreviewRegionOrigin(); // only if no rebin_xy
@@ -73,6 +77,9 @@ public:
 private:
     // Cube parameters
     PreviewCubeParameters _cube_parameters;
+
+    // Name of source image
+    std::string _source_filename;
 
     // Origin (blc) of preview region in source image
     casacore::IPosition _origin;

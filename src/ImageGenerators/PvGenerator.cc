@@ -15,10 +15,10 @@ using namespace carta;
 
 PvGenerator::PvGenerator() : _file_id(0), _name("") {}
 
-void PvGenerator::SetFileIdName(int file_id, int index, const std::string& filename) {
-    // Optional (not for preview) file id and name for PV image
+void PvGenerator::SetFileIdName(int file_id, int index, const std::string& filename, bool is_preview) {
+    // Optional (not for preview) file id, and name for PV image
     _file_id = ((file_id + 1) * PV_ID_MULTIPLIER) - index;
-    SetPvImageName(filename, index);
+    SetPvImageName(filename, index, is_preview);
 }
 
 bool PvGenerator::GetPvImage(std::shared_ptr<Frame>& frame, const casacore::Matrix<float>& pv_data, casacore::IPosition& pv_shape,
@@ -51,14 +51,18 @@ bool PvGenerator::GetPvImage(std::shared_ptr<Frame>& frame, const casacore::Matr
     return true;
 }
 
-void PvGenerator::SetPvImageName(const std::string& filename, int index) {
+void PvGenerator::SetPvImageName(const std::string& filename, int index, bool is_preview) {
     // Index appended when multiple PV images shown for one input image
     // image.ext -> image_pv[index].ext
+    // If is_preview: image.ext -> image_pv_preview[index].ext (index is preview_id)
     fs::path input_filepath(filename);
 
     // Assemble new filename
     auto pv_path = input_filepath.stem();
     pv_path += "_pv";
+    if (is_preview) {
+        pv_path += "_preview";
+    }
     if (index > 0) {
         pv_path += std::to_string(index);
     }

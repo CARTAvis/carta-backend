@@ -24,7 +24,7 @@ public:
     ~PvGenerator() = default;
 
     // For PV generator (not preview)
-    void SetFileIdName(int file_id, int index, const std::string& filename);
+    void SetFileIdName(int file_id, int index, const std::string& filename, bool is_preview = false);
 
     // Create generated PV image from input data. If reverse, [spectral, offset] instead of normal [offset, spectral].
     // Returns generated image and success, with message if failure.
@@ -33,7 +33,7 @@ public:
         std::string& message);
 
 private:
-    void SetPvImageName(const std::string& filename, int index);
+    void SetPvImageName(const std::string& filename, int index, bool is_preview);
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image,
         std::shared_ptr<casacore::CoordinateSystem> input_csys, casacore::IPosition& pv_shape, int stokes,

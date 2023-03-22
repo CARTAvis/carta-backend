@@ -22,6 +22,14 @@ int PvPreviewCube::GetStokes() {
     return _cube_parameters.stokes;
 }
 
+void PvPreviewCube::SetSourceFileName(const std::string& name) {
+    _source_filename = name;
+}
+
+std::string PvPreviewCube::GetSourceFileName() {
+    return _source_filename;
+}
+
 void PvPreviewCube::SetPreviewRegionOrigin(const casacore::IPosition& origin) {
     // Preview region's blc in source image
     _origin = origin;

@@ -1023,6 +1023,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     if (!preview_cube_set) {
         // Cache new settings for this preview
         _pv_preview_cubes[preview_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+        _pv_preview_cubes[preview_id]->SetSourceFileName(frame->GetFileName());
     }
 
     auto preview_cube = _pv_preview_cubes.at(preview_id);
@@ -1217,6 +1218,8 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
     int start_channel(0); // spectral range applied in preview image
     int stokes(preview_cube->GetStokes());
     PvGenerator pv_generator;
+    pv_generator.SetFileIdName(frame_id, preview_id, preview_cube->GetSourceFileName(), true);
+
     if (pv_generator.GetPvImage(preview_frame, no_preview_data, data_shape, increment, start_channel, stokes, reverse, pv_image, error)) {
         // Access preview data by pointer and size
         auto data_size = preview_data.size();
