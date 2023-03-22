@@ -11,6 +11,8 @@
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 #include <casacore/measures/Measures/Stokes.h>
 
+#include "Util/Stokes.h"
+
 using namespace carta;
 
 PvGenerator::PvGenerator() : _file_id(0), _name("") {}
@@ -130,8 +132,8 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<ca
 
     // Add stokes coordinate if input image has one
     if (input_csys->hasPolarizationCoordinate()) {
-        auto stokes_type = casacore::Stokes::type(stokes + 1);
-        casacore::Vector<casacore::Int> types(1, stokes_type);
+        auto casacore_stokes_type = StokesTypesToCasacore[stokes];
+        casacore::Vector<casacore::Int> types(1, casacore_stokes_type);
         casacore::StokesCoordinate stokes_coord(types);
         pv_csys.addCoordinate(stokes_coord);
         pv_shape.append(casacore::IPosition(1, 1));
