@@ -129,8 +129,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a3f73d0fb1820aaf9b2eda5fa8af4465f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae41e978649253da4adc64d03bdd12f82"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#ae41e978649253da4adc64d03bdd12f82">AddDataTypeEntry</a> (CARTA::FileInfoExtended &amp;extended_info, casacore::DataType data_type)</td></tr>
 <tr class="separator:ae41e978649253da4adc64d03bdd12f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3b9a252b0d774fa584b8401f6e026aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#aa3b9a252b0d774fa584b8401f6e026aa">AddShapeEntries</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::IPosition &amp;shape, int chan_axis, int depth_axis, int stokes_axis, const std::vector&lt; int &gt; &amp;render_axes)</td></tr>
-<tr class="separator:aa3b9a252b0d774fa584b8401f6e026aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0eb44133b06ce14972f8b0b94ca7eee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#ae0eb44133b06ce14972f8b0b94ca7eee">AddShapeEntries</a> (CARTA::FileInfoExtended &amp;extended_info, const casacore::IPosition &amp;shape, const std::vector&lt; int &gt; &amp;spatial_axes, int spectral_axis, int stokes_axis, const std::vector&lt; int &gt; &amp;render_axes, int depth_axis, casacore::Vector&lt; casacore::String &gt; &amp;axes_names)</td></tr>
+<tr class="separator:ae0eb44133b06ce14972f8b0b94ca7eee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adb7260beffbf94d590beb869d1b0ecbc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#adb7260beffbf94d590beb869d1b0ecbc">AddInitialComputedEntries</a> (const std::string &amp;hdu, CARTA::FileInfoExtended &amp;extended_info, const std::string &amp;filename, const std::vector&lt; int &gt; &amp;render_axes, <a class="el" href="classcarta_1_1CompressedFits.html">CompressedFits</a> *compressed_fits=nullptr)</td></tr>
 <tr class="separator:adb7260beffbf94d590beb869d1b0ecbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8887729cdc95301f2d85a423c5171a73"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a8887729cdc95301f2d85a423c5171a73">AddComputedEntries</a> (CARTA::FileInfoExtended &amp;extended_info, casacore::ImageInterface&lt; float &gt; *image, const std::vector&lt; int &gt; &amp;display_axes, bool use_image_for_entries)</td></tr>
@@ -143,8 +143,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a02cd16701178cf515aca3f5623537611"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa0abc9c6dd40164f472c7554adc32b6"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#afa0abc9c6dd40164f472c7554adc32b6">MakeAngleString</a> (const std::string &amp;type, double val, const std::string &amp;unit)</td></tr>
 <tr class="separator:afa0abc9c6dd40164f472c7554adc32b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae11ff93ae2962198d6b3b195c437bb72"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#ae11ff93ae2962198d6b3b195c437bb72">ConvertCoordsToDeg</a> (const casacore::Quantity &amp;coord0, const casacore::Quantity &amp;coord1)</td></tr>
-<tr class="separator:ae11ff93ae2962198d6b3b195c437bb72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb3998e3b3756d1ee8a2bb91f445c4d7"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#adb3998e3b3756d1ee8a2bb91f445c4d7">ConvertCoordsToDeg</a> (const std::string &amp;type, const casacore::Quantity &amp;coord)</td></tr>
+<tr class="separator:adb3998e3b3756d1ee8a2bb91f445c4d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac36abc843ecdd6253cbb9524c77bc5ce"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#ac36abc843ecdd6253cbb9524c77bc5ce">ConvertIncrementToArcsec</a> (const casacore::Quantity &amp;inc0, const casacore::Quantity &amp;inc1)</td></tr>
 <tr class="separator:ac36abc843ecdd6253cbb9524c77bc5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a807261055dc7071b232cf87138dba416"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileExtInfoLoader.html#a807261055dc7071b232cf87138dba416">GetCoordNames</a> (std::string &amp;ctype1, std::string &amp;ctype2, std::string &amp;radesys, std::string &amp;coord_name1, std::string &amp;coord_name2, std::string &amp;projection)</td></tr>
@@ -543,8 +543,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa3b9a252b0d774fa584b8401f6e026aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa3b9a252b0d774fa584b8401f6e026aa">&#9670;&nbsp;</a></span>AddShapeEntries()</h2>
+<a id="ae0eb44133b06ce14972f8b0b94ca7eee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae0eb44133b06ce14972f8b0b94ca7eee">&#9670;&nbsp;</a></span>AddShapeEntries()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -567,14 +567,14 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>chan_axis</em>, </td>
+          <td class="paramtype">const std::vector&lt; int &gt; &amp;&#160;</td>
+          <td class="paramname"><em>spatial_axes</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>depth_axis</em>, </td>
+          <td class="paramname"><em>spectral_axis</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -586,7 +586,19 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const std::vector&lt; int &gt; &amp;&#160;</td>
-          <td class="paramname"><em>render_axes</em>&#160;</td>
+          <td class="paramname"><em>render_axes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>depth_axis</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casacore::Vector&lt; casacore::String &gt; &amp;&#160;</td>
+          <td class="paramname"><em>axes_names</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -603,14 +615,14 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_aa3b9a252b0d774fa584b8401f6e026aa_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ae0eb44133b06ce14972f8b0b94ca7eee_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
 </div>
 </div>
-<a id="ae11ff93ae2962198d6b3b195c437bb72"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae11ff93ae2962198d6b3b195c437bb72">&#9670;&nbsp;</a></span>ConvertCoordsToDeg()</h2>
+<a id="adb3998e3b3756d1ee8a2bb91f445c4d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb3998e3b3756d1ee8a2bb91f445c4d7">&#9670;&nbsp;</a></span>ConvertCoordsToDeg()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -621,14 +633,14 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">std::string FileExtInfoLoader::ConvertCoordsToDeg </td>
           <td>(</td>
-          <td class="paramtype">const casacore::Quantity &amp;&#160;</td>
-          <td class="paramname"><em>coord0</em>, </td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>type</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const casacore::Quantity &amp;&#160;</td>
-          <td class="paramname"><em>coord1</em>&#160;</td>
+          <td class="paramname"><em>coord</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -645,7 +657,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_ae11ff93ae2962198d6b3b195c437bb72_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileExtInfoLoader_adb3998e3b3756d1ee8a2bb91f445c4d7_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 

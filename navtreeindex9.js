@@ -1,7 +1,5 @@
 var NAVTREEINDEX9 =
 {
-"structcarta_1_1FitData.html#afef66e0a43156be8b50f1f4a67eb5b91":[3,0,0,45,3],
-"structcarta_1_1FitStatus.html":[3,0,0,46],
 "structcarta_1_1FitStatus.html#a060ac529bf23880f23b13fdd88b22fe8":[3,0,0,46,5],
 "structcarta_1_1FitStatus.html#a1cc8198fbcaab29c5a1e3308c6fcc14f":[3,0,0,46,2],
 "structcarta_1_1FitStatus.html#a23c1a555efd20c6af61a3bae2a2dddb9":[3,0,0,46,3],

@@ -193,7 +193,7 @@ var sectionId = 'dynsection-32';
 <!-- Node20 -->
 <g id="node18" class="node">
 <title>Node20</title>
-<g id="a_node18"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#aa3b9a252b0d774fa584b8401f6e026aa" target="_top" xlink:title=" ">
+<g id="a_node18"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#ae0eb44133b06ce14972f8b0b94ca7eee" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="741.5,-703.5 741.5,-733.5 873.5,-733.5 873.5,-703.5 741.5,-703.5"/>
 <text text-anchor="start" x="749.5" y="-721.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
 <text text-anchor="middle" x="807.5" y="-710.5" font-family="Helvetica,sans-Serif" font-size="10.00">::AddShapeEntries</text>
@@ -352,7 +352,7 @@ var sectionId = 'dynsection-32';
 <!-- Node8 -->
 <g id="node8" class="node">
 <title>Node8</title>
-<g id="a_node8"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#ae11ff93ae2962198d6b3b195c437bb72" target="_top" xlink:title=" ">
+<g id="a_node8"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#adb3998e3b3756d1ee8a2bb91f445c4d7" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1167.5,-918.5 1167.5,-948.5 1299.5,-948.5 1299.5,-918.5 1167.5,-918.5"/>
 <text text-anchor="start" x="1175.5" y="-936.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
 <text text-anchor="middle" x="1233.5" y="-925.5" font-family="Helvetica,sans-Serif" font-size="10.00">::ConvertCoordsToDeg</text>
