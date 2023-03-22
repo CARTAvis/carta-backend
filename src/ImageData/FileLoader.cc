@@ -175,11 +175,11 @@ std::shared_ptr<casacore::CoordinateSystem> FileLoader::GetCoordinateSystem(cons
     return std::make_shared<casacore::CoordinateSystem>();
 }
 
-bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& direction_axes, int& spectral_axis, int& stokes_axis,
+bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& spatial_axes, int& spectral_axis, int& stokes_axis,
     std::vector<int>& render_axes, int& z_axis, std::string& message) {
     // Return image shape and axes for image. Spectral axis may or may not be z axis.
     // All parameters are return values.
-    direction_axes.assign(2, -1);
+    spatial_axes.assign(2, -1);
     spectral_axis = -1;
     z_axis = -1;
     stokes_axis = -1;
@@ -219,15 +219,15 @@ bool FileLoader::FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>
     _height = shape(render_axes[1]);
     _image_plane_size = _width * _height;
 
-    // Find direction axes
+    // Find spatial axes
     if (_coord_sys->hasDirectionCoordinate()) {
         auto tmp_axes = _coord_sys->directionAxesNumbers();
-        direction_axes[0] = tmp_axes[0];
-        direction_axes[1] = tmp_axes[1];
+        spatial_axes[0] = tmp_axes[0];
+        spatial_axes[1] = tmp_axes[1];
     } else if (_coord_sys->hasLinearCoordinate()) {
         auto tmp_axes = _coord_sys->linearAxesNumbers();
-        for (int i = 0; i < casacore::min(tmp_axes.size(), 2); ++i) { // Assume the first two linear axes are direction axes, if any
-            direction_axes[i] = tmp_axes[i];
+        for (int i = 0; i < casacore::min(tmp_axes.size(), 2); ++i) { // Assume the first two linear axes are spatial axes, if any
+            spatial_axes[i] = tmp_axes[i];
         }
     }
 
