@@ -50,8 +50,9 @@ private:
 
     // Computed entries
     void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type);
-    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int depth_axis,
-        int stokes_axis, const std::vector<int>& render_axes);
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const std::vector<int>& spatial_axes,
+        int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
+        casacore::Vector<casacore::String>& axes_names);
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
         const std::vector<int>& render_axes, CompressedFits* compressed_fits = nullptr);
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
@@ -66,7 +67,7 @@ private:
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);
 
     // Convert Quantities and return formatted string
-    std::string ConvertCoordsToDeg(const casacore::Quantity& coord0, const casacore::Quantity& coord1);
+    std::string ConvertCoordsToDeg(const std::string& type, const casacore::Quantity& coord);
     std::string ConvertIncrementToArcsec(const casacore::Quantity& inc0, const casacore::Quantity& inc1);
 
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
