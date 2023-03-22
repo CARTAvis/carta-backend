@@ -49,21 +49,25 @@ public:
     // Cube parameters
     bool HasSameParameters(const PreviewCubeParameters& parameters);
 
+    // Stokes from cube parameters, for preview image
+    int GetStokes();
+
     // blc of preview region's bounding box in source image
     void SetPreviewRegionOrigin(const casacore::IPosition& origin);
+    bool UsePreviewRegionOrigin(); // only if no rebin_xy
     casacore::IPosition PreviewRegionOrigin();
 
-    // Return stored preview image (or nullptr)
+    // Return cached preview image
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage();
 
-    // Create preview image by applying rebinning to SubImage, and store it.
-    // Input SubImage is preview region and spectral range applied to source image.
+    // Create preview image by applying rebinning to SubImage, and cache cube data.
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(casacore::SubImage<float>& sub_image, std::string& error);
 
     // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels
     bool GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
         std::vector<float>& profile, double& num_pixels);
 
+    // Cancel preview image and cube data cache.
     void StopCube();
 
 private:

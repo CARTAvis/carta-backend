@@ -179,7 +179,6 @@ bool LineBoxRegions::GetFixedPixelRegions(const RegionState& line_region_state, 
             if (box_centers.empty()) {
                 trim_line = false;
             } else {
-                std::lock_guard<std::mutex> lock(_pix_mvdir_mutex);
                 trim_line = (GetPointSeparation(line_coord_sys, box_centers.back(), line_end) < (0.5 * increment));
             }
         }
@@ -201,9 +200,6 @@ bool LineBoxRegions::CheckLinearOffsets(
     double min_separation(0.0), max_separation(0.0);
     double total_separation(0.0);
     double tolerance = GetSeparationTolerance(coord_sys);
-
-    // Lock pixel to MVDirection conversion; cannot multithread DirectionCoordinate::toWorld
-    std::lock_guard<std::mutex> lock(_pix_mvdir_mutex);
 
     // Check angular separation between centers
     for (size_t i = 0; i < num_centers - 1; ++i) {
@@ -234,9 +230,8 @@ bool LineBoxRegions::CheckLinearOffsets(
 double LineBoxRegions::GetPointSeparation(
     std::shared_ptr<casacore::CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2) {
     // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
-    // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     double separation(0.0);
-
+    std::lock_guard<std::mutex> guard(_mvdir_mutex);
     try {
         casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(point1);
         casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(point2);
@@ -279,9 +274,7 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
         std::vector<double> line_start({control_points[0].x(), control_points[0].y()});
         std::vector<double> line_end({control_points[1].x(), control_points[1].y()});
 
-        std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
         double line_separation = GetPointSeparation(line_coord_sys, line_start, line_end);
-        mvdir_lock.unlock();
 
         if (!line_separation) {
             // endpoint(s) out of image and coordinate system
@@ -306,9 +299,6 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
         // Copy center for offsets
         std::vector<double> pos_box_start({line_center[0], line_center[1]}), neg_box_start({line_center[0], line_center[1]});
 
-        // Lock entire loop, for measuring separation between points
-        mvdir_lock.lock();
-
         // Get points along line from center out with increment spacing to set regions
         for (int ioffset = 1; ioffset <= num_offsets; ++ioffset) {
             // Each box height (box_start to box_end) is variable to be fixed angular spacing.
@@ -328,7 +318,6 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
                 neg_box_start = neg_box_end; // end of this box is start of next box
             }
         }
-        mvdir_lock.unlock();
 
         int start_idx, end_idx;                                 // for start and end of overlapping box regions
         float rotation = GetLineRotation(line_start, line_end); // for RegionState
@@ -341,8 +330,7 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
             RegionState polygon_region_state; // corners of box but not a box since not uniform
 
             if (!region_start.empty() && !region_end.empty()) {
-                // If empty, part of line off image.
-                // Find box corners and set polygon region. Mutex is locked in function while determining polygon corners.
+                // Find box corners and set polygon region. If empty, part of line off image.
                 polygon_region_state = GetPolygonRegionState(line_coord_sys, line_region_state.reference_file_id, region_start, region_end,
                     line_width, angular_width, rotation, tolerance);
             }
@@ -359,7 +347,6 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
             std::vector<double> line_end({control_points[iline + 1].x(), control_points[iline + 1].y()});
 
             // Angular length of line (arcsec)
-            std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
             double line_separation = GetPointSeparation(line_coord_sys, line_start, line_end);
 
             if (!line_separation) {
@@ -390,7 +377,6 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
                     line_points.push_back(next_point);
                 }
             }
-            mvdir_lock.unlock();
 
             num_regions = line_points.size() - 1;
             int start_idx, end_idx;                                 // for start and end of overlapping box regions
@@ -420,9 +406,7 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
             if (line_points.back().empty()) {
                 trim_line = false;
             } else {
-                mvdir_lock.lock();
                 trim_line = (GetPointSeparation(line_coord_sys, line_points.back(), line_end) < (0.5 * increment));
-                mvdir_lock.unlock();
             }
         } // line segments loop
     }
@@ -434,7 +418,6 @@ std::vector<double> LineBoxRegions::FindPointAtTargetSeparation(std::shared_ptr<
     const std::vector<double>& start_point, const std::vector<double>& end_point, double target_separation, double tolerance) {
     // Find point on line described by start and end points which is at target separation in arcsec (within tolerance) of start point.
     // Return point [x, y] in pixel coordinates.  Vector is empty if DirectionCoordinate conversion fails.
-    // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     std::vector<double> target_point;
 
     // Do binary search of line, finding midpoints until target separation is reached.
@@ -502,8 +485,6 @@ RegionState LineBoxRegions::GetPolygonRegionState(std::shared_ptr<casacore::Coor
     std::vector<CARTA::Point> control_points(4);
 
     // Create line perpendicular to line (along "width axis") at box start to find box corners
-    std::unique_lock<std::mutex> mvdir_lock(_pix_mvdir_mutex);
-
     // Endpoint in positive direction width*2 pixels out from box start
     std::vector<double> target_end({box_start[0] - (pixel_width * 2 * cos_x), box_start[1] - (pixel_width * 2 * sin_x)});
     std::vector<double> corner = FindPointAtTargetSeparation(coord_sys, box_start, target_end, half_width, tolerance);
@@ -536,7 +517,6 @@ RegionState LineBoxRegions::GetPolygonRegionState(std::shared_ptr<casacore::Coor
         return RegionState();
     }
     control_points[2] = Message::Point(corner);
-    mvdir_lock.unlock();
 
     float polygon_rotation(0.0);
     RegionState region_state = RegionState(file_id, CARTA::RegionType::POLYGON, control_points, polygon_rotation);

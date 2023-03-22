@@ -93,8 +93,9 @@ public:
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
     // Update PV preview image when PV cut region (region_id) changes
-    bool UpdatePvPreview(int file_id, int region_id, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
-    void StopPvCalc(int file_id, bool is_preview = false);
+    bool UpdatePvPreview(int file_id, int region_id, RegionState& region_state,
+        std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
+    void StopPvCalc(int file_id);
     void StopPvPreview(int preview_id);
     void ClosePvPreview(int preview_id);
 
@@ -178,8 +179,8 @@ private:
     bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
         std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
-    bool CalculatePvPreviewImage(int frame_id, const RegionState& region_state, int width, bool reverse, int preview_id,
-        const casacore::IPosition& preview_region_origin, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
+    bool CalculatePvPreviewImage(int frame_id, const RegionState& region_state, int preview_id, PvPreviewCut& preview_cut,
+        std::shared_ptr<PvPreviewCube> preview_cube, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
         GeneratedImage& pv_image);
 
     // Regions: key is region_id

@@ -49,7 +49,7 @@ private:
     casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
 
     // Lock pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
-    std::mutex _pix_mvdir_mutex;
+    std::mutex _mvdir_mutex;
 };
 
 } // namespace carta

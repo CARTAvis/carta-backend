@@ -775,38 +775,42 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     std::string err_message;
     bool success(false);
 
+    if (region_id == NEW_REGION_ID && preview_region) {
+        // Only update PV preview with valid region id
+        return false;
+    }
+
+    // RegionState needed for SetRegion and Send PvPreview
+    std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
+    RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
+
     if (_frames.count(file_id)) { // reference Frame for Region exists
         if (!_region_handler) {
             // created on demand only
             _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
         }
 
-        std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
-        RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
         auto csys = _frames.at(file_id)->CoordinateSystem();
-
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
-        // log error
         if (!success) {
             err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
-            SendLogEvent(err_message, {"region"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         err_message = fmt::format("Cannot set region, file id {} not found", file_id);
     }
 
-    // RESPONSE
-    if (!silent) {
+    // SetRegion ack
+    if (!silent && !preview_region) {
         auto ack = Message::SetRegionAck(region_id, success, err_message);
         SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     }
 
-    // update data streams if requirements set and region changed
-    if (success && _region_handler->RegionChanged(region_id)) {
-        if (preview_region) {
-            SendPvPreview(file_id, region_id);
-        } else {
+    // Update pv preview, and data streams if not preview region
+    if (success) {
+        SendPvPreview(file_id, region_id, region_state);
+
+        if (!preview_region) {
             OnMessageTask* tsk = new RegionDataStreamsTask(this, ALL_FILES, region_id);
             ThreadManager::QueueTask(tsk);
         }
@@ -1753,12 +1757,12 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
-bool Session::SendPvPreview(int file_id, int region_id) {
+bool Session::SendPvPreview(int file_id, int region_id, RegionState& region_state) {
     // return true if data sent
     Timer t;
-    auto pv_preview_callback = [&](CARTA::PvResponse& message, GeneratedImage& pv_image) {
-        if (message.has_preview_data()) {
-            auto data_message = message.mutable_preview_data();
+    auto pv_preview_callback = [&](CARTA::PvResponse& response, GeneratedImage& pv_image) {
+        if (response.has_preview_data()) {
+            auto data_message = response.mutable_preview_data();
             if (pv_image.image) {
                 // Complete data stream message with pv image file info
                 CARTA::FileInfoExtended file_info_extended;
@@ -1769,13 +1773,13 @@ bool Session::SendPvPreview(int file_id, int region_id) {
                 }
             }
 
-            // Send message with preview id, even if failed
-            spdlog::performance("Update pv image in {:.3f} ms", t.Elapsed().ms());
+            // Send PvPreviewData with preview id, even if failed
+            spdlog::performance("Update pv preview in {:.3f} ms", t.Elapsed().ms());
             SendEvent(CARTA::EventType::PV_PREVIEW_DATA, 0, *data_message);
         }
     };
 
-    return _region_handler->UpdatePvPreview(file_id, region_id, pv_preview_callback);
+    return _region_handler->UpdatePvPreview(file_id, region_id, region_state, pv_preview_callback);
 }
 
 bool Session::SendContourData(int file_id, bool ignore_empty) {
@@ -1888,8 +1892,6 @@ void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool 
         SendSpectralProfileData(file_id, region_id, stokes_changed);
         SendRegionStatsData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
-        // Only update preview when PV cut changes, not when stokes changes
-        SendPvPreview(file_id, region_id);
     }
 }
 
