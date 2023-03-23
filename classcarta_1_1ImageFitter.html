@@ -107,8 +107,8 @@ Collaboration diagram for carta::ImageFitter:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9cdf83157a2149961d2311086602baf8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8">ImageFitter</a> ()</td></tr>
 <tr class="separator:a9cdf83157a2149961d2311086602baf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a295ca3ffb33ea837771f2264e08ea5b9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a295ca3ffb33ea837771f2264e08ea5b9">FitImage</a> (size_t width, size_t height, float *image, const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
-<tr class="separator:a295ca3ffb33ea837771f2264e08ea5b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47cbfb16ddaa05b8ce82b2770e3a4bbe"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a47cbfb16ddaa05b8ce82b2770e3a4bbe">FitImage</a> (size_t width, size_t height, float *image, const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
+<tr class="separator:a47cbfb16ddaa05b8ce82b2770e3a4bbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0cda5d39e25c707d58f1459914f49b7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e">GetGeneratedImages</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const casacore::ImageRegion &amp;image_region, int file_id, const std::string &amp;filename, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;model_image, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;residual_image, CARTA::FittingResponse &amp;fitting_response)</td></tr>
 <tr class="separator:a0cda5d39e25c707d58f1459914f49b7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42b7d3b5141dc7d3777af3355496fb91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a42b7d3b5141dc7d3777af3355496fb91">StopFitting</a> ()</td></tr>
@@ -118,10 +118,10 @@ Public Member Functions</h2></td></tr>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a85fff0ddc5414112e3cebbcae80b739b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a85fff0ddc5414112e3cebbcae80b739b">CalculateNanNum</a> ()</td></tr>
 <tr class="separator:a85fff0ddc5414112e3cebbcae80b739b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d1de22f3a9cde5c6ebd14a5ae341542"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a9d1de22f3a9cde5c6ebd14a5ae341542">SetInitialValues</a> (const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params)</td></tr>
-<tr class="separator:a9d1de22f3a9cde5c6ebd14a5ae341542"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad3240f527a8fe222473fcbcfe74bcbe5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#ad3240f527a8fe222473fcbcfe74bcbe5">SolveSystem</a> ()</td></tr>
-<tr class="separator:ad3240f527a8fe222473fcbcfe74bcbe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a621c8378ac1d751ba73f1d3cb6658890"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a621c8378ac1d751ba73f1d3cb6658890">SetInitialValues</a> (const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, double background_offset, const std::vector&lt; bool &gt; &amp;fixed_params)</td></tr>
+<tr class="separator:a621c8378ac1d751ba73f1d3cb6658890"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3796f44fac3ba6b9dbe37b9261491abe"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe">SolveSystem</a> (CARTA::FittingSolverType solver)</td></tr>
+<tr class="separator:a3796f44fac3ba6b9dbe37b9261491abe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5824b306b9f2af74b8c26a60f5bd95d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5">CalculateImageData</a> (const gsl_vector *residual)</td></tr>
 <tr class="separator:a5824b306b9f2af74b8c26a60f5bd95d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3c8ade73522345593eb784d0f248b1a6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3c8ade73522345593eb784d0f248b1a6">SetResults</a> ()</td></tr>
@@ -365,8 +365,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a295ca3ffb33ea837771f2264e08ea5b9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a295ca3ffb33ea837771f2264e08ea5b9">&#9670;&nbsp;</a></span>FitImage()</h2>
+<a id="a47cbfb16ddaa05b8ce82b2770e3a4bbe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47cbfb16ddaa05b8ce82b2770e3a4bbe">&#9670;&nbsp;</a></span>FitImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -400,6 +400,18 @@ Here is the caller graph for this function:</div>
           <td></td>
           <td class="paramtype">const std::vector&lt; bool &gt; &amp;&#160;</td>
           <td class="paramname"><em>fixed_params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>background_offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::FittingSolverType&#160;</td>
+          <td class="paramname"><em>solver</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -447,7 +459,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a295ca3ffb33ea837771f2264e08ea5b9_cgraph.svg" width="656" height="411"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a47cbfb16ddaa05b8ce82b2770e3a4bbe_cgraph.svg" width="656" height="411"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -844,8 +856,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a9d1de22f3a9cde5c6ebd14a5ae341542"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9d1de22f3a9cde5c6ebd14a5ae341542">&#9670;&nbsp;</a></span>SetInitialValues()</h2>
+<a id="a621c8378ac1d751ba73f1d3cb6658890"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a621c8378ac1d751ba73f1d3cb6658890">&#9670;&nbsp;</a></span>SetInitialValues()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -858,6 +870,12 @@ Here is the caller graph for this function:</div>
           <td>(</td>
           <td class="paramtype">const std::vector&lt; CARTA::GaussianComponent &gt; &amp;&#160;</td>
           <td class="paramname"><em>initial_values</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>background_offset</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -880,7 +898,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a9d1de22f3a9cde5c6ebd14a5ae341542_icgraph.svg" width="336" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a621c8378ac1d751ba73f1d3cb6658890_icgraph.svg" width="336" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -911,8 +929,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ad3240f527a8fe222473fcbcfe74bcbe5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad3240f527a8fe222473fcbcfe74bcbe5">&#9670;&nbsp;</a></span>SolveSystem()</h2>
+<a id="a3796f44fac3ba6b9dbe37b9261491abe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3796f44fac3ba6b9dbe37b9261491abe">&#9670;&nbsp;</a></span>SolveSystem()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -923,7 +941,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">int ImageFitter::SolveSystem </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">CARTA::FittingSolverType&#160;</td>
+          <td class="paramname"><em>solver</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -936,13 +955,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_ad3240f527a8fe222473fcbcfe74bcbe5_cgraph.svg" width="360" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a3796f44fac3ba6b9dbe37b9261491abe_cgraph.svg" width="360" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_ad3240f527a8fe222473fcbcfe74bcbe5_icgraph.svg" width="336" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a3796f44fac3ba6b9dbe37b9261491abe_icgraph.svg" width="336" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 

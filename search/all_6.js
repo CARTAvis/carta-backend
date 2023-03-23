@@ -61,7 +61,7 @@ var searchData=
   ['first_5fprogress_5fafter_5fmilli_5fsecs_746',['FIRST_PROGRESS_AFTER_MILLI_SECS',['../MomentGenerator_8h.html#ab306bd134c636935c4cfd480283f57dd',1,'MomentGenerator.h']]],
   ['fit_5fvalues_5findexes_747',['fit_values_indexes',['../structcarta_1_1FitData.html#a129b4bf0198d0ad96787d88b616711f3',1,'carta::FitData']]],
   ['fitdata_748',['FitData',['../structcarta_1_1FitData.html',1,'carta']]],
-  ['fitimage_749',['FitImage',['../classcarta_1_1Frame.html#aeb6afc8204ae9f00c0517b4f28be32d5',1,'carta::Frame::FitImage()'],['../classcarta_1_1ImageFitter.html#a295ca3ffb33ea837771f2264e08ea5b9',1,'carta::ImageFitter::FitImage()'],['../classcarta_1_1RegionHandler.html#a8a692669b14a98aec1f36f2617910138',1,'carta::RegionHandler::FitImage()']]],
+  ['fitimage_749',['FitImage',['../classcarta_1_1Frame.html#aeb6afc8204ae9f00c0517b4f28be32d5',1,'carta::Frame::FitImage()'],['../classcarta_1_1ImageFitter.html#a47cbfb16ddaa05b8ce82b2770e3a4bbe',1,'carta::ImageFitter::FitImage()'],['../classcarta_1_1RegionHandler.html#a8a692669b14a98aec1f36f2617910138',1,'carta::RegionHandler::FitImage()']]],
   ['fits_5fblock_5fsize_750',['FITS_BLOCK_SIZE',['../CompressedFits_8cc.html#ac125833ca17a8da1f1167ef0ad9b5e08',1,'CompressedFits.cc']]],
   ['fits_5fcard_5fsize_751',['FITS_CARD_SIZE',['../CompressedFits_8cc.html#a666d42812e7e4efe3370ded9f3d21534',1,'CompressedFits.cc']]],
   ['fits_5fmagic_5fnumber_752',['FITS_MAGIC_NUMBER',['../File_8h.html#a0a4c1a3f4f7ba5fa1f3d5fd8ae8f24aa',1,'File.h']]],
