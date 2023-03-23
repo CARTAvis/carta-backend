@@ -46,10 +46,10 @@ class PvPreviewCube {
 public:
     PvPreviewCube(const PreviewCubeParameters& parameters);
 
-    // Cube parameters
+    // Compare cube parameters
     bool HasSameParameters(const PreviewCubeParameters& parameters);
 
-    // Stokes from cube parameters, for preview image
+    // Cube parameters stokes for setting preview image in source image
     int GetStokes();
 
     // Filename of source image for preview image name
@@ -58,14 +58,15 @@ public:
 
     // blc of preview region's bounding box in source image
     void SetPreviewRegionOrigin(const casacore::IPosition& origin);
-    bool UsePreviewRegionOrigin(); // only if no rebin_xy
-    casacore::IPosition PreviewRegionOrigin();
 
     // Return cached preview image
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage();
 
     // Create preview image by applying rebinning to SubImage, and cache cube data.
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(casacore::SubImage<float>& sub_image, std::string& error);
+
+    // Set PV cut in preview cube
+    RegionState GetPvCutRegion(const RegionState& source_region_state, int preview_frame_id);
 
     // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels
     bool GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,

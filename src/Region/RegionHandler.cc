@@ -1123,25 +1123,9 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
     preview_data_message->set_width(0);
     preview_data_message->set_height(0);
 
-    // Set RegionState for pv cut in preview image.
-    std::vector<CARTA::Point> preview_points;
-    if (preview_cube->UsePreviewRegionOrigin()) {
-        // When no rebinning xy, use preview region origin to set control points.
-        auto preview_region_origin = preview_cube->PreviewRegionOrigin();
-        float blc_x(preview_region_origin[0]), blc_y(preview_region_origin[1]);
-        for (auto& point : region_state.control_points) {
-            auto preview_point = Message::Point(point.x() - blc_x, point.y() - blc_y);
-            preview_points.push_back(preview_point);
-        }
-    } else {
-        // TODO: Set region in "matched" preview image
-        pv_response.set_message("PV preview rebin xy not implemented yet.");
-        return false;
-    }
+    // Set new pv cut region in preview image.
     int preview_cut_id(NEW_REGION_ID);
-    auto preview_cut_state = RegionState(frame_id, region_state.type, preview_points, region_state.rotation);
-
-    // Set new pv cut region
+    auto preview_cut_state = preview_cube->GetPvCutRegion(region_state, frame_id);
     auto preview_frame = _frames.at(frame_id);
     auto preview_frame_csys = preview_frame->CoordinateSystem();
     if (!SetRegion(preview_cut_id, preview_cut_state, preview_frame_csys)) {

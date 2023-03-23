@@ -14,6 +14,7 @@ namespace carta {
 
 PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters) {
     _cube_parameters = parameters;
+    _origin = casacore::IPosition(2, 0, 0); // blc of image plane
 }
 
 bool PvPreviewCube::HasSameParameters(const PreviewCubeParameters& parameters) {
@@ -35,16 +36,6 @@ std::string PvPreviewCube::GetSourceFileName() {
 void PvPreviewCube::SetPreviewRegionOrigin(const casacore::IPosition& origin) {
     // Preview region's blc in source image
     _origin = origin;
-}
-
-bool PvPreviewCube::UsePreviewRegionOrigin() {
-    // Whether to set pv cut using origin, or need conversion
-    return _cube_parameters.rebin_xy <= 1;
-}
-
-casacore::IPosition PvPreviewCube::PreviewRegionOrigin() {
-    // Preview region's blc in source image
-    return _origin;
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage() {
@@ -112,6 +103,24 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     }
 
     return _preview_image;
+}
+
+RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state, int preview_frame_id) {
+    // Calculate line control points in downsampled preview image from pv cut in source image
+    std::vector<CARTA::Point> preview_line_points;
+
+    // Subtract bottom left corner of preview region and apply rebin
+    float blc_x(_origin[0]), blc_y(_origin[1]);
+    float rebin_xy = (float)std::max(_cube_parameters.rebin_xy, 1);
+    CARTA::Point line_point;
+
+    for (auto& point : source_region_state.control_points) {
+        line_point.set_x((point.x() - blc_x) / rebin_xy);
+        line_point.set_y((point.y() - blc_y) / rebin_xy);
+        preview_line_points.push_back(line_point);
+    }
+
+    return RegionState(preview_frame_id, CARTA::RegionType::LINE, preview_line_points, source_region_state.rotation);
 }
 
 bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
