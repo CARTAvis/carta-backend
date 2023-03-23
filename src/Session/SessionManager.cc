@@ -16,40 +16,30 @@ namespace carta {
 SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
     : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
-Session* SessionManager::FindSession(uint32_t session_id) {
-    std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    if (_sessions.count(session_id)) {
-        return _sessions[session_id];
-    }
-    return nullptr;
-}
-
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    if (!_sessions.count(session_id)) {
+    Session* session;
+    try {
+        session = _sessions.at(session_id);
+    } catch (const std::out_of_range& e) {
+        spdlog::warn("Could not delete session {}: not found!", session_id);
         return;
     }
 
-    Session* session = _sessions[session_id];
-    if (session) {
-        spdlog::info(
-            "Session {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
-        session->WaitForTaskCancellation();
-        session->CloseAllScriptingRequests();
+    spdlog::info("Session {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
+    session->WaitForTaskCancellation();
+    session->CloseAllScriptingRequests();
 
-        if (!session->GetRefCount()) {
-            spdlog::info("Sessions in Session Map :");
-            for (const std::pair<uint32_t, Session*>& ssp : _sessions) {
-                Session* ss = ssp.second;
-                spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
-            }
-            delete session;
-            _sessions.erase(session_id);
-        } else {
-            spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session_id, session->GetRefCount());
+    if (!session->GetRefCount()) {
+        spdlog::info("Sessions in Session Map :");
+        for (const std::pair<uint32_t, Session*>& ssp : _sessions) {
+            Session* ss = ssp.second;
+            spdlog::info("\tMap id {}, session id {}, session ptr {}", ssp.first, ss->GetId(), fmt::ptr(ss));
         }
+        delete session;
+        _sessions.erase(session_id);
     } else {
-        spdlog::warn("Could not delete session {}: not found!", session_id);
+        spdlog::info("Session {} reference count is not 0 ({}) at this point in DeleteSession", session_id, session->GetRefCount());
     }
 }
 
@@ -118,10 +108,12 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
 
     // Delete the Session
-    auto session = FindSession(session_id);
-    if (session) {
+    try {
+        auto session = _sessions.at(session_id);
         session->DecreaseRefCount();
         DeleteSession(session_id);
+    } catch (const std::out_of_range& e) {
+        // No session found
     }
 
     // Close the websockets
@@ -130,19 +122,21 @@ void SessionManager::OnDisconnect(WSType* ws, int code, std::string_view message
 
 void SessionManager::OnDrain(WSType* ws) {
     uint32_t session_id = ws->getUserData()->session_id;
-    Session* session = FindSession(session_id);
-    if (session) {
+    try {
+        auto session = _sessions.at(session_id);
         spdlog::debug("Draining WebSocket backpressure: client {} [{}]. Remaining buffered amount: {} (bytes).", session->GetId(),
             session->GetAddress(), ws->getBufferedAmount());
-    } else {
+    } catch (const std::out_of_range& e) {
         spdlog::debug("Draining WebSocket backpressure: unknown client. Remaining buffered amount: {} (bytes).", ws->getBufferedAmount());
     }
 }
 
 void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    Session* session = FindSession(session_id);
-    if (!session) {
+    Session* session;
+    try {
+        session = _sessions.at(session_id);
+    } catch (const std::out_of_range& e) {
         spdlog::error("Missing session!");
         return;
     }
@@ -583,23 +577,23 @@ void SessionManager::RunApp() {
 bool SessionManager::SendScriptingRequest(int& session_id, uint32_t& scripting_request_id, std::string& target, std::string& action,
     std::string& parameters, bool& async, std::string& return_path, ScriptingResponseCallback callback,
     ScriptingSessionClosedCallback session_closed_callback) {
-    Session* session = FindSession(session_id);
-    if (!session) {
+    try {
+        auto session = _sessions.at(session_id);
+        auto message = Message::ScriptingRequest(scripting_request_id, target, action, parameters, async, return_path);
+        session->SendScriptingRequest(message, callback, session_closed_callback);
+        return true;
+    } catch (const std::out_of_range& e) {
         return false;
     }
-
-    auto message = Message::ScriptingRequest(scripting_request_id, target, action, parameters, async, return_path);
-    session->SendScriptingRequest(message, callback, session_closed_callback);
-    return true;
 }
 
 void SessionManager::OnScriptingAbort(int session_id, uint32_t scripting_request_id) {
-    Session* session = FindSession(session_id);
-    if (!session) {
-        return; // Session is gone; nothing to do
+    try {
+        auto session = _sessions.at(session_id);
+        session->OnScriptingAbort(scripting_request_id);
+    } catch (const std::out_of_range& e) {
+        // Session is gone; nothing to do
     }
-
-    session->OnScriptingAbort(scripting_request_id);
 }
 
 std::string SessionManager::IPAsText(std::string_view binary) {
