@@ -919,7 +919,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     if (pv_request.has_spectral_range()) {
         spectral_range = AxisRange(pv_request.spectral_range().min(), pv_request.spectral_range().max());
     } else {
-        spectral_range = AxisRange(0, frame->Depth());
+        spectral_range = AxisRange(0, frame->Depth() - 1);
     }
     bool is_preview(pv_request.has_preview_settings());
 
