@@ -1022,9 +1022,8 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
             fitting_response.set_success(false);
             return false;
         }
-    } else {
-        // TODO: support image fitting with regions
-        fitting_response.set_message("region not supported");
+    } else if (region_id < 0 || !RegionSet(region_id)) {
+        fitting_response.set_message("region id not found");
         fitting_response.set_success(false);
         return false;
     }
