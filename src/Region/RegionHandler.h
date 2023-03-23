@@ -170,7 +170,7 @@ private:
     bool GetComputedStokesProfiles(
         ProfilesMap& profiles, int stokes, const std::function<bool(ProfilesMap&, std::string)>& get_profiles_data);
 
-    // PV generator or preview
+    // PV generator
     bool CalculatePvImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse, bool keep,
         std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
         GeneratedImage& pv_image);

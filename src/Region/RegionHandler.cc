@@ -918,6 +918,8 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     AxisRange spectral_range;
     if (pv_request.has_spectral_range()) {
         spectral_range = AxisRange(pv_request.spectral_range().min(), pv_request.spectral_range().max());
+    } else {
+        spectral_range = AxisRange(0, frame->Depth());
     }
     bool is_preview(pv_request.has_preview_settings());
 
@@ -955,6 +957,11 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     if (width < 1 || width > 20) {
         pv_response.set_message("Invalid averaging width.");
         return false;
+    }
+
+    // Set frame
+    if (!FrameSet(file_id)) {
+        _frames[file_id] = frame;
     }
 
     if (is_preview) {
@@ -1263,10 +1270,6 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
 
     // Reset stop flag
     _stop_pv[file_id] = false;
-
-    if (!FrameSet(file_id)) {
-        _frames[file_id] = frame;
-    }
 
     // Common parameters for PV and preview
     bool per_z(true), pv_success(false), cancelled(false);
