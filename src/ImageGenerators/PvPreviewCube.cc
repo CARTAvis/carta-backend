@@ -8,6 +8,8 @@
 
 #include <casacore/images/Images/RebinImage.h>
 
+#include "Timer/Timer.h"
+
 namespace carta {
 
 PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters) {
@@ -68,7 +70,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     auto rebin_xy = std::max(_cube_parameters.rebin_xy, 1);
     auto rebin_z = std::max(_cube_parameters.rebin_z, 1);
 
-    if (rebin_xy > 1 && rebin_z > 1) {
+    if (rebin_xy > 1 || rebin_z > 1) {
         try {
             // Make casacore::RebinImage
             int x_axis(0), y_axis(1), z_axis(-1), stokes_axis(-1);
@@ -104,7 +106,9 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
 
     if (!_stop_cube) {
         // Cache cube data (remove degenerate stokes axis)
+        Timer t;
         _cube_data = _preview_image->get(true);
+        spdlog::performance("PV preview cube data loaded in {:.3f} ms", t.Elapsed().ms());
     }
 
     return _preview_image;
