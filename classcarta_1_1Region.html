@@ -114,10 +114,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ab8bbf4338dd204b36962ebeb5483aad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a94dae002eb286f96a62b56298e90e93b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a94dae002eb286f96a62b56298e90e93b">GetReferenceFileId</a> ()</td></tr>
 <tr class="separator:a94dae002eb286f96a62b56298e90e93b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d76e7b01e30a3ef1b827f8527ce57f3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a2d76e7b01e30a3ef1b827f8527ce57f3">IsRotbox</a> ()</td></tr>
-<tr class="separator:a2d76e7b01e30a3ef1b827f8527ce57f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af102a71d65687f966cea595f8c94b97a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#af102a71d65687f966cea595f8c94b97a">RegionChanged</a> ()</td></tr>
 <tr class="separator:af102a71d65687f966cea595f8c94b97a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6aa583d2520af7092a6cf9bcd2648c63"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a6aa583d2520af7092a6cf9bcd2648c63">IsPoint</a> ()</td></tr>
+<tr class="separator:a6aa583d2520af7092a6cf9bcd2648c63"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada8631223565a6358d5baf1def870471"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#ada8631223565a6358d5baf1def870471">IsLineType</a> ()</td></tr>
+<tr class="separator:ada8631223565a6358d5baf1def870471"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d76e7b01e30a3ef1b827f8527ce57f3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a2d76e7b01e30a3ef1b827f8527ce57f3">IsRotbox</a> ()</td></tr>
+<tr class="separator:a2d76e7b01e30a3ef1b827f8527ce57f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9557b22b60d93d7d5933c08f3a2e19c2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a9557b22b60d93d7d5933c08f3a2e19c2">IsAnnotation</a> ()</td></tr>
 <tr class="separator:a9557b22b60d93d7d5933c08f3a2e19c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac865299ac37b5286ae16ddfad5e062bd"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#ac865299ac37b5286ae16ddfad5e062bd">CoordinateSystem</a> ()</td></tr>
@@ -189,14 +193,14 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a767afdad502059e25bcf389d1fc42e89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe2395f765e76c9cd81c775f9e151056"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#afe2395f765e76c9cd81c775f9e151056">GetPointRecord</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys, const casacore::IPosition &amp;output_shape)</td></tr>
 <tr class="separator:afe2395f765e76c9cd81c775f9e151056"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af22052c10d0059e65d3ef5a5f9ffa441"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#af22052c10d0059e65d3ef5a5f9ffa441">GetLineRecord</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_csys, const casacore::IPosition &amp;image_shape)</td></tr>
+<tr class="separator:af22052c10d0059e65d3ef5a5f9ffa441"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7c5f833091a74779c77aadd9817a8a77"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a7c5f833091a74779c77aadd9817a8a77">GetPolygonRecord</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys)</td></tr>
 <tr class="separator:a7c5f833091a74779c77aadd9817a8a77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a790a5a5f3aee8797e2f2024b02dd4dce"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a790a5a5f3aee8797e2f2024b02dd4dce">GetRotboxRecord</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys)</td></tr>
 <tr class="separator:a790a5a5f3aee8797e2f2024b02dd4dce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac3cc3a5318e66e752da26ce9cf1cfedd"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#ac3cc3a5318e66e752da26ce9cf1cfedd">GetEllipseRecord</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; output_csys)</td></tr>
 <tr class="separator:ac3cc3a5318e66e752da26ce9cf1cfedd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a27910d866b81db5b9190e84701e349f7"><td class="memItemLeft" align="right" valign="top">casacore::TableRecord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a27910d866b81db5b9190e84701e349f7">GetAnnotationRegionRecord</a> (int file_id, std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_csys, const casacore::IPosition &amp;image_shape)</td></tr>
-<tr class="separator:a27910d866b81db5b9190e84701e349f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a77abe84c6c73dbad663e8255e362a86f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a77abe84c6c73dbad663e8255e362a86f">CompleteRegionRecord</a> (casacore::TableRecord &amp;record, const casacore::IPosition &amp;image_shape)</td></tr>
 <tr class="separator:a77abe84c6c73dbad663e8255e362a86f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0dd77dcd58e6a5d7b71f3be8c357943c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Region.html#a0dd77dcd58e6a5d7b71f3be8c357943c">ConvertCartaPointToWorld</a> (const CARTA::Point &amp;point, std::vector&lt; casacore::Quantity &gt; &amp;world_point)</td></tr>
@@ -361,7 +365,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a767afdad502059e25bcf389d1fc42e89_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a767afdad502059e25bcf389d1fc42e89_icgraph.svg" width="100%" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -451,7 +455,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a0dd77dcd58e6a5d7b71f3be8c357943c_icgraph.svg" width="100%" height="535"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a0dd77dcd58e6a5d7b71f3be8c357943c_icgraph.svg" width="100%" height="525"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -511,7 +515,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_ad108d4cb9b98967b6fc1011b1a8f6705_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_ad108d4cb9b98967b6fc1011b1a8f6705_icgraph.svg" width="100%" height="432"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -559,7 +563,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_abd8e434773d9f9a1c8775c30b026a23f_icgraph.svg" width="100%" height="574"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_abd8e434773d9f9a1c8775c30b026a23f_icgraph.svg" width="100%" height="572"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -662,60 +666,6 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a9891c6276749ba4296f7796c8c32f079_icgraph.svg" width="434" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-
-</div>
-</div>
-<a id="a27910d866b81db5b9190e84701e349f7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a27910d866b81db5b9190e84701e349f7">&#9670;&nbsp;</a></span>GetAnnotationRegionRecord()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">casacore::TableRecord Region::GetAnnotationRegionRecord </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
-          <td class="paramname"><em>image_csys</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const casacore::IPosition &amp;&#160;</td>
-          <td class="paramname"><em>image_shape</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a27910d866b81db5b9190e84701e349f7_cgraph.svg" width="100%" height="590"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a27910d866b81db5b9190e84701e349f7_icgraph.svg" width="495" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -941,7 +891,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_afeba24c3fc32647d614ed0fe8a2cb63d_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_afeba24c3fc32647d614ed0fe8a2cb63d_icgraph.svg" width="100%" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1162,6 +1112,60 @@ Here is the call graph for this function:</div>
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_abb634583b379802b8712f1b7e2312a36_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="af22052c10d0059e65d3ef5a5f9ffa441"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af22052c10d0059e65d3ef5a5f9ffa441">&#9670;&nbsp;</a></span>GetLineRecord()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">casacore::TableRecord Region::GetLineRecord </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
+          <td class="paramname"><em>image_csys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const casacore::IPosition &amp;&#160;</td>
+          <td class="paramname"><em>image_shape</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_af22052c10d0059e65d3ef5a5f9ffa441_cgraph.svg" width="100%" height="564"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_af22052c10d0059e65d3ef5a5f9ffa441_icgraph.svg" width="495" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1545,7 +1549,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a9557b22b60d93d7d5933c08f3a2e19c2_icgraph.svg" width="100%" height="454"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a9557b22b60d93d7d5933c08f3a2e19c2_icgraph.svg" width="518" height="88"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1565,6 +1569,74 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="ada8631223565a6358d5baf1def870471"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada8631223565a6358d5baf1def870471">&#9670;&nbsp;</a></span>IsLineType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::Region::IsLineType </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_ada8631223565a6358d5baf1def870471_cgraph.svg" width="427" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_ada8631223565a6358d5baf1def870471_icgraph.svg" width="468" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a6aa583d2520af7092a6cf9bcd2648c63"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6aa583d2520af7092a6cf9bcd2648c63">&#9670;&nbsp;</a></span>IsPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool carta::Region::IsPoint </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Region_a6aa583d2520af7092a6cf9bcd2648c63_cgraph.svg" width="403" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 
 </div>
 </div>

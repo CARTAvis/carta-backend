@@ -1,6 +1,5 @@
 <map id="Ds9ImportExport.h" name="Ds9ImportExport.h">
-<area shape="rect" id="node1" title=" " alt="" coords="169,5,313,32"/>
-<area shape="rect" id="node2" href="$FileListHandler_8cc.html" title=" " alt="" coords="5,80,141,107"/>
-<area shape="rect" id="node3" href="$Ds9ImportExport_8cc.html" title=" " alt="" coords="166,80,317,107"/>
-<area shape="rect" id="node4" href="$RegionHandler_8cc.html" title=" " alt="" coords="341,80,475,107"/>
+<area shape="rect" id="node1" title=" " alt="" coords="91,5,235,32"/>
+<area shape="rect" id="node2" href="$Ds9ImportExport_8cc.html" title=" " alt="" coords="5,80,156,107"/>
+<area shape="rect" id="node3" href="$RegionHandler_8cc.html" title=" " alt="" coords="180,80,315,107"/>
 </map>

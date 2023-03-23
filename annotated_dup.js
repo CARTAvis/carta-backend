@@ -67,7 +67,6 @@ var annotated_dup =
       [ "Ds9ImportExport", "classcarta_1_1Ds9ImportExport.html", "classcarta_1_1Ds9ImportExport" ],
       [ "RegionState", "structcarta_1_1RegionState.html", "structcarta_1_1RegionState" ],
       [ "Region", "classcarta_1_1Region.html", "classcarta_1_1Region" ],
-      [ "RegionStyle", "structcarta_1_1RegionStyle.html", "structcarta_1_1RegionStyle" ],
       [ "RegionProperties", "structcarta_1_1RegionProperties.html", "structcarta_1_1RegionProperties" ],
       [ "RegionHandler", "classcarta_1_1RegionHandler.html", "classcarta_1_1RegionHandler" ],
       [ "RegionImportExport", "classcarta_1_1RegionImportExport.html", "classcarta_1_1RegionImportExport" ],

@@ -1,5 +1,7 @@
 <map id="carta::RegionHandler::IsClosedRegion" name="carta::RegionHandler::IsClosedRegion">
-<area shape="rect" id="node1" title=" " alt="" coords="5,35,164,76"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="212,5,371,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a809f63096e4fabebdcdef49591ed1c70" title=" " alt="" coords="419,35,577,76"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,78,164,120"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a0a88beca77cada14a4aba1dbb90b7e5f" title=" " alt="" coords="212,13,371,54"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="625,57,784,98"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="212,78,371,120"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="419,28,577,69"/>
 </map>

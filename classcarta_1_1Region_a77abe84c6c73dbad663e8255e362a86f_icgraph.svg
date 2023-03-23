@@ -67,10 +67,9 @@ var sectionId = 'dynsection-7';
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1Region.html#a27910d866b81db5b9190e84701e349f7" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="205,-0.5 205,-30.5 363,-30.5 363,-0.5 205,-0.5"/>
-<text text-anchor="start" x="213" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Region::GetAnnotation</text>
-<text text-anchor="middle" x="284" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">RegionRecord</text>
+<g id="a_node2"><a xlink:href="classcarta_1_1Region.html#af22052c10d0059e65d3ef5a5f9ffa441" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="205,-6 205,-25 363,-25 363,-6 205,-6"/>
+<text text-anchor="middle" x="284" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Region::GetLineRecord</text>
 </a>
 </g>
 </g>

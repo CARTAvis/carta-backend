@@ -175,7 +175,6 @@ var files_dup =
     [ "Region.h", "Region_8h.html", "Region_8h" ],
     [ "RegionHandler.cc", "RegionHandler_8cc.html", "RegionHandler_8cc" ],
     [ "RegionHandler.h", "RegionHandler_8h.html", [
-      [ "RegionStyle", "structcarta_1_1RegionStyle.html", "structcarta_1_1RegionStyle" ],
       [ "RegionProperties", "structcarta_1_1RegionProperties.html", "structcarta_1_1RegionProperties" ],
       [ "RegionHandler", "classcarta_1_1RegionHandler.html", "classcarta_1_1RegionHandler" ]
     ] ],

@@ -169,8 +169,8 @@ Private Types</h2></td></tr>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a43a9a50fcbb0fb348cd8a10cd52922e8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a43a9a50fcbb0fb348cd8a10cd52922e8">GetNextRegionId</a> ()</td></tr>
 <tr class="separator:a43a9a50fcbb0fb348cd8a10cd52922e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a809f63096e4fabebdcdef49591ed1c70"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a809f63096e4fabebdcdef49591ed1c70">RegionSet</a> (int region_id)</td></tr>
-<tr class="separator:a809f63096e4fabebdcdef49591ed1c70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e8b41c9fe29c95b66a44f78490bbcae"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae">RegionSet</a> (int region_id, bool check_annotation=false)</td></tr>
+<tr class="separator:a9e8b41c9fe29c95b66a44f78490bbcae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16e8f0e73ba63be909517151bf11a450"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450">FrameSet</a> (int file_id)</td></tr>
 <tr class="separator:a16e8f0e73ba63be909517151bf11a450"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa447d1d2f60c4f8b54e06530329e1b75"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#aa447d1d2f60c4f8b54e06530329e1b75">HasSpectralRequirements</a> (int region_id, int file_id, const std::string &amp;coordinate, const std::vector&lt; CARTA::StatsType &gt; &amp;required_stats)</td></tr>
@@ -185,8 +185,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a390e02b6d680c5b09e8957a65468c8d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a46657f081da273353708ae70ffaed031"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a46657f081da273353708ae70ffaed031">ClearRegionCache</a> (int region_id)</td></tr>
 <tr class="separator:a46657f081da273353708ae70ffaed031"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa43ef4e45748b4142eb3f28233f6f0e6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#aa43ef4e45748b4142eb3f28233f6f0e6">RegionFileIdsValid</a> (int region_id, int file_id)</td></tr>
-<tr class="separator:aa43ef4e45748b4142eb3f28233f6f0e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c787facbcb265d7fa434e05324f2c9e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e">RegionFileIdsValid</a> (int region_id, int file_id, bool check_annotation=false)</td></tr>
+<tr class="separator:a8c787facbcb265d7fa434e05324f2c9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c734366cb3b4b307c54a66251dd270c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::LCRegion &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#a5c734366cb3b4b307c54a66251dd270c">ApplyRegionToFile</a> (int region_id, int file_id, const <a class="el" href="structStokesSource.html">StokesSource</a> &amp;stokes_source=<a class="el" href="structStokesSource.html">StokesSource</a>(), bool report_error=true)</td></tr>
 <tr class="separator:a5c734366cb3b4b307c54a66251dd270c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa1d36f8d9ad35aeca13bc882748af022"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionHandler.html#aa1d36f8d9ad35aeca13bc882748af022">ApplyRegionToFile</a> (int region_id, int file_id, const <a class="el" href="structAxisRange.html">AxisRange</a> &amp;z_range, int stokes, <a class="el" href="structcarta_1_1StokesRegion.html">StokesRegion</a> &amp;stokes_region, std::shared_ptr&lt; casacore::LCRegion &gt; region_2D)</td></tr>
@@ -2871,13 +2871,13 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_ab9501617a3845ac3fa32b6b88c5269eb_cgraph.svg" width="583" height="82"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_ab9501617a3845ac3fa32b6b88c5269eb_cgraph.svg" width="100%" height="408"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_ab9501617a3845ac3fa32b6b88c5269eb_icgraph.svg" width="428" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_ab9501617a3845ac3fa32b6b88c5269eb_icgraph.svg" width="635" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -2907,7 +2907,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a0a88beca77cada14a4aba1dbb90b7e5f_icgraph.svg" width="619" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a0a88beca77cada14a4aba1dbb90b7e5f_icgraph.svg" width="100%" height="486"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -2937,7 +2937,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a94d939104654243dec3750ada83b370e_icgraph.svg" width="416" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a94d939104654243dec3750ada83b370e_icgraph.svg" width="100%" height="479"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -3009,8 +3009,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="aa43ef4e45748b4142eb3f28233f6f0e6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa43ef4e45748b4142eb3f28233f6f0e6">&#9670;&nbsp;</a></span>RegionFileIdsValid()</h2>
+<a id="a8c787facbcb265d7fa434e05324f2c9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c787facbcb265d7fa434e05324f2c9e">&#9670;&nbsp;</a></span>RegionFileIdsValid()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3028,7 +3028,13 @@ Here is the call graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>check_annotation</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -3045,20 +3051,20 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_aa43ef4e45748b4142eb3f28233f6f0e6_cgraph.svg" width="376" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a8c787facbcb265d7fa434e05324f2c9e_cgraph.svg" width="376" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_aa43ef4e45748b4142eb3f28233f6f0e6_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a8c787facbcb265d7fa434e05324f2c9e_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
 </div>
 </div>
-<a id="a809f63096e4fabebdcdef49591ed1c70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a809f63096e4fabebdcdef49591ed1c70">&#9670;&nbsp;</a></span>RegionSet()</h2>
+<a id="a9e8b41c9fe29c95b66a44f78490bbcae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e8b41c9fe29c95b66a44f78490bbcae">&#9670;&nbsp;</a></span>RegionSet()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3070,8 +3076,18 @@ Here is the caller graph for this function:</div>
           <td class="memname">bool carta::RegionHandler::RegionSet </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>region_id</em></td><td>)</td>
+          <td class="paramname"><em>region_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>check_annotation</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -3083,7 +3099,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a809f63096e4fabebdcdef49591ed1c70_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a9e8b41c9fe29c95b66a44f78490bbcae_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -3253,7 +3269,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a1a8245294e3438b63256e0d49436c7df_cgraph.svg" width="100%" height="399"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a1a8245294e3438b63256e0d49436c7df_cgraph.svg" width="100%" height="457"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -3345,7 +3361,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_aaa29bac6b3845d7b15ec257a1683e028_cgraph.svg" width="100%" height="399"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_aaa29bac6b3845d7b15ec257a1683e028_cgraph.svg" width="100%" height="407"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -3391,7 +3407,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_ae05f9bc832b30378281c5897edee7339_cgraph.svg" width="100%" height="399"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_ae05f9bc832b30378281c5897edee7339_cgraph.svg" width="100%" height="425"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
@@ -3443,7 +3459,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a2f27f6890487e19f0eb43331962f2fb2_cgraph.svg" width="100%" height="399"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a2f27f6890487e19f0eb43331962f2fb2_cgraph.svg" width="100%" height="457"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -3467,7 +3483,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a48531b61f365e6d5a8a790e8b1725464_cgraph.svg" width="100%" height="399"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1RegionHandler_a48531b61f365e6d5a8a790e8b1725464_cgraph.svg" width="100%" height="425"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 

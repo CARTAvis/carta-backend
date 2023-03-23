@@ -115,8 +115,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4dda042b0ce6f62290cc4cdebc047375"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d23ae833c4df87677829d60296d2f26"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a0d23ae833c4df87677829d60296d2f26">CrtfImportExport</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; image_coord_sys, const casacore::IPosition &amp;image_shape, int stokes_axis)</td></tr>
 <tr class="separator:a0d23ae833c4df87677829d60296d2f26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51630824beddcd414c958e4d381f5cc8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a51630824beddcd414c958e4d381f5cc8">AddExportRegion</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;region_state, const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;region_style) override</td></tr>
-<tr class="separator:a51630824beddcd414c958e4d381f5cc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18d65abfe480e9cb2c9fa39588474b00"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a18d65abfe480e9cb2c9fa39588474b00">AddExportRegion</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;region_state, const CARTA::RegionStyle &amp;region_style) override</td></tr>
+<tr class="separator:a18d65abfe480e9cb2c9fa39588474b00"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7353412d84a4a83b3765fe465c1af9c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aa7353412d84a4a83b3765fe465c1af9c">ExportRegions</a> (std::string &amp;filename, std::string &amp;error) override</td></tr>
 <tr class="separator:aa7353412d84a4a83b3765fe465c1af9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91ec25c06130bd2e8f2f84623d604ad8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a91ec25c06130bd2e8f2f84623d604ad8">ExportRegions</a> (std::vector&lt; std::string &gt; &amp;contents, std::string &amp;error) override</td></tr>
@@ -130,43 +130,63 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa868a606098bd3c29ae885cdf2771263 inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08f0b0cd978303552143fcbd616897f6 inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structcarta_1_1RegionProperties.html">RegionProperties</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a08f0b0cd978303552143fcbd616897f6">GetImportedRegions</a> (std::string &amp;error)</td></tr>
 <tr class="separator:a08f0b0cd978303552143fcbd616897f6 inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb2c09daeba9c8fda701b1aafe55f28c inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#acb2c09daeba9c8fda701b1aafe55f28c">AddExportRegion</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;region_state, const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;region_style, const casacore::RecordInterface &amp;region_record, bool pixel_coord)</td></tr>
-<tr class="separator:acb2c09daeba9c8fda701b1aafe55f28c inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8946f0178cf8d1c73d4e4adf6f67005c inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a8946f0178cf8d1c73d4e4adf6f67005c">AddExportRegion</a> (const <a class="el" href="structcarta_1_1RegionState.html">RegionState</a> &amp;region_state, const CARTA::RegionStyle &amp;region_style, const casacore::RecordInterface &amp;region_record, bool pixel_coord)</td></tr>
+<tr class="separator:a8946f0178cf8d1c73d4e4adf6f67005c inherit pub_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a2e529624b6af0ddc91b1d348497b021a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a2e529624b6af0ddc91b1d348497b021a">AddExportRegion</a> (CARTA::RegionType region_type, const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;region_style, const std::vector&lt; casacore::Quantity &gt; &amp;control_points, const casacore::Quantity &amp;rotation) override</td></tr>
-<tr class="separator:a2e529624b6af0ddc91b1d348497b021a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad67fc001bf4bca84dcc04084f8da3f74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#ad67fc001bf4bca84dcc04084f8da3f74">AddRegionNames</a> () override</td></tr>
+<tr class="separator:ad67fc001bf4bca84dcc04084f8da3f74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a413a234bd6a423dd1512f03474fd01"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a7a413a234bd6a423dd1512f03474fd01">AddExportRegion</a> (CARTA::RegionType region_type, const std::vector&lt; casacore::Quantity &gt; &amp;control_points, const casacore::Quantity &amp;rotation, const CARTA::RegionStyle &amp;region_style) override</td></tr>
+<tr class="separator:a7a413a234bd6a423dd1512f03474fd01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classcarta_1_1RegionImportExport"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classcarta_1_1RegionImportExport')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classcarta_1_1RegionImportExport.html">carta::RegionImportExport</a></td></tr>
 <tr class="memitem:a98aad0229b8b63943800e4920c10b71c inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">virtual std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a98aad0229b8b63943800e4920c10b71c">ReadRegionFile</a> (const std::string &amp;file, bool file_is_filename, const char extra_delim='\0')</td></tr>
 <tr class="separator:a98aad0229b8b63943800e4920c10b71c inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfa81a597e546c432241f65dda89576d inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#adfa81a597e546c432241f65dda89576d">IsCommentLine</a> (const std::string &amp;line)</td></tr>
+<tr class="separator:adfa81a597e546c432241f65dda89576d inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a948056d082fdce1689ce12c9c4c353dc inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a948056d082fdce1689ce12c9c4c353dc">SetParserDelim</a> (const std::string &amp;delim)</td></tr>
 <tr class="separator:a948056d082fdce1689ce12c9c4c353dc inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace29fa615ac0800a59cfd12c9259d278 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#ace29fa615ac0800a59cfd12c9259d278">ParseRegionParameters</a> (std::string &amp;region_definition, std::vector&lt; std::string &gt; &amp;parameters, std::unordered_map&lt; std::string, std::string &gt; &amp;properties)</td></tr>
 <tr class="separator:ace29fa615ac0800a59cfd12c9259d278 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab14406bc47f8ef9a23afba269ed32634 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">CARTA::TextAnnotationPosition&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#ab14406bc47f8ef9a23afba269ed32634">GetTextPosition</a> (const std::string &amp;position)</td></tr>
+<tr class="separator:ab14406bc47f8ef9a23afba269ed32634 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb6f0ee85b170fe0670dcababd41f512 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#acb6f0ee85b170fe0670dcababd41f512">AddTextStyleToProperties</a> (const CARTA::RegionStyle &amp;text_style, <a class="el" href="structcarta_1_1RegionProperties.html">RegionProperties</a> &amp;textbox_properties)</td></tr>
+<tr class="separator:acb6f0ee85b170fe0670dcababd41f512 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dbf1bb6405ba5cbc0dea6803c3d2eef inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a4dbf1bb6405ba5cbc0dea6803c3d2eef">ConvertPointToPixels</a> (std::string &amp;region_frame, std::vector&lt; casacore::Quantity &gt; &amp;point, casacore::Vector&lt; casacore::Double &gt; &amp;pixel_coords)</td></tr>
 <tr class="separator:a4dbf1bb6405ba5cbc0dea6803c3d2eef inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a316dd4dbbc4907464ac3ed89c6b41cf5 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a316dd4dbbc4907464ac3ed89c6b41cf5">WorldToPixelLength</a> (casacore::Quantity input, unsigned int pixel_axis)</td></tr>
 <tr class="separator:a316dd4dbbc4907464ac3ed89c6b41cf5 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af21c3543b73c915a0a007b3472a74b0f inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#af21c3543b73c915a0a007b3472a74b0f">FormatColor</a> (const std::string &amp;color)</td></tr>
 <tr class="separator:af21c3543b73c915a0a007b3472a74b0f inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71afc9963460ea3e627e1350080f892d inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a71afc9963460ea3e627e1350080f892d">ExportAnnCompassStyle</a> (const CARTA::RegionStyle &amp;region_style, const std::string &amp;ann_coord_sys, std::string &amp;region_line)</td></tr>
+<tr class="separator:a71afc9963460ea3e627e1350080f892d inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa00fa80041bcb9cbb45ec2d2209274c1 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#aa00fa80041bcb9cbb45ec2d2209274c1">ImportCompassStyle</a> (std::string &amp;compass_properties, std::string &amp;coordinate_system, CARTA::AnnotationStyle *annotation_style)</td></tr>
+<tr class="separator:aa00fa80041bcb9cbb45ec2d2209274c1 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1228bb4a6dc5f9b25e981217651ae58 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#ae1228bb4a6dc5f9b25e981217651ae58">ImportRulerStyle</a> (std::string &amp;ruler_properties, std::string &amp;coordinate_system)</td></tr>
+<tr class="separator:ae1228bb4a6dc5f9b25e981217651ae58 inherit pro_methods_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
+<tr class="memitem:aa4a4e41e61c65e5915fb07d100eca2ca"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aa4a4e41e61c65e5915fb07d100eca2ca">GetImageDirectionFrame</a> ()</td></tr>
+<tr class="separator:aa4a4e41e61c65e5915fb07d100eca2ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56822ffcdfaf92e84091ca60c84e0747"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a56822ffcdfaf92e84091ca60c84e0747">ProcessFileLines</a> (std::vector&lt; std::string &gt; &amp;lines)</td></tr>
 <tr class="separator:a56822ffcdfaf92e84091ca60c84e0747"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99ab259809ee92720f90d01e3c0f8c96"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a99ab259809ee92720f90d01e3c0f8c96">GetRegionDirectionFrame</a> (std::unordered_map&lt; std::string, std::string &gt; &amp;properties)</td></tr>
 <tr class="separator:a99ab259809ee92720f90d01e3c0f8c96"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e092d027efcc3892677452c73502f71"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a0e092d027efcc3892677452c73502f71">ImportAnnSymbol</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;coord_frame)</td></tr>
-<tr class="separator:a0e092d027efcc3892677452c73502f71"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a884110e3ba5e06302d02846589f5420b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a884110e3ba5e06302d02846589f5420b">ImportAnnSymbolText</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;coord_frame)</td></tr>
+<tr class="separator:a884110e3ba5e06302d02846589f5420b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a203f570531da26a20c6806daf391b580"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a203f570531da26a20c6806daf391b580">ImportAnnBox</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;coord_frame)</td></tr>
 <tr class="separator:a203f570531da26a20c6806daf391b580"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a829dc1d18b0da020bf57a933ff90c35d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a829dc1d18b0da020bf57a933ff90c35d">ImportAnnEllipse</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;coord_frame)</td></tr>
 <tr class="separator:a829dc1d18b0da020bf57a933ff90c35d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a56a623ffcba838c3a8ab1c47f1c07817"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a56a623ffcba838c3a8ab1c47f1c07817">ImportAnnPolygonLine</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;coord_frame)</td></tr>
-<tr class="separator:a56a623ffcba838c3a8ab1c47f1c07817"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13a4c69d8251f00857c859eec9dfd50f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a13a4c69d8251f00857c859eec9dfd50f">ImportStyleParameters</a> (std::unordered_map&lt; std::string, std::string &gt; &amp;properties)</td></tr>
-<tr class="separator:a13a4c69d8251f00857c859eec9dfd50f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25d9fd2d0426b2473f70a764b741a28c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a25d9fd2d0426b2473f70a764b741a28c">ImportAnnPoly</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;coord_frame)</td></tr>
+<tr class="separator:a25d9fd2d0426b2473f70a764b741a28c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a902c02e8be2a5ed17b3cb731c50a744d"><td class="memItemLeft" align="right" valign="top">CARTA::RegionStyle&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a902c02e8be2a5ed17b3cb731c50a744d">ImportStyleParameters</a> (CARTA::RegionType region_type, std::unordered_map&lt; std::string, std::string &gt; &amp;properties)</td></tr>
+<tr class="separator:a902c02e8be2a5ed17b3cb731c50a744d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a980ff42e10d157d116bdd720dc08bf60"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a980ff42e10d157d116bdd720dc08bf60">ImportFontStyleParameters</a> (std::unordered_map&lt; std::string, std::string &gt; &amp;properties, CARTA::AnnotationStyle *annotation_style)</td></tr>
+<tr class="separator:a980ff42e10d157d116bdd720dc08bf60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afdba3b61951eeff1143bd6026f553a38"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#afdba3b61951eeff1143bd6026f553a38">ImportPointStyleParameters</a> (const std::string &amp;symbol_char, std::unordered_map&lt; std::string, std::string &gt; &amp;properties, CARTA::AnnotationStyle *annotation_style)</td></tr>
+<tr class="separator:afdba3b61951eeff1143bd6026f553a38"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa80761ad28e05dfecd1eaee0efcbedf0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aa80761ad28e05dfecd1eaee0efcbedf0">GetBoxControlPoints</a> (std::string &amp;box_definition, std::vector&lt; CARTA::Point &gt; &amp;control_points, float &amp;rotation)</td></tr>
 <tr class="separator:aa80761ad28e05dfecd1eaee0efcbedf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c41a794e0c167f4016673beedfab1ba"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a1c41a794e0c167f4016673beedfab1ba">GetBoxControlPoints</a> (std::vector&lt; std::string &gt; &amp;parameters, std::string &amp;region_frame, std::vector&lt; CARTA::Point &gt; &amp;control_points, float &amp;rotation)</td></tr>
@@ -175,10 +195,24 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:ac52bc07f6a5dbfaf79cee5e46d7ba89a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0825242c8460b999da091ba1ee3b3762"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a0825242c8460b999da091ba1ee3b3762">GetRectBoxPoints</a> (casacore::Quantity &amp;blcx, casacore::Quantity &amp;blcy, casacore::Quantity &amp;trcx, casacore::Quantity &amp;trcy, std::string &amp;region_frame, std::vector&lt; CARTA::Point &gt; &amp;control_points)</td></tr>
 <tr class="separator:a0825242c8460b999da091ba1ee3b3762"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa818d42e05fcfa48b7f54b3b37ec5cab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aa818d42e05fcfa48b7f54b3b37ec5cab">ExportStyleParameters</a> (const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;region_style, std::string &amp;region_line)</td></tr>
-<tr class="separator:aa818d42e05fcfa48b7f54b3b37ec5cab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef0c4274b5092f60db9bcad3c35f924c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aef0c4274b5092f60db9bcad3c35f924c">ExportStyleParameters</a> (const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;region_style, casa::AnnotationBase *region)</td></tr>
-<tr class="separator:aef0c4274b5092f60db9bcad3c35f924c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc25b62687682b81bfe52a9c50ae3ea6"><td class="memItemLeft" align="right" valign="top">casa::AnnSymbol::Symbol&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#abc25b62687682b81bfe52a9c50ae3ea6">GetAnnSymbol</a> (CARTA::PointAnnotationShape point_shape)</td></tr>
+<tr class="separator:abc25b62687682b81bfe52a9c50ae3ea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fdce414ca76f1a337f634c3d50e9426"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a5fdce414ca76f1a337f634c3d50e9426">GetAnnSymbolCharacter</a> (CARTA::PointAnnotationShape point_shape)</td></tr>
+<tr class="separator:a5fdce414ca76f1a337f634c3d50e9426"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e92f1dfe9f41c03693d25e4ebe2508d"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a6e92f1dfe9f41c03693d25e4ebe2508d">GetRegionColor</a> (const CARTA::RegionStyle &amp;region_style)</td></tr>
+<tr class="separator:a6e92f1dfe9f41c03693d25e4ebe2508d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a373069692ab2205c2ca70040f888518b"><td class="memItemLeft" align="right" valign="top">casa::AnnotationBase::LineStyle&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a373069692ab2205c2ca70040f888518b">GetRegionLineStyle</a> (const CARTA::RegionStyle &amp;region_style)</td></tr>
+<tr class="separator:a373069692ab2205c2ca70040f888518b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1939e4595e8b66d378db75609a732fcb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a1939e4595e8b66d378db75609a732fcb">GetAnnotationFontParameters</a> (const CARTA::RegionStyle &amp;region_style, std::string &amp;font, unsigned int &amp;font_size, casa::AnnotationBase::FontStyle &amp;font_style)</td></tr>
+<tr class="separator:a1939e4595e8b66d378db75609a732fcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f8b02eeb60d1bf7f42baf2232ef28c2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a6f8b02eeb60d1bf7f42baf2232ef28c2">GetAnnotationSymbolParameters</a> (const CARTA::RegionStyle &amp;region_style, unsigned int &amp;symbol_size, unsigned int &amp;symbol_thickness)</td></tr>
+<tr class="separator:a6f8b02eeb60d1bf7f42baf2232ef28c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaee86f6ca01ce6fd7e8d6205ea1e5a46"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aaee86f6ca01ce6fd7e8d6205ea1e5a46">GetAnnotationCoordinateSystem</a> ()</td></tr>
+<tr class="separator:aaee86f6ca01ce6fd7e8d6205ea1e5a46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78b28b40825778ec319a7a91571bc7e8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a78b28b40825778ec319a7a91571bc7e8">ExportStyleParameters</a> (const CARTA::RegionStyle &amp;region_style, std::string &amp;region_line)</td></tr>
+<tr class="separator:a78b28b40825778ec319a7a91571bc7e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9dbb49ec669428b5d5d862f11e45d06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#ab9dbb49ec669428b5d5d862f11e45d06">ExportStyleParameters</a> (const CARTA::RegionStyle &amp;region_style, casa::AnnotationBase *region)</td></tr>
+<tr class="separator:ab9dbb49ec669428b5d5d862f11e45d06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7d4318094e6cc9a357f80d59259fdab"><td class="memItemLeft" align="right" valign="top">casacore::Vector&lt; <a class="el" href="Image_8h.html#a19b285317b167c303e88345dc1c89091">casacore::Stokes::StokesTypes</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#ab7d4318094e6cc9a357f80d59259fdab">GetStokesTypes</a> ()</td></tr>
 <tr class="separator:ab7d4318094e6cc9a357f80d59259fdab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67d7c7f0e0f34b4fe446bbfed50d6d0b"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a67d7c7f0e0f34b4fe446bbfed50d6d0b">GetCrtfVersionHeader</a> ()</td></tr>
@@ -188,8 +222,6 @@ Private Member Functions</h2></td></tr>
 Private Attributes</h2></td></tr>
 <tr class="memitem:aa3bfc0a6a038c06339ac77dd748be76b"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#aa3bfc0a6a038c06339ac77dd748be76b">_global_properties</a></td></tr>
 <tr class="separator:aa3bfc0a6a038c06339ac77dd748be76b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac7878b00f2b2850406c1fdd81a392430"><td class="memItemLeft" align="right" valign="top">casa::RegionTextList&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#ac7878b00f2b2850406c1fdd81a392430">_region_list</a></td></tr>
-<tr class="separator:ac7878b00f2b2850406c1fdd81a392430"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f76d93d28588ccf3fee2337902077a8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CrtfImportExport.html#a7f76d93d28588ccf3fee2337902077a8">_stokes_axis</a></td></tr>
 <tr class="separator:a7f76d93d28588ccf3fee2337902077a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -212,6 +244,8 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:abbc48977a82cdcc4e5e0bbb99007b844 inherit pro_attribs_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5084f07d2520680efd4dd148e364b035 inherit pro_attribs_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; CARTA::RegionType, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#a5084f07d2520680efd4dd148e364b035">_region_names</a></td></tr>
 <tr class="separator:a5084f07d2520680efd4dd148e364b035 inherit pro_attribs_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af36cfea1baa4c6010053ff15874ea988 inherit pro_attribs_classcarta_1_1RegionImportExport"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; CARTA::TextAnnotationPosition, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1RegionImportExport.html#af36cfea1baa4c6010053ff15874ea988">_text_positions</a></td></tr>
+<tr class="separator:af36cfea1baa4c6010053ff15874ea988 inherit pro_attribs_classcarta_1_1RegionImportExport"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a4dda042b0ce6f62290cc4cdebc047375"></a>
@@ -266,7 +300,7 @@ Additional Inherited Members</h2></td></tr>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a4dda042b0ce6f62290cc4cdebc047375_cgraph.svg" width="562" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a4dda042b0ce6f62290cc4cdebc047375_cgraph.svg" width="562" height="248"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -303,12 +337,18 @@ Here is the call graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a0d23ae833c4df87677829d60296d2f26_cgraph.svg" width="403" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2e529624b6af0ddc91b1d348497b021a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2e529624b6af0ddc91b1d348497b021a">&#9670;&nbsp;</a></span>AddExportRegion() <span class="overload">[1/2]</span></h2>
+<a id="a7a413a234bd6a423dd1512f03474fd01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a413a234bd6a423dd1512f03474fd01">&#9670;&nbsp;</a></span>AddExportRegion() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -325,12 +365,6 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;&#160;</td>
-          <td class="paramname"><em>region_style</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">const std::vector&lt; casacore::Quantity &gt; &amp;&#160;</td>
           <td class="paramname"><em>control_points</em>, </td>
         </tr>
@@ -338,7 +372,13 @@ Here is the call graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const casacore::Quantity &amp;&#160;</td>
-          <td class="paramname"><em>rotation</em>&#160;</td>
+          <td class="paramname"><em>rotation</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
+          <td class="paramname"><em>region_style</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -353,12 +393,12 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classcarta_1_1RegionImportExport.html#a1597be46aeed5bd9a6848455dc25aae0">carta::RegionImportExport</a>.</p>
+<p>Implements <a class="el" href="classcarta_1_1RegionImportExport.html#a8b9dc18a9fd450a647dced8ea1b47ed7">carta::RegionImportExport</a>.</p>
 
 </div>
 </div>
-<a id="a51630824beddcd414c958e4d381f5cc8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a51630824beddcd414c958e4d381f5cc8">&#9670;&nbsp;</a></span>AddExportRegion() <span class="overload">[2/2]</span></h2>
+<a id="a18d65abfe480e9cb2c9fa39588474b00"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18d65abfe480e9cb2c9fa39588474b00">&#9670;&nbsp;</a></span>AddExportRegion() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -375,7 +415,7 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;&#160;</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
           <td class="paramname"><em>region_style</em>&#160;</td>
         </tr>
         <tr>
@@ -391,11 +431,44 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classcarta_1_1RegionImportExport.html#ad0a711c93ba5ef84bb80f83c252cd457">carta::RegionImportExport</a>.</p>
+<p>Implements <a class="el" href="classcarta_1_1RegionImportExport.html#a5b3e28e8bdc25dc82fed5d33aefeff4f">carta::RegionImportExport</a>.</p>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a51630824beddcd414c958e4d381f5cc8_cgraph.svg" width="410" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a18d65abfe480e9cb2c9fa39588474b00_cgraph.svg" width="475" height="248"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="ad67fc001bf4bca84dcc04084f8da3f74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad67fc001bf4bca84dcc04084f8da3f74">&#9670;&nbsp;</a></span>AddRegionNames()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrtfImportExport::AddRegionNames </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classcarta_1_1RegionImportExport.html#a5ad9d2b32cacbcecb43bb100587b2cd4">carta::RegionImportExport</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_ad67fc001bf4bca84dcc04084f8da3f74_icgraph.svg" width="403" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -477,8 +550,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="aef0c4274b5092f60db9bcad3c35f924c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aef0c4274b5092f60db9bcad3c35f924c">&#9670;&nbsp;</a></span>ExportStyleParameters() <span class="overload">[1/2]</span></h2>
+<a id="ab9dbb49ec669428b5d5d862f11e45d06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9dbb49ec669428b5d5d862f11e45d06">&#9670;&nbsp;</a></span>ExportStyleParameters() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -489,7 +562,7 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="memname">void carta::CrtfImportExport::ExportStyleParameters </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;&#160;</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
           <td class="paramname"><em>region_style</em>, </td>
         </tr>
         <tr>
@@ -513,8 +586,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="aa818d42e05fcfa48b7f54b3b37ec5cab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa818d42e05fcfa48b7f54b3b37ec5cab">&#9670;&nbsp;</a></span>ExportStyleParameters() <span class="overload">[2/2]</span></h2>
+<a id="a78b28b40825778ec319a7a91571bc7e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78b28b40825778ec319a7a91571bc7e8">&#9670;&nbsp;</a></span>ExportStyleParameters() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -525,7 +598,7 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="memname">void carta::CrtfImportExport::ExportStyleParameters </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> &amp;&#160;</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
           <td class="paramname"><em>region_style</em>, </td>
         </tr>
         <tr>
@@ -549,7 +622,186 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_aa818d42e05fcfa48b7f54b3b37ec5cab_icgraph.svg" width="410" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a78b28b40825778ec319a7a91571bc7e8_icgraph.svg" width="410" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="aaee86f6ca01ce6fd7e8d6205ea1e5a46"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaee86f6ca01ce6fd7e8d6205ea1e5a46">&#9670;&nbsp;</a></span>GetAnnotationCoordinateSystem()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string carta::CrtfImportExport::GetAnnotationCoordinateSystem </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_aaee86f6ca01ce6fd7e8d6205ea1e5a46_icgraph.svg" width="475" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a1939e4595e8b66d378db75609a732fcb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1939e4595e8b66d378db75609a732fcb">&#9670;&nbsp;</a></span>GetAnnotationFontParameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::CrtfImportExport::GetAnnotationFontParameters </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
+          <td class="paramname"><em>region_style</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>font</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int &amp;&#160;</td>
+          <td class="paramname"><em>font_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">casa::AnnotationBase::FontStyle &amp;&#160;</td>
+          <td class="paramname"><em>font_style</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a6f8b02eeb60d1bf7f42baf2232ef28c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f8b02eeb60d1bf7f42baf2232ef28c2">&#9670;&nbsp;</a></span>GetAnnotationSymbolParameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::CrtfImportExport::GetAnnotationSymbolParameters </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
+          <td class="paramname"><em>region_style</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int &amp;&#160;</td>
+          <td class="paramname"><em>symbol_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int &amp;&#160;</td>
+          <td class="paramname"><em>symbol_thickness</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="abc25b62687682b81bfe52a9c50ae3ea6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc25b62687682b81bfe52a9c50ae3ea6">&#9670;&nbsp;</a></span>GetAnnSymbol()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">casa::AnnSymbol::Symbol carta::CrtfImportExport::GetAnnSymbol </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::PointAnnotationShape&#160;</td>
+          <td class="paramname"><em>point_shape</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a5fdce414ca76f1a337f634c3d50e9426"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5fdce414ca76f1a337f634c3d50e9426">&#9670;&nbsp;</a></span>GetAnnSymbolCharacter()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">char carta::CrtfImportExport::GetAnnSymbolCharacter </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::PointAnnotationShape&#160;</td>
+          <td class="paramname"><em>point_shape</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CrtfImportExport_a5fdce414ca76f1a337f634c3d50e9426_icgraph.svg" width="422" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -736,6 +988,31 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="aa4a4e41e61c65e5915fb07d100eca2ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4a4e41e61c65e5915fb07d100eca2ca">&#9670;&nbsp;</a></span>GetImageDirectionFrame()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string carta::CrtfImportExport::GetImageDirectionFrame </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a0825242c8460b999da091ba1ee3b3762"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0825242c8460b999da091ba1ee3b3762">&#9670;&nbsp;</a></span>GetRectBoxPoints()</h2>
 
@@ -796,6 +1073,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a6e92f1dfe9f41c03693d25e4ebe2508d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6e92f1dfe9f41c03693d25e4ebe2508d">&#9670;&nbsp;</a></span>GetRegionColor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string carta::CrtfImportExport::GetRegionColor </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
+          <td class="paramname"><em>region_style</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a99ab259809ee92720f90d01e3c0f8c96"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a99ab259809ee92720f90d01e3c0f8c96">&#9670;&nbsp;</a></span>GetRegionDirectionFrame()</h2>
 
@@ -810,6 +1113,32 @@ Here is the caller graph for this function:</div>
           <td>(</td>
           <td class="paramtype">std::unordered_map&lt; std::string, std::string &gt; &amp;&#160;</td>
           <td class="paramname"><em>properties</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a373069692ab2205c2ca70040f888518b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a373069692ab2205c2ca70040f888518b">&#9670;&nbsp;</a></span>GetRegionLineStyle()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">casa::AnnotationBase::LineStyle carta::CrtfImportExport::GetRegionLineStyle </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::RegionStyle &amp;&#160;</td>
+          <td class="paramname"><em>region_style</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -919,8 +1248,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a56a623ffcba838c3a8ab1c47f1c07817"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a56a623ffcba838c3a8ab1c47f1c07817">&#9670;&nbsp;</a></span>ImportAnnPolygonLine()</h2>
+<a id="a25d9fd2d0426b2473f70a764b741a28c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a25d9fd2d0426b2473f70a764b741a28c">&#9670;&nbsp;</a></span>ImportAnnPoly()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -929,7 +1258,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a> carta::CrtfImportExport::ImportAnnPolygonLine </td>
+          <td class="memname"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a> carta::CrtfImportExport::ImportAnnPoly </td>
           <td>(</td>
           <td class="paramtype">std::vector&lt; std::string &gt; &amp;&#160;</td>
           <td class="paramname"><em>parameters</em>, </td>
@@ -955,8 +1284,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a0e092d027efcc3892677452c73502f71"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e092d027efcc3892677452c73502f71">&#9670;&nbsp;</a></span>ImportAnnSymbol()</h2>
+<a id="a884110e3ba5e06302d02846589f5420b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a884110e3ba5e06302d02846589f5420b">&#9670;&nbsp;</a></span>ImportAnnSymbolText()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -965,7 +1294,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a> carta::CrtfImportExport::ImportAnnSymbol </td>
+          <td class="memname"><a class="el" href="structcarta_1_1RegionState.html">RegionState</a> carta::CrtfImportExport::ImportAnnSymbolText </td>
           <td>(</td>
           <td class="paramtype">std::vector&lt; std::string &gt; &amp;&#160;</td>
           <td class="paramname"><em>parameters</em>, </td>
@@ -991,8 +1320,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a13a4c69d8251f00857c859eec9dfd50f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a13a4c69d8251f00857c859eec9dfd50f">&#9670;&nbsp;</a></span>ImportStyleParameters()</h2>
+<a id="a980ff42e10d157d116bdd720dc08bf60"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a980ff42e10d157d116bdd720dc08bf60">&#9670;&nbsp;</a></span>ImportFontStyleParameters()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1001,11 +1330,99 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcarta_1_1RegionStyle.html">RegionStyle</a> carta::CrtfImportExport::ImportStyleParameters </td>
+          <td class="memname">void carta::CrtfImportExport::ImportFontStyleParameters </td>
           <td>(</td>
           <td class="paramtype">std::unordered_map&lt; std::string, std::string &gt; &amp;&#160;</td>
-          <td class="paramname"><em>properties</em></td><td>)</td>
+          <td class="paramname"><em>properties</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">CARTA::AnnotationStyle *&#160;</td>
+          <td class="paramname"><em>annotation_style</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afdba3b61951eeff1143bd6026f553a38"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afdba3b61951eeff1143bd6026f553a38">&#9670;&nbsp;</a></span>ImportPointStyleParameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::CrtfImportExport::ImportPointStyleParameters </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>symbol_char</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::unordered_map&lt; std::string, std::string &gt; &amp;&#160;</td>
+          <td class="paramname"><em>properties</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CARTA::AnnotationStyle *&#160;</td>
+          <td class="paramname"><em>annotation_style</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a902c02e8be2a5ed17b3cb731c50a744d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a902c02e8be2a5ed17b3cb731c50a744d">&#9670;&nbsp;</a></span>ImportStyleParameters()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">CARTA::RegionStyle carta::CrtfImportExport::ImportStyleParameters </td>
+          <td>(</td>
+          <td class="paramtype">CARTA::RegionType&#160;</td>
+          <td class="paramname"><em>region_type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::unordered_map&lt; std::string, std::string &gt; &amp;&#160;</td>
+          <td class="paramname"><em>properties</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -1061,28 +1478,6 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">std::unordered_map&lt;std::string, std::string&gt; carta::CrtfImportExport::_global_properties</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac7878b00f2b2850406c1fdd81a392430"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac7878b00f2b2850406c1fdd81a392430">&#9670;&nbsp;</a></span>_region_list</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">casa::RegionTextList carta::CrtfImportExport::_region_list</td>
         </tr>
       </table>
   </td>

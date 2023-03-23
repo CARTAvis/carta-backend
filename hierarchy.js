@@ -105,7 +105,6 @@ var hierarchy =
     [ "carta::RegionState", "structcarta_1_1RegionState.html", null ],
     [ "carta::RegionStatsConfig", "structcarta_1_1RegionStatsConfig.html", null ],
     [ "carta::FileInfo::RegionStatsId", "structcarta_1_1FileInfo_1_1RegionStatsId.html", null ],
-    [ "carta::RegionStyle", "structcarta_1_1RegionStyle.html", null ],
     [ "carta::FileListHandler::ResultMsg", "structcarta_1_1FileListHandler_1_1ResultMsg.html", null ],
     [ "carta::Session", "classcarta_1_1Session.html", null ],
     [ "carta::SessionContext", "classcarta_1_1SessionContext.html", null ],
