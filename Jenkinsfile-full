@@ -866,13 +866,15 @@ def file_browser() {
                 } else {
                     ret = true
                 }
-                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 1 of 4"
+                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 1 of 5"
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 4"
+                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 3 of 4"
+                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 3 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 4 of 4"
+                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 4 of 5"
+                sh "pgrep carta_backend"
+                sh "CI=true npm test src/test/OPEN_SWAPPED_IMAGES.test.ts # test 5 of 5"
                 sh "pgrep carta_backend"
             }
         }
@@ -893,15 +895,17 @@ def animator() {
                     ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 5"
+                sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 5"
+                sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "#CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 3 of 5"
+                sh "#CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 3 of 6"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 4 of 5"
+                sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 4 of 6"
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 5 of 5"
+                sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 5 of 6"
+                sh "pgrep carta_backend"
+                sh "CI=true npm test src/test/ANIMATOR_SWAPPED_IMAGES.test.ts # test 6 of 6"
                 sh "pgrep carta_backend"
             }
         }
