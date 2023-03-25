@@ -18,23 +18,12 @@
 
 namespace carta {
 
-struct RegionStyle {
-    std::string name;
-    std::string color;
-    int line_width;
-    std::vector<int> dash_list;
-
-    RegionStyle() {}
-    RegionStyle(const std::string& name_, const std::string& color_, int line_width_, const std::vector<int> dash_list_)
-        : name(name_), color(color_), line_width(line_width_), dash_list(dash_list_) {}
-};
-
 struct RegionProperties {
     RegionProperties() {}
-    RegionProperties(RegionState& region_state, RegionStyle& region_style) : state(region_state), style(region_style) {}
+    RegionProperties(RegionState& region_state, CARTA::RegionStyle& region_style) : state(region_state), style(region_style) {}
 
     RegionState state;
-    RegionStyle style;
+    CARTA::RegionStyle style;
 };
 
 class RegionHandler {
@@ -80,10 +69,12 @@ public:
     bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, std::vector<GeneratedImage>& collapse_results);
 
-    // Spatial Requirements
+    // Tests for region type, and not annotation
     bool IsPointRegion(int region_id);
     bool IsLineRegion(int region_id);
     bool IsClosedRegion(int region_id);
+
+    // Spatial Requirements
     std::vector<int> GetSpatialReqRegionsForFile(int file_id);
     std::vector<int> GetSpatialReqFilesForRegion(int region_id);
 
@@ -101,7 +92,7 @@ private:
     int GetNextRegionId();
 
     // Check specific id or if any regions/frames set
-    bool RegionSet(int region_id);
+    bool RegionSet(int region_id, bool check_annotation = false);
     bool FrameSet(int file_id);
 
     // Requirements helpers
@@ -117,7 +108,7 @@ private:
     void ClearRegionCache(int region_id);
 
     // Apply region to image
-    bool RegionFileIdsValid(int region_id, int file_id);
+    bool RegionFileIdsValid(int region_id, int file_id, bool check_annotation = false);
     std::shared_ptr<casacore::LCRegion> ApplyRegionToFile(
         int region_id, int file_id, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
