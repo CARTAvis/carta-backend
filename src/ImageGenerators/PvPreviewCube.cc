@@ -6,8 +6,12 @@
 
 #include "PvPreviewCube.h"
 
+#include <cmath>
+#include <valarray>
+
 #include <casacore/images/Images/RebinImage.h>
 
+#include "DataStream/Smoothing.h"
 #include "Timer/Timer.h"
 
 namespace carta {
@@ -54,14 +58,11 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     }
 
     if (sub_image.ndim() == 0) {
+        error = "Preview image subcube failed.";
         return _preview_image;
     }
 
-    // Rebin is zero if request message fields not set, reset to 1.
-    auto rebin_xy = std::max(_cube_parameters.rebin_xy, 1);
-    auto rebin_z = std::max(_cube_parameters.rebin_z, 1);
-
-    if (rebin_xy > 1 || rebin_z > 1) {
+    if (DoRebin()) {
         try {
             // Make casacore::RebinImage
             int x_axis(0), y_axis(1), z_axis(-1), stokes_axis(-1);
@@ -82,10 +83,11 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
             z_axis = sub_image.coordinates().spectralAxisNumber();
 
             casacore::IPosition rebin_factors(sub_image.ndim(), 1);
-            rebin_factors[x_axis] = rebin_xy;
-            rebin_factors[y_axis] = rebin_xy;
-            rebin_factors[z_axis] = rebin_z;
+            rebin_factors[x_axis] = _cube_parameters.rebin_xy;
+            rebin_factors[y_axis] = _cube_parameters.rebin_xy;
+            rebin_factors[z_axis] = _cube_parameters.rebin_z;
             _preview_image.reset(new casacore::RebinImage<float>(sub_image, rebin_factors));
+            _preview_subimage = sub_image; // for data access, instead of RebinImage (too slow)
         } catch (const casacore::AipsError& err) {
             error = err.getMesg();
             return _preview_image;
@@ -95,11 +97,8 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
         _preview_image.reset(new casacore::SubImage<float>(sub_image));
     }
 
-    if (!_stop_cube) {
-        // Cache cube data (remove degenerate stokes axis)
-        Timer t;
-        _cube_data = _preview_image->get(true);
-        spdlog::performance("PV preview cube data loaded in {:.3f} ms", t.Elapsed().ms());
+    if (!_stop_cube && _preview_image) {
+        LoadCubeData();
     }
 
     return _preview_image;
@@ -111,7 +110,7 @@ RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state
 
     // Subtract bottom left corner of preview region and apply rebin
     float blc_x(_origin[0]), blc_y(_origin[1]);
-    float rebin_xy = (float)std::max(_cube_parameters.rebin_xy, 1);
+    auto rebin_xy = _cube_parameters.rebin_xy;
     CARTA::Point line_point;
 
     for (auto& point : source_region_state.control_points) {
@@ -132,8 +131,8 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
     }
 
     // If cancelled during preview image, load data now.
-    if (_cube_data.empty()) {
-        _cube_data = _preview_image->get(true); // remove degenerate stokes axis
+    if (_cube_data.empty() && !_stop_cube) {
+        LoadCubeData();
     }
 
     auto bounding_box = region->boundingBox();
@@ -174,6 +173,89 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
 
 void PvPreviewCube::StopCube() {
     _stop_cube = true;
+}
+
+bool PvPreviewCube::DoRebin() {
+    return _cube_parameters.rebin_xy > 1 || _cube_parameters.rebin_z > 1;
+}
+
+void PvPreviewCube::LoadCubeData() {
+    // Cache preview image data in memory
+    Timer t;
+    if (DoRebin()) {
+        casacore::Array<float> carta_cube_data;
+        int spectral_axis(_preview_subimage.coordinates().spectralAxisNumber());
+        auto subimage_shape = _preview_subimage.shape();
+
+        // Dimensions
+        auto width = subimage_shape(0);
+        auto height = subimage_shape(1);
+        auto nchan = subimage_shape(spectral_axis);
+        auto chan_size = width * height;
+
+        // Channel slicer start and length
+        casacore::IPosition start(subimage_shape.size(), 0);
+        casacore::IPosition length(subimage_shape);
+        length(spectral_axis) = 1;
+
+        // Rebin dimensions: if rebin==1, same as dimensions above
+        auto rebin_xy = _cube_parameters.rebin_xy;
+        auto rebin_z = _cube_parameters.rebin_z;
+        size_t rebin_width = width / rebin_xy;
+        size_t rebin_height = height / rebin_xy;
+        size_t rebin_nchan = nchan / rebin_z;
+        casacore::IPosition rebin_channel_shape(2, rebin_width, rebin_height);
+        size_t rebin_channel_size = rebin_width * rebin_height;
+
+        // casacore::Array<float> test_cube_data;
+        _cube_data.resize(casacore::IPosition(3, rebin_width, rebin_height, rebin_nchan));
+        size_t new_chan(0);
+
+        for (auto ichan = 0; ichan < rebin_nchan; ichan += rebin_z) {
+            // Check for cancel
+            if (_stop_cube) {
+                _cube_data.resize();
+                return;
+            }
+
+            // Accumulate rebin_z channels
+            std::vector<float> channel_sum(rebin_channel_size, 0.0);
+
+            for (int rebin_chan = 0; rebin_chan < rebin_z; ++rebin_chan) {
+                // Apply channel slicer to get data and mask for this channel
+                casacore::Array<float> data;
+                start(spectral_axis) = ichan + rebin_chan;
+                casacore::Slicer channel_slicer(start, length);
+                _preview_subimage.getSlice(data, channel_slicer, true);
+                auto channel_data = data.tovector();
+
+                if (rebin_xy > 1) {
+                    // Rebin channel data in xy
+                    std::vector<float> rebinned_data(rebin_channel_size, 0.0);
+                    BlockSmooth(channel_data.data(), rebinned_data.data(), width, height, rebin_width, rebin_height, 0, 0, rebin_xy);
+
+                    // Accumulate rebinned channel data
+                    std::transform(channel_sum.begin(), channel_sum.end(), rebinned_data.begin(), channel_sum.begin(), std::plus<float>());
+                } else {
+                    // Accumulate channel data
+                    std::transform(channel_sum.begin(), channel_sum.end(), channel_data.begin(), channel_sum.begin(), std::plus<float>());
+                }
+            }
+
+            // Get mean for rebin_z
+            std::transform(channel_sum.begin(), channel_sum.end(), channel_sum.begin(), [rebin_z](float& s) { return s / (float)rebin_z; });
+
+            // Reshape vector to 2D and set cube data for this output channel
+            casacore::Vector<float> channel_sumv(channel_sum);
+            auto channel_cube_data = channel_sumv.reform(rebin_channel_shape);
+            _cube_data[new_chan++] = channel_cube_data;
+        }
+
+        spdlog::performance("PV preview cube data (rebin) loaded in {:.3f} ms", t.Elapsed().ms());
+    } else {
+        _cube_data = _preview_image->get(true);
+        spdlog::performance("PV preview cube data (no rebin) loaded in {:.3f} ms", t.Elapsed().ms());
+    }
 }
 
 } // namespace carta

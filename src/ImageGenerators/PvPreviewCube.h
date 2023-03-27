@@ -46,10 +46,8 @@ class PvPreviewCube {
 public:
     PvPreviewCube(const PreviewCubeParameters& parameters);
 
-    // Compare cube parameters
+    // Cube parameters
     bool HasSameParameters(const PreviewCubeParameters& parameters);
-
-    // Cube parameters stokes for setting preview image in source image
     int GetStokes();
 
     // Filename of source image for preview image name
@@ -76,6 +74,12 @@ public:
     void StopCube();
 
 private:
+    // Rebin cube parameters > 1
+    bool DoRebin();
+
+    // Cache cube data for preview image
+    void LoadCubeData();
+
     // Cube parameters
     PreviewCubeParameters _cube_parameters;
 
@@ -87,6 +91,9 @@ private:
 
     // Preview image cube: SubImage with downsampling applied
     std::shared_ptr<casacore::ImageInterface<float>> _preview_image;
+
+    // SubImage for data access when preview image is RebinImage
+    casacore::SubImage<float> _preview_subimage;
 
     casacore::Array<float> _cube_data;
 
