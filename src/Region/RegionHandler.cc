@@ -1021,6 +1021,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
             // Check if another cached preview image and frame can be used.
             for (auto& preview_cube : _pv_preview_cubes) {
                 if (preview_cube.second->HasSameParameters(cube_parameters)) {
+                    StopPvPreview(preview_id);
                     _pv_preview_cubes[preview_id] = preview_cube.second;
                     preview_cube_set = true;
                     break;
