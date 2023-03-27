@@ -71,7 +71,7 @@ struct HistogramConfig {
 
     HistogramConfig() : coordinate("z"), channel(CURRENT_Z), num_bins(AUTO_BIN_SIZE), fixed_bounds(false), min_val(0), max_val(0) {}
 
-    HistogramConfig(const CARTA::SetHistogramRequirements_HistogramConfig& config)
+    HistogramConfig(const CARTA::HistogramConfig& config)
         : coordinate(config.coordinate()),
           channel(config.channel()),
           num_bins(config.num_bins()),

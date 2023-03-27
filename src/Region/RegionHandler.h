@@ -47,8 +47,8 @@ public:
     void RemoveFrame(int file_id);
 
     // Requirements
-    bool SetHistogramRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
-        const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
+    bool SetHistogramRequirements(
+        int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs);
     bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,

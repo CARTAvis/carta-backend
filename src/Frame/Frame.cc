@@ -675,7 +675,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 // ****************************************************
 // Histogram Requirements and Data
 
-bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs) {
+bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs) {
     // Set histogram requirements for image or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
