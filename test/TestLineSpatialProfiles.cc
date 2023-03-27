@@ -21,20 +21,31 @@ using ::testing::Pointwise;
 class LineSpatialProfileTest : public ::testing::Test {
 public:
     static bool SetLineRegion(carta::RegionHandler& region_handler, int file_id, int& region_id, const std::vector<float>& endpoints,
-        std::shared_ptr<casacore::CoordinateSystem> csys) {
+        std::shared_ptr<casacore::CoordinateSystem> csys, bool is_annotation) {
         std::vector<CARTA::Point> control_points;
         for (auto i = 0; i < endpoints.size(); i += 2) {
             control_points.push_back(Message::Point(endpoints[i], endpoints[i + 1]));
         }
 
         // Define RegionState for line region and set region (region_id updated)
-        CARTA::RegionType region_type = (control_points.size() == 2 ? CARTA::RegionType::LINE : CARTA::RegionType::POLYLINE);
+        auto npoints(control_points.size());
+        CARTA::RegionType region_type(CARTA::RegionType::LINE);
+        if (is_annotation) {
+            if (npoints > 2) {
+                region_type = CARTA::RegionType::ANNPOLYLINE;
+            } else {
+                region_type = CARTA::RegionType::ANNLINE;
+            }
+        } else if (npoints > 2) {
+            region_type = CARTA::RegionType::POLYLINE;
+        }
         RegionState region_state(file_id, region_type, control_points, 0.0);
         return region_handler.SetRegion(region_id, region_state, csys);
     }
 
     static bool GetLineProfiles(const std::string& image_path, const std::vector<float>& endpoints,
-        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_reqs, CARTA::SpatialProfileData& spatial_profile) {
+        const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_reqs, CARTA::SpatialProfileData& spatial_profile,
+        bool is_annotation = false) {
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(image_path));
         std::shared_ptr<Frame> frame(new Frame(0, loader, "0"));
         carta::RegionHandler region_handler;
@@ -42,7 +53,7 @@ public:
         // Set line region
         int file_id(0), region_id(-1);
         auto csys = frame->CoordinateSystem();
-        if (!SetLineRegion(region_handler, file_id, region_id, endpoints, csys)) {
+        if (!SetLineRegion(region_handler, file_id, region_id, endpoints, csys, is_annotation)) {
             return false;
         }
 
@@ -195,4 +206,17 @@ TEST_F(LineSpatialProfileTest, AveragingWidthRange) {
     TestAveragingWidthRange(1, true);
     TestAveragingWidthRange(20, true);
     TestAveragingWidthRange(21, false);
+}
+
+TEST_F(LineSpatialProfileTest, FitsAnnotationLineProfile) {
+    std::string image_path = FileFinder::FitsImagePath("noise_3d.fits");
+    std::vector<float> endpoints = {0.0, 0.0, 9.0, 9.0};
+    int start(0), end(0), mip(0), width(3);
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> spatial_reqs = {Message::SpatialConfig("x", start, end, mip, width)};
+
+    CARTA::SpatialProfileData spatial_profile;
+    bool is_annotation(true);
+    bool ok = GetLineProfiles(image_path, endpoints, spatial_reqs, spatial_profile, is_annotation);
+
+    ASSERT_FALSE(ok);
 }

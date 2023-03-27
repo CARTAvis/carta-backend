@@ -22,4 +22,7 @@ bool HasSuffix(const std::string& haystack, const std::string& needle, bool case
 // determine whether strings are equal in constant time, rather than based on early-exit
 bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 
+// Convert string to integer, return whether success
+bool StringToInt(const std::string& input, int& i);
+
 #endif // CARTA_BACKEND__UTIL_STRING_H_
