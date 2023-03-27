@@ -979,8 +979,8 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     // Unpack preview settings
     int preview_id(preview_settings.preview_id());
     int preview_region_id(preview_settings.region_id());
-    int rebin_xy(preview_settings.rebin_xy());
-    int rebin_z(preview_settings.rebin_z());
+    int rebin_xy = std::max(preview_settings.rebin_xy(), 1);
+    int rebin_z = std::max(preview_settings.rebin_z(), 1);
 
     // If not image region, check preview region and get its region state.
     bool is_image_region(preview_region_id == IMAGE_REGION_ID);
