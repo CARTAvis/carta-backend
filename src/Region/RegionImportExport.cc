@@ -40,8 +40,8 @@ std::vector<RegionProperties> RegionImportExport::GetImportedRegions(std::string
     return _import_regions;
 }
 
-bool RegionImportExport::AddExportRegion(
-    const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord) {
+bool RegionImportExport::AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style,
+    const casacore::RecordInterface& region_record, bool pixel_coord) {
     // Convert Record to Quantities for region type then set region
     // Record is in pixel coords; convert to world coords if needed
     if (pixel_coord) {
@@ -54,26 +54,35 @@ bool RegionImportExport::AddExportRegion(
     bool converted(false);
     switch (region_state.type) {
         case CARTA::RegionType::POINT:
+        case CARTA::RegionType::ANNPOINT:
             converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
             break;
         case CARTA::RegionType::RECTANGLE:
+        case CARTA::RegionType::ANNRECTANGLE:
+        case CARTA::RegionType::ANNTEXT:
             converted = ConvertRecordToRectangle(region_record, pixel_coord, control_points);
             break;
         case CARTA::RegionType::ELLIPSE:
+        case CARTA::RegionType::ANNELLIPSE:
+        case CARTA::RegionType::ANNCOMPASS:
             converted = ConvertRecordToEllipse(region_state, region_record, pixel_coord, control_points, rotation);
             break;
-        case CARTA::RegionType::POLYGON:
         case CARTA::RegionType::LINE:
-        case CARTA::RegionType::POLYLINE: {
+        case CARTA::RegionType::POLYLINE:
+        case CARTA::RegionType::POLYGON:
+        case CARTA::RegionType::ANNLINE:
+        case CARTA::RegionType::ANNPOLYLINE:
+        case CARTA::RegionType::ANNPOLYGON:
+        case CARTA::RegionType::ANNVECTOR:
+        case CARTA::RegionType::ANNRULER:
             converted = ConvertRecordToPolygonLine(region_record, pixel_coord, control_points);
             break;
-        }
         default:
             break;
     }
 
     if (converted) {
-        return AddExportRegion(region_state.type, region_style, control_points, rotation); // CRTF or DS9 export
+        return AddExportRegion(region_state.type, control_points, rotation, region_style); // CRTF or DS9 export
     }
 
     return converted;
@@ -120,15 +129,41 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
     return split_lines;
 }
 
+bool RegionImportExport::IsCommentLine(const std::string& line) {
+    // Determine if line starts with "# " + a region name.
+    // Requires that _region_names map is complete (with AddRegionNames)
+    if (line[0] != '#') {
+        return false;
+    }
+    if (line.find("# textbox") == 0 || line.find("# circle") == 0 || line.find("# segment") == 0) {
+        // not in map, are type RECTANGLE (CRTF "centerbox", DS9 "box"), ELLIPSE ("ellipse"), and POLYLINE
+        return false;
+    }
+
+    for (auto& name : _region_names) { // map {RegionType, string}
+        if (line.find(name.second) == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void RegionImportExport::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
+    // Some annotation regions have comment syntax; remove leading #
+    if (region_definition[0] == '#') {
+        region_definition = region_definition.substr(2);
+    }
 
     // Remove spaces around = to recognize properties
     std::regex equals_spaces("[ ]+=[ ]+");
     region_definition = std::regex_replace(region_definition, equals_spaces, "=");
 
     size_t next(0), current(0), end(region_definition.size());
+    bool is_property(false), is_quoted_string(false);
+    std::string property_key;
 
     while (current < end) {
         next = region_definition.find_first_of(_parser_delim, current);
@@ -138,94 +173,53 @@ void RegionImportExport::ParseRegionParameters(
         }
 
         if ((next - current) > 0) {
-            // Section of region_definition between parser delimiters
-            std::string parse_string = region_definition.substr(current, next - current);
+            // Item is region_definition between parser delimiters
+            std::string item = region_definition.substr(current, next - current);
 
-            if (parse_string.find("=") == std::string::npos) {
-                // Assume region parameter (region type)
-                parameters.push_back(parse_string);
+            if ((item.front() == '"' || item.front() == '\'') && !(item.back() == '"' || item.back() == '\'')) {
+                // find closing quote
+                is_quoted_string = true;
+                current = next;
+                next = region_definition.find_first_of(item[0], current);
+                item += region_definition.substr(current, next - current);
+                item.erase(0, 1); // remove initial quote
             } else {
+                is_quoted_string = false;
+            }
+
+            if (!is_quoted_string && item.find('=') != std::string::npos) {
                 // Assume region property (kv pair)
                 std::vector<std::string> kvpair;
-                SplitString(parse_string, '=', kvpair);
-                std::string key = kvpair[0];
+                SplitString(item, '=', kvpair);
+                property_key = kvpair[0];
 
                 if (kvpair.size() == 1) {
                     // value starts with delim
                     current = next + 1;
-
-                    if (region_definition[next] == '[') { // e.g. corr=[I, Q]
-                        next = region_definition.find_first_of("]", current);
-                    } else { // e.g. color=#00ffff
-                        next = region_definition.find_first_of(" ", current);
-                    }
-
-                    if ((next != std::string::npos) && (next - current > 0)) {
-                        std::string value = region_definition.substr(current, next - current);
-                        properties[key] = value;
-                    }
-                } else if (kvpair.size() == 2) {
+                    next = region_definition.find_first_of(_parser_delim, current);
+                    properties[property_key] = region_definition.substr(current, next - current);
+                } else {
                     std::string value = kvpair[1];
 
-                    if ((key == "dashlist") || (key == "line")) {
-                        // Two values separated by space e.g. "dashlist=8 3" or "line=0 0"
-                        // Find second value.
-                        current = next + 1;
-                        if (current < end) {
-                            next = region_definition.find_first_of(" ", current);
-                            std::string second_arg = region_definition.substr(current, next - current);
-                            properties[key] = value + " " + second_arg;
-                        }
-                    } else if (key == "point") {
-                        // point=shape [size] e.g. "point=circle" or "point=diamond 10"
-                        // value is shape, look for optional size if not at end of line
-                        current = next + 1;
-                        if (current < end) {
-                            // Get next string, check if size
-                            auto possible_next = region_definition.find_first_of(" ", current);
-                            string possible_size = region_definition.substr(current, possible_next - current);
-                            if (!possible_size.empty()) {
-                                // Try to convert to int
-                                char* endptr(nullptr);
-                                auto point_size = strtol(possible_size.c_str(), &endptr, 10);
-
-                                if ((point_size != 0) && (point_size != LONG_MAX) && (point_size != LONG_MIN)) {
-                                    // conversion successful - add size and advance pointer
-                                    properties[key] = value + " " + possible_size;
-                                    next = possible_next;
-                                } else {
-                                    // conversion failed - shape only
-                                    properties[key] = value;
-                                }
-                            }
+                    if (value.front() == '"' || value.front() == '\'') {
+                        if (value.back() == '"' || value.back() == '\'') {
+                            value.pop_back(); // remove closing quote
                         } else {
-                            // end of line
-                            properties[key] = value;
+                            // find closing quote
+                            current = next;
+                            next = region_definition.find_first_of(value[0], current);
+                            value += region_definition.substr(current, next - current);
                         }
-                    } else if (value.find_first_of("'\"[{(", 0) == 0) {
-                        // value delimited by special chars; find end and strip delimiters
-                        char start_delim = value.front();
-                        std::unordered_map<char, char> delim_map = {{'\'', '\''}, {'"', '"'}, {'[', ']'}, {'{', '}'}, {'(', ')'}};
-                        char end_delim = delim_map[start_delim];
-                        value.erase(0, 1); // erase start delim
-
-                        if (value.back() == end_delim) {
-                            // next parser delimiter is end delimiter, found value
-                            value.pop_back();
-                            properties[key] = value;
-                        } else {
-                            // value has other parser delim (such as space) inside outer delim (such as quote/bracket)
-                            // Save first part of value, then find end delimiter for rest of value.
-                            value.append(1, region_definition[next]);
-                            current = next + 1;
-                            next = region_definition.find_first_of(end_delim, current);
-                            string value_end = region_definition.substr(current, next - current);
-                            properties[key] = value.append(value_end);
-                            next++; // Advance past end delim
-                        }
-                    } else {
-                        properties[key] = value;
+                        value.erase(0, 1); // remove initial quote
                     }
+                    properties[property_key] = value;
+                }
+                is_property = true;
+            } else {
+                if (!is_property) {
+                    parameters.push_back(item);
+                } else {
+                    properties[property_key] += " " + item;
                 }
             }
         }
@@ -236,6 +230,32 @@ void RegionImportExport::ParseRegionParameters(
             current = next;
         }
     }
+}
+
+CARTA::TextAnnotationPosition RegionImportExport::GetTextPosition(const std::string& position) {
+    // Return position enum for string, or default CENTER
+    CARTA::TextAnnotationPosition anno_position(CARTA::TextAnnotationPosition::CENTER);
+    if (!position.empty()) {
+        for (auto& text_position : _text_positions) {
+            if (text_position.second == position) {
+                anno_position = text_position.first;
+                break;
+            }
+        }
+    }
+    return anno_position;
+}
+
+void RegionImportExport::AddTextStyleToProperties(const CARTA::RegionStyle& text_style, RegionProperties& textbox_properties) {
+    // Add imported text style to existing textbox region properties.
+    // Textbox defines state and style: name, text_position
+    // Text defines style: color, text label, font
+    textbox_properties.style.set_color(text_style.color());
+    auto annotation_style = textbox_properties.style.mutable_annotation_style();
+    annotation_style->set_text_label0(text_style.annotation_style().text_label0());
+    annotation_style->set_font_style(text_style.annotation_style().font_style());
+    annotation_style->set_font(text_style.annotation_style().font());
+    annotation_style->set_font_size(text_style.annotation_style().font_size());
 }
 
 bool RegionImportExport::ConvertPointToPixels(
@@ -299,7 +319,7 @@ bool RegionImportExport::ConvertPointToPixels(
 }
 
 double RegionImportExport::WorldToPixelLength(casacore::Quantity input, unsigned int pixel_axis) {
-    // world->pixel conversion of ellipse/circle radius or box width.
+    // world->pixel conversion of ellipse/circle radius, box width/height, or compass length.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
     if (input.getUnit() == "pix") {
         return input.getValue();
@@ -312,24 +332,6 @@ double RegionImportExport::WorldToPixelLength(casacore::Quantity input, unsigned
     // Find pixel length
     casacore::Vector<casacore::Double> increments(_coord_sys->increment());
     return fabs(input.getValue() / increments[pixel_axis]);
-}
-
-std::string RegionImportExport::FormatColor(const std::string& color) {
-    // Capitalize and add prefix if hex; else return same string
-    std::string hex_color(color);
-    if (color[0] == '#') {
-        // Do conversion without prefix
-        hex_color = color.substr(1);
-    }
-
-    // Check if can convert entire string to hex number
-    char* endptr(nullptr);
-    if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
-        std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
-        hex_color = "#" + hex_color;
-    }
-
-    return hex_color;
 }
 
 bool RegionImportExport::ConvertRecordToPoint(
@@ -446,7 +448,8 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     rotation.convert("deg"); // CASA rotang, from x-axis
 
     CARTA::Point ellipse_axes = region_state.control_points[1];
-    bool reversed((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
+    bool reversed = (region_state.type == CARTA::RegionType::ELLIPSE || region_state.type == CARTA::RegionType::ANNELLIPSE) &&
+                    ((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based
     if (region_record.asBool("oneRel")) {
@@ -581,5 +584,80 @@ bool RegionImportExport::ConvertRecordToPolygonLine(
     } catch (const casacore::AipsError& err) {
         spdlog::error("Export error: polygon Record conversion failed: {}", err.getMesg());
         return false;
+    }
+}
+
+std::string RegionImportExport::FormatColor(const std::string& color) {
+    // Capitalize and add prefix if hex; else return same string
+    std::string hex_color(color);
+    if (color[0] == '#') {
+        // Do conversion without prefix
+        hex_color = color.substr(1);
+    }
+
+    // Check if can convert entire string to hex number
+    char* endptr(nullptr);
+    if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
+        std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
+        hex_color = "#" + hex_color;
+    }
+
+    return hex_color;
+}
+
+void RegionImportExport::ExportAnnCompassStyle(
+    const CARTA::RegionStyle& region_style, const std::string& ann_coord_sys, std::string& region_line) {
+    // Append compass labels and arrows to region line
+    auto north_label = region_style.annotation_style().text_label0();
+    auto east_label = region_style.annotation_style().text_label1();
+    auto north_arrow = (region_style.annotation_style().is_north_arrow() ? "1" : "0");
+    auto east_arrow = (region_style.annotation_style().is_east_arrow() ? "1" : "0");
+
+    region_line += " compass=";
+    if (!ann_coord_sys.empty()) {
+        region_line += ann_coord_sys;
+    }
+    if (!north_label.empty()) {
+        region_line += fmt::format(" {{{}}}", north_label);
+    }
+    if (!east_label.empty()) {
+        region_line += fmt::format(" {{{}}}", east_label);
+    }
+    region_line += fmt::format(" {} {}", north_arrow, east_arrow);
+}
+
+void RegionImportExport::ImportCompassStyle(
+    std::string& compass_properties, std::string& coordinate_system, CARTA::AnnotationStyle* annotation_style) {
+    // Parse compass properties into AnnotationStyle fields
+    std::vector<std::string> params;
+    SplitString(compass_properties, ' ', params);
+
+    if (params.size() == 5) { // compass=<coordinate system> <north label> <east label> [0|1] [0|1]
+        coordinate_system = params[0];
+
+        auto north_label = params[1];
+        if (north_label.front() == '{' && north_label.back() == '}') {
+            north_label = north_label.substr(1, north_label.length() - 2);
+        }
+        annotation_style->set_text_label0(north_label);
+
+        auto east_label = params[2];
+        if (east_label.front() == '{' && east_label.back() == '}') {
+            east_label = east_label.substr(1, east_label.length() - 2);
+        }
+        annotation_style->set_text_label1(east_label);
+
+        annotation_style->set_is_north_arrow(params[3] == "1" ? true : false);
+        annotation_style->set_is_east_arrow(params[4] == "1" ? true : false);
+    }
+}
+
+void RegionImportExport::ImportRulerStyle(std::string& ruler_properties, std::string& coordinate_system) {
+    // Parse ruler properties for coordinate system; unit unused in carta (frontend sets dynamically)
+    std::vector<std::string> params;
+    SplitString(ruler_properties, ' ', params);
+
+    if (params.size() == 2) { // ruler=<coordinate system> [image|degrees|arcmin|arcsec]
+        coordinate_system = params[0];
     }
 }

@@ -66,7 +66,8 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             ClearRegionCache(region_id);
         }
     } else {
-        if (region_id == NEW_REGION_ID) {
+        if (region_id > TEMP_REGION_ID && region_id < CURSOR_REGION_ID) {
+            // new region, assign id
             region_id = GetNextRegionId();
         }
 
@@ -81,14 +82,15 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
 }
 
 bool RegionHandler::RegionChanged(int region_id) {
-    if (!RegionSet(region_id)) {
+    // Used to trigger sending profiles etc., so not for annotation regions
+    if (!RegionSet(region_id, true)) {
         return false;
     }
     return GetRegion(region_id)->RegionChanged();
 }
 
 void RegionHandler::RemoveRegion(int region_id) {
-    // call destructor and erase from map
+    // Call destructor and erase from map
     if (!RegionSet(region_id)) {
         return;
     }
@@ -117,14 +119,19 @@ std::shared_ptr<Region> RegionHandler::GetRegion(int region_id) {
     }
 }
 
-bool RegionHandler::RegionSet(int region_id) {
+bool RegionHandler::RegionSet(int region_id, bool check_annotation) {
     // Check whether a particular region is set or any regions are set
+    bool region_set(false);
     std::lock_guard<std::mutex> region_guard(_region_mutex);
     if (region_id == ALL_REGIONS) {
-        return _regions.size();
+        region_set = _regions.size() > 0;
     } else {
-        return (_regions.find(region_id) != _regions.end()) && _regions.at(region_id)->IsConnected();
+        region_set = (_regions.find(region_id) != _regions.end()) && _regions.at(region_id)->IsConnected();
+        if (region_set && check_annotation) {
+            region_set &= !_regions.at(region_id)->IsAnnotation();
+        }
     }
+    return region_set;
 }
 
 void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
@@ -176,8 +183,10 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     auto region_info_map = import_ack.mutable_regions();
     auto region_style_map = import_ack.mutable_region_styles();
     for (auto& imported_region : region_list) {
-        auto region_csys = frame->CoordinateSystem();
         auto region_state = imported_region.state;
+        auto region_style = imported_region.style;
+
+        auto region_csys = frame->CoordinateSystem();
         auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
 
         if (region && region->IsValid()) {
@@ -186,21 +195,14 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             region_lock.unlock();
 
             // Set CARTA::RegionInfo
-            CARTA::RegionInfo carta_region_info;
-            carta_region_info.set_region_type(region_state.type);
-            *carta_region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-            carta_region_info.set_rotation(region_state.rotation);
-            // Set CARTA::RegionStyle
-            auto region_style = imported_region.style;
-            CARTA::RegionStyle carta_region_style;
-            carta_region_style.set_name(region_style.name);
-            carta_region_style.set_color(region_style.color);
-            carta_region_style.set_line_width(region_style.line_width);
-            *carta_region_style.mutable_dash_list() = {region_style.dash_list.begin(), region_style.dash_list.end()};
+            CARTA::RegionInfo region_info;
+            region_info.set_region_type(region_state.type);
+            *region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
+            region_info.set_rotation(region_state.rotation);
 
             // Add info and style to import_ack; increment region id for next region
-            (*region_info_map)[region_id] = carta_region_info;
-            (*region_style_map)[region_id++] = carta_region_style;
+            (*region_info_map)[region_id] = region_info;
+            (*region_style_map)[region_id++] = region_style;
         }
     }
 }
@@ -258,21 +260,15 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             break;
     }
 
-    // Add regions to export from map<region_id, RegionStyle>
     std::string error; // append region errors here
     for (auto& region_id_style : region_styles) {
-        int region_id = region_id_style.first;
+        auto region_id = region_id_style.first;
+        auto region_style = region_id_style.second;
 
         if (RegionSet(region_id)) {
             bool region_added(false);
             auto region = GetRegion(region_id);
-
-            // Get state from Region, style from input map
-            RegionState region_state = region->GetRegionState();
-
-            CARTA::RegionStyle carta_region_style = region_id_style.second;
-            std::vector<int> dash_list = {carta_region_style.dash_list().begin(), carta_region_style.dash_list().end()};
-            RegionStyle region_style(carta_region_style.name(), carta_region_style.color(), carta_region_style.line_width(), dash_list);
+            auto region_state = region->GetRegionState();
 
             if ((region_state.reference_file_id == file_id) && pixel_coord) {
                 // Use RegionState control points with reference file id for pixel export
@@ -347,14 +343,15 @@ void RegionHandler::RemoveFrame(int file_id) {
 
 bool RegionHandler::SetHistogramRequirements(
     int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs) {
-    // Set histogram requirements for given region and file
+    // Set histogram requirements for closed region
+
     if (configs.empty() && !RegionSet(region_id)) {
         // Frontend clears requirements after region removed, prevent error in log by returning true.
         return true;
     }
 
-    if (!RegionSet(region_id)) {
-        spdlog::error("Histogram requirements failed: no region with id {}", region_id);
+    if (!RegionSet(region_id, true)) {
+        spdlog::error("Histogram requirements failed: no region with id {} or is annotation only", region_id);
         return false;
     }
 
@@ -381,18 +378,19 @@ bool RegionHandler::SetHistogramRequirements(
 
 bool RegionHandler::SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
     const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
-    // Clear all requirements for this file/region
+    // Set spatial requirements for point or line
+
     if (spatial_profiles.empty() && !RegionSet(region_id)) {
         // Frontend clears requirements after region removed, prevent error in log by returning true.
         return true;
     }
 
-    if (!RegionSet(region_id)) {
-        spdlog::error("Spatial requirements failed: no region with id {}", region_id);
+    if (!RegionSet(region_id, true)) {
+        spdlog::error("Spatial requirements failed: no region with id {} or is annotation only", region_id);
         return false;
     }
 
-    if (IsClosedRegion(region_id)) {
+    if (!IsPointRegion(region_id) && !IsLineRegion(region_id)) {
         spdlog::debug("Spatial requirements not valid for region {} type", region_id);
         return false;
     }
@@ -443,18 +441,19 @@ bool RegionHandler::HasSpatialRequirements(int region_id, int file_id, const std
 
 bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
     const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_profiles) {
-    // Set spectral profile requirements for given region and file
+    // Set spectral profile requirements for point or closed region
+
     if (spectral_profiles.empty() && !RegionSet(region_id)) {
         // Frontend clears requirements after region removed, prevent error in log by returning true.
         return true;
     }
 
-    if (!RegionSet(region_id)) {
-        spdlog::error("Spectral requirements failed: no region with id {}", region_id);
+    if (!RegionSet(region_id, true)) {
+        spdlog::error("Spectral requirements failed: no region with id {} or is annotation only", region_id);
         return false;
     }
 
-    if (IsLineRegion(region_id)) {
+    if (!IsPointRegion(region_id) && !IsClosedRegion(region_id)) {
         spdlog::debug("Spectral requirements not valid for region {} type", region_id);
         return false;
     }
@@ -582,14 +581,15 @@ void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
 
 bool RegionHandler::SetStatsRequirements(
     int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs) {
-    // Set stats data requirements for given region and file
+    // Set stats data requirements for closed region
+
     if (stats_configs.empty() && !RegionSet(region_id)) {
         // frontend clears requirements after region removed, prevent error in log
         return true;
     }
 
-    if (!RegionSet(region_id)) {
-        spdlog::error("Statistics requirements failed: no region with id {}", region_id);
+    if (!RegionSet(region_id, true)) {
+        spdlog::error("Statistics requirements failed: no region with id {} or is annotation only", region_id);
         return false;
     }
 
@@ -791,12 +791,12 @@ void RegionHandler::ClearRegionCache(int region_id) {
 // ********************************************************************
 // Region data stream helpers
 
-bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
+bool RegionHandler::RegionFileIdsValid(int region_id, int file_id, bool check_annotation) {
     // Check error conditions and preconditions
     if (((region_id == ALL_REGIONS) && (file_id == ALL_FILES)) || (region_id == CURSOR_REGION_ID)) { // not allowed
         return false;
     }
-    if (!RegionSet(region_id)) { // no Region(s) for this id or Region is closing
+    if (!RegionSet(region_id, check_annotation)) { // ID not found, Region is closing, or is annotation
         return false;
     }
     if (!FrameSet(file_id)) { // no Frame(s) for this id or Frame is closing
@@ -809,22 +809,22 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
     int region_id, int file_id, const StokesSource& stokes_source, bool report_error) {
     // Returns 2D region with no extension; nullptr if outside image or not closed region
     // Go through Frame for image mutex
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return nullptr;
     }
 
     auto region = GetRegion(region_id);
-    if (region && region->IsAnnotation()) { // true if line or polyline
+    if (!region || (region->IsAnnotation() || region->IsLineType())) {
         return nullptr;
     }
 
-    return _frames.at(file_id)->GetImageRegion(file_id, region, stokes_source, report_error);
+    return _frames.at(file_id)->GetImageRegion(file_id, GetRegion(region_id), stokes_source, report_error);
 }
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region,
     std::shared_ptr<casacore::LCRegion> region_2D) {
     // Returns 3D ImageRegion for region applied to image and extended by z-range and stokes index
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -835,6 +835,8 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, const AxisRang
         if (!applied_region) {
             applied_region = ApplyRegionToFile(region_id, file_id, stokes_source);
         }
+
+        // Check applied region
         if (!applied_region) {
             return false;
         }
@@ -915,19 +917,14 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
 
     // Checks for valid request:
     // 1. Region is set
-    if (!RegionSet(region_id)) {
+    if (!RegionSet(region_id, true)) {
         pv_response.set_message("PV image generator requested for invalid region.");
         return false;
     }
 
-    // 2. Region is line type but not polyline
-    if (!IsLineRegion(region_id)) {
+    // 2. Region is not line type
+    if (!IsLineRegion(region_id) || (GetRegion(region_id)->GetRegionState().type == CARTA::RegionType::POLYLINE)) {
         pv_response.set_message("Region type not supported for PV image generator.");
-        return false;
-    }
-
-    if (GetRegion(region_id)->GetRegionState().type == CARTA::RegionType::POLYLINE) {
-        pv_response.set_message("Region type POLYLINE not supported for PV image generator.");
         return false;
     }
 
@@ -1025,9 +1022,8 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
             fitting_response.set_success(false);
             return false;
         }
-    } else {
-        // TODO: support image fitting with regions
-        fitting_response.set_message("region not supported");
+    } else if (region_id < 0 || !RegionSet(region_id)) {
+        fitting_response.set_message("region id not found");
         fitting_response.set_success(false);
         return false;
     }
@@ -1070,7 +1066,7 @@ bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA
 bool RegionHandler::FillRegionHistogramData(
     std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id) {
     // Fill histogram data for given region and file
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -1249,7 +1245,7 @@ bool RegionHandler::FillSpectralProfileData(
     // 1. a specific region and a specific file
     // 2. a specific region and ALL_FILES
     // 3. a specific file and ALL_REGIONS
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -1323,7 +1319,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     std::vector<CARTA::StatsType>& required_stats, bool report_error,
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // Fill spectral profile message for given region, file, and requirement
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -1606,7 +1602,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
 
 bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id) {
     // Fill stats data for given region and file
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -1742,7 +1738,7 @@ bool RegionHandler::GetRegionStatsData(
 
 bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std::vector<CARTA::SpatialProfileData>& spatial_data_vec) {
     // Cursor/point spatial profiles
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -1771,7 +1767,7 @@ bool RegionHandler::FillPointSpatialProfileData(int file_id, int region_id, std:
 
 bool RegionHandler::FillLineSpatialProfileData(int file_id, int region_id, std::function<void(CARTA::SpatialProfileData profile_data)> cb) {
     // Line spatial profiles.  Use callback to return each profile individually.
-    if (!RegionFileIdsValid(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
     }
 
@@ -1868,26 +1864,22 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
 }
 
 bool RegionHandler::IsPointRegion(int region_id) {
-    if (RegionSet(region_id)) {
-        return (GetRegion(region_id)->GetRegionState().type == CARTA::RegionType::POINT);
+    if (RegionSet(region_id, true)) {
+        return GetRegion(region_id)->IsPoint();
     }
     return false;
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
-    if (RegionSet(region_id)) {
-        auto region_type = GetRegion(region_id)->GetRegionState().type;
-        return (region_type == CARTA::RegionType::LINE) || (region_type == CARTA::RegionType::POLYLINE);
+    // Is a line type but not an annotation
+    if (RegionSet(region_id, true)) {
+        return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
     return false;
 }
 
 bool RegionHandler::IsClosedRegion(int region_id) {
-    if (RegionSet(region_id)) {
-        auto type = GetRegion(region_id)->GetRegionState().type;
-        return (type != CARTA::RegionType::LINE) && (type != CARTA::RegionType::POLYLINE) && (type != CARTA::RegionType::POINT);
-    }
-    return false;
+    return RegionSet(region_id, true) && !IsPointRegion(region_id) && !IsLineRegion(region_id);
 }
 
 std::vector<int> RegionHandler::GetSpatialReqRegionsForFile(int file_id) {
@@ -1930,7 +1922,7 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
         return false;
     }
 
-    if (!RegionSet(region_id)) {
+    if (!RegionSet(region_id, true)) {
         return false;
     }
 
@@ -2280,7 +2272,7 @@ bool RegionHandler::CheckLinearOffsets(
 
 double RegionHandler::GetPointSeparation(
     std::shared_ptr<CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2) {
-    // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
+    // Returns angular separation in arcsec. Both points must be inside image or returns zero (use toWorldLength instead, not as accurate).
     // Caller should lock _pix_mvdir_mutex conversion before calling this; cannot multithread DirectionCoordinate::toWorld
     double separation(0.0);
 
@@ -2734,7 +2726,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
     std::lock_guard<std::mutex> guard(_line_profile_mutex);
     SetRegion(region_id, region_state, reference_csys);
 
-    if (!RegionSet(region_id)) {
+    if (!RegionSet(region_id, true)) {
         return profile;
     }
 
