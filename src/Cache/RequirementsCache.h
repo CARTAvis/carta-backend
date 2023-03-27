@@ -64,17 +64,29 @@ struct CacheIdHash {
 struct HistogramConfig {
     std::string coordinate;
     int channel;
+    bool fixed_num_bins;
     int num_bins;
+    double bin_width;
     bool fixed_bounds;
     float min_val;
     float max_val;
 
-    HistogramConfig() : coordinate("z"), channel(CURRENT_Z), num_bins(AUTO_BIN_SIZE), fixed_bounds(false), min_val(0), max_val(0) {}
+    HistogramConfig()
+        : coordinate("z"),
+          channel(CURRENT_Z),
+          fixed_num_bins(false),
+          num_bins(AUTO_BIN_SIZE),
+          bin_width(0),
+          fixed_bounds(false),
+          min_val(0),
+          max_val(0) {}
 
     HistogramConfig(const CARTA::HistogramConfig& config)
         : coordinate(config.coordinate()),
           channel(config.channel()),
+          fixed_num_bins(config.fixed_num_bins()),
           num_bins(config.num_bins()),
+          bin_width(config.bin_width()),
           fixed_bounds(config.fixed_bounds()),
           min_val(config.bounds().min()),
           max_val(config.bounds().max()) {}

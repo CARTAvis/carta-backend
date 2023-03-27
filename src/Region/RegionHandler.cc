@@ -1158,7 +1158,7 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Set histogram fields
-        auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
+        auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0, hist_config);
 
         // Get image region
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, stokes_region, lc_region)) {

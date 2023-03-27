@@ -734,7 +734,7 @@ bool Frame::FillRegionHistogramData(
         }
 
         // create and fill region histogram data message
-        auto histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
+        auto histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0, histogram_config);
         auto* histogram = histogram_data.mutable_histograms();
 
         // Fill histogram submessage from loader cache, if any
