@@ -90,6 +90,12 @@ struct HistogramConfig {
           fixed_bounds(config.fixed_bounds()),
           min_val(config.bounds().min()),
           max_val(config.bounds().max()) {}
+
+    bool operator!=(const HistogramConfig& rhs) const {
+        return (coordinate != rhs.coordinate) || (channel != rhs.channel) || (fixed_num_bins != rhs.fixed_num_bins) ||
+               (fixed_bounds != rhs.fixed_bounds) || (num_bins != rhs.num_bins) || !AreEqual(bin_width, rhs.bin_width) ||
+               !AreEqual(min_val, rhs.min_val) || !AreEqual(max_val, rhs.max_val);
+    }
 };
 
 struct RegionHistogramConfig {

@@ -683,14 +683,16 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::His
 
     if (region_id == IMAGE_REGION_ID) {
         _image_histogram_configs.clear();
+        _image_histogram_configs.push_back(HistogramConfig()); // histogram config for image rendering
     } else {
         _cube_histogram_configs.clear();
     }
 
-    for (auto& histogram_config : histogram_configs) {
+    for (const auto& histogram_config : histogram_configs) {
         // set histogram requirements for histogram widgets
         HistogramConfig config(histogram_config);
-        if (region_id == IMAGE_REGION_ID) {
+        if (region_id == IMAGE_REGION_ID && config != _image_histogram_configs[0]) {
+            // only add histogram config for an image which is not the same with the one for image rendering
             _image_histogram_configs.push_back(config);
         } else {
             _cube_histogram_configs.push_back(config);
