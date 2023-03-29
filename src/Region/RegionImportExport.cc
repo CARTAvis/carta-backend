@@ -201,7 +201,7 @@ void RegionImportExport::ParseRegionParameters(
                 } else {
                     std::string value = kvpair[1];
 
-		    if (!value.empty() && (value.front() == '"' || value.front() == '\'')) {
+                    if (!value.empty() && (value.front() == '"' || value.front() == '\'')) {
                         if (!value.empty() && (value.back() == '"' || value.back() == '\'')) {
                             value.pop_back(); // remove closing quote
                         } else {
