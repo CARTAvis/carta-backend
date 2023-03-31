@@ -808,7 +808,7 @@ CARTA::RegionStyle CrtfImportExport::ImportStyleParameters(
     // name
     if (properties.count("label")) {
         auto name = properties["label"];
-        if (name.front() == '"' && name.back() == '"') {
+        if (!name.empty() && name.front() == '"' && name.back() == '"') {
             name = name.substr(1, name.length() - 2);
         }
         region_style.set_name(name);
