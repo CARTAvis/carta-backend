@@ -893,7 +893,7 @@ CARTA::RegionStyle Ds9ImportExport::ImportStyleParameters(
     // name for most regions, or text for text region
     if (properties.find("text") != properties.end()) {
         auto name = properties["text"];
-        if (name.front() == '{' && name.back() == '}') {
+        if (!name.empty() && name.front() == '{' && name.back() == '}') {
             name = name.substr(1, name.length() - 2);
         }
 
