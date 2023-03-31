@@ -1,5 +1,6 @@
 var NAVTREEINDEX7 =
 {
+"classcarta_1_1StokesFilesConnector.html#a682e3c54c1eb013b0d886df710cf6f7b":[3,0,0,44,4],
 "classcarta_1_1StokesFilesConnector.html#a6edbf96d75b4888e490a2974ad3b2128":[3,0,0,44,7],
 "classcarta_1_1StokesFilesConnector.html#a99f6cac79a12711d8e47b4a1c6b4f381":[3,0,0,44,3],
 "classcarta_1_1StokesFilesConnector.html#aa75c6c5322a4d6cd95eaa48574296eff":[3,0,0,44,8],
@@ -215,8 +216,8 @@ var NAVTREEINDEX7 =
 "functions_enum.html":[3,3,4],
 "functions_eval.html":[3,3,5],
 "functions_f.html":[3,3,0,6],
-"functions_func.html":[3,3,1,0],
 "functions_func.html":[3,3,1],
+"functions_func.html":[3,3,1,0],
 "functions_func_a.html":[3,3,1,1],
 "functions_func_b.html":[3,3,1,2],
 "functions_func_c.html":[3,3,1,3],
@@ -248,6 +249,5 @@ var NAVTREEINDEX7 =
 "functions_k.html":[3,3,0,11],
 "functions_l.html":[3,3,0,12],
 "functions_m.html":[3,3,0,13],
-"functions_n.html":[3,3,0,14],
-"functions_o.html":[3,3,0,15]
+"functions_n.html":[3,3,0,14]
 };

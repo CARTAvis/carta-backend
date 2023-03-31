@@ -1,5 +1,6 @@
 var NAVTREEINDEX8 =
 {
+"functions_o.html":[3,3,0,15],
 "functions_p.html":[3,3,0,16],
 "functions_q.html":[3,3,0,17],
 "functions_r.html":[3,3,0,18],
@@ -9,8 +10,8 @@ var NAVTREEINDEX8 =
 "functions_type.html":[3,3,3],
 "functions_u.html":[3,3,0,21],
 "functions_v.html":[3,3,0,22],
-"functions_vars.html":[3,3,2,0],
 "functions_vars.html":[3,3,2],
+"functions_vars.html":[3,3,2,0],
 "functions_vars_a.html":[3,3,2,1],
 "functions_vars_b.html":[3,3,2,2],
 "functions_vars_c.html":[3,3,2,3],
@@ -45,8 +46,8 @@ var NAVTREEINDEX8 =
 "globals_type.html":[4,1,3],
 "globals_vars.html":[4,1,2],
 "hierarchy.html":[3,2],
-"index.html":[],
 "index.html":[0],
+"index.html":[],
 "index.html#autotoc_md3":[0,0],
 "md_docs_static_faq.html":[1],
 "md_docs_static_faq.html#autotoc_md0":[1,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX8 =
 "structcarta_1_1FileInfo_1_1ImageStats.html":[3,0,0,0,0],
 "structcarta_1_1FileInfo_1_1ImageStats.html#a225e0121ae6cc4436adbf496032d30bf":[3,0,0,0,0,0],
 "structcarta_1_1FileInfo_1_1ImageStats.html#a40bee377b0e0097e61c06a7d349339a0":[3,0,0,0,0,5],
-"structcarta_1_1FileInfo_1_1ImageStats.html#a728667bae9e53fb799da895da3a6a426":[3,0,0,0,0,4],
-"structcarta_1_1FileInfo_1_1ImageStats.html#aa2bb2808bfa83878580f12a4a0c8a702":[3,0,0,0,0,2]
+"structcarta_1_1FileInfo_1_1ImageStats.html#a728667bae9e53fb799da895da3a6a426":[3,0,0,0,0,4]
 };

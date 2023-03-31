@@ -1,5 +1,6 @@
 var NAVTREEINDEX9 =
 {
+"structcarta_1_1FileInfo_1_1ImageStats.html#aa2bb2808bfa83878580f12a4a0c8a702":[3,0,0,0,0,2],
 "structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6":[3,0,0,0,0,1],
 "structcarta_1_1FileInfo_1_1ImageStats.html#ae1e3d71fe03d319d216da33622253527":[3,0,0,0,0,3],
 "structcarta_1_1FileInfo_1_1RegionSpectralStats.html":[3,0,0,0,2],
@@ -234,6 +235,5 @@ var NAVTREEINDEX9 =
 "structcarta_1_1VectorField_1_1Valid.html":[3,0,0,17,4],
 "structcarta_1_1VectorField_1_1Valid.html#a2f69d65fb5bf06e685dabb449ad0c8cb":[3,0,0,17,4,0],
 "structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html":[3,0,2,0],
-"structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html#a135e68d6f7876a6f14eae7b4d3c1804d":[3,0,2,0,0],
-"":[2,0,3]
+"structstd_1_1hash_3_01carta_1_1TileCacheKey_01_4.html#a135e68d6f7876a6f14eae7b4d3c1804d":[3,0,2,0,0]
 };
