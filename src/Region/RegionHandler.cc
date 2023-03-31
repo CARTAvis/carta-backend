@@ -1162,10 +1162,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
 
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
         if (_stop_pv_preview[preview_id]) {
-            progress_callback(1.0);
-            RemoveRegion(preview_cut_id);
-            pv_response.set_cancel(true);
-            return false;
+            break;
         }
 
         // Set box region with next temp region id
