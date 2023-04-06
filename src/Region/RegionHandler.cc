@@ -1102,6 +1102,10 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
         auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
         auto preview_session_id(-1);
         auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
+        if (!preview_frame->IsValid()) {
+            pv_response.set_message("Failed to load preview cube.");
+        }
+
         _frames[frame_id] = preview_frame;
     }
     spdlog::performance("PV preview cube and frame in {:.3f} ms", t.Elapsed().ms());

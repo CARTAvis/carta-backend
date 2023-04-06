@@ -198,23 +198,17 @@ void PvPreviewCube::LoadCubeData() {
         casacore::IPosition length(subimage_shape);
         length(spectral_axis) = 1;
 
-        // Rebin dimensions: if rebin==1, same as dimensions above
+        // Rebin shape: same shape as casacore::RebinImage
         auto rebin_xy = _cube_parameters.rebin_xy;
         auto rebin_z = _cube_parameters.rebin_z;
-        size_t rebin_width = width / rebin_xy;
-        size_t rebin_height = height / rebin_xy;
-        casacore::IPosition rebin_channel_shape(2, rebin_width, rebin_height);
-        size_t rebin_channel_size = rebin_width * rebin_height;
-
-        size_t rebin_nchan = nchan / rebin_z;
-        if (nchan % rebin_nchan > 0) {
-            // Match shape of RebinImage used for headers
-            ++rebin_nchan;
-        }
-
-        // casacore::Array<float> test_cube_data;
+        size_t rebin_width = std::ceil((float)width / (float)rebin_xy);
+        size_t rebin_height = std::ceil((float)height / (float)rebin_xy);
+        size_t rebin_nchan = std::ceil((float)nchan / (float)rebin_z);
         _cube_data.resize(casacore::IPosition(3, rebin_width, rebin_height, rebin_nchan));
         _cube_data = NAN;
+
+        casacore::IPosition rebin_channel_shape(2, rebin_width, rebin_height);
+        size_t rebin_channel_size = rebin_width * rebin_height;
         size_t new_chan(0);
 
         for (auto ichan = 0; ichan < nchan; ichan += rebin_z) {
