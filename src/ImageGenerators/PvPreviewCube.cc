@@ -203,19 +203,30 @@ void PvPreviewCube::LoadCubeData() {
         auto rebin_z = _cube_parameters.rebin_z;
         size_t rebin_width = width / rebin_xy;
         size_t rebin_height = height / rebin_xy;
-        size_t rebin_nchan = nchan / rebin_z;
         casacore::IPosition rebin_channel_shape(2, rebin_width, rebin_height);
         size_t rebin_channel_size = rebin_width * rebin_height;
 
+        size_t rebin_nchan = nchan / rebin_z;
+        if (nchan % rebin_nchan > 0) {
+            // Match shape of RebinImage used for headers
+            ++rebin_nchan;
+        }
+
         // casacore::Array<float> test_cube_data;
         _cube_data.resize(casacore::IPosition(3, rebin_width, rebin_height, rebin_nchan));
+        _cube_data = NAN;
         size_t new_chan(0);
 
-        for (auto ichan = 0; ichan < rebin_nchan; ichan += rebin_z) {
+        for (auto ichan = 0; ichan < nchan; ichan += rebin_z) {
             // Check for cancel
             if (_stop_cube) {
                 _cube_data.resize();
                 return;
+            }
+
+            // Check if can average next rebin_z channels
+            if (ichan + rebin_z - 1 >= nchan) {
+                break;
             }
 
             // Accumulate rebin_z channels
