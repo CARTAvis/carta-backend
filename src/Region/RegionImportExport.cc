@@ -176,7 +176,7 @@ void RegionImportExport::ParseRegionParameters(
             // Item is region_definition between parser delimiters
             std::string item = region_definition.substr(current, next - current);
 
-            if ((item.front() == '"' || item.front() == '\'') && !(item.back() == '"' || item.back() == '\'')) {
+            if (!item.empty() && (item.front() == '"' || item.front() == '\'') && !(item.back() == '"' || item.back() == '\'')) {
                 // find closing quote
                 is_quoted_string = true;
                 current = next;
@@ -201,8 +201,8 @@ void RegionImportExport::ParseRegionParameters(
                 } else {
                     std::string value = kvpair[1];
 
-                    if (value.front() == '"' || value.front() == '\'') {
-                        if (value.back() == '"' || value.back() == '\'') {
+                    if (!value.empty() && (value.front() == '"' || value.front() == '\'')) {
+                        if (!value.empty() && (value.back() == '"' || value.back() == '\'')) {
                             value.pop_back(); // remove closing quote
                         } else {
                             // find closing quote
