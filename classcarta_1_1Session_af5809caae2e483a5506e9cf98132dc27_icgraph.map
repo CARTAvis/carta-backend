@@ -1,10 +1,9 @@
 <map id="carta::Session::GetId" name="carta::Session::GetId">
-<area shape="rect" id="node1" title=" " alt="" coords="683,126,839,153"/>
-<area shape="rect" id="node2" href="$classcarta_1_1SessionManager.html#a692b5f2bcc6bdc21ce76424e09e50151" title=" " alt="" coords="453,7,624,48"/>
-<area shape="rect" id="node5" href="$classcarta_1_1SessionManager.html#ae5ac6cd89932160011440a3b8796978f" title=" " alt="" coords="224,71,395,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,136,395,177"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="443,177,635,219"/>
-<area shape="rect" id="node8" href="$classcarta_1_1OnMessageTask.html#a0379a954357d75279596084d9ff18e16" title=" " alt="" coords="455,243,623,284"/>
+<area shape="rect" id="node1" title=" " alt="" coords="683,101,839,127"/>
+<area shape="rect" id="node2" href="$classcarta_1_1SessionManager.html#a692b5f2bcc6bdc21ce76424e09e50151" title=" " alt="" coords="453,5,624,47"/>
+<area shape="rect" id="node5" href="$classcarta_1_1SessionManager.html#a474c31666cb3b22fcbe8af5f945d2950" title=" " alt="" coords="224,71,395,112"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Session.html#afe5c090c017ef208f638b96a7eb1ecf0" title=" " alt="" coords="443,123,635,164"/>
+<area shape="rect" id="node7" href="$classcarta_1_1OnMessageTask.html#a0379a954357d75279596084d9ff18e16" title=" " alt="" coords="455,188,623,229"/>
 <area shape="rect" id="node3" href="$classcarta_1_1SessionManager.html#afb5dc4f3c2e187bd2e7921912d45dde0" title=" " alt="" coords="224,5,395,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,71,176,112"/>
+<area shape="rect" id="node4" href="$classcarta_1_1SessionManager.html#ab4e4e7f0244bd6843e70ab91652debf6" title=" " alt="" coords="5,39,176,80"/>
 </map>
