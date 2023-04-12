@@ -51,6 +51,19 @@ int RegionHandler::GetNextRegionId() {
     return max_id + 1;
 }
 
+int RegionHandler::GetNextTemporaryRegionId() {
+    int min_id(TEMP_REGION_ID);
+    std::lock_guard<std::mutex> region_guard(_region_mutex);
+    if (!_regions.empty()) {
+        for (auto& region : _regions) {
+            if (region.first < min_id) {
+                min_id = region.first;
+            }
+        }
+    }
+    return min_id - 1;
+}
+
 bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::shared_ptr<casacore::CoordinateSystem> csys) {
     // Set region params for region id; if id < 0, create new id
     // CoordinateSystem will be owned by Region
@@ -67,9 +80,12 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             ClearRegionCache(region_id);
         }
     } else {
-        if (region_id > TEMP_REGION_ID && region_id < CURSOR_REGION_ID) {
-            // new region, assign id
+        if (region_id == NEW_REGION_ID) {
+            // new region, assign (positive) id
             region_id = GetNextRegionId();
+        } else if (region_id == TEMP_REGION_ID) {
+            // new region, assign (negative) id
+            region_id = GetNextTemporaryRegionId();
         }
 
         auto region = std::shared_ptr<Region>(new Region(region_state, csys));
@@ -402,14 +418,12 @@ bool RegionHandler::SetSpatialRequirements(int region_id, int file_id, std::shar
     // Set spatial profile requirements for given region and file
     ConfigId config_id(file_id, region_id);
 
+    std::unique_lock<std::mutex> ulock(_spatial_mutex);
     if (_spatial_req.count(config_id)) {
-        std::unique_lock<std::mutex> ulock(_spatial_mutex);
         _spatial_req[config_id].clear();
-        ulock.unlock();
     }
 
     // Set new requirements for this file/region
-    std::unique_lock<std::mutex> ulock(_spatial_mutex);
     _spatial_req[config_id] = spatial_profiles;
     ulock.unlock();
 
@@ -626,7 +640,9 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
         _spectral_cache.clear();
         _stats_cache.clear();
 
+        std::unique_lock pv_cut_lock(_pv_cut_mutex);
         _pv_preview_cuts.clear();
+        std::unique_lock pv_cube_lock(_pv_cube_mutex);
         _pv_preview_cubes.clear();
     } else {
         // Iterate through requirements and remove those for given region_id
@@ -638,7 +654,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
 
-        std::unique_lock<std::mutex> ulock1(_spectral_mutex);
+        std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
             if ((*it).first.region_id == region_id) {
                 it = _spectral_req.erase(it);
@@ -646,7 +662,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
                 ++it;
             }
         }
-        ulock1.unlock();
+        spectral_lock.unlock();
 
         for (auto it = _stats_req.begin(); it != _stats_req.end();) {
             if ((*it).first.region_id == region_id) {
@@ -656,7 +672,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
 
-        std::unique_lock<std::mutex> ulock2(_spatial_mutex);
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         for (auto it = _spatial_req.begin(); it != _spatial_req.end();) {
             if ((*it).first.region_id == region_id) {
                 it = _spatial_req.erase(it);
@@ -664,7 +680,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
                 ++it;
             }
         }
-        ulock2.unlock();
+        spatial_lock.unlock();
 
         for (auto it = _histogram_cache.begin(); it != _histogram_cache.end();) {
             if ((*it).first.region_id == region_id) {
@@ -690,12 +706,16 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
 
-        for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
-            if ((*it).second.region_id == region_id) {
-                // Erase PV preview settings with this region id (PV cut)
-                it = _pv_preview_cuts.erase(it);
-            } else {
-                ++it;
+        if (region_id > 0) {
+            // Needed only for pv cut region in source image.
+            // Do not attempt to get lock for removing temporary box region.
+            std::unique_lock pv_cut_lock(_pv_cut_mutex);
+            for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
+                if ((*it).second->HasFileRegionIds(ALL_FILES, region_id)) {
+                    it = _pv_preview_cuts.erase(it);
+                } else {
+                    ++it;
+                }
             }
         }
     }
@@ -706,16 +726,21 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     if (file_id == ALL_FILES) {
         _histogram_req.clear();
         _stats_req.clear();
-        std::unique_lock<std::mutex> ulock1(_spectral_mutex);
+        std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         _spectral_req.clear();
-        ulock1.unlock();
-        std::unique_lock<std::mutex> ulock2(_spatial_mutex);
+        spectral_lock.unlock();
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         _spatial_req.clear();
-        ulock2.unlock();
+        spatial_lock.unlock();
 
         _histogram_cache.clear();
         _spectral_cache.clear();
         _stats_cache.clear();
+
+        std::unique_lock pv_cut_lock(_pv_cut_mutex);
+        _pv_preview_cuts.clear();
+        std::unique_lock pv_cube_lock(_pv_cube_mutex);
+        _pv_preview_cubes.clear();
     } else {
         // Iterate through requirements and remove those for given file_id
         for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
@@ -726,7 +751,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
             }
         }
 
-        std::unique_lock<std::mutex> ulock1(_spectral_mutex);
+        std::unique_lock<std::mutex> spectral_lock(_spectral_mutex);
         for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _spectral_req.erase(it);
@@ -734,7 +759,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
                 ++it;
             }
         }
-        ulock1.unlock();
+        spectral_lock.unlock();
 
         for (auto it = _stats_req.begin(); it != _stats_req.end();) {
             if ((*it).first.file_id == file_id) {
@@ -744,7 +769,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
             }
         }
 
-        std::unique_lock<std::mutex> ulock2(_spatial_mutex);
+        std::unique_lock<std::mutex> spatial_lock(_spatial_mutex);
         for (auto it = _spatial_req.begin(); it != _spatial_req.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _spatial_req.erase(it);
@@ -752,7 +777,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
                 ++it;
             }
         }
-        ulock2.unlock();
+        spatial_lock.unlock();
 
         // Iterate through cache and remove those for given file_id
         for (auto it = _histogram_cache.begin(); it != _histogram_cache.end();) {
@@ -778,6 +803,26 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
                 ++it;
             }
         }
+
+        std::unique_lock pv_cut_lock(_pv_cut_mutex);
+        for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
+            if ((*it).second->HasFileRegionIds(file_id, ALL_REGIONS)) {
+                it = _pv_preview_cuts.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        pv_cut_lock.unlock();
+
+        std::unique_lock pv_cube_lock(_pv_cube_mutex);
+        for (auto it = _pv_preview_cubes.begin(); it != _pv_preview_cubes.end();) {
+            if ((*it).second->HasFileId(file_id)) {
+                it = _pv_preview_cubes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        pv_cube_lock.unlock();
     }
 }
 
@@ -1000,48 +1045,51 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
         preview_region_state = _regions.at(preview_region_id)->GetRegionState();
     }
 
-    // Save cut and cube settings for updates, including preview region state
-    auto preview_cut = PvPreviewCut(file_id, region_id, width, reverse);
-    _pv_preview_cuts[preview_id] = preview_cut;
+    // Save cut and cube settings for updates, including current pv cut region state
+    RegionState region_state = GetRegion(region_id)->GetRegionState();
     auto stokes = frame->CurrentStokes();
-    auto cube_parameters =
-        PreviewCubeParameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_region_state);
+    PreviewCutParameters cut_parameters(file_id, region_id, width, reverse);
+    PreviewCubeParameters cube_parameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_region_state);
 
-    // Use cached preview image and its frame, or set new preview image and frame.
+    // Update cut and/or cube settings for existing preview ID
+    // Set unique locks so queued preview images are completed before update
+    std::unique_lock pv_cut_lock(_pv_cut_mutex);
+    if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end() && _pv_preview_cuts.at(preview_id)->HasSameParameters(cut_parameters)) {
+        // Same preview cut settings, just set this RegionState
+        _pv_preview_cuts.at(preview_id)->AddRegion(region_state);
+    } else {
+        // Preview cut settings changed, set new PvPreviewCut
+        _pv_preview_cuts[preview_id] = std::shared_ptr<PvPreviewCut>(new PvPreviewCut(cut_parameters, region_state));
+    }
+    auto preview_cut = _pv_preview_cuts.at(preview_id);
+    pv_cut_lock.unlock();
+
     auto frame_id = GetPvPreviewFrameId(preview_id);
+    bool preview_frame_set = _frames.find(frame_id) != _frames.end();
 
-    // Check if cached preview cube can be used
-    bool preview_cube_set(false), preview_frame_set(false);
-    if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
-        if (_pv_preview_cubes.at(preview_id)->HasSameParameters(cube_parameters)) {
-            // Reuse preview cube and frame
-            preview_cube_set = true;
-            preview_frame_set = _frames.find(frame_id) != _frames.end();
-        } else {
-            // Check if another cached preview image and frame can be used.
-            for (auto& preview_cube : _pv_preview_cubes) {
-                if (preview_cube.second->HasSameParameters(cube_parameters)) {
-                    StopPvPreview(preview_id);
-                    _pv_preview_cubes[preview_id] = preview_cube.second;
-                    preview_cube_set = true;
-                    break;
-                }
+    std::unique_lock pv_cube_lock(_pv_cube_mutex);
+    if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end() ||
+        !_pv_preview_cubes.at(preview_id)->HasSameParameters(cube_parameters)) {
+        // Preview cube changed, see if set for another preview ID
+        bool cube_found(false);
+        for (auto& preview_cube : _pv_preview_cubes) {
+            if (preview_cube.second->HasSameParameters(cube_parameters)) {
+                _pv_preview_cubes[preview_id] = preview_cube.second;
+                cube_found = true;
+                break;
             }
         }
-    }
+        if (!cube_found) {
+            _pv_preview_cubes[preview_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
+        }
 
-    if (!preview_cube_set) {
-        // Cache new settings for this preview
-        _pv_preview_cubes[preview_id] = std::shared_ptr<PvPreviewCube>(new PvPreviewCube(cube_parameters));
-        _pv_preview_cubes[preview_id]->SetSourceFileName(frame->GetFileName());
+        // If preview cube changed, then frame for its preview image cube is invalid
+        preview_frame_set = false;
     }
-
     auto preview_cube = _pv_preview_cubes.at(preview_id);
+    pv_cube_lock.unlock();
 
-    // Reset flag for creating cube.
-    _stop_pv_preview[preview_id] = false;
-
-    // Set frame for preview image if not reusing preview cube and frame.
+    // Set frame for preview image if needed
     Timer t;
     if (!preview_frame_set) {
         // Get cached preview image from PvPreviewCube, or create one.
@@ -1087,13 +1135,12 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
             }
 
             // Get preview image from SubImage and downsampling parameters
-            std::string error;
-            preview_image = preview_cube->GetPreviewImage(sub_image, error);
-            if (!preview_image) {
-                pv_response.set_message(error);
-                return false;
-            } else if (_stop_pv_preview[preview_id]) {
-                pv_response.set_cancel(true);
+            bool cancel(false);
+            std::string message;
+            preview_image = preview_cube->GetPreviewImage(sub_image, cancel, message);
+            if (!preview_image || cancel) {
+                pv_response.set_cancel(cancel);
+                pv_response.set_message(message);
                 return false;
             }
         }
@@ -1103,24 +1150,22 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
         auto preview_session_id(-1);
         auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
         if (!preview_frame->IsValid()) {
-            pv_response.set_message("Failed to load preview cube.");
+            pv_response.set_message("Failed to load image from preview settings.");
         }
 
         _frames[frame_id] = preview_frame;
     }
     spdlog::performance("PV preview cube and frame in {:.3f} ms", t.Elapsed().ms());
 
-    // RegionState for pv cut region
-    RegionState region_state = GetRegion(region_id)->GetRegionState();
-
-    return CalculatePvPreviewImage(frame_id, region_state, preview_id, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
+    return CalculatePvPreviewImage(frame_id, preview_id, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
 }
 
-bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& region_state, int preview_id, PvPreviewCut& preview_cut,
+bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, std::shared_ptr<PvPreviewCut> preview_cut,
     std::shared_ptr<PvPreviewCube> preview_cube, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
     GeneratedImage& pv_image) {
     // Calculate PV preview data using pv cut RegionState (in source image) and PvPreviewCube.
-    // This method is the entry point for pv preview updates, where only pv cut changed.
+    // This method is the entry point for pv preview updates, where only the pv cut changed.
+    spdlog::debug("Calculate PV preview image");
 
     // Prepare response; if error, add message.
     pv_response.set_success(false);
@@ -1130,9 +1175,15 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
     preview_data_message->set_width(0);
     preview_data_message->set_height(0);
 
+    RegionState source_region_state;
+    if (!preview_cut->GetNextRegion(source_region_state)) {
+        spdlog::debug("No regions to process");
+        return false;
+    }
+
     // Set new pv cut region in preview image.
-    int preview_cut_id(NEW_REGION_ID);
-    auto preview_cut_state = preview_cube->GetPvCutRegion(region_state, frame_id);
+    int preview_cut_id(TEMP_REGION_ID);
+    auto preview_cut_state = preview_cube->GetPvCutRegion(source_region_state, frame_id);
     auto preview_frame = _frames.at(frame_id);
     auto preview_frame_csys = preview_frame->CoordinateSystem();
     if (!SetRegion(preview_cut_id, preview_cut_state, preview_frame_csys)) {
@@ -1140,13 +1191,15 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
         return false;
     }
 
+    LineBoxRegions line_box_regions;
+    auto width = preview_cut->GetWidth();
     casacore::Quantity increment;
     std::vector<RegionState> box_regions;
     std::string error;
-    LineBoxRegions line_box_regions;
 
     // Approximate preview cut region with width as series of box regions
-    if (!line_box_regions.GetLineBoxRegions(preview_cut_state, preview_frame_csys, preview_cut.width, increment, box_regions, error)) {
+    if (!line_box_regions.GetLineBoxRegions(preview_cut_state, preview_frame_csys, width, increment, box_regions, error)) {
+        spdlog::debug("GetLineBoxRegions failed!");
         spdlog::error(error);
         pv_response.set_message(error);
         return false;
@@ -1154,9 +1207,9 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
 
     // Initialize preview data then set with box region profiles
     casacore::Matrix<float> preview_data;
-    auto num_regions = box_regions.size();
+    size_t num_regions(box_regions.size());
     auto depth = preview_frame->Depth();
-    auto reverse = preview_cut.reverse;
+    auto reverse = preview_cut->GetReverse();
     if (reverse) {
         preview_data.resize(depth, num_regions);
     } else {
@@ -1165,15 +1218,8 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
     preview_data = FLOAT_NAN;
 
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
-        if (_stop_pv_preview[preview_id]) {
-            break;
-        }
-
         // Set box region with next temp region id
         int box_region_id(TEMP_REGION_ID);
-        while (_regions.find(box_region_id) != _regions.end()) {
-            --box_region_id;
-        }
         SetRegion(box_region_id, box_regions[iregion], preview_frame_csys);
 
         if (!RegionSet(box_region_id)) {
@@ -1187,25 +1233,36 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, const RegionState& reg
         // Use PvPreviewCube to calculate profile with lcregion and mask
         std::vector<float> profile;
         double max_num_pixels(0.0);
-        if (preview_cube->GetRegionProfile(box_lc_region, box_mask, profile, max_num_pixels)) {
-            if (reverse) {
-                preview_data.column(iregion) = profile;
-            } else {
-                preview_data.row(iregion) = profile;
+        bool cancel(false);
+        std::string message;
+
+        std::unique_lock pv_cube_lock(_pv_cube_mutex);
+        if (preview_cube) {
+            if (preview_cube->GetRegionProfile(box_lc_region, box_mask, profile, max_num_pixels, cancel, message)) {
+                spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
+                if (reverse) {
+                    preview_data.column(iregion) = profile;
+                } else {
+                    preview_data.row(iregion) = profile;
+                }
             }
+        } else {
+            // Preview cube was deleted
+            cancel = true;
+            message = "PV image preview cancelled.";
         }
-        // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
+        if (cancel) {
+            pv_response.set_message(message);
+            pv_response.set_cancel(true);
+            return false;
+        }
+        pv_cube_lock.unlock();
 
         RemoveRegion(box_region_id);
     }
 
     progress_callback(1.0);
     RemoveRegion(preview_cut_id);
-
-    if (_stop_pv_preview[preview_id]) {
-        pv_response.set_cancel(true);
-        return false;
-    }
 
     // Use PvGenerator to set PV image for headers only
     casacore::Matrix<float> no_preview_data; // do not copy actual preview data into image
@@ -1271,7 +1328,6 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
 
     if (GetLineProfiles(file_id, region_id, width, spectral_range, per_z, stokes_index, "", progress_callback, pv_data, offset_increment,
             cancelled, message, reverse)) {
-        PvGenerator pv_generator;
         auto pv_shape = pv_data.shape();
         int start_chan(spectral_range.from); // Used for reference value in returned PV image
 
@@ -1281,10 +1337,13 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
             name_index = ++_pv_name_index[file_id];
         }
         _pv_name_index[file_id] = name_index;
-        auto input_filename = frame->GetFileName();
+
+        std::shared_lock frame_lock(frame->GetActiveTaskMutex());
+        auto source_filename = frame->GetFileName();
 
         // Create GeneratedImage with id and name in PvGenerator
-        pv_generator.SetFileIdName(file_id, name_index, input_filename);
+        PvGenerator pv_generator;
+        pv_generator.SetFileIdName(file_id, name_index, source_filename);
         pv_success =
             pv_generator.GetPvImage(frame, pv_data, pv_shape, offset_increment, start_chan, stokes_index, reverse, pv_image, message);
         cancelled &= _stop_pv[file_id];
@@ -1292,11 +1351,11 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
         // Cleanup
         _stop_pv.erase(file_id);
 
-        // Close file if on disk
-        auto filename = frame->GetFileName();
-        if (!filename.empty()) {
-            frame->CloseCachedImage(filename);
+        // Close source image if on disk and not used elsewhere
+        if (!source_filename.empty()) {
+            frame->CloseCachedImage(source_filename);
         }
+        frame_lock.unlock();
     }
 
     if (cancelled) {
@@ -1313,15 +1372,34 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
     return pv_success;
 }
 
-bool RegionHandler::UpdatePvPreview(int file_id, int region_id, RegionState& region_state,
-    std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb) {
-    // Update all previews using the pv cut described by region ID and state.
+bool RegionHandler::UpdatePvPreviewRegion(int file_id, int region_id, RegionState& region_state) {
+    // Set region state in PvPreviewCut, if region is pv cut.  Returns this status.
+    if (region_state.type != CARTA::RegionType::LINE) {
+        return false;
+    }
+    std::shared_lock pv_cut_lock(_pv_cut_mutex);
+    bool is_preview_cut(false);
+    for (auto& preview_cut : _pv_preview_cuts) {
+        if (preview_cut.second->HasFileRegionIds(file_id, region_id)) {
+            preview_cut.second->AddRegion(region_state);
+            is_preview_cut = true;
+        }
+    }
+    return is_preview_cut;
+}
+
+bool RegionHandler::UpdatePvPreviewImage(
+    int file_id, int region_id, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb) {
+    // Update all previews using the pv cut described by file and region IDs
     bool preview_updated(false);
+
+    // Lock settings to prevent removal/replacement until queue is complete
+    std::shared_lock pv_cut_lock(_pv_cut_mutex);
 
     for (auto& pv_preview_cut : _pv_preview_cuts) {
         // Find and update pv preview settings with input file and region
         auto preview_cut = pv_preview_cut.second;
-        if ((file_id == ALL_FILES || preview_cut.file_id == file_id) && preview_cut.region_id == region_id) {
+        if (preview_cut->HasFileRegionIds(file_id, region_id)) {
             auto preview_id = pv_preview_cut.first;
 
             if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end()) {
@@ -1336,15 +1414,16 @@ bool RegionHandler::UpdatePvPreview(int file_id, int region_id, RegionState& reg
                 return preview_updated;
             }
 
-            spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
-            GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
-            CARTA::PvResponse pv_response;
-            GeneratedImage pv_image;
-
-            // We no longer need the region id since we have its state.  A new region will be set in the preview image.
-            preview_updated = CalculatePvPreviewImage(
-                frame_id, region_state, preview_id, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
-            cb(pv_response, pv_image);
+            while (preview_cut->HasQueuedRegion()) {
+                // Generate preview for one region state in queue
+                spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
+                GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
+                CARTA::PvResponse pv_response;
+                GeneratedImage pv_image;
+                preview_updated =
+                    CalculatePvPreviewImage(frame_id, preview_id, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
+                cb(pv_response, pv_image);
+            }
         }
     }
 
@@ -1358,37 +1437,33 @@ int RegionHandler::GetPvPreviewFrameId(int preview_id) {
 void RegionHandler::StopPvCalc(int file_id) {
     // Cancel any PV calculations in progress
     _stop_pv[file_id] = true;
-
-    // Stop any spectral profiles in progress by clearing requirements for temporary region.
-    if (FrameSet(file_id)) {
-        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> no_profiles;
-        SetSpectralRequirements(TEMP_REGION_ID, file_id, _frames.at(file_id), no_profiles);
-    }
 }
 
 void RegionHandler::StopPvPreview(int preview_id) {
     // Cancel any preview cube and pv image calculations in progress
-    _stop_pv_preview[preview_id] = true;
-
     if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
         _pv_preview_cubes.at(preview_id)->StopCube();
     }
 }
 
 void RegionHandler::ClosePvPreview(int preview_id) {
-    // Cancel PV calculations
+    // Cancel PV calculations and remove preview settings, frame, and stop flag
     StopPvPreview(preview_id);
 
-    // Remove preview settings, frame, and stop flag
+    std::unique_lock pv_cut_lock(_pv_cut_mutex);
     if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end()) {
         _pv_preview_cuts.erase(preview_id);
     }
+    pv_cut_lock.unlock();
+
+    std::unique_lock pv_cube_lock(_pv_cube_mutex);
     if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
         _pv_preview_cubes.erase(preview_id);
     }
+    pv_cube_lock.unlock();
+
     auto frame_id = GetPvPreviewFrameId(preview_id);
     _frames.erase(frame_id);
-    _stop_pv_preview.erase(preview_id);
 }
 
 bool RegionHandler::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response,
@@ -2311,8 +2386,10 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
     }
 
     auto line_region = GetRegion(region_id);
+    std::shared_lock region_lock(line_region->GetActiveTaskMutex());
     auto line_region_state = line_region->GetRegionState();
     auto line_coord_sys = line_region->CoordinateSystem();
+    region_lock.unlock();
 
     if (per_z && (line_region_state.type == CARTA::RegionType::POLYLINE)) {
         message = "Polyline region not supported for PV images.";
@@ -2431,15 +2508,6 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
 
     std::lock_guard<std::mutex> guard(_line_profile_mutex);
     int region_id(TEMP_REGION_ID);
-    if (!per_z) {
-        // Unique ID for multiple line profiles
-        region_id -= region_idx;
-    } else {
-        while (_regions.find(region_id) != _regions.end()) {
-            --region_id;
-        }
-    }
-
     SetRegion(region_id, region_state, reference_csys);
 
     if (!RegionSet(region_id, true)) {
@@ -2485,6 +2553,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         // Get region
         StokesRegion stokes_region;
         std::shared_ptr<casacore::LCRegion> lc_region;
+        std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
         if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, lc_region, stokes_region)) {
             // Get region data
             std::vector<float> region_data;
@@ -2496,6 +2565,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
                 profile[0] = basic_stats.mean;
             }
         }
+        frame_lock.unlock();
     }
 
     // Remove temporary region

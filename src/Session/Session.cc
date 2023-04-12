@@ -806,9 +806,11 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     }
 
-    // Update pv preview, and data streams if not preview region
     if (success) {
-        SendPvPreview(file_id, region_id, region_state);
+        // Update pv preview (if region is pv cut for preview)
+        if (_region_handler->UpdatePvPreviewRegion(file_id, region_id, region_state)) {
+            SendPvPreview(file_id, region_id);
+        }
 
         if (!preview_region) {
             OnMessageTask* tsk = new RegionDataStreamsTask(this, ALL_FILES, region_id);
@@ -1368,7 +1370,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
                     OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
                 }
             }
-            spdlog::performance("Generate pv image in {:.3f} ms", t.Elapsed().ms());
+            spdlog::performance("Generate pv response in {:.3f} ms", t.Elapsed().ms());
         }
 
         SendEvent(CARTA::EventType::PV_RESPONSE, request_id, pv_response);
@@ -1757,7 +1759,7 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
-bool Session::SendPvPreview(int file_id, int region_id, RegionState& region_state) {
+bool Session::SendPvPreview(int file_id, int region_id) {
     // return true if data sent
     Timer t;
     auto pv_preview_callback = [&](CARTA::PvResponse& response, GeneratedImage& pv_image) {
@@ -1779,7 +1781,8 @@ bool Session::SendPvPreview(int file_id, int region_id, RegionState& region_stat
         }
     };
 
-    return _region_handler->UpdatePvPreview(file_id, region_id, region_state, pv_preview_callback);
+    spdlog::performance("Request pv preview");
+    return _region_handler->UpdatePvPreviewImage(file_id, region_id, pv_preview_callback);
 }
 
 bool Session::SendContourData(int file_id, bool ignore_empty) {

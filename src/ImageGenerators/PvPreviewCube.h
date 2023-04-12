@@ -48,6 +48,7 @@ public:
 
     // Cube parameters
     bool HasSameParameters(const PreviewCubeParameters& parameters);
+    bool HasFileId(int file_id);
     int GetStokes();
 
     // Filename of source image for preview image name
@@ -61,14 +62,15 @@ public:
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage();
 
     // Create preview image by applying rebinning to SubImage, and cache cube data.
-    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(casacore::SubImage<float>& sub_image, std::string& error);
+    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(
+        casacore::SubImage<float>& sub_image, bool& cancel, std::string& message);
 
     // Set PV cut in preview cube
     RegionState GetPvCutRegion(const RegionState& source_region_state, int preview_frame_id);
 
     // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels
     bool GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
-        std::vector<float>& profile, double& num_pixels);
+        std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message);
 
     // Cancel preview image and cube data cache.
     void StopCube();
@@ -78,7 +80,8 @@ private:
     bool DoRebin();
 
     // Cache cube data for preview image
-    void LoadCubeData();
+    void LoadCubeData(bool& cancel);
+    bool CubeLoaded();
 
     // Cube parameters
     PreviewCubeParameters _cube_parameters;
@@ -89,16 +92,18 @@ private:
     // Origin (blc) of preview region in source image
     casacore::IPosition _origin;
 
-    // Preview image cube: SubImage with downsampling applied
+    // Preview image cube: SubImage with downsampling applied if rebin
     std::shared_ptr<casacore::ImageInterface<float>> _preview_image;
 
     // SubImage for data access when preview image is RebinImage
     casacore::SubImage<float> _preview_subimage;
 
+    // Image cube cache
     casacore::Array<float> _cube_data;
 
-    // Flag to stop downsampling image
+    // Flag to stop caching image cube
     bool _stop_cube;
+    std::string _cancel_message;
 };
 
 } // namespace carta

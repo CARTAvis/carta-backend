@@ -217,6 +217,7 @@ set(SOURCE_FILES
         src/ImageGenerators/MomentGenerator.cc
         src/ImageGenerators/PvGenerator.cc
         src/ImageGenerators/PvPreviewCube.cc
+        src/ImageGenerators/PvPreviewCut.cc
         src/ImageStats/Histogram.cc
         src/ImageStats/StatsCalculator.cc
         src/Logger/Logger.cc
@@ -225,7 +226,7 @@ set(SOURCE_FILES
         src/Main/WebBrowser.cc
         src/Region/CrtfImportExport.cc
         src/Region/Ds9ImportExport.cc
-		src/Region/LineBoxRegions.cc
+        src/Region/LineBoxRegions.cc
         src/Region/Region.cc
         src/Region/RegionHandler.cc
         src/Region/RegionImportExport.cc
@@ -244,7 +245,7 @@ set(SOURCE_FILES
         src/Util/Casacore.cc
         src/Util/File.cc
         src/Util/Message.cc
-		src/Util/Stokes.cc
+        src/Util/Stokes.cc
         src/Util/String.cc
         src/Util/Token.cc
         src/ImageFitter/ImageFitter.cc)

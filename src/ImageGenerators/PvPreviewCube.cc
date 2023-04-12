@@ -16,13 +16,18 @@
 
 namespace carta {
 
-PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters) {
-    _cube_parameters = parameters;
+PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters) : _cube_parameters(parameters) {
     _origin = casacore::IPosition(2, 0, 0); // blc of image plane
+    _stop_cube = false;
+    _cancel_message = "PV image preview cancelled.";
 }
 
 bool PvPreviewCube::HasSameParameters(const PreviewCubeParameters& parameters) {
     return _cube_parameters == parameters;
+}
+
+bool PvPreviewCube::HasFileId(int file_id) {
+    return _cube_parameters.file_id == file_id;
 }
 
 int PvPreviewCube::GetStokes() {
@@ -47,24 +52,35 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     return _preview_image;
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(casacore::SubImage<float>& sub_image, std::string& error) {
+std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
+    casacore::SubImage<float>& sub_image, bool& cancel, std::string& message) {
     // Input SubImage is preview region, spectral range, and stokes applied to source image.
     // Apply downsampling to this subimage if needed.
     // Returns false if sub_image not set, preview image fails, or cancelled.
-    _stop_cube = false;
+    cancel = false;
 
     if (_preview_image) {
+        // Image already created, load data if cancelled
+        if (!CubeLoaded()) {
+            LoadCubeData(cancel);
+        }
+        if (cancel) {
+            message = _cancel_message;
+        }
         return _preview_image;
     }
 
     if (sub_image.ndim() == 0) {
-        error = "Preview image subcube failed.";
+        message = "Preview region failed.";
         return _preview_image;
     }
 
+    // For data access, instead of RebinImage (too slow)
+    _preview_subimage = sub_image;
+
     if (DoRebin()) {
         try {
-            // Make casacore::RebinImage
+            // Make casacore::RebinImage for headers only
             int x_axis(0), y_axis(1), z_axis(-1), stokes_axis(-1);
             casacore::Vector<int> xy_axes;
             if (sub_image.coordinates().hasDirectionCoordinate()) {
@@ -74,7 +90,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
             }
 
             if (xy_axes.size() != 2) {
-                error = "Cannot find xy spatial axes to rebin.";
+                message = "Cannot find xy spatial axes to rebin.";
                 return _preview_image;
             }
 
@@ -87,9 +103,8 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
             rebin_factors[y_axis] = _cube_parameters.rebin_xy;
             rebin_factors[z_axis] = _cube_parameters.rebin_z;
             _preview_image.reset(new casacore::RebinImage<float>(sub_image, rebin_factors));
-            _preview_subimage = sub_image; // for data access, instead of RebinImage (too slow)
         } catch (const casacore::AipsError& err) {
-            error = err.getMesg();
+            message = err.getMesg();
             return _preview_image;
         }
     } else {
@@ -97,8 +112,9 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
         _preview_image.reset(new casacore::SubImage<float>(sub_image));
     }
 
-    if (!_stop_cube && _preview_image) {
-        LoadCubeData();
+    LoadCubeData(cancel);
+    if (cancel) {
+        message = _cancel_message;
     }
 
     return _preview_image;
@@ -123,16 +139,31 @@ RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state
 }
 
 bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
-    std::vector<float>& profile, double& num_pixels) {
+    std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
     // Set spectral profile and maximum number of pixels for region.
     // Returns false if no preview image or region cannot be applied.
-    if (!region || !_preview_image) {
+    cancel = false;
+
+    if (_stop_cube) {
+        cancel = true;
+        message = _cancel_message;
+        _stop_cube = false;
         return false;
     }
 
-    // If cancelled during preview image, load data now.
-    if (_cube_data.empty() && !_stop_cube) {
-        LoadCubeData();
+    if (!region || !_preview_image) {
+        // Should not be here if no preview image (GetPreviewImage first).
+        // Most likely LCRegion outside bounding box.
+        return false;
+    }
+
+    // If cancelled during preview image cube loading, load data now.
+    if (!CubeLoaded()) {
+        LoadCubeData(cancel);
+        if (cancel) {
+            message = _cancel_message;
+            return false;
+        }
     }
 
     auto bounding_box = region->boundingBox();
@@ -145,6 +176,13 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
     std::vector<double> npix_per_chan(nchan, 0.0);
 
     for (size_t ichan = 0; ichan < nchan; ++ichan) {
+        if (_stop_cube) {
+            cancel = true;
+            message = _cancel_message;
+            _stop_cube = false;
+            return false;
+        }
+
         double chan_sum(0.0);
         for (size_t ix = 0; ix < box_length[0]; ++ix) {
             for (size_t iy = 0; iy < box_length[1]; ++iy) {
@@ -153,6 +191,7 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
                     continue;
                 }
 
+                auto pos = casacore::IPosition(3, ix + box_start[0], iy + box_start[1], ichan);
                 float data_val = _cube_data(casacore::IPosition(3, ix + box_start[0], iy + box_start[1], ichan));
                 if (std::isfinite(data_val)) {
                     chan_sum += data_val;
@@ -179,8 +218,15 @@ bool PvPreviewCube::DoRebin() {
     return _cube_parameters.rebin_xy > 1 || _cube_parameters.rebin_z > 1;
 }
 
-void PvPreviewCube::LoadCubeData() {
+void PvPreviewCube::LoadCubeData(bool& cancel) {
     // Cache preview image data in memory
+    // First check if user cancelled.
+    if (_stop_cube) {
+        cancel = true;
+        _stop_cube = false;
+        return;
+    }
+
     Timer t;
     if (DoRebin()) {
         casacore::Array<float> carta_cube_data;
@@ -214,6 +260,8 @@ void PvPreviewCube::LoadCubeData() {
         for (auto ichan = 0; ichan < nchan; ichan += rebin_z) {
             // Check for cancel
             if (_stop_cube) {
+                cancel = true;
+                _stop_cube = false;
                 _cube_data.resize();
                 return;
             }
@@ -258,9 +306,13 @@ void PvPreviewCube::LoadCubeData() {
 
         spdlog::performance("PV preview cube data (rebin) loaded in {:.3f} ms", t.Elapsed().ms());
     } else {
-        _cube_data = _preview_image->get(true);
+        _cube_data = _preview_subimage.get(true);
         spdlog::performance("PV preview cube data (no rebin) loaded in {:.3f} ms", t.Elapsed().ms());
     }
+}
+
+bool PvPreviewCube::CubeLoaded() {
+    return !_cube_data.empty();
 }
 
 } // namespace carta

@@ -84,8 +84,8 @@ public:
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
     // Update PV preview image when PV cut region (region_id) changes
-    bool UpdatePvPreview(int file_id, int region_id, RegionState& region_state,
-        std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
+    bool UpdatePvPreviewRegion(int file_id, int region_id, RegionState& region_state);
+    bool UpdatePvPreviewImage(int file_id, int region_id, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
     void StopPvCalc(int file_id);
     void StopPvPreview(int preview_id);
     void ClosePvPreview(int preview_id);
@@ -95,8 +95,10 @@ public:
         GeneratedImage& model_image, GeneratedImage& residual_image, GeneratorProgressCallback progress_callback);
 
 private:
-    // Get unique region id (max id + 1)
+    // Get unique region id: max id (from 0) + 1
     int GetNextRegionId();
+    // Get unique region id: min id (from TEMP_REGION_ID) - 1
+    int GetNextTemporaryRegionId();
 
     // Check specific id or if any regions/frames set
     bool RegionFileIdsValid(int region_id, int file_id, bool check_annotation = false);
@@ -169,7 +171,7 @@ private:
     bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
         std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
-    bool CalculatePvPreviewImage(int frame_id, const RegionState& region_state, int preview_id, PvPreviewCut& preview_cut,
+    bool CalculatePvPreviewImage(int frame_id, int preview_id, std::shared_ptr<PvPreviewCut> preview_cut,
         std::shared_ptr<PvPreviewCube> preview_cube, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
         GeneratedImage& pv_image);
 
@@ -185,7 +187,7 @@ private:
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
     std::unordered_map<ConfigId, std::vector<CARTA::SetSpatialRequirements_SpatialConfig>, ConfigIdHash> _spatial_req;
-    // Lock requirements to add/remove
+    // Lock to add/remove requirements
     std::mutex _spatial_mutex;
     std::mutex _spectral_mutex;
 
@@ -202,10 +204,12 @@ private:
     // PV generator, key is file_id.
     std::unordered_map<int, bool> _stop_pv;      // cancel
     std::unordered_map<int, int> _pv_name_index; // name suffix for "keep"
-    // PV preview, key is preview_id.
+    // PV preview, key is preview_id. Mutex to protect cut and cube in use.
     std::unordered_map<int, bool> _stop_pv_preview;
-    std::unordered_map<int, PvPreviewCut> _pv_preview_cuts;
+    std::unordered_map<int, std::shared_ptr<PvPreviewCut>> _pv_preview_cuts;
     std::unordered_map<int, std::shared_ptr<PvPreviewCube>> _pv_preview_cubes;
+    std::shared_mutex _pv_cut_mutex;
+    std::shared_mutex _pv_cube_mutex;
 
     // Prevent crash during line profiles
     std::mutex _line_profile_mutex;
