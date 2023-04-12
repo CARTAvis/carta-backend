@@ -145,7 +145,7 @@ bool RegionHandler::RegionSet(int region_id, bool check_annotation) {
     } else {
         region_set = (_regions.find(region_id) != _regions.end()) && _regions.at(region_id)->IsConnected();
         if (region_set && check_annotation) {
-            region_set &= !_regions.at(region_id)->IsAnnotation();
+            region_set = !_regions.at(region_id)->IsAnnotation();
         }
     }
     return region_set;
@@ -870,7 +870,7 @@ std::shared_ptr<casacore::LCRegion> RegionHandler::ApplyRegionToFile(
         return nullptr;
     }
 
-    if (!IsClosedRegion(region_id)) {
+    if (!IsClosedRegion(region_id) && !IsPointRegion(region_id)) {
         return nullptr;
     }
 
@@ -2326,7 +2326,6 @@ bool RegionHandler::IsPointRegion(int region_id) {
 }
 
 bool RegionHandler::IsLineRegion(int region_id) {
-    // Is a line type but not an annotation
     if (RegionSet(region_id, true)) {
         return GetRegion(region_id)->IsLineType() && !GetRegion(region_id)->IsAnnotation();
     }
@@ -2472,16 +2471,12 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
 }
 
 bool RegionHandler::CancelLineProfiles(int region_id, int file_id, RegionState& region_state) {
-    // Cancel if region or frame is closing
-    bool cancel(false);
+    // Cancel if region or frame is closing or line moved
+    bool cancel = !RegionFileIdsValid(region_id, file_id);
 
-    if (!RegionFileIdsValid(region_id, file_id)) {
-        cancel = true;
-    }
-
-    // Cancel if region changed
-    if (GetRegion(region_id)->GetRegionState() != region_state) {
-        cancel = true;
+    if (!cancel) {
+        auto region = GetRegion(region_id);
+        cancel = !region || (region->GetRegionState() != region_state);
     }
 
     if (cancel) {
