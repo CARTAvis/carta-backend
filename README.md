@@ -1,7 +1,6 @@
-
 # CARTA Image Viewer (Backend)
 
-![code coverage](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fcarta.asiaa.sinica.edu.tw%2Fcoverage%2Fpercentage.json)
+![code coverage](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fgist.githubusercontent.com%2Fajm-asiaa%2Fecad490776d42844903aeebf5e6d2173%2Fraw)
 
 Backend process for simple web-based interface for viewing radio astronomy images in CASA, FITS, MIRIAD, and HDF5 formats (using the IDIA custom schema for HDF5). Unlike the conventional approach of rendering an image on the backend and sending a rendered image to the frontend client, the backend sends a compressed subset of the data, and the frontend renders the image efficiently on the GPU using WebGL and GLSL shaders. While the data is compressed using the lossy ZFP algorithm, the compression artefacts are generally much less noticeable than those cropping up from full-colour JPEG compression. While data sizes depend on compression quality used, sizes are [comparable](https://docs.google.com/spreadsheets/d/1lp1687TL0bYmbM3jGyjuPd9dYZnrAYGnLIQXWVpnmS0/edit?usp=sharing) with sizes of compressed JPEG images with a 95% quality setting, depending on the colour map used to generate the JPEG image. PNG compression is generally a factor of 2 larger than the ZFP compressed data.
 
@@ -68,5 +67,9 @@ For more detailed example commands for installing the dependencies and performin
 ## Running the backend process
 
 Command-line arguments are in the format `--arg=value` or `--arg value`. Run `carta_backend --help` for a list of options. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `--frontend_folder` argument. Hosting of the frontend can be disabled with the `--no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `--debug_no_auth` argument.
+
+## Developer documentation
+
+Automatically generated Doxygen documentation can be found at [cartavis.org/carta-backend](https://cartavis.org/carta-backend/).
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3377984.svg)](https://doi.org/10.5281/zenodo.3377984)

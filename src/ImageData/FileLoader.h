@@ -23,8 +23,6 @@
 
 namespace carta {
 
-class Frame;
-
 struct StokesSlicer {
     StokesSource stokes_source;
     casacore::Slicer slicer;
@@ -78,8 +76,8 @@ public:
     // Image shape and coordinate system axes
     casacore::IPosition GetShape();
     std::shared_ptr<casacore::CoordinateSystem> GetCoordinateSystem(const StokesSource& stokes_source = StokesSource());
-    bool FindCoordinateAxes(casacore::IPosition& shape, int& spectral_axis, int& z_axis, int& stokes_axis, std::string& message);
-    std::vector<int> GetRenderAxes(); // Determine axes used for image raster data
+    bool FindCoordinateAxes(casacore::IPosition& shape, std::vector<int>& spatial_axes, int& spectral_axis, int& stokes_axis,
+        std::vector<int>& render_axes, int& z_axis, std::string& message);
 
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const StokesSlicer& stokes_slicer);
@@ -152,7 +150,6 @@ protected:
     size_t _num_dims, _image_plane_size;
     size_t _width, _height, _depth, _num_stokes;
     int _z_axis, _stokes_axis;
-    std::vector<int> _render_axes;
     std::shared_ptr<casacore::CoordinateSystem> _coord_sys;
     bool _has_pixel_mask;
     casacore::DataType _data_type;
