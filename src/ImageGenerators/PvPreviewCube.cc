@@ -18,11 +18,11 @@
 
 namespace carta {
 
-PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters) : _cube_parameters(parameters) {
-    _origin = casacore::IPosition(2, 0, 0); // blc of image plane
-    _stop_cube = false;
-    _cancel_message = "PV image preview cancelled.";
-}
+PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters)
+    : _cube_parameters(parameters),
+      _origin(casacore::IPosition(2, 0, 0)),
+      _stop_cube(false),
+      _cancel_message("PV image preview cancelled.") {}
 
 bool PvPreviewCube::HasSameParameters(const PreviewCubeParameters& parameters) {
     return _cube_parameters == parameters;
@@ -83,7 +83,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     if (DoRebin()) {
         try {
             // Make casacore::RebinImage for headers only
-            int x_axis(0), y_axis(1), z_axis(-1), stokes_axis(-1);
+            int x_axis(0), y_axis(1), z_axis(-1);
             casacore::Vector<int> xy_axes;
             if (sub_image.coordinates().hasDirectionCoordinate()) {
                 xy_axes = sub_image.coordinates().directionAxesNumbers();
@@ -173,7 +173,7 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
     auto box_length = bounding_box.length();
 
     // Initialize profile
-    size_t nchan = box_length(2);
+    size_t nchan = box_length(_preview_image->coordinates().spectralAxisNumber());
     profile.resize(nchan, NAN);
     std::vector<double> npix_per_chan(nchan, 0.0);
 
@@ -193,8 +193,8 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
                     continue;
                 }
 
-                auto pos = casacore::IPosition(3, ix + box_start[0], iy + box_start[1], ichan);
                 float data_val = _cube_data(casacore::IPosition(3, ix + box_start[0], iy + box_start[1], ichan));
+
                 if (std::isfinite(data_val)) {
                     chan_sum += data_val;
                     ++npix_per_chan[ichan];
@@ -321,7 +321,7 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
     } else {
         // No progress updates for each channel, but should be quick
         progress_callback(0.1);
-        _cube_data = _preview_subimage.get(true);
+        _cube_data = _preview_subimage.get(true); // no degenerate axis
         spdlog::performance("PV preview cube data (no rebin) loaded in {:.3f} ms", t.Elapsed().ms());
     }
 
