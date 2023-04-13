@@ -264,7 +264,7 @@ protected:
     void SendSpatialProfileDataByRegionId(int region_id);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
-    bool SendPvPreview(int file_id, int region_id);
+    bool SendPvPreview(int file_id, int region_id, bool preview_region);
     void UpdateImageData(int file_id, bool send_image_histogram, bool z_changed, bool stokes_changed);
     void UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed);
     bool SendVectorFieldData(int file_id);

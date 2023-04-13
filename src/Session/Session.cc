@@ -809,7 +809,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     if (success) {
         // Update pv preview (if region is pv cut for preview)
         if (_region_handler->UpdatePvPreviewRegion(file_id, region_id, region_state)) {
-            SendPvPreview(file_id, region_id);
+            SendPvPreview(file_id, region_id, preview_region);
         }
 
         if (!preview_region) {
@@ -1759,7 +1759,7 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
-bool Session::SendPvPreview(int file_id, int region_id) {
+bool Session::SendPvPreview(int file_id, int region_id, bool preview_region) {
     // return true if data sent
     Timer t;
     auto pv_preview_callback = [&](CARTA::PvResponse& response, GeneratedImage& pv_image) {
@@ -1782,7 +1782,7 @@ bool Session::SendPvPreview(int file_id, int region_id) {
     };
 
     spdlog::performance("Request pv preview");
-    return _region_handler->UpdatePvPreviewImage(file_id, region_id, pv_preview_callback);
+    return _region_handler->UpdatePvPreviewImage(file_id, region_id, preview_region, pv_preview_callback);
 }
 
 bool Session::SendContourData(int file_id, bool ignore_empty) {

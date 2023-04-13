@@ -1157,10 +1157,11 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     }
     spdlog::performance("PV preview cube and frame in {:.3f} ms", t.Elapsed().ms());
 
-    return CalculatePvPreviewImage(frame_id, preview_id, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
+    bool no_histogram(false);
+    return CalculatePvPreviewImage(frame_id, preview_id, no_histogram, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
 }
 
-bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, std::shared_ptr<PvPreviewCut> preview_cut,
+bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool no_histogram, std::shared_ptr<PvPreviewCut> preview_cut,
     std::shared_ptr<PvPreviewCube> preview_cube, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
     GeneratedImage& pv_image) {
     // Calculate PV preview data using pv cut RegionState (in source image) and PvPreviewCube.
@@ -1290,11 +1291,16 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, std::s
         // Complete PvResponse
         pv_response.set_success(true);
         preview_data_message->set_image_data(data_ptr, data_size * sizeof(float));
+        preview_data.freeStorage(data_ptr, delete_storage);
+
         preview_data_message->set_width(data_shape(0));
         preview_data_message->set_height(data_shape(1));
         *preview_data_message->mutable_histogram_bounds() = hist_bounds;
 
-        preview_data.freeStorage(data_ptr, delete_storage);
+        if (!no_histogram) {
+            auto preview_histogram = preview_data_message->mutable_histogram();
+            FillHistogram(preview_histogram, basic_stats, hist);
+        }
     } else {
         pv_response.set_success(false);
         pv_response.set_message(error);
@@ -1389,7 +1395,7 @@ bool RegionHandler::UpdatePvPreviewRegion(int file_id, int region_id, RegionStat
 }
 
 bool RegionHandler::UpdatePvPreviewImage(
-    int file_id, int region_id, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb) {
+    int file_id, int region_id, bool no_histogram, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb) {
     // Update all previews using the pv cut described by file and region IDs
     bool preview_updated(false);
 
@@ -1420,8 +1426,8 @@ bool RegionHandler::UpdatePvPreviewImage(
                 GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
                 CARTA::PvResponse pv_response;
                 GeneratedImage pv_image;
-                preview_updated =
-                    CalculatePvPreviewImage(frame_id, preview_id, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
+                preview_updated = CalculatePvPreviewImage(
+                    frame_id, preview_id, no_histogram, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
                 cb(pv_response, pv_image);
             }
         }
