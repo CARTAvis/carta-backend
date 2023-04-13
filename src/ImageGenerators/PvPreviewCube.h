@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND_IMAGEGENERATORS_PVPREVIEWCUBE_H_
 #define CARTA_BACKEND_IMAGEGENERATORS_PVPREVIEWCUBE_H_
 
+#include "ImageGenerators/ImageGenerator.h"
 #include "Region/Region.h"
 #include "Util/File.h"
 #include "Util/Image.h"
@@ -63,14 +64,15 @@ public:
 
     // Create preview image by applying rebinning to SubImage, and cache cube data.
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(
-        casacore::SubImage<float>& sub_image, bool& cancel, std::string& message);
+        casacore::SubImage<float>& sub_image, GeneratorProgressCallback progress_callback, bool& cancel, std::string& message);
 
     // Set PV cut in preview cube
     RegionState GetPvCutRegion(const RegionState& source_region_state, int preview_frame_id);
 
-    // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels
+    // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels.
+    // Include progress callback in case data must be loaded
     bool GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
-        std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message);
+        GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message);
 
     // Cancel preview image and cube data cache.
     void StopCube();
@@ -80,7 +82,7 @@ private:
     bool DoRebin();
 
     // Cache cube data for preview image
-    void LoadCubeData(bool& cancel);
+    void LoadCubeData(GeneratorProgressCallback progress_callback, bool& cancel);
     bool CubeLoaded();
 
     // Cube parameters

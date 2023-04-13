@@ -14,6 +14,8 @@
 #include "DataStream/Smoothing.h"
 #include "Timer/Timer.h"
 
+#define LOAD_DATA_PROGRESS_INTERVAL 1000
+
 namespace carta {
 
 PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters) : _cube_parameters(parameters) {
@@ -53,7 +55,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
 }
 
 std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
-    casacore::SubImage<float>& sub_image, bool& cancel, std::string& message) {
+    casacore::SubImage<float>& sub_image, GeneratorProgressCallback progress_callback, bool& cancel, std::string& message) {
     // Input SubImage is preview region, spectral range, and stokes applied to source image.
     // Apply downsampling to this subimage if needed.
     // Returns false if sub_image not set, preview image fails, or cancelled.
@@ -62,7 +64,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
     if (_preview_image) {
         // Image already created, load data if cancelled
         if (!CubeLoaded()) {
-            LoadCubeData(cancel);
+            LoadCubeData(progress_callback, cancel);
         }
         if (cancel) {
             message = _cancel_message;
@@ -112,7 +114,7 @@ std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
         _preview_image.reset(new casacore::SubImage<float>(sub_image));
     }
 
-    LoadCubeData(cancel);
+    LoadCubeData(progress_callback, cancel);
     if (cancel) {
         message = _cancel_message;
     }
@@ -139,7 +141,7 @@ RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state
 }
 
 bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
-    std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
+    GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
     // Set spectral profile and maximum number of pixels for region.
     // Returns false if no preview image or region cannot be applied.
     cancel = false;
@@ -159,7 +161,7 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
 
     // If cancelled during preview image cube loading, load data now.
     if (!CubeLoaded()) {
-        LoadCubeData(cancel);
+        LoadCubeData(progress_callback, cancel);
         if (cancel) {
             message = _cancel_message;
             return false;
@@ -218,7 +220,7 @@ bool PvPreviewCube::DoRebin() {
     return _cube_parameters.rebin_xy > 1 || _cube_parameters.rebin_z > 1;
 }
 
-void PvPreviewCube::LoadCubeData(bool& cancel) {
+void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bool& cancel) {
     // Cache preview image data in memory
     // First check if user cancelled.
     if (_stop_cube) {
@@ -257,6 +259,8 @@ void PvPreviewCube::LoadCubeData(bool& cancel) {
         size_t rebin_channel_size = rebin_width * rebin_height;
         size_t new_chan(0);
 
+        // Timer for progress updates
+        auto t_start = std::chrono::high_resolution_clock::now();
         for (auto ichan = 0; ichan < nchan; ichan += rebin_z) {
             // Check for cancel
             if (_stop_cube) {
@@ -302,13 +306,27 @@ void PvPreviewCube::LoadCubeData(bool& cancel) {
             casacore::Vector<float> channel_sumv(channel_sum);
             auto channel_cube_data = channel_sumv.reform(rebin_channel_shape);
             _cube_data[new_chan++] = channel_cube_data;
+
+            // Update progress at interval
+            float progress = (float)ichan / (float)nchan;
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+            if ((dt > LOAD_DATA_PROGRESS_INTERVAL) || (progress >= 1.0)) {
+                t_start = t_end;
+                progress_callback(progress);
+            }
         }
 
         spdlog::performance("PV preview cube data (rebin) loaded in {:.3f} ms", t.Elapsed().ms());
     } else {
+        // No progress updates for each channel, but should be quick
+        progress_callback(0.1);
         _cube_data = _preview_subimage.get(true);
         spdlog::performance("PV preview cube data (no rebin) loaded in {:.3f} ms", t.Elapsed().ms());
     }
+
+    // Most of time spent loading data, calculating profiles is minimal
+    progress_callback(1.0);
 }
 
 bool PvPreviewCube::CubeLoaded() {

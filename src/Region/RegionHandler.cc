@@ -1034,11 +1034,11 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     RegionState preview_region_state;
     if (!is_image_region) {
         if (!RegionSet(preview_region_id)) {
-            pv_response.set_message("PV preview cube requested for invalid region id.");
+            pv_response.set_message("PV preview cube requested for invalid preview region id.");
             return false;
         }
         if (!IsClosedRegion(preview_region_id)) {
-            pv_response.set_message("PV preview cube requested for invalid region type.");
+            pv_response.set_message("PV preview cube requested for invalid preview region type.");
             return false;
         }
 
@@ -1137,7 +1137,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
             // Get preview image from SubImage and downsampling parameters
             bool cancel(false);
             std::string message;
-            preview_image = preview_cube->GetPreviewImage(sub_image, cancel, message);
+            preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
             if (!preview_image || cancel) {
                 pv_response.set_cancel(cancel);
                 pv_response.set_message(message);
@@ -1178,7 +1178,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
 
     RegionState source_region_state;
     if (!preview_cut->GetNextRegion(source_region_state)) {
-        spdlog::debug("No regions to process");
+        spdlog::debug("No PV cut regions to process");
         return false;
     }
 
@@ -1239,7 +1239,8 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
 
         std::unique_lock pv_cube_lock(_pv_cube_mutex);
         if (preview_cube) {
-            if (preview_cube->GetRegionProfile(box_lc_region, box_mask, profile, max_num_pixels, cancel, message)) {
+            // Progress for loading data here if needed due to prior cancel
+            if (preview_cube->GetRegionProfile(box_lc_region, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
                 spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
                 if (reverse) {
                     preview_data.column(iregion) = profile;
@@ -1262,7 +1263,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
         RemoveRegion(box_region_id);
     }
 
-    progress_callback(1.0);
     RemoveRegion(preview_cut_id);
 
     // Use PvGenerator to set PV image for headers only
