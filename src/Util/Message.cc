@@ -589,7 +589,6 @@ CARTA::RegionHistogramData Message::RegionHistogramData(
     auto* config = message.mutable_config();
     config->set_fixed_num_bins(hist_config.fixed_num_bins);
     config->set_num_bins(hist_config.num_bins);
-    config->set_bin_width(hist_config.bin_width);
     config->set_fixed_bounds(hist_config.fixed_bounds);
     auto* bounds = config->mutable_bounds();
     bounds->set_min(hist_config.min_val);

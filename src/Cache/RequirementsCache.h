@@ -66,7 +66,6 @@ struct HistogramConfig {
     int channel;
     bool fixed_num_bins;
     int num_bins;
-    double bin_width;
     bool fixed_bounds;
     float min_val;
     float max_val;
@@ -76,7 +75,6 @@ struct HistogramConfig {
           channel(CURRENT_Z),
           fixed_num_bins(false),
           num_bins(AUTO_BIN_SIZE),
-          bin_width(0),
           fixed_bounds(false),
           min_val(0),
           max_val(0) {}
@@ -86,15 +84,14 @@ struct HistogramConfig {
           channel(config.channel()),
           fixed_num_bins(config.fixed_num_bins()),
           num_bins(config.num_bins()),
-          bin_width(config.bin_width()),
           fixed_bounds(config.fixed_bounds()),
           min_val(config.bounds().min()),
           max_val(config.bounds().max()) {}
 
     bool operator!=(const HistogramConfig& rhs) const {
         return (coordinate != rhs.coordinate) || (channel != rhs.channel) || (fixed_num_bins != rhs.fixed_num_bins) ||
-               (fixed_bounds != rhs.fixed_bounds) || (num_bins != rhs.num_bins) || !AreEqual(bin_width, rhs.bin_width) ||
-               !AreEqual(min_val, rhs.min_val) || !AreEqual(max_val, rhs.max_val);
+               (fixed_bounds != rhs.fixed_bounds) || (num_bins != rhs.num_bins) || !AreEqual(min_val, rhs.min_val) ||
+               !AreEqual(max_val, rhs.max_val);
     }
 };
 
