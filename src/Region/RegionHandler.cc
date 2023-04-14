@@ -1166,7 +1166,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
     GeneratedImage& pv_image) {
     // Calculate PV preview data using pv cut RegionState (in source image) and PvPreviewCube.
     // This method is the entry point for pv preview updates, where only the pv cut changed.
-    spdlog::debug("Calculate PV preview image");
 
     // Prepare response; if error, add message.
     pv_response.set_success(false);
