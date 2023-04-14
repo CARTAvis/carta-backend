@@ -69,8 +69,8 @@ bool LineBoxRegions::GetFixedPixelRegions(const RegionState& line_region_state, 
         // Number of pixels in line, to determine number of offsets
         auto dx_pixels = line_end[0] - line_start[0];
         auto dy_pixels = line_end[1] - line_start[1];
-        size_t pixel_length = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
-        auto num_offsets = std::max(lround(float(pixel_length - 1) / 2.0), (long)0);
+        double pixel_length = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
+        auto num_offsets = std::max(lround((pixel_length - 1.0) / 2.0), (long)0);
 
         // Offset range [-offset, offset] from center pixel
         std::vector<std::vector<double>> box_centers((num_offsets * 2) + 1);
@@ -130,7 +130,8 @@ bool LineBoxRegions::GetFixedPixelRegions(const RegionState& line_region_state, 
             // Number of regions = pixel length of line
             auto dx_pixels = line_end[0] - line_start[0];
             auto dy_pixels = line_end[1] - line_start[1];
-            int num_regions = int(sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels))) + 1;
+            double pixel_length = sqrt((dx_pixels * dx_pixels) + (dy_pixels * dy_pixels));
+            int num_regions = lround(pixel_length) + 1;
 
             int start(0);
             if (trim_line) {
