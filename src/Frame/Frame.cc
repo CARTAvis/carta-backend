@@ -691,7 +691,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::His
     for (const auto& histogram_config : histogram_configs) {
         // set histogram requirements for histogram widgets
         HistogramConfig config(histogram_config);
-        if (region_id == IMAGE_REGION_ID && config != _image_histogram_configs[0]) {
+        if (region_id == IMAGE_REGION_ID && config != _image_histogram_configs.front()) {
             // only add histogram config for an image which is not the same with the one for image rendering
             _image_histogram_configs.push_back(config);
         } else {
@@ -752,15 +752,14 @@ bool Frame::FillRegionHistogramData(
             BasicStats<float> stats;
             if (GetBasicStats(z, stokes, stats)) {
                 // Set histogram bounds
-                float min_val = histogram_config.fixed_bounds ? histogram_config.min_val : stats.min_val;
-                float max_val = histogram_config.fixed_bounds ? histogram_config.max_val : stats.max_val;
+                HistogramBounds bounds(histogram_config, stats);
 
                 // Fill histogram submessage from Frame cache, if any
-                histogram_filled = FillHistogramFromFrameCache(z, stokes, num_bins, min_val, max_val, histogram);
+                histogram_filled = FillHistogramFromFrameCache(z, stokes, num_bins, bounds, histogram);
 
                 if (!histogram_filled) {
                     Histogram hist;
-                    histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, min_val, max_val, hist);
+                    histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, bounds, hist);
                     FillHistogram(histogram, stats, hist);
                 }
             }
@@ -806,7 +805,7 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
     return false;
 }
 
-bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, float min_val, float max_val, CARTA::Histogram* histogram) {
+bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram) {
     // Get stats and histogram results from cache; also used for cube histogram
     if (num_bins == AUTO_BIN_SIZE) {
         num_bins = AutoBinSize();
@@ -815,9 +814,9 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, float m
     bool have_histogram(false);
     Histogram hist;
     if (z == ALL_Z) {
-        have_histogram = GetCachedCubeHistogram(stokes, num_bins, min_val, max_val, hist);
+        have_histogram = GetCachedCubeHistogram(stokes, num_bins, bounds, hist);
     } else {
-        have_histogram = GetCachedImageHistogram(z, stokes, num_bins, min_val, max_val, hist);
+        have_histogram = GetCachedImageHistogram(z, stokes, num_bins, bounds, hist);
     }
 
     if (have_histogram) {
@@ -868,7 +867,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
     return false;
 }
 
-bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, int min_val, int max_val, Histogram& hist) {
+bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get image histogram results from cache
     int cache_key(CacheKey(z, stokes));
     if (_image_histograms.count(cache_key)) {
@@ -876,7 +875,7 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, int min_val
         auto results_for_key = _image_histograms[cache_key];
 
         for (auto& result : results_for_key) {
-            if (result.GetNbins() == num_bins && AreEqual(result.GetMinVal(), min_val) && AreEqual(result.GetMaxVal(), max_val)) {
+            if (result.GetNbins() == num_bins && AreEqual(result.GetMinVal(), bounds.min) && AreEqual(result.GetMaxVal(), bounds.max)) {
                 hist = result;
                 return true;
             }
@@ -885,12 +884,12 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, int min_val
     return false;
 }
 
-bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, int min_val, int max_val, Histogram& hist) {
+bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get cube histogram results from cache
     if (_cube_histograms.count(stokes)) {
         for (auto& result : _cube_histograms[stokes]) {
             // get from cache if correct num_bins
-            if (result.GetNbins() == num_bins && AreEqual(result.GetMinVal(), min_val) && AreEqual(result.GetMaxVal(), max_val)) {
+            if (result.GetNbins() == num_bins && AreEqual(result.GetMinVal(), bounds.min) && AreEqual(result.GetMaxVal(), bounds.max)) {
                 hist = result;
                 return true;
             }
@@ -899,7 +898,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, int min_val, int ma
     return false;
 }
 
-bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, float min_val, float max_val, Histogram& hist) {
+bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Calculate histogram for given parameters, return results
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -920,12 +919,12 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, f
         }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, min_val, max_val, _image_cache.get(), _image_cache_size);
+        hist = CalcHistogram(num_bins, bounds, _image_cache.get(), _image_cache_size);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
         GetZMatrix(data, z, stokes);
-        hist = CalcHistogram(num_bins, min_val, max_val, data.data(), data.size());
+        hist = CalcHistogram(num_bins, bounds, data.data(), data.size());
     }
 
     // cache image histogram

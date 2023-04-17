@@ -95,6 +95,16 @@ struct HistogramConfig {
     }
 };
 
+struct HistogramBounds {
+    float min;
+    float max;
+
+    HistogramBounds(const HistogramConfig& config, const BasicStats<float>& stats) {
+        min = config.fixed_bounds ? config.min_val : stats.min_val;
+        max = config.fixed_bounds ? config.max_val : stats.max_val;
+    }
+};
+
 struct RegionHistogramConfig {
     std::vector<HistogramConfig> configs;
 };

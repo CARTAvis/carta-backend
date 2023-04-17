@@ -1184,11 +1184,9 @@ bool RegionHandler::GetRegionHistogramData(
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
                 // Set histogram bounds
-                float min_val = hist_config.fixed_bounds ? hist_config.min_val : stats.min_val;
-                float max_val = hist_config.fixed_bounds ? hist_config.max_val : stats.max_val;
-
+                HistogramBounds bounds(hist_config, stats);
                 Histogram hist;
-                if (_histogram_cache[cache_id].GetHistogram(num_bins, min_val, max_val, hist)) {
+                if (_histogram_cache[cache_id].GetHistogram(num_bins, bounds.min, bounds.max, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
                     FillHistogram(histogram, stats, hist);
 
@@ -1216,11 +1214,10 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Set histogram bounds
-        float min_val = hist_config.fixed_bounds ? hist_config.min_val : stats.min_val;
-        float max_val = hist_config.fixed_bounds ? hist_config.max_val : stats.max_val;
+        HistogramBounds bounds(hist_config, stats);
 
         // Calculate and cache histogram for number of bins
-        Histogram histo = CalcHistogram(num_bins, min_val, max_val, data[stokes].data(), data[stokes].size());
+        Histogram histo = CalcHistogram(num_bins, bounds, data[stokes].data(), data[stokes].size());
         _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
