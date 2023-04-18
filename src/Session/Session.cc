@@ -1781,7 +1781,6 @@ bool Session::SendPvPreview(int file_id, int region_id, bool preview_region) {
         }
     };
 
-    spdlog::performance("Request pv preview");
     return _region_handler->UpdatePvPreviewImage(file_id, region_id, preview_region, pv_preview_callback);
 }
 
@@ -1948,8 +1947,8 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);
 
-    // uWS::Loop::defer(function) is the only thread-safe function, use it to defer the calling of a function to the thread that runs the
-    // Loop.
+    // uWS::Loop::defer(function) is the only thread-safe function.
+    // Use it to defer the calling of a function to the thread that runs the Loop.
     if (_loop && _socket) {
         _loop->defer([&]() {
             std::pair<std::vector<char>, bool> msg;
