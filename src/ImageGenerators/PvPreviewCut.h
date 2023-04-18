@@ -21,13 +21,16 @@ struct PreviewCutParameters {
     int region_id;
     int width;
     bool reverse;
+    CARTA::CompressionType compression;
+    float quality;
 
     PreviewCutParameters() : file_id(-1), region_id(-1) {}
-    PreviewCutParameters(int file_id_, int region_id_, int width_, bool reverse_)
-        : file_id(file_id_), region_id(region_id_), width(width_), reverse(reverse_) {}
+    PreviewCutParameters(int file_id_, int region_id_, int width_, bool reverse_, CARTA::CompressionType compression_, float quality_)
+        : file_id(file_id_), region_id(region_id_), width(width_), reverse(reverse_), compression(compression_), quality(quality_) {}
 
     bool operator==(const PreviewCutParameters& other) {
-        return (HasFileRegionIds(other.file_id, other.region_id) && width == other.width && reverse == other.reverse);
+        return (HasFileRegionIds(other.file_id, other.region_id) && width == other.width && reverse == other.reverse &&
+                compression == other.compression && quality == other.quality);
     }
 
     bool HasFileRegionIds(int file_id_, int region_id_) {
@@ -51,6 +54,10 @@ public:
     void AddRegion(const RegionState& region_state);
     bool GetNextRegion(RegionState& region_state);
     void ClearRegionQueue();
+
+    // Apply compression if set in parameters
+    bool FillCompressedPreviewData(
+        CARTA::PvPreviewData* preview_data, std::vector<float>& image_data, int width, int height, bool decrease_quality);
 
 private:
     // PV cut settings; includes per-preview reverse flag for updates

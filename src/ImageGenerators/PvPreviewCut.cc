@@ -6,6 +6,8 @@
 
 #include "PvPreviewCut.h"
 
+#include "DataStream/Compression.h"
+
 namespace carta {
 
 PvPreviewCut::PvPreviewCut(const PreviewCutParameters& parameters, const RegionState& region_state) : _cut_parameters(parameters) {
@@ -60,6 +62,42 @@ void PvPreviewCut::ClearRegionQueue() {
     while (!_preview_region_states.empty()) {
         _preview_region_states.pop();
     }
+}
+
+bool PvPreviewCut::FillCompressedPreviewData(
+    CARTA::PvPreviewData* preview_data, std::vector<float>& image_data, int width, int height, bool decrease_quality) {
+    // Compress data with given shape and fill PvPreviewData message. Decrease quality setting if flag set.
+    // Returns false if compression type unsupported.
+    auto compression_type = _cut_parameters.compression;
+    int quality = lround(_cut_parameters.quality);
+
+    if (compression_type == CARTA::CompressionType::NONE) {
+        // Complete message
+        preview_data->set_image_data(image_data.data(), image_data.size() * sizeof(float));
+        preview_data->set_compression_type(compression_type);
+        preview_data->set_compression_quality(quality);
+        return true;
+    } else if (compression_type == CARTA::CompressionType::ZFP) {
+        // Encode NaN values
+        auto nan_encodings = GetNanEncodingsBlock(image_data, 0, width, height);
+
+        // Compress preview image data
+        std::vector<char> compression_buffer;
+        size_t compressed_size;
+        if (decrease_quality) {
+            quality -= 2;
+        }
+        Compress(image_data, 0, compression_buffer, compressed_size, width, height, quality);
+
+        // Complete message
+        preview_data->set_image_data(compression_buffer.data(), compressed_size);
+        preview_data->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+        preview_data->set_compression_type(compression_type);
+        preview_data->set_compression_quality(quality);
+        return true;
+    }
+
+    return false; // unsupported compression
 }
 
 } // namespace carta

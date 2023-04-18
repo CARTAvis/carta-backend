@@ -86,7 +86,7 @@ public:
     // Update PV preview image when PV cut region (region_id) changes
     bool UpdatePvPreviewRegion(int file_id, int region_id, RegionState& region_state);
     bool UpdatePvPreviewImage(
-        int file_id, int region_id, bool no_histogram, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
+        int file_id, int region_id, bool quick_update, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
     void StopPvCalc(int file_id);
     void StopPvPreview(int preview_id);
     void ClosePvPreview(int preview_id);
@@ -172,7 +172,7 @@ private:
     bool CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
         std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
-    bool CalculatePvPreviewImage(int frame_id, int preview_id, bool no_histogram, std::shared_ptr<PvPreviewCut> preview_cut,
+    bool CalculatePvPreviewImage(int frame_id, int preview_id, bool quick_update, std::shared_ptr<PvPreviewCut> preview_cut,
         std::shared_ptr<PvPreviewCube> preview_cube, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
         GeneratedImage& pv_image);
 

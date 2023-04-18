@@ -1028,6 +1028,8 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     int preview_region_id(preview_settings.region_id());
     int rebin_xy = std::max(preview_settings.rebin_xy(), 1);
     int rebin_z = std::max(preview_settings.rebin_z(), 1);
+    auto compression = preview_settings.compression_type();
+    float quality = preview_settings.compression_quality();
 
     // If not image region, check preview region and get its region state.
     bool is_image_region(preview_region_id == IMAGE_REGION_ID);
@@ -1048,7 +1050,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     // Save cut and cube settings for updates, including current pv cut region state
     RegionState region_state = GetRegion(region_id)->GetRegionState();
     auto stokes = frame->CurrentStokes();
-    PreviewCutParameters cut_parameters(file_id, region_id, width, reverse);
+    PreviewCutParameters cut_parameters(file_id, region_id, width, reverse, compression, quality);
     PreviewCubeParameters cube_parameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_region_state);
 
     // Update cut and/or cube settings for existing preview ID
@@ -1157,11 +1159,11 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     }
     spdlog::performance("PV preview cube and frame in {:.3f} ms", t.Elapsed().ms());
 
-    bool no_histogram(false);
-    return CalculatePvPreviewImage(frame_id, preview_id, no_histogram, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
+    bool quick_update(false);
+    return CalculatePvPreviewImage(frame_id, preview_id, quick_update, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
 }
 
-bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool no_histogram, std::shared_ptr<PvPreviewCut> preview_cut,
+bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool quick_update, std::shared_ptr<PvPreviewCut> preview_cut,
     std::shared_ptr<PvPreviewCube> preview_cube, GeneratorProgressCallback progress_callback, CARTA::PvResponse& pv_response,
     GeneratedImage& pv_image) {
     // Calculate PV preview data using pv cut RegionState (in source image) and PvPreviewCube.
@@ -1206,27 +1208,32 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
     }
 
     // Initialize preview data then set with box region profiles
-    casacore::Matrix<float> preview_data;
+    std::vector<float> preview_data;
     size_t num_regions(box_regions.size());
     auto depth = preview_frame->Depth();
+
     auto reverse = preview_cut->GetReverse();
+    casacore::IPosition data_shape;
     if (reverse) {
-        preview_data.resize(depth, num_regions);
+        data_shape = casacore::IPosition(2, depth, num_regions);
     } else {
-        preview_data.resize(num_regions, depth);
+        data_shape = casacore::IPosition(2, num_regions, depth);
     }
-    preview_data = FLOAT_NAN;
+
+    // Set preview data as a matrix row/column (shared memory), initialized to NaN if any region profile fails
+    preview_data.resize(data_shape.product());
+    casacore::Matrix<float> preview_data_matrix(data_shape, preview_data.data(), casacore::StorageInitPolicy::SHARE);
+    preview_data_matrix = FLOAT_NAN;
+
+    // Do not collide with line spatial profile (coord sys copy crash)
+    std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
 
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
-        // Do not collide with line spatial profile (coord sys copy crash and memory allocation issues)
-        std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
-
         // Set box region with next temp region id
         int box_region_id(TEMP_REGION_ID);
         SetRegion(box_region_id, box_regions[iregion], preview_frame_csys);
 
         if (!RegionSet(box_region_id)) {
-            profile_lock.unlock();
             continue;
         }
 
@@ -1253,9 +1260,9 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
             if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
                 spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
                 if (reverse) {
-                    preview_data.column(iregion) = profile;
+                    preview_data_matrix.column(iregion) = profile;
                 } else {
-                    preview_data.row(iregion) = profile;
+                    preview_data_matrix.row(iregion) = profile;
                 }
             }
         } else {
@@ -1272,46 +1279,48 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
         }
 
         RemoveRegion(box_region_id);
-        profile_lock.unlock();
     }
 
+    profile_lock.unlock();
     RemoveRegion(preview_cut_id);
 
     // Use PvGenerator to set PV image for headers only
     casacore::Matrix<float> no_preview_data; // do not copy actual preview data into image
-    auto data_shape = preview_data.shape();
-    int start_channel(0); // spectral range applied in preview image
+    int start_channel(0);                    // spectral range applied in preview image
     int stokes(preview_cube->GetStokes());
     PvGenerator pv_generator;
     pv_generator.SetFileIdName(frame_id, preview_id, preview_cube->GetSourceFileName(), true);
 
     if (pv_generator.GetPvImage(preview_frame, no_preview_data, data_shape, increment, start_channel, stokes, reverse, pv_image, error)) {
-        // Access preview data by pointer and size
-        auto data_size = preview_data.size();
-        bool delete_storage(false); // remains false if array is contiguous in memory
-        const float* data_ptr = preview_data.getStorage(delete_storage);
+        int width = data_shape(0);
+        int height = data_shape(1);
 
-        // Histogram bounds
-        int num_bins = int(std::max(sqrt(data_shape(0) * data_shape(1)), 2.0));
-        BasicStats<float> basic_stats;
-        CalcBasicStats(basic_stats, data_ptr, data_size);
-        Histogram hist = CalcHistogram(num_bins, basic_stats, data_ptr, data_size);
-        CARTA::FloatBounds hist_bounds;
-        hist_bounds.set_min(hist.GetMinVal());
-        hist_bounds.set_max(hist.GetMaxVal());
+        // Compress preview data if requested, else just fill message
+        if (preview_cut->FillCompressedPreviewData(preview_data_message, preview_data, width, height, quick_update)) {
+            // Calculate histogram bounds
+            int num_bins = int(std::max(sqrt(data_shape(0) * data_shape(1)), 2.0));
+            BasicStats<float> basic_stats;
+            CalcBasicStats(basic_stats, preview_data.data(), preview_data.size());
+            Histogram hist = CalcHistogram(num_bins, basic_stats, preview_data.data(), preview_data.size());
+            CARTA::FloatBounds hist_bounds;
+            hist_bounds.set_min(hist.GetMinVal());
+            hist_bounds.set_max(hist.GetMaxVal());
 
-        // Complete PvResponse
-        pv_response.set_success(true);
-        preview_data_message->set_image_data(data_ptr, data_size * sizeof(float));
-        preview_data.freeStorage(data_ptr, delete_storage);
+            // Complete PvResponse
+            pv_response.set_success(true);
+            preview_data_message->set_width(width);
+            preview_data_message->set_height(height);
+            *preview_data_message->mutable_histogram_bounds() = hist_bounds;
 
-        preview_data_message->set_width(data_shape(0));
-        preview_data_message->set_height(data_shape(1));
-        *preview_data_message->mutable_histogram_bounds() = hist_bounds;
-
-        if (!no_histogram) {
-            auto preview_histogram = preview_data_message->mutable_histogram();
-            FillHistogram(preview_histogram, basic_stats, hist);
+            // Add Histogram if not doing quick update
+            if (!quick_update) {
+                auto preview_histogram = preview_data_message->mutable_histogram();
+                FillHistogram(preview_histogram, basic_stats, hist);
+            }
+        } else {
+            pv_response.set_success(false);
+            pv_response.set_message("Preview data compression failed: unsupported type");
+            return false;
         }
     } else {
         pv_response.set_success(false);

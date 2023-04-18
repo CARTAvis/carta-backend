@@ -1765,6 +1765,7 @@ bool Session::SendPvPreview(int file_id, int region_id, bool preview_region) {
     auto pv_preview_callback = [&](CARTA::PvResponse& response, GeneratedImage& pv_image) {
         if (response.has_preview_data()) {
             auto data_message = response.mutable_preview_data();
+            auto data_compression = data_message->compression_type();
             if (pv_image.image) {
                 // Complete data stream message with pv image file info
                 CARTA::FileInfoExtended file_info_extended;
@@ -1775,9 +1776,10 @@ bool Session::SendPvPreview(int file_id, int region_id, bool preview_region) {
                 }
             }
 
-            // Send PvPreviewData with preview id, even if failed
             spdlog::performance("Update pv preview in {:.3f} ms", t.Elapsed().ms());
-            SendEvent(CARTA::EventType::PV_PREVIEW_DATA, 0, *data_message);
+            // Send PvPreviewData with preview id, even if failed.
+            // Only compress message if data is not compressed.
+            SendEvent(CARTA::EventType::PV_PREVIEW_DATA, 0, *data_message, data_compression == CARTA::CompressionType::NONE);
         }
     };
 
