@@ -140,7 +140,7 @@ RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state
     return RegionState(preview_frame_id, CARTA::RegionType::LINE, preview_line_points, source_region_state.rotation);
 }
 
-bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box, const casacore::ArrayLattice<casacore::Bool>& mask,
     GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
     // Set spectral profile and maximum number of pixels for region.
     // Returns false if no preview image or region cannot be applied.
@@ -153,9 +153,8 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
         return false;
     }
 
-    if (!region || !_preview_image) {
+    if (!_preview_image) {
         // Should not be here if no preview image (GetPreviewImage first).
-        // Most likely LCRegion outside bounding box.
         return false;
     }
 
@@ -168,9 +167,8 @@ bool PvPreviewCube::GetRegionProfile(std::shared_ptr<casacore::LCRegion> region,
         }
     }
 
-    auto bounding_box = region->boundingBox();
-    auto box_start = bounding_box.start();
-    auto box_length = bounding_box.length();
+    auto box_start = region_bounding_box.start();
+    auto box_length = region_bounding_box.length();
 
     // Initialize profile
     size_t nchan = box_length(_preview_image->coordinates().spectralAxisNumber());

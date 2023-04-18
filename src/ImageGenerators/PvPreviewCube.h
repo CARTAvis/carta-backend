@@ -71,7 +71,7 @@ public:
 
     // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels.
     // Include progress callback in case data must be loaded
-    bool GetRegionProfile(std::shared_ptr<casacore::LCRegion> region, const casacore::ArrayLattice<casacore::Bool>& mask,
+    bool GetRegionProfile(const casacore::Slicer& region_bounding_box, const casacore::ArrayLattice<casacore::Bool>& mask,
         GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message);
 
     // Cancel preview image and cube data cache.
