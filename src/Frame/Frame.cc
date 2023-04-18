@@ -1608,7 +1608,7 @@ bool Frame::GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubIm
     return _loader->GetSubImage(stokes_slicer, sub_image);
 }
 
-bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data) {
+bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance) {
     // Get image data with a region applied
     Timer t;
     casacore::SubImage<float> sub_image;
@@ -1654,7 +1654,9 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
             }
         }
 
-        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+        if (report_performance) {
+            spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+        }
 
         return true;
     } catch (casacore::AipsError& err) {
