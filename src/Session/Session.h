@@ -149,7 +149,7 @@ public:
     void CancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
-        _file_settings.AddCursorSetting(message, request_id);
+        _cursor_settings.AddCursorSetting(message, request_id);
     }
     void ImageChannelLock(int fileId) {
         _image_channel_mutexes[fileId].lock();
@@ -212,8 +212,9 @@ public:
     // RegionDataStreams
     void RegionDataStreams(int file_id, int region_id);
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
+    bool SendPvPreview(int file_id, int region_id, bool preview_region);
 
-    CursorSettings _file_settings;
+    CursorSettings _cursor_settings;
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(
@@ -264,7 +265,7 @@ protected:
     void SendSpatialProfileDataByRegionId(int region_id);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
-    bool SendPvPreview(int file_id, int region_id, bool preview_region);
+
     void UpdateImageData(int file_id, bool send_image_histogram, bool z_changed, bool stokes_changed);
     void UpdateRegionData(int file_id, int region_id, bool z_changed, bool stokes_changed);
     bool SendVectorFieldData(int file_id);

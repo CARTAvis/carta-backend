@@ -114,7 +114,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _animation_active(false),
-      _file_settings(this),
+      _cursor_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
     _histogram_progress = 1.0;
     _ref_count = 0;
@@ -628,7 +628,7 @@ bool Session::OnOpenFile(
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
     CheckCancelAnimationOnFileClose(message.file_id());
-    _file_settings.ClearSettings(message.file_id());
+    _cursor_settings.ClearSettings(message.file_id());
     DeleteFrame(message.file_id());
 }
 
@@ -807,9 +807,11 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     }
 
     if (success) {
-        // Update pv preview (if region is pv cut for preview)
+        // Move data streams off main thread by queueing tasks
         if (_region_handler->UpdatePvPreviewRegion(file_id, region_id, region_state)) {
-            SendPvPreview(file_id, region_id, preview_region);
+            // Update pv preview (if region is pv cut for preview)
+            OnMessageTask* tsk = new PvPreviewUpdateTask(this, ALL_FILES, region_id, preview_region);
+            ThreadManager::QueueTask(tsk);
         }
 
         if (!preview_region) {
@@ -1948,6 +1950,7 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);
+    // spdlog::debug("***** Queued message type={} queue size={}", event_type, _out_msgs.size());
 
     // uWS::Loop::defer(function) is the only thread-safe function.
     // Use it to defer the calling of a function to the thread that runs the Loop.
