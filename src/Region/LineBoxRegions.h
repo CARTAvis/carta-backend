@@ -48,8 +48,9 @@ private:
     // Convert increment (in arcsec) to different unit depending on scale
     casacore::Quantity AdjustIncrementUnit(double offset_increment, size_t num_offsets);
 
-    // Lock pixel-MVDirection conversion; static variable used in casacore::DirectionCoordinate
-    std::mutex _mvdir_mutex;
+    // Lock casacore::DirectionCoordinate pixel-MVDirection conversion.
+    // Need to lock across instances when calculating PV and line spatial profiles concurrently.
+    inline static std::mutex _mvdir_mutex;
 };
 
 } // namespace carta

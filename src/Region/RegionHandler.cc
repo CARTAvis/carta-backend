@@ -1218,28 +1218,39 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
     preview_data = FLOAT_NAN;
 
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
+        // Do not collide with line spatial profile (coord sys copy crash and memory allocation issues)
+        std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
+
         // Set box region with next temp region id
         int box_region_id(TEMP_REGION_ID);
         SetRegion(box_region_id, box_regions[iregion], preview_frame_csys);
 
         if (!RegionSet(box_region_id)) {
+            profile_lock.unlock();
             continue;
         }
 
         // Get box region LCRegion and mask
+        bool cancel(false);
+        casacore::Slicer box_bounding_box;
         auto box_lc_region = ApplyRegionToFile(box_region_id, frame_id);
+
+        if (!box_lc_region) {
+            continue;
+        }
+
+        auto bounding_box = box_lc_region->boundingBox();
         auto box_mask = _regions.at(box_region_id)->GetImageRegionMask(frame_id);
 
         // Use PvPreviewCube to calculate profile with lcregion and mask
         std::vector<float> profile;
         double max_num_pixels(0.0);
-        bool cancel(false);
         std::string message;
 
         std::unique_lock pv_cube_lock(_pv_cube_mutex);
         if (preview_cube) {
             // Progress for loading data here if needed due to prior cancel
-            if (preview_cube->GetRegionProfile(box_lc_region, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
+            if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
                 spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
                 if (reverse) {
                     preview_data.column(iregion) = profile;
@@ -1252,14 +1263,16 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool n
             cancel = true;
             message = "PV image preview cancelled.";
         }
+        pv_cube_lock.unlock();
+
         if (cancel) {
             pv_response.set_message(message);
             pv_response.set_cancel(true);
             return false;
         }
-        pv_cube_lock.unlock();
 
         RemoveRegion(box_region_id);
+        profile_lock.unlock();
     }
 
     RemoveRegion(preview_cut_id);
@@ -2555,9 +2568,9 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
         std::shared_ptr<casacore::LCRegion> lc_region;
         std::shared_lock frame_lock(_frames.at(file_id)->GetActiveTaskMutex());
         if (ApplyRegionToFile(region_id, file_id, z_range, stokes_index, lc_region, stokes_region)) {
-            // Get region data
+            // Get region data (report_performance = false, too much output)
             std::vector<float> region_data;
-            if (_frames.at(file_id)->GetRegionData(stokes_region, region_data)) {
+            if (_frames.at(file_id)->GetRegionData(stokes_region, region_data, false)) {
                 // Get BasicStats
                 BasicStats<float> basic_stats;
                 CalcBasicStats(basic_stats, region_data.data(), region_data.size());
