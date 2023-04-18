@@ -34,31 +34,31 @@ int PvPreviewCut::GetReverse() {
 }
 
 bool PvPreviewCut::HasQueuedRegion() {
-    std::lock_guard<std::mutex> guard(preview_region_mutex);
-    return (!preview_region_states.empty());
+    std::lock_guard<std::mutex> guard(_preview_region_mutex);
+    return (!_preview_region_states.empty());
 }
 
 void PvPreviewCut::AddRegion(const RegionState& region_state) {
-    std::lock_guard<std::mutex> guard(preview_region_mutex);
-    preview_region_states.push(region_state);
+    std::lock_guard<std::mutex> guard(_preview_region_mutex);
+    _preview_region_states.push(region_state);
 }
 
 bool PvPreviewCut::GetNextRegion(RegionState& region_state) {
     // Remove and return next region state in queue.
     // Returns false if no more regions.
-    std::lock_guard<std::mutex> guard(preview_region_mutex);
-    if (preview_region_states.empty()) {
+    std::lock_guard<std::mutex> guard(_preview_region_mutex);
+    if (_preview_region_states.empty()) {
         return false;
     }
-    region_state = preview_region_states.front();
-    preview_region_states.pop();
+    region_state = _preview_region_states.front();
+    _preview_region_states.pop();
     return true;
 }
 
 void PvPreviewCut::ClearRegionQueue() {
-    std::lock_guard<std::mutex> guard(preview_region_mutex);
-    while (!preview_region_states.empty()) {
-        preview_region_states.pop();
+    std::lock_guard<std::mutex> guard(_preview_region_mutex);
+    while (!_preview_region_states.empty()) {
+        _preview_region_states.pop();
     }
 }
 

@@ -59,8 +59,8 @@ private:
     // PV cut region RegionStates (in source image) as the cut is moved.
     // The region states are queued in order, then dequeued to set the region and create each PV preview image.
     // The last region is kept for preview updates when other preview parameters change (not the cut itself).
-    std::mutex preview_region_mutex;
-    std::queue<RegionState> preview_region_states;
+    std::mutex _preview_region_mutex;
+    std::queue<RegionState> _preview_region_states;
 };
 
 } // namespace carta
