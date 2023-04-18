@@ -15,13 +15,6 @@
 
 #include "Image.h"
 
-// computed stokes
-#define COMPUTE_STOKES_PTOTAL StokesValues[CARTA::PolarizationType::Ptotal]     // Total polarization intensity: (Q^2+U^2+V^2)^(1/2)
-#define COMPUTE_STOKES_PLINEAR StokesValues[CARTA::PolarizationType::Plinear]   // Linear polarization intensity: (Q^2+U^2)^(1/2)
-#define COMPUTE_STOKES_PFTOTAL StokesValues[CARTA::PolarizationType::PFtotal]   // Fractional total polarization intensity: Ptotal/I
-#define COMPUTE_STOKES_PFLINEAR StokesValues[CARTA::PolarizationType::PFlinear] // Fractional linear polarization intensity: Plinear/I
-#define COMPUTE_STOKES_PANGLE StokesValues[CARTA::PolarizationType::Pangle]     // Polarization angle: (tan^-1(U/Q))/2
-
 // stokes types and value conversion
 static std::unordered_map<CARTA::PolarizationType, int> StokesValues{{CARTA::PolarizationType::I, 1}, {CARTA::PolarizationType::Q, 2},
     {CARTA::PolarizationType::U, 3}, {CARTA::PolarizationType::V, 4}, {CARTA::PolarizationType::RR, 5}, {CARTA::PolarizationType::LL, 6},
@@ -29,6 +22,13 @@ static std::unordered_map<CARTA::PolarizationType, int> StokesValues{{CARTA::Pol
     {CARTA::PolarizationType::XY, 11}, {CARTA::PolarizationType::YX, 12}, {CARTA::PolarizationType::Ptotal, 13},
     {CARTA::PolarizationType::Plinear, 14}, {CARTA::PolarizationType::PFtotal, 15}, {CARTA::PolarizationType::PFlinear, 16},
     {CARTA::PolarizationType::Pangle, 17}};
+
+// computed stokes using StokesValues
+#define COMPUTE_STOKES_PTOTAL StokesValues[CARTA::PolarizationType::Ptotal]     // Total polarization intensity: (Q^2+U^2+V^2)^(1/2)
+#define COMPUTE_STOKES_PLINEAR StokesValues[CARTA::PolarizationType::Plinear]   // Linear polarization intensity: (Q^2+U^2)^(1/2)
+#define COMPUTE_STOKES_PFTOTAL StokesValues[CARTA::PolarizationType::PFtotal]   // Fractional total polarization intensity: Ptotal/I
+#define COMPUTE_STOKES_PFLINEAR StokesValues[CARTA::PolarizationType::PFlinear] // Fractional linear polarization intensity: Plinear/I
+#define COMPUTE_STOKES_PANGLE StokesValues[CARTA::PolarizationType::Pangle]     // Polarization angle: (tan^-1(U/Q))/2
 
 static std::unordered_map<int, CARTA::PolarizationType> StokesTypes{{1, CARTA::PolarizationType::I}, {2, CARTA::PolarizationType::Q},
     {3, CARTA::PolarizationType::U}, {4, CARTA::PolarizationType::V}, {5, CARTA::PolarizationType::RR}, {6, CARTA::PolarizationType::LL},
