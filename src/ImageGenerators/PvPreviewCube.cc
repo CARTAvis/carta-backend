@@ -143,16 +143,7 @@ RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state
 bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box, const casacore::ArrayLattice<casacore::Bool>& mask,
     GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
     // Set spectral profile and maximum number of pixels for region.
-    // Returns false if no preview image or region cannot be applied.
-    cancel = false;
-
-    if (_stop_cube) {
-        cancel = true;
-        message = _cancel_message;
-        _stop_cube = false;
-        return false;
-    }
-
+    // Returns false if no preview image
     if (!_preview_image) {
         // Should not be here if no preview image (GetPreviewImage first).
         return false;
@@ -176,13 +167,6 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
     std::vector<double> npix_per_chan(nchan, 0.0);
 
     for (size_t ichan = 0; ichan < nchan; ++ichan) {
-        if (_stop_cube) {
-            cancel = true;
-            message = _cancel_message;
-            _stop_cube = false;
-            return false;
-        }
-
         double chan_sum(0.0);
         for (size_t ix = 0; ix < box_length[0]; ++ix) {
             for (size_t iy = 0; iy < box_length[1]; ++iy) {
@@ -223,7 +207,7 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
     // First check if user cancelled.
     if (_stop_cube) {
         cancel = true;
-        _stop_cube = false;
+        _stop_cube = false; // reset for next preview
         return;
     }
 
@@ -263,8 +247,8 @@ void PvPreviewCube::LoadCubeData(GeneratorProgressCallback progress_callback, bo
             // Check for cancel
             if (_stop_cube) {
                 cancel = true;
-                _stop_cube = false;
                 _cube_data.resize();
+                _stop_cube = false; // reset for next preview
                 return;
             }
 
