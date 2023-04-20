@@ -22,15 +22,23 @@ struct PreviewCutParameters {
     int width;
     bool reverse;
     CARTA::CompressionType compression;
-    float quality;
+    float image_quality;
+    float animation_quality;
 
     PreviewCutParameters() : file_id(-1), region_id(-1) {}
-    PreviewCutParameters(int file_id_, int region_id_, int width_, bool reverse_, CARTA::CompressionType compression_, float quality_)
-        : file_id(file_id_), region_id(region_id_), width(width_), reverse(reverse_), compression(compression_), quality(quality_) {}
+    PreviewCutParameters(int file_id_, int region_id_, int width_, bool reverse_, CARTA::CompressionType compression_, float image_quality_,
+        float animation_quality_)
+        : file_id(file_id_),
+          region_id(region_id_),
+          width(width_),
+          reverse(reverse_),
+          compression(compression_),
+          image_quality(image_quality_),
+          animation_quality(animation_quality_) {}
 
     bool operator==(const PreviewCutParameters& other) {
         return (HasFileRegionIds(other.file_id, other.region_id) && width == other.width && reverse == other.reverse &&
-                compression == other.compression && quality == other.quality);
+                compression == other.compression && image_quality == other.image_quality && animation_quality == other.animation_quality);
     }
 
     bool HasFileRegionIds(int file_id_, int region_id_) {

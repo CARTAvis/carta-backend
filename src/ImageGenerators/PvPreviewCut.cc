@@ -65,11 +65,11 @@ void PvPreviewCut::ClearRegionQueue() {
 }
 
 bool PvPreviewCut::FillCompressedPreviewData(
-    CARTA::PvPreviewData* preview_data, std::vector<float>& image_data, int width, int height, bool decrease_quality) {
-    // Compress data with given shape and fill PvPreviewData message. Decrease quality setting if flag set.
+    CARTA::PvPreviewData* preview_data, std::vector<float>& image_data, int width, int height, bool is_animation) {
+    // Compress data with given shape using image or animation quality (is_animation parameter) and fill PvPreviewData message.
     // Returns false if compression type unsupported.
     auto compression_type = _cut_parameters.compression;
-    int quality = lround(_cut_parameters.quality);
+    int quality = is_animation ? lround(_cut_parameters.animation_quality) : lround(_cut_parameters.image_quality);
 
     if (compression_type == CARTA::CompressionType::NONE) {
         // Complete message
@@ -84,9 +84,6 @@ bool PvPreviewCut::FillCompressedPreviewData(
         // Compress preview image data
         std::vector<char> compression_buffer;
         size_t compressed_size;
-        if (decrease_quality) {
-            quality -= 2;
-        }
         Compress(image_data, 0, compression_buffer, compressed_size, width, height, quality);
 
         // Complete message

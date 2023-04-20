@@ -959,7 +959,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     // Unpack request message and send it along
     int file_id(pv_request.file_id());
     int region_id(pv_request.region_id());
-    int width(pv_request.width());
+    int line_width(pv_request.width());
     bool reverse(pv_request.reverse());
     bool keep(pv_request.keep());
     AxisRange spectral_range;
@@ -1001,7 +1001,7 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     }
 
     // 4. Valid width
-    if (width < 1 || width > 20) {
+    if (line_width < 1 || line_width > 20) {
         pv_response.set_message("Invalid averaging width.");
         return false;
     }
@@ -1012,14 +1012,15 @@ bool RegionHandler::CalculatePvImage(const CARTA::PvRequest& pv_request, std::sh
     }
 
     if (is_preview) {
-        return CalculatePvPreviewImage(file_id, region_id, width, spectral_range, reverse, frame, pv_request.preview_settings(),
+        return CalculatePvPreviewImage(file_id, region_id, line_width, spectral_range, reverse, frame, pv_request.preview_settings(),
             progress_callback, pv_response, pv_image);
     } else {
-        return CalculatePvImage(file_id, region_id, width, spectral_range, reverse, keep, frame, progress_callback, pv_response, pv_image);
+        return CalculatePvImage(
+            file_id, region_id, line_width, spectral_range, reverse, keep, frame, progress_callback, pv_response, pv_image);
     }
 }
 
-bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int width, AxisRange& spectral_range, bool reverse,
+bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line_width, AxisRange& spectral_range, bool reverse,
     std::shared_ptr<Frame>& frame, const CARTA::PvPreviewSettings& preview_settings, GeneratorProgressCallback progress_callback,
     CARTA::PvResponse& pv_response, GeneratedImage& pv_image) {
     // Find or set cached preview cube, then continue.
@@ -1029,7 +1030,8 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     int rebin_xy = std::max(preview_settings.rebin_xy(), 1);
     int rebin_z = std::max(preview_settings.rebin_z(), 1);
     auto compression = preview_settings.compression_type();
-    float quality = preview_settings.compression_quality();
+    float image_quality = preview_settings.image_compression_quality();
+    float animation_quality = preview_settings.animation_compression_quality();
 
     // If not image region, check preview region and get its region state.
     bool is_image_region(preview_region_id == IMAGE_REGION_ID);
@@ -1050,14 +1052,14 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
     // Save cut and cube settings for updates, including current pv cut region state
     RegionState region_state = GetRegion(region_id)->GetRegionState();
     auto stokes = frame->CurrentStokes();
-    PreviewCutParameters cut_parameters(file_id, region_id, width, reverse, compression, quality);
+    PreviewCutParameters cut_parameters(file_id, region_id, line_width, reverse, compression, image_quality, animation_quality);
     PreviewCubeParameters cube_parameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_region_state);
 
-    // Update cut and/or cube settings for existing preview ID
-    // Set unique locks so queued preview images are completed before update
+    // Update cut and/or cube settings for existing preview ID.
+    // Set unique locks so in-progress preview images are completed before update.
     std::unique_lock pv_cut_lock(_pv_cut_mutex);
     if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end() && _pv_preview_cuts.at(preview_id)->HasSameParameters(cut_parameters)) {
-        // Same preview cut settings, just set this RegionState
+        // Same preview cut settings, clear queue and set this RegionState
         _pv_preview_cuts.at(preview_id)->AddRegion(region_state);
     } else {
         // Preview cut settings changed, set new PvPreviewCut
@@ -1100,6 +1102,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
         if (!preview_image) {
             // Apply preview region or slicer to get SubImage, and set preview region origin.
             casacore::SubImage<float> sub_image;
+            std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
             if (is_image_region) {
                 // Apply slicer to source image to get SubImage
                 auto slicer = frame->GetImageSlicer(spectral_range, frame->CurrentStokes());
@@ -1140,6 +1143,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
             bool cancel(false);
             std::string message;
             preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
+            profile_lock.unlock();
             if (!preview_image || cancel) {
                 pv_response.set_cancel(cancel);
                 pv_response.set_message(message);
@@ -1151,6 +1155,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int widt
         auto preview_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(preview_image, ""));
         auto preview_session_id(-1);
         auto preview_frame = std::make_shared<Frame>(preview_session_id, preview_loader, "");
+
         if (!preview_frame->IsValid()) {
             pv_response.set_message("Failed to load image from preview settings.");
         }
@@ -1179,7 +1184,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
 
     RegionState source_region_state;
     if (!preview_cut->GetNextRegion(source_region_state)) {
-        spdlog::debug("No PV cut regions to process");
+        spdlog::info("No PV cut regions queued for pv preview");
         return false;
     }
 
@@ -1194,13 +1199,13 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     }
 
     LineBoxRegions line_box_regions;
-    auto width = preview_cut->GetWidth();
+    auto line_width = preview_cut->GetWidth();
     casacore::Quantity increment;
     std::vector<RegionState> box_regions;
     std::string error;
 
-    // Approximate preview cut region with width as series of box regions
-    if (!line_box_regions.GetLineBoxRegions(preview_cut_state, preview_frame_csys, width, increment, box_regions, error)) {
+    // Approximate preview cut region with line width as series of box regions
+    if (!line_box_regions.GetLineBoxRegions(preview_cut_state, preview_frame_csys, line_width, increment, box_regions, error)) {
         spdlog::debug("GetLineBoxRegions failed!");
         spdlog::error(error);
         pv_response.set_message(error);
@@ -1258,7 +1263,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         if (preview_cube) {
             // Progress for loading data here if needed due to prior cancel
             if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
-                spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
+                // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
                 if (reverse) {
                     preview_data_matrix.column(iregion) = profile;
                 } else {
@@ -1441,7 +1446,7 @@ bool RegionHandler::UpdatePvPreviewImage(
                 return preview_updated;
             }
 
-            while (preview_cut->HasQueuedRegion()) {
+            if (preview_cut->HasQueuedRegion()) {
                 // Generate preview for one region state in queue
                 spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
                 GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
@@ -1470,6 +1475,9 @@ void RegionHandler::StopPvPreview(int preview_id) {
     // Cancel any preview cube and pv image calculations in progress
     if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
         _pv_preview_cubes.at(preview_id)->StopCube();
+    }
+    if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end()) {
+        _pv_preview_cuts.at(preview_id)->ClearRegionQueue();
     }
 }
 
@@ -2462,8 +2470,8 @@ bool RegionHandler::GetLineProfiles(int file_id, int region_id, int width, const
             double num_pixels(0.0);
             casacore::Vector<float> region_profile = GetTemporaryRegionProfile(
                 iprofile, file_id, box_regions[iprofile], line_coord_sys, per_z, z_range, stokes_index, num_pixels);
-            spdlog::debug(
-                "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iprofile, num_profiles, num_pixels);
+            // spdlog::debug(
+            //     "File {} region {} line profile {} of {} max num pixels={}", file_id, region_id, iprofile, num_profiles, num_pixels);
 
             if (profiles.empty()) {
                 if (reverse) {
