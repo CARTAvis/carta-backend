@@ -46,8 +46,10 @@ struct PreviewCubeParameters {
 class PvPreviewCube {
 public:
     PvPreviewCube(const PreviewCubeParameters& parameters);
+    ~PvPreviewCube() = default;
 
     // Cube parameters
+    PreviewCubeParameters parameters();
     bool HasSameParameters(const PreviewCubeParameters& parameters);
     bool HasFileId(int file_id);
     int GetStokes();
@@ -59,8 +61,9 @@ public:
     // blc of preview region's bounding box in source image
     void SetPreviewRegionOrigin(const casacore::IPosition& origin);
 
-    // Return cached preview image
-    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage();
+    // Return cached preview image and cache cube data if not done previously
+    std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(
+        GeneratorProgressCallback progress_callback, bool& cancel, std::string& message);
 
     // Create preview image by applying rebinning to SubImage, and cache cube data.
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(

@@ -24,6 +24,10 @@ PvPreviewCube::PvPreviewCube(const PreviewCubeParameters& parameters)
       _stop_cube(false),
       _cancel_message("PV image preview cancelled.") {}
 
+PreviewCubeParameters PvPreviewCube::parameters() {
+    return _cube_parameters;
+}
+
 bool PvPreviewCube::HasSameParameters(const PreviewCubeParameters& parameters) {
     return _cube_parameters == parameters;
 }
@@ -49,8 +53,15 @@ void PvPreviewCube::SetPreviewRegionOrigin(const casacore::IPosition& origin) {
     _origin = origin;
 }
 
-std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage() {
+std::shared_ptr<casacore::ImageInterface<float>> PvPreviewCube::GetPreviewImage(
+    GeneratorProgressCallback progress_callback, bool& cancel, std::string& message) {
     // Returns cached preview image; nullptr if not set
+    if (_preview_image && !CubeLoaded()) {
+        LoadCubeData(progress_callback, cancel);
+        if (cancel) {
+            message = _cancel_message;
+        }
+    }
     return _preview_image;
 }
 
@@ -165,17 +176,28 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
     size_t nchan = box_length(_preview_image->coordinates().spectralAxisNumber());
     profile.resize(nchan, NAN);
     std::vector<double> npix_per_chan(nchan, 0.0);
+    auto data_shape = _cube_data.shape();
+    auto mask_shape = mask.shape();
 
     for (size_t ichan = 0; ichan < nchan; ++ichan) {
         double chan_sum(0.0);
         for (size_t ix = 0; ix < box_length[0]; ++ix) {
             for (size_t iy = 0; iy < box_length[1]; ++iy) {
                 // Accumulate if pixel in region (mask=true) and is not NAN or inf
-                if (!mask.getAt(casacore::IPosition(2, ix, iy))) {
+                // Check index into mask and data cube
+                casacore::IPosition mask_pos(2, ix, iy);
+                casacore::IPosition data_pos(3, ix + box_start[0], iy + box_start[1], ichan);
+                if (mask_pos > mask_shape || data_pos > data_shape) {
+                    message = "Region profile failed accessing data or mask.";
+                    profile.clear();
+                    return false;
+                }
+
+                if (!mask.getAt(mask_pos)) {
                     continue;
                 }
 
-                float data_val = _cube_data(casacore::IPosition(3, ix + box_start[0], iy + box_start[1], ichan));
+                float data_val = _cube_data(data_pos);
 
                 if (std::isfinite(data_val)) {
                     chan_sum += data_val;

@@ -1096,8 +1096,10 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
     // Set frame for preview image if needed
     Timer t;
     if (!preview_frame_set) {
-        // Get cached preview image from PvPreviewCube, or create one.
-        auto preview_image = preview_cube->GetPreviewImage();
+        // Get cached preview image from PvPreviewCube, or create one. Callback for progress of loading cube data.
+        bool cancel(false);
+        std::string message;
+        auto preview_image = preview_cube->GetPreviewImage(progress_callback, cancel, message);
 
         if (!preview_image) {
             // Apply preview region or slicer to get SubImage, and set preview region origin.
@@ -1140,8 +1142,6 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
             }
 
             // Get preview image from SubImage and downsampling parameters
-            bool cancel(false);
-            std::string message;
             preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
             profile_lock.unlock();
             if (!preview_image || cancel) {
@@ -1173,6 +1173,9 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     GeneratedImage& pv_image) {
     // Calculate PV preview data using pv cut RegionState (in source image) and PvPreviewCube.
     // This method is the entry point for pv preview updates, where only the pv cut changed.
+
+    // Get initial parameters to ensure cube did not change
+    auto cube_parameters = preview_cube->parameters();
 
     // Prepare response; if error, add message.
     pv_response.set_success(false);
@@ -1232,7 +1235,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
 
     // Do not collide with line spatial profile (coord sys copy crash)
     std::unique_lock<std::mutex> profile_lock(_line_profile_mutex);
-
     for (size_t iregion = 0; iregion < num_regions; ++iregion) {
         // Set box region with next temp region id
         int box_region_id(TEMP_REGION_ID);
@@ -1259,8 +1261,8 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         double max_num_pixels(0.0);
         std::string message;
 
-        std::unique_lock pv_cube_lock(_pv_cube_mutex);
-        if (preview_cube) {
+        // Make sure preview cube exists and has not changed
+        if (preview_cube && preview_cube->HasSameParameters(cube_parameters)) {
             // Progress for loading data here if needed due to prior cancel
             if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
                 // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
@@ -1275,7 +1277,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
             cancel = true;
             message = "PV image preview cancelled.";
         }
-        pv_cube_lock.unlock();
 
         if (cancel) {
             pv_response.set_message(message);
@@ -1472,7 +1473,7 @@ void RegionHandler::StopPvCalc(int file_id) {
 }
 
 void RegionHandler::StopPvPreview(int preview_id) {
-    // Cancel any preview cube and pv image calculations in progress
+    // Cancel any preview cube and pv image calculations in progress or queued
     if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
         _pv_preview_cubes.at(preview_id)->StopCube();
     }
