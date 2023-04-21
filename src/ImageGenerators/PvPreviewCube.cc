@@ -155,18 +155,8 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
     GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
     // Set spectral profile and maximum number of pixels for region.
     // Returns false if no preview image
-    if (!_preview_image) {
-        // Should not be here if no preview image (GetPreviewImage first).
+    if (!_preview_image || !CubeLoaded()) {
         return false;
-    }
-
-    // If cancelled during preview image cube loading, load data now.
-    if (!CubeLoaded()) {
-        LoadCubeData(progress_callback, cancel);
-        if (cancel) {
-            message = _cancel_message;
-            return false;
-        }
     }
 
     auto box_start = region_bounding_box.start();
