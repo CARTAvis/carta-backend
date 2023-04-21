@@ -114,20 +114,23 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<ca
     casacore::Vector<casacore::Double> crpix(2, (pv_shape[offset_axis] - 1) / 2);
     casacore::LinearCoordinate linear_coord(name, unit, crval, inc, pc, crpix);
 
-    // Set spectral reference value (changes if spectral range)
+    // Set spectral coordinate from record (seg fault when copy)
+    casacore::Record spectral_rec;
+    casacore::String field_name("SpectralCoordinate");
+    input_csys->spectralCoordinate().save(spectral_rec, field_name);
+    casacore::SpectralCoordinate* pv_spectral_coord = casacore::SpectralCoordinate::restore(spectral_rec, field_name);
     casacore::Vector<casacore::Double> refval(1, spectral_refval);
     casacore::Vector<casacore::Double> refpix(1, 0.0);
-    casacore::SpectralCoordinate spectral_coord(input_csys->spectralCoordinate());
-    spectral_coord.setReferenceValue(refval);
-    spectral_coord.setReferencePixel(refpix);
+    pv_spectral_coord->setReferenceValue(refval);
+    pv_spectral_coord->setReferencePixel(refpix);
 
     // Add offset and spectral coordinates
     if (reverse) {
-        pv_csys.addCoordinate(spectral_coord);
+        pv_csys.addCoordinate(*pv_spectral_coord);
         pv_csys.addCoordinate(linear_coord);
     } else {
         pv_csys.addCoordinate(linear_coord);
-        pv_csys.addCoordinate(spectral_coord);
+        pv_csys.addCoordinate(*pv_spectral_coord);
     }
 
     // Add stokes coordinate if input image has one
