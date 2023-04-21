@@ -69,13 +69,16 @@ public:
     std::shared_ptr<casacore::ImageInterface<float>> GetPreviewImage(
         casacore::SubImage<float>& sub_image, GeneratorProgressCallback progress_callback, bool& cancel, std::string& message);
 
+    // Check if cube is loaded
+    bool CubeLoaded();
+
     // Set PV cut in preview cube
     RegionState GetPvCutRegion(const RegionState& source_region_state, int preview_frame_id);
 
     // Apply region and mask to preview cube for spectral profile and maximum number of per-channel pixels.
     // Include progress callback in case data must be loaded
     bool GetRegionProfile(const casacore::Slicer& region_bounding_box, const casacore::ArrayLattice<casacore::Bool>& mask,
-        GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message);
+        GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, std::string& message);
 
     // Cancel preview image and cube data cache.
     void StopCube();
@@ -86,7 +89,6 @@ private:
 
     // Cache cube data for preview image
     void LoadCubeData(GeneratorProgressCallback progress_callback, bool& cancel);
-    bool CubeLoaded();
 
     // Cube parameters
     PreviewCubeParameters _cube_parameters;

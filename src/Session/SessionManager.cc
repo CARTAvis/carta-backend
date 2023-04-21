@@ -456,6 +456,9 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::PV_REQUEST: {
                     CARTA::PvRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.has_preview_settings()) {
+                            session->StopPvPreviewUpdates(message.preview_settings().preview_id());
+                        }
                         tsk = new GeneralMessageTask<CARTA::PvRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }

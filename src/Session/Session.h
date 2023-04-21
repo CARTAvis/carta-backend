@@ -213,6 +213,7 @@ public:
     void RegionDataStreams(int file_id, int region_id);
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
     bool SendPvPreview(int file_id, int region_id, bool preview_region);
+    void StopPvPreviewUpdates(int preview_id);
 
     CursorSettings _cursor_settings;
     std::unordered_map<int, concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;

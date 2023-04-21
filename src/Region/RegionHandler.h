@@ -89,6 +89,7 @@ public:
         int file_id, int region_id, bool quick_update, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
     void StopPvCalc(int file_id);
     void StopPvPreview(int preview_id);
+    void StopPvPreviewUpdates(int preview_id);
     void ClosePvPreview(int preview_id);
 
     // Image fitting

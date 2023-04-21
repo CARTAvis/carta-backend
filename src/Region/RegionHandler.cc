@@ -1091,15 +1091,21 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
         preview_frame_set = false;
     }
     auto preview_cube = _pv_preview_cubes.at(preview_id);
+    bool preview_cube_loaded = preview_cube->CubeLoaded();
     pv_cube_lock.unlock();
 
     // Set frame for preview image if needed
     Timer t;
-    if (!preview_frame_set) {
-        // Get cached preview image from PvPreviewCube, or create one. Callback for progress of loading cube data.
+    if (!preview_frame_set || !preview_cube_loaded) {
+        // Create or get cached preview image from PvPreviewCube. Progress callback for loading cube data if needed.
         bool cancel(false);
         std::string message;
         auto preview_image = preview_cube->GetPreviewImage(progress_callback, cancel, message);
+        if (cancel) {
+            pv_response.set_cancel(cancel);
+            pv_response.set_message(message);
+            return false;
+        }
 
         if (!preview_image) {
             // Apply preview region or slicer to get SubImage, and set preview region origin.
@@ -1109,7 +1115,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 // Apply slicer to source image to get SubImage
                 auto slicer = frame->GetImageSlicer(spectral_range, frame->CurrentStokes());
                 if (!frame->GetSlicerSubImage(slicer, sub_image)) {
-                    pv_response.set_message("Failed to set spectral range in preview cube.");
+                    pv_response.set_message("Failed to set spectral range for preview cube.");
                     return false;
                 }
                 casacore::IPosition origin(2, 0, 0);
@@ -1119,7 +1125,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 StokesSource stokes_source(stokes, spectral_range);
                 std::shared_ptr<casacore::LCRegion> lc_region = ApplyRegionToFile(preview_region_id, file_id, stokes_source);
                 if (!lc_region) {
-                    pv_response.set_message("Failed to set preview region in image for preview cube.");
+                    pv_response.set_message("Failed to set preview region for preview cube.");
                     return false;
                 }
 
@@ -1130,7 +1136,7 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
                 // Apply LCRegion and spectral range to source image to get StokesRegion
                 StokesRegion stokes_region;
                 if (!ApplyRegionToFile(preview_region_id, file_id, spectral_range, stokes, lc_region, stokes_region)) {
-                    pv_response.set_message("Failed to set preview region or spectral range in image for preview cube.");
+                    pv_response.set_message("Failed to set preview region or spectral range for preview cube.");
                     return false;
                 }
 
@@ -1143,12 +1149,12 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
 
             // Get preview image from SubImage and downsampling parameters
             preview_image = preview_cube->GetPreviewImage(sub_image, progress_callback, cancel, message);
-            profile_lock.unlock();
             if (!preview_image || cancel) {
                 pv_response.set_cancel(cancel);
                 pv_response.set_message(message);
                 return false;
             }
+            profile_lock.unlock();
         }
 
         // Preview image is now set, make frame to access it.
@@ -1262,9 +1268,10 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         std::string message;
 
         // Make sure preview cube exists and has not changed
+        std::unique_lock pv_cube_lock(_pv_cube_mutex);
         if (preview_cube && preview_cube->HasSameParameters(cube_parameters)) {
             // Progress for loading data here if needed due to prior cancel
-            if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, cancel, message)) {
+            if (preview_cube->GetRegionProfile(bounding_box, box_mask, progress_callback, profile, max_num_pixels, message)) {
                 // spdlog::debug("PV preview profile {} of {} max num pixels={}", iregion, num_regions, max_num_pixels);
                 if (reverse) {
                     preview_data_matrix.column(iregion) = profile;
@@ -1272,11 +1279,8 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
                     preview_data_matrix.row(iregion) = profile;
                 }
             }
-        } else {
-            // Preview cube was deleted
-            cancel = true;
-            message = "PV image preview cancelled.";
         }
+        pv_cube_lock.unlock();
 
         if (cancel) {
             pv_response.set_message(message);
@@ -1447,7 +1451,7 @@ bool RegionHandler::UpdatePvPreviewImage(
                 return preview_updated;
             }
 
-            if (preview_cut->HasQueuedRegion()) {
+            if (preview_cut->HasQueuedRegion() && preview_cube->CubeLoaded()) {
                 // Generate preview for one region state in queue
                 spdlog::debug("Updating pv preview {} for region {}", preview_id, region_id);
                 GeneratorProgressCallback progress_callback = [](float progress) {}; // no progress for preview update
@@ -1456,6 +1460,8 @@ bool RegionHandler::UpdatePvPreviewImage(
                 preview_updated = CalculatePvPreviewImage(
                     frame_id, preview_id, no_histogram, preview_cut, preview_cube, progress_callback, pv_response, pv_image);
                 cb(pv_response, pv_image);
+            } else {
+                spdlog::debug("PV preview {} failed: cube data not loaded or no preview regions queued", preview_id);
             }
         }
     }
@@ -1473,11 +1479,16 @@ void RegionHandler::StopPvCalc(int file_id) {
 }
 
 void RegionHandler::StopPvPreview(int preview_id) {
-    // Cancel any preview cube and pv image calculations in progress or queued
+    // Cancel loading preview cube cache
     if (_pv_preview_cubes.find(preview_id) != _pv_preview_cubes.end()) {
         _pv_preview_cubes.at(preview_id)->StopCube();
     }
+}
+
+void RegionHandler::StopPvPreviewUpdates(int preview_id) {
+    // Clear region queue to stop pv preview updates
     if (_pv_preview_cuts.find(preview_id) != _pv_preview_cuts.end()) {
+        // Safe because has internal mutex for queue
         _pv_preview_cuts.at(preview_id)->ClearRegionQueue();
     }
 }

@@ -1788,6 +1788,12 @@ bool Session::SendPvPreview(int file_id, int region_id, bool preview_region) {
     return _region_handler->UpdatePvPreviewImage(file_id, region_id, preview_region, pv_preview_callback);
 }
 
+void Session::StopPvPreviewUpdates(int preview_id) {
+    if (_region_handler) {
+        _region_handler->StopPvPreviewUpdates(preview_id);
+    }
+}
+
 bool Session::SendContourData(int file_id, bool ignore_empty) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);

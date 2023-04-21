@@ -152,7 +152,7 @@ RegionState PvPreviewCube::GetPvCutRegion(const RegionState& source_region_state
 }
 
 bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box, const casacore::ArrayLattice<casacore::Bool>& mask,
-    GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, bool& cancel, std::string& message) {
+    GeneratorProgressCallback progress_callback, std::vector<float>& profile, double& num_pixels, std::string& message) {
     // Set spectral profile and maximum number of pixels for region.
     // Returns false if no preview image
     if (!_preview_image || !CubeLoaded()) {
@@ -174,20 +174,11 @@ bool PvPreviewCube::GetRegionProfile(const casacore::Slicer& region_bounding_box
         for (size_t ix = 0; ix < box_length[0]; ++ix) {
             for (size_t iy = 0; iy < box_length[1]; ++iy) {
                 // Accumulate if pixel in region (mask=true) and is not NAN or inf
-                // Check index into mask and data cube
-                casacore::IPosition mask_pos(2, ix, iy);
-                casacore::IPosition data_pos(3, ix + box_start[0], iy + box_start[1], ichan);
-                if (mask_pos > mask_shape || data_pos > data_shape) {
-                    message = "Region profile failed accessing data or mask.";
-                    profile.clear();
-                    return false;
-                }
-
-                if (!mask.getAt(mask_pos)) {
+                if (!mask.getAt(casacore::IPosition(2, ix, iy))) {
                     continue;
                 }
 
-                float data_val = _cube_data(data_pos);
+                float data_val = _cube_data(casacore::IPosition(3, ix + box_start[0], iy + box_start[1], ichan));
 
                 if (std::isfinite(data_val)) {
                     chan_sum += data_val;
