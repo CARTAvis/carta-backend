@@ -28,6 +28,7 @@ namespace carta {
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preferences_schema_2.json"
 #define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
 #define CARTA_SNIPPET_SCHEMA_URL "https://cartavis.github.io/schemas/snippet_schema_1.json"
+#define CARTA_WORKSPACE_SCHEMA_URL "https://cartavis.github.io/schemas/workspace_schema_1.json"
 
 typedef uWS::HttpRequest Req;
 typedef uWS::HttpResponse<false> Res;
@@ -51,7 +52,9 @@ protected:
     nlohmann::json GetExistingPreferences();
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
+    nlohmann::json GetExistingObjectList(const std::string& object_type);
     nlohmann::json GetExistingObjects(const std::string& object_type);
+    nlohmann::json GetExistingObject(const std::string& object_type, const std::string& object_name);
     std::string_view SetObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view ClearObjectFromString(const std::string& object_type, const std::string& buffer);
     std::string_view SendScriptingRequest(const std::string& buffer, int& session_id, ScriptingResponseCallback callback,
@@ -64,6 +67,7 @@ private:
     static bool IsValidFrontendFolder(fs::path folder);
     bool IsAuthenticated(Req* req);
     void AddNoCacheHeaders(Res* res);
+    void AddCorsHeaders(Res* res);
 
     bool WritePreferencesFile(nlohmann::json& obj);
     bool WriteObjectFile(const std::string& object_type, const std::string& object_name, nlohmann::json& obj);
@@ -74,6 +78,8 @@ private:
     void HandleGetPreferences(Res* res, Req* req);
     void HandleSetPreferences(Res* res, Req* req);
     void HandleClearPreferences(Res* res, Req* req);
+    void HandleGetObjectList(const std::string& object_type, Res* res, Req* req);
+    void HandleGetObject(const std::string& object_type, Res* res, Req* req);
     void HandleGetObjects(const std::string& object_type, Res* res, Req* req);
     void HandleSetObject(const std::string& object_type, Res* res, Req* req);
     void HandleClearObject(const std::string& object_type, Res* res, Req* req);
