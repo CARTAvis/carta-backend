@@ -1465,7 +1465,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             }
 
             // Set histogram bounds
-            HistogramBounds bounds(cube_histogram_config, cube_stats);
+            auto bounds = cube_histogram_config.GetBounds(cube_stats);
 
             // check cancel and proceed
             if (!_histogram_context.is_group_execution_cancelled()) {

@@ -591,8 +591,8 @@ CARTA::RegionHistogramData Message::RegionHistogramData(
     config->set_num_bins(hist_config.num_bins);
     config->set_fixed_bounds(hist_config.fixed_bounds);
     auto* bounds = config->mutable_bounds();
-    bounds->set_min(hist_config.min_val);
-    bounds->set_max(hist_config.max_val);
+    bounds->set_min(hist_config.bounds.min);
+    bounds->set_max(hist_config.bounds.max);
     return message;
 }
 

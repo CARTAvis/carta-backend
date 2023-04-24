@@ -9,7 +9,37 @@
 
 #include <algorithm>
 
+#include <carta-protobuf/defs.pb.h>
+
 namespace carta {
+
+template <typename T>
+struct Bounds {
+    T min;
+    T max;
+
+    Bounds<T>() : min(0), max(0) {}
+
+    Bounds<T>(T min_, T max_) : min(min_), max(max_) {}
+
+    Bounds<T>(const CARTA::FloatBounds& bounds) : min(bounds.min()), max(bounds.max()) {}
+
+    bool Equal(T num1, T num2) const {
+        return fabs(num1 - num2) <= std::numeric_limits<T>::epsilon();
+    }
+
+    bool Invalid() const {
+        return min == std::numeric_limits<T>::max() || max == std::numeric_limits<T>::min();
+    }
+
+    bool operator==(const Bounds<T>& rhs) const {
+        return Equal(min, rhs.min) && Equal(max, rhs.max);
+    }
+
+    bool operator!=(const Bounds<T>& rhs) const {
+        return !Equal(min, rhs.min) || !Equal(max, rhs.max);
+    }
+};
 
 template <typename T>
 struct BasicStats {

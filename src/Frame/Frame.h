@@ -139,7 +139,7 @@ public:
     bool FillRegionHistogramData(
         std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
-    bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
+    bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const Bounds<float>& bounds, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
     void CacheCubeStats(int stokes, BasicStats<float>& stats);
     void CacheCubeHistogram(int stokes, Histogram& hist);
@@ -239,9 +239,9 @@ protected:
     int AutoBinSize();
     bool FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
     bool FillHistogramFromFrameCache(
-        int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message
-    bool GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist); // internal histogram
-    bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);         // internal histogram
+        int z, int stokes, int num_bins, const Bounds<float>& bounds, CARTA::Histogram* histogram);              // histogram message
+    bool GetCachedImageHistogram(int z, int stokes, int num_bins, const Bounds<float>& bounds, Histogram& hist); // internal histogram
+    bool GetCachedCubeHistogram(int stokes, int num_bins, const Bounds<float>& bounds, Histogram& hist);         // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);

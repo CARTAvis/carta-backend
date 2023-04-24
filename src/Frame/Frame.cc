@@ -752,7 +752,7 @@ bool Frame::FillRegionHistogramData(
             BasicStats<float> stats;
             if (GetBasicStats(z, stokes, stats)) {
                 // Set histogram bounds
-                HistogramBounds bounds(histogram_config, stats);
+                auto bounds = histogram_config.GetBounds(stats);
 
                 // Fill histogram submessage from Frame cache, if any
                 histogram_filled = FillHistogramFromFrameCache(z, stokes, num_bins, bounds, histogram);
@@ -805,7 +805,7 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
     return false;
 }
 
-bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram) {
+bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, const Bounds<float>& bounds, CARTA::Histogram* histogram) {
     // Get stats and histogram results from cache; also used for cube histogram
     if (num_bins == AUTO_BIN_SIZE) {
         num_bins = AutoBinSize();
@@ -867,7 +867,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
     return false;
 }
 
-bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
+bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const Bounds<float>& bounds, Histogram& hist) {
     // Get image histogram results from cache
     int cache_key(CacheKey(z, stokes));
     if (_image_histograms.count(cache_key)) {
@@ -875,7 +875,7 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const Histo
         auto results_for_key = _image_histograms[cache_key];
 
         for (auto& result : results_for_key) {
-            if (result.GetNbins() == num_bins && AreEqual(result.GetMinVal(), bounds.min) && AreEqual(result.GetMaxVal(), bounds.max)) {
+            if (result.GetNbins() == num_bins && result.GetBounds() == bounds) {
                 hist = result;
                 return true;
             }
@@ -884,12 +884,12 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const Histo
     return false;
 }
 
-bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
+bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const Bounds<float>& bounds, Histogram& hist) {
     // Get cube histogram results from cache
     if (_cube_histograms.count(stokes)) {
         for (auto& result : _cube_histograms[stokes]) {
             // get from cache if correct num_bins
-            if (result.GetNbins() == num_bins && AreEqual(result.GetMinVal(), bounds.min) && AreEqual(result.GetMaxVal(), bounds.max)) {
+            if (result.GetNbins() == num_bins && result.GetBounds() == bounds) {
                 hist = result;
                 return true;
             }
@@ -898,7 +898,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBoun
     return false;
 }
 
-bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
+bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, const Bounds<float>& bounds, Histogram& hist) {
     // Calculate histogram for given parameters, return results
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
