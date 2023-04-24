@@ -8,6 +8,7 @@
 #define CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_H_
 
 #include <algorithm>
+#include <cmath>
 
 #include <carta-protobuf/defs.pb.h>
 
