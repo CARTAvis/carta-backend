@@ -67,7 +67,7 @@ struct HistogramConfig {
     bool fixed_num_bins;
     int num_bins;
     bool fixed_bounds;
-    Bounds<float> bounds;
+    HistogramBounds bounds;
 
     HistogramConfig() : coordinate("z"), channel(CURRENT_Z), fixed_num_bins(false), num_bins(AUTO_BIN_SIZE), fixed_bounds(false) {}
 
@@ -77,17 +77,17 @@ struct HistogramConfig {
           fixed_num_bins(config.fixed_num_bins()),
           num_bins(config.num_bins()),
           fixed_bounds(config.fixed_bounds()),
-          bounds(Bounds<float>(config.bounds())) {}
+          bounds(HistogramBounds(config.bounds())) {}
 
     bool operator!=(const HistogramConfig& rhs) const {
         return (coordinate != rhs.coordinate) || (channel != rhs.channel) || (fixed_num_bins != rhs.fixed_num_bins) ||
                (fixed_bounds != rhs.fixed_bounds) || (num_bins != rhs.num_bins) || (bounds != rhs.bounds);
     }
 
-    Bounds<float> GetBounds(const BasicStats<float>& stats) const {
+    HistogramBounds GetBounds(const BasicStats<float>& stats) const {
         float min = fixed_bounds ? bounds.min : stats.min_val;
         float max = fixed_bounds ? bounds.max : stats.max_val;
-        return Bounds<float>(min, max);
+        return HistogramBounds(min, max);
     }
 };
 
@@ -113,7 +113,7 @@ struct HistogramCache {
         stats = stats_;
     }
 
-    bool GetHistogram(int num_bins_, const Bounds<float>& bounds, Histogram& histogram_) {
+    bool GetHistogram(int num_bins_, const HistogramBounds& bounds, Histogram& histogram_) {
         if (histograms.count(num_bins_)) {
             const auto& hist = histograms.at(num_bins_);
             if (bounds == hist.GetBounds()) {

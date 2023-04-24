@@ -15,7 +15,7 @@
 
 using namespace carta;
 
-Histogram::Histogram(int num_bins, const Bounds<float>& bounds, const float* data, const size_t data_size)
+Histogram::Histogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size)
     : _bin_width((bounds.max - bounds.min) / num_bins),
       _min_val(bounds.min),
       _max_val(bounds.max),

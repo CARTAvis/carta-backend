@@ -14,6 +14,8 @@
 
 namespace carta {
 
+using HistogramBounds = Bounds<float>;
+
 class Histogram {
     float _min_val;                   // lower bound of the histogram (inclusive)
     float _max_val;                   // upper bound of the histogram (inclusive)
@@ -26,7 +28,7 @@ class Histogram {
 
 public:
     Histogram() = default; // required to create empty histograms used in references
-    Histogram(int num_bins, const Bounds<float>& bounds, const float* data, const size_t data_size);
+    Histogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size);
 
     Histogram(const Histogram& h);
 
@@ -38,8 +40,8 @@ public:
     float GetMaxVal() const {
         return _max_val;
     }
-    Bounds<float> GetBounds() const {
-        return Bounds<float>(_min_val, _max_val);
+    HistogramBounds GetBounds() const {
+        return HistogramBounds(_min_val, _max_val);
     }
     size_t GetNbins() const {
         return _histogram_bins.size();

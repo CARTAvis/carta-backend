@@ -23,10 +23,10 @@ void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t da
     stats = mm.GetStats();
 }
 
-Histogram CalcHistogram(int num_bins, const Bounds<float>& bounds, const float* data, const size_t data_size) {
+Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size) {
     if (bounds.Invalid() || data_size == 0) {
         // empty / NaN region
-        return Histogram(1, Bounds<float>(0, 0), data, data_size);
+        return Histogram(1, HistogramBounds(0, 0), data, data_size);
     }
     return Histogram(num_bins, bounds, data, data_size);
 }
