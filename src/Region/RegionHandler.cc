@@ -1492,6 +1492,7 @@ void RegionHandler::StopPvPreviewUpdates(int preview_id) {
 
 void RegionHandler::ClosePvPreview(int preview_id) {
     // Cancel PV calculations and remove preview settings, frame, and stop flag
+    StopPvPreviewUpdates(preview_id);
     StopPvPreview(preview_id);
 
     std::unique_lock pv_cut_lock(_pv_cut_mutex);
