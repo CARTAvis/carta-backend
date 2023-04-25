@@ -14,7 +14,7 @@
 
 namespace carta {
 
-using HistogramBounds = Bounds<float>;
+using HistogramBounds = Bounds<double>;
 
 class Histogram {
     float _min_val;                   // lower bound of the histogram (inclusive)

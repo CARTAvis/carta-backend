@@ -23,7 +23,7 @@ struct Bounds {
 
     Bounds<T>(T min_, T max_) : min(min_), max(max_) {}
 
-    Bounds<T>(const CARTA::FloatBounds& bounds) : min(bounds.min()), max(bounds.max()) {}
+    Bounds<T>(const CARTA::DoubleBounds& bounds) : min(bounds.min()), max(bounds.max()) {}
 
     bool Equal(T num1, T num2) const {
         return fabs(num1 - num2) <= std::numeric_limits<T>::epsilon();
