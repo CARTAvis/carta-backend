@@ -40,7 +40,6 @@ RegionHandler::~RegionHandler() {
 int RegionHandler::GetNextRegionId() {
     // Returns maximum id + 1; start at 1 if no regions set
     int max_id(0);
-    std::lock_guard<std::mutex> region_guard(_region_mutex);
     if (!_regions.empty()) {
         for (auto& region : _regions) {
             if (region.first > max_id) {
@@ -53,7 +52,6 @@ int RegionHandler::GetNextRegionId() {
 
 int RegionHandler::GetNextTemporaryRegionId() {
     int min_id(TEMP_REGION_ID);
-    std::lock_guard<std::mutex> region_guard(_region_mutex);
     if (!_regions.empty()) {
         for (auto& region : _regions) {
             if (region.first < min_id) {
@@ -80,6 +78,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             ClearRegionCache(region_id);
         }
     } else {
+        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
         if (region_id == NEW_REGION_ID) {
             // new region, assign (positive) id
             region_id = GetNextRegionId();
@@ -88,9 +87,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             region_id = GetNextTemporaryRegionId();
         }
 
-        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
         if (region && region->IsValid()) {
-            std::lock_guard<std::mutex> region_guard(_region_mutex);
             _regions[region_id] = std::move(region);
             valid_region = true;
         }
