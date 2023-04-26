@@ -23,7 +23,7 @@ void PvGenerator::SetFileIdName(int file_id, int index, const std::string& filen
     SetPvImageName(filename, index, is_preview);
 }
 
-bool PvGenerator::GetPvImage(std::shared_ptr<Frame>& frame, const casacore::Matrix<float>& pv_data, casacore::IPosition& pv_shape,
+bool PvGenerator::GetPvImage(const std::shared_ptr<Frame>& frame, const casacore::Matrix<float>& pv_data, casacore::IPosition& pv_shape,
     const casacore::Quantity& offset_increment, int start_chan, int stokes, bool reverse, GeneratedImage& pv_image, std::string& message) {
     // Create PV image with input data.
     auto input_csys = frame->CoordinateSystem();
@@ -73,7 +73,7 @@ void PvGenerator::SetPvImageName(const std::string& filename, int index, bool is
 }
 
 std::shared_ptr<casacore::ImageInterface<casacore::Float>> PvGenerator::SetupPvImage(
-    std::shared_ptr<casacore::ImageInterface<float>> input_image, std::shared_ptr<casacore::CoordinateSystem> input_csys,
+    const std::shared_ptr<casacore::ImageInterface<float>>& input_image, const std::shared_ptr<casacore::CoordinateSystem>& input_csys,
     casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse,
     std::string& message) {
     // Create temporary image (no data) using input image.  Return casacore::TempImage.
@@ -96,7 +96,7 @@ std::shared_ptr<casacore::ImageInterface<casacore::Float>> PvGenerator::SetupPvI
     return image;
 }
 
-casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<casacore::CoordinateSystem> input_csys,
+casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(const std::shared_ptr<casacore::CoordinateSystem>& input_csys,
     casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse) {
     // Set PV coordinate system with LinearCoordinate and input coordinates for spectral and stokes
     casacore::CoordinateSystem pv_csys;
@@ -115,7 +115,7 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<ca
     casacore::LinearCoordinate linear_coord(name, unit, crval, inc, pc, crpix);
 
     // Set spectral coordinate
-    auto input_spectral_coord = input_csys->spectralCoordinate();
+    auto& input_spectral_coord = input_csys->spectralCoordinate();
     auto freq_type = input_spectral_coord.frequencySystem();
     auto freq_inc = input_spectral_coord.increment()(0);
     auto rest_freq = input_spectral_coord.restFrequency();

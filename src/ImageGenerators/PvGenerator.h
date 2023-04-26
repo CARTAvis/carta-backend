@@ -28,17 +28,17 @@ public:
 
     // Create generated PV image from input data. If reverse, [spectral, offset] instead of normal [offset, spectral].
     // Returns generated image and success, with message if failure.
-    bool GetPvImage(std::shared_ptr<Frame>& frame, const casacore::Matrix<float>& pv_data, casacore::IPosition& pv_shape,
+    bool GetPvImage(const std::shared_ptr<Frame>& frame, const casacore::Matrix<float>& pv_data, casacore::IPosition& pv_shape,
         const casacore::Quantity& offset_increment, int start_chan, int stokes, bool reverse, GeneratedImage& pv_image,
         std::string& message);
 
 private:
     void SetPvImageName(const std::string& filename, int index, bool is_preview);
 
-    std::shared_ptr<casacore::ImageInterface<casacore::Float>> SetupPvImage(std::shared_ptr<casacore::ImageInterface<float>> input_image,
-        std::shared_ptr<casacore::CoordinateSystem> input_csys, casacore::IPosition& pv_shape, int stokes,
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> SetupPvImage(const std::shared_ptr<casacore::ImageInterface<float>>& input_image,
+        const std::shared_ptr<casacore::CoordinateSystem>& input_csys, casacore::IPosition& pv_shape, int stokes,
         const casacore::Quantity& offset_increment, double spectral_refval, bool reverse, std::string& message);
-    casacore::CoordinateSystem GetPvCoordinateSystem(std::shared_ptr<casacore::CoordinateSystem> input_csys, casacore::IPosition& pv_shape,
+    casacore::CoordinateSystem GetPvCoordinateSystem(const std::shared_ptr<casacore::CoordinateSystem>& input_csys, casacore::IPosition& pv_shape,
         int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse);
     GeneratedImage GetGeneratedImage(std::shared_ptr<casacore::ImageInterface<casacore::Float>> image);
 
