@@ -115,11 +115,12 @@ casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem(std::shared_ptr<ca
     casacore::LinearCoordinate linear_coord(name, unit, crval, inc, pc, crpix);
 
     // Set spectral coordinate
-    casacore::SpectralCoordinate spectral_coord = input_csys->spectralCoordinate();
-    casacore::Vector<casacore::Double> refval(1, spectral_refval);
-    casacore::Vector<casacore::Double> refpix(1, 0.0);
-    spectral_coord.setReferenceValue(refval);
-    spectral_coord.setReferencePixel(refpix);
+    auto input_spectral_coord = input_csys->spectralCoordinate();
+    auto freq_type = input_spectral_coord.frequencySystem();
+    auto freq_inc = input_spectral_coord.increment()(0);
+    auto rest_freq = input_spectral_coord.restFrequency();
+    casacore::Double refpix(0.0);
+    casacore::SpectralCoordinate spectral_coord(freq_type, spectral_refval, freq_inc, refpix, rest_freq);
 
     // Add offset and spectral coordinates
     if (reverse) {
