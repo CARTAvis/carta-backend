@@ -206,8 +206,8 @@ private:
     // PV generator, key is file_id.
     std::unordered_map<int, bool> _stop_pv;      // cancel
     std::unordered_map<int, int> _pv_name_index; // name suffix for "keep"
+
     // PV preview, key is preview_id. Mutex to protect cut and cube in use.
-    std::unordered_map<int, bool> _stop_pv_preview;
     std::unordered_map<int, std::shared_ptr<PvPreviewCut>> _pv_preview_cuts;
     std::unordered_map<int, std::shared_ptr<PvPreviewCube>> _pv_preview_cubes;
     std::shared_mutex _pv_cut_mutex;
