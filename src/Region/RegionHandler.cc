@@ -1177,7 +1177,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
     GeneratedImage& pv_image) {
     // Calculate PV preview data using pv cut RegionState (in source image) and PvPreviewCube.
     // This method is the entry point for pv preview updates, where only the pv cut changed.
-
     // Get initial parameters to ensure cube did not change
     auto cube_parameters = preview_cube->parameters();
 
@@ -1216,6 +1215,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         spdlog::debug("GetLineBoxRegions failed!");
         spdlog::error(error);
         pv_response.set_message(error);
+        RemoveRegion(preview_cut_id);
         return false;
     }
 
@@ -1283,6 +1283,7 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         pv_cube_lock.unlock();
 
         if (cancel) {
+            RemoveRegion(preview_cut_id);
             pv_response.set_message(message);
             pv_response.set_cancel(true);
             return false;
