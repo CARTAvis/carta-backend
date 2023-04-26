@@ -1254,11 +1254,13 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
         auto box_lc_region = ApplyRegionToFile(box_region_id, frame_id);
 
         if (!box_lc_region) {
+            RemoveRegion(box_region_id);
             continue;
         }
 
         auto bounding_box = box_lc_region->boundingBox();
         auto box_mask = _regions.at(box_region_id)->GetImageRegionMask(frame_id);
+        RemoveRegion(box_region_id);
 
         // Use PvPreviewCube to calculate profile with lcregion and mask
         std::vector<float> profile;
@@ -1285,8 +1287,6 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
             pv_response.set_cancel(true);
             return false;
         }
-
-        RemoveRegion(box_region_id);
     }
 
     profile_lock.unlock();
