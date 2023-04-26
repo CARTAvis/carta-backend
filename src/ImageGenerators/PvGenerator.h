@@ -40,7 +40,6 @@ private:
         const casacore::Quantity& offset_increment, double spectral_refval, bool reverse, std::string& message);
     casacore::CoordinateSystem GetPvCoordinateSystem(const std::shared_ptr<casacore::CoordinateSystem>& input_csys, casacore::IPosition& pv_shape,
         int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse);
-    GeneratedImage GetGeneratedImage(std::shared_ptr<casacore::ImageInterface<casacore::Float>> image);
 
     // GeneratedImage parameters
     int _file_id;
