@@ -35,11 +35,12 @@ public:
 private:
     void SetPvImageName(const std::string& filename, int index, bool is_preview);
 
-    std::shared_ptr<casacore::ImageInterface<casacore::Float>> SetupPvImage(const std::shared_ptr<casacore::ImageInterface<float>>& input_image,
-        const std::shared_ptr<casacore::CoordinateSystem>& input_csys, casacore::IPosition& pv_shape, int stokes,
-        const casacore::Quantity& offset_increment, double spectral_refval, bool reverse, std::string& message);
-    casacore::CoordinateSystem GetPvCoordinateSystem(const std::shared_ptr<casacore::CoordinateSystem>& input_csys, casacore::IPosition& pv_shape,
-        int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse);
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> SetupPvImage(
+        const std::shared_ptr<casacore::ImageInterface<float>>& input_image, const std::shared_ptr<casacore::CoordinateSystem>& input_csys,
+        casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse,
+        std::string& message);
+    casacore::CoordinateSystem GetPvCoordinateSystem(const std::shared_ptr<casacore::CoordinateSystem>& input_csys,
+        casacore::IPosition& pv_shape, int stokes, const casacore::Quantity& offset_increment, double spectral_refval, bool reverse);
 
     // GeneratedImage parameters
     int _file_id;
