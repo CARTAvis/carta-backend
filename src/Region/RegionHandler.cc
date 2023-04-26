@@ -78,7 +78,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             ClearRegionCache(region_id);
         }
     } else {
-        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
+        std::unique_lock<std::mutex> region_lock(_region_mutex);
         if (region_id == NEW_REGION_ID) {
             // new region, assign (positive) id
             region_id = GetNextRegionId();
@@ -87,6 +87,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, std::sh
             region_id = GetNextTemporaryRegionId();
         }
 
+        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
             valid_region = true;
