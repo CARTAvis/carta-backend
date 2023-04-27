@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed failure loading CASA image due to FITS headers error ([#1239](https://github.com/CARTAvis/carta-backend/issues/1239)).
 * Fixed incorrect PV image orientation if the cube has projection distortion ([#1244](https://github.com/CARTAvis/carta-backend/issues/1244)).
 * Fixed crash following use of an incorrect session ID ([#1248](https://github.com/CARTAvis/carta-backend/issues/1248)).
+* Fixed crash following compressed fits parsing error ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233)).
 
 ## [3.0.0]
 

@@ -328,8 +328,7 @@ void CompressedFits::ParseFitsCard(
         return;
     }
 
-    if (fits_card.startsWith("HISTORY")) {
-        // Do not parse HISTORY
+    if (fits_card.startsWith("HISTORY") || fits_card.startsWith("COMMENT")) {
         keyword = fits_card;
         return;
     }
