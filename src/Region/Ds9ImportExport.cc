@@ -346,7 +346,7 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
     if (_coord_map.find(ds9_coord) != _coord_map.end()) {
         _file_ref_frame = _coord_map[ds9_coord];
     } else {
-        _file_ref_frame == "UNSUPPORTED";
+        _file_ref_frame = "UNSUPPORTED";
         _pixel_coord = false;
         return false;
     }
