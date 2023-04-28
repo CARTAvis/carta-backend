@@ -12,6 +12,7 @@ var classcarta_1_1FileExtInfoLoader =
     [ "ConvertCoordsToDeg", "classcarta_1_1FileExtInfoLoader.html#adb3998e3b3756d1ee8a2bb91f445c4d7", null ],
     [ "ConvertHeaderValueToNumeric", "classcarta_1_1FileExtInfoLoader.html#a9569d63b1ec07f806edb9f3469b15fd5", null ],
     [ "ConvertIncrementToArcsec", "classcarta_1_1FileExtInfoLoader.html#ac36abc843ecdd6253cbb9524c77bc5ce", null ],
+    [ "ConvertUnitToCasacore", "classcarta_1_1FileExtInfoLoader.html#a5de7596e10856b87fd1a8446c96c960d", null ],
     [ "FillFileExtInfo", "classcarta_1_1FileExtInfoLoader.html#a30fc220f3dc42e8828e92d1fdb314c6c", null ],
     [ "FillFileInfoFromImage", "classcarta_1_1FileExtInfoLoader.html#a2b908c0f74ba5614a0602bfec4bf3aae", null ],
     [ "FillFitsFileInfoMap", "classcarta_1_1FileExtInfoLoader.html#a06c36c25d3286c3019c1bbdcabdd9f63", null ],

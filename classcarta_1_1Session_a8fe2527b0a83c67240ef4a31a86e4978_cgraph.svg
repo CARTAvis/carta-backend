@@ -94,33 +94,33 @@ var sectionId = 'dynsection-68';
 <path fill="none" stroke="midnightblue" d="M92.87,-231.21C127.34,-258.06 199,-313.89 234.16,-341.27"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="232.22,-344.2 242.26,-347.59 236.53,-338.68 232.22,-344.2"/>
 </g>
-<!-- Node79 -->
+<!-- Node80 -->
 <g id="node36" class="node">
-<title>Node79</title>
+<title>Node80</title>
 <g id="a_node36"><a xlink:href="classcarta_1_1Session.html#af5f45b72e3fb7d4ad6fbf32fcc9da912" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="948,-176.62 948,-195.62 1091,-195.62 1091,-176.62 948,-176.62"/>
 <text text-anchor="middle" x="1019.5" y="-183.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendEvent</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node79 -->
+<!-- Node1&#45;&gt;Node80 -->
 <g id="edge66" class="edge">
-<title>Node1&#45;&gt;Node79</title>
+<title>Node1&#45;&gt;Node80</title>
 <path fill="none" stroke="midnightblue" d="M126.33,-201.07C237.46,-170.27 504.02,-100.99 733,-77.12 809.92,-69.1 835.39,-47.93 907,-77.12 952.1,-95.5 988.88,-141.88 1006.76,-167.83"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1004,-170 1012.47,-176.37 1009.82,-166.11 1004,-170"/>
 </g>
-<!-- Node84 -->
+<!-- Node85 -->
 <g id="node41" class="node">
-<title>Node84</title>
+<title>Node85</title>
 <g id="a_node41"><a xlink:href="classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="740,-10.62 740,-29.62 900,-29.62 900,-10.62 740,-10.62"/>
 <text text-anchor="middle" x="820" y="-17.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendLogEvent</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node84 -->
+<!-- Node1&#45;&gt;Node85 -->
 <g id="edge67" class="edge">
-<title>Node1&#45;&gt;Node84</title>
+<title>Node1&#45;&gt;Node85</title>
 <path fill="none" stroke="midnightblue" d="M80.63,-200.75C94.98,-171.76 130.37,-109.51 181,-82.12 363.09,16.36 617.42,4.46 742.86,-9.41"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="742.8,-12.93 753.13,-10.58 743.59,-5.97 742.8,-12.93"/>
 </g>
@@ -170,54 +170,54 @@ var sectionId = 'dynsection-68';
 <path fill="none" stroke="midnightblue" d="M317.39,-366.74C322.05,-369.23 326.35,-372.31 330,-376.12 383.12,-431.58 316.72,-486.22 366,-545.12 369.34,-549.12 373.28,-552.6 377.58,-555.65"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="375.86,-558.7 386.22,-560.96 379.53,-552.74 375.86,-558.7"/>
 </g>
-<!-- Node42 -->
+<!-- Node43 -->
 <g id="node21" class="node">
-<title>Node42</title>
+<title>Node43</title>
 <g id="a_node21"><a xlink:href="Casacore_8cc.html#adaf629920399b9ef31d6579a0693c4bb" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="758,-523.62 758,-542.62 882,-542.62 882,-523.62 758,-523.62"/>
 <text text-anchor="middle" x="820" y="-530.62" font-family="Helvetica,sans-Serif" font-size="10.00">GetResolvedFilename</text>
 </a>
 </g>
 </g>
-<!-- Node3&#45;&gt;Node42 -->
+<!-- Node3&#45;&gt;Node43 -->
 <g id="edge41" class="edge">
-<title>Node3&#45;&gt;Node42</title>
+<title>Node3&#45;&gt;Node43</title>
 <path fill="none" stroke="midnightblue" d="M316.35,-366.71C321.35,-369.19 326.01,-372.28 330,-376.12 370.12,-414.73 322.72,-461.09 366,-496.12 422.88,-542.16 635.09,-540.91 747.73,-536.73"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="748.12,-540.21 757.98,-536.33 747.85,-533.22 748.12,-540.21"/>
 </g>
-<!-- Node73 -->
+<!-- Node74 -->
 <g id="node30" class="node">
-<title>Node73</title>
+<title>Node74</title>
 <g id="a_node30"><a xlink:href="classcarta_1_1LoaderCache.html#a341be9f1278d337b6e7a0a347de474c1" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="559.5,-479.62 559.5,-498.62 693.5,-498.62 693.5,-479.62 559.5,-479.62"/>
 <text text-anchor="middle" x="626.5" y="-486.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::LoaderCache::Get</text>
 </a>
 </g>
 </g>
-<!-- Node3&#45;&gt;Node73 -->
+<!-- Node3&#45;&gt;Node74 -->
 <g id="edge40" class="edge">
-<title>Node3&#45;&gt;Node73</title>
+<title>Node3&#45;&gt;Node74</title>
 <path fill="none" stroke="midnightblue" d="M314.85,-366.65C320.34,-369.13 325.52,-372.24 330,-376.12 361.32,-403.25 332.74,-437.41 366,-462.12 421.39,-503.28 502.76,-505.01 559.57,-499.67"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="559.94,-503.15 569.53,-498.64 559.22,-496.19 559.94,-503.15"/>
 </g>
-<!-- Node77 -->
+<!-- Node78 -->
 <g id="node34" class="node">
-<title>Node77</title>
+<title>Node78</title>
 <g id="a_node34"><a xlink:href="classMessage.html#a3b5ff040fcbd3b2562c5bc107b5b0a7d" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="388.5,-404.62 388.5,-423.62 497.5,-423.62 497.5,-404.62 388.5,-404.62"/>
 <text text-anchor="middle" x="443" y="-411.62" font-family="Helvetica,sans-Serif" font-size="10.00">Message::OpenFile</text>
 </a>
 </g>
 </g>
-<!-- Node3&#45;&gt;Node77 -->
+<!-- Node3&#45;&gt;Node78 -->
 <g id="edge42" class="edge">
-<title>Node3&#45;&gt;Node77</title>
+<title>Node3&#45;&gt;Node78</title>
 <path fill="none" stroke="midnightblue" d="M300.17,-366.63C310.12,-369.28 320.54,-372.46 330,-376.12 346.87,-382.65 349.1,-388.66 366,-395.12 372.4,-397.57 379.23,-399.79 386.06,-401.78"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="385.46,-405.24 396.04,-404.52 387.32,-398.49 385.46,-405.24"/>
 </g>
-<!-- Node78 -->
+<!-- Node79 -->
 <g id="node35" class="node">
-<title>Node78</title>
+<title>Node79</title>
 <g id="a_node35"><a xlink:href="classcarta_1_1LoaderCache.html#a850302c370dc52cc1784d85b88a03e77" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="571.5,-428.12 571.5,-458.12 681.5,-458.12 681.5,-428.12 571.5,-428.12"/>
 <text text-anchor="start" x="579.5" y="-446.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::LoaderCache</text>
@@ -225,27 +225,27 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node3&#45;&gt;Node78 -->
+<!-- Node3&#45;&gt;Node79 -->
 <g id="edge43" class="edge">
-<title>Node3&#45;&gt;Node78</title>
+<title>Node3&#45;&gt;Node79</title>
 <path fill="none" stroke="midnightblue" d="M312.34,-366.69C318.63,-369.15 324.68,-372.24 330,-376.12 354.21,-393.78 340.04,-418.16 366,-433.12 425.38,-467.36 505.76,-464.46 561.25,-456.45"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="561.96,-459.89 571.31,-454.91 560.9,-452.97 561.96,-459.89"/>
 </g>
-<!-- Node3&#45;&gt;Node79 -->
+<!-- Node3&#45;&gt;Node80 -->
 <g id="edge45" class="edge">
-<title>Node3&#45;&gt;Node79</title>
+<title>Node3&#45;&gt;Node80</title>
 <path fill="none" stroke="midnightblue" d="M277.35,-347.53C298.98,-338.15 334.05,-324.51 366,-319.12 527.06,-291.97 569.83,-330.86 733,-338.12 810.26,-341.56 838.02,-373.07 907,-338.12 962.58,-309.96 997.16,-239.61 1011.24,-205.4"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1014.66,-206.25 1015.09,-195.67 1008.15,-203.68 1014.66,-206.25"/>
 </g>
-<!-- Node3&#45;&gt;Node84 -->
+<!-- Node3&#45;&gt;Node85 -->
 <g id="edge50" class="edge">
-<title>Node3&#45;&gt;Node84</title>
+<title>Node3&#45;&gt;Node85</title>
 <path fill="none" stroke="midnightblue" d="M262.75,-347.28C278.2,-323.47 320.25,-261.68 366,-220.12 440.64,-152.33 464.43,-138.34 556,-96.12 630.46,-61.79 654.18,-66.7 733,-44.12 746.42,-40.28 761.04,-36.17 774.35,-32.46"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="775.54,-35.76 784.24,-29.71 773.67,-29.02 775.54,-35.76"/>
 </g>
-<!-- Node86 -->
+<!-- Node87 -->
 <g id="node43" class="node">
-<title>Node86</title>
+<title>Node87</title>
 <g id="a_node43"><a xlink:href="classcarta_1_1Session.html#af0bc6048baa8b0e803edc7bfb1161e87" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="368.5,-230.12 368.5,-260.12 517.5,-260.12 517.5,-230.12 368.5,-230.12"/>
 <text text-anchor="start" x="376.5" y="-248.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendRegion</text>
@@ -253,9 +253,9 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node3&#45;&gt;Node86 -->
+<!-- Node3&#45;&gt;Node87 -->
 <g id="edge53" class="edge">
-<title>Node3&#45;&gt;Node86</title>
+<title>Node3&#45;&gt;Node87</title>
 <path fill="none" stroke="midnightblue" d="M270.45,-347.56C291.03,-333.57 330.92,-306.91 366,-286.12 378.13,-278.93 391.6,-271.5 403.79,-264.96"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="405.64,-267.94 412.82,-260.16 402.35,-261.76 405.64,-267.94"/>
 </g>
@@ -275,24 +275,24 @@ var sectionId = 'dynsection-68';
 <path fill="none" stroke="midnightblue" d="M518.62,-589.32C531.09,-591.37 543.9,-593.38 556,-595.12 619.04,-604.18 690.85,-612.51 743.5,-618.25"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="743.44,-621.76 753.76,-619.36 744.2,-614.8 743.44,-621.76"/>
 </g>
-<!-- Node39 -->
+<!-- Node40 -->
 <g id="node19" class="node">
-<title>Node39</title>
+<title>Node40</title>
 <g id="a_node19"><a xlink:href="classcarta_1_1Session.html#a6c490d8acff0517270d57a70a6956dc6" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="556,-566.62 556,-585.62 697,-585.62 697,-566.62 556,-566.62"/>
 <text text-anchor="middle" x="626.5" y="-573.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::FillFileInfo</text>
 </a>
 </g>
 </g>
-<!-- Node6&#45;&gt;Node39 -->
+<!-- Node6&#45;&gt;Node40 -->
 <g id="edge18" class="edge">
-<title>Node6&#45;&gt;Node39</title>
+<title>Node6&#45;&gt;Node40</title>
 <path fill="none" stroke="midnightblue" d="M518.61,-576.12C527.56,-576.12 536.73,-576.12 545.75,-576.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="545.85,-579.62 555.85,-576.12 545.85,-572.62 545.85,-579.62"/>
 </g>
-<!-- Node43 -->
+<!-- Node44 -->
 <g id="node22" class="node">
-<title>Node43</title>
+<title>Node44</title>
 <g id="a_node22"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#a06c36c25d3286c3019c1bbdcabdd9f63" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="560.5,-775.12 560.5,-805.12 692.5,-805.12 692.5,-775.12 560.5,-775.12"/>
 <text text-anchor="start" x="568.5" y="-793.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -300,15 +300,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node6&#45;&gt;Node43 -->
+<!-- Node6&#45;&gt;Node44 -->
 <g id="edge21" class="edge">
-<title>Node6&#45;&gt;Node43</title>
+<title>Node6&#45;&gt;Node44</title>
 <path fill="none" stroke="midnightblue" d="M456.76,-591.17C488.07,-628.08 568.83,-723.3 606.11,-767.26"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="603.61,-769.73 612.75,-775.09 608.95,-765.2 603.61,-769.73"/>
 </g>
-<!-- Node6&#45;&gt;Node73 -->
+<!-- Node6&#45;&gt;Node74 -->
 <g id="edge35" class="edge">
-<title>Node6&#45;&gt;Node73</title>
+<title>Node6&#45;&gt;Node74</title>
 <path fill="none" stroke="midnightblue" d="M475.61,-560.97C509.63,-544.66 563.29,-518.94 596.33,-503.11"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="597.97,-506.2 605.47,-498.72 594.94,-499.89 597.97,-506.2"/>
 </g>
@@ -344,9 +344,9 @@ var sectionId = 'dynsection-68';
 <path fill="none" stroke="midnightblue" d="M1070.7,-641.27C1079.45,-644.87 1088.23,-649.14 1096,-654.12 1115.05,-666.34 1112.47,-678.69 1132,-690.12 1135.42,-692.12 1139.02,-693.97 1142.72,-695.66"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1141.52,-698.95 1152.09,-699.57 1144.21,-692.49 1141.52,-698.95"/>
 </g>
-<!-- Node22 -->
+<!-- Node23 -->
 <g id="node12" class="node">
-<title>Node22</title>
+<title>Node23</title>
 <g id="a_node12"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#ae41e978649253da4adc64d03bdd12f82" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1152.5,-748.12 1152.5,-778.12 1284.5,-778.12 1284.5,-748.12 1152.5,-748.12"/>
 <text text-anchor="start" x="1160.5" y="-766.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -354,15 +354,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node22 -->
+<!-- Node8&#45;&gt;Node23 -->
 <g id="edge11" class="edge">
-<title>Node8&#45;&gt;Node22</title>
+<title>Node8&#45;&gt;Node23</title>
 <path fill="none" stroke="midnightblue" d="M1077.14,-641.17C1084.03,-644.65 1090.54,-648.91 1096,-654.12 1125.66,-682.46 1101.21,-712.01 1132,-739.12 1135.41,-742.13 1139.17,-744.76 1143.15,-747.06"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1141.67,-750.23 1152.18,-751.6 1144.82,-743.98 1141.67,-750.23"/>
 </g>
-<!-- Node23 -->
+<!-- Node24 -->
 <g id="node13" class="node">
-<title>Node23</title>
+<title>Node24</title>
 <g id="a_node13"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#a9a7099a65e803d42d6da0619f83bfd7c" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="1134,-601.12 1134,-631.12 1303,-631.12 1303,-601.12 1134,-601.12"/>
 <text text-anchor="start" x="1142" y="-619.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -370,15 +370,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node23 -->
+<!-- Node8&#45;&gt;Node24 -->
 <g id="edge12" class="edge">
-<title>Node8&#45;&gt;Node23</title>
+<title>Node8&#45;&gt;Node24</title>
 <path fill="none" stroke="midnightblue" d="M1085.55,-622.82C1097.75,-622.2 1110.74,-621.54 1123.61,-620.89"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1124.09,-624.37 1133.9,-620.37 1123.73,-617.38 1124.09,-624.37"/>
 </g>
-<!-- Node25 -->
+<!-- Node26 -->
 <g id="node14" class="node">
-<title>Node25</title>
+<title>Node26</title>
 <g id="a_node14"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#ae0eb44133b06ce14972f8b0b94ca7eee" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1152.5,-797.12 1152.5,-827.12 1284.5,-827.12 1284.5,-797.12 1152.5,-797.12"/>
 <text text-anchor="start" x="1160.5" y="-815.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -386,15 +386,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node25 -->
+<!-- Node8&#45;&gt;Node26 -->
 <g id="edge13" class="edge">
-<title>Node8&#45;&gt;Node25</title>
+<title>Node8&#45;&gt;Node26</title>
 <path fill="none" stroke="midnightblue" d="M1079.34,-641.3C1085.54,-644.74 1091.29,-648.96 1096,-654.12 1137.54,-699.7 1088.64,-744.27 1132,-788.12 1135.41,-791.57 1139.28,-794.54 1143.43,-797.08"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1141.83,-800.2 1152.31,-801.74 1145.09,-794 1141.83,-800.2"/>
 </g>
-<!-- Node26 -->
+<!-- Node27 -->
 <g id="node15" class="node">
-<title>Node26</title>
+<title>Node27</title>
 <g id="a_node15"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#a3f73d0fb1820aaf9b2eda5fa8af4465f" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1132,-552.12 1132,-582.12 1305,-582.12 1305,-552.12 1132,-552.12"/>
 <text text-anchor="start" x="1140" y="-570.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -402,15 +402,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node26 -->
+<!-- Node8&#45;&gt;Node27 -->
 <g id="edge14" class="edge">
-<title>Node8&#45;&gt;Node26</title>
+<title>Node8&#45;&gt;Node27</title>
 <path fill="none" stroke="midnightblue" d="M1069.31,-611.1C1088.8,-605.14 1111.45,-598.26 1132,-592.12 1139.69,-589.82 1147.78,-587.43 1155.78,-585.08"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1156.87,-588.41 1165.48,-582.23 1154.89,-581.69 1156.87,-588.41"/>
 </g>
-<!-- Node27 -->
+<!-- Node28 -->
 <g id="node16" class="node">
-<title>Node27</title>
+<title>Node28</title>
 <g id="a_node16"><a xlink:href="classcarta_1_1CartaFitsImage.html#afaac20c0c6137f4492de3b54dec402e2" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="1157.5,-503.12 1157.5,-533.12 1279.5,-533.12 1279.5,-503.12 1157.5,-503.12"/>
 <text text-anchor="start" x="1165.5" y="-521.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CartaFitsImage</text>
@@ -418,15 +418,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node27 -->
+<!-- Node8&#45;&gt;Node28 -->
 <g id="edge15" class="edge">
-<title>Node8&#45;&gt;Node27</title>
+<title>Node8&#45;&gt;Node28</title>
 <path fill="none" stroke="midnightblue" d="M1037,-610.83C1057.72,-592.37 1095.06,-561.52 1132,-543.12 1136.93,-540.66 1142.15,-538.41 1147.47,-536.34"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1148.93,-539.54 1157.13,-532.83 1146.54,-532.96 1148.93,-539.54"/>
 </g>
-<!-- Node33 -->
+<!-- Node34 -->
 <g id="node17" class="node">
-<title>Node33</title>
+<title>Node34</title>
 <g id="a_node17"><a xlink:href="classcarta_1_1CartaHdf5Image.html#a4da383c4556276436d01463c8e977d2c" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1154.5,-454.12 1154.5,-484.12 1282.5,-484.12 1282.5,-454.12 1154.5,-454.12"/>
 <text text-anchor="start" x="1162.5" y="-472.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CartaHdf5Image</text>
@@ -434,15 +434,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node33 -->
+<!-- Node8&#45;&gt;Node34 -->
 <g id="edge16" class="edge">
-<title>Node8&#45;&gt;Node33</title>
+<title>Node8&#45;&gt;Node34</title>
 <path fill="none" stroke="midnightblue" d="M1029.06,-610.79C1045.38,-583.01 1083.65,-524.34 1132,-493.12 1136.08,-490.49 1140.44,-488.14 1144.96,-486.05"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1146.55,-489.18 1154.43,-482.1 1143.85,-482.72 1146.55,-489.18"/>
 </g>
-<!-- Node34 -->
+<!-- Node35 -->
 <g id="node18" class="node">
-<title>Node34</title>
+<title>Node35</title>
 <g id="a_node18"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#a7cb64132f92a7f2c68bdcdae4a25491d" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1152.5,-650.12 1152.5,-680.12 1284.5,-680.12 1284.5,-650.12 1152.5,-650.12"/>
 <text text-anchor="start" x="1160.5" y="-668.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -450,9 +450,9 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node8&#45;&gt;Node34 -->
+<!-- Node8&#45;&gt;Node35 -->
 <g id="edge17" class="edge">
-<title>Node8&#45;&gt;Node34</title>
+<title>Node8&#45;&gt;Node35</title>
 <path fill="none" stroke="midnightblue" d="M1085.55,-639C1103.7,-642.59 1123.56,-646.52 1142.24,-650.22"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1141.69,-653.68 1152.18,-652.19 1143.05,-646.82 1141.69,-653.68"/>
 </g>
@@ -488,9 +488,9 @@ var sectionId = 'dynsection-68';
 <path fill="none" stroke="midnightblue" d="M1278.52,-729.15C1305.79,-736.09 1338.33,-744.38 1366.7,-751.6"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1365.99,-755.03 1376.55,-754.11 1367.72,-748.25 1365.99,-755.03"/>
 </g>
-<!-- Node40 -->
+<!-- Node41 -->
 <g id="node20" class="node">
-<title>Node40</title>
+<title>Node41</title>
 <g id="a_node20"><a xlink:href="classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="762,-562.12 762,-592.12 878,-592.12 878,-562.12 762,-562.12"/>
 <text text-anchor="start" x="770" y="-580.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileInfoLoader</text>
@@ -498,39 +498,39 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node39&#45;&gt;Node40 -->
+<!-- Node40&#45;&gt;Node41 -->
 <g id="edge19" class="edge">
-<title>Node39&#45;&gt;Node40</title>
+<title>Node40&#45;&gt;Node41</title>
 <path fill="none" stroke="midnightblue" d="M697.18,-576.49C714.97,-576.58 734.06,-576.68 751.72,-576.77"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="751.92,-580.27 761.94,-576.82 751.96,-573.27 751.92,-580.27"/>
 </g>
-<!-- Node39&#45;&gt;Node42 -->
+<!-- Node40&#45;&gt;Node43 -->
 <g id="edge20" class="edge">
-<title>Node39&#45;&gt;Node42</title>
+<title>Node40&#45;&gt;Node43</title>
 <path fill="none" stroke="midnightblue" d="M670,-566.58C698.51,-560.18 736.26,-551.7 766.63,-544.88"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="767.63,-548.24 776.62,-542.64 766.09,-541.41 767.63,-548.24"/>
 </g>
-<!-- Node43&#45;&gt;Node7 -->
+<!-- Node44&#45;&gt;Node7 -->
 <g id="edge27" class="edge">
-<title>Node43&#45;&gt;Node7</title>
+<title>Node44&#45;&gt;Node7</title>
 <path fill="none" stroke="midnightblue" d="M634.77,-775.03C649.32,-746.43 684.82,-684.24 733,-651.12 736.53,-648.69 740.3,-646.5 744.21,-644.52"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="745.91,-647.59 753.56,-640.26 743.01,-641.22 745.91,-647.59"/>
 </g>
-<!-- Node43&#45;&gt;Node10 -->
+<!-- Node44&#45;&gt;Node10 -->
 <g id="edge22" class="edge">
-<title>Node43&#45;&gt;Node10</title>
+<title>Node44&#45;&gt;Node10</title>
 <path fill="none" stroke="midnightblue" d="M632.03,-805.21C642.97,-838.66 674.41,-918.57 733,-950.12 949.85,-1066.88 1261.41,-985.24 1383.57,-945.46"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1385.02,-948.67 1393.42,-942.21 1382.82,-942.02 1385.02,-948.67"/>
 </g>
-<!-- Node43&#45;&gt;Node11 -->
+<!-- Node44&#45;&gt;Node11 -->
 <g id="edge23" class="edge">
-<title>Node43&#45;&gt;Node11</title>
+<title>Node44&#45;&gt;Node11</title>
 <path fill="none" stroke="midnightblue" d="M653.34,-805.32C674.08,-816.6 704.37,-831.03 733,-837.12 981.66,-890.01 1058.08,-897.6 1305,-837.12 1342.07,-828.04 1380.31,-806.4 1405.74,-789.96"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1407.76,-792.82 1414.17,-784.38 1403.9,-786.98 1407.76,-792.82"/>
 </g>
-<!-- Node44 -->
+<!-- Node45 -->
 <g id="node23" class="node">
-<title>Node44</title>
+<title>Node45</title>
 <g id="a_node23"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#adb7260beffbf94d590beb869d1b0ecbc" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="943,-797.12 943,-827.12 1096,-827.12 1096,-797.12 943,-797.12"/>
 <text text-anchor="start" x="951" y="-815.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -538,15 +538,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node43&#45;&gt;Node44 -->
+<!-- Node44&#45;&gt;Node45 -->
 <g id="edge24" class="edge">
-<title>Node43&#45;&gt;Node44</title>
+<title>Node44&#45;&gt;Node45</title>
 <path fill="none" stroke="midnightblue" d="M633.74,-805.13C646.94,-834.68 680.87,-899.7 733,-925.12 802.51,-959.02 835.65,-954.95 907,-925.12 950.18,-907.07 985.13,-863.25 1003.78,-835.79"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1006.88,-837.44 1009.46,-827.16 1001.03,-833.58 1006.88,-837.44"/>
 </g>
-<!-- Node48 -->
+<!-- Node49 -->
 <g id="node24" class="node">
-<title>Node48</title>
+<title>Node49</title>
 <g id="a_node24"><a xlink:href="classcarta_1_1CompressedFits.html#a208311366da6b5a5d6fd9c99b9bf8973" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="757.5,-797.12 757.5,-827.12 882.5,-827.12 882.5,-797.12 757.5,-797.12"/>
 <text text-anchor="start" x="765.5" y="-815.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
@@ -554,15 +554,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node43&#45;&gt;Node48 -->
+<!-- Node44&#45;&gt;Node49 -->
 <g id="edge28" class="edge">
-<title>Node43&#45;&gt;Node48</title>
+<title>Node44&#45;&gt;Node49</title>
 <path fill="none" stroke="midnightblue" d="M692.6,-797.6C710.18,-799.62 729.29,-801.82 747.21,-803.87"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="746.98,-807.37 757.31,-805.03 747.78,-800.42 746.98,-807.37"/>
 </g>
-<!-- Node49 -->
+<!-- Node50 -->
 <g id="node25" class="node">
-<title>Node49</title>
+<title>Node50</title>
 <g id="a_node25"><a xlink:href="classcarta_1_1CompressedFits.html#a94e623f08d835889943c9d7a2fcb7f76" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="757.5,-660.12 757.5,-690.12 882.5,-690.12 882.5,-660.12 757.5,-660.12"/>
 <text text-anchor="start" x="765.5" y="-678.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CompressedFits</text>
@@ -570,15 +570,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node43&#45;&gt;Node49 -->
+<!-- Node44&#45;&gt;Node50 -->
 <g id="edge29" class="edge">
-<title>Node43&#45;&gt;Node49</title>
+<title>Node44&#45;&gt;Node50</title>
 <path fill="none" stroke="midnightblue" d="M641.36,-774.8C660.23,-754.83 695.92,-720.12 733,-700.12 737.59,-697.65 742.45,-695.39 747.43,-693.34"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="749.03,-696.48 757.12,-689.65 746.53,-689.94 749.03,-696.48"/>
 </g>
-<!-- Node66 -->
+<!-- Node67 -->
 <g id="node27" class="node">
-<title>Node66</title>
+<title>Node67</title>
 <g id="a_node27"><a xlink:href="classcarta_1_1FitsHduList.html#aae758ae3882416bb039c090209fcf5ad" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="769.5,-709.12 769.5,-739.12 870.5,-739.12 870.5,-709.12 769.5,-709.12"/>
 <text text-anchor="start" x="777.5" y="-727.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FitsHduList</text>
@@ -586,30 +586,30 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node43&#45;&gt;Node66 -->
+<!-- Node44&#45;&gt;Node67 -->
 <g id="edge31" class="edge">
-<title>Node43&#45;&gt;Node66</title>
+<title>Node44&#45;&gt;Node67</title>
 <path fill="none" stroke="midnightblue" d="M671.43,-774.98C699.41,-765.34 735.83,-752.78 765.49,-742.56"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="766.96,-745.76 775.27,-739.19 764.68,-739.14 766.96,-745.76"/>
 </g>
-<!-- Node68 -->
+<!-- Node69 -->
 <g id="node28" class="node">
-<title>Node68</title>
+<title>Node69</title>
 <g id="a_node28"><a xlink:href="File_8cc.html#a75f8a4cb14c9fca8730255b6fee82794" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="968,-714.62 968,-733.62 1071,-733.62 1071,-714.62 968,-714.62"/>
 <text text-anchor="middle" x="1019.5" y="-721.62" font-family="Helvetica,sans-Serif" font-size="10.00">IsCompressedFits</text>
 </a>
 </g>
 </g>
-<!-- Node43&#45;&gt;Node68 -->
+<!-- Node44&#45;&gt;Node69 -->
 <g id="edge33" class="edge">
-<title>Node43&#45;&gt;Node68</title>
+<title>Node44&#45;&gt;Node69</title>
 <path fill="none" stroke="midnightblue" d="M692.68,-781.97C749.47,-774.53 833.94,-762.65 907,-749.12 927.6,-745.31 950.17,-740.39 969.59,-735.92"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="970.48,-739.31 979.43,-733.63 968.9,-732.49 970.48,-739.31"/>
 </g>
-<!-- Node72 -->
+<!-- Node73 -->
 <g id="node29" class="node">
-<title>Node72</title>
+<title>Node73</title>
 <g id="a_node29"><a xlink:href="classcarta_1_1FileExtInfoLoader.html#a52af5bc1b2fbb1cbeb91ceb48d8ba685" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="754,-885.12 754,-915.12 886,-915.12 886,-885.12 754,-885.12"/>
 <text text-anchor="start" x="762" y="-903.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileExtInfoLoader</text>
@@ -617,48 +617,48 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node43&#45;&gt;Node72 -->
+<!-- Node44&#45;&gt;Node73 -->
 <g id="edge34" class="edge">
-<title>Node43&#45;&gt;Node72</title>
+<title>Node44&#45;&gt;Node73</title>
 <path fill="none" stroke="midnightblue" d="M643.91,-805.2C663.75,-822.78 698.76,-851.76 733,-870.12 740.8,-874.3 749.29,-878.09 757.81,-881.45"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="756.81,-884.82 767.4,-885.07 759.28,-878.27 756.81,-884.82"/>
 </g>
-<!-- Node44&#45;&gt;Node22 -->
+<!-- Node45&#45;&gt;Node23 -->
 <g id="edge25" class="edge">
-<title>Node44&#45;&gt;Node22</title>
+<title>Node45&#45;&gt;Node23</title>
 <path fill="none" stroke="midnightblue" d="M1080.95,-797.09C1101.93,-791.87 1125.65,-785.97 1147.35,-780.57"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1148.31,-783.94 1157.17,-778.13 1146.62,-777.15 1148.31,-783.94"/>
 </g>
-<!-- Node44&#45;&gt;Node25 -->
+<!-- Node45&#45;&gt;Node26 -->
 <g id="edge26" class="edge">
-<title>Node44&#45;&gt;Node25</title>
+<title>Node45&#45;&gt;Node26</title>
 <path fill="none" stroke="midnightblue" d="M1096.1,-812.12C1111.18,-812.12 1127.01,-812.12 1142.08,-812.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1142.37,-815.62 1152.37,-812.12 1142.37,-808.62 1142.37,-815.62"/>
 </g>
-<!-- Node54 -->
+<!-- Node55 -->
 <g id="node26" class="node">
-<title>Node54</title>
+<title>Node55</title>
 <g id="a_node26"><a xlink:href="classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="959.5,-663.62 959.5,-682.62 1079.5,-682.62 1079.5,-663.62 959.5,-663.62"/>
 <text text-anchor="middle" x="1019.5" y="-670.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Timer::Elapsed</text>
 </a>
 </g>
 </g>
-<!-- Node49&#45;&gt;Node54 -->
+<!-- Node50&#45;&gt;Node55 -->
 <g id="edge30" class="edge">
-<title>Node49&#45;&gt;Node54</title>
+<title>Node50&#45;&gt;Node55</title>
 <path fill="none" stroke="midnightblue" d="M882.68,-674.5C903.78,-674.28 927.53,-674.04 949.2,-673.82"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="949.35,-677.32 959.31,-673.72 949.28,-670.32 949.35,-677.32"/>
 </g>
-<!-- Node66&#45;&gt;Node68 -->
+<!-- Node67&#45;&gt;Node69 -->
 <g id="edge32" class="edge">
-<title>Node66&#45;&gt;Node68</title>
+<title>Node67&#45;&gt;Node69</title>
 <path fill="none" stroke="midnightblue" d="M870.58,-724.12C897.04,-724.12 929.82,-724.12 957.8,-724.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="957.87,-727.62 967.87,-724.12 957.87,-720.62 957.87,-727.62"/>
 </g>
-<!-- Node74 -->
+<!-- Node75 -->
 <g id="node31" class="node">
-<title>Node74</title>
+<title>Node75</title>
 <g id="a_node31"><a xlink:href="classcarta_1_1LoaderCache.html#a266bb1e531c331928d9af7f7c3c5b05d" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="765,-425.12 765,-455.12 875,-455.12 875,-425.12 765,-425.12"/>
 <text text-anchor="start" x="773" y="-443.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::LoaderCache</text>
@@ -666,15 +666,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node73&#45;&gt;Node74 -->
+<!-- Node74&#45;&gt;Node75 -->
 <g id="edge36" class="edge">
-<title>Node73&#45;&gt;Node74</title>
+<title>Node74&#45;&gt;Node75</title>
 <path fill="none" stroke="midnightblue" d="M664.88,-479.56C690.4,-473.03 724.87,-464.21 754.74,-456.56"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="755.86,-459.89 764.68,-454.02 754.12,-453.11 755.86,-459.89"/>
 </g>
-<!-- Node75 -->
+<!-- Node76 -->
 <g id="node32" class="node">
-<title>Node75</title>
+<title>Node76</title>
 <g id="a_node32"><a xlink:href="classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="768,-474.12 768,-504.12 872,-504.12 872,-474.12 768,-474.12"/>
 <text text-anchor="start" x="776" y="-492.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileLoader::</text>
@@ -682,57 +682,57 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node73&#45;&gt;Node75 -->
+<!-- Node74&#45;&gt;Node76 -->
 <g id="edge37" class="edge">
-<title>Node73&#45;&gt;Node75</title>
+<title>Node74&#45;&gt;Node76</title>
 <path fill="none" stroke="midnightblue" d="M693.67,-489.12C714.48,-489.12 737.36,-489.12 757.8,-489.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="757.94,-492.62 767.94,-489.12 757.94,-485.62 757.94,-492.62"/>
 </g>
-<!-- Node75&#45;&gt;Node68 -->
+<!-- Node76&#45;&gt;Node69 -->
 <g id="edge39" class="edge">
-<title>Node75&#45;&gt;Node68</title>
+<title>Node76&#45;&gt;Node69</title>
 <path fill="none" stroke="midnightblue" d="M872.43,-494.53C885.27,-498.23 897.95,-504.28 907,-514.12 961.65,-573.52 891.95,-629.6 943,-692.12 949.42,-699.98 958.11,-705.94 967.31,-710.45"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="966.06,-713.73 976.62,-714.5 968.85,-707.31 966.06,-713.73"/>
 </g>
-<!-- Node76 -->
+<!-- Node77 -->
 <g id="node33" class="node">
-<title>Node76</title>
+<title>Node77</title>
 <g id="a_node33"><a xlink:href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="962,-479.62 962,-498.62 1077,-498.62 1077,-479.62 962,-479.62"/>
 <text text-anchor="middle" x="1019.5" y="-486.62" font-family="Helvetica,sans-Serif" font-size="10.00">CasacoreImageType</text>
 </a>
 </g>
 </g>
-<!-- Node75&#45;&gt;Node76 -->
+<!-- Node76&#45;&gt;Node77 -->
 <g id="edge38" class="edge">
-<title>Node75&#45;&gt;Node76</title>
+<title>Node76&#45;&gt;Node77</title>
 <path fill="none" stroke="midnightblue" d="M872.12,-489.12C896.33,-489.12 925.58,-489.12 951.54,-489.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="951.68,-492.62 961.68,-489.12 951.68,-485.62 951.68,-492.62"/>
 </g>
-<!-- Node78&#45;&gt;Node74 -->
+<!-- Node79&#45;&gt;Node75 -->
 <g id="edge44" class="edge">
-<title>Node78&#45;&gt;Node74</title>
+<title>Node79&#45;&gt;Node75</title>
 <path fill="none" stroke="midnightblue" d="M681.61,-442.27C704.25,-441.92 730.75,-441.5 754.4,-441.13"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="754.75,-444.63 764.69,-440.97 754.64,-437.63 754.75,-444.63"/>
 </g>
-<!-- Node80 -->
+<!-- Node81 -->
 <g id="node37" class="node">
-<title>Node80</title>
+<title>Node81</title>
 <g id="a_node37"><a xlink:href="namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1132,-132.62 1132,-151.62 1305,-151.62 1305,-132.62 1132,-132.62"/>
 <text text-anchor="middle" x="1218.5" y="-139.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::logger::LogSentEventType</text>
 </a>
 </g>
 </g>
-<!-- Node79&#45;&gt;Node80 -->
+<!-- Node80&#45;&gt;Node81 -->
 <g id="edge46" class="edge">
-<title>Node79&#45;&gt;Node80</title>
+<title>Node80&#45;&gt;Node81</title>
 <path fill="none" stroke="midnightblue" d="M1062.85,-176.61C1083.68,-171.93 1109.15,-166.22 1132,-161.12 1142.46,-158.79 1153.64,-156.3 1164.35,-153.92"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1165.44,-157.26 1174.44,-151.67 1163.92,-150.43 1165.44,-157.26"/>
 </g>
-<!-- Node82 -->
+<!-- Node83 -->
 <g id="node39" class="node">
-<title>Node82</title>
+<title>Node83</title>
 <g id="a_node39"><a xlink:href="classcarta_1_1concurrent__queue.html#ab1a11795f017e1c7dd870fce5da5ede1" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1151.5,-220.12 1151.5,-250.12 1285.5,-250.12 1285.5,-220.12 1151.5,-220.12"/>
 <text text-anchor="start" x="1159.5" y="-238.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::concurrent_queue</text>
@@ -740,15 +740,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node79&#45;&gt;Node82 -->
+<!-- Node80&#45;&gt;Node83 -->
 <g id="edge48" class="edge">
-<title>Node79&#45;&gt;Node82</title>
+<title>Node80&#45;&gt;Node83</title>
 <path fill="none" stroke="midnightblue" d="M1058.95,-195.69C1084,-201.92 1117.43,-210.23 1147.13,-217.62"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1146.5,-221.07 1157.05,-220.08 1148.19,-214.27 1146.5,-221.07"/>
 </g>
-<!-- Node83 -->
+<!-- Node84 -->
 <g id="node40" class="node">
-<title>Node83</title>
+<title>Node84</title>
 <g id="a_node40"><a xlink:href="classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1151.5,-171.12 1151.5,-201.12 1285.5,-201.12 1285.5,-171.12 1151.5,-171.12"/>
 <text text-anchor="start" x="1159.5" y="-189.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::concurrent_queue</text>
@@ -756,15 +756,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node79&#45;&gt;Node83 -->
+<!-- Node80&#45;&gt;Node84 -->
 <g id="edge49" class="edge">
-<title>Node79&#45;&gt;Node83</title>
+<title>Node80&#45;&gt;Node84</title>
 <path fill="none" stroke="midnightblue" d="M1091.07,-186.12C1107.34,-186.12 1124.72,-186.12 1141.23,-186.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1141.37,-189.62 1151.37,-186.12 1141.37,-182.62 1141.37,-189.62"/>
 </g>
-<!-- Node81 -->
+<!-- Node82 -->
 <g id="node38" class="node">
-<title>Node81</title>
+<title>Node82</title>
 <g id="a_node38"><a xlink:href="namespacecarta_1_1logger.html#a23c9bf75209165cf69eb8d50f64b81b4" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1378.5,-127.12 1378.5,-157.12 1494.5,-157.12 1494.5,-127.12 1378.5,-127.12"/>
 <text text-anchor="start" x="1386.5" y="-145.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::logger::log</text>
@@ -772,42 +772,42 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node80&#45;&gt;Node81 -->
+<!-- Node81&#45;&gt;Node82 -->
 <g id="edge47" class="edge">
-<title>Node80&#45;&gt;Node81</title>
+<title>Node81&#45;&gt;Node82</title>
 <path fill="none" stroke="midnightblue" d="M1305.18,-142.12C1326.14,-142.12 1348.28,-142.12 1368.24,-142.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1368.46,-145.62 1378.46,-142.12 1368.46,-138.62 1368.46,-145.62"/>
 </g>
-<!-- Node84&#45;&gt;Node79 -->
+<!-- Node85&#45;&gt;Node80 -->
 <g id="edge52" class="edge">
-<title>Node84&#45;&gt;Node79</title>
+<title>Node85&#45;&gt;Node80</title>
 <path fill="none" stroke="midnightblue" d="M875.58,-29.75C886.55,-33.19 897.59,-37.84 907,-44.12 955.48,-76.49 992.37,-136.77 1008.92,-167.33"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1005.98,-169.25 1013.74,-176.47 1012.17,-165.99 1005.98,-169.25"/>
 </g>
-<!-- Node85 -->
+<!-- Node86 -->
 <g id="node42" class="node">
-<title>Node85</title>
+<title>Node86</title>
 <g id="a_node42"><a xlink:href="classMessage.html#a99e84f303d54a46b1cf582bf343c7f29" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="963,-10.62 963,-29.62 1076,-29.62 1076,-10.62 963,-10.62"/>
 <text text-anchor="middle" x="1019.5" y="-17.62" font-family="Helvetica,sans-Serif" font-size="10.00">Message::ErrorData</text>
 </a>
 </g>
 </g>
-<!-- Node84&#45;&gt;Node85 -->
+<!-- Node85&#45;&gt;Node86 -->
 <g id="edge51" class="edge">
-<title>Node84&#45;&gt;Node85</title>
+<title>Node85&#45;&gt;Node86</title>
 <path fill="none" stroke="midnightblue" d="M900.19,-20.12C917.61,-20.12 935.88,-20.12 952.7,-20.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="952.97,-23.62 962.97,-20.12 952.97,-16.62 952.97,-23.62"/>
 </g>
-<!-- Node86&#45;&gt;Node84 -->
+<!-- Node87&#45;&gt;Node85 -->
 <g id="edge65" class="edge">
-<title>Node86&#45;&gt;Node84</title>
+<title>Node87&#45;&gt;Node85</title>
 <path fill="none" stroke="midnightblue" d="M469.19,-230.01C537.57,-188.98 726.11,-75.85 794.13,-35.05"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="796.12,-37.93 802.9,-29.78 792.52,-31.93 796.12,-37.93"/>
 </g>
-<!-- Node87 -->
+<!-- Node88 -->
 <g id="node44" class="node">
-<title>Node87</title>
+<title>Node88</title>
 <g id="a_node44"><a xlink:href="classcarta_1_1Session.html#aa9e908b20d1e35ff162cc1f361dbfe56" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="558,-217.12 558,-247.12 695,-247.12 695,-217.12 558,-217.12"/>
 <text text-anchor="start" x="566" y="-235.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::Calculate</text>
@@ -815,15 +815,15 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node86&#45;&gt;Node87 -->
+<!-- Node87&#45;&gt;Node88 -->
 <g id="edge54" class="edge">
-<title>Node86&#45;&gt;Node87</title>
+<title>Node87&#45;&gt;Node88</title>
 <path fill="none" stroke="midnightblue" d="M517.56,-239.85C527.58,-239.13 537.9,-238.4 547.99,-237.67"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="548.26,-241.16 557.98,-236.96 547.76,-234.18 548.26,-241.16"/>
 </g>
-<!-- Node98 -->
+<!-- Node99 -->
 <g id="node50" class="node">
-<title>Node98</title>
+<title>Node99</title>
 <g id="a_node50"><a xlink:href="classcarta_1_1Session.html#ae6ff58d2a61d3872bc741f12ed2b91d7" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="754,-299.12 754,-329.12 886,-329.12 886,-299.12 754,-299.12"/>
 <text text-anchor="start" x="762" y="-317.12" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendFile</text>
@@ -831,57 +831,57 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node86&#45;&gt;Node98 -->
+<!-- Node87&#45;&gt;Node99 -->
 <g id="edge64" class="edge">
-<title>Node86&#45;&gt;Node98</title>
+<title>Node87&#45;&gt;Node99</title>
 <path fill="none" stroke="midnightblue" d="M517.64,-258.67C583.07,-270.71 678.27,-288.23 744.09,-300.34"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="743.51,-303.79 753.98,-302.16 744.78,-296.91 743.51,-303.79"/>
 </g>
-<!-- Node87&#45;&gt;Node54 -->
+<!-- Node88&#45;&gt;Node55 -->
 <g id="edge56" class="edge">
-<title>Node87&#45;&gt;Node54</title>
+<title>Node88&#45;&gt;Node55</title>
 <path fill="none" stroke="midnightblue" d="M639.39,-247.23C657.57,-269.54 694.27,-311.5 733,-338.12 802.69,-386.02 855.63,-347.94 907,-415.12 971.45,-499.41 873.09,-571.31 943,-651.12 945.37,-653.82 948.04,-656.2 950.94,-658.29"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="949.24,-661.35 959.62,-663.47 952.82,-655.34 949.24,-661.35"/>
 </g>
-<!-- Node87&#45;&gt;Node84 -->
+<!-- Node88&#45;&gt;Node85 -->
 <g id="edge63" class="edge">
-<title>Node87&#45;&gt;Node84</title>
+<title>Node88&#45;&gt;Node85</title>
 <path fill="none" stroke="midnightblue" d="M635.16,-217.06C650.65,-187.63 688.07,-121.5 733,-77.12 750.36,-59.97 773.6,-44.93 791.55,-34.61"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="793.38,-37.6 800.39,-29.66 789.96,-31.49 793.38,-37.6"/>
 </g>
-<!-- Node88 -->
+<!-- Node89 -->
 <g id="node45" class="node">
-<title>Node88</title>
+<title>Node89</title>
 <g id="a_node45"><a xlink:href="classcarta_1_1Histogram.html#a56e2b8bfafd357f89b9197487c20446e" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="758.5,-222.62 758.5,-241.62 881.5,-241.62 881.5,-222.62 758.5,-222.62"/>
 <text text-anchor="middle" x="820" y="-229.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Histogram::Add</text>
 </a>
 </g>
 </g>
-<!-- Node87&#45;&gt;Node88 -->
+<!-- Node88&#45;&gt;Node89 -->
 <g id="edge55" class="edge">
-<title>Node87&#45;&gt;Node88</title>
+<title>Node88&#45;&gt;Node89</title>
 <path fill="none" stroke="midnightblue" d="M695.02,-232.12C712.3,-232.12 730.93,-232.12 748.37,-232.12"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="748.47,-235.62 758.47,-232.12 748.47,-228.62 748.47,-235.62"/>
 </g>
-<!-- Node94 -->
+<!-- Node95 -->
 <g id="node46" class="node">
-<title>Node94</title>
+<title>Node95</title>
 <g id="a_node46"><a xlink:href="Message_8cc.html#aadf644bd365f0198b09a7196f9990511" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="779,-184.62 779,-203.62 861,-203.62 861,-184.62 779,-184.62"/>
 <text text-anchor="middle" x="820" y="-191.62" font-family="Helvetica,sans-Serif" font-size="10.00">FillHistogram</text>
 </a>
 </g>
 </g>
-<!-- Node87&#45;&gt;Node94 -->
+<!-- Node88&#45;&gt;Node95 -->
 <g id="edge57" class="edge">
-<title>Node87&#45;&gt;Node94</title>
+<title>Node88&#45;&gt;Node95</title>
 <path fill="none" stroke="midnightblue" d="M695.02,-218.72C719.3,-213.91 746.23,-208.56 768.78,-204.09"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="769.68,-207.48 778.81,-202.1 768.32,-200.61 769.68,-207.48"/>
 </g>
-<!-- Node95 -->
+<!-- Node96 -->
 <g id="node47" class="node">
-<title>Node95</title>
+<title>Node96</title>
 <g id="a_node47"><a xlink:href="classcarta_1_1SessionContext.html#a28e9e5c979d1c244253a92f69b156c39" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="758.5,-124.62 758.5,-165.62 881.5,-165.62 881.5,-124.62 758.5,-124.62"/>
 <text text-anchor="start" x="766.5" y="-153.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::SessionContext</text>
@@ -890,51 +890,51 @@ var sectionId = 'dynsection-68';
 </a>
 </g>
 </g>
-<!-- Node87&#45;&gt;Node95 -->
+<!-- Node88&#45;&gt;Node96 -->
 <g id="edge58" class="edge">
-<title>Node87&#45;&gt;Node95</title>
+<title>Node88&#45;&gt;Node96</title>
 <path fill="none" stroke="midnightblue" d="M652.94,-216.89C673.95,-204.67 704.81,-187.56 733,-175.12 738.06,-172.89 743.35,-170.7 748.7,-168.6"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="750.29,-171.74 758.38,-164.9 747.79,-165.2 750.29,-171.74"/>
 </g>
-<!-- Node96 -->
+<!-- Node97 -->
 <g id="node48" class="node">
-<title>Node96</title>
+<title>Node97</title>
 <g id="a_node48"><a xlink:href="structcarta_1_1BasicStats.html#a536adffa874e62bc21b8764a77ce09fd" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="759,-86.62 759,-105.62 881,-105.62 881,-86.62 759,-86.62"/>
 <text text-anchor="middle" x="820" y="-93.62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::BasicStats::join</text>
 </a>
 </g>
 </g>
-<!-- Node87&#45;&gt;Node96 -->
+<!-- Node88&#45;&gt;Node97 -->
 <g id="edge59" class="edge">
-<title>Node87&#45;&gt;Node96</title>
+<title>Node88&#45;&gt;Node97</title>
 <path fill="none" stroke="midnightblue" d="M636.73,-216.81C652.88,-191.42 688.8,-140.86 733,-115.12 738.08,-112.16 743.57,-109.67 749.24,-107.56"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="750.51,-110.83 758.9,-104.36 748.31,-104.18 750.51,-110.83"/>
 </g>
-<!-- Node97 -->
+<!-- Node98 -->
 <g id="node49" class="node">
-<title>Node97</title>
+<title>Node98</title>
 <g id="a_node49"><a xlink:href="classMessage.html#af13c35c35a5f3fd50a68319be9287611" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="733,-260.62 733,-279.62 907,-279.62 907,-260.62 733,-260.62"/>
 <text text-anchor="middle" x="820" y="-267.62" font-family="Helvetica,sans-Serif" font-size="10.00">Message::RegionHistogramData</text>
 </a>
 </g>
 </g>
-<!-- Node87&#45;&gt;Node97 -->
+<!-- Node88&#45;&gt;Node98 -->
 <g id="edge60" class="edge">
-<title>Node87&#45;&gt;Node97</title>
+<title>Node88&#45;&gt;Node98</title>
 <path fill="none" stroke="midnightblue" d="M695.02,-245.52C716.58,-249.8 740.24,-254.49 761.06,-258.62"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="760.54,-262.09 771.03,-260.6 761.9,-255.22 760.54,-262.09"/>
 </g>
-<!-- Node87&#45;&gt;Node98 -->
+<!-- Node88&#45;&gt;Node99 -->
 <g id="edge61" class="edge">
-<title>Node87&#45;&gt;Node98</title>
+<title>Node88&#45;&gt;Node99</title>
 <path fill="none" stroke="midnightblue" d="M651.92,-247.25C672.85,-259.74 704.11,-277.27 733,-289.12 738.85,-291.52 745.02,-293.79 751.25,-295.91"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="750.46,-299.33 761.06,-299.11 752.64,-292.68 750.46,-299.33"/>
 </g>
-<!-- Node98&#45;&gt;Node79 -->
+<!-- Node99&#45;&gt;Node80 -->
 <g id="edge62" class="edge">
-<title>Node98&#45;&gt;Node79</title>
+<title>Node99&#45;&gt;Node80</title>
 <path fill="none" stroke="midnightblue" d="M885.29,-299.04C892.83,-296.23 900.23,-292.95 907,-289.12 947.28,-266.36 984.76,-226.37 1004.33,-203.49"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="1007.17,-205.54 1010.92,-195.63 1001.81,-201.05 1007.17,-205.54"/>
 </g>
