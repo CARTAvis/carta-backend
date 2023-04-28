@@ -24,7 +24,7 @@ void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t da
 }
 
 Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size) {
-    if (bounds.Invalid() || data_size == 0) {
+    if (bounds.Invalid<float>() || data_size == 0) {
         // empty / NaN region
         return Histogram(1, HistogramBounds(0, 0), data, data_size);
     }

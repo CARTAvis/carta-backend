@@ -29,8 +29,10 @@ struct Bounds {
         return fabs(num1 - num2) <= std::numeric_limits<T>::epsilon();
     }
 
+    // U is the type of statistics value. When a statistics value is not available, they are assigned to the extreme value of such type
+    template <typename U>
     bool Invalid() const {
-        return min == std::numeric_limits<T>::max() || max == std::numeric_limits<T>::min();
+        return min == std::numeric_limits<U>::max() || max == std::numeric_limits<U>::lowest();
     }
 
     bool operator==(const Bounds<T>& rhs) const {
