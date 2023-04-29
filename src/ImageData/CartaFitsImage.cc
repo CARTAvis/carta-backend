@@ -392,7 +392,7 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
         int blank_value;
         char* comment(nullptr); // ignore
         status = 0;
-        fits_read_key(fptr, TLONG, key.c_str(), &blank_value, comment, &status);
+        fits_read_key(fptr, TINT, key.c_str(), &blank_value, comment, &status);
         _has_blanks = !status;
     } else {
         // For float (-32) and double (-64) mask is represented by NaN
