@@ -23,7 +23,6 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
-#include "Frame/VectorFieldCalculator.h"
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
@@ -320,7 +319,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::
     bool file_info_ok(false);
 
     try {
-        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image));
+        image_loader = std::shared_ptr<FileLoader>(FileLoader::GetLoader(image, filename));
         FileExtInfoLoader ext_info_loader(image_loader);
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
@@ -1310,7 +1309,6 @@ bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
 void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_id) {
     int file_id(pv_request.file_id());
     int region_id(pv_request.region_id());
-    int width(pv_request.width());
     CARTA::PvResponse pv_response;
 
     if (_frames.count(file_id)) {
@@ -1328,7 +1326,7 @@ void Session::OnPvRequest(const CARTA::PvRequest& pv_request, uint32_t request_i
             auto& frame = _frames.at(file_id);
             GeneratedImage pv_image;
 
-            if (_region_handler->CalculatePvImage(file_id, region_id, width, frame, progress_callback, pv_response, pv_image)) {
+            if (_region_handler->CalculatePvImage(pv_request, frame, progress_callback, pv_response, pv_image)) {
                 auto* open_file_ack = pv_response.mutable_open_file_ack();
                 OnOpenFile(pv_image.file_id, pv_image.name, pv_image.image, open_file_ack);
             }
@@ -1355,15 +1353,36 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
 
     if (_frames.count(file_id)) {
         Timer t;
+        bool success(false);
         int region_id(fitting_request.region_id());
+        GeneratedImage model_image;
+        GeneratedImage residual_image;
+
+        // Set fitting progress callback function
+        auto progress_callback = [&](float progress) {
+            auto fitting_progress = Message::FittingProgress(file_id, progress);
+            SendEvent(CARTA::EventType::FITTING_PROGRESS, request_id, fitting_progress);
+        };
+
         if (region_id != IMAGE_REGION_ID) {
             if (!_region_handler) {
-                // created on demand only
                 _region_handler = std::unique_ptr<RegionHandler>(new RegionHandler());
             }
-            _region_handler->FitImage(fitting_request, fitting_response, _frames.at(file_id));
+            success = _region_handler->FitImage(
+                fitting_request, fitting_response, _frames.at(file_id), model_image, residual_image, progress_callback);
         } else {
-            _frames.at(file_id)->FitImage(fitting_request, fitting_response);
+            success = _frames.at(file_id)->FitImage(fitting_request, fitting_response, model_image, residual_image, progress_callback);
+        }
+
+        if (success) {
+            if (fitting_request.create_model_image()) {
+                auto* model_image_open_file_ack = fitting_response.mutable_model_image();
+                OnOpenFile(model_image.file_id, model_image.name, model_image.image, model_image_open_file_ack);
+            }
+            if (fitting_request.create_residual_image()) {
+                auto* residual_image_open_file_ack = fitting_response.mutable_residual_image();
+                OnOpenFile(residual_image.file_id, residual_image.name, residual_image.image, residual_image_open_file_ack);
+            }
         }
 
         spdlog::performance("Fit 2D image in {:.3f} ms", t.Elapsed().ms());
@@ -1371,6 +1390,13 @@ void Session::OnFittingRequest(const CARTA::FittingRequest& fitting_request, uin
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"Fitting"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnStopFitting(const CARTA::StopFitting& stop_fitting) {
+    int file_id(stop_fitting.file_id());
+    if (_frames.count(file_id)) {
+        _frames.at(file_id)->StopFitting();
     }
 }
 
@@ -1805,29 +1831,14 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 }
 
 bool Session::SendVectorFieldData(int file_id) {
-    if (_frames.count(file_id)) {
-        auto frame = _frames.at(file_id);
-        auto settings = frame->GetVectorFieldParameters();
-        if (settings.smoothing_factor < 1) {
-            return true;
-        }
-
-        if (settings.stokes_intensity < 0 && settings.stokes_angle < 0) {
-            auto empty_response = Message::VectorOverlayTileData(file_id, frame->CurrentZ(), settings.stokes_intensity,
-                settings.stokes_angle, settings.compression_type, settings.compression_quality);
-            empty_response.set_progress(1.0);
-            SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, empty_response);
-            return true;
-        }
-
+    if (_frames.count(file_id) && _frames.at(file_id)->IsValid()) {
         // Set callback function
         auto callback = [&](CARTA::VectorOverlayTileData& partial_response) {
             SendFileEvent(file_id, CARTA::EventType::VECTOR_OVERLAY_TILE_DATA, 0, partial_response);
         };
 
         // Do PI/PA calculations
-        VectorFieldCalculator vector_field_calculator(file_id, frame);
-        if (vector_field_calculator.DoCalculations(callback)) {
+        if (_frames.at(file_id)->CalculateVectorField(callback)) {
             return true;
         }
         SendLogEvent("Error processing vector field image", {"vector field"}, CARTA::ErrorSeverity::WARNING);

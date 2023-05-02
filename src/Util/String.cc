@@ -71,3 +71,14 @@ std::string SafeStringEscape(const std::string& input) {
 
     return escaped.str();
 }
+
+bool StringToInt(const std::string& input, int& i) {
+    try {
+        i = std::stoi(input);
+        return true;
+    } catch (std::invalid_argument) {
+        return false;
+    } catch (std::out_of_range) {
+        return false;
+    }
+}

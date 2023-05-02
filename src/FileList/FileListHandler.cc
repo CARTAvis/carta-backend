@@ -16,7 +16,6 @@
 
 #include "../Logger/Logger.h"
 #include "FileInfoLoader.h"
-#include "Region/Ds9ImportExport.h"
 #include "Timer/ListProgressReporter.h"
 #include "Util/Casacore.h"
 #include "Util/File.h"
@@ -65,7 +64,7 @@ void FileListHandler::GetRelativePath(std::string& folder) {
         folder.replace(0, 2, ""); // remove leading "./"
     } else if (folder.find(_top_level_folder) == 0) {
         folder.replace(0, _top_level_folder.length(), ""); // remove root folder path
-        if (folder.front() == '/') {
+        if (!folder.empty() && folder.front() == '/') {
             folder.replace(0, 1, "");
         } // remove leading '/'
     }

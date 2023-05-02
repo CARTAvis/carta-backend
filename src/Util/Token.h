@@ -4,13 +4,26 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+/** @file
+ *  Utilities for working with authentication tokens.
+ */
+
 #ifndef CARTA_BACKEND__UTIL_TOKEN_H_
 #define CARTA_BACKEND__UTIL_TOKEN_H_
 
 #include <uWebSockets/HttpContext.h>
 #include <string>
 
+/** @brief Create a new authentication token.
+ *  @return A new random token.
+ */
 std::string NewAuthToken();
+
+/** @brief Validate an HTTP request.
+ *  @param http_request The HTTP request to validate.
+ *  @param required_token The token to use for authentication.
+ *  @return Whether the request contains the required authentication token.
+ */
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
 
 #endif // CARTA_BACKEND__UTIL_TOKEN_H_

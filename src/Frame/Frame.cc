@@ -45,7 +45,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
-      _moment_generator(nullptr) {
+      _moment_generator(nullptr),
+      _moment_name_index(0) {
     // Initialize for operator==
     _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
 
@@ -67,18 +68,16 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _z_axis, _stokes_axis, log_message)) {
+    std::vector<int> spatial_axes, render_axes;
+    if (!_loader->FindCoordinateAxes(_image_shape, spatial_axes, _spectral_axis, _stokes_axis, render_axes, _z_axis, log_message)) {
         _open_image_error = fmt::format("Cannot determine file shape. {}", log_message);
         spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
 
-    // Determine which axes are rendered, e.g. for pV images
-    std::vector<int> render_axes = _loader->GetRenderAxes();
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
-
     _width = _image_shape(_x_axis);
     _height = _image_shape(_y_axis);
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
@@ -652,12 +651,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         }
     } else {
         // Block averaging
-        CARTA::ImageBounds image_bounds;
-        image_bounds.set_x_min(0);
-        image_bounds.set_y_min(0);
-        image_bounds.set_x_max(_width);
-        image_bounds.set_y_max(_height);
-
+        CARTA::ImageBounds image_bounds = Message::ImageBounds(0, _width, 0, _height);
         std::vector<float> dest_vector;
         smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
         cache_lock.release();
@@ -1325,7 +1319,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     } else if (max_pos > -1) {
                         profile[i / mip] = profile[i / mip + 1] = max_pix;
                     } else {
-                        profile[i / mip] = profile[i / mip + 1] = std::numeric_limits<float>::quiet_NaN();
+                        profile[i / mip] = profile[i / mip + 1] = FLOAT_NAN;
                     }
                 }
                 profile.resize(decimated_end - decimated_start); // shrink the profile to the downsampled size
@@ -1629,7 +1623,7 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
 
         // Get image data
         std::unique_lock<std::mutex> ulock(_image_mutex);
-        if (_loader->GetFileName().empty() || is_computed_stokes) { // For the image in memory
+        if (_loader->IsGenerated() || is_computed_stokes) { // For the image in memory
             casacore::Array<float> tmp;
             sub_image.doGetSlice(tmp, slicer);
             data = tmp.tovector();
@@ -1714,10 +1708,10 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
     return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
-bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)
-    return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
+    return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress);
 }
 
 bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
@@ -1734,9 +1728,14 @@ bool Frame::CalculateMoments(int file_id, GeneratorProgressCallback progress_cal
     }
 
     if (_moment_generator) {
+        int name_index(0);
+        if (moment_request.keep()) {
+            name_index = ++_moment_name_index;
+        }
+
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
-        _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _z_axis, _stokes_axis, progress_callback, moment_request,
-            moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
+        _moment_generator->CalculateMoments(file_id, stokes_region.image_region, _z_axis, _stokes_axis, name_index, progress_callback,
+            moment_request, moment_response, collapse_results, region_state, GetStokesType(CurrentStokes()));
         ulock.unlock();
     }
 
@@ -1749,7 +1748,8 @@ void Frame::StopMomentCalc() {
     }
 }
 
-bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, StokesRegion* stokes_region) {
+bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::FittingResponse& fitting_response, GeneratedImage& model_image,
+    GeneratedImage& residual_image, GeneratorProgressCallback progress_callback, StokesRegion* stokes_region) {
     if (!_image_fitter) {
         _image_fitter = std::make_unique<ImageFitter>();
     }
@@ -1759,6 +1759,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
     if (_image_fitter) {
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
+        std::vector<bool> fixed_params(fitting_request.fixed_params().begin(), fitting_request.fixed_params().end());
 
         if (stokes_region != nullptr) {
             casacore::IPosition region_shape = GetRegionShape(*stokes_region);
@@ -1775,15 +1776,38 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(
-                region_shape(0), region_shape(1), region_data.data(), initial_values, fitting_response, region_origin(0), region_origin(1));
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), initial_values, fixed_params,
+                fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+                fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fitting_response);
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fixed_params, fitting_request.offset(),
+                fitting_request.solver(), fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response,
+                progress_callback);
+        }
+
+        if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
+            int file_id(fitting_request.file_id());
+            StokesRegion output_stokes_region;
+            if (stokes_region != nullptr) {
+                output_stokes_region = *stokes_region;
+            } else {
+                GetImageRegion(file_id, AxisRange(CurrentZ()), CurrentStokes(), output_stokes_region);
+            }
+            casa::SPIIF image(_loader->GetStokesImage(output_stokes_region.stokes_source));
+            success = _image_fitter->GetGeneratedImages(
+                image, output_stokes_region.image_region, file_id, GetFileName(), model_image, residual_image, fitting_response);
         }
     }
 
     return success;
+}
+
+void Frame::StopFitting() {
+    spdlog::debug("Cancelling image fitting.");
+    if (_image_fitter) {
+        _image_fitter->StopFitting();
+    }
 }
 
 // Export modified image to file, for changed range of channels/stokes and chopped region
@@ -2263,15 +2287,6 @@ void Frame::CloseCachedImage(const std::string& file) {
     }
 }
 
-bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
-    VectorFieldSettings new_settings(message);
-    if (_vector_field_settings != new_settings) {
-        _vector_field_settings = new_settings;
-        return true;
-    }
-    return false;
-}
-
 bool Frame::GetDownsampledRasterData(
     std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip) {
     int tile_original_width = bounds.x_max() - bounds.x_min();
@@ -2288,21 +2303,20 @@ bool Frame::GetDownsampledRasterData(
     // Check does the (HDF5) loader has the right (mip) downsampled data
     if (_loader->HasMip(mip) && _loader->GetDownsampledRasterData(data, z, stokes, bounds, mip, _image_mutex)) {
         return true;
-    } else {
-        // Check is there another downsampled data that we can use to downsample
-        for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
-            if (mip % sub_mip == 0) {
-                int loader_mip = mip / sub_mip;
-                if (_loader->HasMip(loader_mip) &&
-                    _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
-                    use_loader_downsampled_data = true;
-                    // Reset mip
-                    mip = sub_mip;
-                    // Reset the original tile width and height
-                    tile_original_width = std::ceil((float)tile_original_width / loader_mip);
-                    tile_original_height = std::ceil((float)tile_original_height / loader_mip);
-                    break;
-                }
+    }
+
+    // Check is there another downsampled data that we can use to downsample
+    for (int sub_mip = 2; sub_mip < mip; ++sub_mip) {
+        if (mip % sub_mip == 0) {
+            int loader_mip = mip / sub_mip;
+            if (_loader->HasMip(loader_mip) && _loader->GetDownsampledRasterData(tile_data, z, stokes, bounds, loader_mip, _image_mutex)) {
+                use_loader_downsampled_data = true;
+                // Reset mip
+                mip = sub_mip;
+                // Reset the original tile width and height
+                tile_original_width = std::ceil((float)tile_original_width / loader_mip);
+                tile_original_height = std::ceil((float)tile_original_height / loader_mip);
+                break;
             }
         }
     }
@@ -2325,6 +2339,80 @@ bool Frame::GetDownsampledRasterData(
     data.resize(downsampled_height * downsampled_width);
     return BlockSmooth(
         tile_data.data(), data.data(), tile_original_width, tile_original_height, downsampled_width, downsampled_height, 0, 0, mip);
+}
+
+bool Frame::SetVectorOverlayParameters(const CARTA::SetVectorOverlayParameters& message) {
+    return _vector_field.SetParameters(message, _stokes_axis);
+}
+
+bool Frame::CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+    if (_vector_field.ClearParameters(callback, _z_index)) {
+        return true;
+    }
+    return DoVectorFieldCalculation(callback);
+}
+
+bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback) {
+    // Prevent deleting the Frame while this task is not finished yet
+    std::shared_lock lock(GetActiveTaskMutex());
+
+    // Get vector field settings
+    int mip = _vector_field.Mip();
+    bool fractional = _vector_field.Fractional();
+    float threshold = _vector_field.Threshold();
+    bool calculate_pi = _vector_field.CalculatePi();
+    bool calculate_pa = _vector_field.CalculatePa();
+    bool current_stokes_as_pi = _vector_field.CurrStokesAsPi();
+    bool current_stokes_as_pa = _vector_field.CurrStokesAsPa();
+
+    // Get tiles
+    std::vector<Tile> tiles;
+    GetTiles(_width, _height, mip, tiles);
+
+    // Initialize stokes maps for their flags, indices and data
+    std::unordered_map<std::string, bool> stokes_flag{{"I", false}, {"Q", false}, {"U", false}};
+    std::unordered_map<std::string, int> stokes_indices{{"I", -1}, {"Q", -1}, {"U", -1}};
+
+    // Set stokes flags and get their indices
+    stokes_flag["I"] = (fractional || !std::isnan(threshold));
+    stokes_flag["Q"] = stokes_flag["U"] = (calculate_pi || calculate_pa);
+    for (auto one : stokes_flag) {
+        std::string stokes = one.first;
+        if (stokes_flag[stokes] && !GetStokesTypeIndex(stokes + "x", stokes_indices[stokes])) {
+            return false;
+        }
+    }
+
+    // Get image tiles data
+    for (int i = 0; i < tiles.size(); ++i) {
+        auto& tile = tiles[i];
+        auto bounds = GetImageBounds(tile, _width, _height, mip);
+        int width, height;
+        std::unordered_map<std::string, std::vector<float>> stokes_data;
+        double progress = (double)(i + 1) / tiles.size();
+
+        // Get current stokes data
+        if (current_stokes_as_pi || current_stokes_as_pa) {
+            if (!GetDownsampledRasterData(stokes_data["CUR"], width, height, _z_index, CurrentStokes(), bounds, mip)) {
+                return false;
+            }
+        }
+
+        // Get stokes data I, Q, or U
+        if (calculate_pi || calculate_pa) {
+            for (auto one : stokes_flag) {
+                std::string stokes = one.first;
+                if (stokes_flag[stokes] &&
+                    !GetDownsampledRasterData(stokes_data[stokes], width, height, _z_index, stokes_indices[stokes], bounds, mip)) {
+                    return false;
+                }
+            }
+        }
+
+        // Calculate PI or PA and then send a partial response message
+        _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
+    }
+    return true;
 }
 
 } // namespace carta
