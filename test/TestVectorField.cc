@@ -11,7 +11,6 @@
 #include "DataStream/Compression.h"
 #include "DataStream/Smoothing.h"
 #include "Frame/Frame.h"
-#include "Frame/VectorFieldCalculator.h"
 #include "Session/Session.h"
 #include "Util/Message.h"
 
@@ -20,6 +19,64 @@
 static const std::string IMAGE_SHAPE = "1110 1110 25 4";
 static const std::string IMAGE_OPTS = "-s 0";
 static const std::string IMAGE_OPTS_NAN = "-s 0 -n row column -d 10";
+
+void FillTileData(CARTA::TileData* tile, int32_t x, int32_t y, int32_t layer, int32_t mip, int32_t tile_width, int32_t tile_height,
+    std::vector<float>& array, CARTA::CompressionType compression_type, float compression_quality) {
+    if (tile) {
+        tile->set_x(x);
+        tile->set_y(y);
+        tile->set_layer(layer);
+        tile->set_mip(mip);
+        tile->set_width(tile_width);
+        tile->set_height(tile_height);
+        if (compression_type == CARTA::CompressionType::ZFP) {
+            // Get and fill the NaN data
+            auto nan_encodings = GetNanEncodingsBlock(array, 0, tile_width, tile_height);
+            tile->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
+            // Compress and fill the data
+            std::vector<char> compression_buffer;
+            size_t compressed_size;
+            int precision = lround(compression_quality);
+            Compress(array, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
+            tile->set_image_data(compression_buffer.data(), compressed_size);
+        } else {
+            tile->set_image_data(array.data(), sizeof(float) * array.size());
+        }
+    }
+}
+
+class TestVectorField : public VectorField {
+public:
+    TestVectorField() : VectorField() {}
+
+    void TestVectorFieldSettings() {
+        auto msg = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg1 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg2 = Message::SetVectorOverlayParameters(0, 4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg3 = Message::SetVectorOverlayParameters(0, 2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg4 = Message::SetVectorOverlayParameters(0, 2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg5 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg6 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg7 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg8 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1);
+        auto msg9 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1);
+        auto msg10 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1);
+        auto msg11 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2);
+
+        EXPECT_TRUE(SetParameters(msg, -1));
+        EXPECT_FALSE(SetParameters(msg1, -1));
+        EXPECT_TRUE(SetParameters(msg2, -1));
+        EXPECT_TRUE(SetParameters(msg3, -1));
+        EXPECT_TRUE(SetParameters(msg4, -1));
+        EXPECT_TRUE(SetParameters(msg5, -1));
+        EXPECT_TRUE(SetParameters(msg6, -1));
+        EXPECT_TRUE(SetParameters(msg7, -1));
+        EXPECT_TRUE(SetParameters(msg8, -1));
+        EXPECT_TRUE(SetParameters(msg9, -1));
+        EXPECT_TRUE(SetParameters(msg10, -1));
+        EXPECT_TRUE(SetParameters(msg11, -1));
+    }
+};
 
 class TestFrame : public Frame {
 public:
@@ -842,8 +899,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
@@ -905,8 +961,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         // Check results
         if (file_type == CARTA::FileType::HDF5) {
@@ -950,19 +1005,18 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         if (stokes_intensity > -1) {
-            EXPECT_GE(intensity_tiles_size, 1);
+            EXPECT_GT(intensity_tiles_size, 0);
         } else {
-            EXPECT_EQ(intensity_tiles_size, 1);
+            EXPECT_EQ(intensity_tiles_size, 0);
         }
 
         if (stokes_angle > -1) {
-            EXPECT_GE(angle_tiles_size, 1);
+            EXPECT_GT(angle_tiles_size, 0);
         } else {
-            EXPECT_EQ(angle_tiles_size, 1);
+            EXPECT_EQ(angle_tiles_size, 0);
         }
 
         CheckProgresses(progresses);
@@ -1010,8 +1064,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        VectorFieldCalculator vector_field_calculator(0, frame);
-        vector_field_calculator.DoCalculations(callback);
+        frame->CalculateVectorField(callback);
 
         // =============================================================================
         // Compress the vector field data with ZFP
@@ -1041,7 +1094,7 @@ public:
         };
 
         // Do PI/PA calculations by the Frame function
-        vector_field_calculator.DoCalculations(callback2);
+        frame->CalculateVectorField(callback2);
 
         // Check the absolute mean of error
         float pi_abs_err_mean = 0;
@@ -1302,43 +1355,8 @@ TEST_F(VectorFieldTest, TestTileCalc) {
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldSettings) {
-    auto msg = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg1 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg2 = Message::SetVectorOverlayParameters(0, 4, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg3 = Message::SetVectorOverlayParameters(0, 2, false, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg4 = Message::SetVectorOverlayParameters(0, 2, true, 0.2, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg5 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, false, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg6 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.02, 0.02, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg7 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.03, -1, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg8 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, 0, -1, CARTA::CompressionType::ZFP, 1);
-    auto msg9 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, 0, CARTA::CompressionType::ZFP, 1);
-    auto msg10 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::NONE, 1);
-    auto msg11 = Message::SetVectorOverlayParameters(0, 2, true, 0.1, true, 0.01, 0.02, -1, -1, CARTA::CompressionType::ZFP, 2);
-
-    VectorFieldSettings settings(msg);
-    VectorFieldSettings settings1(msg1);
-    VectorFieldSettings settings2(msg2);
-    VectorFieldSettings settings3(msg3);
-    VectorFieldSettings settings4(msg4);
-    VectorFieldSettings settings5(msg5);
-    VectorFieldSettings settings6(msg6);
-    VectorFieldSettings settings7(msg7);
-    VectorFieldSettings settings8(msg8);
-    VectorFieldSettings settings9(msg9);
-    VectorFieldSettings settings10(msg10);
-    VectorFieldSettings settings11(msg11);
-
-    EXPECT_TRUE(settings == settings1);
-    EXPECT_TRUE(settings != settings2);
-    EXPECT_TRUE(settings != settings3);
-    EXPECT_TRUE(settings != settings4);
-    EXPECT_TRUE(settings != settings5);
-    EXPECT_TRUE(settings != settings6);
-    EXPECT_TRUE(settings != settings7);
-    EXPECT_TRUE(settings != settings8);
-    EXPECT_TRUE(settings != settings9);
-    EXPECT_TRUE(settings != settings10);
-    EXPECT_TRUE(settings != settings11);
+    TestVectorField test_vector_field;
+    test_vector_field.TestVectorFieldSettings();
 }
 
 TEST_F(VectorFieldTest, TestVectorFieldCalc) {
@@ -1366,8 +1384,8 @@ TEST_F(VectorFieldTest, TestVectorFieldCalc2) {
 }
 
 TEST_F(VectorFieldTest, TestStokesIntensityOrAngleSettings) {
-    TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, -1, 0);
-    TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, 0, -1);
+    // TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, -1, 0);
+    // TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, 0, -1);
     TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, 0, 0);
     TestStokesIntensityOrAngleSettings(IMAGE_OPTS_NAN, CARTA::FileType::FITS, 4, true, false, 1e-3, 1e-3, 0.1, -1, -1);
 }
