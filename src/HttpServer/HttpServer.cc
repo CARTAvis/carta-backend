@@ -433,14 +433,13 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
     }
 
     std::string_view object_name = req->getParameter(0);
-    ;
 
     if (object_name.empty()) {
         res->writeStatus(HTTP_404)->end();
         return;
     }
-
-    json existing_object = GetExistingObject(object_type, std::string(object_name));
+    auto object_name_string = SafeStringUnescape(std::string(object_name));
+    json existing_object = GetExistingObject(object_type, object_name_string);
     if (existing_object == nullptr) {
         res->writeStatus(HTTP_404)->end();
         return;
