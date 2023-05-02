@@ -32,7 +32,7 @@ struct Bounds {
     // U is the type of statistics values. When statistics values are unavailable, they are assigned to extreme values of U type
     template <typename U>
     bool Invalid() const {
-        return min == std::numeric_limits<U>::max() || max == std::numeric_limits<U>::lowest();
+        return min == std::numeric_limits<U>::max() || max == std::numeric_limits<U>::lowest() || min >= max;
     }
 
     bool operator==(const Bounds<T>& rhs) const {
