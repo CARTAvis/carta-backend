@@ -31,18 +31,21 @@ public:
 
     // Export regions
     // RegionState control points for pixel coords in reference image
-    bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) override;
+    bool AddExportRegion(const RegionState& region_state, const CARTA::RegionStyle& region_style) override;
 
     // Print regions to file or vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(CARTA::RegionType region_type, const RegionStyle& style, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation) override;
+    // Add to type:name dictionary for DS9 syntax
+    void AddRegionNames() override;
+
+    bool AddExportRegion(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points,
+        const casacore::Quantity& rotation, const CARTA::RegionStyle& style) override;
 
 private:
-    // Default global properties
+    // Default global properties for export
     void InitGlobalProperties();
 
     // Parse each file line and set coord sys or region
@@ -56,23 +59,37 @@ private:
 
     // Import regions
     void SetGlobals(std::string& global_line);
-    void SetRegion(std::string& region_definition);
-    RegionState ImportPointRegion(std::vector<std::string>& parameters);
-    RegionState ImportCircleRegion(std::vector<std::string>& parameters);
-    RegionState ImportEllipseRegion(std::vector<std::string>& parameters);
-    RegionState ImportRectangleRegion(std::vector<std::string>& parameters);
-    RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters);
-    RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
+    RegionProperties SetRegion(std::string& region_definition);
+    RegionState ImportPointRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportCircleRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportEllipseRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportRectangleRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportPolygonLineRegion(std::vector<std::string>& parameters, bool is_annotation = false);
+    RegionState ImportVectorRegion(std::vector<std::string>& parameters);
+    RegionState ImportRulerRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style);
+    RegionState ImportCompassRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, CARTA::RegionStyle& region_style);
+    CARTA::RegionStyle ImportStyleParameters(CARTA::RegionType region_type, std::unordered_map<std::string, std::string>& properties);
+    void ImportPointStyleParameters(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
+    void ImportFontStyleParameters(std::unordered_map<std::string, std::string>& properties, CARTA::AnnotationStyle* annotation_style);
 
-    // Convert DS9 syntax -> CASA
-    bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
-    void ConvertTimeFormatToDeg(std::string& parameter);
+    // Convert DS9 syntax -> CASA to read casacore::Quantity
+    bool ParamToQuantity(std::string& param, bool is_angle, bool is_xy, std::string& region_name, casacore::Quantity& param_quantity);
+    bool Ds9ToCasacoreUnit(std::string& parameter, const std::string& region_type);
+    void ConvertTimeFormatToAngle(std::string& parameter);
 
     // Export: add header string to _export_regions
     void AddHeader();
-    std::string AddExportRegionPixel(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
-    std::string AddExportRegionWorld(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
-    void AddExportStyleParameters(const RegionStyle& region_style, std::string& region_line);
+    std::string AddExportRegionPixel(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle,
+        const CARTA::RegionStyle& region_style);
+    std::string AddExportRegionWorld(CARTA::RegionType region_type, const std::vector<casacore::Quantity>& control_points, float angle,
+        const CARTA::RegionStyle& region_style);
+    void ExportStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportTextboxStyleParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportFontParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportAnnotationStyleParameters(CARTA::RegionType region_type, const CARTA::RegionStyle& region_style, std::string& region_line);
+    void ExportAnnPointParameters(const CARTA::RegionStyle& region_style, std::string& region_line);
 
     // DS9/CASA conversion map
     std::unordered_map<std::string, std::string> _coord_map;
@@ -83,7 +100,7 @@ private:
     bool _pixel_coord;
 
     // Default properties
-    std::map<std::string, std::string> _global_properties;
+    std::unordered_map<std::string, std::string> _global_properties;
 };
 
 } // namespace carta

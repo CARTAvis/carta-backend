@@ -1,8 +1,213 @@
 name: ci
-on: push
+on: [push, pull_request]
 jobs:
+
+
   format-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: ./scripts/style.py all check
+
+
+  Ubuntu-Focal:
+    runs-on: [self-hosted, Linux, X64, Docker]
+    needs: format-check
+    container: carta/backend-builder-ubuntu-focal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Fix ownership
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          lsb_release -a
+
+      - name: Build backend
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer --coverage' \
+                   -DCMAKE_C_FLAGS='--coverage' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 32
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
+          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
+          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:ubuntu_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Ubuntu-Focal Unit Test results
+          path: build/test/ubuntu_test_report.xml
+          reporter: java-junit
+
+      - name: Generate code coverage report
+        shell: bash
+        run: |
+          mkdir coverage
+          gcovr -f src/ --xml-pretty -j 8 -o coverage/coverage.xml
+
+      - name: Create code coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/coverage.xml
+          badge: true
+          format: 'markdown'
+          output: both
+          indicators: true
+          thresholds: '38 75'
+          hide_branch_rate: true
+          hide_complexity: true
+
+      - name: Publish code coverage summary
+        uses: LouisBrunner/checks-action@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Code Coverage
+          conclusion: ${{ job.status }}
+          output: "{\"summary\":\"Code Coverage\"}"
+          output_text_description_file: code-coverage-results.md
+
+      - name: Add coverage comment to Pull Request
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+
+  macOS-12:
+    runs-on: [self-hosted, macOS-12-M1]
+    needs: format-check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          sw_vers
+
+      - name: Build backend  
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DDevSuppressExternalWarnings=ON \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 8
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        uses: nick-fields/retry@master
+        with:
+          timeout_minutes: 2
+          retry_wait_seconds: 60
+          max_attempts: 3
+          retry_on_exit_code: 1
+          shell: bash
+          command: |
+            cd build/test
+            ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp:detect_container_overflow=0 \
+            ASAN_SYMBOLIZER_PATH=/opt/homebrew/opt/llvm/bin/llvm-symbolizer \
+            ./carta_backend_tests --gtest_output=xml:macos_test_report.xml
+            head -1 macos_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: macOS-12 Unit Test results
+          path: build/test/macos_test_report.xml
+          reporter: java-junit
+
+
+  AlmaLinux-8:
+    runs-on: [self-hosted, Linux, X64, Docker]
+    needs: format-check
+    container: carta/backend-builder-almalinux-8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Fix ownership
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+
+      - name: System information
+        shell: bash
+        run: |
+          uname -a
+          cat /etc/redhat-release
+
+      - name: Build backend
+        shell: bash
+        run: |
+          git submodule update --init --recursive
+          mkdir build && cd build
+          cmake .. -Dtest=on -DCMAKE_BUILD_TYPE=Debug \
+                   -DCMAKE_CXX_FLAGS='-O0 -g -fsanitize=address -fno-omit-frame-pointer' \
+                   -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address'
+          make -j 32
+
+      - name: Check backend runs
+        shell: bash
+        run: |
+          ./build/carta_backend --version
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          cd build/test
+          ASAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan.supp \
+          LSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/debug/asan/myasan-leaks.supp \
+          ASAN_SYMBOLIZER_PATH=llvm-symbolizer \
+          ./carta_backend_tests --gtest_output=xml:almalinux_test_report.xml
+
+      - name: Publish unit test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: AlmaLinux-8 Unit Test results
+          path: build/test/almalinux_test_report.xml
+          reporter: java-junit
+
+  Notify:
+    name: Send notifications
+    runs-on: ubuntu-latest
+    needs: [format-check, Ubuntu-Focal, macOS-12, AlmaLinux-8]
+    if: always()
+    steps:
+      - name: Notify Slack
+        uses: baijunyao/action-slack-notify@v3.0.0
+        if: ${{ github.event_name == 'push' }}
+        with:
+          slack_channel_id: actions-build-status
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          github_context: ${{ toJson(github) }}

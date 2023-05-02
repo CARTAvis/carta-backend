@@ -24,7 +24,8 @@ const std::string success_string = json({{"success", true}}).dump();
 uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
-    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting)
+    std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
+    bool enable_runtime_config)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
@@ -32,7 +33,8 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _config_folder(user_directory / "config"),
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
-      _enable_scripting(enable_scripting) {
+      _enable_scripting(enable_scripting),
+      _enable_runtime_config(enable_runtime_config) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -71,7 +73,11 @@ void HttpServer::RegisterRoutes() {
     }
 
     if (_enable_frontend) {
-        app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        if (_enable_runtime_config) {
+            app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+        } else {
+            app.get("/config", [&](auto res, auto req) { DefaultSuccess(res, req); });
+        }
         // Static routes for all other files
         app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
     } else {
@@ -92,11 +98,21 @@ void HttpServer::HandleStaticRequest(Res* res, Req* req) {
     if (url.empty() || url == "/") {
         path /= "index.html";
     } else {
-        // Trim leading '/'
-        if (url[0] == '/') {
+        // Trim all leading '/'
+        while (url.size() && url[0] == '/') {
             url = url.substr(1);
         }
         path /= std::string(url);
+    }
+
+    std::error_code error_code;
+    auto relative_path = fs::relative(path, _http_root_folder, error_code).string();
+
+    // Prevent serving of any files outside the HTTP root folder
+    if (error_code || !relative_path.size() || relative_path.find("..") != std::string::npos) {
+        res->writeStatus(HTTP_403);
+        res->end();
+        return;
     }
 
     // Check if we can serve a gzip-compressed alternative
@@ -105,7 +121,6 @@ void HttpServer::HandleStaticRequest(Res* res, Req* req) {
     bool gzip_compressed = false;
     auto gzip_path = path;
     gzip_path += ".gz";
-    std::error_code error_code;
     if (accepts_gzip && fs::exists(gzip_path, error_code) && fs::is_regular_file(gzip_path, error_code)) {
         gzip_compressed = true;
         path = gzip_path;
@@ -116,6 +131,7 @@ void HttpServer::HandleStaticRequest(Res* res, Req* req) {
         std::ifstream file(path.string(), std::ios::binary | std::ios::ate);
         if (!file.good()) {
             res->writeStatus(HTTP_404);
+            res->end();
             return;
         }
         std::streamsize size = file.tellg();
@@ -663,6 +679,11 @@ void HttpServer::OnScriptingAbort(int session_id, uint32_t scripting_request_id)
 
 void HttpServer::NotImplemented(Res* res, Req* req) {
     res->writeStatus(HTTP_501)->end();
+    return;
+}
+
+void HttpServer::DefaultSuccess(Res* res, Req* req) {
+    res->writeStatus(HTTP_200)->end();
     return;
 }
 

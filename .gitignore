@@ -16,3 +16,6 @@ fabric.properties
 cmake-build-*/
 build/
 coverage/
+
+# Doxygen
+docs/html

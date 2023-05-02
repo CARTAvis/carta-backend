@@ -58,7 +58,6 @@ set(TEST_SOURCES
         TestRestApi.cc
         TestSpatialProfiles.cc
         TestTileEncoding.cc
-        TestTimer.cc
         TestUtil.cc
         TestVectorField.cc
         TestVoTable.cc)
