@@ -441,6 +441,11 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
     }
 
     json existing_object = GetExistingObject(object_type, std::string(object_name));
+    if (existing_object == nullptr) {
+        res->writeStatus(HTTP_404)->end();
+        return;
+    }
+
     res->writeStatus(HTTP_200);
     AddNoCacheHeaders(res);
     res->writeHeader("Content-Type", "application/json");
@@ -535,7 +540,7 @@ nlohmann::json HttpServer::GetExistingObject(const std::string& object_type, con
     } catch (json::exception e) {
         spdlog::warn(e.what());
     }
-    return json::object();
+    return nullptr;
 }
 
 nlohmann::json HttpServer::GetExistingObjects(const std::string& object_type) {

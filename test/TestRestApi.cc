@@ -61,6 +61,7 @@ public:
     FRIEND_TEST(RestApiTest, EmptyStartingWorkspaces);
     FRIEND_TEST(RestApiTest, GetExistingWorkspaceList);
     FRIEND_TEST(RestApiTest, GetExistingWorkspace);
+    FRIEND_TEST(RestApiTest, GetMissingWorkspace);
     FRIEND_TEST(RestApiTest, GetExistingWorkspaces);
     FRIEND_TEST(RestApiTest, DeleteWorkspace);
     FRIEND_TEST(RestApiTest, DeleteWorkspaceEmpty);
@@ -495,6 +496,13 @@ TEST_F(RestApiTest, GetExistingWorkspace) {
     WriteDefaultWorkspaces();
     auto existing_workspace = _frontend_server->GetExistingObject("workspace", "test_workspace");
     EXPECT_EQ(existing_workspace, example_workspace);
+}
+
+TEST_F(RestApiTest, GetMissingWorkspace) {
+    WriteDefaultWorkspaces();
+    auto existing_workspace = _frontend_server->GetExistingObject("workspace", "this is a missing workspace");
+    // Missing workspace results in an empty JSON object
+    EXPECT_EQ(existing_workspace, nullptr);
 }
 
 TEST_F(RestApiTest, GetExistingWorkspaces) {
