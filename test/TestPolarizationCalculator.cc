@@ -456,7 +456,7 @@ public:
             return;
         }
 
-        auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(resulting_image));
+        auto loader = std::shared_ptr<carta::FileLoader>(carta::FileLoader::GetLoader(resulting_image, ""));
         auto frame2 = std::make_shared<Frame>(1, loader, "");
         carta::Histogram cube_histogram2;
         CalculateCubeHistogram(frame2, 1, 0, cube_histogram2);
