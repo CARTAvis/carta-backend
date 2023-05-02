@@ -81,7 +81,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
     map_ok = !hdu_info_map.empty();
     if (!map_ok) {
-        message = "No image hdus found.";
+        message = "Header error or no image HDUs found.";
     }
 
     return map_ok;
@@ -214,6 +214,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
             _loader->CloseImageIfUpdated();
         } catch (casacore::AipsError& err) {
             message = err.getMesg();
+            spdlog::debug("Extended file info exception: {}", message);
             if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
                 message = "Failed to open image at specified HDU.";
             } else if (message.find("No image at specified location") != std::string::npos) {
@@ -835,11 +836,11 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
                 MakeAngleString(axis_names(display_axis0), reference_values(display_axis0), axis_units(display_axis0));
             std::string coord2angle =
                 MakeAngleString(axis_names(display_axis1), reference_values(display_axis1), axis_units(display_axis1));
-            std::string format_coords = fmt::format("[{}, {}]", coord1angle, coord2angle);
+            std::string formatted_coords = fmt::format("[{}, {}]", coord1angle, coord2angle);
             // Add reference coords (angle format if possible)
             auto entry = extended_info.add_computed_entries();
             entry->set_name("Image reference coords");
-            entry->set_value(format_coords);
+            entry->set_value(formatted_coords);
             entry->set_entry_type(CARTA::EntryType::STRING);
 
             bool is_coord0_dir(coord0.isConform("deg")), is_coord1_dir(coord1.isConform("deg"));
@@ -1024,23 +1025,21 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
                     cunit1 = cunit1.before("/");
                 }
                 cunit1.trim();
-                if (cunit1.startsWith("DEG") || cunit1.startsWith("Deg")) { // Degrees, DEGREES nonstandard FITS values
-                    cunit1 = "deg";
-                }
+                ConvertUnitToCasacore(cunit1);
             } else if (entry_name.find("CUNIT" + suffix2) == 0) {
                 cunit2 = entry.value();
                 if (cunit2.contains("/")) {
                     cunit2 = cunit2.before("/");
                 }
                 cunit2.trim();
-                if (cunit2.startsWith("DEG") || cunit2.startsWith("Deg")) { // Degrees, DEGREES nonstandard FITS values
-                    cunit2 = "deg";
-                }
+                ConvertUnitToCasacore(cunit2);
             }
         }
 
         if (calc_spec_range && entry_name.find("CUNIT" + suffix3) == 0) {
             cunit3 = entry.value();
+            cunit3.trim();
+            ConvertUnitToCasacore(cunit3);
         }
 
         // pixel increment
@@ -1127,9 +1126,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
     if (!need_crval) {
         // reference coordinates
-        std::string format_coord1 = MakeAngleString(coord_name1, crval1, cunit1);
-        std::string format_coord2 = MakeAngleString(coord_name2, crval2, cunit2);
-        std::string ref_coords = fmt::format("[{}, {}]", format_coord1, format_coord2);
+        std::string coord1 = MakeAngleString(coord_name1, crval1, cunit1);
+        std::string coord2 = MakeAngleString(coord_name2, crval2, cunit2);
+        std::string ref_coords = fmt::format("[{}, {}]", coord1, coord2);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Image reference coords");
         entry->set_value(ref_coords);
@@ -1290,6 +1289,24 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
     }
 }
 
+void FileExtInfoLoader::ConvertUnitToCasacore(casacore::String& unit) {
+    // Returns casacore Unit string or input string if unknown (fail with error later)
+    if (casacore::UnitVal::check(unit)) {
+        return;
+    }
+
+    unit.downcase();
+    if (casacore::UnitVal::check(unit)) {
+        return;
+    }
+
+    // This may no longer be needed but unclear about casacore UnitMaps
+    if (unit.startsWith("DEG") || unit.startsWith("Deg")) {
+        // Degrees, DEGREES nonstandard FITS values
+        unit = "deg";
+    }
+}
+
 std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double val, const std::string& unit) {
     // make coordinate angle string for RA, DEC, GLON, GLAT; else just return "{val} {unit}"
     if (unit.empty()) {
@@ -1305,8 +1322,14 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
         return fmt::format("{:.6g} {}", val, unit);
     }
 
-    casacore::Quantity quant1(val, unit), pi2(360, "deg");
+    casacore::Quantity quant1(val, unit);
+    if (!quant1.isConform("deg")) {
+        // Cannot convert to MVAngle format
+        return fmt::format("{:.6g} {}", val, unit);
+    }
+
     if (type.find("Longitude") != std::string::npos && quant1.get("deg").getValue() < 0) {
+        casacore::Quantity pi2(360, "deg");
         quant1 += pi2;
     }
     casacore::MVAngle mva(quant1);
