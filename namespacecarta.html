@@ -212,6 +212,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html">PvGenerator</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1Bounds.html">Bounds</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1BasicStatsCalculator.html">BasicStatsCalculator</a></td></tr>
@@ -307,6 +309,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a9a9fe0f86f7e331bd55b6875dd3ce036"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c9b76ff62d08b7bdc3c98bdd0575b86"><td class="memItemLeft" align="right" valign="top">typedef std::function&lt; bool(int &amp;, uint32_t &amp;, std::string &amp;, std::string &amp;, std::string &amp;, bool &amp;, std::string &amp;, <a class="el" href="namespacecarta.html#a1cc3d56faa02d25cd8ab44f4088c4c2e">ScriptingResponseCallback</a>, <a class="el" href="namespacecarta.html#aae6a40ab940ff7220ea3869e4b0a12e8">ScriptingSessionClosedCallback</a>)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a9c9b76ff62d08b7bdc3c98bdd0575b86">ScriptingRequestHandler</a></td></tr>
 <tr class="separator:a9c9b76ff62d08b7bdc3c98bdd0575b86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e5e52c4e8fa6d21995384f1d39280c6"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> = <a class="el" href="structcarta_1_1Bounds.html">Bounds</a>&lt; double &gt;</td></tr>
+<tr class="separator:a8e5e52c4e8fa6d21995384f1d39280c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1cc3d56faa02d25cd8ab44f4088c4c2e"><td class="memItemLeft" align="right" valign="top">typedef std::function&lt; void(const bool &amp;, const std::string &amp;, const std::string &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a1cc3d56faa02d25cd8ab44f4088c4c2e">ScriptingResponseCallback</a></td></tr>
 <tr class="separator:a1cc3d56faa02d25cd8ab44f4088c4c2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae6a40ab940ff7220ea3869e4b0a12e8"><td class="memItemLeft" align="right" valign="top">typedef std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#aae6a40ab940ff7220ea3869e4b0a12e8">ScriptingSessionClosedCallback</a></td></tr>
@@ -379,8 +383,8 @@ Functions</h2></td></tr>
 <tr class="separator:a95828b5aa32c7a2363d7679a2cb91b77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96f7cab56516141317895bada342c0b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a96f7cab56516141317895bada342c0b1">CalcBasicStats</a> (<a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;stats, const float *data, const size_t data_size)</td></tr>
 <tr class="separator:a96f7cab56516141317895bada342c0b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af038996ac9ec0abf3fe540ed6e37fde3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1Histogram.html">Histogram</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#af038996ac9ec0abf3fe540ed6e37fde3">CalcHistogram</a> (int num_bins, const <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;stats, const float *data, const size_t data_size)</td></tr>
-<tr class="separator:af038996ac9ec0abf3fe540ed6e37fde3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d967873206a1f0ff9062a2ecf29ae6b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1Histogram.html">Histogram</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b">CalcHistogram</a> (int num_bins, const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;bounds, const float *data, const size_t data_size)</td></tr>
+<tr class="separator:a3d967873206a1f0ff9062a2ecf29ae6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf80e39f46bb6dfcabb145a18352d366"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecarta.html#abf80e39f46bb6dfcabb145a18352d366">CalcStatsValues</a> (std::map&lt; CARTA::StatsType, std::vector&lt; double &gt;&gt; &amp;stats_values, const std::vector&lt; CARTA::StatsType &gt; &amp;requested_stats, const casacore::ImageInterface&lt; float &gt; &amp;image, bool per_channel)</td></tr>
 <tr class="separator:abf80e39f46bb6dfcabb145a18352d366"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3581dda6f86c582d960a381773a4192"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
@@ -415,6 +419,20 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef const std::function&lt;void(double, double, const std::vector&lt;float&gt;&amp;, const std::vector&lt;int32_t&gt;&amp;)&gt; <a class="el" href="namespacecarta.html#a2e349f6da0c1715066c9ebb1173d1f29">carta::ContourCallback</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8e5e52c4e8fa6d21995384f1d39280c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8e5e52c4e8fa6d21995384f1d39280c6">&#9670;&nbsp;</a></span>HistogramBounds</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">carta::HistogramBounds</a> = typedef <a class="el" href="structcarta_1_1Bounds.html">Bounds</a>&lt;double&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -876,8 +894,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="af038996ac9ec0abf3fe540ed6e37fde3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af038996ac9ec0abf3fe540ed6e37fde3">&#9670;&nbsp;</a></span>CalcHistogram()</h2>
+<a id="a3d967873206a1f0ff9062a2ecf29ae6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d967873206a1f0ff9062a2ecf29ae6b">&#9670;&nbsp;</a></span>CalcHistogram()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -891,8 +909,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;&#160;</td>
-          <td class="paramname"><em>stats</em>, </td>
+          <td class="paramtype">const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;&#160;</td>
+          <td class="paramname"><em>bounds</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -914,9 +932,15 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacecarta_a3d967873206a1f0ff9062a2ecf29ae6b_cgraph.svg" width="380" height="38"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_af038996ac9ec0abf3fe540ed6e37fde3_icgraph.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="namespacecarta_a3d967873206a1f0ff9062a2ecf29ae6b_icgraph.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 

@@ -1,8 +1,9 @@
 <map id="carta::Histogram::Add" name="carta::Histogram::Add">
-<area shape="rect" id="node1" title=" " alt="" coords="5,85,169,112"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Histogram.html#a81787c73b6b71a8495c8c3ffcf4d7c46" title=" " alt="" coords="237,49,456,90"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Histogram.html#a1efcb688ab3b0d60a6216d14d87fef5e" title=" " alt="" coords="217,115,476,141"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa" title=" " alt="" coords="524,5,735,32"/>
-<area shape="rect" id="node4" href="$classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b" title=" " alt="" coords="526,56,733,83"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="530,107,729,133"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,111,169,137"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Histogram.html#a81787c73b6b71a8495c8c3ffcf4d7c46" title=" " alt="" coords="237,74,456,115"/>
+<area shape="rect" id="node7" href="$classcarta_1_1Histogram.html#a1efcb688ab3b0d60a6216d14d87fef5e" title=" " alt="" coords="217,140,476,167"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083" title=" " alt="" coords="524,5,735,32"/>
+<area shape="rect" id="node4" href="$classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa" title=" " alt="" coords="524,56,735,83"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Histogram.html#a751eb7e111b661cf77a44995db151a3b" title=" " alt="" coords="526,107,733,133"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206" title=" " alt="" coords="530,157,729,184"/>
 </map>

@@ -74,15 +74,16 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "AnimationObject_8h.html",
-"Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce",
-"classcarta_1_1BasicStatsCalculator.html#a14873f9d84d2abb0fabe85f4b70d0a44",
-"classcarta_1_1DataColumn.html#adc5a3e9aa02735a42da33a2a16bb8a2f",
-"classcarta_1_1Frame.html#a69a52aa8315bc300f5772b47694c8ba8",
-"classcarta_1_1ImageMoments.html#a579b90ab84001f9c2460423043e1dfd3",
-"classcarta_1_1RegionHandler.html#ab51161364a45784bb0f864f517d12a3f",
-"classcarta_1_1StokesFilesConnector.html#a682e3c54c1eb013b0d886df710cf6f7b",
-"functions_o.html",
-"structcarta_1_1FileInfo_1_1ImageStats.html#aa2bb2808bfa83878580f12a4a0c8a702"
+"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c",
+"classcarta_1_1BasicStatsCalculator.html",
+"classcarta_1_1DataColumn.html#ad8041f37686aa5add5dd1515e5e088b6",
+"classcarta_1_1Frame.html#a664c9fd4c9a6e1b64349c045577e1af2",
+"classcarta_1_1ImageMoments.html#a547bd512d09b18acec48f352fe39e17e",
+"classcarta_1_1RegionHandler.html#aaa29bac6b3845d7b15ec257a1683e028",
+"classcarta_1_1StokesFilesConnector.html#a4ea71675a73f8ee48ff744e18fb476ef",
+"functions_n.html",
+"structcarta_1_1ContourSettings.html#abae2001ead3f63533a21a2a6d8dec880",
+"structcarta_1_1VectorField_1_1Valid.html#a2f69d65fb5bf06e685dabb449ad0c8cb"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

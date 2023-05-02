@@ -34,7 +34,7 @@ var classMessage =
     [ "PvRequest", "classMessage.html#a0b7f372e72e3c2852fc3c77215e0c95e", null ],
     [ "RasterTileData", "classMessage.html#ac700107151a549f518c77c36f36aea7e", null ],
     [ "RasterTileSync", "classMessage.html#abfe5e236035c2d079cb30cf181d500f5", null ],
-    [ "RegionHistogramData", "classMessage.html#af13c35c35a5f3fd50a68319be9287611", null ],
+    [ "RegionHistogramData", "classMessage.html#a730c49c8e93e27faf31796d44748088b", null ],
     [ "RegionStatsData", "classMessage.html#a1641ebe3a971aa233d8621a1abe0bd76", null ],
     [ "RegisterViewer", "classMessage.html#afc2a3c83d6b506ed8b71e54dbce0f9ab", null ],
     [ "RegisterViewerAck", "classMessage.html#a8c590c77e9f0326e09ac0af465b58a86", null ],

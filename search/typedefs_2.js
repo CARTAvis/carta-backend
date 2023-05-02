@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['im_3549',['IM',['../MomentGenerator_8cc.html#ad3a7e1777d23e5cb42ceac0f38b09859',1,'MomentGenerator.cc']]],
-  ['imageref_3550',['ImageRef',['../classcarta_1_1FileLoader.html#a71e6f6d410ccc6ce459ce5e546857eab',1,'carta::FileLoader']]],
-  ['indexlist_3551',['IndexList',['../namespacecarta.html#a4f6247fd8c7932db3c7807a3a8f6a7af',1,'carta']]]
+  ['histogrambounds_3569',['HistogramBounds',['../namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6',1,'carta']]]
 ];

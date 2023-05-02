@@ -166,6 +166,7 @@ var NAVTREEINDEX0 =
 "Hdf5Loader_8tcc.html":[4,0,56],
 "Histogram_8cc.html":[4,0,57],
 "Histogram_8h.html":[4,0,58],
+"Histogram_8h.html#a8e5e52c4e8fa6d21995384f1d39280c6":[4,0,58,1],
 "HttpServer_8cc.html":[4,0,59],
 "HttpServer_8cc.html#a4262964fd29ac905d328d8d61295ebfc":[4,0,59,1],
 "HttpServer_8cc.html#ab701e3ac61a85b337ec5c1abaad6742d":[4,0,59,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX0 =
 "Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d":[4,0,74,2],
 "Logger_8h.html#a220224f8f0ac091a4555ac30dfc7619d":[4,0,74,8],
 "Logger_8h.html#a3a30c8519779f61e8148bc6bcc19a489":[4,0,74,6],
-"Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,74,9],
-"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c":[4,0,74,11]
+"Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,74,9]
 };

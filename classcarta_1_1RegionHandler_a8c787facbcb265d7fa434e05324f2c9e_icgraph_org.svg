@@ -53,7 +53,7 @@
 <!-- Node7 -->
 <g id="node7" class="node">
 <title>Node7</title>
-<g id="a_node7"><a xlink:href="classcarta_1_1RegionHandler.html#ac8aee0764dac213215f2ea00074320b2" target="_top" xlink:title=" ">
+<g id="a_node7"><a xlink:href="classcarta_1_1RegionHandler.html#a7797d9c5eca341dcb490a338fc66967a" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="892.5,-439.89 892.5,-469.89 1040.5,-469.89 1040.5,-439.89 892.5,-439.89"/>
 <text text-anchor="start" x="900.5" y="-457.89" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
 <text text-anchor="middle" x="966.5" y="-446.89" font-family="Helvetica,sans-Serif" font-size="10.00">::GetRegionHistogramData</text>

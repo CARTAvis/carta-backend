@@ -10,6 +10,8 @@ var hierarchy =
     [ "carta::BasicStatsCalculator< T >", "classcarta_1_1BasicStatsCalculator.html", null ],
     [ "carta::BeamInfo", "structcarta_1_1BeamInfo.html", null ],
     [ "carta::BeamTableInfo", "structcarta_1_1BeamTableInfo.html", null ],
+    [ "carta::Bounds< T >", "structcarta_1_1Bounds.html", null ],
+    [ "carta::Bounds< double >", "structcarta_1_1Bounds.html", null ],
     [ "carta::CacheId", "structcarta_1_1CacheId.html", null ],
     [ "carta::CacheIdHash", "structcarta_1_1CacheIdHash.html", null ],
     [ "carta::VectorField::CalcFpi", "structcarta_1_1VectorField_1_1CalcFpi.html", null ],

@@ -1,6 +1,8 @@
 <map id="carta::HistogramConfig" name="carta::HistogramConfig">
-<area shape="rect" id="node1" title=" " alt="" coords="5,200,177,227"/>
-<area shape="rect" id="node2" title=" " alt="" coords="25,96,64,123"/>
-<area shape="rect" id="node3" title=" " alt="" coords="96,96,183,123"/>
-<area shape="rect" id="node4" title=" " alt="" coords="70,5,209,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="195,200,367,227"/>
+<area shape="rect" id="node2" href="$structcarta_1_1Bounds.html" title=" " alt="" coords="5,96,191,123"/>
+<area shape="rect" id="node3" title=" " alt="" coords="215,96,253,123"/>
+<area shape="rect" id="node4" title=" " alt="" coords="303,96,354,123"/>
+<area shape="rect" id="node5" title=" " alt="" coords="417,96,504,123"/>
+<area shape="rect" id="node6" title=" " alt="" coords="391,5,530,47"/>
 </map>

@@ -85,7 +85,7 @@
 <!-- Node5 -->
 <g id="node5" class="node">
 <title>Node5</title>
-<g id="a_node5"><a xlink:href="classcarta_1_1RegionHandler.html#a1a8245294e3438b63256e0d49436c7df" target="_top" xlink:title=" ">
+<g id="a_node5"><a xlink:href="classcarta_1_1RegionHandler.html#ac080cc297d2d25110faca808755a7467" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="155,-98.5 155,-128.5 313,-128.5 313,-98.5 155,-98.5"/>
 <text text-anchor="start" x="163" y="-116.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
 <text text-anchor="middle" x="234" y="-105.5" font-family="Helvetica,sans-Serif" font-size="10.00">::SetHistogramRequirements</text>

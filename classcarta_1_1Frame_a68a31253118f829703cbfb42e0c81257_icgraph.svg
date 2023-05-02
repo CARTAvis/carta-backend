@@ -46,9 +46,9 @@ if (edges && edges.length) {
         </defs>
 
 <script type="text/javascript">
-var viewWidth = 906;
+var viewWidth = 721;
 var viewHeight = 116;
-var sectionId = 'dynsection-72';
+var sectionId = 'dynsection-70';
 </script>
 <script xlink:href="svgpan.js"/>
 <svg id="graph" class="graph">
@@ -58,40 +58,40 @@ var sectionId = 'dynsection-72';
 <g id="node1" class="node">
 <title>Node1</title>
 <g id="a_node1"><a xlink:title=" ">
-<polygon fill="#bfbfbf" stroke="black" points="758,-69 758,-88 898,-88 898,-69 758,-69"/>
-<text text-anchor="middle" x="828" y="-76" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZMatrix</text>
+<polygon fill="#bfbfbf" stroke="black" points="573,-69 573,-88 713,-88 713,-69 573,-69"/>
+<text text-anchor="middle" x="643" y="-76" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetZMatrix</text>
 </a>
 </g>
 </g>
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1Frame.html#a2627ae9873e0f4ab013e34f588e65433" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="353,-88 353,-107 534,-107 534,-88 353,-88"/>
-<text text-anchor="middle" x="443.5" y="-95" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::CalculateHistogram</text>
+<g id="a_node2"><a xlink:href="classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="168,-88 168,-107 349,-107 349,-88 168,-88"/>
+<text text-anchor="middle" x="258.5" y="-95" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::CalculateHistogram</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node2 -->
 <g id="edge1" class="edge">
 <title>Node1&#45;&gt;Node2</title>
-<path fill="none" stroke="midnightblue" d="M747.58,-82.45C685.38,-85.53 598.86,-89.83 534.18,-93.05"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="747.92,-85.93 757.73,-81.94 747.57,-78.94 747.92,-85.93"/>
+<path fill="none" stroke="midnightblue" d="M562.58,-82.45C500.38,-85.53 413.86,-89.83 349.18,-93.05"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="562.92,-85.93 572.73,-81.94 562.57,-78.94 562.92,-85.93"/>
 </g>
 <!-- Node4 -->
 <g id="node4" class="node">
 <title>Node4</title>
 <g id="a_node4"><a xlink:href="classcarta_1_1Frame.html#a1bd6cad34fcc337311218150f6771850" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="570,-50 570,-69 722,-69 722,-50 570,-50"/>
-<text text-anchor="middle" x="646" y="-57" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetBasicStats</text>
+<polygon fill="none" stroke="black" points="385,-50 385,-69 537,-69 537,-50 385,-50"/>
+<text text-anchor="middle" x="461" y="-57" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::GetBasicStats</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node4 -->
 <g id="edge3" class="edge">
 <title>Node1&#45;&gt;Node4</title>
-<path fill="none" stroke="midnightblue" d="M747.95,-70.16C739.39,-69.25 730.69,-68.33 722.18,-67.44"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="747.61,-73.64 757.92,-71.21 748.34,-66.68 747.61,-73.64"/>
+<path fill="none" stroke="midnightblue" d="M562.95,-70.16C554.39,-69.25 545.69,-68.33 537.18,-67.44"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="562.61,-73.64 572.92,-71.21 563.34,-66.68 562.61,-73.64"/>
 </g>
 <!-- Node3 -->
 <g id="node3" class="node">
@@ -106,52 +106,36 @@ var sectionId = 'dynsection-72';
 <!-- Node2&#45;&gt;Node3 -->
 <g id="edge2" class="edge">
 <title>Node2&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M342.51,-89.98C290.42,-85.75 225.71,-80.02 168,-73.5 156.39,-72.19 144.05,-70.62 132.14,-69.02"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="342.51,-93.49 352.76,-90.8 343.07,-86.51 342.51,-93.49"/>
+<path fill="none" stroke="midnightblue" d="M199.58,-85.95C178.34,-81.71 154.17,-76.89 132.33,-72.53"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="198.94,-89.39 209.43,-87.91 200.31,-82.52 198.94,-89.39"/>
 </g>
 <!-- Node4&#45;&gt;Node3 -->
-<g id="edge7" class="edge">
+<g id="edge6" class="edge">
 <title>Node4&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M559.44,-59.5C443.03,-59.5 237.26,-59.5 132.39,-59.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="559.73,-63 569.73,-59.5 559.73,-56 559.73,-63"/>
+<path fill="none" stroke="midnightblue" d="M374.62,-59.5C301.8,-59.5 198.64,-59.5 132.28,-59.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="374.69,-63 384.69,-59.5 374.69,-56 374.69,-63"/>
 </g>
 <!-- Node5 -->
 <g id="node5" class="node">
 <title>Node5</title>
-<g id="a_node5"><a xlink:href="classcarta_1_1Frame.html#af4487db12b8553663cadf357d5c4c9f3" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="369,-0.5 369,-30.5 518,-30.5 518,-0.5 369,-0.5"/>
-<text text-anchor="start" x="377" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::FillHistogram</text>
-<text text-anchor="middle" x="443.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">FromFrameCache</text>
+<g id="a_node5"><a xlink:href="classcarta_1_1Frame.html#a3a4bc30034d44066062d5794044da1b6" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="184,-0.5 184,-30.5 333,-30.5 333,-0.5 184,-0.5"/>
+<text text-anchor="start" x="192" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::FillHistogram</text>
+<text text-anchor="middle" x="258.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">FromFrameCache</text>
 </a>
 </g>
 </g>
 <!-- Node4&#45;&gt;Node5 -->
 <g id="edge4" class="edge">
 <title>Node4&#45;&gt;Node5</title>
-<path fill="none" stroke="midnightblue" d="M591.49,-47.76C567.44,-42.48 538.76,-36.19 513.15,-30.57"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="590.98,-51.23 601.49,-49.95 592.48,-44.39 590.98,-51.23"/>
+<path fill="none" stroke="midnightblue" d="M406.49,-47.76C382.44,-42.48 353.76,-36.19 328.15,-30.57"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="405.98,-51.23 416.49,-49.95 407.48,-44.39 405.98,-51.23"/>
 </g>
-<!-- Node6 -->
-<g id="node6" class="node">
-<title>Node6</title>
-<g id="a_node6"><a xlink:href="classcarta_1_1Frame.html#a81ac6f87981449dccd193fa2c81dddcf" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="168,-0.5 168,-30.5 317,-30.5 317,-0.5 168,-0.5"/>
-<text text-anchor="start" x="176" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::FillHistogram</text>
-<text text-anchor="middle" x="242.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">FromCache</text>
-</a>
-</g>
-</g>
-<!-- Node5&#45;&gt;Node6 -->
+<!-- Node5&#45;&gt;Node3 -->
 <g id="edge5" class="edge">
-<title>Node5&#45;&gt;Node6</title>
-<path fill="none" stroke="midnightblue" d="M358.93,-15.5C345.03,-15.5 330.7,-15.5 317.06,-15.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="358.97,-19 368.97,-15.5 358.97,-12 358.97,-19"/>
-</g>
-<!-- Node6&#45;&gt;Node3 -->
-<g id="edge6" class="edge">
-<title>Node6&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M172.15,-32.99C157.08,-36.79 141.25,-40.78 126.59,-44.47"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="173.09,-36.36 181.94,-30.52 171.38,-29.57 173.09,-36.36"/>
+<title>Node5&#45;&gt;Node3</title>
+<path fill="none" stroke="midnightblue" d="M182.27,-32.88C165.66,-36.71 148.21,-40.74 132.06,-44.47"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="183.52,-36.18 192.47,-30.52 181.94,-29.36 183.52,-36.18"/>
 </g>
 </g>
 </svg>

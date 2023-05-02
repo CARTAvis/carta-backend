@@ -1,8 +1,10 @@
 <map id="carta::RegionHistogramConfig" name="carta::RegionHistogramConfig">
-<area shape="rect" id="node1" title=" " alt="" coords="5,393,223,420"/>
-<area shape="rect" id="node2" title=" " alt="" coords="37,289,191,331"/>
-<area shape="rect" id="node3" href="$structcarta_1_1HistogramConfig.html" title=" " alt="" coords="28,200,200,227"/>
-<area shape="rect" id="node4" title=" " alt="" coords="48,96,87,123"/>
-<area shape="rect" id="node5" title=" " alt="" coords="119,96,205,123"/>
-<area shape="rect" id="node6" title=" " alt="" coords="93,5,231,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="172,393,389,420"/>
+<area shape="rect" id="node2" title=" " alt="" coords="203,289,358,331"/>
+<area shape="rect" id="node3" href="$structcarta_1_1HistogramConfig.html" title=" " alt="" coords="195,200,367,227"/>
+<area shape="rect" id="node4" href="$structcarta_1_1Bounds.html" title=" " alt="" coords="5,96,191,123"/>
+<area shape="rect" id="node5" title=" " alt="" coords="215,96,253,123"/>
+<area shape="rect" id="node6" title=" " alt="" coords="303,96,354,123"/>
+<area shape="rect" id="node7" title=" " alt="" coords="417,96,504,123"/>
+<area shape="rect" id="node8" title=" " alt="" coords="391,5,530,47"/>
 </map>

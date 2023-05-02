@@ -4,6 +4,7 @@ var files_dup =
     [ "App.cc", "App_8cc.html", "App_8cc" ],
     [ "App.h", "App_8h.html", "App_8h" ],
     [ "BasicStatsCalculator.h", "BasicStatsCalculator_8h.html", [
+      [ "Bounds", "structcarta_1_1Bounds.html", "structcarta_1_1Bounds" ],
       [ "BasicStats", "structcarta_1_1BasicStats.html", "structcarta_1_1BasicStats" ],
       [ "BasicStatsCalculator", "classcarta_1_1BasicStatsCalculator.html", "classcarta_1_1BasicStatsCalculator" ]
     ] ],
@@ -109,9 +110,7 @@ var files_dup =
     ] ],
     [ "Hdf5Loader.tcc", "Hdf5Loader_8tcc.html", null ],
     [ "Histogram.cc", "Histogram_8cc.html", null ],
-    [ "Histogram.h", "Histogram_8h.html", [
-      [ "Histogram", "classcarta_1_1Histogram.html", "classcarta_1_1Histogram" ]
-    ] ],
+    [ "Histogram.h", "Histogram_8h.html", "Histogram_8h" ],
     [ "HttpServer.cc", "HttpServer_8cc.html", "HttpServer_8cc" ],
     [ "HttpServer.h", "HttpServer_8h.html", "HttpServer_8h" ],
     [ "Image.cc", "Image_8cc.html", "Image_8cc" ],

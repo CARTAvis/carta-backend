@@ -107,8 +107,8 @@ Collaboration diagram for carta::Histogram:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1368034276c1d537ed733d8eadbd2cbb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#a1368034276c1d537ed733d8eadbd2cbb">Histogram</a> ()=default</td></tr>
 <tr class="separator:a1368034276c1d537ed733d8eadbd2cbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad55771b8b8f2336553cae0e42b55687b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#ad55771b8b8f2336553cae0e42b55687b">Histogram</a> (int num_bins, float min_value, float max_value, const float *data, const size_t data_size)</td></tr>
-<tr class="separator:ad55771b8b8f2336553cae0e42b55687b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adca34b054443cfdc5585667dbd3ba61a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#adca34b054443cfdc5585667dbd3ba61a">Histogram</a> (int num_bins, const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;bounds, const float *data, const size_t data_size)</td></tr>
+<tr class="separator:adca34b054443cfdc5585667dbd3ba61a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57bd7d0018ca67ebc964a70856a45121"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#a57bd7d0018ca67ebc964a70856a45121">Histogram</a> (const <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> &amp;h)</td></tr>
 <tr class="separator:a57bd7d0018ca67ebc964a70856a45121"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56e2b8bfafd357f89b9197487c20446e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#a56e2b8bfafd357f89b9197487c20446e">Add</a> (const <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> &amp;h)</td></tr>
@@ -117,6 +117,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a751eb7e111b661cf77a44995db151a3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1f537df539939fde102e25b0b42a9aa"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#ae1f537df539939fde102e25b0b42a9aa">GetMaxVal</a> () const</td></tr>
 <tr class="separator:ae1f537df539939fde102e25b0b42a9aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1002f37e381eb1de20add01e234a8083"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#a1002f37e381eb1de20add01e234a8083">GetBounds</a> () const</td></tr>
+<tr class="separator:a1002f37e381eb1de20add01e234a8083"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70adaf5681547ca8d7aa22550bfb3206"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206">GetNbins</a> () const</td></tr>
 <tr class="separator:a70adaf5681547ca8d7aa22550bfb3206"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa90c785ed1c27cf59d527c060f080eb5"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Histogram.html#aa90c785ed1c27cf59d527c060f080eb5">GetBinWidth</a> () const</td></tr>
@@ -177,8 +179,8 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="ad55771b8b8f2336553cae0e42b55687b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad55771b8b8f2336553cae0e42b55687b">&#9670;&nbsp;</a></span>Histogram() <span class="overload">[2/3]</span></h2>
+<a id="adca34b054443cfdc5585667dbd3ba61a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adca34b054443cfdc5585667dbd3ba61a">&#9670;&nbsp;</a></span>Histogram() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -192,14 +194,8 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>min_value</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">float&#160;</td>
-          <td class="paramname"><em>max_value</em>, </td>
+          <td class="paramtype">const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;&#160;</td>
+          <td class="paramname"><em>bounds</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -223,7 +219,7 @@ Private Attributes</h2></td></tr>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_ad55771b8b8f2336553cae0e42b55687b_cgraph.svg" width="100%" height="378"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_adca34b054443cfdc5585667dbd3ba61a_cgraph.svg" width="100%" height="378"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -266,7 +262,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_a56e2b8bfafd357f89b9197487c20446e_cgraph.svg" width="100%" height="410"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_a56e2b8bfafd357f89b9197487c20446e_cgraph.svg" width="100%" height="442"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
@@ -314,7 +310,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_a81787c73b6b71a8495c8c3ffcf4d7c46_cgraph.svg" width="488" height="139"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_a81787c73b6b71a8495c8c3ffcf4d7c46_cgraph.svg" width="488" height="190"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -431,6 +427,37 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_aa90c785ed1c27cf59d527c060f080eb5_icgraph.svg" width="351" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a1002f37e381eb1de20add01e234a8083"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1002f37e381eb1de20add01e234a8083">&#9670;&nbsp;</a></span>GetBounds()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> carta::Histogram::GetBounds </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Histogram_a1002f37e381eb1de20add01e234a8083_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 

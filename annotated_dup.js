@@ -58,6 +58,7 @@ var annotated_dup =
       [ "ImageMoments", "classcarta_1_1ImageMoments.html", "classcarta_1_1ImageMoments" ],
       [ "MomentGenerator", "classcarta_1_1MomentGenerator.html", "classcarta_1_1MomentGenerator" ],
       [ "PvGenerator", "classcarta_1_1PvGenerator.html", "classcarta_1_1PvGenerator" ],
+      [ "Bounds", "structcarta_1_1Bounds.html", "structcarta_1_1Bounds" ],
       [ "BasicStats", "structcarta_1_1BasicStats.html", "structcarta_1_1BasicStats" ],
       [ "BasicStatsCalculator", "classcarta_1_1BasicStatsCalculator.html", "classcarta_1_1BasicStatsCalculator" ],
       [ "Histogram", "classcarta_1_1Histogram.html", "classcarta_1_1Histogram" ],
