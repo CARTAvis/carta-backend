@@ -346,7 +346,7 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
     if (_coord_map.find(ds9_coord) != _coord_map.end()) {
         _file_ref_frame = _coord_map[ds9_coord];
     } else {
-        _file_ref_frame == "UNSUPPORTED";
+        _file_ref_frame = "UNSUPPORTED";
         _pixel_coord = false;
         return false;
     }
@@ -1471,33 +1471,46 @@ void Ds9ImportExport::ExportAnnPointParameters(const CARTA::RegionStyle& region_
     bool fill(false);
 
     switch (region_style.annotation_style().point_shape()) {
-        case CARTA::PointAnnotationShape::SQUARE:
+        case CARTA::PointAnnotationShape::SQUARE: {
             point_shape = "box";
             fill = true;
             break;
-        case CARTA::PointAnnotationShape::BOX:
+        }
+        case CARTA::PointAnnotationShape::BOX: {
             point_shape = "box";
             break;
-        case CARTA::PointAnnotationShape::CIRCLE:
+        }
+        case CARTA::PointAnnotationShape::CIRCLE: {
             point_shape = "circle";
             fill = true;
             break;
-        case CARTA::PointAnnotationShape::CIRCLE_LINED:
+        }
+        case CARTA::PointAnnotationShape::CIRCLE_LINED: {
             point_shape = "circle";
             break;
-        case CARTA::PointAnnotationShape::DIAMOND:
+        }
+        case CARTA::PointAnnotationShape::DIAMOND: {
             point_shape = "diamond";
             fill = true;
             break;
-        case CARTA::PointAnnotationShape::DIAMOND_LINED:
+        }
+        case CARTA::PointAnnotationShape::DIAMOND_LINED: {
             point_shape = "diamond";
             break;
-        case CARTA::PointAnnotationShape::CROSS:
+        }
+        case CARTA::PointAnnotationShape::CROSS: {
             point_shape = "cross";
             break;
-        case CARTA::PointAnnotationShape::X:
+        }
+        case CARTA::PointAnnotationShape::X: {
             point_shape = "x";
             break;
+        }
+        default: {
+            point_shape = "box";
+            fill = true;
+            break;
+        }
     }
 
     auto point_size = region_style.annotation_style().point_width();

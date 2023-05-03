@@ -51,6 +51,14 @@ public:
         _mtx.unlock();
     }
 
+    size_t size() {
+        size_t q_size(0);
+        _mtx.lock();
+        q_size = _q.size();
+        _mtx.unlock();
+        return q_size;
+    }
+
 private:
     std::list<T> _q;
     std::mutex _mtx;
