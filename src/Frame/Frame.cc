@@ -31,7 +31,7 @@ static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -84,7 +84,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (load_image_cache && !(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -1594,13 +1594,21 @@ casacore::IPosition Frame::GetRegionShape(const StokesRegion& stokes_region) {
     return lattice_region.shape();
 }
 
-bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data) {
+bool Frame::GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
+    std::lock_guard<std::mutex> ulock(_image_mutex);
+    return _loader->GetSubImage(stokes_region, sub_image);
+}
+
+bool Frame::GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
+    std::lock_guard<std::mutex> ulock(_image_mutex);
+    return _loader->GetSubImage(stokes_slicer, sub_image);
+}
+
+bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance) {
     // Get image data with a region applied
     Timer t;
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
-    ulock.unlock();
+    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
 
     if (!subimage_ok) {
         return false;
@@ -1642,7 +1650,9 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
             }
         }
 
-        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+        if (report_performance) {
+            spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+        }
 
         return true;
     } catch (casacore::AipsError& err) {
@@ -1666,10 +1676,8 @@ bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
+    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
     _loader->CloseImageIfUpdated();
-    ulock.unlock();
 
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
@@ -1683,10 +1691,8 @@ bool Frame::GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA:
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_slicer, sub_image);
+    bool subimage_ok = GetSlicerSubImage(stokes_slicer, sub_image);
     _loader->CloseImageIfUpdated();
-    ulock.unlock();
 
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
@@ -1874,8 +1880,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     //// Todo: support saving computed stokes images
     if (image_shape.size() == 2) {
-        if (region) {
-            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image);
+        if (region && GetRegionSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image)) {
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }

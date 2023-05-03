@@ -19,7 +19,7 @@
 
 #include "ImageData/FileInfo.h"
 #include "Util/Casacore.h"
-#include "Util/Image.h"
+#include "Util/Stokes.h"
 
 namespace carta {
 

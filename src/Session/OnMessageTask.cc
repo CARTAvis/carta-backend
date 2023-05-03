@@ -30,7 +30,7 @@ OnMessageTask* SetImageChannelsTask::execute() {
 }
 
 OnMessageTask* SetCursorTask::execute() {
-    _session->_file_settings.ExecuteOne("SET_CURSOR", _file_id);
+    _session->_cursor_settings.ExecuteOne("SET_CURSOR", _file_id);
     return nullptr;
 }
 
@@ -68,5 +68,10 @@ OnMessageTask* RegionDataStreamsTask::execute() {
 
 OnMessageTask* SpectralProfileTask::execute() {
     _session->SendSpectralProfileData(_file_id, _region_id);
+    return nullptr;
+}
+
+OnMessageTask* PvPreviewUpdateTask::execute() {
+    _session->SendPvPreview(_file_id, _region_id, _preview_region);
     return nullptr;
 }

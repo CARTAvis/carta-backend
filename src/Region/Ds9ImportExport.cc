@@ -1509,6 +1509,7 @@ void Ds9ImportExport::ExportAnnPointParameters(const CARTA::RegionStyle& region_
             break;
         }
         default: {
+            point_shape = "box";
             break;
         }
     }
