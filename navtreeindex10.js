@@ -1,5 +1,13 @@
 var NAVTREEINDEX10 =
 {
+"structcarta_1_1RegionHistogramConfig.html":[3,0,0,6],
+"structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c":[3,0,0,6,0],
+"structcarta_1_1RegionProperties.html":[3,0,0,68],
+"structcarta_1_1RegionProperties.html#a4641461535f1434e56736c2ebbb2d94f":[3,0,0,68,0],
+"structcarta_1_1RegionProperties.html#abddc743aaa615ca712ba322eb9016ddc":[3,0,0,68,3],
+"structcarta_1_1RegionProperties.html#ac17aae501c41e6b93c67ed23d1759b94":[3,0,0,68,1],
+"structcarta_1_1RegionProperties.html#af0c57a1f160c2b8b7a7dc39d6609bc57":[3,0,0,68,2],
+"structcarta_1_1RegionSpectralConfig.html":[3,0,0,9],
 "structcarta_1_1RegionSpectralConfig.html#a2aa9292365dfa8f6cc302353795d9c2d":[3,0,0,9,0],
 "structcarta_1_1RegionState.html":[3,0,0,66],
 "structcarta_1_1RegionState.html#a012fe948493b80db2c45fc6477674346":[3,0,0,66,11],

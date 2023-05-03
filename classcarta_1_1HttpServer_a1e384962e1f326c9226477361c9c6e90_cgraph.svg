@@ -48,7 +48,7 @@ if (edges && edges.length) {
 <script type="text/javascript">
 var viewWidth = 638;
 var viewHeight = 137;
-var sectionId = 'dynsection-17';
+var sectionId = 'dynsection-25';
 </script>
 <script xlink:href="svgpan.js"/>
 <svg id="graph" class="graph">
@@ -80,65 +80,81 @@ var sectionId = 'dynsection-17';
 <path fill="none" stroke="midnightblue" d="M114.08,-79.6C130.69,-84.61 149.34,-90.23 166.6,-95.44"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="166,-98.91 176.58,-98.45 168.02,-92.21 166,-98.91"/>
 </g>
-<!-- Node3 -->
-<g id="node3" class="node">
-<title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" target="_top" xlink:title=" ">
+<!-- Node4 -->
+<g id="node4" class="node">
+<title>Node4</title>
+<g id="a_node4"><a xlink:href="classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="162,-49.5 162,-79.5 293,-79.5 293,-49.5 162,-49.5"/>
 <text text-anchor="start" x="170" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
 <text text-anchor="middle" x="227.5" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetExistingPreferences</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node3 -->
-<g id="edge2" class="edge">
-<title>Node1&#45;&gt;Node3</title>
+<!-- Node1&#45;&gt;Node4 -->
+<g id="edge3" class="edge">
+<title>Node1&#45;&gt;Node4</title>
 <path fill="none" stroke="midnightblue" d="M126.36,-64.5C134.63,-64.5 143.18,-64.5 151.64,-64.5"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="151.88,-68 161.88,-64.5 151.88,-61 151.88,-68"/>
 </g>
-<!-- Node4 -->
-<g id="node4" class="node">
-<title>Node4</title>
-<g id="a_node4"><a xlink:href="classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" target="_top" xlink:title=" ">
+<!-- Node5 -->
+<g id="node5" class="node">
+<title>Node5</title>
+<g id="a_node5"><a xlink:href="classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="174.5,-0.5 174.5,-30.5 280.5,-30.5 280.5,-0.5 174.5,-0.5"/>
 <text text-anchor="start" x="182.5" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
 <text text-anchor="middle" x="227.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">IsAuthenticated</text>
 </a>
 </g>
 </g>
-<!-- Node1&#45;&gt;Node4 -->
-<g id="edge3" class="edge">
-<title>Node1&#45;&gt;Node4</title>
+<!-- Node1&#45;&gt;Node5 -->
+<g id="edge4" class="edge">
+<title>Node1&#45;&gt;Node5</title>
 <path fill="none" stroke="midnightblue" d="M114.08,-49.4C130.69,-44.39 149.34,-38.77 166.6,-33.56"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="168.02,-36.79 176.58,-30.55 166,-30.09 168.02,-36.79"/>
 </g>
-<!-- Node5 -->
-<g id="node5" class="node">
-<title>Node5</title>
-<g id="a_node5"><a xlink:href="Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" target="_top" xlink:title="Validate an HTTP request.">
-<polygon fill="none" stroke="black" points="329,-6 329,-25 436,-25 436,-6 329,-6"/>
-<text text-anchor="middle" x="382.5" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateAuthToken</text>
+<!-- Node3 -->
+<g id="node3" class="node">
+<title>Node3</title>
+<g id="a_node3"><a xlink:href="classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="329.5,-98.5 329.5,-128.5 435.5,-128.5 435.5,-98.5 329.5,-98.5"/>
+<text text-anchor="start" x="337.5" y="-116.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::HttpServer::</text>
+<text text-anchor="middle" x="382.5" y="-105.5" font-family="Helvetica,sans-Serif" font-size="10.00">AddCorsHeaders</text>
 </a>
 </g>
 </g>
-<!-- Node4&#45;&gt;Node5 -->
-<g id="edge4" class="edge">
-<title>Node4&#45;&gt;Node5</title>
-<path fill="none" stroke="midnightblue" d="M280.73,-15.5C293.02,-15.5 306.25,-15.5 318.95,-15.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="318.99,-19 328.99,-15.5 318.99,-12 318.99,-19"/>
+<!-- Node2&#45;&gt;Node3 -->
+<g id="edge2" class="edge">
+<title>Node2&#45;&gt;Node3</title>
+<path fill="none" stroke="midnightblue" d="M287.22,-113.5C297.58,-113.5 308.41,-113.5 318.88,-113.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="319.19,-117 329.19,-113.5 319.19,-110 319.19,-117"/>
 </g>
 <!-- Node6 -->
 <g id="node6" class="node">
 <title>Node6</title>
-<g id="a_node6"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="472,-6 472,-25 630,-25 630,-6 472,-6"/>
-<text text-anchor="middle" x="551" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
+<g id="a_node6"><a xlink:href="Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" target="_top" xlink:title="Validate an HTTP request.">
+<polygon fill="none" stroke="black" points="329,-6 329,-25 436,-25 436,-6 329,-6"/>
+<text text-anchor="middle" x="382.5" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">ValidateAuthToken</text>
 </a>
 </g>
 </g>
 <!-- Node5&#45;&gt;Node6 -->
 <g id="edge5" class="edge">
 <title>Node5&#45;&gt;Node6</title>
+<path fill="none" stroke="midnightblue" d="M280.73,-15.5C293.02,-15.5 306.25,-15.5 318.95,-15.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="318.99,-19 328.99,-15.5 318.99,-12 318.99,-19"/>
+</g>
+<!-- Node7 -->
+<g id="node7" class="node">
+<title>Node7</title>
+<g id="a_node7"><a xlink:href="String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="472,-6 472,-25 630,-25 630,-6 472,-6"/>
+<text text-anchor="middle" x="551" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">ConstantTimeStringCompare</text>
+</a>
+</g>
+</g>
+<!-- Node6&#45;&gt;Node7 -->
+<g id="edge6" class="edge">
+<title>Node6&#45;&gt;Node7</title>
 <path fill="none" stroke="midnightblue" d="M436.18,-15.5C444.33,-15.5 452.93,-15.5 461.61,-15.5"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="461.81,-19 471.81,-15.5 461.81,-12 461.81,-19"/>
 </g>

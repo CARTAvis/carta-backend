@@ -1,30 +1,36 @@
 <map id="carta::HttpServer::RegisterRoutes" name="carta::HttpServer::RegisterRoutes">
-<area shape="rect" id="node1" title=" " alt="" coords="5,384,147,425"/>
-<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#a9dfa92f1166c9c48597fb07ae91db182" title=" " alt="" coords="213,57,355,99"/>
-<area shape="rect" id="node3" href="$classcarta_1_1HttpServer.html#aef99e62efe9a7250f3f0a867d114f426" title=" " alt="" coords="212,253,356,295"/>
-<area shape="rect" id="node10" href="$classcarta_1_1HttpServer.html#a45673f54c55bb8e02fbacf5fb3340f93" title=" " alt="" coords="195,319,373,360"/>
-<area shape="rect" id="node14" href="$classcarta_1_1HttpServer.html#ab0d40a7fbc2c74aaf9ad45ba35d2f912" title=" " alt="" coords="213,580,355,621"/>
-<area shape="rect" id="node15" href="$classcarta_1_1HttpServer.html#a94f3006427469ddabb14f8dce474b4fc" title=" " alt="" coords="213,123,355,164"/>
-<area shape="rect" id="node17" href="$classcarta_1_1HttpServer.html#a1e384962e1f326c9226477361c9c6e90" title=" " alt="" coords="200,188,368,229"/>
-<area shape="rect" id="node18" href="$classcarta_1_1HttpServer.html#a412683874c457522cd4df4dc960ab4e2" title=" " alt="" coords="201,515,367,556"/>
-<area shape="rect" id="node22" href="$classcarta_1_1HttpServer.html#a5a834bd534d12e1e534098fa2e10bc33" title=" " alt="" coords="213,449,355,491"/>
-<area shape="rect" id="node25" href="$classcarta_1_1HttpServer.html#ac68951fe0785a7f62d39420c8f628533" title=" " alt="" coords="201,384,367,425"/>
-<area shape="rect" id="node27" href="$classcarta_1_1HttpServer.html#a97d067005cab1bba7645ec617b940e3f" title=" " alt="" coords="205,645,363,687"/>
-<area shape="rect" id="node28" href="$classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6" title=" " alt="" coords="213,711,355,752"/>
-<area shape="rect" id="node4" href="$classcarta_1_1HttpServer.html#a9f22cc64ac844efa362e5cae7e227b18" title=" " alt="" coords="451,188,609,229"/>
-<area shape="rect" id="node5" href="$classcarta_1_1HttpServer.html#a34070207b3bf12d0b37f0a9a369cadc5" title=" " alt="" coords="445,123,615,164"/>
-<area shape="rect" id="node6" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="459,253,601,295"/>
-<area shape="rect" id="node9" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="459,449,601,491"/>
-<area shape="rect" id="node7" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="703,261,845,287"/>
-<area shape="rect" id="node8" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="909,261,1120,287"/>
-<area shape="rect" id="node11" href="$classcarta_1_1HttpServer.html#a8387ce0b6ef632f5287b9c6a9f90d338" title=" " alt="" coords="428,319,632,360"/>
-<area shape="rect" id="node12" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="687,319,861,360"/>
-<area shape="rect" id="node13" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="695,384,853,425"/>
-<area shape="rect" id="node16" href="$classcarta_1_1HttpServer.html#a1ba43a1b36ce1e19d6aa024b3711bc10" title=" " alt="" coords="457,5,603,47"/>
-<area shape="rect" id="node19" href="$classcarta_1_1HttpServer.html#a5a0f38bf0416026e852b3ab1f69f7c57" title=" " alt="" coords="459,580,601,621"/>
-<area shape="rect" id="node20" href="$classcarta_1_1HttpServer.html#a4b2354257c27b9b6ac9f8c875ecbc8c3" title=" " alt="" coords="450,645,610,687"/>
-<area shape="rect" id="node21" href="$classcarta_1_1HttpServer.html#a84c66f1a1f6dd7ebbc074612244fd05f" title=" " alt="" coords="448,711,612,752"/>
-<area shape="rect" id="node23" href="$classcarta_1_1HttpServer.html#a2f5ec652fc543dc22995bd5ad9b866f9" title=" " alt="" coords="452,515,608,556"/>
-<area shape="rect" id="node24" href="$classcarta_1_1HttpServer.html#a44362263707890daf7c642f9c8400877" title=" " alt="" coords="703,515,845,556"/>
-<area shape="rect" id="node26" href="$classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848" title=" " alt="" coords="421,384,639,425"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,576,147,617"/>
+<area shape="rect" id="node2" href="$classcarta_1_1HttpServer.html#a3d73c3c23b0a75f2db9496c6a027d0e9" title=" " alt="" coords="703,200,845,241"/>
+<area shape="rect" id="node3" href="$classcarta_1_1HttpServer.html#a9dfa92f1166c9c48597fb07ae91db182" title=" " alt="" coords="213,804,355,845"/>
+<area shape="rect" id="node4" href="$classcarta_1_1HttpServer.html#aef99e62efe9a7250f3f0a867d114f426" title=" " alt="" coords="212,477,356,519"/>
+<area shape="rect" id="node11" href="$classcarta_1_1HttpServer.html#a45673f54c55bb8e02fbacf5fb3340f93" title=" " alt="" coords="195,543,373,584"/>
+<area shape="rect" id="node15" href="$classcarta_1_1HttpServer.html#ab0d40a7fbc2c74aaf9ad45ba35d2f912" title=" " alt="" coords="213,869,355,911"/>
+<area shape="rect" id="node16" href="$classcarta_1_1HttpServer.html#aa7a4e4cee9cd8a3204770992be139ee5" title=" " alt="" coords="213,216,355,257"/>
+<area shape="rect" id="node19" href="$classcarta_1_1HttpServer.html#a9d4bf386ea698bf2205b604b8fc19e9f" title=" " alt="" coords="206,281,362,323"/>
+<area shape="rect" id="node21" href="$classcarta_1_1HttpServer.html#a94f3006427469ddabb14f8dce474b4fc" title=" " alt="" coords="213,347,355,388"/>
+<area shape="rect" id="node23" href="$classcarta_1_1HttpServer.html#a1e384962e1f326c9226477361c9c6e90" title=" " alt="" coords="200,412,368,453"/>
+<area shape="rect" id="node24" href="$classcarta_1_1HttpServer.html#a412683874c457522cd4df4dc960ab4e2" title=" " alt="" coords="201,739,367,780"/>
+<area shape="rect" id="node28" href="$classcarta_1_1HttpServer.html#a5a834bd534d12e1e534098fa2e10bc33" title=" " alt="" coords="213,673,355,715"/>
+<area shape="rect" id="node31" href="$classcarta_1_1HttpServer.html#ac68951fe0785a7f62d39420c8f628533" title=" " alt="" coords="201,608,367,649"/>
+<area shape="rect" id="node33" href="$classcarta_1_1HttpServer.html#a97d067005cab1bba7645ec617b940e3f" title=" " alt="" coords="205,935,363,976"/>
+<area shape="rect" id="node34" href="$classcarta_1_1HttpServer.html#a47a6ce88bed3ea5dcc9630b6439b86c6" title=" " alt="" coords="213,1000,355,1041"/>
+<area shape="rect" id="node5" href="$classcarta_1_1HttpServer.html#a9f22cc64ac844efa362e5cae7e227b18" title=" " alt="" coords="451,412,609,453"/>
+<area shape="rect" id="node6" href="$classcarta_1_1HttpServer.html#a34070207b3bf12d0b37f0a9a369cadc5" title=" " alt="" coords="445,347,615,388"/>
+<area shape="rect" id="node7" href="$classcarta_1_1HttpServer.html#af169f00ad63df4365dabaff24daf8a38" title=" " alt="" coords="459,477,601,519"/>
+<area shape="rect" id="node10" href="$classcarta_1_1HttpServer.html#adbfb962d9f1dd478618ca66b867728af" title=" " alt="" coords="459,673,601,715"/>
+<area shape="rect" id="node8" href="$Token_8cc.html#a9bdf5a1f3fa36deef988a7294f9f85b1" title="Validate an HTTP request." alt="" coords="703,485,845,511"/>
+<area shape="rect" id="node9" href="$String_8cc.html#ac6e67fbe6974b4438e7f60fa751d5e75" title=" " alt="" coords="909,485,1120,511"/>
+<area shape="rect" id="node12" href="$classcarta_1_1HttpServer.html#a8387ce0b6ef632f5287b9c6a9f90d338" title=" " alt="" coords="428,543,632,584"/>
+<area shape="rect" id="node13" href="$classcarta_1_1HttpServer.html#ac8c4bdb5a8fb3df895f096fde3b6e9b9" title=" " alt="" coords="687,543,861,584"/>
+<area shape="rect" id="node14" href="$classcarta_1_1HttpServer.html#a29a4c8cf88375801afae89c5fc1a56de" title=" " alt="" coords="695,608,853,649"/>
+<area shape="rect" id="node17" href="$classcarta_1_1HttpServer.html#af4c89f86ebffb4e0ea82f37d41e6f190" title=" " alt="" coords="459,47,601,88"/>
+<area shape="rect" id="node18" href="$String_8cc.html#a072e2624b237bdf8f61e2014ce26eecf" title=" " alt="" coords="453,113,607,139"/>
+<area shape="rect" id="node20" href="$classcarta_1_1HttpServer.html#a196b386010aa12dc7a2687e6dec2b586" title=" " alt="" coords="449,164,611,205"/>
+<area shape="rect" id="node22" href="$classcarta_1_1HttpServer.html#a1ba43a1b36ce1e19d6aa024b3711bc10" title=" " alt="" coords="457,229,603,271"/>
+<area shape="rect" id="node25" href="$classcarta_1_1HttpServer.html#a5a0f38bf0416026e852b3ab1f69f7c57" title=" " alt="" coords="459,804,601,845"/>
+<area shape="rect" id="node26" href="$classcarta_1_1HttpServer.html#a4b2354257c27b9b6ac9f8c875ecbc8c3" title=" " alt="" coords="450,869,610,911"/>
+<area shape="rect" id="node27" href="$classcarta_1_1HttpServer.html#a84c66f1a1f6dd7ebbc074612244fd05f" title=" " alt="" coords="448,935,612,976"/>
+<area shape="rect" id="node29" href="$classcarta_1_1HttpServer.html#a2f5ec652fc543dc22995bd5ad9b866f9" title=" " alt="" coords="452,739,608,780"/>
+<area shape="rect" id="node30" href="$classcarta_1_1HttpServer.html#a44362263707890daf7c642f9c8400877" title=" " alt="" coords="703,739,845,780"/>
+<area shape="rect" id="node32" href="$classcarta_1_1HttpServer.html#a18e362a5de3bde7f163d2c0382a9b848" title=" " alt="" coords="421,608,639,649"/>
 </map>

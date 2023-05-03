@@ -1,5 +1,13 @@
 var NAVTREEINDEX9 =
 {
+"structAxisRange.html#a145c438deed0a187f00335a4c3b8d024":[3,0,4,1],
+"structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c":[3,0,4,0],
+"structAxisRange.html#a495415babad4cbd13f0c165f88fad6a1":[3,0,4,4],
+"structAxisRange.html#a649a21f3357a105599ab3ced83a0053d":[3,0,4,5],
+"structAxisRange.html#ad838bfc7c64ace788906bf98106a86b9":[3,0,4,6],
+"structAxisRange.html#ae077bad7bf33daaf0db4603b8cebe7c3":[3,0,4,3],
+"structAxisRange.html#afe27315ca30282545d389919e2ad9cd8":[3,0,4,2],
+"structPointXy.html":[3,0,6],
 "structPointXy.html#a2ea924810b76cb83c3175de2ba2dc31b":[3,0,6,1],
 "structPointXy.html#a4565cef6a760b37ee073bfdd6aa91185":[3,0,6,3],
 "structPointXy.html#a621610a5d2f12457e8ff10110972f81c":[3,0,6,0],
@@ -241,13 +249,5 @@ var NAVTREEINDEX9 =
 "structcarta_1_1ProgramSettings.html#af7d2adcd634e3d42023943597eb0a772":[3,0,0,61,47],
 "structcarta_1_1ProgramSettings.html#afcb770edcb01237690bc88a59d995b47":[3,0,0,61,29],
 "structcarta_1_1ProgramSettings.html#afec747a7616313a7f49b1142658a4278":[3,0,0,61,0],
-"structcarta_1_1ProgramSettings.html#aff22fb67d053a4b60c2a71a82a856289":[3,0,0,61,50],
-"structcarta_1_1RegionHistogramConfig.html":[3,0,0,6],
-"structcarta_1_1RegionHistogramConfig.html#ad8ed1b8fb32ff14b4f2720d7d78b358c":[3,0,0,6,0],
-"structcarta_1_1RegionProperties.html":[3,0,0,68],
-"structcarta_1_1RegionProperties.html#a4641461535f1434e56736c2ebbb2d94f":[3,0,0,68,0],
-"structcarta_1_1RegionProperties.html#abddc743aaa615ca712ba322eb9016ddc":[3,0,0,68,3],
-"structcarta_1_1RegionProperties.html#ac17aae501c41e6b93c67ed23d1759b94":[3,0,0,68,1],
-"structcarta_1_1RegionProperties.html#af0c57a1f160c2b8b7a7dc39d6609bc57":[3,0,0,68,2],
-"structcarta_1_1RegionSpectralConfig.html":[3,0,0,9]
+"structcarta_1_1ProgramSettings.html#aff22fb67d053a4b60c2a71a82a856289":[3,0,0,61,50]
 };

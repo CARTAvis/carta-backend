@@ -1,5 +1,13 @@
 var NAVTREEINDEX8 =
 {
+"classcarta_1_1WebBrowser.html#a7d1f41f018d2693505b6383ff9c8dad9":[3,0,0,62,2],
+"classcarta_1_1WebBrowser.html#a98a1837e72a8a24394655eb12006bf5f":[3,0,0,62,7],
+"classcarta_1_1WebBrowser.html#acac78431cb88ba68772a803a42db680a":[3,0,0,62,12],
+"classcarta_1_1WebBrowser.html#acf07f093a493cf3bb52ad4973a104ddb":[3,0,0,62,4],
+"classcarta_1_1WebBrowser.html#af668cd182ec040016f6d59d601c1713a":[3,0,0,62,11],
+"classcarta_1_1WebBrowser.html#afdfb9fee1f4180d5e836ba44d1184138":[3,0,0,62,1],
+"classcarta_1_1concurrent__queue.html":[3,0,0,93],
+"classcarta_1_1concurrent__queue.html#a1859a351293cdfa480edca9852267fa8":[3,0,0,93,4],
 "classcarta_1_1concurrent__queue.html#a37f14bef2794637000c1653f5b8b0e15":[3,0,0,93,1],
 "classcarta_1_1concurrent__queue.html#a44dc990ae7a71921648cad573058357d":[3,0,0,93,5],
 "classcarta_1_1concurrent__queue.html#a4709ad7a7d1da6e898372b1c01b6d751":[3,0,0,93,7],
@@ -131,8 +139,8 @@ var NAVTREEINDEX8 =
 "globals_type.html":[4,1,3],
 "globals_vars.html":[4,1,2],
 "hierarchy.html":[3,2],
-"index.html":[],
 "index.html":[0],
+"index.html":[],
 "index.html#autotoc_md3":[0,0],
 "md_docs_static_faq.html":[1],
 "md_docs_static_faq.html#autotoc_md0":[1,0],
@@ -241,13 +249,5 @@ var NAVTREEINDEX8 =
 "namespacespdlog.html#a670c6a63d98e715c33a6063e6e0c7b0c":[2,0,2,1],
 "namespacespdlog_1_1sinks.html":[2,0,2,0],
 "pages.html":[],
-"structAxisRange.html":[3,0,4],
-"structAxisRange.html#a145c438deed0a187f00335a4c3b8d024":[3,0,4,1],
-"structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c":[3,0,4,0],
-"structAxisRange.html#a495415babad4cbd13f0c165f88fad6a1":[3,0,4,4],
-"structAxisRange.html#a649a21f3357a105599ab3ced83a0053d":[3,0,4,5],
-"structAxisRange.html#ad838bfc7c64ace788906bf98106a86b9":[3,0,4,6],
-"structAxisRange.html#ae077bad7bf33daaf0db4603b8cebe7c3":[3,0,4,3],
-"structAxisRange.html#afe27315ca30282545d389919e2ad9cd8":[3,0,4,2],
-"structPointXy.html":[3,0,6]
+"structAxisRange.html":[3,0,4]
 };
