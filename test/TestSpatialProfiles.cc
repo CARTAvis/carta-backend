@@ -21,21 +21,6 @@ static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 
 class SpatialProfileTest : public ::testing::Test, public ImageGenerator {
 public:
-    static std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
-        if (data.profiles(0).coordinate().back() == 'x') {
-            return {data.profiles(0), data.profiles(1)};
-        } else {
-            return {data.profiles(1), data.profiles(0)};
-        }
-    }
-
-    static std::vector<float> ProfileValues(CARTA::SpatialProfile& profile) {
-        std::string buffer = profile.raw_values_fp32();
-        std::vector<float> values(buffer.size() / sizeof(float));
-        memcpy(values.data(), buffer.data(), buffer.size());
-        return values;
-    }
-
     static std::vector<float> Decimated(std::vector<float> full_resolution, int mip) {
         // Decimate profile in 1D
         size_t num_decimated_pairs = std::ceil((float)full_resolution.size() / (mip * 2));
@@ -127,14 +112,14 @@ TEST_F(SpatialProfileTest, SmallFitsProfile) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 10);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
         CmpVectors(x_vals, reader.ReadProfileX(5));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
         CmpVectors(y_vals, reader.ReadProfileY(5));
     }
@@ -168,14 +153,14 @@ TEST_F(SpatialProfileTest, SmallHdf5Profile) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 10);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
         CmpVectors(x_vals, reader.ReadProfileX(5));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
         CmpVectors(y_vals, reader.ReadProfileY(5));
     }
@@ -203,14 +188,14 @@ TEST_F(SpatialProfileTest, LowResFitsProfile) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 130);
         EXPECT_EQ(x_profile.mip(), 2);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 66);
         CmpVectors(x_vals, Decimated(reader.ReadProfileX(50), 2));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
         CmpVectors(y_vals, Decimated(reader.ReadProfileY(50), 2));
     }
@@ -238,14 +223,14 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileExactMipAvailable) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 130);
         EXPECT_EQ(x_profile.mip(), 2);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 65);
         CmpVectors(x_vals, Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)}), 1e-5);
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
         CmpVectors(y_vals, Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)}), 1e-5);
     }
@@ -275,14 +260,14 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileLowerMipAvailable) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 130);
         EXPECT_EQ(x_profile.mip(), 2);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 65);
         CmpVectors(x_vals, Downsampled({reader.ReadProfileX(50), reader.ReadProfileX(51)}), 1e-5);
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
         CmpVectors(y_vals, Downsampled({reader.ReadProfileY(50), reader.ReadProfileY(51)}), 1e-5);
     }
@@ -312,14 +297,14 @@ TEST_F(SpatialProfileTest, LowResHdf5ProfileNoMipAvailable) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 120);
         EXPECT_EQ(x_profile.mip(), 2);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 60);
         CmpVectors(x_vals, Decimated(reader.ReadProfileX(50), 2));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 100);
         EXPECT_EQ(y_profile.mip(), 2);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 50);
         CmpVectors(y_vals, Decimated(reader.ReadProfileY(50), 2));
     }
@@ -347,14 +332,14 @@ TEST_F(SpatialProfileTest, FullResFitsStartEnd) {
         EXPECT_EQ(x_profile.start(), 100);
         EXPECT_EQ(x_profile.end(), 200);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 100);
         CmpVectors(x_vals, Segment(reader.ReadProfileX(150), 100, 200));
 
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 100);
         CmpVectors(y_vals, Segment(reader.ReadProfileY(150), 100, 200));
     }
@@ -382,14 +367,14 @@ TEST_F(SpatialProfileTest, FullResHdf5StartEnd) {
         EXPECT_EQ(x_profile.start(), 100);
         EXPECT_EQ(x_profile.end(), 200);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 100);
         CmpVectors(x_vals, Segment(reader.ReadProfileX(150), 100, 200));
 
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 100);
         CmpVectors(y_vals, Segment(reader.ReadProfileY(150), 100, 200));
     }
@@ -417,7 +402,7 @@ TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
         EXPECT_EQ(x_profile.start(), 100);
         EXPECT_EQ(x_profile.end(), 200);
         EXPECT_EQ(x_profile.mip(), 4);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 24);
         // Data to decimate has endpoints rounded up to mip*2
         CmpVectors(x_vals, Decimated(Segment(reader.ReadProfileX(150), 104, 200), 4));
@@ -425,7 +410,7 @@ TEST_F(SpatialProfileTest, LowResFitsStartEnd) {
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
         EXPECT_EQ(y_profile.mip(), 4);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 24);
         // Data to decimate has endpoints rounded up to mip*2
         CmpVectors(y_vals, Decimated(Segment(reader.ReadProfileY(150), 104, 200), 4));
@@ -454,7 +439,7 @@ TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
         EXPECT_EQ(x_profile.start(), 100);
         EXPECT_EQ(x_profile.end(), 200);
         EXPECT_EQ(x_profile.mip(), 4);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 25);
         // Downsampled region is selected so that it includes the requested row
         CmpVectors(x_vals,
@@ -465,7 +450,7 @@ TEST_F(SpatialProfileTest, LowResHdf5StartEnd) {
         EXPECT_EQ(y_profile.start(), 100);
         EXPECT_EQ(y_profile.end(), 200);
         EXPECT_EQ(y_profile.mip(), 4);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 25);
         // Downsampled region is selected so that it includes the requested column
         CmpVectors(y_vals,
@@ -496,14 +481,14 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullRes) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 3000);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 3000);
         CmpVectors(x_vals, reader.ReadProfileX(150));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 2000);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 2000);
         CmpVectors(y_vals, reader.ReadProfileY(150));
     }
@@ -531,14 +516,14 @@ TEST_F(SpatialProfileTest, Hdf5MultipleChunkFullResStartEnd) {
         EXPECT_EQ(x_profile.start(), 1000);
         EXPECT_EQ(x_profile.end(), 1500);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 500);
         CmpVectors(x_vals, Segment(reader.ReadProfileX(1250), 1000, 1500));
 
         EXPECT_EQ(y_profile.start(), 1000);
         EXPECT_EQ(y_profile.end(), 1500);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 500);
         CmpVectors(y_vals, Segment(reader.ReadProfileY(1250), 1000, 1500));
     }
@@ -574,14 +559,14 @@ TEST_F(SpatialProfileTest, FitsChannelChange) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 10);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
         CmpVectors(x_vals, reader.ReadProfileX(5, 1));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
         CmpVectors(y_vals, reader.ReadProfileY(5, 1));
     }
@@ -623,14 +608,14 @@ TEST_F(SpatialProfileTest, FitsChannelStokesChange) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 10);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
         CmpVectors(x_vals, reader.ReadProfileX(y, channel, spatial_config_stokes));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
         CmpVectors(y_vals, reader.ReadProfileY(x, channel, spatial_config_stokes));
     }
@@ -666,14 +651,14 @@ TEST_F(SpatialProfileTest, ContiguousHDF5ChannelChange) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 10);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 10);
         CmpVectors(x_vals, reader.ReadProfileX(5, 1));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 10);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 10);
         CmpVectors(y_vals, reader.ReadProfileY(5, 1));
     }
@@ -709,14 +694,14 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelChange) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 1000);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 1000);
         CmpVectors(x_vals, reader.ReadProfileX(5, 1));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 1000);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 1000);
         CmpVectors(y_vals, reader.ReadProfileY(5, 1));
     }
@@ -758,14 +743,14 @@ TEST_F(SpatialProfileTest, ChunkedHDF5ChannelStokesChange) {
         EXPECT_EQ(x_profile.start(), 0);
         EXPECT_EQ(x_profile.end(), 1000);
         EXPECT_EQ(x_profile.mip(), 0);
-        auto x_vals = ProfileValues(x_profile);
+        auto x_vals = GetSpatialProfileValues(x_profile);
         EXPECT_EQ(x_vals.size(), 1000);
         CmpVectors(x_vals, reader.ReadProfileX(y, channel, spatial_config_stokes));
 
         EXPECT_EQ(y_profile.start(), 0);
         EXPECT_EQ(y_profile.end(), 1000);
         EXPECT_EQ(y_profile.mip(), 0);
-        auto y_vals = ProfileValues(y_profile);
+        auto y_vals = GetSpatialProfileValues(y_profile);
         EXPECT_EQ(y_vals.size(), 1000);
         CmpVectors(y_vals, reader.ReadProfileY(x, channel, spatial_config_stokes));
     }

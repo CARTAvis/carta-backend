@@ -91,6 +91,7 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
     AxisRange z_range = AxisRange(ALL_Z), AxisRange x_range = AxisRange(ALL_X), AxisRange y_range = AxisRange(ALL_Y));
 template <typename T>
 std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile);
+std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data);
 std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile);
 void CmpValues(float data1, float data2, float abs_err = 0);
 void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);

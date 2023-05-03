@@ -375,6 +375,13 @@ void GetImageData(std::vector<float>& data, std::shared_ptr<const casacore::Imag
     }
 }
 
+std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
+    if (data.profiles(0).coordinate().back() == 'x') {
+        return {data.profiles(0), data.profiles(1)};
+    }
+    return {data.profiles(1), data.profiles(0)};
+}
+
 std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile) {
     std::string buffer = profile.raw_values_fp32();
     std::vector<float> values(buffer.size() / sizeof(float));

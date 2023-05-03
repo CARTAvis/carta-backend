@@ -124,3 +124,56 @@ TEST_F(FitsImageTest2, Load2DSliceData) {
     Load2DSliceData({1000, 1000, 1, 1}, false);
     Load2DSliceData({2000, 2000, 1, 1}, false);
 }
+
+TEST_F(FitsImageTest2, CompressedFitsSpatialProfile) {
+    auto path_string = GeneratedFitsImagePath("100 100");
+    FitsDataReader reader(path_string);
+    auto ref_point = reader.ReadPointXY(5, 5);
+    auto ref_profile_x = reader.ReadProfileX(5);
+    auto ref_profile_y = reader.ReadProfileY(5);
+
+    // Compress the FITS file
+    string cmd = "gzip " + path_string;
+    system(cmd.c_str());
+    string gzip_path_string = path_string + ".gz";
+
+    // Open compressed FITS file through the Frame loader
+    std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(gzip_path_string));
+    std::unique_ptr<Frame> frame(new Frame(0, loader, "0"));
+
+    // Get spectral profiles from the compressed FITS file
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("x"), Message::SpatialConfig("y")};
+    frame->SetSpatialRequirements(profiles);
+    frame->SetCursor(5, 5);
+
+    std::vector<CARTA::SpatialProfileData> data_vec;
+    frame->FillSpatialProfileData(data_vec);
+
+    // Check with the spatial profiles from normal (uncompressed) FITS file
+    for (auto& data : data_vec) {
+        EXPECT_EQ(data.file_id(), 0);
+        EXPECT_EQ(data.region_id(), CURSOR_REGION_ID);
+        EXPECT_EQ(data.x(), 5);
+        EXPECT_EQ(data.y(), 5);
+        EXPECT_EQ(data.channel(), 0);
+        EXPECT_EQ(data.stokes(), 0);
+        CmpValues(data.value(), ref_point);
+        EXPECT_EQ(data.profiles_size(), 2);
+
+        auto [x_profile, y_profile] = GetProfiles(data);
+
+        EXPECT_EQ(x_profile.start(), 0);
+        EXPECT_EQ(x_profile.end(), 100);
+        EXPECT_EQ(x_profile.mip(), 0);
+        auto x_vals = GetSpatialProfileValues(x_profile);
+        EXPECT_EQ(x_vals.size(), 100);
+        CmpVectors(x_vals, ref_profile_x);
+
+        EXPECT_EQ(y_profile.start(), 0);
+        EXPECT_EQ(y_profile.end(), 100);
+        EXPECT_EQ(y_profile.mip(), 0);
+        auto y_vals = GetSpatialProfileValues(y_profile);
+        EXPECT_EQ(y_vals.size(), 100);
+        CmpVectors(y_vals, ref_profile_y);
+    }
+}
