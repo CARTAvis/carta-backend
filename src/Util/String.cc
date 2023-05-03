@@ -7,6 +7,7 @@
 #include "String.h"
 
 #include <iomanip>
+#include <regex>
 #include <sstream>
 
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
@@ -70,6 +71,33 @@ std::string SafeStringEscape(const std::string& input) {
     }
 
     return escaped.str();
+}
+
+std::string SafeStringUnescape(const std::string& input) {
+    // Adapted from https://gist.github.com/arthurafarias/56fec2cd49a32f374c02d1df2b6c350f
+    // Replaces hex tokens in the form %XX to their ASCII equivalent
+
+    auto decoded = input;
+    int dynamicLength = decoded.size() - 2;
+
+    // Skip processing for strings shorter than one escaped character %DD
+    if (decoded.size() < 3) {
+        return decoded;
+    }
+
+    for (int i = 0; i < dynamicLength; i++) {
+        std::string current_substring = decoded.substr(i, 3);
+
+        std::smatch sm;
+        if (std::regex_match(current_substring, sm, std::regex("%[0-9A-F]{2}"))) {
+            current_substring = current_substring.replace(0, 1, "0x");
+            std::string replacement_character = {(char)std::stoi(current_substring, nullptr, 16)};
+            decoded = decoded.replace(decoded.begin() + i, decoded.begin() + i + 3, replacement_character);
+        }
+        dynamicLength = decoded.size() - 2;
+    }
+
+    return decoded;
 }
 
 bool StringToInt(const std::string& input, int& i) {
