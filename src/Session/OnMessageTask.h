@@ -105,6 +105,17 @@ public:
     ~SpectralProfileTask() = default;
 };
 
+class PvPreviewUpdateTask : public OnMessageTask {
+    OnMessageTask* execute() override;
+    int _file_id, _region_id;
+    bool _preview_region;
+
+public:
+    PvPreviewUpdateTask(Session* session, int file_id, int region_id, bool preview_region)
+        : OnMessageTask(session), _file_id(file_id), _region_id(region_id), _preview_region(preview_region) {}
+    ~PvPreviewUpdateTask() = default;
+};
+
 } // namespace carta
 
 #include "OnMessageTask.tcc"

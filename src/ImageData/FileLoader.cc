@@ -326,6 +326,10 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
             image->doGetSlice(slice_data, slicer);
             data = slice_data; // copy from reference
             return true;
+        } else if (image_type == "RebinImage") {
+            // For PV preview, image coordinate system and headers only.
+            // Data is rebinned and accessed in PvPreviewCube.
+            return true;
         }
 
         // Get data slice with mask applied.

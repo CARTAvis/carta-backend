@@ -83,7 +83,9 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
 
 class Frame {
 public:
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+    // Load image cache for default_z, except for PV preview image which needs cube
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
+        bool load_image_cache = true);
     ~Frame(){};
 
     bool IsValid();
@@ -168,8 +170,10 @@ public:
         int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region);
     casacore::IPosition GetRegionShape(const StokesRegion& stokes_region);
+    bool GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
+    bool GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
     // Returns data vector
-    bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data);
+    bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance = true);
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
