@@ -47,8 +47,8 @@ public:
     void RemoveFrame(int file_id);
 
     // Requirements
-    bool SetHistogramRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
-        const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
+    bool SetHistogramRequirements(
+        int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs);
     bool SetSpatialRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
@@ -115,8 +115,8 @@ private:
         std::shared_ptr<casacore::LCRegion> region_2D);
 
     // Data stream helpers
-    bool GetRegionHistogramData(int region_id, int file_id, const std::vector<HistogramConfig>& configs,
-        std::vector<CARTA::RegionHistogramData>& histogram_messages);
+    bool GetRegionHistogramData(
+        int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats, bool report_error,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);

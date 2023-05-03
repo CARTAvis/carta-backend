@@ -52,6 +52,7 @@ struct EventHeader {
     uint16_t icd_version;
     uint32_t request_id;
 };
+struct HistogramConfig;
 } // namespace carta
 
 class Message {
@@ -133,7 +134,7 @@ public:
     static CARTA::PvProgress PvProgress(int32_t file_id, float progress);
     static CARTA::FittingProgress FittingProgress(int32_t file_id, float progress);
     static CARTA::RegionHistogramData RegionHistogramData(
-        int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress);
+        int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const carta::HistogramConfig& hist_config);
     static CARTA::ContourImageData ContourImageData(
         int32_t file_id, uint32_t reference_file_id, int32_t channel, int32_t stokes, double progress);
     static CARTA::VectorOverlayTileData VectorOverlayTileData(int32_t file_id, int32_t channel, int32_t stokes_intensity,

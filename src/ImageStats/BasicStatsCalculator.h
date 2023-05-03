@@ -8,8 +8,41 @@
 #define CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_H_
 
 #include <algorithm>
+#include <cmath>
+
+#include <carta-protobuf/defs.pb.h>
 
 namespace carta {
+
+template <typename T>
+struct Bounds {
+    T min;
+    T max;
+
+    Bounds<T>() : min(0), max(0) {}
+
+    Bounds<T>(T min_, T max_) : min(min_), max(max_) {}
+
+    Bounds<T>(const CARTA::DoubleBounds& bounds) : min(bounds.min()), max(bounds.max()) {}
+
+    bool Equal(T num1, T num2) const {
+        return fabs(num1 - num2) <= std::numeric_limits<T>::epsilon();
+    }
+
+    // U is the type of statistics values. When statistics values are unavailable, they are assigned to extreme values of U type
+    template <typename U>
+    bool Invalid() const {
+        return min == std::numeric_limits<U>::max() || max == std::numeric_limits<U>::lowest() || min >= max;
+    }
+
+    bool operator==(const Bounds<T>& rhs) const {
+        return Equal(min, rhs.min) && Equal(max, rhs.max);
+    }
+
+    bool operator!=(const Bounds<T>& rhs) const {
+        return !Equal(min, rhs.min) || !Equal(max, rhs.max);
+    }
+};
 
 template <typename T>
 struct BasicStats {

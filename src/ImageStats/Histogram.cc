@@ -15,11 +15,11 @@
 
 using namespace carta;
 
-Histogram::Histogram(int num_bins, float min_value, float max_value, const float* data, const size_t data_size)
-    : _bin_width((max_value - min_value) / num_bins),
-      _min_val(min_value),
-      _max_val(max_value),
-      _bin_center(min_value + (_bin_width * 0.5)),
+Histogram::Histogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size)
+    : _bin_width((bounds.max - bounds.min) / num_bins),
+      _min_val(bounds.min),
+      _max_val(bounds.max),
+      _bin_center(bounds.min + (_bin_width * 0.5)),
       _histogram_bins(num_bins, 0) {
     Fill(data, data_size);
 }
@@ -78,12 +78,8 @@ bool Histogram::ConsistencyCheck(const Histogram& a, const Histogram& b) {
         spdlog::warn("Histograms don't have the same number of bins: {} and {}", a.GetNbins(), b.GetNbins());
         return false;
     }
-    if (fabs(a.GetMinVal() - b.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
-        spdlog::warn("Lower histogram limits are not equal: {} and {}", a.GetMinVal(), b.GetMinVal());
-        return false;
-    }
-    if (fabs(a.GetMaxVal() - b.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
-        spdlog::warn("Upper histogram limits are not equal: {} and {}", a.GetMaxVal(), b.GetMaxVal());
+    if (a.GetBounds() != b.GetBounds()) {
+        spdlog::warn("Histogram bounds are not equal: [{}, {}] and [{}, {}]", a.GetMinVal(), a.GetMaxVal(), b.GetMinVal(), b.GetMaxVal());
         return false;
     }
     return true;
