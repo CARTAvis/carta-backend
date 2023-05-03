@@ -1,6 +1,6 @@
 var classcarta_1_1Frame =
 [
-    [ "Frame", "classcarta_1_1Frame.html#a7c5b058faaa1622f53b38c64af50efbc", null ],
+    [ "Frame", "classcarta_1_1Frame.html#aa4b9e045d2b184a995017be80dbbe832", null ],
     [ "~Frame", "classcarta_1_1Frame.html#af89271c818c27cc69f645adad9d9f370", null ],
     [ "AutoBinSize", "classcarta_1_1Frame.html#a54fa0e39d0db24c3f5913668935f69ef", null ],
     [ "CacheCubeHistogram", "classcarta_1_1Frame.html#a1609821cf2b2d8a610ac95194bb8f1a1", null ],
@@ -52,11 +52,13 @@ var classcarta_1_1Frame =
     [ "GetLoaderSpectralData", "classcarta_1_1Frame.html#a0ccd5e169b486632f96ed4f0421cceae", null ],
     [ "GetRasterData", "classcarta_1_1Frame.html#a99070db9ce0098cba8ec37c0d3c1d850", null ],
     [ "GetRasterTileData", "classcarta_1_1Frame.html#a3b8bcda7531d4fd25f6dbb7be1d4a35e", null ],
-    [ "GetRegionData", "classcarta_1_1Frame.html#a91370ae254c04c36c1c289c1e9de0fd5", null ],
+    [ "GetRegionData", "classcarta_1_1Frame.html#abdae48af7ad841100f029acbc0734007", null ],
     [ "GetRegionShape", "classcarta_1_1Frame.html#adf31710bdcc36207949ebc1e3517f363", null ],
     [ "GetRegionStats", "classcarta_1_1Frame.html#a299822e6a515161ad36738b7d115702b", null ],
+    [ "GetRegionSubImage", "classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b", null ],
     [ "GetSlicerData", "classcarta_1_1Frame.html#a79c789ebc62771151da94673a325a31a", null ],
     [ "GetSlicerStats", "classcarta_1_1Frame.html#a8fdab932abc3042a41d3ac5217d120d5", null ],
+    [ "GetSlicerSubImage", "classcarta_1_1Frame.html#abfb51ff40ed64be4d295af2d3e448619", null ],
     [ "GetStokesType", "classcarta_1_1Frame.html#aee72393b7b1a3e676815cbf65cc23f48", null ],
     [ "GetStokesTypeIndex", "classcarta_1_1Frame.html#aad7fc7f3462a849a9cea9562fb45e220", null ],
     [ "GetZMatrix", "classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257", null ],

@@ -474,7 +474,7 @@
 <!-- Node27 -->
 <g id="node27" class="node">
 <title>Node27</title>
-<g id="a_node27"><a xlink:href="Image_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
+<g id="a_node27"><a xlink:href="Stokes_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="626.5,-416 626.5,-435 733.5,-435 733.5,-416 626.5,-416"/>
 <text text-anchor="middle" x="680" y="-423" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
 </a>

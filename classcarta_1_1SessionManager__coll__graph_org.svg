@@ -281,7 +281,7 @@
 <title>Node10&#45;&gt;Node4</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M1359.53,-1275.76C1341.48,-1281.53 1319.31,-1287.96 1299,-1292 1240.84,-1303.58 1172.38,-1309.29 1129.58,-1311.94"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="1360.68,-1279.06 1369.1,-1272.63 1358.51,-1272.41 1360.68,-1279.06"/>
-<text text-anchor="middle" x="1239" y="-1311" font-family="Helvetica,sans-Serif" font-size="10.00"> _file_settings</text>
+<text text-anchor="middle" x="1239" y="-1311" font-family="Helvetica,sans-Serif" font-size="10.00"> _cursor_settings</text>
 </g>
 <!-- Node11&#45;&gt;Node10 -->
 <g id="edge10" class="edge">

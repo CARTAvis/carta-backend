@@ -181,6 +181,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a2036089799c3a8f55565548b2c4a3f44"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3f71bbdd1c4727be1e0a6e6ab743af2b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a3f71bbdd1c4727be1e0a6e6ab743af2b">OnSetVectorOverlayParameters</a> (const CARTA::SetVectorOverlayParameters &amp;message)</td></tr>
 <tr class="separator:a3f71bbdd1c4727be1e0a6e6ab743af2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18a6c8a7972ec63640069235fa433189"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a18a6c8a7972ec63640069235fa433189">OnStopPvPreview</a> (const CARTA::StopPvPreview &amp;stop_pv_preview)</td></tr>
+<tr class="separator:a18a6c8a7972ec63640069235fa433189"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad765d3322c80e5186df95735ec7f4d64"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ad765d3322c80e5186df95735ec7f4d64">OnClosePvPreview</a> (const CARTA::ClosePvPreview &amp;close_pv_preview)</td></tr>
+<tr class="separator:ad765d3322c80e5186df95735ec7f4d64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4690f022a25887573f406194d0feb2c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a4690f022a25887573f406194d0feb2c5">AddToSetChannelQueue</a> (CARTA::SetImageChannels message, uint32_t request_id)</td></tr>
 <tr class="separator:a4690f022a25887573f406194d0feb2c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a258addc8994b72cb71c51280d3850bf4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4">ExecuteSetChannelEvt</a> (std::pair&lt; CARTA::SetImageChannels, uint32_t &gt; request)</td></tr>
@@ -249,6 +253,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4565eed986a6f5ed57ab3a0a6c5b6110"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a64e272e7aec6edd051745e773d47c0f2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a64e272e7aec6edd051745e773d47c0f2">SendSpectralProfileData</a> (int file_id, int region_id, bool stokes_changed=false)</td></tr>
 <tr class="separator:a64e272e7aec6edd051745e773d47c0f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8a5cb91e4f627673631d7648bbaed75"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#af8a5cb91e4f627673631d7648bbaed75">SendPvPreview</a> (int file_id, int region_id, bool preview_region)</td></tr>
+<tr class="separator:af8a5cb91e4f627673631d7648bbaed75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59ac36eb3134b8103a6f9d4aafc796bd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a59ac36eb3134b8103a6f9d4aafc796bd">StopPvPreviewUpdates</a> (int preview_id)</td></tr>
+<tr class="separator:a59ac36eb3134b8103a6f9d4aafc796bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37dd476efba8d4b38ced034210268745"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a37dd476efba8d4b38ced034210268745">SendScriptingRequest</a> (CARTA::ScriptingRequest &amp;message, <a class="el" href="namespacecarta.html#a1cc3d56faa02d25cd8ab44f4088c4c2e">ScriptingResponseCallback</a> callback, <a class="el" href="namespacecarta.html#aae6a40ab940ff7220ea3869e4b0a12e8">ScriptingSessionClosedCallback</a> session_closed_callback)</td></tr>
 <tr class="separator:a37dd476efba8d4b38ced034210268745"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a831437a015f426c85585864951e3294b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a831437a015f426c85585864951e3294b">OnScriptingResponse</a> (const CARTA::ScriptingResponse &amp;message, uint32_t request_id)</td></tr>
@@ -283,8 +291,8 @@ Static Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:aa490782e18729f520433fc49ad8ccd6b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1CursorSettings.html">CursorSettings</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aa490782e18729f520433fc49ad8ccd6b">_file_settings</a></td></tr>
-<tr class="separator:aa490782e18729f520433fc49ad8ccd6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94dedbbfed0a0ef04359409bd8d7dea1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1CursorSettings.html">CursorSettings</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a94dedbbfed0a0ef04359409bd8d7dea1">_cursor_settings</a></td></tr>
+<tr class="separator:a94dedbbfed0a0ef04359409bd8d7dea1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95fd8340769d98224e53cc818288bbcf"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; int, <a class="el" href="classcarta_1_1concurrent__queue.html">concurrent_queue</a>&lt; std::pair&lt; CARTA::SetImageChannels, uint32_t &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a95fd8340769d98224e53cc818288bbcf">_set_channel_queues</a></td></tr>
 <tr class="separator:a95fd8340769d98224e53cc818288bbcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -2039,6 +2047,30 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="ad765d3322c80e5186df95735ec7f4d64"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad765d3322c80e5186df95735ec7f4d64">&#9670;&nbsp;</a></span>OnClosePvPreview()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Session::OnClosePvPreview </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::ClosePvPreview &amp;&#160;</td>
+          <td class="paramname"><em>close_pv_preview</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ad765d3322c80e5186df95735ec7f4d64_icgraph.svg" width="639" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
 <a id="aed12d0369de4c3391dba300cb77e9241"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aed12d0369de4c3391dba300cb77e9241">&#9670;&nbsp;</a></span>OnConcatStokesFiles()</h2>
 
@@ -2927,7 +2959,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a0be4f9fed44a55d06ade047901083710_cgraph.svg" width="100%" height="454"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a0be4f9fed44a55d06ade047901083710_cgraph.svg" width="100%" height="432"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
@@ -3108,6 +3140,30 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a94a1bb9a9457b278fd768d729d7e6c2b_icgraph.svg" width="660" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a18a6c8a7972ec63640069235fa433189"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a18a6c8a7972ec63640069235fa433189">&#9670;&nbsp;</a></span>OnStopPvPreview()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Session::OnStopPvPreview </td>
+          <td>(</td>
+          <td class="paramtype">const CARTA::StopPvPreview &amp;&#160;</td>
+          <td class="paramname"><em>stop_pv_preview</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a18a6c8a7972ec63640069235fa433189_icgraph.svg" width="632" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -3413,6 +3469,52 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a9614e33dea4622ec90432fa7aad7a451_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
+<a id="af8a5cb91e4f627673631d7648bbaed75"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8a5cb91e4f627673631d7648bbaed75">&#9670;&nbsp;</a></span>SendPvPreview()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Session::SendPvPreview </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>region_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>preview_region</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_af8a5cb91e4f627673631d7648bbaed75_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_af8a5cb91e4f627673631d7648bbaed75_icgraph.svg" width="487" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -3958,6 +4060,30 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a59ac36eb3134b8103a6f9d4aafc796bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59ac36eb3134b8103a6f9d4aafc796bd">&#9670;&nbsp;</a></span>StopPvPreviewUpdates()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Session::StopPvPreviewUpdates </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>preview_id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a59ac36eb3134b8103a6f9d4aafc796bd_icgraph.svg" width="667" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
 <a id="aef4b334b4727ea531b229d242c3108b2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aef4b334b4727ea531b229d242c3108b2">&#9670;&nbsp;</a></span>UpdateImageData()</h2>
 
@@ -4332,6 +4458,20 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a94dedbbfed0a0ef04359409bd8d7dea1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94dedbbfed0a0ef04359409bd8d7dea1">&#9670;&nbsp;</a></span>_cursor_settings</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classcarta_1_1CursorSettings.html">CursorSettings</a> carta::Session::_cursor_settings</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a44b5161716cac5918d2060c568a8b7da"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a44b5161716cac5918d2060c568a8b7da">&#9670;&nbsp;</a></span>_enable_scripting</h2>
 
@@ -4416,20 +4556,6 @@ Here is the caller graph for this function:</div>
 <span class="mlabels"><span class="mlabel">protected</span></span>  </td>
   </tr>
 </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aa490782e18729f520433fc49ad8ccd6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa490782e18729f520433fc49ad8ccd6b">&#9670;&nbsp;</a></span>_file_settings</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classcarta_1_1CursorSettings.html">CursorSettings</a> carta::Session::_file_settings</td>
-        </tr>
-      </table>
 </div><div class="memdoc">
 
 </div>

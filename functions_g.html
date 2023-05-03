@@ -278,11 +278,11 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 <li>GetFitsHeaderString()
 : <a class="el" href="classcarta_1_1CartaFitsImage.html#aff1f2daec6344390f8d626744eebaafd">carta::CartaFitsImage</a>
 </li>
-<li>GetFixedAngularRegionProfiles()
-: <a class="el" href="classcarta_1_1RegionHandler.html#abb5e03ccc3f1a8e0026c0b13ba5ed0d5">carta::RegionHandler</a>
+<li>GetFixedAngularRegions()
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#a72a143302eecd02b957b4115727684aa">carta::LineBoxRegions</a>
 </li>
-<li>GetFixedPixelRegionProfiles()
-: <a class="el" href="classcarta_1_1RegionHandler.html#a678aa8c7913af74fd1b483b3bd943a4c">carta::RegionHandler</a>
+<li>GetFixedPixelRegions()
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#a9d3e0a811025ef9dba3b3aaa75289b96">carta::LineBoxRegions</a>
 </li>
 <li>GetFrequencyType()
 : <a class="el" href="classcarta_1_1CartaFitsImage.html#a5e0332702a5666d04fc33597c3485a6e">carta::CartaFitsImage</a>
@@ -292,9 +292,6 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 </li>
 <li>GetGaussianParams()
 : <a class="el" href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043">carta::ImageFitter</a>
-</li>
-<li>GetGeneratedImage()
-: <a class="el" href="classcarta_1_1PvGenerator.html#a4b93ad45377935d81b732d2ac46b91c0">carta::PvGenerator</a>
 </li>
 <li>GetGeneratedImages()
 : <a class="el" href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e">carta::ImageFitter</a>
@@ -361,17 +358,20 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 <li>GetLastMessageTimestamp()
 : <a class="el" href="classcarta_1_1Session.html#a59949ab9d3dd6d79fb2d6f12e30731c6">carta::Session</a>
 </li>
+<li>GetLineBoxRegions()
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#aae7e0083e6c7541ed0121160bb1c8266">carta::LineBoxRegions</a>
+</li>
 <li>GetLineProfiles()
-: <a class="el" href="classcarta_1_1RegionHandler.html#af0631842fe196a21fafb16e61b71401d">carta::RegionHandler</a>
+: <a class="el" href="classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048">carta::RegionHandler</a>
 </li>
 <li>GetLineRecord()
 : <a class="el" href="classcarta_1_1Region.html#af22052c10d0059e65d3ef5a5f9ffa441">carta::Region</a>
 </li>
 <li>GetLineRotation()
-: <a class="el" href="classcarta_1_1RegionHandler.html#a5f6b80024e762bb97330542aedd76f01">carta::RegionHandler</a>
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#a2e282e38eae566e015e13f72a9696e28">carta::LineBoxRegions</a>
 </li>
 <li>GetLineSpatialData()
-: <a class="el" href="classcarta_1_1RegionHandler.html#acf0d1aa0e6368d33b4631f3c383b3349">carta::RegionHandler</a>
+: <a class="el" href="classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526">carta::RegionHandler</a>
 </li>
 <li>GetLoader()
 : <a class="el" href="classcarta_1_1FileLoader.html#a581709c9a332af503acb77d79b8ae38f">carta::FileLoader</a>
@@ -403,8 +403,14 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 <li>GetNbins()
 : <a class="el" href="classcarta_1_1Histogram.html#a70adaf5681547ca8d7aa22550bfb3206">carta::Histogram</a>
 </li>
+<li>GetNextRegion()
+: <a class="el" href="classcarta_1_1PvPreviewCut.html#ab5206f998e292cebe47ecb46fc00f631">carta::PvPreviewCut</a>
+</li>
 <li>GetNextRegionId()
 : <a class="el" href="classcarta_1_1RegionHandler.html#a43a9a50fcbb0fb348cd8a10cd52922e8">carta::RegionHandler</a>
+</li>
+<li>GetNextTemporaryRegionId()
+: <a class="el" href="classcarta_1_1RegionHandler.html#a0aca77af88b2550b5b6f2a6e2d94e101">carta::RegionHandler</a>
 </li>
 <li>GetNumHeaders()
 : <a class="el" href="classcarta_1_1FitsLoader.html#a0e0754a4dace9f12dd948513e73f2963">carta::FitsLoader</a>
@@ -422,22 +428,31 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 : <a class="el" href="classcarta_1_1Region.html#afe2395f765e76c9cd81c775f9e151056">carta::Region</a>
 </li>
 <li>GetPointSeparation()
-: <a class="el" href="classcarta_1_1RegionHandler.html#afd06fd1f23a82495b43c1f736936b8f1">carta::RegionHandler</a>
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#a427ea4115e09871b3b27e1be0201abc3">carta::LineBoxRegions</a>
 </li>
 <li>GetPolygonRecord()
 : <a class="el" href="classcarta_1_1Region.html#a7c5f833091a74779c77aadd9817a8a77">carta::Region</a>
+</li>
+<li>GetPolygonRegionState()
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#a984128ccf5350d17ce15c25bf001e5c7">carta::LineBoxRegions</a>
+</li>
+<li>GetPreviewImage()
+: <a class="el" href="classcarta_1_1PvPreviewCube.html#ad43529f919a8a0bf552fea83db62bdfc">carta::PvPreviewCube</a>
 </li>
 <li>GetProfile()
 : <a class="el" href="structcarta_1_1SpectralCache.html#a24665dc34474fc6a7dc3bff49d5ac95a">carta::SpectralCache</a>
 </li>
 <li>GetPvCoordinateSystem()
-: <a class="el" href="classcarta_1_1PvGenerator.html#ab1febc450890857d3ef2e7a1311dea22">carta::PvGenerator</a>
+: <a class="el" href="classcarta_1_1PvGenerator.html#a88d4f824daaee87153d23421c08bcd6e">carta::PvGenerator</a>
 </li>
-<li>GetPvFilename()
-: <a class="el" href="classcarta_1_1PvGenerator.html#a99d71b741700e6e53082f85f76b8719b">carta::PvGenerator</a>
+<li>GetPvCutRegion()
+: <a class="el" href="classcarta_1_1PvPreviewCube.html#a5588d7d712d60dacfab1b3001d34fb2f">carta::PvPreviewCube</a>
 </li>
 <li>GetPvImage()
-: <a class="el" href="classcarta_1_1PvGenerator.html#a1e1ca18c8b424039f29da9f9f6651087">carta::PvGenerator</a>
+: <a class="el" href="classcarta_1_1PvGenerator.html#a012bab3e9000f5c725a86f1a52bafa46">carta::PvGenerator</a>
+</li>
+<li>GetPvPreviewFrameId()
+: <a class="el" href="classcarta_1_1RegionHandler.html#ab0b3358b46e9265c92310a735aa44156">carta::RegionHandler</a>
 </li>
 <li>GetRasterData()
 : <a class="el" href="classcarta_1_1Frame.html#a99070db9ce0098cba8ec37c0d3c1d850">carta::Frame</a>
@@ -467,7 +482,7 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 : <a class="el" href="classcarta_1_1CrtfImportExport.html#a6e92f1dfe9f41c03693d25e4ebe2508d">carta::CrtfImportExport</a>
 </li>
 <li>GetRegionData()
-: <a class="el" href="classcarta_1_1Frame.html#a91370ae254c04c36c1c289c1e9de0fd5">carta::Frame</a>
+: <a class="el" href="classcarta_1_1Frame.html#abdae48af7ad841100f029acbc0734007">carta::Frame</a>
 </li>
 <li>GetRegionDirectionFrame()
 : <a class="el" href="classcarta_1_1CrtfImportExport.html#a99ab259809ee92720f90d01e3c0f8c96">carta::CrtfImportExport</a>
@@ -483,6 +498,9 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 </li>
 <li>GetRegionPointsRecord()
 : <a class="el" href="classcarta_1_1Region.html#a1a2fb79566c14c07764aaf101398ac42">carta::Region</a>
+</li>
+<li>GetRegionProfile()
+: <a class="el" href="classcarta_1_1PvPreviewCube.html#a5111b1569e7cf25cc3cd64a65da81f39">carta::PvPreviewCube</a>
 </li>
 <li>getRegionPtr()
 : <a class="el" href="classcarta_1_1CartaFitsImage.html#ad11af856c6aa52e5cc9d264d70b4dc8f">carta::CartaFitsImage</a>
@@ -505,14 +523,20 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 <li>GetRegionStatsData()
 : <a class="el" href="classcarta_1_1RegionHandler.html#a5400b6dee0622f4ce2060ae424e1e559">carta::RegionHandler</a>
 </li>
+<li>GetRegionSubImage()
+: <a class="el" href="classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b">carta::Frame</a>
+</li>
 <li>GetRelativePath()
 : <a class="el" href="classcarta_1_1FileListHandler.html#a17d989234776d56309c835ffdc8a8906">carta::FileListHandler</a>
+</li>
+<li>GetReverse()
+: <a class="el" href="classcarta_1_1PvPreviewCut.html#adb14a36f084715532b96ee32203e8dc6">carta::PvPreviewCut</a>
 </li>
 <li>GetRotboxRecord()
 : <a class="el" href="classcarta_1_1Region.html#a790a5a5f3aee8797e2f2024b02dd4dce">carta::Region</a>
 </li>
 <li>GetSeparationTolerance()
-: <a class="el" href="classcarta_1_1RegionHandler.html#a8b78380a638348da41636cd03b2d0afc">carta::RegionHandler</a>
+: <a class="el" href="classcarta_1_1LineBoxRegions.html#a622d3a3a2a21711de9a278543fe0fc40">carta::LineBoxRegions</a>
 </li>
 <li>GetShape()
 : <a class="el" href="classcarta_1_1CompressedFits.html#a067a3b895e9c95ecec6ebef781b5b002">carta::CompressedFits</a>
@@ -529,6 +553,12 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 </li>
 <li>GetSlicerStats()
 : <a class="el" href="classcarta_1_1Frame.html#a8fdab932abc3042a41d3ac5217d120d5">carta::Frame</a>
+</li>
+<li>GetSlicerSubImage()
+: <a class="el" href="classcarta_1_1Frame.html#abfb51ff40ed64be4d295af2d3e448619">carta::Frame</a>
+</li>
+<li>GetSourceFileName()
+: <a class="el" href="classcarta_1_1PvPreviewCube.html#a5b44ec708d7985c9bdd82e34e09eed84">carta::PvPreviewCube</a>
 </li>
 <li>GetSpatialReqFilesForRegion()
 : <a class="el" href="classcarta_1_1RegionHandler.html#a3de66887f1781fe1d346106e475b521c">carta::RegionHandler</a>
@@ -556,6 +586,9 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 </li>
 <li>GetStatsDataTyped()
 : <a class="el" href="classcarta_1_1Hdf5Loader.html#a98265ec422b4430aa93afe40d684e566">carta::Hdf5Loader</a>
+</li>
+<li>GetStokes()
+: <a class="el" href="classcarta_1_1PvPreviewCube.html#a6fe837fbcfe4e3fcda13acc51e2d1863">carta::PvPreviewCube</a>
 </li>
 <li>GetStokesImage()
 : <a class="el" href="classcarta_1_1FileLoader.html#a5680d87d09f6ddb4cc1bb1a3d713d2c3">carta::FileLoader</a>
@@ -592,16 +625,13 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 : <a class="el" href="classcarta_1_1CrtfImportExport.html#ab7d4318094e6cc9a357f80d59259fdab">carta::CrtfImportExport</a>
 </li>
 <li>GetSubImage()
-: <a class="el" href="classcarta_1_1FileLoader.html#aef375b5bfd4e812d73b9bc0bd01c582d">carta::FileLoader</a>
+: <a class="el" href="classcarta_1_1FileLoader.html#ac79c14eb03e346904ded08b47282323f">carta::FileLoader</a>
 </li>
 <li>GetTable()
 : <a class="el" href="classcarta_1_1TableView.html#a8b3a5d2f07d9f361246f4583cf61f856">carta::TableView</a>
 </li>
 <li>GetTemporaryRegionProfile()
 : <a class="el" href="classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242">carta::RegionHandler</a>
-</li>
-<li>GetTemporaryRegionState()
-: <a class="el" href="classcarta_1_1RegionHandler.html#a96526baa9d270362c6aadfa640156ca2">carta::RegionHandler</a>
 </li>
 <li>GetTextPosition()
 : <a class="el" href="classcarta_1_1RegionImportExport.html#ab14406bc47f8ef9a23afba269ed32634">carta::RegionImportExport</a>
@@ -617,6 +647,9 @@ $(document).ready(function(){initNavTree('functions_g.html',''); initResizable()
 </li>
 <li>GetTuple()
 : <a class="el" href="structcarta_1_1ProgramSettings.html#a486dfbd43b2a554ef4819774e427023f">carta::ProgramSettings</a>
+</li>
+<li>GetWidth()
+: <a class="el" href="classcarta_1_1PvPreviewCut.html#a5818d165c040a09155bce62b51b7c413">carta::PvPreviewCut</a>
 </li>
 <li>GetZMatrix()
 : <a class="el" href="classcarta_1_1Frame.html#a68a31253118f829703cbfb42e0c81257">carta::Frame</a>

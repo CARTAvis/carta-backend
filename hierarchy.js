@@ -69,6 +69,7 @@ var hierarchy =
     [ "casa::ImageTask", null, [
       [ "carta::Image2DConvolver< T >", "classcarta_1_1Image2DConvolver.html", null ]
     ] ],
+    [ "carta::LineBoxRegions", "classcarta_1_1LineBoxRegions.html", null ],
     [ "carta::ListProgressReporter", "classcarta_1_1ListProgressReporter.html", null ],
     [ "carta::LoaderCache", "classcarta_1_1LoaderCache.html", null ],
     [ "Message", "classMessage.html", null ],
@@ -81,6 +82,7 @@ var hierarchy =
     ] ],
     [ "carta::OnMessageTask", "classcarta_1_1OnMessageTask.html", [
       [ "carta::AnimationTask", "classcarta_1_1AnimationTask.html", null ],
+      [ "carta::PvPreviewUpdateTask", "classcarta_1_1PvPreviewUpdateTask.html", null ],
       [ "carta::RegionDataStreamsTask", "classcarta_1_1RegionDataStreamsTask.html", null ],
       [ "carta::SetCursorTask", "classcarta_1_1SetCursorTask.html", null ],
       [ "carta::SetImageChannelsTask", "classcarta_1_1SetImageChannelsTask.html", null ],
@@ -90,8 +92,12 @@ var hierarchy =
     [ "carta::PerSocketData", "structcarta_1_1PerSocketData.html", null ],
     [ "PointXy", "structPointXy.html", null ],
     [ "carta::PolarizationCalculator", "classcarta_1_1PolarizationCalculator.html", null ],
+    [ "carta::PreviewCubeParameters", "structcarta_1_1PreviewCubeParameters.html", null ],
+    [ "carta::PreviewCutParameters", "structcarta_1_1PreviewCutParameters.html", null ],
     [ "carta::ProgramSettings", "structcarta_1_1ProgramSettings.html", null ],
     [ "carta::PvGenerator", "classcarta_1_1PvGenerator.html", null ],
+    [ "carta::PvPreviewCube", "classcarta_1_1PvPreviewCube.html", null ],
+    [ "carta::PvPreviewCut", "classcarta_1_1PvPreviewCut.html", null ],
     [ "carta::queuing_rw_mutex", "classcarta_1_1queuing__rw__mutex.html", null ],
     [ "carta::queuing_rw_mutex_scoped", "classcarta_1_1queuing__rw__mutex__scoped.html", null ],
     [ "carta::Region", "classcarta_1_1Region.html", null ],

@@ -205,7 +205,7 @@ var sectionId = 'dynsection-24';
 <!-- Node6 -->
 <g id="node6" class="node">
 <title>Node6</title>
-<g id="a_node6"><a xlink:href="Image_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
+<g id="a_node6"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="415.5,-1 415.5,-20 522.5,-20 522.5,-1 415.5,-1"/>
 <text text-anchor="middle" x="469" y="-8" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
 </a>

@@ -1,8 +1,7 @@
 <map id="carta::RegionHandler::SetSpectralRequirements" name="carta::RegionHandler::SetSpectralRequirements">
-<area shape="rect" id="node1" title=" " alt="" coords="5,101,200,142"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="248,40,407,81"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="868,68,1027,109"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="455,101,613,142"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a0a88beca77cada14a4aba1dbb90b7e5f" title=" " alt="" coords="455,36,613,77"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="661,68,820,109"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,78,200,120"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="248,13,407,54"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="661,57,820,98"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="248,78,407,120"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="455,28,613,69"/>
 </map>

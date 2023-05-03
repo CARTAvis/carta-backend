@@ -2,7 +2,7 @@
 <area shape="rect" id="node1" title=" " alt="" coords="5,259,237,285"/>
 <area shape="rect" id="node2" href="$classcarta_1_1TileCache.html#a4eda64cc5324f96a16c6b877ab4ce7cc" title="Retrieve a tile from the cache." alt="" coords="310,107,469,133"/>
 <area shape="rect" id="node7" href="$classcarta_1_1Frame.html#a99070db9ce0098cba8ec37c0d3c1d850" title=" " alt="" coords="285,233,493,260"/>
-<area shape="rect" id="node15" href="$Image_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="318,284,461,311"/>
+<area shape="rect" id="node15" href="$Stokes_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="318,284,461,311"/>
 <area shape="rect" id="node16" href="$structcarta_1_1Tile.html#a15de628805a25fcb844b57cfa540d43d" title=" " alt="" coords="305,335,474,361"/>
 <area shape="rect" id="node3" href="$classcarta_1_1TileCache.html#a33c4defad803515b8b2213511e097044" title="Calculate the key for the chunk that contains the given tile." alt="" coords="548,157,748,184"/>
 <area shape="rect" id="node4" href="$classcarta_1_1TileCache.html#a32436ee71719f6852e8e07891f8aecf7" title="Load a chunk from the file into the cache." alt="" coords="545,5,751,32"/>

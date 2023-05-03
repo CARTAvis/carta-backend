@@ -37,7 +37,7 @@
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="Image_8cc.html#ab8c999df32574e3db2c2cc70f94c91cc" target="_top" xlink:title=" ">
+<g id="a_node3"><a xlink:href="Stokes_8cc.html#ab8c999df32574e3db2c2cc70f94c91cc" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="168.5,-50 168.5,-69 257.5,-69 257.5,-50 168.5,-50"/>
 <text text-anchor="middle" x="213" y="-57" font-family="Helvetica,sans-Serif" font-size="10.00">GetStokesType</text>
 </a>

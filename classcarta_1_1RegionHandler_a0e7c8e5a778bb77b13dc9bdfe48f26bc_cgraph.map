@@ -1,9 +1,10 @@
 <map id="carta::RegionHandler::FillPointSpatialProfileData" name="carta::RegionHandler::FillPointSpatialProfileData">
-<area shape="rect" id="node1" title=" " alt="" coords="5,64,204,105"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a5c734366cb3b4b307c54a66251dd270c" title=" " alt="" coords="252,64,411,105"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="459,5,617,47"/>
-<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="252,129,411,171"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="459,71,617,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="665,71,824,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="665,5,824,47"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,97,204,138"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a5c734366cb3b4b307c54a66251dd270c" title=" " alt="" coords="252,97,411,138"/>
+<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="459,162,617,203"/>
+<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="459,31,617,73"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="459,97,617,138"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="665,151,824,193"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="872,122,1031,163"/>
+<area shape="rect" id="node8" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="665,34,824,75"/>
 </map>

@@ -31,7 +31,7 @@
 <title>Node1&#45;&gt;Node11</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M914.56,-1199.94C923.71,-1197.41 932.76,-1194.2 941,-1190.09 950.58,-1185.32 949.32,-1178.66 959,-1174.09 1013.93,-1148.2 1051.96,-1196.91 1094,-1153.09 1131.16,-1114.37 1150.17,-706.91 1153.1,-638.74"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="913.49,-1196.59 904.63,-1202.41 915.18,-1203.39 913.49,-1196.59"/>
-<text text-anchor="middle" x="1026.5" y="-1177.09" font-family="Helvetica,sans-Serif" font-size="10.00"> _file_settings</text>
+<text text-anchor="middle" x="1026.5" y="-1177.09" font-family="Helvetica,sans-Serif" font-size="10.00"> _cursor_settings</text>
 </g>
 <!-- Node2 -->
 <g id="node2" class="node">

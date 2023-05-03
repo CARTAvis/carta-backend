@@ -2,18 +2,12 @@ var Image_8h =
 [
     [ "AxisRange", "structAxisRange.html", "structAxisRange" ],
     [ "PointXy", "structPointXy.html", "structPointXy" ],
-    [ "StokesSource", "structStokesSource.html", "structStokesSource" ],
     [ "ALL_REGIONS", "Image_8h.html#a1676db91cb9f8f3197d8c49203f0264a", null ],
     [ "ALL_X", "Image_8h.html#a74b863f93b19c8a44646190f3385f855", null ],
     [ "ALL_Y", "Image_8h.html#a71ae956b3c1ebf675ec8d19f6c2115d1", null ],
     [ "ALL_Z", "Image_8h.html#a58337814bf6075cab1f0e1476eda4b4e", null ],
     [ "AUTO_BIN_SIZE", "Image_8h.html#a0d7c8081a29b46e6a70f0065eda31de2", null ],
     [ "CHUNK_SIZE", "Image_8h.html#aea3cfda4f3a9f978ec759f206cf186fe", null ],
-    [ "COMPUTE_STOKES_PANGLE", "Image_8h.html#acd8e63ad9e3e1a938b9a5052616f7948", null ],
-    [ "COMPUTE_STOKES_PFLINEAR", "Image_8h.html#a624b6e7bf0dab0c851baa415a79e9018", null ],
-    [ "COMPUTE_STOKES_PFTOTAL", "Image_8h.html#ac5ff9ec2b36bb448a42fbf77a8036739", null ],
-    [ "COMPUTE_STOKES_PLINEAR", "Image_8h.html#a0a5991f8ea6798975c97e1c4ffd254b4", null ],
-    [ "COMPUTE_STOKES_PTOTAL", "Image_8h.html#a332b3b5d68507f777039c3092798165b", null ],
     [ "CUBE_REGION_ID", "Image_8h.html#a9a542ab2ca3525dedc7a1f5c9ca4e637", null ],
     [ "CURRENT_STOKES", "Image_8h.html#a3d5f2e09411ca846a6ad0c1f6da3f4d4", null ],
     [ "CURRENT_Z", "Image_8h.html#a1534a6d48c686d441767c9bda9e58712", null ],
@@ -28,12 +22,5 @@ var Image_8h =
     [ "TARGET_PARTIAL_REGION_TIME", "Image_8h.html#acd30222a2ac216deb3e0f8c127445411", null ],
     [ "TEMP_FOV_REGION_ID", "Image_8h.html#a892fa79b8c3cf7a59d88962238dccd82", null ],
     [ "TEMP_REGION_ID", "Image_8h.html#a9f1f8772af723c1f49360c8cbffaccc7", null ],
-    [ "TILE_SIZE", "Image_8h.html#a62ecd70800687eb2d625af180c4210d7", null ],
-    [ "GetStokesType", "Image_8h.html#ab8c999df32574e3db2c2cc70f94c91cc", null ],
-    [ "GetStokesValue", "Image_8h.html#a231a322f47657ea555657510bc70bfac", null ],
-    [ "IsComputedStokes", "Image_8h.html#a760082d4e226879b5a46d51c5957cbbe", null ],
-    [ "IsComputedStokes", "Image_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c", null ],
-    [ "StokesStringTypes", "Image_8h.html#ab5bb519b62ec0ad2e20de98b34389eb0", null ],
-    [ "StokesTypes", "Image_8h.html#a19b285317b167c303e88345dc1c89091", null ],
-    [ "StokesValues", "Image_8h.html#adacfc276d68fc1e248ac26e47fc28cda", null ]
+    [ "TILE_SIZE", "Image_8h.html#a62ecd70800687eb2d625af180c4210d7", null ]
 ];

@@ -1,8 +1,9 @@
 <map id="carta::Bounds::Invalid" name="carta::Bounds::Invalid">
-<area shape="rect" id="node1" title=" " alt="" coords="743,46,905,73"/>
-<area shape="rect" id="node2" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title=" " alt="" coords="536,46,695,73"/>
-<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="247,15,488,42"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a7797d9c5eca341dcb490a338fc66967a" title=" " alt="" coords="269,68,466,109"/>
+<area shape="rect" id="node1" title=" " alt="" coords="743,71,905,98"/>
+<area shape="rect" id="node2" href="$namespacecarta.html#a3d967873206a1f0ff9062a2ecf29ae6b" title=" " alt="" coords="536,71,695,98"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326" title=" " alt="" coords="247,13,488,39"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a7d419cae3ba9a6b3f2435cde1d6838ee" title=" " alt="" coords="267,64,467,105"/>
+<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a7797d9c5eca341dcb490a338fc66967a" title=" " alt="" coords="269,129,466,171"/>
 <area shape="rect" id="node4" href="$classcarta_1_1Frame.html#add5c6cc7f22b6a5d87d7080d29f214fb" title=" " alt="" coords="14,5,190,47"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb" title=" " alt="" coords="5,71,199,112"/>
+<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb" title=" " alt="" coords="5,129,199,171"/>
 </map>

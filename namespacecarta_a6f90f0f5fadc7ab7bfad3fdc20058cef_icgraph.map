@@ -1,8 +1,9 @@
 <map id="carta::GetNanEncodingsBlock" name="carta::GetNanEncodingsBlock">
-<area shape="rect" id="node1" title=" " alt="" coords="923,46,1137,73"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#a8f2a50be837b3421d00d04f527838abd" title=" " alt="" coords="701,5,875,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1VectorField.html#af0437cf723f6770bc15bed7cfc224649" title=" " alt="" coords="721,71,855,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1VectorField.html#a647fc9c5e7323efef169a741c30a97cf" title=" " alt="" coords="519,71,653,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918" title=" " alt="" coords="268,71,471,112"/>
-<area shape="rect" id="node6" href="$classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45" title=" " alt="" coords="5,71,220,112"/>
+<area shape="rect" id="node1" title=" " alt="" coords="963,78,1177,105"/>
+<area shape="rect" id="node2" href="$classcarta_1_1PvPreviewCut.html#aad4e1676c16757527a8fc399210a0b7a" title=" " alt="" coords="701,5,915,47"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#a8f2a50be837b3421d00d04f527838abd" title=" " alt="" coords="721,71,895,112"/>
+<area shape="rect" id="node4" href="$classcarta_1_1VectorField.html#af0437cf723f6770bc15bed7cfc224649" title=" " alt="" coords="741,136,875,177"/>
+<area shape="rect" id="node5" href="$classcarta_1_1VectorField.html#a647fc9c5e7323efef169a741c30a97cf" title=" " alt="" coords="519,136,653,177"/>
+<area shape="rect" id="node6" href="$classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918" title=" " alt="" coords="268,136,471,177"/>
+<area shape="rect" id="node7" href="$classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45" title=" " alt="" coords="5,136,220,177"/>
 </map>

@@ -98,27 +98,29 @@ $(document).ready(function(){initNavTree('classcarta_1_1PvGenerator.html',''); i
 <div class="dynheader">
 Collaboration diagram for carta::PvGenerator:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator__coll__graph.svg" width="414" height="247"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator__coll__graph.svg" width="198" height="218"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae783499b3a583f9f13d353e58cd2c9ab"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#ae783499b3a583f9f13d353e58cd2c9ab">PvGenerator</a> (int file_id, const std::string &amp;filename, int index)</td></tr>
-<tr class="separator:ae783499b3a583f9f13d353e58cd2c9ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e1ca18c8b424039f29da9f9f6651087"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a1e1ca18c8b424039f29da9f9f6651087">GetPvImage</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; input_image, std::shared_ptr&lt; casacore::CoordinateSystem &gt; input_csys, const casacore::Matrix&lt; float &gt; &amp;pv_data, const casacore::Quantity &amp;offset_increment, double spectral_refval, int stokes, bool reverse, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;pv_image, std::string &amp;message)</td></tr>
-<tr class="separator:a1e1ca18c8b424039f29da9f9f6651087"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a503623260e7f87019b3e9c077f440df2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a503623260e7f87019b3e9c077f440df2">PvGenerator</a> ()</td></tr>
+<tr class="separator:a503623260e7f87019b3e9c077f440df2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a717b2853f1e273b8f3b436cce3577ee4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a717b2853f1e273b8f3b436cce3577ee4">~PvGenerator</a> ()=default</td></tr>
+<tr class="separator:a717b2853f1e273b8f3b436cce3577ee4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa298743cbab7844804e294b55c6944d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#aaa298743cbab7844804e294b55c6944d">SetFileIdName</a> (int file_id, int index, const std::string &amp;filename, bool is_preview=false)</td></tr>
+<tr class="separator:aaa298743cbab7844804e294b55c6944d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a012bab3e9000f5c725a86f1a52bafa46"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a012bab3e9000f5c725a86f1a52bafa46">GetPvImage</a> (const std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; &amp;frame, const casacore::Matrix&lt; float &gt; &amp;pv_data, casacore::IPosition &amp;pv_shape, const casacore::Quantity &amp;offset_increment, int start_chan, int stokes, bool reverse, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;pv_image, std::string &amp;message)</td></tr>
+<tr class="separator:a012bab3e9000f5c725a86f1a52bafa46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:a99d71b741700e6e53082f85f76b8719b"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a99d71b741700e6e53082f85f76b8719b">GetPvFilename</a> (const std::string &amp;filename, int index)</td></tr>
-<tr class="separator:a99d71b741700e6e53082f85f76b8719b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a25c0c21da59fedb5af78564010a785"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a6a25c0c21da59fedb5af78564010a785">SetupPvImage</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; input_image, std::shared_ptr&lt; casacore::CoordinateSystem &gt; input_csys, casacore::IPosition &amp;pv_shape, int stokes, const casacore::Quantity &amp;offset_increment, double spectral_refval, bool reverse, std::string &amp;message)</td></tr>
-<tr class="separator:a6a25c0c21da59fedb5af78564010a785"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1febc450890857d3ef2e7a1311dea22"><td class="memItemLeft" align="right" valign="top">casacore::CoordinateSystem&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#ab1febc450890857d3ef2e7a1311dea22">GetPvCoordinateSystem</a> (std::shared_ptr&lt; casacore::CoordinateSystem &gt; input_csys, casacore::IPosition &amp;pv_shape, int stokes, const casacore::Quantity &amp;offset_increment, double spectral_refval, bool reverse)</td></tr>
-<tr class="separator:ab1febc450890857d3ef2e7a1311dea22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b93ad45377935d81b732d2ac46b91c0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a4b93ad45377935d81b732d2ac46b91c0">GetGeneratedImage</a> ()</td></tr>
-<tr class="separator:a4b93ad45377935d81b732d2ac46b91c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac786651b1af13ce59575ca6a36f5057c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#ac786651b1af13ce59575ca6a36f5057c">SetPvImageName</a> (const std::string &amp;filename, int index, bool is_preview)</td></tr>
+<tr class="separator:ac786651b1af13ce59575ca6a36f5057c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63b7357430af0f2aff4de0aa611595ec"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::ImageInterface&lt; casacore::Float &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a63b7357430af0f2aff4de0aa611595ec">SetupPvImage</a> (const std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; &amp;input_image, const std::shared_ptr&lt; casacore::CoordinateSystem &gt; &amp;input_csys, casacore::IPosition &amp;pv_shape, int stokes, const casacore::Quantity &amp;offset_increment, double spectral_refval, bool reverse, std::string &amp;message)</td></tr>
+<tr class="separator:a63b7357430af0f2aff4de0aa611595ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88d4f824daaee87153d23421c08bcd6e"><td class="memItemLeft" align="right" valign="top">casacore::CoordinateSystem&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a88d4f824daaee87153d23421c08bcd6e">GetPvCoordinateSystem</a> (const std::shared_ptr&lt; casacore::CoordinateSystem &gt; &amp;input_csys, casacore::IPosition &amp;pv_shape, int stokes, const casacore::Quantity &amp;offset_increment, double spectral_refval, bool reverse)</td></tr>
+<tr class="separator:a88d4f824daaee87153d23421c08bcd6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -126,12 +128,10 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a35fb810cc14436c5e18d8c674cc4296a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf9c29d2502a4bb9ebeb7d08ab00b159"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#aaf9c29d2502a4bb9ebeb7d08ab00b159">_name</a></td></tr>
 <tr class="separator:aaf9c29d2502a4bb9ebeb7d08ab00b159"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a36ab17526644068173d1722f048de94e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; casacore::ImageInterface&lt; casacore::Float &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1PvGenerator.html#a36ab17526644068173d1722f048de94e">_image</a></td></tr>
-<tr class="separator:a36ab17526644068173d1722f048de94e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae783499b3a583f9f13d353e58cd2c9ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae783499b3a583f9f13d353e58cd2c9ab">&#9670;&nbsp;</a></span>PvGenerator()</h2>
+<a id="a503623260e7f87019b3e9c077f440df2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a503623260e7f87019b3e9c077f440df2">&#9670;&nbsp;</a></span>PvGenerator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,40 +139,16 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="memname">PvGenerator::PvGenerator </td>
           <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>index</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_ae783499b3a583f9f13d353e58cd2c9ab_cgraph.svg" width="347" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4b93ad45377935d81b732d2ac46b91c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b93ad45377935d81b732d2ac46b91c0">&#9670;&nbsp;</a></span>GetGeneratedImage()</h2>
+<a id="a717b2853f1e273b8f3b436cce3577ee4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a717b2853f1e273b8f3b436cce3577ee4">&#9670;&nbsp;</a></span>~PvGenerator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -181,7 +157,7 @@ Here is the call graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> PvGenerator::GetGeneratedImage </td>
+          <td class="memname">carta::PvGenerator::~PvGenerator </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -189,21 +165,16 @@ Here is the call graph for this function:</div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a4b93ad45377935d81b732d2ac46b91c0_icgraph.svg" width="572" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
 
 </div>
 </div>
-<a id="ab1febc450890857d3ef2e7a1311dea22"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab1febc450890857d3ef2e7a1311dea22">&#9670;&nbsp;</a></span>GetPvCoordinateSystem()</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a88d4f824daaee87153d23421c08bcd6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88d4f824daaee87153d23421c08bcd6e">&#9670;&nbsp;</a></span>GetPvCoordinateSystem()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -214,7 +185,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">casacore::CoordinateSystem PvGenerator::GetPvCoordinateSystem </td>
           <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
+          <td class="paramtype">const std::shared_ptr&lt; casacore::CoordinateSystem &gt; &amp;&#160;</td>
           <td class="paramname"><em>input_csys</em>, </td>
         </tr>
         <tr>
@@ -262,56 +233,14 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_ab1febc450890857d3ef2e7a1311dea22_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a88d4f824daaee87153d23421c08bcd6e_icgraph.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
 </div>
 </div>
-<a id="a99d71b741700e6e53082f85f76b8719b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a99d71b741700e6e53082f85f76b8719b">&#9670;&nbsp;</a></span>GetPvFilename()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::string PvGenerator::GetPvFilename </td>
-          <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>index</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a99d71b741700e6e53082f85f76b8719b_icgraph.svg" width="347" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-
-</div>
-</div>
-<a id="a1e1ca18c8b424039f29da9f9f6651087"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1e1ca18c8b424039f29da9f9f6651087">&#9670;&nbsp;</a></span>GetPvImage()</h2>
+<a id="a012bab3e9000f5c725a86f1a52bafa46"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a012bab3e9000f5c725a86f1a52bafa46">&#9670;&nbsp;</a></span>GetPvImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -319,14 +248,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">bool PvGenerator::GetPvImage </td>
           <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt;&#160;</td>
-          <td class="paramname"><em>input_image</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
-          <td class="paramname"><em>input_csys</em>, </td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classcarta_1_1Frame.html">Frame</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>frame</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -337,14 +260,20 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">casacore::IPosition &amp;&#160;</td>
+          <td class="paramname"><em>pv_shape</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">const casacore::Quantity &amp;&#160;</td>
           <td class="paramname"><em>offset_increment</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>spectral_refval</em>, </td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>start_chan</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -380,20 +309,72 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a1e1ca18c8b424039f29da9f9f6651087_cgraph.svg" width="603" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a012bab3e9000f5c725a86f1a52bafa46_cgraph.svg" width="584" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a1e1ca18c8b424039f29da9f9f6651087_icgraph.svg" width="362" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a012bab3e9000f5c725a86f1a52bafa46_icgraph.svg" width="403" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
 </div>
 </div>
-<a id="a6a25c0c21da59fedb5af78564010a785"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6a25c0c21da59fedb5af78564010a785">&#9670;&nbsp;</a></span>SetupPvImage()</h2>
+<a id="aaa298743cbab7844804e294b55c6944d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa298743cbab7844804e294b55c6944d">&#9670;&nbsp;</a></span>SetFileIdName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void PvGenerator::SetFileIdName </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>is_preview</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_aaa298743cbab7844804e294b55c6944d_cgraph.svg" width="350" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_aaa298743cbab7844804e294b55c6944d_icgraph.svg" width="403" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="ac786651b1af13ce59575ca6a36f5057c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac786651b1af13ce59575ca6a36f5057c">&#9670;&nbsp;</a></span>SetPvImageName()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -402,15 +383,63 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool PvGenerator::SetupPvImage </td>
+          <td class="memname">void PvGenerator::SetPvImageName </td>
           <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt;&#160;</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>is_preview</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_ac786651b1af13ce59575ca6a36f5057c_icgraph.svg" width="598" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a63b7357430af0f2aff4de0aa611595ec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63b7357430af0f2aff4de0aa611595ec">&#9670;&nbsp;</a></span>SetupPvImage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; casacore::ImageInterface&lt; casacore::Float &gt; &gt; PvGenerator::SetupPvImage </td>
+          <td>(</td>
+          <td class="paramtype">const std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; &amp;&#160;</td>
           <td class="paramname"><em>input_image</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; casacore::CoordinateSystem &gt;&#160;</td>
+          <td class="paramtype">const std::shared_ptr&lt; casacore::CoordinateSystem &gt; &amp;&#160;</td>
           <td class="paramname"><em>input_csys</em>, </td>
         </tr>
         <tr>
@@ -464,13 +493,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a6a25c0c21da59fedb5af78564010a785_cgraph.svg" width="392" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a63b7357430af0f2aff4de0aa611595ec_cgraph.svg" width="392" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a6a25c0c21da59fedb5af78564010a785_icgraph.svg" width="554" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1PvGenerator_a63b7357430af0f2aff4de0aa611595ec_icgraph.svg" width="595" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -488,28 +517,6 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">int carta::PvGenerator::_file_id</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a36ab17526644068173d1722f048de94e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a36ab17526644068173d1722f048de94e">&#9670;&nbsp;</a></span>_image</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;casacore::ImageInterface&lt;casacore::Float&gt; &gt; carta::PvGenerator::_image</td>
         </tr>
       </table>
   </td>

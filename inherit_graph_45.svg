@@ -8,9 +8,9 @@
  viewBox="0.00 0.00 311.00 77.50" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 73.5)">
 <title>Graphical Class Hierarchy</title>
-<!-- Node68 -->
+<!-- Node69 -->
 <g id="node1" class="node">
-<title>Node68</title>
+<title>Node69</title>
 <g id="a_node1"><a xlink:title=" ">
 <polygon fill="none" stroke="#bfbfbf" points="0,-22.5 0,-41.5 115,-41.5 115,-22.5 0,-22.5"/>
 <text text-anchor="middle" x="57.5" y="-29.5" font-family="Helvetica,sans-Serif" font-size="10.00">casa::MomentsBase</text>
@@ -27,24 +27,24 @@
 </a>
 </g>
 </g>
-<!-- Node68&#45;&gt;Node0 -->
+<!-- Node69&#45;&gt;Node0 -->
 <g id="edge1" class="edge">
-<title>Node68&#45;&gt;Node0</title>
+<title>Node69&#45;&gt;Node0</title>
 <path fill="none" stroke="midnightblue" d="M125.47,-40.8C138.44,-42.5 151.98,-44.28 164.76,-45.96"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="125.58,-37.28 115.21,-39.45 124.67,-44.22 125.58,-37.28"/>
 </g>
-<!-- Node70 -->
+<!-- Node71 -->
 <g id="node3" class="node">
-<title>Node70</title>
+<title>Node71</title>
 <g id="a_node3"><a xlink:href="classcarta_1_1ImageMoments.html" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="151,-0.5 151,-19.5 303,-19.5 303,-0.5 151,-0.5"/>
 <text text-anchor="middle" x="227" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageMoments&lt; T &gt;</text>
 </a>
 </g>
 </g>
-<!-- Node68&#45;&gt;Node70 -->
+<!-- Node69&#45;&gt;Node71 -->
 <g id="edge2" class="edge">
-<title>Node68&#45;&gt;Node70</title>
+<title>Node69&#45;&gt;Node71</title>
 <path fill="none" stroke="midnightblue" d="M125.2,-23.24C134.54,-22.01 144.17,-20.75 153.61,-19.51"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="124.67,-19.78 115.21,-24.55 125.58,-26.72 124.67,-19.78"/>
 </g>

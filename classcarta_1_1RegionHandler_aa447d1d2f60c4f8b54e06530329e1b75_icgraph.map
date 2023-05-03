@@ -1,12 +1,10 @@
 <map id="carta::RegionHandler::HasSpectralRequirements" name="carta::RegionHandler::HasSpectralRequirements">
-<area shape="rect" id="node1" title=" " alt="" coords="1425,39,1624,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#aa5624138d4060512518d54f2b6709a25" title=" " alt="" coords="1195,39,1377,80"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe" title=" " alt="" coords="955,5,1130,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242" title=" " alt="" coords="939,71,1147,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#abb5e03ccc3f1a8e0026c0b13ba5ed0d5" title=" " alt="" coords="660,37,891,79"/>
-<area shape="rect" id="node10" href="$classcarta_1_1RegionHandler.html#a678aa8c7913af74fd1b483b3bd943a4c" title=" " alt="" coords="670,103,881,144"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#af0631842fe196a21fafb16e61b71401d" title=" " alt="" coords="453,71,612,112"/>
-<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#a53807aa22abb92b35725054a015e12aa" title=" " alt="" coords="247,37,405,79"/>
-<area shape="rect" id="node8" href="$classcarta_1_1RegionHandler.html#acf0d1aa0e6368d33b4631f3c383b3349" title=" " alt="" coords="247,103,405,144"/>
-<area shape="rect" id="node9" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,103,199,144"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1147,39,1345,80"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#aa5624138d4060512518d54f2b6709a25" title=" " alt="" coords="916,39,1099,80"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe" title=" " alt="" coords="677,5,851,47"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242" title=" " alt="" coords="660,71,868,112"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048" title=" " alt="" coords="453,71,612,112"/>
+<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" title=" " alt="" coords="247,37,405,79"/>
+<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526" title=" " alt="" coords="247,103,405,144"/>
+<area shape="rect" id="node8" href="$classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" title=" " alt="" coords="5,103,199,144"/>
 </map>

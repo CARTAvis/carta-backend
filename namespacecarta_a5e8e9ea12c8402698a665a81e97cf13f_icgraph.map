@@ -1,10 +1,12 @@
 <map id="carta::BlockSmooth" name="carta::BlockSmooth">
-<area shape="rect" id="node1" title=" " alt="" coords="824,42,973,69"/>
-<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#addae4d13342b22a4b5e6790f2cc7275d" title=" " alt="" coords="548,5,776,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#a99070db9ce0098cba8ec37c0d3c1d850" title=" " alt="" coords="558,71,766,98"/>
+<area shape="rect" id="node1" title=" " alt="" coords="824,110,973,137"/>
+<area shape="rect" id="node2" href="$classcarta_1_1Frame.html#addae4d13342b22a4b5e6790f2cc7275d" title=" " alt="" coords="548,19,776,60"/>
+<area shape="rect" id="node5" href="$classcarta_1_1Frame.html#a99070db9ce0098cba8ec37c0d3c1d850" title=" " alt="" coords="558,110,766,137"/>
+<area shape="rect" id="node9" href="$classcarta_1_1PvPreviewCube.html#adaba25f353bc8314ec76eb5bdce35b39" title=" " alt="" coords="580,161,744,203"/>
 <area shape="rect" id="node3" href="$classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918" title=" " alt="" coords="283,5,485,47"/>
 <area shape="rect" id="node4" href="$classcarta_1_1Frame.html#ae3ee51cc1bda05842764364c3f49db45" title=" " alt="" coords="5,5,220,47"/>
 <area shape="rect" id="node6" href="$classcarta_1_1Frame.html#a958f69761afea8b1388de6bea20f8b78" title=" " alt="" coords="282,71,486,98"/>
 <area shape="rect" id="node7" href="$classcarta_1_1Frame.html#a3b8bcda7531d4fd25f6dbb7be1d4a35e" title=" " alt="" coords="268,122,500,149"/>
 <area shape="rect" id="node8" href="$classcarta_1_1Frame.html#a8f2a50be837b3421d00d04f527838abd" title=" " alt="" coords="26,115,199,156"/>
+<area shape="rect" id="node10" href="$classcarta_1_1PvPreviewCube.html#ad43529f919a8a0bf552fea83db62bdfc" title=" " alt="" coords="302,173,466,215"/>
 </map>

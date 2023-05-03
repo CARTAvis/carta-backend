@@ -113,7 +113,6 @@ var files_dup =
     [ "Histogram.h", "Histogram_8h.html", "Histogram_8h" ],
     [ "HttpServer.cc", "HttpServer_8cc.html", "HttpServer_8cc" ],
     [ "HttpServer.h", "HttpServer_8h.html", "HttpServer_8h" ],
-    [ "Image.cc", "Image_8cc.html", "Image_8cc" ],
     [ "Image.h", "Image_8h.html", "Image_8h" ],
     [ "Image2DConvolver.h", "Image2DConvolver_8h.html", [
       [ "Image2DConvolver", "classcarta_1_1Image2DConvolver.html", "classcarta_1_1Image2DConvolver" ]
@@ -132,6 +131,10 @@ var files_dup =
     [ "ImageMoments.tcc", "ImageMoments_8tcc.html", null ],
     [ "ImagePtrLoader.h", "ImagePtrLoader_8h.html", [
       [ "ImagePtrLoader", "classcarta_1_1ImagePtrLoader.html", "classcarta_1_1ImagePtrLoader" ]
+    ] ],
+    [ "LineBoxRegions.cc", "LineBoxRegions_8cc.html", null ],
+    [ "LineBoxRegions.h", "LineBoxRegions_8h.html", [
+      [ "LineBoxRegions", "classcarta_1_1LineBoxRegions.html", "classcarta_1_1LineBoxRegions" ]
     ] ],
     [ "ListProgressReporter.cc", "ListProgressReporter_8cc.html", null ],
     [ "ListProgressReporter.h", "ListProgressReporter_8h.html", [
@@ -157,7 +160,8 @@ var files_dup =
       [ "AnimationTask", "classcarta_1_1AnimationTask.html", "classcarta_1_1AnimationTask" ],
       [ "StartAnimationTask", "classcarta_1_1StartAnimationTask.html", "classcarta_1_1StartAnimationTask" ],
       [ "RegionDataStreamsTask", "classcarta_1_1RegionDataStreamsTask.html", "classcarta_1_1RegionDataStreamsTask" ],
-      [ "SpectralProfileTask", "classcarta_1_1SpectralProfileTask.html", "classcarta_1_1SpectralProfileTask" ]
+      [ "SpectralProfileTask", "classcarta_1_1SpectralProfileTask.html", "classcarta_1_1SpectralProfileTask" ],
+      [ "PvPreviewUpdateTask", "classcarta_1_1PvPreviewUpdateTask.html", "classcarta_1_1PvPreviewUpdateTask" ]
     ] ],
     [ "OnMessageTask.tcc", "OnMessageTask_8tcc.html", null ],
     [ "PolarizationCalculator.cc", "PolarizationCalculator_8cc.html", null ],
@@ -169,6 +173,16 @@ var files_dup =
     [ "PvGenerator.cc", "PvGenerator_8cc.html", null ],
     [ "PvGenerator.h", "PvGenerator_8h.html", [
       [ "PvGenerator", "classcarta_1_1PvGenerator.html", "classcarta_1_1PvGenerator" ]
+    ] ],
+    [ "PvPreviewCube.cc", "PvPreviewCube_8cc.html", "PvPreviewCube_8cc" ],
+    [ "PvPreviewCube.h", "PvPreviewCube_8h.html", [
+      [ "PreviewCubeParameters", "structcarta_1_1PreviewCubeParameters.html", "structcarta_1_1PreviewCubeParameters" ],
+      [ "PvPreviewCube", "classcarta_1_1PvPreviewCube.html", "classcarta_1_1PvPreviewCube" ]
+    ] ],
+    [ "PvPreviewCut.cc", "PvPreviewCut_8cc.html", null ],
+    [ "PvPreviewCut.h", "PvPreviewCut_8h.html", [
+      [ "PreviewCutParameters", "structcarta_1_1PreviewCutParameters.html", "structcarta_1_1PreviewCutParameters" ],
+      [ "PvPreviewCut", "classcarta_1_1PvPreviewCut.html", "classcarta_1_1PvPreviewCut" ]
     ] ],
     [ "Region.cc", "Region_8cc.html", null ],
     [ "Region.h", "Region_8h.html", "Region_8h" ],
@@ -204,6 +218,8 @@ var files_dup =
     [ "Smoothing.h", "Smoothing_8h.html", "Smoothing_8h" ],
     [ "StatsCalculator.cc", "StatsCalculator_8cc.html", "StatsCalculator_8cc" ],
     [ "StatsCalculator.h", "StatsCalculator_8h.html", "StatsCalculator_8h" ],
+    [ "Stokes.cc", "Stokes_8cc.html", "Stokes_8cc" ],
+    [ "Stokes.h", "Stokes_8h.html", "Stokes_8h" ],
     [ "StokesFilesConnector.cc", "StokesFilesConnector_8cc.html", "StokesFilesConnector_8cc" ],
     [ "StokesFilesConnector.h", "StokesFilesConnector_8h.html", [
       [ "StokesFilesConnector", "classcarta_1_1StokesFilesConnector.html", "classcarta_1_1StokesFilesConnector" ]

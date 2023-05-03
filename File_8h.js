@@ -5,6 +5,7 @@ var File_8h =
     [ "FILE_LIST_PROGRESS_INTERVAL_SECS", "File_8h.html#a53c8815cc37ebf54eca70ca6927a2e4e", null ],
     [ "FITS_MAGIC_NUMBER", "File_8h.html#a0a4c1a3f4f7ba5fa1f3d5fd8ae8f24aa", null ],
     [ "HDF5_MAGIC_NUMBER", "File_8h.html#a214733e92e196bdeb1c4596f295a408a", null ],
+    [ "TEMP_FILE_ID", "File_8h.html#a7294d7c82c93e8825893a2529c82b06b", null ],
     [ "XML_MAGIC_NUMBER", "File_8h.html#ac38cbd82cae0510f16671b10bfaeee2a", null ],
     [ "GetMagicNumber", "File_8h.html#a7e6d57b61e0979a7171bb2e6519093f9", null ],
     [ "GetNumItems", "File_8h.html#aa6f49a48edd9827968c16d1cc91e25f5", null ],

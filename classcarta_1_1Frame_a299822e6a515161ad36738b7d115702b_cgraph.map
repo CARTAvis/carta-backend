@@ -1,4 +1,5 @@
 <map id="carta::Frame::GetRegionStats" name="carta::Frame::GetRegionStats">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,219,32"/>
-<area shape="rect" id="node2" href="$namespacecarta.html#abf80e39f46bb6dfcabb145a18352d366" title=" " alt="" coords="267,5,433,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,35,219,61"/>
+<area shape="rect" id="node2" href="$namespacecarta.html#abf80e39f46bb6dfcabb145a18352d366" title=" " alt="" coords="285,5,452,32"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#ac7f0c67f2a09b79662fea052e406895b" title=" " alt="" coords="267,57,471,98"/>
 </map>

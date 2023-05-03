@@ -1,4 +1,5 @@
 <map id="carta::Frame::GetSlicerStats" name="carta::Frame::GetSlicerStats">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,209,32"/>
-<area shape="rect" id="node2" href="$namespacecarta.html#abf80e39f46bb6dfcabb145a18352d366" title=" " alt="" coords="257,5,424,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,35,209,61"/>
+<area shape="rect" id="node2" href="$namespacecarta.html#abf80e39f46bb6dfcabb145a18352d366" title=" " alt="" coords="271,5,438,32"/>
+<area shape="rect" id="node3" href="$classcarta_1_1Frame.html#abfb51ff40ed64be4d295af2d3e448619" title=" " alt="" coords="257,57,452,98"/>
 </map>

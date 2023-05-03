@@ -1,8 +1,6 @@
 <map id="carta::RegionHandler::SetHistogramRequirements" name="carta::RegionHandler::SetHistogramRequirements">
-<area shape="rect" id="node1" title=" " alt="" coords="5,163,216,204"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="264,108,423,149"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="884,91,1043,132"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a0a88beca77cada14a4aba1dbb90b7e5f" title=" " alt="" coords="471,83,629,124"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="471,17,629,59"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="677,32,836,73"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,85,216,127"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="264,56,423,97"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="677,64,836,105"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="471,5,629,47"/>
 </map>

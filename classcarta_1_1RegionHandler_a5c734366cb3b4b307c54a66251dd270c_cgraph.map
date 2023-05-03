@@ -1,7 +1,9 @@
 <map id="carta::RegionHandler::ApplyRegionToFile" name="carta::RegionHandler::ApplyRegionToFile">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,164,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="212,5,371,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="212,71,371,112"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="419,5,577,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="419,71,577,112"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,79,164,121"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="212,14,371,55"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="212,79,371,121"/>
+<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="212,145,371,186"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="419,27,577,69"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="625,57,784,98"/>
+<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="419,195,577,237"/>
 </map>

@@ -46,9 +46,9 @@ if (edges && edges.length) {
         </defs>
 
 <script type="text/javascript">
-var viewWidth = 1386;
+var viewWidth = 1177;
 var viewHeight = 112;
-var sectionId = 'dynsection-51';
+var sectionId = 'dynsection-46';
 </script>
 <script xlink:href="svgpan.js"/>
 <svg id="graph" class="graph">
@@ -58,9 +58,9 @@ var sectionId = 'dynsection-51';
 <g id="node1" class="node">
 <title>Node1</title>
 <g id="a_node1"><a xlink:title=" ">
-<polygon fill="#bfbfbf" stroke="black" points="1259,-48.5 1259,-78.5 1378,-78.5 1378,-48.5 1259,-48.5"/>
-<text text-anchor="start" x="1267" y="-66.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="1318.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetStokesPflinear</text>
+<polygon fill="#bfbfbf" stroke="black" points="1050,-48.5 1050,-78.5 1169,-78.5 1169,-48.5 1050,-48.5"/>
+<text text-anchor="start" x="1058" y="-66.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="1109.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetStokesPflinear</text>
 </a>
 </g>
 </g>
@@ -68,167 +68,129 @@ var sectionId = 'dynsection-51';
 <g id="node2" class="node">
 <title>Node2</title>
 <g id="a_node2"><a xlink:href="classcarta_1_1RegionHandler.html#abb010a0a0dc050115c0d88d88f6a3050" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="1065,-48.5 1065,-78.5 1223,-78.5 1223,-48.5 1065,-48.5"/>
-<text text-anchor="start" x="1073" y="-66.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="1144" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetComputedStokesProfiles</text>
+<polygon fill="none" stroke="black" points="856,-48.5 856,-78.5 1014,-78.5 1014,-48.5 856,-48.5"/>
+<text text-anchor="start" x="864" y="-66.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="935" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetComputedStokesProfiles</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node2 -->
 <g id="edge1" class="edge">
 <title>Node1&#45;&gt;Node2</title>
-<path fill="none" stroke="midnightblue" d="M1248.56,-63.5C1240.2,-63.5 1231.62,-63.5 1223.14,-63.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="1248.62,-67 1258.62,-63.5 1248.62,-60 1248.62,-67"/>
+<path fill="none" stroke="midnightblue" d="M1039.56,-63.5C1031.2,-63.5 1022.62,-63.5 1014.14,-63.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="1039.62,-67 1049.62,-63.5 1039.62,-60 1039.62,-67"/>
 </g>
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
 <g id="a_node3"><a xlink:href="classcarta_1_1RegionHandler.html#aa5624138d4060512518d54f2b6709a25" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="892,-48.5 892,-78.5 1029,-78.5 1029,-48.5 892,-48.5"/>
-<text text-anchor="start" x="900" y="-66.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="960.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetRegionSpectralData</text>
+<polygon fill="none" stroke="black" points="683,-48.5 683,-78.5 820,-78.5 820,-48.5 683,-48.5"/>
+<text text-anchor="start" x="691" y="-66.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="751.5" y="-55.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetRegionSpectralData</text>
 </a>
 </g>
 </g>
 <!-- Node2&#45;&gt;Node3 -->
 <g id="edge2" class="edge">
 <title>Node2&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M1054.87,-63.5C1046.23,-63.5 1037.57,-63.5 1029.18,-63.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="1054.97,-67 1064.97,-63.5 1054.97,-60 1054.97,-67"/>
+<path fill="none" stroke="midnightblue" d="M845.87,-63.5C837.23,-63.5 828.57,-63.5 820.18,-63.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="845.97,-67 855.97,-63.5 845.97,-60 845.97,-67"/>
 </g>
 <!-- Node4 -->
 <g id="node4" class="node">
 <title>Node4</title>
 <g id="a_node4"><a xlink:href="classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="712.5,-73.5 712.5,-103.5 843.5,-103.5 843.5,-73.5 712.5,-73.5"/>
-<text text-anchor="start" x="720.5" y="-91.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="778" y="-80.5" font-family="Helvetica,sans-Serif" font-size="10.00">::FillSpectralProfileData</text>
+<polygon fill="none" stroke="black" points="503.5,-73.5 503.5,-103.5 634.5,-103.5 634.5,-73.5 503.5,-73.5"/>
+<text text-anchor="start" x="511.5" y="-91.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="569" y="-80.5" font-family="Helvetica,sans-Serif" font-size="10.00">::FillSpectralProfileData</text>
 </a>
 </g>
 </g>
 <!-- Node3&#45;&gt;Node4 -->
 <g id="edge3" class="edge">
 <title>Node3&#45;&gt;Node4</title>
-<path fill="none" stroke="midnightblue" d="M881.66,-74.28C868.94,-76.04 855.88,-77.85 843.52,-79.56"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="882.35,-77.72 891.77,-72.88 881.39,-70.79 882.35,-77.72"/>
+<path fill="none" stroke="midnightblue" d="M672.66,-74.28C659.94,-76.04 646.88,-77.85 634.52,-79.56"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="673.35,-77.72 682.77,-72.88 672.39,-70.79 673.35,-77.72"/>
 </g>
 <!-- Node5 -->
 <g id="node5" class="node">
 <title>Node5</title>
 <g id="a_node5"><a xlink:href="classcarta_1_1RegionHandler.html#ab69f418daea6a6ecf8c58ed9434a6242" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="700,-24.5 700,-54.5 856,-54.5 856,-24.5 700,-24.5"/>
-<text text-anchor="start" x="708" y="-42.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="778" y="-31.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetTemporaryRegionProfile</text>
+<polygon fill="none" stroke="black" points="491,-24.5 491,-54.5 647,-54.5 647,-24.5 491,-24.5"/>
+<text text-anchor="start" x="499" y="-42.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
+<text text-anchor="middle" x="569" y="-31.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetTemporaryRegionProfile</text>
 </a>
 </g>
 </g>
 <!-- Node3&#45;&gt;Node5 -->
 <g id="edge4" class="edge">
 <title>Node3&#45;&gt;Node5</title>
-<path fill="none" stroke="midnightblue" d="M881.6,-53.14C873.18,-52.02 864.62,-50.88 856.21,-49.77"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="881.4,-56.65 891.77,-54.5 882.32,-49.71 881.4,-56.65"/>
+<path fill="none" stroke="midnightblue" d="M672.6,-53.14C664.18,-52.02 655.62,-50.88 647.21,-49.77"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="672.4,-56.65 682.77,-54.5 673.32,-49.71 672.4,-56.65"/>
 </g>
 <!-- Node6 -->
 <g id="node6" class="node">
 <title>Node6</title>
-<g id="a_node6"><a xlink:href="classcarta_1_1RegionHandler.html#abb5e03ccc3f1a8e0026c0b13ba5ed0d5" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="491,-49.5 491,-79.5 664,-79.5 664,-49.5 491,-49.5"/>
-<text text-anchor="start" x="499" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="577.5" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetFixedAngularRegionProfiles</text>
-</a>
-</g>
-</g>
-<!-- Node5&#45;&gt;Node6 -->
-<g id="edge5" class="edge">
-<title>Node5&#45;&gt;Node6</title>
-<path fill="none" stroke="midnightblue" d="M689.95,-50.46C681.35,-51.55 672.63,-52.64 664.05,-53.73"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="690.49,-53.92 699.97,-49.2 689.61,-46.98 690.49,-53.92"/>
-</g>
-<!-- Node11 -->
-<g id="node11" class="node">
-<title>Node11</title>
-<g id="a_node11"><a xlink:href="classcarta_1_1RegionHandler.html#a678aa8c7913af74fd1b483b3bd943a4c" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="498.5,-0.5 498.5,-30.5 656.5,-30.5 656.5,-0.5 498.5,-0.5"/>
-<text text-anchor="start" x="506.5" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
-<text text-anchor="middle" x="577.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetFixedPixelRegionProfiles</text>
-</a>
-</g>
-</g>
-<!-- Node5&#45;&gt;Node11 -->
-<g id="edge10" class="edge">
-<title>Node5&#45;&gt;Node11</title>
-<path fill="none" stroke="midnightblue" d="M689.92,-28.97C678.9,-27.64 667.67,-26.28 656.8,-24.97"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="689.62,-32.46 699.97,-30.19 690.46,-25.51 689.62,-32.46"/>
-</g>
-<!-- Node7 -->
-<g id="node7" class="node">
-<title>Node7</title>
-<g id="a_node7"><a xlink:href="classcarta_1_1RegionHandler.html#af0631842fe196a21fafb16e61b71401d" target="_top" xlink:title=" ">
+<g id="a_node6"><a xlink:href="classcarta_1_1RegionHandler.html#acbbfca854da73c657e5257de954b7048" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="336,-24.5 336,-54.5 455,-54.5 455,-24.5 336,-24.5"/>
 <text text-anchor="start" x="344" y="-42.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
 <text text-anchor="middle" x="395.5" y="-31.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetLineProfiles</text>
 </a>
 </g>
 </g>
-<!-- Node6&#45;&gt;Node7 -->
-<g id="edge6" class="edge">
-<title>Node6&#45;&gt;Node7</title>
-<path fill="none" stroke="midnightblue" d="M481,-51.24C472.18,-50.01 463.42,-48.79 455.08,-47.64"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="480.59,-54.71 490.98,-52.62 481.56,-47.78 480.59,-54.71"/>
+<!-- Node5&#45;&gt;Node6 -->
+<g id="edge5" class="edge">
+<title>Node5&#45;&gt;Node6</title>
+<path fill="none" stroke="midnightblue" d="M480.62,-39.5C471.96,-39.5 463.31,-39.5 455.05,-39.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="480.78,-43 490.78,-39.5 480.78,-36 480.78,-43"/>
 </g>
-<!-- Node8 -->
-<g id="node8" class="node">
-<title>Node8</title>
-<g id="a_node8"><a xlink:href="classcarta_1_1RegionHandler.html#a53807aa22abb92b35725054a015e12aa" target="_top" xlink:title=" ">
+<!-- Node7 -->
+<g id="node7" class="node">
+<title>Node7</title>
+<g id="a_node7"><a xlink:href="classcarta_1_1RegionHandler.html#a981ef720799967df543e0b272a17f6cb" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="181,-49.5 181,-79.5 300,-79.5 300,-49.5 181,-49.5"/>
 <text text-anchor="start" x="189" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
 <text text-anchor="middle" x="240.5" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">::CalculatePvImage</text>
 </a>
 </g>
 </g>
-<!-- Node7&#45;&gt;Node8 -->
-<g id="edge7" class="edge">
-<title>Node7&#45;&gt;Node8</title>
+<!-- Node6&#45;&gt;Node7 -->
+<g id="edge6" class="edge">
+<title>Node6&#45;&gt;Node7</title>
 <path fill="none" stroke="midnightblue" d="M325.79,-50.73C317.2,-52.13 308.47,-53.56 300.06,-54.93"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="326.48,-54.16 335.78,-49.09 325.35,-47.25 326.48,-54.16"/>
 </g>
-<!-- Node9 -->
-<g id="node9" class="node">
-<title>Node9</title>
-<g id="a_node9"><a xlink:href="classcarta_1_1RegionHandler.html#acf0d1aa0e6368d33b4631f3c383b3349" target="_top" xlink:title=" ">
+<!-- Node8 -->
+<g id="node8" class="node">
+<title>Node8</title>
+<g id="a_node8"><a xlink:href="classcarta_1_1RegionHandler.html#ab65206f98fa5024447ab049a91cd4526" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="181,-0.5 181,-30.5 300,-30.5 300,-0.5 181,-0.5"/>
 <text text-anchor="start" x="189" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
 <text text-anchor="middle" x="240.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetLineSpatialData</text>
 </a>
 </g>
 </g>
-<!-- Node7&#45;&gt;Node9 -->
-<g id="edge8" class="edge">
-<title>Node7&#45;&gt;Node9</title>
+<!-- Node6&#45;&gt;Node8 -->
+<g id="edge7" class="edge">
+<title>Node6&#45;&gt;Node8</title>
 <path fill="none" stroke="midnightblue" d="M325.79,-28.72C317.2,-27.37 308.47,-26.01 300.06,-24.69"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="325.36,-32.2 335.78,-30.29 326.45,-25.28 325.36,-32.2"/>
 </g>
-<!-- Node10 -->
-<g id="node10" class="node">
-<title>Node10</title>
-<g id="a_node10"><a xlink:href="classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" target="_top" xlink:title=" ">
+<!-- Node9 -->
+<g id="node9" class="node">
+<title>Node9</title>
+<g id="a_node9"><a xlink:href="classcarta_1_1RegionHandler.html#a6bbb668cf434d85d9be739191dd15c19" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="0,-0.5 0,-30.5 145,-30.5 145,-0.5 0,-0.5"/>
 <text text-anchor="start" x="8" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::RegionHandler</text>
 <text text-anchor="middle" x="72.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::FillLineSpatialProfileData</text>
 </a>
 </g>
 </g>
-<!-- Node9&#45;&gt;Node10 -->
-<g id="edge9" class="edge">
-<title>Node9&#45;&gt;Node10</title>
+<!-- Node8&#45;&gt;Node9 -->
+<g id="edge8" class="edge">
+<title>Node8&#45;&gt;Node9</title>
 <path fill="none" stroke="midnightblue" d="M170.79,-15.5C162.33,-15.5 153.67,-15.5 145.17,-15.5"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="170.97,-19 180.97,-15.5 170.97,-12 170.97,-19"/>
-</g>
-<!-- Node11&#45;&gt;Node7 -->
-<g id="edge11" class="edge">
-<title>Node11&#45;&gt;Node7</title>
-<path fill="none" stroke="midnightblue" d="M488.42,-27.24C477.11,-28.75 465.76,-30.27 455.08,-31.69"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="488.89,-30.71 498.33,-25.92 487.96,-23.77 488.89,-30.71"/>
 </g>
 </g>
 </svg>

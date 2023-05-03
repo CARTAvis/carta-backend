@@ -1,21 +1,23 @@
 <map id="carta::RegionHandler::GetRegionSpectralData" name="carta::RegionHandler::GetRegionSpectralData">
-<area shape="rect" id="node1" title=" " alt="" coords="5,232,188,273"/>
-<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a5c734366cb3b4b307c54a66251dd270c" title=" " alt="" coords="262,64,421,105"/>
-<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="495,5,653,47"/>
-<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="495,71,653,112"/>
-<area shape="rect" id="node7" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="261,181,421,207"/>
-<area shape="rect" id="node8" href="$classcarta_1_1RegionHandler.html#abb010a0a0dc050115c0d88d88f6a3050" title=" " alt="" coords="236,232,447,273"/>
-<area shape="rect" id="node16" href="$classcarta_1_1RegionHandler.html#aa447d1d2f60c4f8b54e06530329e1b75" title=" " alt="" coords="242,297,441,339"/>
-<area shape="rect" id="node17" href="$Image_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="270,363,413,390"/>
-<area shape="rect" id="node18" href="$structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" title=" " alt="" coords="262,414,421,441"/>
-<area shape="rect" id="node19" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="281,465,402,491"/>
-<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="701,5,860,47"/>
-<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="701,71,860,112"/>
-<area shape="rect" id="node9" href="$classcarta_1_1RegionHandler.html#a6cbe0993d9c7c1efc36eb8252cfe6177" title=" " alt="" coords="495,136,653,177"/>
-<area shape="rect" id="node12" href="$classcarta_1_1RegionHandler.html#a76c45b738a17f6e7a7776a66fc7f7a3b" title=" " alt="" coords="495,397,653,439"/>
-<area shape="rect" id="node13" href="$classcarta_1_1RegionHandler.html#ade6aad001ccf435eb382aeb3b58745ec" title=" " alt="" coords="495,201,653,243"/>
-<area shape="rect" id="node14" href="$classcarta_1_1RegionHandler.html#ad64e18c097313b54e8a1ee5f316b3125" title=" " alt="" coords="495,267,653,308"/>
-<area shape="rect" id="node15" href="$classcarta_1_1RegionHandler.html#ada1f63f7ba0572cd5dabd2dad0e3792c" title=" " alt="" coords="495,332,653,373"/>
-<area shape="rect" id="node10" href="$classcarta_1_1RegionHandler.html#a63047c5d563b8fb75ec430d47833ec11" title=" " alt="" coords="701,300,860,341"/>
-<area shape="rect" id="node11" href="$classcarta_1_1RegionHandler.html#a8f74993ebeac47b9031a2558833f3ee1" title=" " alt="" coords="908,332,1067,373"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,305,188,347"/>
+<area shape="rect" id="node2" href="$classcarta_1_1RegionHandler.html#a5c734366cb3b4b307c54a66251dd270c" title=" " alt="" coords="262,123,421,164"/>
+<area shape="rect" id="node4" href="$classcarta_1_1RegionHandler.html#a4d3eaa8da979a4b0640aa3b598a9415b" title=" " alt="" coords="701,5,860,47"/>
+<area shape="rect" id="node7" href="$classcarta_1_1RegionHandler.html#a8c787facbcb265d7fa434e05324f2c9e" title=" " alt="" coords="495,180,653,221"/>
+<area shape="rect" id="node9" href="$classcarta_1_1Timer.html#aad2702a80259920b910fb76642f97b88" title=" " alt="" coords="261,254,421,281"/>
+<area shape="rect" id="node10" href="$classcarta_1_1RegionHandler.html#abb010a0a0dc050115c0d88d88f6a3050" title=" " alt="" coords="236,305,447,347"/>
+<area shape="rect" id="node18" href="$classcarta_1_1RegionHandler.html#aa447d1d2f60c4f8b54e06530329e1b75" title=" " alt="" coords="242,371,441,412"/>
+<area shape="rect" id="node19" href="$Stokes_8cc.html#a30da07ffd67ed06c1e15e2da4d915e0c" title=" " alt="" coords="270,437,413,463"/>
+<area shape="rect" id="node20" href="$structcarta_1_1TimeDelta.html#a90b2dc0a7d70b0aa6f668f4bbad7fa58" title=" " alt="" coords="262,487,421,514"/>
+<area shape="rect" id="node21" href="$classMessage.html#a0c0bb5e50ad8b90bade291ab17a18cf5" title=" " alt="" coords="281,538,402,565"/>
+<area shape="rect" id="node3" href="$classcarta_1_1RegionHandler.html#ab9501617a3845ac3fa32b6b88c5269eb" title=" " alt="" coords="495,115,653,156"/>
+<area shape="rect" id="node6" href="$classcarta_1_1RegionHandler.html#a94d939104654243dec3750ada83b370e" title=" " alt="" coords="495,49,653,91"/>
+<area shape="rect" id="node5" href="$classcarta_1_1RegionHandler.html#a9e8b41c9fe29c95b66a44f78490bbcae" title=" " alt="" coords="908,89,1067,131"/>
+<area shape="rect" id="node8" href="$classcarta_1_1RegionHandler.html#a16e8f0e73ba63be909517151bf11a450" title=" " alt="" coords="701,224,860,265"/>
+<area shape="rect" id="node11" href="$classcarta_1_1RegionHandler.html#a6cbe0993d9c7c1efc36eb8252cfe6177" title=" " alt="" coords="495,507,653,548"/>
+<area shape="rect" id="node14" href="$classcarta_1_1RegionHandler.html#a76c45b738a17f6e7a7776a66fc7f7a3b" title=" " alt="" coords="495,245,653,287"/>
+<area shape="rect" id="node15" href="$classcarta_1_1RegionHandler.html#ade6aad001ccf435eb382aeb3b58745ec" title=" " alt="" coords="495,311,653,352"/>
+<area shape="rect" id="node16" href="$classcarta_1_1RegionHandler.html#ad64e18c097313b54e8a1ee5f316b3125" title=" " alt="" coords="495,376,653,417"/>
+<area shape="rect" id="node17" href="$classcarta_1_1RegionHandler.html#ada1f63f7ba0572cd5dabd2dad0e3792c" title=" " alt="" coords="495,441,653,483"/>
+<area shape="rect" id="node12" href="$classcarta_1_1RegionHandler.html#a63047c5d563b8fb75ec430d47833ec11" title=" " alt="" coords="701,367,860,408"/>
+<area shape="rect" id="node13" href="$classcarta_1_1RegionHandler.html#a8f74993ebeac47b9031a2558833f3ee1" title=" " alt="" coords="908,320,1067,361"/>
 </map>
