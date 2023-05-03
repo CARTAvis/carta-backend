@@ -1310,7 +1310,8 @@ bool RegionHandler::CalculatePvPreviewImage(int frame_id, int preview_id, bool q
             int num_bins = int(std::max(sqrt(data_shape(0) * data_shape(1)), 2.0));
             BasicStats<float> basic_stats;
             CalcBasicStats(basic_stats, preview_data.data(), preview_data.size());
-            Histogram hist = CalcHistogram(num_bins, basic_stats, preview_data.data(), preview_data.size());
+            HistogramBounds bounds(basic_stats.min_val, basic_stats.max_val);
+            Histogram hist = CalcHistogram(num_bins, bounds, preview_data.data(), preview_data.size());
             CARTA::FloatBounds hist_bounds;
             hist_bounds.set_min(hist.GetMinVal());
             hist_bounds.set_max(hist.GetMaxVal());
