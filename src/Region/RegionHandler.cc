@@ -357,7 +357,7 @@ void RegionHandler::RemoveFrame(int file_id) {
 // Region requirements handling
 
 bool RegionHandler::SetHistogramRequirements(
-    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs) {
+    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::HistogramConfig>& configs) {
     // Set histogram requirements for closed region
 
     if (configs.empty() && !RegionSet(region_id)) {
@@ -380,8 +380,8 @@ bool RegionHandler::SetHistogramRequirements(
 
     // Make HistogramConfig vector of requirements
     std::vector<HistogramConfig> input_configs;
-    for (auto& config : configs) {
-        HistogramConfig hist_config(config.coordinate(), config.channel(), config.num_bins());
+    for (const auto& config : configs) {
+        HistogramConfig hist_config(config);
         input_configs.push_back(hist_config);
     }
 
@@ -1635,7 +1635,7 @@ bool RegionHandler::FillRegionHistogramData(
 }
 
 bool RegionHandler::GetRegionHistogramData(
-    int region_id, int file_id, const std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
+    int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
     // Fill stats message for given region, file
     Timer t;
 
@@ -1669,7 +1669,7 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Set histogram fields
-        auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
+        auto histogram_message = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0, hist_config);
 
         // Get image region
         if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
@@ -1694,8 +1694,10 @@ bool RegionHandler::GetRegionHistogramData(
         if (_histogram_cache.count(cache_id)) {
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
+                // Set histogram bounds
+                auto bounds = hist_config.GetBounds(stats);
                 Histogram hist;
-                if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
+                if (_histogram_cache[cache_id].GetHistogram(num_bins, bounds, hist)) {
                     auto* histogram = histogram_message.mutable_histograms();
                     FillHistogram(histogram, stats, hist);
 
@@ -1722,8 +1724,11 @@ bool RegionHandler::GetRegionHistogramData(
             have_basic_stats = true;
         }
 
+        // Set histogram bounds
+        Bounds bounds = hist_config.GetBounds(stats);
+
         // Calculate and cache histogram for number of bins
-        Histogram histo = CalcHistogram(num_bins, stats, data[stokes].data(), data[stokes].size());
+        Histogram histo = CalcHistogram(num_bins, bounds, data[stokes].data(), data[stokes].size());
         _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage

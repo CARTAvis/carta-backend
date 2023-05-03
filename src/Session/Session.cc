@@ -961,8 +961,7 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
             return;
         }
 
-        std::vector<CARTA::SetHistogramRequirements_HistogramConfig> requirements = {
-            message.histograms().begin(), message.histograms().end()};
+        std::vector<CARTA::HistogramConfig> requirements = {message.histograms().begin(), message.histograms().end()};
 
         if (region_id > CURSOR_REGION_ID) {
             if (!_region_handler) {
@@ -1513,12 +1512,16 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     // send progress
                     float this_z(z);
                     _histogram_progress = this_z / total_z;
-                    auto progress_msg = Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress);
+                    auto progress_msg =
+                        Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
                     auto* message_histogram = progress_msg.mutable_histograms();
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                     t_start = t_end;
                 }
             }
+
+            // Set histogram bounds
+            auto bounds = cube_histogram_config.GetBounds(cube_stats);
 
             // check cancel and proceed
             if (!_histogram_context.is_group_execution_cancelled()) {
@@ -1526,7 +1529,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                 // send progress message: half done
                 _histogram_progress = 0.50;
-                auto half_progress = Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress);
+                auto half_progress =
+                    Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
                 auto* message_histogram = half_progress.mutable_histograms();
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
 
@@ -1534,7 +1538,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 Histogram z_histogram; // histogram for each z using cube stats
                 Histogram cube_histogram;
                 for (size_t z = 0; z < depth; ++z) {
-                    if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, cube_stats, z_histogram)) {
+                    if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
                         return calculated; // z histogram failed
                     }
 
@@ -1555,7 +1559,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         // Send progress update
                         float this_z(z);
                         _histogram_progress = 0.5 + (this_z / total_z);
-                        auto progress_msg = Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress);
+                        auto progress_msg = Message::RegionHistogramData(
+                            file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
                         auto* message_histogram = progress_msg.mutable_histograms();
                         FillHistogram(message_histogram, cube_stats, cube_histogram);
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);

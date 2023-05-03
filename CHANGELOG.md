@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added automatically generated documentation with Doxygen ([#1215](https://github.com/CARTAvis/carta-backend/issues/1215)).
 * Added support for loading swapped-axes image cubes ([#1178](https://github.com/CARTAvis/carta-backend/issues/1178)).
 * Added support for annotation regions ([#340](https://github.com/CARTAvis/carta-backend/issues/340)).
+* Added support for customizing histogram calculations ([#829](https://github.com/CARTAvis/carta-backend/issues/829)).
 * Added support for PV preview ([#795](https://github.com/CARTAvis/carta-backend/issues/795)).
 
 ### Changed
