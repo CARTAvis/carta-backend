@@ -5,6 +5,7 @@
 */
 
 #include "Message.h"
+#include "Cache/RequirementsCache.h"
 #include "DataStream/Compression.h"
 
 #include <chrono>
@@ -563,9 +564,10 @@ CARTA::PvRequest Message::PvRequest(int32_t file_id, int32_t region_id, int32_t 
     return message;
 }
 
-CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress) {
+CARTA::PvProgress Message::PvProgress(int32_t file_id, float progress, int32_t preview_id) {
     CARTA::PvProgress message;
     message.set_file_id(file_id);
+    message.set_preview_id(preview_id);
     message.set_progress(progress);
     return message;
 }
@@ -578,13 +580,20 @@ CARTA::FittingProgress Message::FittingProgress(int32_t file_id, float progress)
 }
 
 CARTA::RegionHistogramData Message::RegionHistogramData(
-    int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress) {
+    int32_t file_id, int32_t region_id, int32_t channel, int32_t stokes, float progress, const carta::HistogramConfig& hist_config) {
     CARTA::RegionHistogramData message;
     message.set_file_id(file_id);
     message.set_region_id(region_id);
     message.set_channel(channel);
     message.set_stokes(stokes);
     message.set_progress(progress);
+    auto* config = message.mutable_config();
+    config->set_fixed_num_bins(hist_config.fixed_num_bins);
+    config->set_num_bins(hist_config.num_bins);
+    config->set_fixed_bounds(hist_config.fixed_bounds);
+    auto* bounds = config->mutable_bounds();
+    bounds->set_min(hist_config.bounds.min);
+    bounds->set_max(hist_config.bounds.max);
     return message;
 }
 

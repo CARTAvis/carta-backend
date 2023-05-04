@@ -456,6 +456,9 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                 case CARTA::EventType::PV_REQUEST: {
                     CARTA::PvRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.has_preview_settings()) {
+                            session->StopPvPreviewUpdates(message.preview_settings().preview_id());
+                        }
                         tsk = new GeneralMessageTask<CARTA::PvRequest>(session, message, head.request_id);
                         message_parsed = true;
                     }
@@ -489,6 +492,22 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
                     CARTA::StopFitting message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnStopFitting(message);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_PV_PREVIEW: {
+                    CARTA::StopPvPreview message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopPvPreview(message);
+                        message_parsed = true;
+                    }
+                    break;
+                }
+                case CARTA::EventType::CLOSE_PV_PREVIEW: {
+                    CARTA::ClosePvPreview message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnClosePvPreview(message);
                         message_parsed = true;
                     }
                     break;

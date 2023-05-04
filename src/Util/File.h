@@ -22,6 +22,7 @@
 
 // file ids
 #define ALL_FILES -1
+#define TEMP_FILE_ID -100
 
 CARTA::FileType GuessImageType(const std::string& path_string, bool check_content);
 CARTA::FileType GuessRegionType(const std::string& path_string, bool check_content);

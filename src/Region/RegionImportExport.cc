@@ -11,6 +11,8 @@
 #include <casacore/measures/Measures/MCDirection.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
+#include <regex>
+
 #include "../Logger/Logger.h"
 #include "Util/String.h"
 

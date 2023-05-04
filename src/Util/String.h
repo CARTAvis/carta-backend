@@ -12,6 +12,8 @@
 
 // Escape URL strings
 std::string SafeStringEscape(const std::string& input);
+// Unescape URL strings
+std::string SafeStringUnescape(const std::string& input);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);

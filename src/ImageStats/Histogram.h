@@ -7,10 +7,14 @@
 #ifndef CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
 #define CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
 
+#include "BasicStatsCalculator.h"
+
 #include <cstddef>
 #include <vector>
 
 namespace carta {
+
+using HistogramBounds = Bounds<double>;
 
 class Histogram {
     float _min_val;                   // lower bound of the histogram (inclusive)
@@ -24,7 +28,7 @@ class Histogram {
 
 public:
     Histogram() = default; // required to create empty histograms used in references
-    Histogram(int num_bins, float min_value, float max_value, const float* data, const size_t data_size);
+    Histogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size);
 
     Histogram(const Histogram& h);
 
@@ -35,6 +39,9 @@ public:
     }
     float GetMaxVal() const {
         return _max_val;
+    }
+    HistogramBounds GetBounds() const {
+        return HistogramBounds(_min_val, _max_val);
     }
     size_t GetNbins() const {
         return _histogram_bins.size();
