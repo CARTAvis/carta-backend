@@ -64,10 +64,31 @@ struct CacheIdHash {
 struct HistogramConfig {
     std::string coordinate;
     int channel;
+    bool fixed_num_bins;
     int num_bins;
+    bool fixed_bounds;
+    HistogramBounds bounds;
 
-    HistogramConfig() {}
-    HistogramConfig(const std::string& coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
+    HistogramConfig() : coordinate("z"), channel(CURRENT_Z), fixed_num_bins(false), num_bins(AUTO_BIN_SIZE), fixed_bounds(false) {}
+
+    HistogramConfig(const CARTA::HistogramConfig& config)
+        : coordinate(config.coordinate()),
+          channel(config.channel()),
+          fixed_num_bins(config.fixed_num_bins()),
+          num_bins(config.num_bins()),
+          fixed_bounds(config.fixed_bounds()),
+          bounds(HistogramBounds(config.bounds())) {}
+
+    bool operator!=(const HistogramConfig& rhs) const {
+        return (coordinate != rhs.coordinate) || (channel != rhs.channel) || (fixed_num_bins != rhs.fixed_num_bins) ||
+               (fixed_bounds != rhs.fixed_bounds) || (num_bins != rhs.num_bins) || (bounds != rhs.bounds);
+    }
+
+    HistogramBounds GetBounds(const BasicStats<float>& stats) const {
+        float min = fixed_bounds ? bounds.min : stats.min_val;
+        float max = fixed_bounds ? bounds.max : stats.max_val;
+        return HistogramBounds(min, max);
+    }
 };
 
 struct RegionHistogramConfig {
@@ -75,7 +96,7 @@ struct RegionHistogramConfig {
 };
 
 struct HistogramCache {
-    BasicStats<float> stats;
+    BasicStats<float> stats;                       // Statistics data without fixed bounds
     std::unordered_map<int, Histogram> histograms; // key is num_bins
 
     HistogramCache() {}
@@ -92,10 +113,13 @@ struct HistogramCache {
         stats = stats_;
     }
 
-    bool GetHistogram(int num_bins_, Histogram& histogram_) {
+    bool GetHistogram(int num_bins_, const HistogramBounds& bounds, Histogram& histogram_) {
         if (histograms.count(num_bins_)) {
-            histogram_ = histograms.at(num_bins_);
-            return true;
+            const auto& hist = histograms.at(num_bins_);
+            if (bounds == hist.GetBounds()) {
+                histogram_ = hist;
+                return true;
+            }
         }
         return false;
     }
