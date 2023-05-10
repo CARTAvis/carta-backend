@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Fixed crash following compressed fits parsing error ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233)).
+
+## [4.0.0-beta.1]
+
 ### Added
 * Added a check of averaging width when calculating line/polyline spatial profiles or PV images ([#1174](https://github.com/CARTAvis/carta-backend/issues/1174)).
 * Added support for fitting images with regions, fixed parameters, a background offset, and different solvers; added support for generating model and residual images, estimating progress, and cancelling tasks ([#150](https://github.com/CARTAvis/carta-backend/issues/150)).
@@ -16,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added automatically generated documentation with Doxygen ([#1215](https://github.com/CARTAvis/carta-backend/issues/1215)).
 * Added support for loading swapped-axes image cubes ([#1178](https://github.com/CARTAvis/carta-backend/issues/1178)).
 * Added support for annotation regions ([#340](https://github.com/CARTAvis/carta-backend/issues/340)).
+* Added support for customizing histogram calculations ([#829](https://github.com/CARTAvis/carta-backend/issues/829)).
+* Added support for PV preview ([#795](https://github.com/CARTAvis/carta-backend/issues/795)).
 
 ### Changed
 * Removed CASA CRTF parser for performance and annotation region support ([#1219](https://github.com/CARTAvis/carta-backend/issues/1219)).
@@ -29,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed failure loading CASA image due to FITS headers error ([#1239](https://github.com/CARTAvis/carta-backend/issues/1239)).
 * Fixed incorrect PV image orientation if the cube has projection distortion ([#1244](https://github.com/CARTAvis/carta-backend/issues/1244)).
 * Fixed crash following use of an incorrect session ID ([#1248](https://github.com/CARTAvis/carta-backend/issues/1248)).
-* Fixed crash following compressed fits parsing error ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233)).
+* Fixed header angle formatting error with non-angle unit ([#1218](https://github.com/CARTAvis/carta-backend/issues/1218)).
 
 ## [3.0.0]
 

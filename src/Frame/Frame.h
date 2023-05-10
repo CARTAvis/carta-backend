@@ -83,7 +83,9 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
 
 class Frame {
 public:
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
+    // Load image cache for default_z, except for PV preview image which needs cube
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
+        bool load_image_cache = true);
     ~Frame(){};
 
     bool IsValid();
@@ -135,11 +137,11 @@ public:
     bool ContourImage(ContourCallback& partial_contour_callback);
 
     // Histograms: image and cube
-    bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
+    bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs);
     bool FillRegionHistogramData(
         std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
-    bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, BasicStats<float>& stats, Histogram& hist);
+    bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
     void CacheCubeStats(int stokes, BasicStats<float>& stats);
     void CacheCubeHistogram(int stokes, Histogram& hist);
@@ -168,8 +170,10 @@ public:
         int file_id, std::shared_ptr<Region> region, const StokesSource& stokes_source = StokesSource(), bool report_error = true);
     bool GetImageRegion(int file_id, const AxisRange& z_range, int stokes, StokesRegion& stokes_region);
     casacore::IPosition GetRegionShape(const StokesRegion& stokes_region);
+    bool GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image);
+    bool GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image);
     // Returns data vector
-    bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data);
+    bool GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance = true);
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
@@ -237,11 +241,11 @@ protected:
 
     // Histograms: z is single z index or ALL_Z for cube
     int AutoBinSize();
-    bool FillHistogramFromCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram);       // histogram message
     bool FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
-    bool FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram);  // histogram message
-    bool GetCachedImageHistogram(int z, int stokes, int num_bins, Histogram& hist);                  // internal histogram
-    bool GetCachedCubeHistogram(int stokes, int num_bins, Histogram& hist);                          // internal histogram
+    bool FillHistogramFromFrameCache(
+        int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message
+    bool GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist); // internal histogram
+    bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);         // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);

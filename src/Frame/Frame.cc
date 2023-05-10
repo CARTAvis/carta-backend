@@ -31,7 +31,7 @@ static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -84,7 +84,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (load_image_cache && !(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -675,7 +675,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 // ****************************************************
 // Histogram Requirements and Data
 
-bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs) {
+bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs) {
     // Set histogram requirements for image or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -683,17 +683,16 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
 
     if (region_id == IMAGE_REGION_ID) {
         _image_histogram_configs.clear();
+        _image_histogram_configs.push_back(HistogramConfig()); // histogram config for image rendering
     } else {
         _cube_histogram_configs.clear();
     }
 
-    for (auto& histogram_config : histogram_configs) {
+    for (const auto& histogram_config : histogram_configs) {
         // set histogram requirements for histogram widgets
-        HistogramConfig config;
-        config.coordinate = histogram_config.coordinate();
-        config.channel = histogram_config.channel();
-        config.num_bins = histogram_config.num_bins();
-        if (region_id == IMAGE_REGION_ID) {
+        HistogramConfig config(histogram_config);
+        if (region_id == IMAGE_REGION_ID && config != _image_histogram_configs.front()) {
+            // only add histogram config for an image which is not the same with the one for image rendering
             _image_histogram_configs.push_back(config);
         } else {
             _cube_histogram_configs.push_back(config);
@@ -737,11 +736,11 @@ bool Frame::FillRegionHistogramData(
         }
 
         // create and fill region histogram data message
-        auto histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0);
-
-        // fill histogram submessage from cache (loader or local)
+        auto histogram_data = Message::RegionHistogramData(file_id, region_id, z, stokes, 1.0, histogram_config);
         auto* histogram = histogram_data.mutable_histograms();
-        bool histogram_filled = FillHistogramFromCache(z, stokes, num_bins, histogram);
+
+        // Fill histogram submessage from loader cache, if any
+        bool histogram_filled = !histogram_config.fixed_bounds && FillHistogramFromLoaderCache(z, stokes, num_bins, histogram);
 
         if (!histogram_filled) {
             // must calculate cube histogram from Session
@@ -752,17 +751,23 @@ bool Frame::FillRegionHistogramData(
             // calculate image histogram
             BasicStats<float> stats;
             if (GetBasicStats(z, stokes, stats)) {
-                Histogram hist;
-                histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, stats, hist);
-                if (histogram_filled) {
+                // Set histogram bounds
+                auto bounds = histogram_config.GetBounds(stats);
+
+                // Fill histogram submessage from Frame cache, if any
+                histogram_filled = FillHistogramFromFrameCache(z, stokes, num_bins, bounds, histogram);
+
+                if (!histogram_filled) {
+                    Histogram hist;
+                    histogram_filled = CalculateHistogram(region_id, z, stokes, num_bins, bounds, hist);
                     FillHistogram(histogram, stats, hist);
-                    region_histogram_callback(histogram_data); // send region histogram data message
                 }
             }
 
             if (histogram_filled) {
                 auto dt = t.Elapsed();
                 spdlog::performance("Fill image histogram in {:.3f} ms at {:.3f} MPix/s", dt.ms(), (float)stats.num_pixels / dt.us());
+                region_histogram_callback(histogram_data); // send region histogram data message
             }
         } else {
             region_histogram_callback(histogram_data); // send region histogram data message
@@ -776,15 +781,6 @@ bool Frame::FillRegionHistogramData(
 
 int Frame::AutoBinSize() {
     return int(std::max(sqrt(_width * _height), 2.0));
-}
-
-bool Frame::FillHistogramFromCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram) {
-    // Fill Histogram submessage for given z, stokes, and num_bins
-    bool filled = FillHistogramFromLoaderCache(z, stokes, num_bins, histogram);
-    if (!filled) {
-        filled = FillHistogramFromFrameCache(z, stokes, num_bins, histogram);
-    }
-    return filled;
 }
 
 bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram) {
@@ -809,7 +805,7 @@ bool Frame::FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA:
     return false;
 }
 
-bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram) {
+bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram) {
     // Get stats and histogram results from cache; also used for cube histogram
     if (num_bins == AUTO_BIN_SIZE) {
         num_bins = AutoBinSize();
@@ -818,9 +814,9 @@ bool Frame::FillHistogramFromFrameCache(int z, int stokes, int num_bins, CARTA::
     bool have_histogram(false);
     Histogram hist;
     if (z == ALL_Z) {
-        have_histogram = GetCachedCubeHistogram(stokes, num_bins, hist);
+        have_histogram = GetCachedCubeHistogram(stokes, num_bins, bounds, hist);
     } else {
-        have_histogram = GetCachedImageHistogram(z, stokes, num_bins, hist);
+        have_histogram = GetCachedImageHistogram(z, stokes, num_bins, bounds, hist);
     }
 
     if (have_histogram) {
@@ -871,7 +867,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
     return false;
 }
 
-bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, Histogram& hist) {
+bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get image histogram results from cache
     int cache_key(CacheKey(z, stokes));
     if (_image_histograms.count(cache_key)) {
@@ -879,7 +875,7 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, Histogram& 
         auto results_for_key = _image_histograms[cache_key];
 
         for (auto& result : results_for_key) {
-            if (result.GetNbins() == num_bins) {
+            if (result.GetNbins() == num_bins && result.GetBounds() == bounds) {
                 hist = result;
                 return true;
             }
@@ -888,12 +884,12 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, Histogram& 
     return false;
 }
 
-bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, Histogram& hist) {
+bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get cube histogram results from cache
     if (_cube_histograms.count(stokes)) {
         for (auto& result : _cube_histograms[stokes]) {
             // get from cache if correct num_bins
-            if (result.GetNbins() == num_bins) {
+            if (result.GetNbins() == num_bins && result.GetBounds() == bounds) {
                 hist = result;
                 return true;
             }
@@ -902,7 +898,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, Histogram& hist) {
     return false;
 }
 
-bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, BasicStats<float>& stats, Histogram& hist) {
+bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Calculate histogram for given parameters, return results
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -923,12 +919,12 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, B
         }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, stats, _image_cache.get(), _image_cache_size);
+        hist = CalcHistogram(num_bins, bounds, _image_cache.get(), _image_cache_size);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
         GetZMatrix(data, z, stokes);
-        hist = CalcHistogram(num_bins, stats, data.data(), data.size());
+        hist = CalcHistogram(num_bins, bounds, data.data(), data.size());
     }
 
     // cache image histogram
@@ -1598,13 +1594,21 @@ casacore::IPosition Frame::GetRegionShape(const StokesRegion& stokes_region) {
     return lattice_region.shape();
 }
 
-bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data) {
+bool Frame::GetRegionSubImage(const StokesRegion& stokes_region, casacore::SubImage<float>& sub_image) {
+    std::lock_guard<std::mutex> ulock(_image_mutex);
+    return _loader->GetSubImage(stokes_region, sub_image);
+}
+
+bool Frame::GetSlicerSubImage(const StokesSlicer& stokes_slicer, casacore::SubImage<float>& sub_image) {
+    std::lock_guard<std::mutex> ulock(_image_mutex);
+    return _loader->GetSubImage(stokes_slicer, sub_image);
+}
+
+bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>& data, bool report_performance) {
     // Get image data with a region applied
     Timer t;
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
-    ulock.unlock();
+    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
 
     if (!subimage_ok) {
         return false;
@@ -1646,7 +1650,9 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
             }
         }
 
-        spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+        if (report_performance) {
+            spdlog::performance("Get region subimage data in {:.3f} ms", t.Elapsed().ms());
+        }
 
         return true;
     } catch (casacore::AipsError& err) {
@@ -1670,10 +1676,8 @@ bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_region, sub_image);
+    bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
     _loader->CloseImageIfUpdated();
-    ulock.unlock();
 
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
@@ -1687,10 +1691,8 @@ bool Frame::GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA:
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(stokes_slicer, sub_image);
+    bool subimage_ok = GetSlicerSubImage(stokes_slicer, sub_image);
     _loader->CloseImageIfUpdated();
-    ulock.unlock();
 
     if (subimage_ok) {
         std::lock_guard<std::mutex> guard(_image_mutex);
@@ -1878,8 +1880,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     //// Todo: support saving computed stokes images
     if (image_shape.size() == 2) {
-        if (region) {
-            _loader->GetSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image);
+        if (region && GetRegionSubImage(StokesRegion(StokesSource(), ImageRegion(image_region->cloneRegion())), sub_image)) {
             image = sub_image.cloneII();
             _loader->CloseImageIfUpdated();
         }
@@ -2274,11 +2275,7 @@ void Frame::InitImageHistogramConfigs() {
     _image_histogram_configs.clear();
 
     // set histogram requirements for the image
-    HistogramConfig config;
-    config.coordinate = "z"; // current stokes type
-    config.channel = CURRENT_Z;
-    config.num_bins = AUTO_BIN_SIZE;
-    _image_histogram_configs.push_back(config);
+    _image_histogram_configs.push_back(HistogramConfig());
 }
 
 void Frame::CloseCachedImage(const std::string& file) {

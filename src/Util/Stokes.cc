@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "Image.h"
+#include "Stokes.h"
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type) {
     int stokes_value(-1);
