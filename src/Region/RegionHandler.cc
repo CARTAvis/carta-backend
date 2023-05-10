@@ -2362,9 +2362,9 @@ bool RegionHandler::GetLineSpatialData(int file_id, int region_id, const std::st
         return false;
     } else {
         if (cancelled) {
-            spdlog::info("Line region {} spatial profile {} was cancelled.", region_id, coordinate);
+            spdlog::info("Line region {} spatial profile was cancelled.", region_id);
         } else {
-            spdlog::error("Line region {} spatial profile {} failed: {}", region_id, coordinate, message);
+            spdlog::error("Line region {} spatial profile failed: {}", region_id, message);
         }
     }
 
