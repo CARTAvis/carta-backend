@@ -50,7 +50,9 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
             AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, render_axes, &cfits);
 
             // Use headers in FileInfoExtended to create computed entries
-            AddComputedEntriesFromHeaders(hdu_info.second, render_axes, &cfits);
+            int spectral_axis = cfits.GetSpectralAxis();
+            int stokes_axis = cfits.GetStokesAxis();
+            AddComputedEntriesFromHeaders(hdu_info.second, render_axes, spectral_axis, stokes_axis, &cfits);
 
             const casacore::ImageBeamSet beam_set = cfits.GetBeamSet();
             if (!beam_set.empty()) {
@@ -204,7 +206,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         extended_info, image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
-                    AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
+                    AddComputedEntries(extended_info, image.get(), render_axes, spectral_axis, stokes_axis, use_image_for_entries);
                     info_ok = true;
                 }
             } else { // image failed
@@ -671,10 +673,10 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
         if (depth_axis > -1) {
-            compressed_fits->SetSpecSuffix(depth_axis);
+            compressed_fits->SetSpectralAxis(depth_axis);
         }
         if (stokes_axis > -1) {
-            compressed_fits->SetStokesSuffix(stokes_axis);
+            compressed_fits->SetStokesAxis(stokes_axis);
         }
     }
 }
@@ -781,7 +783,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 }
 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-    const std::vector<int>& display_axes, bool use_image_for_entries) {
+    const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries) {
     // Add computed entries to extended file info
     if (use_image_for_entries) {
         // Use image coordinate system
@@ -908,7 +910,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         }
     } else {
         // Use header_entries in extended info
-        AddComputedEntriesFromHeaders(extended_info, display_axes);
+        AddComputedEntriesFromHeaders(extended_info, display_axes, spectral_axis, stokes_axis);
     }
 
     casacore::ImageInfo image_info = image->imageInfo();
@@ -920,20 +922,15 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     AddCoordRanges(extended_info, image->coordinates(), image->shape());
 }
 
-void FileExtInfoLoader::AddComputedEntriesFromHeaders(
-    CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, CompressedFits* compressed_fits) {
+void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes,
+    int spectral_axis, int stokes_axis, CompressedFits* compressed_fits) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
     // For images with missing headers or headers which casacore/wcslib cannot process.
     // Axes are 1-based for header names (ctype, cunit, etc.), 0-based for display axes
     casacore::String suffix1(std::to_string(display_axes[0] + 1));
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
-
-    // Set spectral and stokes suffixes
-    casacore::String suffix3, suffix4;
-    if (compressed_fits) {
-        suffix3 = compressed_fits->GetSpecSuffix();
-        suffix4 = compressed_fits->GetStokesSuffix();
-    }
+    casacore::String suffix3(std::to_string(spectral_axis + 1));
+    casacore::String suffix4(std::to_string(stokes_axis + 1));
 
     casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
     casacore::String ctype3, cunit3, cunit4;
@@ -944,7 +941,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     int velref(std::numeric_limits<int>::min());
 
     // Quit looking for key when have needed values
-    bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
+    bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true), need_specsys(true);
     bool calc_spec_range(false), calc_stokes_range(false);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
@@ -1024,21 +1021,18 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
                 if (cunit1.contains("/")) {
                     cunit1 = cunit1.before("/");
                 }
-                cunit1.trim();
                 ConvertUnitToCasacore(cunit1);
             } else if (entry_name.find("CUNIT" + suffix2) == 0) {
                 cunit2 = entry.value();
                 if (cunit2.contains("/")) {
                     cunit2 = cunit2.before("/");
                 }
-                cunit2.trim();
                 ConvertUnitToCasacore(cunit2);
             }
         }
 
         if (calc_spec_range && entry_name.find("CUNIT" + suffix3) == 0) {
             cunit3 = entry.value();
-            cunit3.trim();
             ConvertUnitToCasacore(cunit3);
         }
 
@@ -1075,13 +1069,14 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
         // Radesys
         if (entry_name.find("RADESYS") == 0) {
-            need_radesys = false;
             radesys = entry.value();
+            need_radesys = false;
         }
 
         // Specsys
         if (entry_name.find("SPECSYS") == 0) {
             specsys = entry.value();
+            need_specsys = false;
         }
 
         // Velocity definition
@@ -1101,10 +1096,12 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     }
 
     // Set computed entries
-    std::string coord_name1, coord_name2, projection;
+    std::string projection;
     if (!need_ctype) {
-        GetCoordNames(ctype1, ctype2, radesys, coord_name1, coord_name2, projection);
-        std::string coord_type = fmt::format("{}, {}", coord_name1, coord_name2);
+        GetCoordNames(ctype1, ctype2, radesys, projection);
+        need_radesys = radesys.empty();
+
+        std::string coord_type = fmt::format("{}, {}", ctype1, ctype2);
         auto comp_entry = extended_info.add_computed_entries();
         comp_entry->set_name("Coordinate type");
         comp_entry->set_value(coord_type);
@@ -1126,8 +1123,8 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
 
     if (!need_crval) {
         // reference coordinates
-        std::string coord1 = MakeAngleString(coord_name1, crval1, cunit1);
-        std::string coord2 = MakeAngleString(coord_name2, crval2, cunit2);
+        std::string coord1 = MakeAngleString(ctype1, crval1, cunit1);
+        std::string coord2 = MakeAngleString(ctype2, crval2, cunit2);
         std::string ref_coords = fmt::format("[{}, {}]", coord1, coord2);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Image reference coords");
@@ -1140,7 +1137,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         bool q1IsDir(q1.isConform("deg")), q2IsDir(q2.isConform("deg"));
         if (q1IsDir || q2IsDir) {
             // Reference coord(s) converted to deg
-            std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(coord_name1, q1), ConvertCoordsToDeg(coord_name2, q2));
+            std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(ctype1, q1), ConvertCoordsToDeg(ctype2, q2));
             auto comp_entry = extended_info.add_computed_entries();
             comp_entry->set_name("Image ref coords (deg)");
             comp_entry->set_value(ref_coords_deg);
@@ -1187,6 +1184,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_name("Celestial frame");
         entry->set_value(direction_frame);
         entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (need_specsys) {
+        // Set if appended to spectral coordinate type in CTYPE3
+        SplitCtypeDescriptor(ctype3, specsys);
     }
 
     if (!specsys.empty()) {
@@ -1291,6 +1293,8 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 
 void FileExtInfoLoader::ConvertUnitToCasacore(casacore::String& unit) {
     // Returns casacore Unit string or input string if unknown (fail with error later)
+    unit.trim();
+
     if (casacore::UnitVal::check(unit)) {
         return;
     }
@@ -1368,40 +1372,37 @@ std::string FileExtInfoLoader::ConvertIncrementToArcsec(const casacore::Quantity
     return fmt::format(inc_format, inc0_arcsec.getValue(), inc1_arcsec.getValue());
 }
 
-void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1,
-    std::string& coord_name2, std::string& projection) {
+void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& projection) {
     // split ctype1 and ctype2 into type and projection
     std::unordered_map<std::string, std::string> names = {
         {"RA", "Right Ascension"}, {"DEC", "Declination"}, {"GLON", "Longitude"}, {"GLAT", "Latitude"}};
 
-    auto delim_pos = ctype1.find("--");
-    if (delim_pos != std::string::npos) {
-        coord_name1 = ctype1.substr(0, delim_pos);
-        projection = ctype1.substr(delim_pos, std::string::npos);
-        auto proj_start = projection.find_first_not_of('-');
-        projection = projection.substr(proj_start, std::string::npos);
-    } else {
-        coord_name1 = ctype1;
-    }
-
-    if (radesys.empty() && (coord_name1 == "GLON")) {
+    // ctype1 to coordinate name and projection
+    SplitCtypeDescriptor(ctype1, projection);
+    if (radesys.empty() && (ctype1 == "GLON")) {
         radesys = "GALACTIC";
     }
-
-    if (names.count(coord_name1)) {
-        coord_name1 = names[coord_name1];
+    if (names.find(ctype1) != names.end()) {
+        ctype1 = names[ctype1];
     }
 
-    delim_pos = ctype2.find("--");
+    // ctype2 to coordinate name
+    std::string projection2;
+    SplitCtypeDescriptor(ctype2, projection2);
+    if (names.find(ctype2) != names.end()) {
+        ctype2 = names[ctype2];
+    }
+}
+
+void FileExtInfoLoader::SplitCtypeDescriptor(std::string& ctype, std::string& descriptor) {
+    // Splits CTYPE string on one or more '-', returns coord name and descriptor
+    auto delim_pos = ctype.find_first_of("-");
     if (delim_pos != std::string::npos) {
-        // split ctype2
-        coord_name2 = ctype2.substr(0, delim_pos);
-    } else {
-        coord_name2 = ctype2;
-    }
-
-    if (names.count(coord_name2)) {
-        coord_name2 = names[coord_name2];
+        // Get descriptor then remove it from ctype
+        descriptor = ctype.substr(delim_pos, std::string::npos);
+        ctype = ctype.substr(0, delim_pos);
+        auto desc_start = descriptor.find_first_not_of('-');
+        descriptor = descriptor.substr(desc_start, std::string::npos);
     }
 }
 

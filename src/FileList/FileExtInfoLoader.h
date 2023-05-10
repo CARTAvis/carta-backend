@@ -56,9 +56,9 @@ private:
     void AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info, const std::string& filename,
         const std::vector<int>& render_axes, CompressedFits* compressed_fits = nullptr);
     void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-        const std::vector<int>& display_axes, bool use_image_for_entries);
-    void AddComputedEntriesFromHeaders(
-        CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, CompressedFits* compressed_fits = nullptr);
+        const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries);
+    void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, int spectral_axis,
+        int stokes_axis, CompressedFits* compressed_fits = nullptr);
     void AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set);
     void AddCoordRanges(
         CARTA::FileInfoExtended& extended_info, const casacore::CoordinateSystem& coord_system, const casacore::IPosition& image_shape);
@@ -73,8 +73,8 @@ private:
     std::string ConvertCoordsToDeg(const std::string& type, const casacore::Quantity& coord);
     std::string ConvertIncrementToArcsec(const casacore::Quantity& inc0, const casacore::Quantity& inc1);
 
-    void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
-        std::string& projection);
+    void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& projection);
+    void SplitCtypeDescriptor(std::string& ctype, std::string& descriptor);
 
     std::shared_ptr<FileLoader> _loader;
     CARTA::FileType _type;
