@@ -63,11 +63,7 @@ set(TEST_SOURCES
 
 # Add all the sources in the main project and remove Main.cc
 foreach(src_file ${SOURCE_FILES})
-    if(IS_ABSOLUTE ${src_file})
-        list(APPEND SOURCES ${src_file})
-    else()
-        list(APPEND SOURCES ../${src_file})
-    endif()
+    list(APPEND SOURCES ../${src_file})
 endforeach()
 list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main/Main.cc)
 
