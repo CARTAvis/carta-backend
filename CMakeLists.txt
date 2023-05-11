@@ -155,7 +155,8 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
 
 #pugixml
-#include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
+SET(PUGIXML_COMPACT ON CACHE BOOL "" FORCE)
+include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
 
 #spdlog
 add_subdirectory(third-party/spdlog)
@@ -248,7 +249,7 @@ set(SOURCE_FILES
         src/Util/Token.cc
         src/ImageFitter/ImageFitter.cc)
 
-add_definitions(-DHAVE_HDF5)
+add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(REMOVE_ITEM LINK_LIBS uuid)
