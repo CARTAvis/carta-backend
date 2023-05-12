@@ -29,6 +29,10 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 
+std::unordered_map<std::string, casacore::DataType> bitpix_types(
+    {{"8", casacore::DataType::TpChar}, {"16", casacore::DataType::TpShort}, {"32", casacore::DataType::TpInt},
+        {"64", casacore::DataType::TpInt64}, {"-32", casacore::DataType::TpFloat}, {"-64", casacore::DataType::TpDouble}});
+
 using namespace carta;
 
 FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<FileLoader> loader) : _loader(loader) {}
@@ -39,6 +43,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
     bool map_ok(false);
 
     if (IsCompressedFits(filename)) {
+        spdlog::debug("Compressed FITS");
         CompressedFits cfits(filename);
         if (!cfits.GetFitsHeaderInfo(hdu_info_map)) {
             message = "Compressed FITS headers failed.";
@@ -61,6 +66,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         }
     } else {
         // Get list of image HDUs
+        spdlog::debug("NOT Compressed FITS");
         std::vector<std::string> hdu_list;
         FitsHduList fits_hdu_list = FitsHduList(filename);
         fits_hdu_list.GetHduList(hdu_list, message);
@@ -658,9 +664,6 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
             }
         } else if (entry_name.find("BITPIX") == 0) {
             auto value = header_entry.value();
-            std::unordered_map<std::string, casacore::DataType> bitpix_types(
-                {{"8", casacore::DataType::TpChar}, {"16", casacore::DataType::TpShort}, {"32", casacore::DataType::TpInt},
-                    {"64", casacore::DataType::TpInt64}, {"-32", casacore::DataType::TpFloat}, {"-64", casacore::DataType::TpDouble}});
             if (bitpix_types.find(value) != bitpix_types.end()) {
                 data_type = bitpix_types[value];
             }
@@ -682,11 +685,37 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 }
 
 void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type) {
+    bool is_scaled(false); // represent fp32 as 16-bit scaled integers
+    if (data_type == casacore::DataType::TpShort) {
+        // If native type is short, check if is scaled float or if casacore BITPIX header is float due to scaling
+        float bscale(1.0), bzero(0.0);
+        std::string bitpix;
+        for (int i = 0; i < extended_info.header_entries_size(); ++i) {
+            auto header_entry = extended_info.header_entries(i);
+            auto entry_name = header_entry.name();
+            if (entry_name == "BSCALE") {
+                bscale = header_entry.numeric_value();
+            } else if (entry_name == "BZERO") {
+                bzero = header_entry.numeric_value();
+            } else if (entry_name == "BITPIX") {
+                bitpix = header_entry.value();
+            }
+            if (bscale != 1.0 || bzero != 0.0 || bitpix == "-32") {
+                is_scaled = true;
+                break;
+            }
+        }
+    }
+
     std::stringstream ss;
     ss << data_type;
+    auto data_type_str = ss.str();
+    if (is_scaled) {
+        data_type_str += " (rescaled to float32)";
+    }
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Data type");
-    entry->set_value(ss.str());
+    entry->set_value(data_type_str);
     entry->set_entry_type(CARTA::EntryType::STRING);
 }
 
