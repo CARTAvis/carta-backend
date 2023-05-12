@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+* Fixed spatial profile for polyline in widefield image ([#1258](https://github.com/CARTAvis/carta-backend/issues/1258)).
 * Fixed crash following compressed fits parsing error ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233)).
 
 ## [4.0.0-beta.1]
