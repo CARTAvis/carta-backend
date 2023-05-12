@@ -1,5 +1,6 @@
 var NAVTREEINDEX8 =
 {
+"classcarta_1_1WebBrowser.html#a6fd08b70c94b4ebc44354c8a5e8b848b":[3,0,0,62,0],
 "classcarta_1_1WebBrowser.html#a7d1f41f018d2693505b6383ff9c8dad9":[3,0,0,62,2],
 "classcarta_1_1WebBrowser.html#a98a1837e72a8a24394655eb12006bf5f":[3,0,0,62,7],
 "classcarta_1_1WebBrowser.html#acac78431cb88ba68772a803a42db680a":[3,0,0,62,12],
@@ -103,8 +104,8 @@ var NAVTREEINDEX8 =
 "functions_type.html":[3,3,3],
 "functions_u.html":[3,3,0,21],
 "functions_v.html":[3,3,0,22],
-"functions_vars.html":[3,3,2,0],
 "functions_vars.html":[3,3,2],
+"functions_vars.html":[3,3,2,0],
 "functions_vars_a.html":[3,3,2,1],
 "functions_vars_b.html":[3,3,2,2],
 "functions_vars_c.html":[3,3,2,3],
@@ -139,8 +140,8 @@ var NAVTREEINDEX8 =
 "globals_type.html":[4,1,3],
 "globals_vars.html":[4,1,2],
 "hierarchy.html":[3,2],
-"index.html":[0],
 "index.html":[],
+"index.html":[0],
 "index.html#autotoc_md3":[0,0],
 "md_docs_static_faq.html":[1],
 "md_docs_static_faq.html#autotoc_md0":[1,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX8 =
 "namespacespdlog.html":[2,0,2],
 "namespacespdlog.html#a670c6a63d98e715c33a6063e6e0c7b0c":[2,0,2,1],
 "namespacespdlog_1_1sinks.html":[2,0,2,0],
-"pages.html":[],
-"structAxisRange.html":[3,0,4]
+"pages.html":[]
 };
