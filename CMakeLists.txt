@@ -155,7 +155,6 @@ include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
 
 #pugixml
-SET(PUGIXML_COMPACT ON CACHE BOOL "" FORCE)
 include_directories(${CMAKE_SOURCE_DIR}/third-party/pugixml/src)
 
 #spdlog
