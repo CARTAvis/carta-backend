@@ -686,12 +686,8 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
-        if (depth_axis > -1) {
-            compressed_fits->SetSpectralAxis(depth_axis);
-        }
-        if (stokes_axis > -1) {
-            compressed_fits->SetStokesAxis(stokes_axis);
-        }
+        compressed_fits->SetSpectralAxis(depth_axis);
+        compressed_fits->SetStokesAxis(stokes_axis);
     }
 }
 

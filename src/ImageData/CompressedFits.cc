@@ -20,7 +20,7 @@
 
 using namespace carta;
 
-CompressedFits::CompressedFits(const std::string& filename) : _filename(filename) {
+CompressedFits::CompressedFits(const std::string& filename) : _filename(filename), _spectral_axis(-1), _stokes_axis(-1) {
     // Initialize linear transformation matrix for the direction coordinate
     SetDefaultTransformMatrix();
 }
