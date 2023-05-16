@@ -39,7 +39,6 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
     bool map_ok(false);
 
     if (IsCompressedFits(filename)) {
-        spdlog::debug("Compressed FITS");
         CompressedFits cfits(filename);
         if (!cfits.GetFitsHeaderInfo(hdu_info_map)) {
             message = "Compressed FITS headers failed.";
