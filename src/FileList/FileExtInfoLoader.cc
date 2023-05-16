@@ -29,10 +29,6 @@
 #include "Util/FileSystem.h"
 #include "Util/Image.h"
 
-std::unordered_map<std::string, casacore::DataType> bitpix_types(
-    {{"8", casacore::DataType::TpChar}, {"16", casacore::DataType::TpShort}, {"32", casacore::DataType::TpInt},
-        {"64", casacore::DataType::TpInt64}, {"-32", casacore::DataType::TpFloat}, {"-64", casacore::DataType::TpDouble}});
-
 using namespace carta;
 
 FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<FileLoader> loader) : _loader(loader) {}
@@ -66,7 +62,6 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         }
     } else {
         // Get list of image HDUs
-        spdlog::debug("NOT Compressed FITS");
         std::vector<std::string> hdu_list;
         FitsHduList fits_hdu_list = FitsHduList(filename);
         fits_hdu_list.GetHduList(hdu_list, message);
@@ -155,13 +150,16 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 }
 
                 // For computed entries:
-                bool use_image_for_entries(false);
-                auto data_type = _loader->GetDataType();
+                auto data_type = image->dataType();
+                auto internal_type = data_type; // set for FITS to possibly different type
                 casacore::String image_type(image->imageType());
+                bool use_image_for_entries(false);
 
                 if (image_type == "FITSImage") {
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
-                    casacore::String filename(image->name());
+                    casacore::FITSImage* fits_image = dynamic_cast<casacore::FITSImage*>(image.get());
+                    casacore::String filename(fits_image->name());
+                    internal_type = fits_image->internalDataType();
                     casacore::Vector<casacore::String> headers = FitsHeaderStrings(filename, FileInfo::GetFitsHdu(hdu));
 
                     if (headers.empty()) {
@@ -182,6 +180,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 } else if (image_type == "CartaFitsImage") {
                     CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(image.get());
+                    internal_type = fits_image->internalDataType();
                     casacore::Vector<casacore::String> headers = fits_image->FitsHeaderStrings();
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else if (image_type == "CartaHdf5Image") {
@@ -202,7 +201,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 }
 
-                AddDataTypeEntry(extended_info, data_type);
+                AddDataTypeEntry(extended_info, data_type, internal_type);
 
                 std::vector<int> spatial_axes, render_axes;
                 int spectral_axis, stokes_axis, depth_axis;
@@ -587,8 +586,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
 
 void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info,
     const std::string& filename, const std::vector<int>& render_axes, CompressedFits* compressed_fits) {
-    // Add computed entries for filename, hdu, shape, and axes
-    // Set name and HDU
+    // Add computed entries for filename, hdu, data type, shape, and axes
     fs::path filepath(filename);
     std::string filename_nopath = filepath.filename().string();
     auto entry = extended_info.add_computed_entries();
@@ -603,13 +601,14 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    // Use header entries to determine computed entries
+    // Describe data type, shape, and axes
+    int bitpix(0);
+    double bscale(1.0), bzero(0.0);
     casacore::IPosition shape;
     std::vector<int> spatial_axes(2, -1);
     int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
     casacore::Vector<casacore::String> axes_names(4, "NA");
     std::vector<std::string> spectral_ctypes = {"FREQ", "WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
-    casacore::DataType data_type(casacore::DataType::TpFloat);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto header_entry = extended_info.header_entries(i);
@@ -663,14 +662,26 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
                 depth_axis = axis_num;
             }
         } else if (entry_name.find("BITPIX") == 0) {
-            auto value = header_entry.value();
-            if (bitpix_types.find(value) != bitpix_types.end()) {
-                data_type = bitpix_types[value];
-            }
+            bitpix = header_entry.numeric_value();
+        } else if (entry_name.find("BSCALE") == 0) {
+            bscale = header_entry.numeric_value();
+        } else if (entry_name.find("BZERO") == 0) {
+            bzero = header_entry.numeric_value();
         }
     }
 
-    AddDataTypeEntry(extended_info, data_type);
+    // Add data type from BITPIX header
+    casacore::DataType internal_type(casacore::DataType::TpOther);
+    if (bitpix_types.find(bitpix) != bitpix_types.end()) {
+        internal_type = bitpix_types[bitpix];
+    }
+    // Check if data type is actually float scaled from int
+    casacore::DataType data_type(internal_type);
+    if ((bitpix > 0) && (bscale != 1.0) || (bzero != 0.0)) {
+        data_type = casacore::DataType::TpFloat;
+    }
+    AddDataTypeEntry(extended_info, data_type, internal_type);
+
     AddShapeEntries(extended_info, shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
     if (compressed_fits) {
@@ -684,38 +695,17 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     }
 }
 
-void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type) {
-    bool is_scaled(false); // represent fp32 as 16-bit scaled integers
-    if (data_type == casacore::DataType::TpShort) {
-        // If native type is short, check if is scaled float or if casacore BITPIX header is float due to scaling
-        float bscale(1.0), bzero(0.0);
-        std::string bitpix;
-        for (int i = 0; i < extended_info.header_entries_size(); ++i) {
-            auto header_entry = extended_info.header_entries(i);
-            auto entry_name = header_entry.name();
-            if (entry_name == "BSCALE") {
-                bscale = header_entry.numeric_value();
-            } else if (entry_name == "BZERO") {
-                bzero = header_entry.numeric_value();
-            } else if (entry_name == "BITPIX") {
-                bitpix = header_entry.value();
-            }
-            if (bscale != 1.0 || bzero != 0.0 || bitpix == "-32") {
-                is_scaled = true;
-                break;
-            }
-        }
-    }
-
+void FileExtInfoLoader::AddDataTypeEntry(
+    CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType internal_type) {
+    // Report internal data type from header, and data type reported by image (usually the same)
     std::stringstream ss;
-    ss << data_type;
-    auto data_type_str = ss.str();
-    if (is_scaled) {
-        data_type_str += " (rescaled to float32)";
+    ss << internal_type;
+    if (internal_type < data_type) {
+        ss << " (rescaled to " << data_type << ")";
     }
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Data type");
-    entry->set_value(data_type_str);
+    entry->set_value(ss.str());
     entry->set_entry_type(CARTA::EntryType::STRING);
 }
 
@@ -1321,22 +1311,29 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 }
 
 void FileExtInfoLoader::ConvertUnitToCasacore(casacore::String& unit) {
-    // Returns casacore Unit string or input string if unknown (fail with error later)
+    // Returns valid casacore Unit string, or input string if unknown
+    // (fails with error later)
     unit.trim();
 
+    // Check input unit string
     if (casacore::UnitVal::check(unit)) {
         return;
     }
 
+    // Try capitalize and check again
+    unit.capitalize();
+    if (casacore::UnitVal::check(unit)) {
+        return;
+    }
+
+    // Try lowercase (shorten if degrees) and check again
     unit.downcase();
-    if (casacore::UnitVal::check(unit)) {
-        return;
+    if (unit.startsWith("deg")) { // e.g. "degrees"
+        unit = "deg";
     }
 
-    // This may no longer be needed but unclear about casacore UnitMaps
-    if (unit.startsWith("DEG") || unit.startsWith("Deg")) {
-        // Degrees, DEGREES nonstandard FITS values
-        unit = "deg";
+    if (casacore::UnitVal::check(unit)) {
+        return;
     }
 }
 

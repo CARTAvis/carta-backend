@@ -49,7 +49,7 @@ private:
     void FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderInfo& fhi, CARTA::FileInfoExtended& extended_info);
 
     // Computed entries
-    void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type);
+    void AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType internal_type);
     void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, const std::vector<int>& spatial_axes,
         int spectral_axis, int stokes_axis, const std::vector<int>& render_axes, int depth_axis,
         casacore::Vector<casacore::String>& axes_names);

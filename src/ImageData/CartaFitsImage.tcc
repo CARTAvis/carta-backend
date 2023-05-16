@@ -38,7 +38,6 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
     // cfitsio params
     int anynul(0), status(0);
     T null_val(0);
-    int dtype(TFLOAT);
 
     switch (datatype) {
         case 8: {
