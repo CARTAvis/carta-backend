@@ -861,8 +861,17 @@ bool CartaFitsImage::AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys
 
         // CTYPE, native type for SpectralCoordinate
         casacore::String ctype1 = wcs_spectral.ctype[0];
-
-        if (ctype1.startsWith("WAVE") || ctype1.startsWith("AWAV") || ctype1.startsWith("VOPT") || ctype1.startsWith("FELO")) {
+        if (ctype1.startsWith("FREQ")) {
+            try {
+                casacore::MFrequency::Types frequency_type = GetFrequencyType(wcs_spectral);
+                casacore::SpectralCoordinate spectral_coord(frequency_type, wcs);
+                spectral_coord.setNativeType(casacore::SpectralCoordinate::FREQ);
+                coord_sys.addCoordinate(spectral_coord);
+            } catch (const casacore::AipsError& err) {
+                spdlog::debug("Failed to set FREQ spectral coordinate from wcs.");
+                ok = false;
+            }
+        } else if (ctype1.startsWith("WAVE") || ctype1.startsWith("AWAV") || ctype1.startsWith("VOPT") || ctype1.startsWith("FELO")) {
             // Set up wcsprm struct with wcsset
             casacore::Coordinate::set_wcs(wcs_spectral);
 
@@ -894,7 +903,7 @@ bool CartaFitsImage::AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys
                 // Calculate wavelengths
                 casacore::Vector<casacore::Double> wavelengths(num_chan);
                 for (size_t i = 0; i < num_chan; ++i) {
-                    wavelengths(i) = crval + (cdelt * pc * (double(i + 1) - crpix)); // +1 because FITS works 1-based
+                    wavelengths(i) = crval + (cdelt * pc * (double(i + 1) - crpix)); // +1 because FITS is 1-based
                 }
 
                 bool in_air(false);
@@ -966,8 +975,7 @@ bool CartaFitsImage::AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys
                 }
             }
         } else {
-            casacore::SpectralCoordinate::SpecType native_type(casacore::SpectralCoordinate::FREQ);
-
+            casacore::SpectralCoordinate::SpecType native_type;
             if (ctype1.startsWith("VELO")) {
                 native_type = casacore::SpectralCoordinate::VRAD;
             } else if (ctype1.startsWith("VRAD")) {
