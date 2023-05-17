@@ -150,8 +150,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 }
 
                 // For computed entries:
-                auto data_type = image->dataType();
-                auto internal_type = data_type; // set for FITS to possibly different type
+                auto data_type = _loader->GetDataType();
+                auto equivalent_type = data_type; // for FITS only, for rescaled data
                 casacore::String image_type(image->imageType());
                 bool use_image_for_entries(false);
 
@@ -159,7 +159,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
                     casacore::FITSImage* fits_image = dynamic_cast<casacore::FITSImage*>(image.get());
                     casacore::String filename(fits_image->name());
-                    internal_type = fits_image->internalDataType();
+                    equivalent_type = fits_image->dataType();
                     casacore::Vector<casacore::String> headers = FitsHeaderStrings(filename, FileInfo::GetFitsHdu(hdu));
 
                     if (headers.empty()) {
@@ -180,7 +180,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 } else if (image_type == "CartaFitsImage") {
                     CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(image.get());
-                    internal_type = fits_image->internalDataType();
+                    equivalent_type = fits_image->dataType();
                     casacore::Vector<casacore::String> headers = fits_image->FitsHeaderStrings();
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else if (image_type == "CartaHdf5Image") {
@@ -201,7 +201,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 }
 
-                AddDataTypeEntry(extended_info, data_type, internal_type);
+                AddDataTypeEntry(extended_info, data_type, equivalent_type);
 
                 std::vector<int> spatial_axes, render_axes;
                 int spectral_axis, stokes_axis, depth_axis;
@@ -671,16 +671,16 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
     }
 
     // Add data type from BITPIX header
-    casacore::DataType internal_type(casacore::DataType::TpOther);
+    casacore::DataType data_type(casacore::DataType::TpOther);
     if (bitpix_types.find(bitpix) != bitpix_types.end()) {
-        internal_type = bitpix_types[bitpix];
+        data_type = bitpix_types[bitpix];
     }
     // Check if data type is actually float scaled from int
-    casacore::DataType data_type(internal_type);
+    casacore::DataType equivalent_type(data_type);
     if ((bitpix > 0) && (bscale != 1.0) || (bzero != 0.0)) {
-        data_type = casacore::DataType::TpFloat;
+        equivalent_type = casacore::DataType::TpFloat;
     }
-    AddDataTypeEntry(extended_info, data_type, internal_type);
+    AddDataTypeEntry(extended_info, data_type, equivalent_type);
 
     AddShapeEntries(extended_info, shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
@@ -692,12 +692,12 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
 }
 
 void FileExtInfoLoader::AddDataTypeEntry(
-    CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType internal_type) {
-    // Report internal data type from header, and data type reported by image (usually the same)
+    CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType equivalent_type) {
+    // Report actual data type from header, and data type used by cfitsio for FITS rescaled data
     std::stringstream ss;
-    ss << internal_type;
-    if (internal_type < data_type) {
-        ss << " (rescaled to " << data_type << ")";
+    ss << data_type;
+    if (equivalent_type > data_type) {
+        ss << " (rescaled to " << equivalent_type << ")";
     }
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Data type");
