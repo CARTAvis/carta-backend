@@ -98,10 +98,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         _tile_cache.Reset(_z_index, _stokes_index, tile_cache_capacity);
     }
 
-    // set default histogram requirements
-    InitImageHistogramConfigs();
-    _cube_histogram_configs.clear();
-
     try {
         // Resize stats vectors and load data from image, if the format supports it.
         // A failure here shouldn't invalidate the frame
@@ -683,7 +679,6 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::His
 
     if (region_id == IMAGE_REGION_ID) {
         _image_histogram_configs.clear();
-        _image_histogram_configs.push_back(HistogramConfig()); // histogram config for image rendering
     } else {
         _cube_histogram_configs.clear();
     }
@@ -691,7 +686,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::His
     for (const auto& histogram_config : histogram_configs) {
         // set histogram requirements for histogram widgets
         HistogramConfig config(histogram_config);
-        if (region_id == IMAGE_REGION_ID && config != _image_histogram_configs.front()) {
+        if (region_id == IMAGE_REGION_ID) {
             // only add histogram config for an image which is not the same with the one for image rendering
             _image_histogram_configs.push_back(config);
         } else {
@@ -702,8 +697,8 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::His
     return true;
 }
 
-bool Frame::FillRegionHistogramData(
-    std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id) {
+bool Frame::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id,
+    int file_id, bool channel_changed) {
     // fill histogram message for image plane or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -712,6 +707,9 @@ bool Frame::FillRegionHistogramData(
     std::vector<HistogramConfig> requirements;
     if (region_id == IMAGE_REGION_ID) {
         requirements = _image_histogram_configs;
+        if (channel_changed) {
+            requirements.push_back(HistogramConfig()); // add a histogram config for image rendering
+        }
     } else {
         requirements = _cube_histogram_configs;
     }
@@ -2269,13 +2267,6 @@ std::string Frame::GetStokesType(int stokes_index) {
 
 std::shared_mutex& Frame::GetActiveTaskMutex() {
     return _active_task_mutex;
-}
-
-void Frame::InitImageHistogramConfigs() {
-    _image_histogram_configs.clear();
-
-    // set histogram requirements for the image
-    _image_histogram_configs.push_back(HistogramConfig());
 }
 
 void Frame::CloseCachedImage(const std::string& file) {
