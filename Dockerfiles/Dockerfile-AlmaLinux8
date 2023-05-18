@@ -9,7 +9,7 @@ RUN \
   dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel cmake curl-devel flex gcc \
          gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libasan \
          libtool libxml2-devel libzstd-devel libuuid-devel make openssl-devel protobuf-devel \
-         python36 python3-pip pugixml-devel readline-devel subversion \
+         python36 python3-pip readline-devel subversion \
          wcslib-devel wget zlib-devel libuuid-devel zfp-devel && \
   pip3 install numpy astropy
 
