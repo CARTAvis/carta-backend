@@ -466,14 +466,14 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     const auto& filename(message.file());
     std::string hdu(message.hdu());
     auto file_id(message.file_id());
-    bool is_lel_expr(message.lel_expr());
+    bool lel_expr(message.lel_expr());
 
     // response message:
     CARTA::OpenFileAck ack;
     bool success(false);
     string err_message;
 
-    if (is_lel_expr) {
+    if (lel_expr) {
         // filename field is LEL expression
         auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
         auto loader = _loaders.Get(filename, dir_path);
