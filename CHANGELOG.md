@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fixed spatial profile for polyline in widefield image ([#1258](https://github.com/CARTAvis/carta-backend/issues/1258)).
+* Fixed the problem of resuming LEL images ([#1226](https://github.com/CARTAvis/carta-backend/issues/1226)).
 
 ## [4.0.0-beta.1]
 
