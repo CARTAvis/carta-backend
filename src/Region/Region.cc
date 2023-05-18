@@ -458,12 +458,12 @@ bool Region::UseApproximatePolygon(std::shared_ptr<casacore::CoordinateSystem> o
 
             // Compare reference to converted length ratio
             double length_ratio_difference = fabs(ref_length_ratio - converted_length_ratio);
-            spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
+            // spdlog::debug("{} distortion check: length ratio difference={:.3e}", RegionName(region_type), length_ratio_difference);
 
             if (length_ratio_difference < 1e-4) {
                 // Passed ratio check; check dot product of converted region
                 double converted_dot_product = (v0_delta_x * v1_delta_x) + (v0_delta_y * v1_delta_y);
-                spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
+                // spdlog::debug("{} distortion check: dot product={:.3e}", RegionName(region_type), converted_dot_product);
 
                 if (fabs(converted_dot_product) < 1e-2) {
                     // passed distortion tests, do not use polygon approximation
