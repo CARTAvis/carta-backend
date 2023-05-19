@@ -1904,14 +1904,11 @@ void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool 
 
     bool channel_changed(z_changed || stokes_changed);
     SendRegionHistogramData(file_id, region_id, channel_changed);
+    SendRegionStatsData(file_id, region_id);
 
-    if (channel_changed) {
-        SendRegionStatsData(file_id, region_id);
-        // SpatialProfileData sent after new requirements received
-    } else { // region changed, update all
+    if (!channel_changed) { // Region changed, update all
         SendSpatialProfileDataByRegionId(region_id);
         SendSpectralProfileData(file_id, region_id, stokes_changed);
-        SendRegionStatsData(file_id, region_id);
     }
 }
 
