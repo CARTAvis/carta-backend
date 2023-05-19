@@ -620,7 +620,8 @@ bool Session::OnOpenFile(
     open_file_ack->set_message(err_message);
 
     if (success) {
-        UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+        bool changed(true); // channel and stokes
+        UpdateRegionData(file_id, IMAGE_REGION_ID, changed, changed);
     } else if (!err_message.empty()) {
         spdlog::error(err_message);
     }
