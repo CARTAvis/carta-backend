@@ -2107,10 +2107,8 @@ void Session::ExecuteAnimationFrameInner() {
                     // Send vector field data if required
                     SendVectorFieldData(file_id);
 
-                    // Send tile data for active frame
-                    if (is_active_frame) {
-                        OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
-                    }
+                    // Send tile data
+                    OnAddRequiredTiles(_frames.at(file_id)->GetAnimationViewSettings());
 
                     // Send region histograms and profiles
                     UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
