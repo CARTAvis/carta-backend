@@ -69,6 +69,8 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
             _data_type = _image->dataType();
         }
     }
+
+    ResetBunit();
 }
 
 casacore::TempImage<float>* CasaLoader::ConvertImageToFloat(casacore::LatticeBase* lattice) {

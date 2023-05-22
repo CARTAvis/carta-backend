@@ -66,6 +66,8 @@ void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
         _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
         _data_type = _image->dataType();
     }
+
+    ResetBunit();
 }
 
 } // namespace carta

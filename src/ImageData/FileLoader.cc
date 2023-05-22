@@ -870,6 +870,19 @@ double FileLoader::CalculateBeamArea() {
     return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());
 }
 
+void FileLoader::ResetBunit() {
+    auto image = GetImage();
+    if (image) {
+        std::string bunit = image->units().getName();
+        std::string lower_bunit = image->units().getName();
+        std::transform(lower_bunit.begin(), lower_bunit.end(), lower_bunit.begin(), [](unsigned char c) { return std::tolower(c); });
+        if (bunit != "Jy/beam" && lower_bunit == "jy/beam") {
+            casacore::Unit new_units("Jy/beam");
+            image->setUnits(new_units);
+        }
+    }
+}
+
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {
     if (_stokes_indices.count(stokes_type)) {
         stokes_index = _stokes_indices[stokes_type];

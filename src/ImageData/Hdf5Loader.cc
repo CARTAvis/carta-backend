@@ -56,6 +56,8 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
             }
         }
     }
+
+    ResetBunit();
 }
 
 bool Hdf5Loader::HasData(std::string ds_name) const {

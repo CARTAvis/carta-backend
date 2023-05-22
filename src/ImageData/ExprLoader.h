@@ -63,6 +63,8 @@ void ExprLoader::OpenFile(const std::string& /*hdu*/) {
         _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
         _data_type = _image->dataType();
     }
+
+    ResetBunit();
 }
 
 bool ExprLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {

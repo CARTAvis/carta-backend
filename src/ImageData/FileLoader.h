@@ -181,6 +181,9 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
+
+    // Ignore the upper or lower cases of BUNIT from header
+    void ResetBunit();
 };
 
 } // namespace carta

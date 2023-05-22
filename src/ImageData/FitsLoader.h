@@ -139,6 +139,8 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             _data_type = fits_image->internalDataType();
         }
     }
+
+    ResetBunit();
 }
 
 int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {
