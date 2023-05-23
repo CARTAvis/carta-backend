@@ -876,7 +876,7 @@ void FileLoader::ResetBunit() {
         std::string bunit = image->units().getName();
         std::string lower_bunit = image->units().getName();
         std::transform(lower_bunit.begin(), lower_bunit.end(), lower_bunit.begin(), [](unsigned char c) { return std::tolower(c); });
-        if (bunit != "Jy/beam" && lower_bunit == "jy/beam") {
+        if (lower_bunit == "jy/beam" && bunit != "Jy/beam") {
             casacore::Unit new_units("Jy/beam");
             image->setUnits(new_units);
         }

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Prevent the installation of pugixml library files ([#1261](https://github.com/CARTAvis/carta-backend/issues/1261)).
 * Fixed spatial profile for polyline in widefield image ([#1258](https://github.com/CARTAvis/carta-backend/issues/1258)).
 * Fixed regression failure of HDF5 PV image due to profile caching in the HDF5 loader ([#1259](https://github.com/CARTAvis/carta-backend/issues/1259)).
+* Fixed the case-sensitive of reading BUNIT from a file header ([#1187](https://github.com/CARTAvis/carta-backend/issues/1187)).
 
 ## [4.0.0-beta.1]
 
