@@ -873,11 +873,12 @@ double FileLoader::CalculateBeamArea() {
 void FileLoader::ResetBunit() {
     auto image = GetImage();
     if (image) {
+        std::unordered_map<std::string, std::string> bunits = {{"jy/beam", "Jy/beam"}, {"mjy/beam", "mJy/beam"}};
         std::string bunit = image->units().getName();
         std::string lower_bunit = image->units().getName();
         std::transform(lower_bunit.begin(), lower_bunit.end(), lower_bunit.begin(), [](unsigned char c) { return std::tolower(c); });
-        if (lower_bunit == "jy/beam" && bunit != "Jy/beam") {
-            casacore::Unit new_units("Jy/beam");
+        if (bunits.count(lower_bunit) && bunit != bunits[lower_bunit]) {
+            casacore::Unit new_units(bunits[lower_bunit]);
             image->setUnits(new_units);
         }
     }
