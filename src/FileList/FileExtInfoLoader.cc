@@ -13,6 +13,7 @@
 #include <spdlog/fmt/ostr.h>
 
 #include <casacore/casa/Quanta/MVAngle.h>
+#include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/FITSImage.h>
@@ -244,7 +245,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 void FileExtInfoLoader::AddEntriesFromHeaderStrings(
     const casacore::Vector<casacore::String>& headers, const std::string& hdu, CARTA::FileInfoExtended& extended_info) {
     // Parse each header in vector and add header entry to FileInfoExtended
-    casacore::String extname, stokes_ctype_num; // used to set stokes values in loader
+    casacore::String extname;
+    casacore::String specsys;          // if separated from VELO ctype
+    casacore::String stokes_ctype_num; // used to set stokes values in loader
 
     // CartaHdf5Image shortens keywords to FITS length 8
     std::unordered_map<std::string, std::string> hdf5_keys = {
@@ -314,8 +317,13 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             name = hdf5_keys[name];
         }
 
-        if (name.startsWith("CTYPE") && ((value == "STOKES") || (value == "Stokes") || (value == "stokes"))) {
-            stokes_ctype_num = name.back();
+        if (name.startsWith("CTYPE")) {
+            if ((value == "STOKES") || (value == "Stokes") || (value == "stokes")) {
+                stokes_ctype_num = name.back();
+            } else if (value.startsWith("VELO-")) {
+                specsys = value.after('-');
+                value = "VELO";
+            }
         } else if (name == "EXTNAME") {
             extname = value;
         } else if (name == "SIMPLE") {
@@ -334,10 +342,10 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         entry->set_name(name);
 
         if (!value.empty()) {
-            // Set numeric value
             if (string_value) {
                 *entry->mutable_value() = value;
             } else {
+                // Set numeric value
                 ConvertHeaderValueToNumeric(name, value, entry);
             }
 
@@ -355,6 +363,14 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             // Set comment
             entry->set_comment(comment);
         }
+    }
+
+    if (!specsys.empty()) {
+        // separated from VELO CTYPE
+        auto entry = extended_info.add_header_entries();
+        entry->set_name("SPECSYS");
+        *entry->mutable_value() = specsys;
+        entry->set_comment("separated from VELO CTYPE");
     }
 
     // Create FileInfoExtended computed_entries for hdu, extension name
@@ -1288,23 +1304,31 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 }
 
 void FileExtInfoLoader::NormalizeHeaderUnit(casacore::String& unit) {
-    // Check that string is in unit map with various cases
-    if (casacore::UnitVal::check(unit)) {
+    // Convert unit string to FITS unit
+    casacore::String unit_name(unit);
+    if (casacore::UnitVal::check(unit_name)) {
+        unit = unit_name;
         return;
     }
-    casacore::String converted_unit(unit);
-    converted_unit.capitalize();
-    if (casacore::UnitVal::check(converted_unit)) {
-        unit = converted_unit;
+
+    unit_name.downcase();
+    if (casacore::UnitVal::check(unit_name)) {
+        unit = unit_name;
         return;
     }
-    converted_unit.downcase();
-    converted_unit = (converted_unit.startsWith("deg") ? "deg" : converted_unit); // shorten "degrees"
-    if (casacore::UnitVal::check(converted_unit)) {
-        unit = converted_unit;
+
+    unit_name.capitalize();
+    if (casacore::UnitVal::check(unit_name)) {
+        unit = unit_name;
         return;
     }
-    // keep unit
+
+    unit_name.upcase();
+    if (casacore::UnitVal::check(unit_name)) {
+        unit = unit_name;
+        return;
+    }
+    // keep original unit
 }
 
 std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double val, const std::string& unit) {
