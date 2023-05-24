@@ -129,7 +129,7 @@ var sectionId = 'dynsection-3';
 <!-- Node27 -->
 <g id="node27" class="node">
 <title>Node27</title>
-<g id="a_node27"><a xlink:href="classcarta_1_1Frame.html#add5c6cc7f22b6a5d87d7080d29f214fb" target="_top" xlink:title=" ">
+<g id="a_node27"><a xlink:href="classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1018.5,-93.5 1018.5,-123.5 1150.5,-123.5 1150.5,-93.5 1018.5,-93.5"/>
 <text text-anchor="start" x="1026.5" y="-111.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Frame::FillRegion</text>
 <text text-anchor="middle" x="1084.5" y="-100.5" font-family="Helvetica,sans-Serif" font-size="10.00">HistogramData</text>
@@ -177,7 +177,7 @@ var sectionId = 'dynsection-3';
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1Session.html#af0bc6048baa8b0e803edc7bfb1161e87" target="_top" xlink:title=" ">
+<g id="a_node3"><a xlink:href="classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1010,-274.5 1010,-304.5 1159,-304.5 1159,-274.5 1010,-274.5"/>
 <text text-anchor="start" x="1018" y="-292.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendRegion</text>
 <text text-anchor="middle" x="1084.5" y="-281.5" font-family="Helvetica,sans-Serif" font-size="10.00">HistogramData</text>

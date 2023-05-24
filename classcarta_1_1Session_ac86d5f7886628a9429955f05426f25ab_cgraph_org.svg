@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1Session.html#af0bc6048baa8b0e803edc7bfb1161e87" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="222,-137.5 222,-167.5 371,-167.5 371,-137.5 222,-137.5"/>
 <text text-anchor="start" x="230" y="-155.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendRegion</text>
 <text text-anchor="middle" x="296.5" y="-144.5" font-family="Helvetica,sans-Serif" font-size="10.00">HistogramData</text>

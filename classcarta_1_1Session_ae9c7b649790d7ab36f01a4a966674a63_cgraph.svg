@@ -774,7 +774,7 @@ var sectionId = 'dynsection-74';
 <!-- Node77 -->
 <g id="node43" class="node">
 <title>Node77</title>
-<g id="a_node43"><a xlink:href="classcarta_1_1Session.html#af0bc6048baa8b0e803edc7bfb1161e87" target="_top" xlink:title=" ">
+<g id="a_node43"><a xlink:href="classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="405,-98.5 405,-128.5 554,-128.5 554,-98.5 405,-98.5"/>
 <text text-anchor="start" x="413" y="-116.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::SendRegion</text>
 <text text-anchor="middle" x="479.5" y="-105.5" font-family="Helvetica,sans-Serif" font-size="10.00">HistogramData</text>

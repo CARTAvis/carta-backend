@@ -45,7 +45,7 @@ var searchData=
   ['fillpointspatialprofiledata_765',['FillPointSpatialProfileData',['../classcarta_1_1RegionHandler.html#a0e7c8e5a778bb77b13dc9bdfe48f26bc',1,'carta::RegionHandler']]],
   ['fillrastertiledata_766',['FillRasterTileData',['../classcarta_1_1Frame.html#a8f2a50be837b3421d00d04f527838abd',1,'carta::Frame']]],
   ['fillregionfileinfo_767',['FillRegionFileInfo',['../classcarta_1_1FileListHandler.html#a7f4f8c5ad7eb30ad51a712446752283d',1,'carta::FileListHandler']]],
-  ['fillregionhistogramdata_768',['FillRegionHistogramData',['../classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb',1,'carta::RegionHandler::FillRegionHistogramData()'],['../classcarta_1_1Frame.html#add5c6cc7f22b6a5d87d7080d29f214fb',1,'carta::Frame::FillRegionHistogramData(std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt; region_histogram_callback, int region_id, int file_id)']]],
+  ['fillregionhistogramdata_768',['FillRegionHistogramData',['../classcarta_1_1RegionHandler.html#a781809901786ab1cf5a4705a77ebe9bb',1,'carta::RegionHandler::FillRegionHistogramData()'],['../classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31',1,'carta::Frame::FillRegionHistogramData(std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt; region_histogram_callback, int region_id, int file_id, bool channel_changed)']]],
   ['fillregionstatsdata_769',['FillRegionStatsData',['../classcarta_1_1Frame.html#a7b6124c45df53a4dc2e8096ce5314b18',1,'carta::Frame::FillRegionStatsData()'],['../classcarta_1_1RegionHandler.html#a409ecbf6d655eab69b1465b819cffb85',1,'carta::RegionHandler::FillRegionStatsData()']]],
   ['fillspatialprofiledata_770',['FillSpatialProfileData',['../classcarta_1_1Frame.html#a7c0bb58338a53775150fb75c3d97ea6f',1,'carta::Frame::FillSpatialProfileData(std::vector&lt; CARTA::SpatialProfileData &gt; &amp;spatial_data_vec)'],['../classcarta_1_1Frame.html#a3d1f8594ec63ae8f16524981c5f21ce2',1,'carta::Frame::FillSpatialProfileData(PointXy point, std::vector&lt; CARTA::SetSpatialRequirements_SpatialConfig &gt; spatial_configs, std::vector&lt; CARTA::SpatialProfileData &gt; &amp;spatial_data_vec)']]],
   ['fillspectralprofiledata_771',['FillSpectralProfileData',['../classcarta_1_1RegionHandler.html#adf0a26d068e926212c682fdf15d367fe',1,'carta::RegionHandler::FillSpectralProfileData()'],['../classcarta_1_1Frame.html#ad1fb3b57f336f8f186fe08eca46b0101',1,'carta::Frame::FillSpectralProfileData()']]],
@@ -98,7 +98,7 @@ var searchData=
   ['fromtext_818',['FromText',['../classcarta_1_1DataColumn.html#a34bafc86e0e1fe9c838dca2c82d18afe',1,'carta::DataColumn']]],
   ['fromvalues_819',['FromValues',['../classcarta_1_1Column.html#a2df953c1e95a4a397a8bd8254e8c34c6',1,'carta::Column']]],
   ['frontend_5ffolder_820',['frontend_folder',['../structcarta_1_1ProgramSettings.html#a3cf6f38321c0e0439b745db850cd94e8',1,'carta::ProgramSettings']]],
-  ['full_821',['full',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6',1,'carta::FileInfo::ImageStats']]],
-  ['full_822',['Full',['../structcarta_1_1TilePool.html#a122765fee330ff04ca7462238518d525',1,'carta::TilePool']]],
+  ['full_821',['Full',['../structcarta_1_1TilePool.html#a122765fee330ff04ca7462238518d525',1,'carta::TilePool']]],
+  ['full_822',['full',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6',1,'carta::FileInfo::ImageStats']]],
   ['funcf_823',['FuncF',['../classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752',1,'carta::ImageFitter']]]
 ];

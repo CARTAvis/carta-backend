@@ -10,7 +10,7 @@ var searchData=
   ['sendfileevent_2998',['SendFileEvent',['../classcarta_1_1Session.html#ae6ff58d2a61d3872bc741f12ed2b91d7',1,'carta::Session']]],
   ['sendlogevent_2999',['SendLogEvent',['../classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451',1,'carta::Session']]],
   ['sendpvpreview_3000',['SendPvPreview',['../classcarta_1_1Session.html#af8a5cb91e4f627673631d7648bbaed75',1,'carta::Session']]],
-  ['sendregionhistogramdata_3001',['SendRegionHistogramData',['../classcarta_1_1Session.html#af0bc6048baa8b0e803edc7bfb1161e87',1,'carta::Session']]],
+  ['sendregionhistogramdata_3001',['SendRegionHistogramData',['../classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee',1,'carta::Session']]],
   ['sendregionstatsdata_3002',['SendRegionStatsData',['../classcarta_1_1Session.html#a5fd62896cf8474c7b37c27093a24459e',1,'carta::Session']]],
   ['sendscriptingrequest_3003',['SendScriptingRequest',['../classcarta_1_1SessionManager.html#aa6e0a0881ee142536453490b8c252edc',1,'carta::SessionManager::SendScriptingRequest()'],['../classcarta_1_1Session.html#a37dd476efba8d4b38ced034210268745',1,'carta::Session::SendScriptingRequest()'],['../classcarta_1_1HttpServer.html#a84c66f1a1f6dd7ebbc074612244fd05f',1,'carta::HttpServer::SendScriptingRequest()']]],
   ['sendspatialprofiledata_3004',['SendSpatialProfileData',['../classcarta_1_1Session.html#a120e85ac57a07414f829a228618ab5fe',1,'carta::Session']]],

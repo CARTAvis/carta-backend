@@ -86,7 +86,7 @@ var classcarta_1_1Session =
     [ "SendFileEvent", "classcarta_1_1Session.html#ae6ff58d2a61d3872bc741f12ed2b91d7", null ],
     [ "SendLogEvent", "classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451", null ],
     [ "SendPvPreview", "classcarta_1_1Session.html#af8a5cb91e4f627673631d7648bbaed75", null ],
-    [ "SendRegionHistogramData", "classcarta_1_1Session.html#af0bc6048baa8b0e803edc7bfb1161e87", null ],
+    [ "SendRegionHistogramData", "classcarta_1_1Session.html#a36ede4133a5424416c8e085af6387fee", null ],
     [ "SendRegionStatsData", "classcarta_1_1Session.html#a5fd62896cf8474c7b37c27093a24459e", null ],
     [ "SendScriptingRequest", "classcarta_1_1Session.html#a37dd476efba8d4b38ced034210268745", null ],
     [ "SendSpatialProfileData", "classcarta_1_1Session.html#a120e85ac57a07414f829a228618ab5fe", null ],

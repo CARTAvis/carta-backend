@@ -158,8 +158,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a958f69761afea8b1388de6bea20f8b78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedead0fb041d61b7398002724da74c2b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#aedead0fb041d61b7398002724da74c2b">SetHistogramRequirements</a> (int region_id, const std::vector&lt; CARTA::HistogramConfig &gt; &amp;histogram_configs)</td></tr>
 <tr class="separator:aedead0fb041d61b7398002724da74c2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add5c6cc7f22b6a5d87d7080d29f214fb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#add5c6cc7f22b6a5d87d7080d29f214fb">FillRegionHistogramData</a> (std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt; region_histogram_callback, int region_id, int file_id)</td></tr>
-<tr class="separator:add5c6cc7f22b6a5d87d7080d29f214fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac139750e3eed058f47720776a77b6d31"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#ac139750e3eed058f47720776a77b6d31">FillRegionHistogramData</a> (std::function&lt; void(CARTA::RegionHistogramData histogram_data)&gt; region_histogram_callback, int region_id, int file_id, bool channel_changed)</td></tr>
+<tr class="separator:ac139750e3eed058f47720776a77b6d31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bd6cad34fcc337311218150f6771850"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1bd6cad34fcc337311218150f6771850">GetBasicStats</a> (int z, int stokes, <a class="el" href="structcarta_1_1BasicStats.html">BasicStats</a>&lt; float &gt; &amp;stats)</td></tr>
 <tr class="separator:a1bd6cad34fcc337311218150f6771850"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e88a8481229d116d2976f51b32ac326"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326">CalculateHistogram</a> (int region_id, int z, int stokes, int num_bins, const <a class="el" href="namespacecarta.html#a8e5e52c4e8fa6d21995384f1d39280c6">HistogramBounds</a> &amp;bounds, <a class="el" href="classcarta_1_1Histogram.html">Histogram</a> &amp;hist)</td></tr>
@@ -279,8 +279,6 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:ab8d23e30f45472bdf614e4830610289f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a789314994a5e12391e4e97d65bef436d"><td class="memItemLeft" align="right" valign="top">casacore::Slicer&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a789314994a5e12391e4e97d65bef436d">GetExportRegionSlicer</a> (const CARTA::SaveFile &amp;save_file_msg, casacore::IPosition image_shape, casacore::IPosition region_shape, casacore::LattRegionHolder &amp;latt_region_holder)</td></tr>
 <tr class="separator:a789314994a5e12391e4e97d65bef436d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69a52aa8315bc300f5772b47694c8ba8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a69a52aa8315bc300f5772b47694c8ba8">InitImageHistogramConfigs</a> ()</td></tr>
-<tr class="separator:a69a52aa8315bc300f5772b47694c8ba8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1614c68dbc09df9dd7212cbcf909fa43"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#a1614c68dbc09df9dd7212cbcf909fa43">CacheKey</a> (int z, int stokes)</td></tr>
 <tr class="separator:a1614c68dbc09df9dd7212cbcf909fa43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0556decdd99bffc1dd869599f4db918"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Frame.html#aa0556decdd99bffc1dd869599f4db918">DoVectorFieldCalculation</a> (const std::function&lt; void(CARTA::VectorOverlayTileData &amp;)&gt; &amp;callback)</td></tr>
@@ -426,7 +424,7 @@ Protected Attributes</h2></td></tr>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aa4b9e045d2b184a995017be80dbbe832_cgraph.svg" width="100%" height="454"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aa4b9e045d2b184a995017be80dbbe832_cgraph.svg" width="100%" height="404"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1317,8 +1315,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="add5c6cc7f22b6a5d87d7080d29f214fb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add5c6cc7f22b6a5d87d7080d29f214fb">&#9670;&nbsp;</a></span>FillRegionHistogramData()</h2>
+<a id="ac139750e3eed058f47720776a77b6d31"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac139750e3eed058f47720776a77b6d31">&#9670;&nbsp;</a></span>FillRegionHistogramData()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1339,7 +1337,13 @@ Here is the call graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>file_id</em>&#160;</td>
+          <td class="paramname"><em>file_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>channel_changed</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -1351,7 +1355,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_add5c6cc7f22b6a5d87d7080d29f214fb_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_ac139750e3eed058f47720776a77b6d31_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -2935,37 +2939,6 @@ Here is the call graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_aeff1a00d7f22df6f180888b1d9eaf457_icgraph.svg" width="100%" height="503"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
-
-</div>
-</div>
-<a id="a69a52aa8315bc300f5772b47694c8ba8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69a52aa8315bc300f5772b47694c8ba8">&#9670;&nbsp;</a></span>InitImageHistogramConfigs()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::Frame::InitImageHistogramConfigs </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Frame_a69a52aa8315bc300f5772b47694c8ba8_icgraph.svg" width="455" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
