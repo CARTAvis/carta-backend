@@ -138,8 +138,8 @@ public:
 
     // Histograms: image and cube
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::HistogramConfig>& histogram_configs);
-    bool FillRegionHistogramData(
-        std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id, int file_id);
+    bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> region_histogram_callback, int region_id,
+        int file_id, bool channel_changed);
     bool GetBasicStats(int z, int stokes, BasicStats<float>& stats);
     bool CalculateHistogram(int region_id, int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
@@ -257,8 +257,6 @@ protected:
     casacore::Slicer GetExportImageSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape);
     casacore::Slicer GetExportRegionSlicer(const CARTA::SaveFile& save_file_msg, casacore::IPosition image_shape,
         casacore::IPosition region_shape, casacore::LattRegionHolder& latt_region_holder);
-
-    void InitImageHistogramConfigs();
 
     // For convenience, create int map key for storing cache by z and stokes
     inline int CacheKey(int z, int stokes) {
