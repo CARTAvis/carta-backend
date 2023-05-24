@@ -64,7 +64,7 @@ private:
         CARTA::FileInfoExtended& extended_info, const casacore::CoordinateSystem& coord_system, const casacore::IPosition& image_shape);
 
     // Convert unit to one recognized by casacore (case-sensitive)
-    void ConvertUnitToCasacore(casacore::String& unit);
+    void NormalizeHeaderUnit(casacore::String& unit);
 
     // Convert MVAngle to string; returns Quantity string if not direction
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit);

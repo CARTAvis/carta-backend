@@ -1034,16 +1034,16 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
                 if (disp1_cunit.contains("/")) {
                     disp1_cunit = disp1_ctype.before("/");
                 }
-                ConvertUnitToCasacore(disp1_cunit);
+                NormalizeHeaderUnit(disp1_cunit);
             } else if (entry_name.find("CUNIT" + disp2_suffix) == 0) {
                 disp2_cunit = entry.value();
                 if (disp2_cunit.contains("/")) {
                     disp2_cunit = disp2_cunit.before("/");
                 }
-                ConvertUnitToCasacore(disp2_cunit);
+                NormalizeHeaderUnit(disp2_cunit);
             } else if (entry_name.find("CUNIT" + spectral_suffix) == 0) {
                 spectral_cunit = entry.value();
-                ConvertUnitToCasacore(spectral_cunit);
+                NormalizeHeaderUnit(spectral_cunit);
             }
         } else if (!found_frame &&
                    ((entry_name.find("EQUINOX") == 0) || (entry_name.find("TELEQUIN") == 0) || (entry_name.find("EPOCH") == 0))) {
@@ -1068,6 +1068,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             found_velref = true;
         } else if (entry_name.find("BUNIT") == 0) {
             bunit = entry.value();
+            NormalizeHeaderUnit(bunit);
         } else if ((entry_name.find("RESTFREQ") == 0) || (entry_name.find("RESTFRQ") == 0)) {
             rest_freq = entry.numeric_value();
         }
@@ -1286,7 +1287,7 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
     }
 }
 
-void FileExtInfoLoader::ConvertUnitToCasacore(casacore::String& unit) {
+void FileExtInfoLoader::NormalizeHeaderUnit(casacore::String& unit) {
     // Check that string is in unit map with various cases
     if (casacore::UnitVal::check(unit)) {
         return;
