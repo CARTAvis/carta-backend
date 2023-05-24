@@ -870,7 +870,7 @@ double FileLoader::CalculateBeamArea() {
     return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());
 }
 
-void FileLoader::ResetBunit() {
+void FileLoader::NormalizeBunit() {
     auto image = GetImage();
     if (image) {
         std::string bunit = image->units().getName();

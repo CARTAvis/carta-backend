@@ -140,7 +140,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
         }
     }
 
-    ResetBunit();
+    NormalizeBunit();
 }
 
 int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {

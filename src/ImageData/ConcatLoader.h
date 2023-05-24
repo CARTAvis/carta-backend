@@ -40,7 +40,7 @@ void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
         _data_type = _image->dataType();
     }
 
-    ResetBunit();
+    NormalizeBunit();
 }
 
 } // namespace carta

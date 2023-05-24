@@ -64,7 +64,7 @@ void ExprLoader::OpenFile(const std::string& /*hdu*/) {
         _data_type = _image->dataType();
     }
 
-    ResetBunit();
+    NormalizeBunit();
 }
 
 bool ExprLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {

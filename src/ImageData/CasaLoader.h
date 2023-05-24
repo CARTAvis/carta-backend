@@ -70,7 +70,7 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
         }
     }
 
-    ResetBunit();
+    NormalizeBunit();
 }
 
 casacore::TempImage<float>* CasaLoader::ConvertImageToFloat(casacore::LatticeBase* lattice) {

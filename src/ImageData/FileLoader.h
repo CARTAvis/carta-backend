@@ -183,7 +183,7 @@ protected:
     double CalculateBeamArea();
 
     // Ignore the upper or lower cases of BUNIT from header
-    void ResetBunit();
+    void NormalizeBunit();
 };
 
 } // namespace carta
