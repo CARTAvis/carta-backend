@@ -7,6 +7,7 @@
 #include "Casacore.h"
 
 #include <casacore/casa/OS/File.h>
+#include <casacore/casa/Quanta/UnitMap.h>
 
 #include "ImageData/CartaMiriadImage.h"
 #include "Logger/Logger.h"
@@ -169,4 +170,16 @@ std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam) {
 
 std::string FormatQuantity(const casacore::Quantity& quantity) {
     return fmt::format("{:.6f} {}", quantity.getValue(), quantity.getUnit());
+}
+
+void NormalizeUnit(casacore::String& unit) {
+    // Convert unit string to "proper" units according to casacore
+    casacore::UnitMap::addFITS();
+    casacore::String unit_name(unit);
+    unit_name.upcase();
+    if (casacore::UnitVal::check(unit_name)) {
+        unit = casacore::UnitMap::fromFITS(unit_name).getName();
+        return;
+    }
+    // keep original unit
 }

@@ -13,7 +13,6 @@
 #include <spdlog/fmt/ostr.h>
 
 #include <casacore/casa/Quanta/MVAngle.h>
-#include <casacore/casa/Quanta/UnitMap.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/FITSImage.h>
@@ -324,6 +323,8 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
                 specsys = value.after('-');
                 value = "VELO";
             }
+        } else if (name.contains("UNIT")) {
+            NormalizeUnit(value);
         } else if (name == "EXTNAME") {
             extname = value;
         } else if (name == "SIMPLE") {
@@ -1050,16 +1051,16 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
                 if (disp1_cunit.contains("/")) {
                     disp1_cunit = disp1_ctype.before("/");
                 }
-                NormalizeHeaderUnit(disp1_cunit);
+                NormalizeUnit(disp1_cunit);
             } else if (entry_name.find("CUNIT" + disp2_suffix) == 0) {
                 disp2_cunit = entry.value();
                 if (disp2_cunit.contains("/")) {
                     disp2_cunit = disp2_cunit.before("/");
                 }
-                NormalizeHeaderUnit(disp2_cunit);
+                NormalizeUnit(disp2_cunit);
             } else if (entry_name.find("CUNIT" + spectral_suffix) == 0) {
                 spectral_cunit = entry.value();
-                NormalizeHeaderUnit(spectral_cunit);
+                NormalizeUnit(spectral_cunit);
             }
         } else if (!found_frame &&
                    ((entry_name.find("EQUINOX") == 0) || (entry_name.find("TELEQUIN") == 0) || (entry_name.find("EPOCH") == 0))) {
@@ -1084,7 +1085,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             found_velref = true;
         } else if (entry_name.find("BUNIT") == 0) {
             bunit = entry.value();
-            NormalizeHeaderUnit(bunit);
+            NormalizeUnit(bunit);
         } else if ((entry_name.find("RESTFREQ") == 0) || (entry_name.find("RESTFRQ") == 0)) {
             rest_freq = entry.numeric_value();
         }
@@ -1301,34 +1302,6 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
         entry->set_entry_type(CARTA::EntryType::STRING);
         entry->set_value(beam_info);
     }
-}
-
-void FileExtInfoLoader::NormalizeHeaderUnit(casacore::String& unit) {
-    // Convert unit string to FITS unit
-    casacore::String unit_name(unit);
-    if (casacore::UnitVal::check(unit_name)) {
-        unit = unit_name;
-        return;
-    }
-
-    unit_name.downcase();
-    if (casacore::UnitVal::check(unit_name)) {
-        unit = unit_name;
-        return;
-    }
-
-    unit_name.capitalize();
-    if (casacore::UnitVal::check(unit_name)) {
-        unit = unit_name;
-        return;
-    }
-
-    unit_name.upcase();
-    if (casacore::UnitVal::check(unit_name)) {
-        unit = unit_name;
-        return;
-    }
-    // keep original unit
 }
 
 std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double val, const std::string& unit) {
