@@ -215,8 +215,10 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a621bf2181f21d4ff0872f7a000193248"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a9f2aed413ebc7d4a1768008dc95ce8"><td class="memItemLeft" align="right" valign="top">casacore::IPosition&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a8a9f2aed413ebc7d4a1768008dc95ce8">_shape</a></td></tr>
 <tr class="separator:a8a9f2aed413ebc7d4a1768008dc95ce8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6375bb99f30d6481977c281c5c400369"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a6375bb99f30d6481977c281c5c400369">_datatype</a></td></tr>
-<tr class="separator:a6375bb99f30d6481977c281c5c400369"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2847c2eb4404d8d410d37d9715902ff9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a2847c2eb4404d8d410d37d9715902ff9">_bitpix</a></td></tr>
+<tr class="separator:a2847c2eb4404d8d410d37d9715902ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a490b243875ba1077599ee1663584275e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a490b243875ba1077599ee1663584275e">_equiv_bitpix</a></td></tr>
+<tr class="separator:a490b243875ba1077599ee1663584275e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae2badc33ca62e58d640e582d4cacef8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#aae2badc33ca62e58d640e582d4cacef8">_has_blanks</a></td></tr>
 <tr class="separator:aae2badc33ca62e58d640e582d4cacef8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:addf95ab5484659bbe1f76ec2fe9c2e8e"><td class="memItemLeft" align="right" valign="top">casacore::Vector&lt; casacore::String &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#addf95ab5484659bbe1f76ec2fe9c2e8e">_all_header_strings</a></td></tr>
@@ -761,9 +763,15 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a4633816d0ab77523c236fb1afae746e8_cgraph.svg" width="364" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a4633816d0ab77523c236fb1afae746e8_icgraph.svg" width="571" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a4633816d0ab77523c236fb1afae746e8_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1304,7 +1312,7 @@ template&lt;typename T &gt; </div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a2ee88de8487400d7d2e3df27568d9146_cgraph.svg" width="384" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a2ee88de8487400d7d2e3df27568d9146_cgraph.svg" width="364" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -1893,8 +1901,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a6375bb99f30d6481977c281c5c400369"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6375bb99f30d6481977c281c5c400369">&#9670;&nbsp;</a></span>_datatype</h2>
+<a id="a2847c2eb4404d8d410d37d9715902ff9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2847c2eb4404d8d410d37d9715902ff9">&#9670;&nbsp;</a></span>_bitpix</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1903,7 +1911,29 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int carta::CartaFitsImage::_datatype</td>
+          <td class="memname">int carta::CartaFitsImage::_bitpix</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a490b243875ba1077599ee1663584275e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a490b243875ba1077599ee1663584275e">&#9670;&nbsp;</a></span>_equiv_bitpix</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int carta::CartaFitsImage::_equiv_bitpix</td>
         </tr>
       </table>
   </td>

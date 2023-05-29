@@ -14,7 +14,7 @@ var searchData=
   ['fileinfo_734',['FileInfo',['../classMessage.html#a56ce2597eac9076f1a3e5dbe8ecc2e28',1,'Message']]],
   ['fileinfo_2ecc_735',['FileInfo.cc',['../FileInfo_8cc.html',1,'']]],
   ['fileinfo_2eh_736',['FileInfo.h',['../FileInfo_8h.html',1,'']]],
-  ['fileinfoloader_737',['FileInfoLoader',['../classcarta_1_1FileInfoLoader.html',1,'carta::FileInfoLoader'],['../classcarta_1_1FileInfoLoader.html#aeb7c1eebf1d50bcec630cb5cfd1d8f66',1,'carta::FileInfoLoader::FileInfoLoader(const std::string &amp;filename)'],['../classcarta_1_1FileInfoLoader.html#a7d8a48d5cc8c6dc29077698bc69c943e',1,'carta::FileInfoLoader::FileInfoLoader(const std::string &amp;filename, const CARTA::FileType &amp;type)']]],
+  ['fileinfoloader_737',['FileInfoLoader',['../classcarta_1_1FileInfoLoader.html',1,'carta::FileInfoLoader'],['../classcarta_1_1FileInfoLoader.html#a7d8a48d5cc8c6dc29077698bc69c943e',1,'carta::FileInfoLoader::FileInfoLoader(const std::string &amp;filename, const CARTA::FileType &amp;type)'],['../classcarta_1_1FileInfoLoader.html#aeb7c1eebf1d50bcec630cb5cfd1d8f66',1,'carta::FileInfoLoader::FileInfoLoader(const std::string &amp;filename)']]],
   ['fileinfoloader_2ecc_738',['FileInfoLoader.cc',['../FileInfoLoader_8cc.html',1,'']]],
   ['fileinfoloader_2eh_739',['FileInfoLoader.h',['../FileInfoLoader_8h.html',1,'']]],
   ['fileinforequest_740',['FileInfoRequest',['../classMessage.html#a0de8ab3a793899c472db3f50f2babaab',1,'Message']]],
@@ -32,7 +32,7 @@ var searchData=
   ['fillcolumndata_752',['FillColumnData',['../classcarta_1_1Column.html#a6e3693ce04580591856dae1fce2db4cd',1,'carta::Column::FillColumnData()'],['../classcarta_1_1DataColumn.html#afa212cb97743dcb0a915559796be1feb',1,'carta::DataColumn::FillColumnData(CARTA::ColumnData &amp;column_data, bool fill_subset, const IndexList &amp;indices, int64_t start, int64_t end) const override'],['../classcarta_1_1DataColumn.html#a2973f30d1e5861827dd1c1c5e51e071d',1,'carta::DataColumn::FillColumnData(CARTA::ColumnData &amp;column_data, bool fill_subset, const IndexList &amp;indices, int64_t start, int64_t end) const']]],
   ['fillcompressedpreviewdata_753',['FillCompressedPreviewData',['../classcarta_1_1PvPreviewCut.html#aad4e1676c16757527a8fc399210a0b7a',1,'carta::PvPreviewCut']]],
   ['fillextendedfileinfo_754',['FillExtendedFileInfo',['../classcarta_1_1Session.html#ac671b008e48c5074c520343edb43beec',1,'carta::Session::FillExtendedFileInfo(CARTA::FileInfoExtended &amp;extended_info, std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const std::string &amp;filename, std::string &amp;message, std::shared_ptr&lt; FileLoader &gt; &amp;image_loader)'],['../classcarta_1_1Session.html#a37e738626d1cd28e14b5a9b90bb6415d',1,'carta::Session::FillExtendedFileInfo(CARTA::FileInfoExtended &amp;extended_info, CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, std::string &amp;hdu_name, std::string &amp;message, std::string &amp;fullname)'],['../classcarta_1_1Session.html#ae5d6e7145e441059fb26e3f23834880d',1,'carta::Session::FillExtendedFileInfo(std::map&lt; std::string, CARTA::FileInfoExtended &gt; &amp;hdu_info_map, CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, const std::string &amp;hdu, std::string &amp;message)']]],
-  ['fillfileextinfo_755',['FillFileExtInfo',['../classcarta_1_1FileInfoLoader.html#add21b641cafcc3737ca2f04a3a758b3e',1,'carta::FileInfoLoader::FillFileExtInfo()'],['../classcarta_1_1FileExtInfoLoader.html#a30fc220f3dc42e8828e92d1fdb314c6c',1,'carta::FileExtInfoLoader::FillFileExtInfo()']]],
+  ['fillfileextinfo_755',['FillFileExtInfo',['../classcarta_1_1FileExtInfoLoader.html#a30fc220f3dc42e8828e92d1fdb314c6c',1,'carta::FileExtInfoLoader']]],
   ['fillfileinfo_756',['FillFileInfo',['../classcarta_1_1Session.html#a6c490d8acff0517270d57a70a6956dc6',1,'carta::Session::FillFileInfo()'],['../classcarta_1_1FileInfoLoader.html#a6752fdbf616d2e16e10e24903afbc1a4',1,'carta::FileInfoLoader::FillFileInfo()']]],
   ['fillfileinfofromimage_757',['FillFileInfoFromImage',['../classcarta_1_1FileExtInfoLoader.html#a2b908c0f74ba5614a0602bfec4bf3aae',1,'carta::FileExtInfoLoader']]],
   ['fillfitsfileinfomap_758',['FillFitsFileInfoMap',['../classcarta_1_1FileExtInfoLoader.html#a06c36c25d3286c3019c1bbdcabdd9f63',1,'carta::FileExtInfoLoader']]],
@@ -98,7 +98,7 @@ var searchData=
   ['fromtext_818',['FromText',['../classcarta_1_1DataColumn.html#a34bafc86e0e1fe9c838dca2c82d18afe',1,'carta::DataColumn']]],
   ['fromvalues_819',['FromValues',['../classcarta_1_1Column.html#a2df953c1e95a4a397a8bd8254e8c34c6',1,'carta::Column']]],
   ['frontend_5ffolder_820',['frontend_folder',['../structcarta_1_1ProgramSettings.html#a3cf6f38321c0e0439b745db850cd94e8',1,'carta::ProgramSettings']]],
-  ['full_821',['Full',['../structcarta_1_1TilePool.html#a122765fee330ff04ca7462238518d525',1,'carta::TilePool']]],
-  ['full_822',['full',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6',1,'carta::FileInfo::ImageStats']]],
+  ['full_821',['full',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa6719468e5fc239a7651dc9191f07de6',1,'carta::FileInfo::ImageStats']]],
+  ['full_822',['Full',['../structcarta_1_1TilePool.html#a122765fee330ff04ca7462238518d525',1,'carta::TilePool']]],
   ['funcf_823',['FuncF',['../classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752',1,'carta::ImageFitter']]]
 ];

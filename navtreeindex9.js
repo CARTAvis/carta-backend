@@ -1,5 +1,10 @@
 var NAVTREEINDEX9 =
 {
+"namespacespdlog.html#a670c6a63d98e715c33a6063e6e0c7b0c":[2,0,2,1],
+"namespacespdlog_1_1sinks.html":[2,0,2,0],
+"pages.html":[],
+"structAxisRange.html":[3,0,4],
+"structAxisRange.html#a145c438deed0a187f00335a4c3b8d024":[3,0,4,1],
 "structAxisRange.html#a17ff4d17c50573253c06cfba37fa479c":[3,0,4,0],
 "structAxisRange.html#a495415babad4cbd13f0c165f88fad6a1":[3,0,4,4],
 "structAxisRange.html#a649a21f3357a105599ab3ced83a0053d":[3,0,4,5],
@@ -244,10 +249,5 @@ var NAVTREEINDEX9 =
 "structcarta_1_1ProgramSettings.html#af05baa44d6fd4297093fb69b3a6a6597":[3,0,0,61,24],
 "structcarta_1_1ProgramSettings.html#af26fc251ef3f54bfc0474666a820798f":[3,0,0,61,38],
 "structcarta_1_1ProgramSettings.html#af42dbe060133b411b2b9392a19466d1c":[3,0,0,61,9],
-"structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7":[3,0,0,61,4],
-"structcarta_1_1ProgramSettings.html#af7d2adcd634e3d42023943597eb0a772":[3,0,0,61,47],
-"structcarta_1_1ProgramSettings.html#afcb770edcb01237690bc88a59d995b47":[3,0,0,61,29],
-"structcarta_1_1ProgramSettings.html#afec747a7616313a7f49b1142658a4278":[3,0,0,61,0],
-"structcarta_1_1ProgramSettings.html#aff22fb67d053a4b60c2a71a82a856289":[3,0,0,61,50],
-"structcarta_1_1RegionHistogramConfig.html":[3,0,0,6]
+"structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7":[3,0,0,61,4]
 };

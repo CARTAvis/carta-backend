@@ -10,9 +10,7 @@ var files_dup =
     ] ],
     [ "BasicStatsCalculator.tcc", "BasicStatsCalculator_8tcc.html", null ],
     [ "CartaFitsImage.cc", "CartaFitsImage_8cc.html", null ],
-    [ "CartaFitsImage.h", "CartaFitsImage_8h.html", [
-      [ "CartaFitsImage", "classcarta_1_1CartaFitsImage.html", "classcarta_1_1CartaFitsImage" ]
-    ] ],
+    [ "CartaFitsImage.h", "CartaFitsImage_8h.html", "CartaFitsImage_8h" ],
     [ "CartaFitsImage.tcc", "CartaFitsImage_8tcc.html", null ],
     [ "CartaHdf5Image.cc", "CartaHdf5Image_8cc.html", null ],
     [ "CartaHdf5Image.h", "CartaHdf5Image_8h.html", [

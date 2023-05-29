@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['help_3623',['help',['../structcarta_1_1ProgramSettings.html#a7882aa5c14ce8c9c846e4f5658194add',1,'carta::ProgramSettings']]],
-  ['histogram_5fbins_3624',['histogram_bins',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa2bb2808bfa83878580f12a4a0c8a702',1,'carta::FileInfo::ImageStats']]],
-  ['histograms_3625',['histograms',['../structcarta_1_1HistogramCache.html#ab497f281e7eed17d476986247ba8b80f',1,'carta::HistogramCache']]],
-  ['host_3626',['host',['../structcarta_1_1ProgramSettings.html#af05baa44d6fd4297093fb69b3a6a6597',1,'carta::ProgramSettings']]]
+  ['help_3627',['help',['../structcarta_1_1ProgramSettings.html#a7882aa5c14ce8c9c846e4f5658194add',1,'carta::ProgramSettings']]],
+  ['histogram_5fbins_3628',['histogram_bins',['../structcarta_1_1FileInfo_1_1ImageStats.html#aa2bb2808bfa83878580f12a4a0c8a702',1,'carta::FileInfo::ImageStats']]],
+  ['histograms_3629',['histograms',['../structcarta_1_1HistogramCache.html#ab497f281e7eed17d476986247ba8b80f',1,'carta::HistogramCache']]],
+  ['host_3630',['host',['../structcarta_1_1ProgramSettings.html#af05baa44d6fd4297093fb69b3a6a6597',1,'carta::ProgramSettings']]]
 ];

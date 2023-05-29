@@ -249,18 +249,17 @@
 <!-- Node14 -->
 <g id="node14" class="node">
 <title>Node14</title>
-<g id="a_node14"><a xlink:href="classcarta_1_1CartaFitsImage.html#a4633816d0ab77523c236fb1afae746e8" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="329,-49.5 329,-79.5 451,-79.5 451,-49.5 329,-49.5"/>
-<text text-anchor="start" x="337" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::CartaFitsImage</text>
-<text text-anchor="middle" x="390" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">::dataType</text>
+<g id="a_node14"><a xlink:href="namespacecarta.html#aca3cf2a9ea68bea36091f387d35c3911" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="336.5,-55 336.5,-74 443.5,-74 443.5,-55 336.5,-55"/>
+<text text-anchor="middle" x="390" y="-62" font-family="Helvetica,sans-Serif" font-size="10.00">carta::bitpix_types</text>
 </a>
 </g>
 </g>
 <!-- Node13&#45;&gt;Node14 -->
 <g id="edge17" class="edge">
 <title>Node13&#45;&gt;Node14</title>
-<path fill="none" stroke="midnightblue" d="M272.75,-64.5C287.43,-64.5 303.27,-64.5 318.39,-64.5"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="318.72,-68 328.72,-64.5 318.72,-61 318.72,-68"/>
+<path fill="none" stroke="midnightblue" d="M272.75,-64.5C290.03,-64.5 308.91,-64.5 326.33,-64.5"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="326.4,-68 336.4,-64.5 326.4,-61 326.4,-68"/>
 </g>
 </g>
 </svg>

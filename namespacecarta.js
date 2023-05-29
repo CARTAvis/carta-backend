@@ -125,6 +125,7 @@ var namespacecarta =
       [ "None", "namespacecarta.html#aa535ebf1a5ce13ded3b0cb2ce60a2daca96caee694e40218f43d17fef2f9b7efc", null ]
     ] ],
     [ "applyOptionalArgument", "namespacecarta.html#aa3581dda6f86c582d960a381773a4192", null ],
+    [ "bitpix_types", "namespacecarta.html#aca3cf2a9ea68bea36091f387d35c3911", null ],
     [ "BlockSmooth", "namespacecarta.html#a5e8e9ea12c8402698a665a81e97cf13f", null ],
     [ "BlockSmoothScalar", "namespacecarta.html#aead2ccf135cb75c1b5d5f5d8b5a64849", null ],
     [ "BlockSmoothSSE", "namespacecarta.html#a3d79fcec84ed84bfc770c589c2f12ea1", null ],
