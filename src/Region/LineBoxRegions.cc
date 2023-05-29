@@ -386,6 +386,7 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
             for (int iregion = 0; iregion < num_regions; ++iregion) {
                 if (trim_line) {
                     spdlog::debug("Polyline segment {} trimmed", iline);
+                    trim_line = false;
                     continue;
                 }
 
@@ -401,7 +402,9 @@ bool LineBoxRegions::GetFixedAngularRegions(const RegionState& line_region_state
                     polygon_region_state = GetPolygonRegionState(line_coord_sys, line_region_state.reference_file_id, region_start,
                         region_end, line_width, angular_width, rotation, tolerance);
                 }
-            } // Done with regions along line segment
+
+                region_states.push_back(polygon_region_state);
+            }
 
             // Check whether to trim next line's starting point
             if (line_points.back().empty()) {

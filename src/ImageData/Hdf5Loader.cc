@@ -424,7 +424,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, const AxisRange& spectral_
     _region_stats[region_stats_id].latest_x = max_x;
 
     if (progress >= 1.0) {
-        if (region_id == TEMP_REGION_ID) {
+        if (region_id <= TEMP_REGION_ID) {
             // clear for next temp region
             _region_stats.erase(region_stats_id);
         } else {
