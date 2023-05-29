@@ -33,7 +33,8 @@ CartaFitsImage::CartaFitsImage(const std::string& filename, unsigned int hdu)
       _hdu(hdu),
       _fptr(nullptr),
       _is_compressed(false),
-      _datatype(casacore::TpOther),
+      _bitpix(-32),       // assume float
+      _equiv_bitpix(-32), // assume float
       _has_blanks(false),
       _pixel_mask(nullptr),
       _is_copy(false) {
@@ -52,7 +53,8 @@ CartaFitsImage::CartaFitsImage(const CartaFitsImage& other)
       _fptr(other._fptr),
       _shape(other._shape),
       _is_compressed(other._is_compressed),
-      _datatype(other._datatype),
+      _bitpix(other._bitpix),
+      _equiv_bitpix(other._equiv_bitpix),
       _has_blanks(other._has_blanks),
       _pixel_mask(nullptr),
       _tiled_shape(other._tiled_shape),
@@ -93,26 +95,19 @@ casacore::Bool CartaFitsImage::ok() const {
 }
 
 casacore::DataType CartaFitsImage::dataType() const {
-    return casacore::DataType::TpFloat;
+    if (bitpix_types.find(_equiv_bitpix) != bitpix_types.end()) {
+        return bitpix_types.at(_equiv_bitpix);
+    }
+
+    return casacore::DataType::TpFloat; // casacore FITSImage default
 }
 
 casacore::DataType CartaFitsImage::internalDataType() const {
-    switch (_datatype) {
-        case 8:
-            return casacore::DataType::TpUChar;
-        case 16:
-            return casacore::DataType::TpShort;
-        case 32:
-            return casacore::DataType::TpInt;
-        case 64:
-            return casacore::DataType::TpInt64;
-        case -32:
-            return casacore::DataType::TpFloat;
-        case -64:
-            return casacore::DataType::TpDouble;
+    if (bitpix_types.find(_bitpix) != bitpix_types.end()) {
+        return bitpix_types.at(_bitpix);
     }
 
-    return dataType();
+    return casacore::DataType::TpFloat; // casacore FITSImage default
 }
 
 casacore::Bool CartaFitsImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
@@ -122,29 +117,29 @@ casacore::Bool CartaFitsImage::doGetSlice(casacore::Array<float>& buffer, const 
 
     // Read data subset from image
     bool ok(false);
-    switch (_datatype) {
+    switch (_equiv_bitpix) {
         case 8: {
-            ok = GetDataSubset<unsigned char>(fptr, _datatype, section, buffer);
+            ok = GetDataSubset<unsigned char>(fptr, _equiv_bitpix, section, buffer);
             break;
         }
         case 16: {
-            ok = GetDataSubset<short>(fptr, _datatype, section, buffer);
+            ok = GetDataSubset<short>(fptr, _equiv_bitpix, section, buffer);
             break;
         }
         case 32: {
-            ok = GetDataSubset<int>(fptr, _datatype, section, buffer);
+            ok = GetDataSubset<int>(fptr, _equiv_bitpix, section, buffer);
             break;
         }
         case 64: {
-            ok = GetDataSubset<LONGLONG>(fptr, _datatype, section, buffer);
+            ok = GetDataSubset<LONGLONG>(fptr, _equiv_bitpix, section, buffer);
             break;
         }
         case -32: {
-            ok = GetDataSubset<float>(fptr, _datatype, section, buffer);
+            ok = GetDataSubset<float>(fptr, _equiv_bitpix, section, buffer);
             break;
         }
         case -64: {
-            ok = GetDataSubset<double>(fptr, _datatype, section, buffer);
+            ok = GetDataSubset<double>(fptr, _equiv_bitpix, section, buffer);
             break;
         }
     }
@@ -218,7 +213,7 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
     }
 
     if (!_pixel_mask) {
-        if (_datatype > 0) {
+        if (_bitpix > 0) {
             SetPixelMask();
         } else {
             return doGetNanMaskSlice(buffer, section);
@@ -379,20 +374,30 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
         CloseFileIfError(1, "Image must be at least 2D.");
     }
 
-    // Set shape and data type
+    // Set data type and shape
+    _bitpix = bitpix;
     _shape.resize(naxis);
     for (int i = 0; i < naxis; ++i) {
         _shape(i) = naxes[i];
     }
-    _datatype = bitpix;
+
+    // Equivalent data type for scaled data
+    int equiv_bitpix;
+    status = 0;
+    fits_get_img_equivtype(fptr, &equiv_bitpix, &status);
+    if (status) {
+        _equiv_bitpix = _bitpix;
+    } else {
+        _equiv_bitpix = equiv_bitpix;
+    }
 
     // Set blanks used for integer datatypes (int value for NAN), for pixel mask
     if (bitpix > 0) {
         std::string key("BLANK");
-        int blank_value;
+        int blank;
         char* comment(nullptr); // ignore
         status = 0;
-        fits_read_key(fptr, TLONG, key.c_str(), &blank_value, comment, &status);
+        fits_read_key(fptr, TINT, key.c_str(), &blank, comment, &status);
         _has_blanks = !status;
     } else {
         // For float (-32) and double (-64) mask is represented by NaN
@@ -856,8 +861,17 @@ bool CartaFitsImage::AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys
 
         // CTYPE, native type for SpectralCoordinate
         casacore::String ctype1 = wcs_spectral.ctype[0];
-
-        if (ctype1.startsWith("WAVE") || ctype1.startsWith("AWAV") || ctype1.startsWith("VOPT") || ctype1.startsWith("FELO")) {
+        if (ctype1.startsWith("FREQ")) {
+            try {
+                casacore::MFrequency::Types frequency_type = GetFrequencyType(wcs_spectral);
+                casacore::SpectralCoordinate spectral_coord(frequency_type, wcs);
+                spectral_coord.setNativeType(casacore::SpectralCoordinate::FREQ);
+                coord_sys.addCoordinate(spectral_coord);
+            } catch (const casacore::AipsError& err) {
+                spdlog::debug("Failed to set FREQ spectral coordinate from wcs.");
+                ok = false;
+            }
+        } else if (ctype1.startsWith("WAVE") || ctype1.startsWith("AWAV") || ctype1.startsWith("VOPT") || ctype1.startsWith("FELO")) {
             // Set up wcsprm struct with wcsset
             casacore::Coordinate::set_wcs(wcs_spectral);
 
@@ -889,7 +903,7 @@ bool CartaFitsImage::AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys
                 // Calculate wavelengths
                 casacore::Vector<casacore::Double> wavelengths(num_chan);
                 for (size_t i = 0; i < num_chan; ++i) {
-                    wavelengths(i) = crval + (cdelt * pc * (double(i + 1) - crpix)); // +1 because FITS works 1-based
+                    wavelengths(i) = crval + (cdelt * pc * (double(i + 1) - crpix)); // +1 because FITS is 1-based
                 }
 
                 bool in_air(false);
@@ -961,8 +975,7 @@ bool CartaFitsImage::AddSpectralCoordinate(casacore::CoordinateSystem& coord_sys
                 }
             }
         } else {
-            casacore::SpectralCoordinate::SpecType native_type(casacore::SpectralCoordinate::FREQ);
-
+            casacore::SpectralCoordinate::SpecType native_type;
             if (ctype1.startsWith("VELO")) {
                 native_type = casacore::SpectralCoordinate::VRAD;
             } else if (ctype1.startsWith("VRAD")) {
@@ -1402,21 +1415,21 @@ void CartaFitsImage::SetPixelMask() {
     // Read blanked mask from image
     bool ok(false);
     casacore::ArrayLattice<bool> mask_lattice;
-    switch (_datatype) {
+    switch (_bitpix) {
         case 8: {
-            ok = GetPixelMask<unsigned char>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetPixelMask<unsigned char>(fptr, _bitpix, _shape, mask_lattice);
             break;
         }
         case 16: {
-            ok = GetPixelMask<short>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetPixelMask<short>(fptr, _bitpix, _shape, mask_lattice);
             break;
         }
         case 32: {
-            ok = GetPixelMask<int>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetPixelMask<int>(fptr, _bitpix, _shape, mask_lattice);
             break;
         }
         case 64: {
-            ok = GetPixelMask<LONGLONG>(fptr, _datatype, _shape, mask_lattice);
+            ok = GetPixelMask<LONGLONG>(fptr, _bitpix, _shape, mask_lattice);
             break;
         }
         case -32: {
