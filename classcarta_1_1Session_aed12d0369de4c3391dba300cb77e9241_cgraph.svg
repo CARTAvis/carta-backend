@@ -173,7 +173,7 @@ var sectionId = 'dynsection-59';
 <!-- Node77 -->
 <g id="node33" class="node">
 <title>Node77</title>
-<g id="a_node33"><a xlink:href="classMessage.html#a3b5ff040fcbd3b2562c5bc107b5b0a7d" target="_top" xlink:title=" ">
+<g id="a_node33"><a xlink:href="classMessage.html#a2c96f4db0dc02d38cdca461a51b0c3eb" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="379.5,-378 379.5,-397 488.5,-397 488.5,-378 379.5,-378"/>
 <text text-anchor="middle" x="434" y="-385" font-family="Helvetica,sans-Serif" font-size="10.00">Message::OpenFile</text>
 </a>
