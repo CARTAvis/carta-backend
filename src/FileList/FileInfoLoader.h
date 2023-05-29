@@ -21,7 +21,6 @@ public:
     FileInfoLoader(const std::string& filename, const CARTA::FileType& type);
 
     bool FillFileInfo(CARTA::FileInfo& file_info);
-    bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, std::string& hdu, std::string& message);
 
 private:
     CARTA::FileType GetCartaFileType(const std::string& filename);
