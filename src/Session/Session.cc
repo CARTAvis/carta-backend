@@ -466,14 +466,14 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     const auto& filename(message.file());
     std::string hdu(message.hdu());
     auto file_id(message.file_id());
-    bool is_lel_expr(message.lel_expr());
+    bool lel_expr(message.lel_expr());
 
     // response message:
     CARTA::OpenFileAck ack;
     bool success(false);
     string err_message;
 
-    if (is_lel_expr) {
+    if (lel_expr) {
         // filename field is LEL expression
         auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
         auto loader = _loaders.Get(filename, dir_path);
@@ -507,7 +507,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
                 std::string expression = "AMPLITUDE(" + filename + ")";
                 bool is_lel_expr(true);
-                auto open_file_message = Message::OpenFile(directory, expression, hdu, file_id, message.render_mode(), is_lel_expr);
+                auto open_file_message = Message::OpenFile(directory, expression, is_lel_expr, hdu, file_id, message.render_mode());
                 return OnOpenFile(open_file_message, request_id, silent);
             }
 
@@ -1115,7 +1115,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 err_file_ids.append(std::to_string(image.file_id()) + " ");
             }
         } else {
-            auto open_file_msg = Message::OpenFile(image.directory(), image.file(), image.hdu(), image.file_id());
+            auto open_file_msg = Message::OpenFile(image.directory(), image.file(), image.lel_expr(), image.hdu(), image.file_id());
 
             // Open a file
             if (!OnOpenFile(open_file_msg, request_id, true)) {

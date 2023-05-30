@@ -50,7 +50,9 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
             AddInitialComputedEntries(hdu_info.first, hdu_info.second, filename, render_axes, &cfits);
 
             // Use headers in FileInfoExtended to create computed entries
-            AddComputedEntriesFromHeaders(hdu_info.second, render_axes, &cfits);
+            int spectral_axis = cfits.GetSpectralAxis();
+            int stokes_axis = cfits.GetStokesAxis();
+            AddComputedEntriesFromHeaders(hdu_info.second, render_axes, spectral_axis, stokes_axis, &cfits);
 
             const casacore::ImageBeamSet beam_set = cfits.GetBeamSet();
             if (!beam_set.empty()) {
@@ -64,6 +66,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
         fits_hdu_list.GetHduList(hdu_list, message);
 
         if (hdu_list.empty()) {
+            message = "No image HDUs found.";
             return map_ok;
         }
 
@@ -81,7 +84,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
 
     map_ok = !hdu_info_map.empty();
     if (!map_ok) {
-        message = "Header error or no image HDUs found.";
+        message = "Error loading headers or image.";
     }
 
     return map_ok;
@@ -147,13 +150,16 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 }
 
                 // For computed entries:
-                bool use_image_for_entries(false);
                 auto data_type = _loader->GetDataType();
+                auto equivalent_type = data_type; // for FITS only, for rescaled data
                 casacore::String image_type(image->imageType());
+                bool use_image_for_entries(false);
 
                 if (image_type == "FITSImage") {
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
-                    casacore::String filename(image->name());
+                    casacore::FITSImage* fits_image = dynamic_cast<casacore::FITSImage*>(image.get());
+                    casacore::String filename(fits_image->name());
+                    equivalent_type = fits_image->dataType();
                     casacore::Vector<casacore::String> headers = FitsHeaderStrings(filename, FileInfo::GetFitsHdu(hdu));
 
                     if (headers.empty()) {
@@ -169,11 +175,18 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                             message = error_string;
                             return false;
                         }
+                        if (!hdu.empty()) {
+                            auto entry = extended_info.add_computed_entries();
+                            entry->set_name("HDU");
+                            entry->set_value(hdu);
+                            entry->set_entry_type(CARTA::EntryType::STRING);
+                        }
                     } else {
                         AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                     }
                 } else if (image_type == "CartaFitsImage") {
                     CartaFitsImage* fits_image = dynamic_cast<CartaFitsImage*>(image.get());
+                    equivalent_type = fits_image->dataType();
                     casacore::Vector<casacore::String> headers = fits_image->FitsHeaderStrings();
                     AddEntriesFromHeaderStrings(headers, hdu, extended_info);
                 } else if (image_type == "CartaHdf5Image") {
@@ -194,7 +207,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                     }
                 }
 
-                AddDataTypeEntry(extended_info, data_type);
+                AddDataTypeEntry(extended_info, data_type, equivalent_type);
 
                 std::vector<int> spatial_axes, render_axes;
                 int spectral_axis, stokes_axis, depth_axis;
@@ -204,7 +217,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         extended_info, image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
-                    AddComputedEntries(extended_info, image.get(), render_axes, use_image_for_entries);
+                    AddComputedEntries(extended_info, image.get(), render_axes, spectral_axis, stokes_axis, use_image_for_entries);
                     info_ok = true;
                 }
             } else { // image failed
@@ -231,7 +244,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 void FileExtInfoLoader::AddEntriesFromHeaderStrings(
     const casacore::Vector<casacore::String>& headers, const std::string& hdu, CARTA::FileInfoExtended& extended_info) {
     // Parse each header in vector and add header entry to FileInfoExtended
-    casacore::String extname, stokes_ctype_num; // used to set stokes values in loader
+    casacore::String extname;
+    casacore::String specsys;          // if separated from VELO ctype
+    casacore::String stokes_ctype_num; // used to set stokes values in loader
 
     // CartaHdf5Image shortens keywords to FITS length 8
     std::unordered_map<std::string, std::string> hdf5_keys = {
@@ -301,8 +316,15 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             name = hdf5_keys[name];
         }
 
-        if (name.startsWith("CTYPE") && ((value == "STOKES") || (value == "Stokes") || (value == "stokes"))) {
-            stokes_ctype_num = name.back();
+        if (name.startsWith("CTYPE")) {
+            if ((value == "STOKES") || (value == "Stokes") || (value == "stokes")) {
+                stokes_ctype_num = name.back();
+            } else if (value.startsWith("VELO-")) {
+                specsys = value.after('-');
+                value = "VELO";
+            }
+        } else if (name.contains("UNIT")) {
+            NormalizeUnit(value);
         } else if (name == "EXTNAME") {
             extname = value;
         } else if (name == "SIMPLE") {
@@ -321,10 +343,10 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         entry->set_name(name);
 
         if (!value.empty()) {
-            // Set numeric value
             if (string_value) {
                 *entry->mutable_value() = value;
             } else {
+                // Set numeric value
                 ConvertHeaderValueToNumeric(name, value, entry);
             }
 
@@ -342,6 +364,14 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             // Set comment
             entry->set_comment(comment);
         }
+    }
+
+    if (!specsys.empty()) {
+        // separated from VELO CTYPE
+        auto entry = extended_info.add_header_entries();
+        entry->set_name("SPECSYS");
+        *entry->mutable_value() = specsys;
+        entry->set_comment("separated from VELO CTYPE");
     }
 
     // Create FileInfoExtended computed_entries for hdu, extension name
@@ -579,8 +609,7 @@ void FileExtInfoLoader::FitsHeaderInfoToHeaderEntries(casacore::ImageFITSHeaderI
 
 void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA::FileInfoExtended& extended_info,
     const std::string& filename, const std::vector<int>& render_axes, CompressedFits* compressed_fits) {
-    // Add computed entries for filename, hdu, shape, and axes
-    // Set name and HDU
+    // Add computed entries for filename, hdu, data type, shape, and axes
     fs::path filepath(filename);
     std::string filename_nopath = filepath.filename().string();
     auto entry = extended_info.add_computed_entries();
@@ -595,13 +624,14 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    // Use header entries to determine computed entries
+    // Describe data type, shape, and axes
+    int bitpix(0);
+    double bscale(1.0), bzero(0.0);
     casacore::IPosition shape;
     std::vector<int> spatial_axes(2, -1);
     int spectral_axis(-1), stokes_axis(-1), depth_axis(-1);
     casacore::Vector<casacore::String> axes_names(4, "NA");
     std::vector<std::string> spectral_ctypes = {"FREQ", "WAV", "ENER", "VOPT", "ZOPT", "VELO", "VRAD", "BETA", "FELO"};
-    casacore::DataType data_type(casacore::DataType::TpFloat);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto header_entry = extended_info.header_entries(i);
@@ -655,33 +685,43 @@ void FileExtInfoLoader::AddInitialComputedEntries(const std::string& hdu, CARTA:
                 depth_axis = axis_num;
             }
         } else if (entry_name.find("BITPIX") == 0) {
-            auto value = header_entry.value();
-            std::unordered_map<std::string, casacore::DataType> bitpix_types(
-                {{"8", casacore::DataType::TpChar}, {"16", casacore::DataType::TpShort}, {"32", casacore::DataType::TpInt},
-                    {"64", casacore::DataType::TpInt64}, {"-32", casacore::DataType::TpFloat}, {"-64", casacore::DataType::TpDouble}});
-            if (bitpix_types.find(value) != bitpix_types.end()) {
-                data_type = bitpix_types[value];
-            }
+            bitpix = header_entry.numeric_value();
+        } else if (entry_name.find("BSCALE") == 0) {
+            bscale = header_entry.numeric_value();
+        } else if (entry_name.find("BZERO") == 0) {
+            bzero = header_entry.numeric_value();
         }
     }
 
-    AddDataTypeEntry(extended_info, data_type);
+    // Add data type from BITPIX header
+    casacore::DataType data_type(casacore::DataType::TpOther);
+    if (bitpix_types.find(bitpix) != bitpix_types.end()) {
+        data_type = bitpix_types[bitpix];
+    }
+    // Check if data type is actually float scaled from int
+    casacore::DataType equivalent_type(data_type);
+    if ((bitpix > 0) && (bscale != 1.0) || (bzero != 0.0)) {
+        equivalent_type = casacore::DataType::TpFloat;
+    }
+    AddDataTypeEntry(extended_info, data_type, equivalent_type);
+
     AddShapeEntries(extended_info, shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
     if (compressed_fits) {
         compressed_fits->SetShape(shape);
-        if (depth_axis > -1) {
-            compressed_fits->SetSpecSuffix(depth_axis);
-        }
-        if (stokes_axis > -1) {
-            compressed_fits->SetStokesSuffix(stokes_axis);
-        }
+        compressed_fits->SetSpectralAxis(depth_axis);
+        compressed_fits->SetStokesAxis(stokes_axis);
     }
 }
 
-void FileExtInfoLoader::AddDataTypeEntry(CARTA::FileInfoExtended& extended_info, casacore::DataType data_type) {
+void FileExtInfoLoader::AddDataTypeEntry(
+    CARTA::FileInfoExtended& extended_info, casacore::DataType data_type, casacore::DataType equivalent_type) {
+    // Report actual data type from header, and data type used by cfitsio for FITS rescaled data
     std::stringstream ss;
     ss << data_type;
+    if (equivalent_type > data_type) {
+        ss << " (rescaled to " << equivalent_type << ")";
+    }
     auto entry = extended_info.add_computed_entries();
     entry->set_name("Data type");
     entry->set_value(ss.str());
@@ -781,7 +821,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 }
 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-    const std::vector<int>& display_axes, bool use_image_for_entries) {
+    const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries) {
     // Add computed entries to extended file info
     if (use_image_for_entries) {
         // Use image coordinate system
@@ -908,7 +948,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         }
     } else {
         // Use header_entries in extended info
-        AddComputedEntriesFromHeaders(extended_info, display_axes);
+        AddComputedEntriesFromHeaders(extended_info, display_axes, spectral_axis, stokes_axis);
     }
 
     casacore::ImageInfo image_info = image->imageInfo();
@@ -920,191 +960,144 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     AddCoordRanges(extended_info, image->coordinates(), image->shape());
 }
 
-void FileExtInfoLoader::AddComputedEntriesFromHeaders(
-    CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, CompressedFits* compressed_fits) {
+void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes,
+    int spectral_axis, int stokes_axis, CompressedFits* compressed_fits) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
     // For images with missing headers or headers which casacore/wcslib cannot process.
     // Axes are 1-based for header names (ctype, cunit, etc.), 0-based for display axes
-    casacore::String suffix1(std::to_string(display_axes[0] + 1));
-    casacore::String suffix2(std::to_string(display_axes[1] + 1));
+    casacore::String disp1_suffix(std::to_string(display_axes[0] + 1));
+    casacore::String disp2_suffix(std::to_string(display_axes[1] + 1));
+    casacore::String spectral_suffix(std::to_string(spectral_axis + 1));
+    casacore::String stokes_suffix(std::to_string(stokes_axis + 1));
 
-    // Set spectral and stokes suffixes
-    casacore::String suffix3, suffix4;
-    if (compressed_fits) {
-        suffix3 = compressed_fits->GetSpecSuffix();
-        suffix4 = compressed_fits->GetStokesSuffix();
-    }
-
-    casacore::String ctype1, ctype2, cunit1("deg"), cunit2("deg"), frame, radesys, specsys, bunit;
-    casacore::String ctype3, cunit3, cunit4;
     double min_double(std::numeric_limits<double>::min());
-    double crval1(min_double), crval2(min_double), crpix1(min_double), crpix2(min_double), cdelt1(min_double), cdelt2(min_double);
-    double crval3(min_double), crval4(min_double), crpix3(min_double), crpix4(min_double), cdelt3(min_double), cdelt4(min_double);
-    double rest_freq(0);
-    int velref(std::numeric_limits<int>::min());
+    int min_int(std::numeric_limits<int>::min());
 
-    // Quit looking for key when have needed values
-    bool need_ctype(true), need_crpix(true), need_crval(true), need_cdelt(true), need_frame(true), need_radesys(true);
-    bool calc_spec_range(false), calc_stokes_range(false);
+    casacore::String disp1_ctype, disp2_ctype, spectral_ctype;
+    casacore::String disp1_cunit("deg"), disp2_cunit("deg"), spectral_cunit("Hz");
+    casacore::String frame, radesys, specsys, bunit;
+    double disp1_crval(min_double), disp1_crpix(min_double), disp1_cdelt(min_double);
+    double disp2_crval(min_double), disp2_crpix(min_double), disp2_cdelt(min_double);
+    double spectral_crval(min_double), spectral_crpix(min_double), spectral_cdelt(min_double);
+    double stokes_crval(min_double), stokes_crpix(min_double), stokes_cdelt(min_double);
+    double rest_freq(0);
+    int velref(min_int);
+
+    // Whether to add computed entries for these items
+    bool found_frame(false), found_radesys(false), found_specsys(false), found_velref(false);
+    bool calc_spectral_range(false), calc_stokes_range(false);
 
     for (int i = 0; i < extended_info.header_entries_size(); ++i) {
         auto entry = extended_info.header_entries(i);
         auto entry_name = entry.name();
 
         // coordinate types
-        if (need_ctype && (entry_name.find("CTYPE") == 0)) {
-            if (entry_name.find("CTYPE" + suffix1) == 0) {
-                ctype1 = entry.value();
-                if (ctype1.contains("/")) {
-                    ctype1 = ctype1.before("/");
+        if (entry_name.find("CTYPE") == 0) {
+            if (entry_name.find("CTYPE" + disp1_suffix) == 0) {
+                disp1_ctype = entry.value();
+                if (disp1_ctype.contains("/")) {
+                    disp1_ctype = disp1_ctype.before("/");
                 }
-                ctype1.trim();
-            } else if (entry_name.find("CTYPE" + suffix2) == 0) {
-                ctype2 = entry.value();
-                if (ctype2.contains("/")) {
-                    ctype2 = ctype2.before("/");
+                disp1_ctype.trim();
+            } else if (entry_name.find("CTYPE" + disp2_suffix) == 0) {
+                disp2_ctype = entry.value();
+                if (disp2_ctype.contains("/")) {
+                    disp2_ctype = disp2_ctype.before("/");
                 }
-                ctype2.trim();
+                disp2_ctype.trim();
+            } else if (entry_name.find("CTYPE" + spectral_suffix) == 0) {
+                spectral_ctype = entry.value();
+                calc_spectral_range = true; // have spectral axis
+            } else if (entry_name.find("CTYPE" + stokes_suffix) == 0) {
+                calc_stokes_range = true; // have stokes axis
             }
-            if (!ctype1.empty() && !ctype2.empty()) {
-                need_ctype = false;
+        } else if (entry_name.find("CRPIX") == 0) {
+            // reference pixels
+            if (entry_name.find("CRPIX" + disp1_suffix) == 0) {
+                disp1_crpix = entry.numeric_value();
+            } else if (entry_name.find("CRPIX" + disp2_suffix) == 0) {
+                disp2_crpix = entry.numeric_value();
+            } else if (entry_name.find("CRPIX" + spectral_suffix) == 0) {
+                spectral_crpix = entry.numeric_value();
+            } else if (entry_name.find("CRPIX" + stokes_suffix) == 0) {
+                stokes_crpix = entry.numeric_value();
             }
-        }
-
-        if (!suffix3.empty() && (entry_name.find("CTYPE" + suffix3) == 0)) {
-            ctype3 = entry.value();
-            calc_spec_range = true;
-        }
-        if (!suffix4.empty() && (entry_name.find("CTYPE" + suffix4) == 0)) {
-            calc_stokes_range = true;
-        }
-
-        // reference pixels
-        if (need_crpix && (entry_name.find("CRPIX") == 0)) {
-            if (entry_name.find("CRPIX" + suffix1) == 0) {
-                crpix1 = entry.numeric_value();
-            } else if (entry_name.find("CRPIX" + suffix2) == 0) {
-                crpix2 = entry.numeric_value();
+        } else if (entry_name.find("CRVAL") == 0) {
+            // reference values
+            if (entry_name.find("CRVAL" + disp1_suffix) == 0) {
+                disp1_crval = entry.numeric_value();
+            } else if (entry_name.find("CRVAL" + disp2_suffix) == 0) {
+                disp2_crval = entry.numeric_value();
+            } else if (entry_name.find("CRVAL" + spectral_suffix) == 0) {
+                spectral_crval = entry.numeric_value();
+            } else if (entry_name.find("CRVAL" + stokes_suffix) == 0) {
+                stokes_crval = entry.numeric_value();
             }
-            if ((crpix1 != min_double) && (crpix2 != min_double)) {
-                need_crpix = false;
+        } else if (entry_name.find("CDELT") == 0) {
+            // pixel increment
+            if (entry_name.find("CDELT" + disp1_suffix) == 0) {
+                disp1_cdelt = entry.numeric_value();
+            } else if (entry_name.find("CDELT" + disp2_suffix) == 0) {
+                disp2_cdelt = entry.numeric_value();
+            } else if (entry_name.find("CDELT" + spectral_suffix) == 0) {
+                spectral_cdelt = entry.numeric_value();
+            } else if (entry_name.find("CDELT" + stokes_suffix) == 0) {
+                stokes_cdelt = entry.numeric_value();
             }
-        }
-
-        if (calc_spec_range && entry_name.find("CRPIX" + suffix3) == 0) {
-            crpix3 = entry.numeric_value() - 1;
-        }
-        if (calc_stokes_range && entry_name.find("CRPIX" + suffix4) == 0) {
-            crpix4 = entry.numeric_value();
-        }
-
-        // reference values
-        if (need_crval && (entry_name.find("CRVAL") == 0)) {
-            if (entry_name.find("CRVAL" + suffix1) == 0) {
-                crval1 = entry.numeric_value();
-            } else if (entry_name.find("CRVAL" + suffix2) == 0) {
-                crval2 = entry.numeric_value();
-            }
-            if ((crval1 != min_double) && (crval2 != min_double)) {
-                need_crval = false;
-            }
-        }
-
-        if (calc_spec_range && entry_name.find("CRVAL" + suffix3) == 0) {
-            crval3 = entry.numeric_value();
-        }
-        if (calc_stokes_range && entry_name.find("CRVAL" + suffix4) == 0) {
-            crval4 = entry.numeric_value();
-        }
-
-        // coordinate units
-        if (entry_name.find("CUNIT") == 0) {
-            if (entry_name.find("CUNIT" + suffix1) == 0) {
-                cunit1 = entry.value();
-                if (cunit1.contains("/")) {
-                    cunit1 = cunit1.before("/");
+        } else if (entry_name.find("CUNIT") == 0) {
+            // coordinate units
+            if (entry_name.find("CUNIT" + disp1_suffix) == 0) {
+                disp1_cunit = entry.value();
+                if (disp1_cunit.contains("/")) {
+                    disp1_cunit = disp1_ctype.before("/");
                 }
-                cunit1.trim();
-                ConvertUnitToCasacore(cunit1);
-            } else if (entry_name.find("CUNIT" + suffix2) == 0) {
-                cunit2 = entry.value();
-                if (cunit2.contains("/")) {
-                    cunit2 = cunit2.before("/");
+                NormalizeUnit(disp1_cunit);
+            } else if (entry_name.find("CUNIT" + disp2_suffix) == 0) {
+                disp2_cunit = entry.value();
+                if (disp2_cunit.contains("/")) {
+                    disp2_cunit = disp2_cunit.before("/");
                 }
-                cunit2.trim();
-                ConvertUnitToCasacore(cunit2);
+                NormalizeUnit(disp2_cunit);
+            } else if (entry_name.find("CUNIT" + spectral_suffix) == 0) {
+                spectral_cunit = entry.value();
+                NormalizeUnit(spectral_cunit);
             }
-        }
-
-        if (calc_spec_range && entry_name.find("CUNIT" + suffix3) == 0) {
-            cunit3 = entry.value();
-            cunit3.trim();
-            ConvertUnitToCasacore(cunit3);
-        }
-
-        // pixel increment
-        if (need_cdelt && (entry_name.find("CDELT") == 0)) {
-            if (entry_name.find("CDELT" + suffix1) == 0) {
-                cdelt1 = entry.numeric_value();
-            } else if (entry_name.find("CDELT" + suffix2) == 0) {
-                cdelt2 = entry.numeric_value();
-            }
-            if ((cdelt1 != min_double) && (cdelt2 != min_double)) {
-                need_cdelt = false;
-            }
-        }
-
-        if (calc_spec_range && entry_name.find("CDELT" + suffix3) == 0) {
-            cdelt3 = entry.numeric_value();
-        }
-        if (calc_stokes_range && entry_name.find("CDELT" + suffix4) == 0) {
-            cdelt4 = entry.numeric_value();
-        }
-
-        // Celestial frame
-        if (need_frame && ((entry_name.find("EQUINOX") == 0) || (entry_name.find("TELEQUIN") == 0) || (entry_name.find("EPOCH") == 0))) {
-            need_frame = false;
+        } else if (!found_frame &&
+                   ((entry_name.find("EQUINOX") == 0) || (entry_name.find("TELEQUIN") == 0) || (entry_name.find("EPOCH") == 0))) {
+            // Celestial frame
             frame = entry.value();
-            double numval = entry.numeric_value();
-            if (frame.contains("2000") || (numval == 2000.0)) {
+            double frame_numval = entry.numeric_value();
+            found_frame = true;
+
+            if (frame.contains("2000") || (frame_numval == 2000.0)) {
                 frame = "J2000";
-            } else if (frame.contains("1950") || (numval == 1950.0)) {
+            } else if (frame.contains("1950") || (frame_numval == 1950.0)) {
                 frame = "B1950";
             }
-        }
-
-        // Radesys
-        if (entry_name.find("RADESYS") == 0) {
-            need_radesys = false;
+        } else if (entry_name.find("RADESYS") == 0) {
             radesys = entry.value();
-        }
-
-        // Specsys
-        if (entry_name.find("SPECSYS") == 0) {
+            found_radesys = true;
+        } else if (entry_name.find("SPECSYS") == 0) {
             specsys = entry.value();
-        }
-
-        // Velocity definition
-        if (entry_name.find("VELREF") == 0) {
+            found_specsys = true;
+        } else if (entry_name.find("VELREF") == 0) {
             velref = entry.numeric_value();
-        }
-
-        // Bunit
-        if (entry_name.find("BUNIT") == 0) {
+            found_velref = true;
+        } else if (entry_name.find("BUNIT") == 0) {
             bunit = entry.value();
-        }
-
-        // Restfrq
-        if (entry_name.find("RESTFRQ") == 0) {
+            NormalizeUnit(bunit);
+        } else if ((entry_name.find("RESTFREQ") == 0) || (entry_name.find("RESTFRQ") == 0)) {
             rest_freq = entry.numeric_value();
         }
     }
 
     // Set computed entries
-    std::string coord_name1, coord_name2, projection;
-    if (!need_ctype) {
-        GetCoordNames(ctype1, ctype2, radesys, coord_name1, coord_name2, projection);
-        std::string coord_type = fmt::format("{}, {}", coord_name1, coord_name2);
+    std::string projection;
+    if (!disp1_ctype.empty() && !disp2_ctype.empty()) {
+        GetCoordNames(disp1_ctype, disp2_ctype, radesys, projection);
+        found_radesys = !radesys.empty();
+
+        std::string coord_type = fmt::format("{}, {}", disp1_ctype, disp2_ctype);
         auto comp_entry = extended_info.add_computed_entries();
         comp_entry->set_name("Coordinate type");
         comp_entry->set_value(coord_type);
@@ -1116,31 +1109,30 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             comp_entry->set_entry_type(CARTA::EntryType::STRING);
         }
     }
-    if (!need_crpix) {
-        std::string ref_pix = fmt::format("[{}, {}]", crpix1, crpix2);
+
+    if (disp1_crpix != min_double && disp2_crpix != min_double) {
+        std::string ref_pix = fmt::format("[{}, {}]", disp1_crpix, disp2_crpix);
         auto comp_entry = extended_info.add_computed_entries();
         comp_entry->set_name("Image reference pixels");
         comp_entry->set_value(ref_pix);
         comp_entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    if (!need_crval) {
-        // reference coordinates
-        std::string coord1 = MakeAngleString(coord_name1, crval1, cunit1);
-        std::string coord2 = MakeAngleString(coord_name2, crval2, cunit2);
+    if (disp1_crval != min_double && disp2_crval != min_double) {
+        std::string coord1 = MakeAngleString(disp1_ctype, disp1_crval, disp1_cunit);
+        std::string coord2 = MakeAngleString(disp2_ctype, disp2_crval, disp2_cunit);
         std::string ref_coords = fmt::format("[{}, {}]", coord1, coord2);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Image reference coords");
         entry->set_value(ref_coords);
         entry->set_entry_type(CARTA::EntryType::STRING);
 
-        // reference coordinates in deg
-        casacore::Quantity q1(crval1, cunit1);
-        casacore::Quantity q2(crval2, cunit2);
-        bool q1IsDir(q1.isConform("deg")), q2IsDir(q2.isConform("deg"));
-        if (q1IsDir || q2IsDir) {
+        // reference coordinates in deg if can convert
+        casacore::Quantity q1(disp1_crval, disp1_cunit);
+        casacore::Quantity q2(disp2_crval, disp2_cunit);
+        if (q1.isConform("deg") || q2.isConform("deg")) {
             // Reference coord(s) converted to deg
-            std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(coord_name1, q1), ConvertCoordsToDeg(coord_name2, q2));
+            std::string ref_coords_deg = fmt::format("[{}, {}]", ConvertCoordsToDeg(disp1_ctype, q1), ConvertCoordsToDeg(disp2_ctype, q2));
             auto comp_entry = extended_info.add_computed_entries();
             comp_entry->set_name("Image ref coords (deg)");
             comp_entry->set_value(ref_coords_deg);
@@ -1148,10 +1140,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         }
     }
 
-    if (!need_cdelt) {
-        // Increment in arcsec
-        casacore::Quantity inc1(cdelt1, cunit1);
-        casacore::Quantity inc2(cdelt2, cunit2);
+    if (disp1_cdelt != min_double && disp2_cdelt != min_double) {
+        casacore::Quantity inc1(disp1_cdelt, disp1_cunit);
+        casacore::Quantity inc2(disp2_cdelt, disp2_cunit);
         std::string pixel_inc = ConvertIncrementToArcsec(inc1, inc2);
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Pixel increment");
@@ -1166,9 +1157,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    if (!need_radesys || !need_frame) {
+    if (found_radesys || found_frame) {
         std::string direction_frame;
-        if (need_radesys) {
+        if (found_frame) {
             if (frame == "J2000") {
                 direction_frame = "FK5, J2000";
             } else if (frame == "B1950") {
@@ -1178,7 +1169,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             } else {
                 direction_frame = frame;
             }
-        } else if (need_frame) {
+        } else if (found_radesys) {
             direction_frame = radesys;
         } else {
             direction_frame = fmt::format("{}, {}", radesys, frame);
@@ -1189,6 +1180,11 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
+    if (!found_specsys) {
+        // Set if appended to CTYPE3 rather than in SPECSYS
+        SplitCtypeDescriptor(spectral_ctype, specsys);
+    }
+
     if (!specsys.empty()) {
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Spectral frame");
@@ -1196,7 +1192,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    if (velref > 0) {
+    if (found_velref) {
         auto entry = extended_info.add_computed_entries();
         entry->set_name("Velocity definition");
         // VELREF : 1 LSR, 2 HEL, 3 OBS, +256 Radio
@@ -1220,43 +1216,62 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
             auto xform = compressed_fits->GetTransformMatrix();
             auto proj_type = casacore::Projection::type(projection);
             auto to_rad = casacore::C::pi / 180.0;
-            casacore::DirectionCoordinate dir_coord(
-                frame_type, proj_type, crval1 * to_rad, crval2 * to_rad, cdelt1 * to_rad, cdelt2 * to_rad, xform, crpix1 - 1, crpix2 - 1);
+            casacore::DirectionCoordinate dir_coord(frame_type, proj_type, disp1_crval * to_rad, disp2_crval * to_rad, disp1_cdelt * to_rad,
+                disp2_cdelt * to_rad, xform, disp1_crpix - 1, disp2_crpix - 1);
             casacore::Vector<casacore::String> units(2);
             units = "rad";
             dir_coord.setWorldAxisUnits(units);
             coordsys.addCoordinate(dir_coord);
         }
 
-        // Make a spectral coordinate and add it to the coordinate system if any
-        casacore::MFrequency::Types spec_type;
-        if (calc_spec_range && casacore::MFrequency::getType(spec_type, specsys)) {
-            if (ctype3 == "VRAD") { // For radio velocity
-                crval3 = rest_freq * (1 - crval3 / casacore::C::c);
-                cdelt3 = -rest_freq * (cdelt3 / casacore::C::c);
-            } else if (ctype3 == "VOPT") { // For optical velocity
-                crval3 = rest_freq / (1 + crval3 / casacore::C::c);
-                cdelt3 = rest_freq / (1 + cdelt3 / casacore::C::c);
+        // Make a spectral coordinate (if any) and add it to the coordinate system
+        if (calc_spectral_range) {
+            casacore::MFrequency::Types frequency_type;
+            if (casacore::MFrequency::getType(frequency_type, specsys)) {
+                // Convert velocities to frequencies
+                casacore::SpectralCoordinate spectral_coordinate;
+                double fits_offset(1.0); // FITS is one-based
+
+                if (spectral_ctype == "WAV" || spectral_ctype == "AWAV" || spectral_ctype == "VELO") {
+                    // Create spectral coordinate with values
+                    size_t num_chan = shape(spectral_axis);
+                    casacore::Vector<casacore::Double> values(num_chan);
+                    for (size_t i = 0; i < num_chan; ++i) {
+                        values(i) = spectral_crval + (spectral_cdelt * (double(i) + fits_offset - spectral_crpix));
+                    }
+
+                    if (spectral_ctype == "VELO") { // values are velocities
+                        spectral_coordinate =
+                            casacore::SpectralCoordinate(frequency_type, casacore::MDoppler::RADIO, values, spectral_cunit, rest_freq);
+                    } else { // values are wavelengths
+                        spectral_coordinate = casacore::SpectralCoordinate(frequency_type, values, spectral_cunit, rest_freq);
+                    }
+                } else {
+                    // Create spectral coordinate with center frequency values
+                    if (spectral_ctype == "VRAD") { // For radio velocity (Hz)
+                        spectral_crval = rest_freq * (fits_offset - spectral_crval / casacore::C::c);
+                        spectral_cdelt = -rest_freq * (spectral_cdelt / casacore::C::c);
+                    } else if (spectral_ctype == "VOPT") { // For optical velocity (Hz)
+                        spectral_crval = rest_freq / (fits_offset + spectral_crval / casacore::C::c);
+                        spectral_cdelt = rest_freq / (fits_offset + spectral_cdelt / casacore::C::c);
+                    }
+                    spectral_coordinate =
+                        casacore::SpectralCoordinate(frequency_type, spectral_crval, spectral_cdelt, spectral_crpix, rest_freq);
+                }
+                coordsys.addCoordinate(spectral_coordinate);
             }
-            casacore::SpectralCoordinate spec_coord(spec_type, crval3, cdelt3, crpix3, rest_freq);
-            if (!cunit3.empty()) {
-                casacore::Vector<casacore::String> units(1);
-                units = cunit3;
-                spec_coord.setWorldAxisUnits(units);
-            }
-            coordsys.addCoordinate(spec_coord);
         }
 
-        // Make a stokes coordinate and add it to the coordinate system if any
+        // Make a stokes coordinate (if any) and add it to the coordinate system
         if (calc_stokes_range) {
-            int stokes_axis = std::stoi(suffix4) - 1;
+            if (stokes_crpix != 1) { // Get the stokes type for the first pixel
+                stokes_crval -= stokes_cdelt * (stokes_crpix - 1);
+            }
+
             int stokes_size = shape[stokes_axis];
             casacore::Vector<casacore::Int> stokes_types(stokes_size);
-            if (crpix4 != 1) { // Get the stokes type for the first pixel
-                crval4 -= cdelt4 * (crpix4 - 1);
-            }
-            for (int i = 0; i < shape[stokes_axis]; ++i) {
-                stokes_types[i] = crval4 + cdelt4 * i;
+            for (int i = 0; i < stokes_size; ++i) {
+                stokes_types[i] = stokes_crval + stokes_cdelt * i;
             }
             casacore::StokesCoordinate stokes_coord(stokes_types);
             coordsys.addCoordinate(stokes_coord);
@@ -1286,24 +1301,6 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
         entry->set_name(entry_name);
         entry->set_entry_type(CARTA::EntryType::STRING);
         entry->set_value(beam_info);
-    }
-}
-
-void FileExtInfoLoader::ConvertUnitToCasacore(casacore::String& unit) {
-    // Returns casacore Unit string or input string if unknown (fail with error later)
-    if (casacore::UnitVal::check(unit)) {
-        return;
-    }
-
-    unit.downcase();
-    if (casacore::UnitVal::check(unit)) {
-        return;
-    }
-
-    // This may no longer be needed but unclear about casacore UnitMaps
-    if (unit.startsWith("DEG") || unit.startsWith("Deg")) {
-        // Degrees, DEGREES nonstandard FITS values
-        unit = "deg";
     }
 }
 
@@ -1368,40 +1365,37 @@ std::string FileExtInfoLoader::ConvertIncrementToArcsec(const casacore::Quantity
     return fmt::format(inc_format, inc0_arcsec.getValue(), inc1_arcsec.getValue());
 }
 
-void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1,
-    std::string& coord_name2, std::string& projection) {
+void FileExtInfoLoader::GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& projection) {
     // split ctype1 and ctype2 into type and projection
     std::unordered_map<std::string, std::string> names = {
         {"RA", "Right Ascension"}, {"DEC", "Declination"}, {"GLON", "Longitude"}, {"GLAT", "Latitude"}};
 
-    auto delim_pos = ctype1.find("--");
-    if (delim_pos != std::string::npos) {
-        coord_name1 = ctype1.substr(0, delim_pos);
-        projection = ctype1.substr(delim_pos, std::string::npos);
-        auto proj_start = projection.find_first_not_of('-');
-        projection = projection.substr(proj_start, std::string::npos);
-    } else {
-        coord_name1 = ctype1;
-    }
-
-    if (radesys.empty() && (coord_name1 == "GLON")) {
+    // ctype1 to coordinate name and projection
+    SplitCtypeDescriptor(ctype1, projection);
+    if (radesys.empty() && (ctype1 == "GLON")) {
         radesys = "GALACTIC";
     }
-
-    if (names.count(coord_name1)) {
-        coord_name1 = names[coord_name1];
+    if (names.find(ctype1) != names.end()) {
+        ctype1 = names[ctype1];
     }
 
-    delim_pos = ctype2.find("--");
+    // ctype2 to coordinate name
+    std::string projection2;
+    SplitCtypeDescriptor(ctype2, projection2);
+    if (names.find(ctype2) != names.end()) {
+        ctype2 = names[ctype2];
+    }
+}
+
+void FileExtInfoLoader::SplitCtypeDescriptor(std::string& ctype, std::string& descriptor) {
+    // Splits CTYPE string on one or more '-', returns coord name and descriptor
+    auto delim_pos = ctype.find_first_of("-");
     if (delim_pos != std::string::npos) {
-        // split ctype2
-        coord_name2 = ctype2.substr(0, delim_pos);
-    } else {
-        coord_name2 = ctype2;
-    }
-
-    if (names.count(coord_name2)) {
-        coord_name2 = names[coord_name2];
+        // Get descriptor then remove it from ctype
+        descriptor = ctype.substr(delim_pos, std::string::npos);
+        ctype = ctype.substr(0, delim_pos);
+        auto desc_start = descriptor.find_first_not_of('-');
+        descriptor = descriptor.substr(desc_start, std::string::npos);
     }
 }
 
@@ -1486,35 +1480,41 @@ void FileExtInfoLoader::AddCoordRanges(
     if (coord_system.hasSpectralAxis() && image_shape[coord_system.spectralAxisNumber()] > 0) {
         auto spectral_coord = coord_system.spectralCoordinate();
         casacore::Vector<casacore::String> spectral_units = spectral_coord.worldAxisUnits();
-        spectral_units(0) = spectral_units(0) == "Hz" ? "GHz" : spectral_units(0);
+        spectral_units(0) = (spectral_units(0) == "Hz" ? "GHz" : spectral_units(0));
+        casacore::String velocity_units("km/s");
+
+        // Convert to desired units
         spectral_coord.setWorldAxisUnits(spectral_units);
-        std::string velocity_units = "km/s";
         spectral_coord.setVelocity(velocity_units);
-        std::vector<double> frequencies(2);
-        std::vector<double> velocities(2);
+
         double start_pixel = 0;
         double end_pixel = image_shape[coord_system.spectralAxisNumber()] - 1;
 
-        if (spectral_coord.toWorld(frequencies[0], start_pixel)) {
+        double start_frequency, end_frequency;
+        double start_velocity, end_velocity;
+        bool has_spectral_range(end_pixel > start_pixel);
+
+        if (spectral_coord.toWorld(start_frequency, start_pixel)) {
             auto* frequency_entry = extended_info.add_computed_entries();
-            if (image_shape[coord_system.spectralAxisNumber()] > 1 && spectral_coord.toWorld(frequencies[1], end_pixel)) {
+            if (has_spectral_range && spectral_coord.toWorld(end_frequency, end_pixel)) {
+                casacore::Quantity end_freq_quant(end_frequency, spectral_units(0));
                 frequency_entry->set_name("Frequency range");
-                frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", frequencies[0], frequencies[1], spectral_units(0)));
-            } else { // For a single channel image
+                frequency_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", start_frequency, end_frequency, spectral_units(0)));
+            } else {
                 frequency_entry->set_name("Frequency");
-                frequency_entry->set_value(fmt::format("{:.4f} ({})", frequencies[0], spectral_units(0)));
+                frequency_entry->set_value(fmt::format("{:.4f} ({})", start_frequency, spectral_units(0)));
             }
             frequency_entry->set_entry_type(CARTA::EntryType::STRING);
         }
 
-        if ((spectral_coord.restFrequency() != 0) && spectral_coord.pixelToVelocity(velocities[0], start_pixel)) {
+        if ((spectral_coord.restFrequency() != 0.0) && spectral_coord.pixelToVelocity(start_velocity, start_pixel)) {
             auto* velocity_entry = extended_info.add_computed_entries();
-            if (image_shape[coord_system.spectralAxisNumber()] > 1 && spectral_coord.pixelToVelocity(velocities[1], end_pixel)) {
+            if (has_spectral_range && spectral_coord.pixelToVelocity(end_velocity, end_pixel)) {
                 velocity_entry->set_name("Velocity range");
-                velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", velocities[0], velocities[1], velocity_units));
+                velocity_entry->set_value(fmt::format("[{:.4f}, {:.4f}] ({})", start_velocity, end_velocity, velocity_units));
             } else { // For a single channel image
                 velocity_entry->set_name("Velocity");
-                velocity_entry->set_value(fmt::format("{:.4f} ({})", velocities[0], velocity_units));
+                velocity_entry->set_value(fmt::format("{:.4f} ({})", start_velocity, velocity_units));
             }
             velocity_entry->set_entry_type(CARTA::EntryType::STRING);
         }
@@ -1573,7 +1573,7 @@ casacore::Vector<casacore::String> FileExtInfoLoader::FitsHeaderStrings(casacore
     for (int i = 0; i < nkeys; ++i) {
         header_strings[i] = header_str.substr(pos, 80);
 
-        if (header_strings[i].contains("FELO-HEL") || header_strings[i].contains("VELO-LSR")) {
+        if (header_strings[i].contains("FELO-HEL")) {
             header_strings.resize();
             return header_strings;
         }
