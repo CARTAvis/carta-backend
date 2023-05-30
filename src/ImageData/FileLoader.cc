@@ -877,17 +877,10 @@ double FileLoader::CalculateBeamArea() {
 
 void FileLoader::NormalizeBunit() {
     if (_image) {
-        std::string bunit = _image->units().getName();
+        auto bunit = _image->units().getName();
         bunit.erase(std::remove(bunit.begin(), bunit.end(), '"'), bunit.end());
-
-        std::string lower_bunit = bunit;
-        std::transform(lower_bunit.begin(), lower_bunit.end(), lower_bunit.begin(), [](unsigned char c) { return std::tolower(c); });
-
-        std::unordered_map<std::string, std::string> bunits = {{"jy/beam", "Jy/beam"}, {"mjy/beam", "mJy/beam"}};
-        if (bunits.count(lower_bunit) && bunit != bunits[lower_bunit]) {
-            casacore::Unit new_units(bunits[lower_bunit]);
-            _image->setUnits(new_units);
-        }
+        NormalizeUnit(bunit);
+        _image->setUnits(bunit);
     }
 }
 
