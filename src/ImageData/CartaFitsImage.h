@@ -21,6 +21,10 @@
 
 namespace carta {
 
+static std::unordered_map<int, casacore::DataType> bitpix_types(
+    {{8, casacore::DataType::TpChar}, {16, casacore::DataType::TpShort}, {32, casacore::DataType::TpInt}, {64, casacore::DataType::TpInt64},
+        {-32, casacore::DataType::TpFloat}, {-64, casacore::DataType::TpDouble}});
+
 class CartaFitsImage : public casacore::ImageInterface<float> {
 public:
     // Construct an image from a pre-existing file.
@@ -100,7 +104,8 @@ private:
     // FITS header values
     bool _is_compressed;
     casacore::IPosition _shape;
-    int _datatype; // bitpix value
+    int _bitpix;
+    int _equiv_bitpix;
     bool _has_blanks;
     casacore::Vector<casacore::String> _all_header_strings;
     casacore::Vector<casacore::String> _image_header_strings;

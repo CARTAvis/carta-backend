@@ -64,7 +64,7 @@ public:
         std::filesystem::path filename_path(filename_path_string);
 
         CARTA::OpenFile open_file =
-            Message::OpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
+            Message::OpenFile(filename_path.parent_path(), filename_path.filename(), false, "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 
@@ -159,7 +159,7 @@ public:
         std::filesystem::path second_filename_path(second_filename_path_string);
 
         CARTA::OpenFile open_file =
-            Message::OpenFile(first_filename_path.parent_path(), first_filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
+            Message::OpenFile(first_filename_path.parent_path(), first_filename_path.filename(), false, "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 
@@ -187,8 +187,8 @@ public:
 
         EXPECT_EQ(_message_count, 3);
 
-        open_file =
-            Message::OpenFile(second_filename_path.parent_path(), second_filename_path.filename(), "0", 1, CARTA::RenderMode::RASTER);
+        open_file = Message::OpenFile(
+            second_filename_path.parent_path(), second_filename_path.filename(), false, "0", 1, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 
@@ -266,7 +266,7 @@ public:
         std::filesystem::path filename_path(filename_path_string);
 
         CARTA::OpenFile open_file =
-            Message::OpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
+            Message::OpenFile(filename_path.parent_path(), filename_path.filename(), false, "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 
@@ -455,7 +455,7 @@ public:
         std::filesystem::path filename_path(filename_path_string);
 
         CARTA::OpenFile open_file =
-            Message::OpenFile(filename_path.parent_path(), filename_path.filename(), "0", 0, CARTA::RenderMode::RASTER);
+            Message::OpenFile(filename_path.parent_path(), filename_path.filename(), false, "0", 0, CARTA::RenderMode::RASTER);
 
         _dummy_backend->Receive(open_file);
 

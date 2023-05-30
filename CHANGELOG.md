@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Prevent the installation of pugixml library files ([#1261](https://github.com/CARTAvis/carta-backend/issues/1261)).
 * Fixed spatial profile for polyline in widefield image ([#1258](https://github.com/CARTAvis/carta-backend/issues/1258)).
 * Fixed regression failure of HDF5 PV image due to profile caching in the HDF5 loader ([#1259](https://github.com/CARTAvis/carta-backend/issues/1259)).
+* Removed duplicate image histogram data sent to the frontend ([#1266](https://github.com/CARTAvis/carta-backend/issues/1266)).
+* Fixed FITS header and data errors ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233), [#1265](https://github.com/CARTAvis/carta-backend/issues/1265)).
+* Fixed the problem of resuming LEL images ([#1226](https://github.com/CARTAvis/carta-backend/issues/1226)).
 
 ## [4.0.0-beta.1]
 
