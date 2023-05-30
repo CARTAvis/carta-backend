@@ -20,15 +20,14 @@ class CasaLoader : public FileLoader {
 public:
     CasaLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
-
 private:
+    void AllocateImage(const std::string& hdu) override;
     casacore::TempImage<float>* ConvertImageToFloat(casacore::LatticeBase* lattice);
 };
 
 CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
+void CasaLoader::AllocateImage(const std::string& /*hdu*/) {
     if (!_image) {
         // Check if image is locked; PagedImage AutoNoReadLocking option tries to acquire a lock and blocks until it is free
         bool create(false), add_request(false), must_exist(false);
@@ -69,8 +68,6 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
             _data_type = _image->dataType();
         }
     }
-
-    NormalizeBunit();
 }
 
 casacore::TempImage<float>* CasaLoader::ConvertImageToFloat(casacore::LatticeBase* lattice) {

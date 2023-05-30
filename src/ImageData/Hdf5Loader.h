@@ -25,8 +25,6 @@ class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
-
     bool HasData(FileInfo::Data ds) const override;
 
     bool GetCursorSpectralData(
@@ -52,6 +50,8 @@ private:
     std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
 
     H5D_layout_t _layout;
+
+    void AllocateImage(const std::string& hdu) override;
 
     std::string DataSetToString(FileInfo::Data ds) const;
     bool HasData(std::string ds_name) const;

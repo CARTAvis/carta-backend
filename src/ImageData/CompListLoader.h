@@ -19,12 +19,13 @@ class CompListLoader : public FileLoader {
 public:
     CompListLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
+private:
+    void AllocateImage(const std::string& hdu) override;
 };
 
 CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CompListLoader::OpenFile(const std::string& /*hdu*/) {
+void CompListLoader::AllocateImage(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new casa::ComponentListImage(_filename));
 
@@ -38,8 +39,6 @@ void CompListLoader::OpenFile(const std::string& /*hdu*/) {
         _coord_sys = std::shared_ptr<casacore::CoordinateSystem>(static_cast<casacore::CoordinateSystem*>(_image->coordinates().clone()));
         _data_type = _image->dataType();
     }
-
-    NormalizeBunit();
 }
 
 } // namespace carta

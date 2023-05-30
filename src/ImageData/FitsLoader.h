@@ -24,12 +24,11 @@ public:
     FitsLoader(const std::string& filename, bool is_gz = false);
     ~FitsLoader();
 
-    void OpenFile(const std::string& hdu) override;
-
 private:
     std::string _unzip_file;
     casacore::uInt _hdu_num;
 
+    void AllocateImage(const std::string& hdu) override;
     int GetNumHeaders(const std::string& filename, int hdu);
     void RemoveHistoryBeam(unsigned int hdu_num);
 };
@@ -45,7 +44,7 @@ FitsLoader::~FitsLoader() {
     }
 }
 
-void FitsLoader::OpenFile(const std::string& hdu) {
+void FitsLoader::AllocateImage(const std::string& hdu) {
     // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 
@@ -139,8 +138,6 @@ void FitsLoader::OpenFile(const std::string& hdu) {
             _data_type = fits_image->internalDataType();
         }
     }
-
-    NormalizeBunit();
 }
 
 int FitsLoader::GetNumHeaders(const std::string& filename, int hdu) {

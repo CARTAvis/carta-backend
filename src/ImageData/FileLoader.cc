@@ -87,6 +87,11 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
+void FileLoader::OpenFile(const std::string& hdu) {
+    AllocateImage(hdu);
+    NormalizeBunit();
+}
+
 typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
