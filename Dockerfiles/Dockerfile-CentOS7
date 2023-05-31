@@ -11,7 +11,7 @@ RUN \
   yum -y install epel-release && \
   yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel cmake3 curl-devel flex \
     git git-lfs hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
-    make openssl-devel pugixml-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
+    make openssl-devel python3 readline-devel subversion systemd-devel wcslib-devel wget \
     zlib-devel libuuid-devel zfp-devel && \
   pip3 install numpy astropy && \
   ln -s /usr/bin/cmake3 /usr/bin/cmake

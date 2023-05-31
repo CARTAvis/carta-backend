@@ -466,14 +466,14 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     const auto& filename(message.file());
     std::string hdu(message.hdu());
     auto file_id(message.file_id());
-    bool is_lel_expr(message.lel_expr());
+    bool lel_expr(message.lel_expr());
 
     // response message:
     CARTA::OpenFileAck ack;
     bool success(false);
     string err_message;
 
-    if (is_lel_expr) {
+    if (lel_expr) {
         // filename field is LEL expression
         auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
         auto loader = _loaders.Get(filename, dir_path);
@@ -507,7 +507,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
                 std::string expression = "AMPLITUDE(" + filename + ")";
                 bool is_lel_expr(true);
-                auto open_file_message = Message::OpenFile(directory, expression, hdu, file_id, message.render_mode(), is_lel_expr);
+                auto open_file_message = Message::OpenFile(directory, expression, is_lel_expr, hdu, file_id, message.render_mode());
                 return OnOpenFile(open_file_message, request_id, silent);
             }
 
@@ -565,9 +565,10 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (success) {
         // send histogram with default requirements
-        if (!SendRegionHistogramData(file_id, IMAGE_REGION_ID)) {
-            std::string message = fmt::format("Image histogram for file id {} failed", file_id);
-            SendLogEvent(message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
+        bool channel_changed(true);
+        if (!SendRegionHistogramData(file_id, IMAGE_REGION_ID, channel_changed)) {
+            err_message = fmt::format("Image histogram for file id {} failed", file_id);
+            SendLogEvent(err_message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
         }
     } else if (!err_message.empty()) {
         spdlog::error(err_message);
@@ -619,7 +620,8 @@ bool Session::OnOpenFile(
     open_file_ack->set_message(err_message);
 
     if (success) {
-        UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+        bool changed(true); // channel and stokes
+        UpdateRegionData(file_id, IMAGE_REGION_ID, changed, changed);
     } else if (!err_message.empty()) {
         spdlog::error(err_message);
     }
@@ -976,8 +978,8 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
 
         if (requirements_set) {
             if ((message.histograms_size() > 0) && !SendRegionHistogramData(file_id, region_id)) {
-                std::string message = fmt::format("Histogram calculation for region {} failed", region_id);
-                SendLogEvent(message, {"histogram"}, CARTA::ErrorSeverity::WARNING);
+                std::string error = fmt::format("Histogram calculation for region {} failed", region_id);
+                SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::WARNING);
             }
         } else {
             std::string error = fmt::format("Histogram requirements not valid for region id {}", region_id);
@@ -1113,7 +1115,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 err_file_ids.append(std::to_string(image.file_id()) + " ");
             }
         } else {
-            auto open_file_msg = Message::OpenFile(image.directory(), image.file(), image.hdu(), image.file_id());
+            auto open_file_msg = Message::OpenFile(image.directory(), image.file(), image.lel_expr(), image.hdu(), image.file_id());
 
             // Open a file
             if (!OnOpenFile(open_file_msg, request_id, true)) {
@@ -1704,7 +1706,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
     return data_sent;
 }
 
-bool Session::SendRegionHistogramData(int file_id, int region_id) {
+bool Session::SendRegionHistogramData(int file_id, int region_id, bool channel_changed) {
     // return true if data sent
     bool data_sent(false);
     if (region_id == ALL_REGIONS && !_region_handler) {
@@ -1724,7 +1726,8 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
     } else if (region_id < CURSOR_REGION_ID) {
         // Image or cube histogram
         if (_frames.count(file_id)) {
-            bool filled_by_frame(_frames.at(file_id)->FillRegionHistogramData(region_histogram_data_callback, region_id, file_id));
+            bool filled_by_frame(
+                _frames.at(file_id)->FillRegionHistogramData(region_histogram_data_callback, region_id, file_id, channel_changed));
 
             if (!filled_by_frame && region_id == CUBE_REGION_ID) { // not in cache, calculate cube histogram
                 CARTA::RegionHistogramData histogram_data;
@@ -1878,9 +1881,10 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool z_cha
             SendSpectralProfileData(file_id, CURSOR_REGION_ID, stokes_changed);
         }
 
-        if (z_changed || stokes_changed) {
+        bool channel_changed(z_changed || stokes_changed);
+        if (channel_changed) {
             if (send_image_histogram) {
-                SendRegionHistogramData(file_id, IMAGE_REGION_ID);
+                SendRegionHistogramData(file_id, IMAGE_REGION_ID, channel_changed);
             }
 
             SendRegionStatsData(file_id, IMAGE_REGION_ID);
@@ -1898,17 +1902,13 @@ void Session::UpdateRegionData(int file_id, int region_id, bool z_changed, bool 
         SendSpectralProfileData(file_id, region_id, stokes_changed);
     }
 
-    if (z_changed || stokes_changed) {
-        SendRegionStatsData(file_id, region_id);
-        SendRegionHistogramData(file_id, region_id);
-        // SpatialProfileData sent after new requirements received
-    }
+    bool channel_changed(z_changed || stokes_changed);
+    SendRegionHistogramData(file_id, region_id, channel_changed);
+    SendRegionStatsData(file_id, region_id);
 
-    if (!z_changed && !stokes_changed) { // region changed, update all
+    if (!channel_changed) { // Region changed, update all
         SendSpatialProfileDataByRegionId(region_id);
         SendSpectralProfileData(file_id, region_id, stokes_changed);
-        SendRegionStatsData(file_id, region_id);
-        SendRegionHistogramData(file_id, region_id);
     }
 }
 

@@ -25,7 +25,7 @@ CARTA::CloseFile Message::CloseFile(int32_t file_id) {
 }
 
 CARTA::OpenFile Message::OpenFile(
-    std::string directory, std::string file, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode, bool lel_expr) {
+    std::string directory, std::string file, bool lel_expr, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
     CARTA::OpenFile open_file;
     open_file.set_directory(directory);
     open_file.set_file(file);

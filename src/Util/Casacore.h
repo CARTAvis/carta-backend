@@ -26,4 +26,7 @@ void GetSpectralCoordPreferences(
 std::string FormatBeam(const casacore::GaussianBeam& gaussian_beam);
 std::string FormatQuantity(const casacore::Quantity& quantity);
 
+// Convert unit to one recognized by casacore (case-sensitive)
+void NormalizeUnit(casacore::String& unit);
+
 #endif // CARTA_BACKEND__UTIL_CASACORE_H_
