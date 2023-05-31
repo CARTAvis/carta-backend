@@ -174,9 +174,10 @@ std::string FormatQuantity(const casacore::Quantity& quantity) {
 
 void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
-    unit.gsub("JY", "Jy");       // Nonstandard "JY" passes check
-    unit.gsub("Beam", "beam");   // Nonstandard "Beam" passes check
-    unit.gsub("Pixel", "pixel"); // Nonstandard "Pixel" passes check
+    // Fix nonstandard units which pass check
+    unit.gsub("JY", "Jy");
+    unit.gsub("Beam", "beam");
+    unit.gsub("Pixel", "pixel");
 
     // Convert unit without prefix
     try {
@@ -188,7 +189,7 @@ void NormalizeUnit(casacore::String& unit) {
             return;
         }
     } catch (const casacore::AipsError& err) {
-        // check() should catch the error and returned false, but does not
+        // check() should catch the error and return false, but does not
     }
 
     // Convert unit with (possible) prefix
@@ -221,6 +222,6 @@ void NormalizeUnit(casacore::String& unit) {
             unit = normalized_unit;
         }
     } catch (const casacore::AipsError& err) {
-        // check() should catch the error and returned false, but does not
+        // not caught by check()
     }
 }
