@@ -92,18 +92,30 @@ void FileLoader::OpenFile(const std::string& hdu) {
 
     // Normalize the upper/lower cases of BUNIT string from header
     if (_image) {
-        casacore::String bunit = _image->units().getName();
+        std::string bunit = _image->units().getName();
         bunit.erase(std::remove(bunit.begin(), bunit.end(), '"'), bunit.end());
 
-        if (!bunit.empty()) {
-            auto prefix = bunit.at(0, 1);
-            if (prefix == 'M' || prefix == 'm') {
-                casacore::String sub_bunit = bunit.at(1, bunit.size() - 1);
-                NormalizeUnit(sub_bunit);
-                _image->setUnits(prefix + sub_bunit);
-            } else {
-                NormalizeUnit(bunit);
-                _image->setUnits(bunit);
+        if (bunit.size() > 1) {
+            std::string prefix = bunit.substr(0, 1);
+            bool concat(false);
+            if (prefix == "M" || prefix == "m") {
+                bunit = bunit.substr(1, bunit.size() - 1);
+                concat = true;
+            }
+
+            std::string lower_bunit = bunit;
+            std::transform(lower_bunit.begin(), lower_bunit.end(), lower_bunit.begin(), ::tolower);
+            std::unordered_set<std::string> lower_bunits = {"jy/beam", "jypb", "jy beam-1", "jy beam^-1"};
+            std::string norm_bunit("Jy/beam");
+
+            if (lower_bunits.count(lower_bunit) && bunit != norm_bunit) {
+                casacore::Unit new_bunit;
+                if (concat) {
+                    new_bunit.setName(prefix + norm_bunit);
+                } else {
+                    new_bunit.setName(norm_bunit);
+                }
+                _image->setUnits(new_bunit);
             }
         }
     }
