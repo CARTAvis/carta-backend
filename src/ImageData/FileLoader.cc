@@ -89,7 +89,24 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
 
 void FileLoader::OpenFile(const std::string& hdu) {
     AllocateImage(hdu);
-    NormalizeBunit();
+
+    // Normalize the upper/lower cases of BUNIT string from header
+    if (_image) {
+        casacore::String bunit = _image->units().getName();
+        bunit.erase(std::remove(bunit.begin(), bunit.end(), '"'), bunit.end());
+
+        if (!bunit.empty()) {
+            auto prefix = bunit.at(0, 1);
+            if (prefix == 'M' || prefix == 'm') {
+                casacore::String sub_bunit = bunit.at(1, bunit.size() - 1);
+                NormalizeUnit(sub_bunit);
+                _image->setUnits(prefix + sub_bunit);
+            } else {
+                NormalizeUnit(bunit);
+                _image->setUnits(bunit);
+            }
+        }
+    }
 }
 
 typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
@@ -873,15 +890,6 @@ double FileLoader::CalculateBeamArea() {
     }
 
     return info.getBeamAreaInPixels(-1, -1, _coord_sys->directionCoordinate());
-}
-
-void FileLoader::NormalizeBunit() {
-    if (_image) {
-        auto bunit = _image->units().getName();
-        bunit.erase(std::remove(bunit.begin(), bunit.end(), '"'), bunit.end());
-        NormalizeUnit(bunit);
-        _image->setUnits(bunit);
-    }
 }
 
 bool FileLoader::GetStokesTypeIndex(const CARTA::PolarizationType& stokes_type, int& stokes_index) {

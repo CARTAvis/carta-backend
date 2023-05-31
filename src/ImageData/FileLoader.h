@@ -184,9 +184,6 @@ protected:
 
     // Set the image object and its parameters
     virtual void AllocateImage(const std::string& hdu) = 0;
-
-    // Ignore the upper or lower cases of BUNIT from header
-    void NormalizeBunit();
 };
 
 } // namespace carta
