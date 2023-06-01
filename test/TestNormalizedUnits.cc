@@ -8,19 +8,26 @@
 
 #include "Util/Casacore.h"
 
-TEST(NormalizedUnitsTest, ValidBunits) {
-    std::vector<casacore::String> input_bunits = {"Jy/beam", "mJy/beam", "MJy/beam"};
+std::vector<casacore::String> TEST_BUNITS = {"Jy/beam", "Jy/Beam", "JY/Beam", "JY/BEAM", "jypb", "Jypb", "JYpb", "jy beam-1", "jy beam^-1",
+    "Jy beam-1", "Jy beam^-1", "JY beam-1", "JY beam^-1", "jy Beam-1", "jy Beam^-1", "Jy Beam-1", "Jy Beam^-1", "JY Beam-1", "JY Beam^-1",
+    "beam-1 jy", "beam^-1 jy", "beam-1 Jy", "beam^-1 Jy", "beam-1 JY", "beam^-1 JY", "Beam-1 jy", "jy Beam^-1", "Beam-1 Jy", "Beam^-1 Jy",
+    "Beam-1 JY", "Beam^-1 JY"};
 
-    for (auto bunit : input_bunits) {
+TEST(NormalizedUnitsTest, ValidBunits) {
+    std::vector<casacore::String> valid_bunits = {"Jy/beam", "mJy/beam", "MJy/beam"};
+    for (auto bunit : valid_bunits) {
         EXPECT_TRUE(casacore::UnitVal::check(bunit));
+    }
+
+    std::vector<casacore::String> invalid_bunits = {"Jy/Beam", "\"jy/beam\"", "counts/s", "MYJy/beam"};
+    for (auto bunit : invalid_bunits) {
+        EXPECT_FALSE(casacore::UnitVal::check(bunit));
     }
 }
 
 TEST(NormalizedUnitsTest, Bunit) {
     casacore::String norm_bunit("Jy/beam");
-    std::vector<casacore::String> input_bunits = {"Jy/beam", "Jy/Beam", "JY/Beam", "JY/BEAM", "jypb", "jy beam-1", "jy beam^-1"};
-
-    for (auto bunit : input_bunits) {
+    for (auto bunit : TEST_BUNITS) {
         NormalizeUnit(bunit);
         EXPECT_EQ(bunit, norm_bunit);
     }
@@ -28,9 +35,8 @@ TEST(NormalizedUnitsTest, Bunit) {
 
 TEST(NormalizedUnitsTest, BunitPrefixUpperM) {
     casacore::String norm_bunit("MJy/beam");
-    std::vector<casacore::String> input_bunits = {"MJy/beam", "MJy/Beam", "MJY/Beam", "MJY/BEAM", "Mjypb", "Mjy beam-1", "Mjy beam^-1"};
-
-    for (auto bunit : input_bunits) {
+    for (auto bunit : TEST_BUNITS) {
+        bunit = "M" + bunit;
         NormalizeUnit(bunit);
         EXPECT_EQ(bunit, norm_bunit);
     }
@@ -38,9 +44,8 @@ TEST(NormalizedUnitsTest, BunitPrefixUpperM) {
 
 TEST(NormalizedUnitsTest, BunitPrefixLowerM) {
     casacore::String norm_bunit("mJy/beam");
-    std::vector<casacore::String> input_bunits = {"mJy/beam", "mJy/Beam", "mJY/Beam", "mJY/BEAM", "mjypb", "mjy beam-1", "mjy beam^-1"};
-
-    for (auto bunit : input_bunits) {
+    for (auto bunit : TEST_BUNITS) {
+        bunit = "m" + bunit;
         NormalizeUnit(bunit);
         EXPECT_EQ(bunit, norm_bunit);
     }

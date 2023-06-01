@@ -176,12 +176,16 @@ void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
     // Fix nonstandard units which pass check
     unit.gsub("JY", "Jy");
+    unit.gsub("jy", "Jy");
     unit.gsub("Beam", "beam");
     unit.gsub("BEAM", "beam");
+    unit.gsub("Jypb", "Jy/beam");
+    unit.gsub("JyPB", "Jy/beam");
+    unit.gsub("Jy beam-1", "Jy/beam");
+    unit.gsub("Jy beam^-1", "Jy/beam");
+    unit.gsub("beam-1 Jy", "Jy/beam");
+    unit.gsub("beam^-1 Jy", "Jy/beam");
     unit.gsub("Pixel", "pixel");
-    unit.gsub("jypb", "Jy/beam");
-    unit.gsub("jy beam-1", "Jy/beam");
-    unit.gsub("jy beam^-1", "Jy/beam");
     unit.gsub("\"", "");
 
     // Convert unit without prefix
