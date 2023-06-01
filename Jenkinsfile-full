@@ -988,11 +988,15 @@ def cube_histogram() {
                     ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
+                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
+                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 5"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
+                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 5"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/SET_HISTOGRAMCONFIG.test.ts # test 4 of 5"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/SET_HISTOGRAMCONFIG_QUEUE.test.ts # test 5 of 5"
                 sh "pgrep carta_backend"
             }
         }
