@@ -677,6 +677,20 @@ pipeline {
                             }
                         }
                     }
+                    stage('vector_overlay') {
+                        agent {
+                            label "${PLATFORM}-agent"
+                        }
+                        steps {
+                            warnError(catchInterruptions: true, message: 'ICD test vecotr_overlay failure') {
+                                unstash "${PLATFORM}-backend"
+                                sh "rm -f /root/.carta/log/carta.log"
+                                sh "ASAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan.supp LSAN_OPTIONS=suppressions=${WORKSPACE}/debug/asan/myasan-leaks.supp ASAN_SYMBOLIZER_PATH=llvm-symbolizer ./carta_backend /images --top_level_folder /images --port ${env.PORT} --omp_threads 4 --debug_no_auth --no_frontend --no_database --verbosity=5 &"
+                                unstash "${PLATFORM}-ICD"
+                                vector_overlay()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1220,3 +1234,34 @@ def image_fitting() {
         }
     }
 }
+
+def vector_overlay() {
+    script {
+        dir ('ICD-RxJS') {
+            sh "npm install && ./protobuf/build_proto.sh"
+            ret = false
+            retry(3) {
+                if (ret) {
+                    sleep(time:30,unit:"SECONDS")
+                    sh "cat /root/.carta/log/carta.log"
+                    echo "Trying again"
+                } else {
+                     ret = true
+                }
+                sh "pgrep carta_backend"
+                sh "CI=true npm test src/test/VECTOR_OVERLAY_FITS.test.ts # test 1 of 6"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/VECTOR_OVERLAY_CASA.test.ts # test 2 of 6"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/VECTOR_OVERLAY_HDF5.test.ts # test 3 of 6"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/VECTOR_OVERLAY_NO_POLARIZATION.test.ts # test 4 of 6"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/VECTOR_OVERLAY_CONTOUR_CHANNEL.test.ts # test 5 of 6"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/VECTOR_OVERLAY_CHANNEL_STREAM.test.ts # test 6 of 6"
+                sh "pgrep carta_backend"
+            }
+        }           
+    }                   
+}    
