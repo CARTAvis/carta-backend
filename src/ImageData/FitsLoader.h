@@ -32,6 +32,7 @@ private:
 
     int GetNumHeaders(const std::string& filename, int hdu);
     void RemoveHistoryBeam(unsigned int hdu_num);
+    bool Is64BitFitsBeamTable(const std::string& filename);
 };
 
 FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
@@ -100,8 +101,13 @@ void FitsLoader::OpenFile(const std::string& hdu) {
                     _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
                 }
             } else if (use_casacore_fits) {
-                _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
-                RemoveHistoryBeam(hdu_num);
+                if (Is64BitFitsBeamTable(_filename)) {
+                    use_casacore_fits = false;
+                    _image.reset(new CartaFitsImage(_filename, hdu_num));
+                } else {
+                    _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+                    RemoveHistoryBeam(hdu_num);
+                }
             } else {
                 _image.reset(new CartaFitsImage(_filename, hdu_num));
             }
@@ -205,6 +211,50 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
             _image->setImageInfo(image_info);
         }
     }
+}
+
+bool FitsLoader::Is64BitFitsBeamTable(const std::string& filename) {
+    fitsfile* fptr;
+    int status(0);
+    fits_open_file(&fptr, filename.c_str(), 0, &status);
+
+    if (status) {
+        spdlog::error("Error opening FITS file.");
+        return false;
+    }
+
+    // Open binary table extension with name BEAMS
+    int hdutype(BINARY_TBL), extver(0);
+    std::string extname("BEAMS");
+    status = 0;
+    fits_movnam_hdu(fptr, hdutype, extname.data(), extver, &status);
+
+    if (status) {
+        status = 0;
+        fits_close_file(fptr, &status);
+        spdlog::info("Could not find BEAMS table.");
+        return false;
+    }
+
+    // Read columns into vectors
+    int casesen(CASEINSEN), colnum(0);
+    char ttype, tunit, tform, nulstr, tdisp;
+    long tbcol;
+    double scale, zero;
+
+    std::vector<std::string> keys = {"BMAJ", "BMIN", "BPA", "CHAN", "POL"};
+    for (auto& key : keys) {
+        status = 0;
+        fits_get_colnum(fptr, casesen, key.data(), &colnum, &status);
+        fits_get_acolparms(fptr, colnum, &ttype, &tbcol, &tunit, &tform, &scale, &zero, &nulstr, &tdisp, &status);
+        if (tform == 'K' || tform == 'D') {
+            spdlog::warn("BEAMS table consists of 64-bit parameters. Convert these values to 32-bit.");
+            return true;
+        }
+    }
+
+    fits_close_file(fptr, &status);
+    return false;
 }
 
 } // namespace carta
