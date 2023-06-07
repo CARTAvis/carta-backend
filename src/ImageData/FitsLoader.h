@@ -238,24 +238,36 @@ bool FitsLoader::Is64BitBeamTable(const std::string& filename) {
 
     // Get BEAMS columns data type
     int casesen(CASEINSEN), colnum(0);
+#if defined(__APPLE__)
+    char ttype, tform;
+#else
     char* ttype = (char*)malloc(sizeof(char*));
     char* tform = (char*)malloc(sizeof(char*));
+#endif
     char tunit, nulstr, tdisp;
     long tbcol;
     double scale, zero;
 
     auto close_file = [&]() {
         fits_close_file(fptr, &status);
+#if defined(__APPLE__)
+#else
         free(ttype);
         free(tform);
+#endif
     };
 
     std::vector<std::string> keys = {"BMAJ", "BMIN", "BPA", "CHAN", "POL"};
     for (auto& key : keys) {
         status = 0;
         fits_get_colnum(fptr, casesen, key.data(), &colnum, &status);
+#if defined(__APPLE__)
+        fits_get_acolparms(fptr, colnum, &ttype, &tbcol, &tunit, &tform, &scale, &zero, &nulstr, &tdisp, &status);
+        if (tform == 'K' || tform == 'D') { // 'K' is 64-bit long signed integer, and 'D' is double precision float
+#else
         fits_get_acolparms(fptr, colnum, ttype, &tbcol, &tunit, tform, &scale, &zero, &nulstr, &tdisp, &status);
         if (*tform == 'K' || *tform == 'D') { // 'K' is 64-bit long signed integer, and 'D' is double precision float
+#endif
             close_file();
             spdlog::warn("BEAMS table consists of 64-bit parameters. Convert these values to 32-bit.");
             return true;
