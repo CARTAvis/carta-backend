@@ -16,9 +16,9 @@
 namespace carta {
 
 template <typename T>
-bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer) {
+bool CartaFitsImage::GetDataSubset(int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer) {
     // Read section of data from FITS file and put it in buffer
-    // Get section components (convert to 1-based)
+    // Get section components for cfitsio(convert to 1-based)
     std::vector<long> start, end, inc;
     casacore::IPosition slicer_start = section.start();
     casacore::IPosition slicer_end = section.end();
@@ -36,8 +36,16 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
     casacore::Array<T> tmp_array(buffer_shape, tmp_buffer.data(), casacore::StorageInitPolicy::SHARE);
 
     // cfitsio params
-    int anynul(0), status(0);
-    T null_val(0);
+    int anynul(0);
+    T* null_val(nullptr);
+    int status(0);
+
+    std::unique_lock<std::mutex> ulock(_fptr_mutex);
+    auto fptr = OpenFile();
+    if (!fptr) {
+        spdlog::debug("CartaFitsImage failed to get file ptr to read subset.");
+        return false;
+    }
 
     switch (datatype) {
         case 8: {
@@ -57,8 +65,8 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
             break;
         }
         case -32: {
-            float fnull_val(NAN);
-            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), &fnull_val, tmp_buffer.data(), &anynul, &status);
+            float* fnull_val(nullptr);
+            fits_read_subset(fptr, TFLOAT, start.data(), end.data(), inc.data(), fnull_val, tmp_buffer.data(), &anynul, &status);
             break;
         }
         case -64: {
@@ -67,8 +75,10 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
             break;
         }
     }
+    ulock.unlock();
 
     if (status > 0) {
+        fits_report_error(stderr, status);
         spdlog::debug("fits_read_subset exited with status {}", status);
         return false;
     }
@@ -81,14 +91,14 @@ bool CartaFitsImage::GetDataSubset(fitsfile* fptr, int datatype, const casacore:
 }
 
 template <typename T>
-bool CartaFitsImage::GetPixelMask(fitsfile* fptr, int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask) {
+bool CartaFitsImage::GetPixelMask(int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask) {
     // Return mask for entire image
     auto mask_size = shape.product();
     std::vector<char> mask_buffer(mask_size);
     casacore::Array<char> marray(shape, mask_buffer.data(), casacore::StorageInitPolicy::SHARE);
     std::vector<T> data_buffer(mask_size);
 
-    // cfitsio params
+    // cfitsio params: undefined pixels are true (1)
     std::vector<long> start(shape.size(), 1);
     int anynul(0), status(0);
     int dtype(TFLOAT);
@@ -114,16 +124,25 @@ bool CartaFitsImage::GetPixelMask(fitsfile* fptr, int datatype, const casacore::
             break;
     }
 
+    std::unique_lock<std::mutex> ulock(_fptr_mutex);
+    auto fptr = OpenFile();
+    if (!fptr) {
+        spdlog::debug("CartaFitsImage failed to get file ptr to read mask.");
+        return false;
+    }
+
     fits_read_pixnull(fptr, dtype, start.data(), mask_size, data_buffer.data(), mask_buffer.data(), &anynul, &status);
+    ulock.unlock();
+
     if (status > 0) {
         spdlog::debug("fits_read_pixnull exited with status {}", status);
         return false;
     }
 
-    // Convert <char> to <bool>
+    // Convert <char> to <bool>; invert bool so masked (good) pixels are 1
     casacore::Array<bool> mask_array(marray.shape());
     convertArray(mask_array, marray);
-    mask = casacore::ArrayLattice<bool>(mask_array);
+    mask = casacore::ArrayLattice<bool>(!mask_array);
     return true;
 }
 
