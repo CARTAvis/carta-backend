@@ -265,7 +265,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
             break;
         }
 
-        if (name.startsWith("HISTORY") || name.startsWith("COMMENT")) {
+        if (name.startsWith("HISTORY") || name.startsWith("COMMENT") || name.startsWith("HIERARCH")) {
             auto entry = extended_info.add_header_entries();
             entry->set_name(name);
             continue;
