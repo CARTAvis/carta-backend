@@ -445,6 +445,10 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
         return;
     }
 
+    if (!existing_object["name"]) {
+        existing_object["name"] = object_name_string;
+    }
+
     res->writeStatus(HTTP_200);
     AddNoCacheHeaders(res);
     res->writeHeader("Content-Type", "application/json");
