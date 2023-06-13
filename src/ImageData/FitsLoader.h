@@ -32,7 +32,7 @@ private:
 
     int GetNumHeaders(const std::string& filename, int hdu);
     void RemoveHistoryBeam(unsigned int hdu_num);
-    bool Is64BitBeamTable(const std::string& filename);
+    bool Is64BitBeamsTable(const std::string& filename);
 };
 
 FitsLoader::FitsLoader(const std::string& filename, bool is_gz) : FileLoader(filename, "", is_gz) {}
@@ -101,7 +101,7 @@ void FitsLoader::OpenFile(const std::string& hdu) {
                     _image.reset(new casacore::FITSImage(_unzip_file, 0, hdu_num));
                 }
             } else if (use_casacore_fits) {
-                if (Is64BitBeamTable(_filename)) {
+                if (Is64BitBeamsTable(_filename)) {
                     use_casacore_fits = false;
                     _image.reset(new CartaFitsImage(_filename, hdu_num));
                 } else {
@@ -213,7 +213,7 @@ void FitsLoader::RemoveHistoryBeam(unsigned int hdu_num) {
     }
 }
 
-bool FitsLoader::Is64BitBeamTable(const std::string& filename) {
+bool FitsLoader::Is64BitBeamsTable(const std::string& filename) {
     fitsfile* fptr;
     int status(0);
     fits_open_file(&fptr, filename.c_str(), 0, &status);
@@ -237,44 +237,21 @@ bool FitsLoader::Is64BitBeamTable(const std::string& filename) {
     }
 
     // Get BEAMS columns data type
-    int casesen(CASEINSEN), colnum(0);
-#if defined(__APPLE__)
-    char ttype, tform;
-#else
-    char* ttype = (char*)malloc(sizeof(char*));
-    char* tform = (char*)malloc(sizeof(char*));
-#endif
-    char tunit, nulstr, tdisp;
-    long tbcol;
-    double scale, zero;
-
-    auto close_file = [&]() {
-        fits_close_file(fptr, &status);
-#if defined(__APPLE__)
-#else
-        free(ttype);
-        free(tform);
-#endif
-    };
-
+    int casesen(CASEINSEN), colnum(0), typecode(0);
+    long repeat, width;
     std::vector<std::string> keys = {"BMAJ", "BMIN", "BPA", "CHAN", "POL"};
     for (auto& key : keys) {
         status = 0;
         fits_get_colnum(fptr, casesen, key.data(), &colnum, &status);
-#if defined(__APPLE__)
-        fits_get_acolparms(fptr, colnum, &ttype, &tbcol, &tunit, &tform, &scale, &zero, &nulstr, &tdisp, &status);
-        if (tform == 'K' || tform == 'D') { // 'K' is 64-bit long signed integer, and 'D' is double precision float
-#else
-        fits_get_acolparms(fptr, colnum, ttype, &tbcol, &tunit, tform, &scale, &zero, &nulstr, &tdisp, &status);
-        if (*tform == 'K' || *tform == 'D') { // 'K' is 64-bit long signed integer, and 'D' is double precision float
-#endif
-            close_file();
+        fits_get_coltype(fptr, colnum, &typecode, &repeat, &width, &status);
+        if (typecode == TDOUBLE) {
+            fits_close_file(fptr, &status);
             spdlog::warn("BEAMS table consists of 64-bit parameters. Convert these values to 32-bit.");
             return true;
         }
     }
 
-    close_file();
+    fits_close_file(fptr, &status);
     return false;
 }
 
