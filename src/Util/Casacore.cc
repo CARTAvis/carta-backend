@@ -178,6 +178,7 @@ void NormalizeUnit(casacore::String& unit) {
     unit.gsub("JY", "Jy");
     unit.gsub("Beam", "beam");
     unit.gsub("Pixel", "pixel");
+    casacore::UnitMap::addFITS();
 
     // Convert unit without prefix
     try {
