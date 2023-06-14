@@ -246,7 +246,7 @@ bool FitsLoader::Is64BitBeamsTable(const std::string& filename) {
         fits_get_coltype(fptr, colnum, &typecode, &repeat, &width, &status);
         if (typecode == TDOUBLE) {
             fits_close_file(fptr, &status);
-            spdlog::warn("BEAMS table consists of 64-bit parameters. Convert these values to 32-bit.");
+            spdlog::warn("BEAMS table consists of 64-bit parameters.");
             return true;
         }
     }
