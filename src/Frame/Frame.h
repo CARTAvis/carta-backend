@@ -85,7 +85,7 @@ class Frame {
 public:
     // Load image cache for default_z, except for PV preview image which needs cube
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
-        bool load_image_cache = true);
+        bool cube_image_cache = false);
     ~Frame(){};
 
     bool IsValid();
@@ -266,6 +266,12 @@ protected:
     // For vector field calculation
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
+    // Get the start index of cube image cache, if any
+    long long int StartIdxOfCubeImageCache() const;
+
+    // Get image cache index (-1 for current channel and stokes, or stokes indices 0, 1, 2, or 3, except for computed stokes indices)
+    int ImageCacheIndex() const;
+
     // Setup
     uint32_t _session_id;
 
@@ -296,9 +302,12 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    //    std::vector<float> _image_cache; // image data for current z, stokes
     long long int _image_cache_size;
-    std::unique_ptr<float[]> _image_cache;
+    // Map of image caches
+    // key = -1: image cache of the current channel and stokes data
+    // key > -1: image cache of all channels data with respect to the stokes index, e.g., 0, 1, 2, or 3 (except for computed stokes indices)
+    std::unordered_map<int, std::unique_ptr<float[]>> _image_caches;
+    bool _cube_image_cache;        // if true, cache the whole cube image. Otherwise, only cache a channel image
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time

@@ -31,7 +31,7 @@ static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool load_image_cache)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool cube_image_cache)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -42,6 +42,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _stokes_axis(-1),
       _z_index(default_z),
       _stokes_index(DEFAULT_STOKES),
+      _cube_image_cache(cube_image_cache),
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
@@ -84,7 +85,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (load_image_cache && !(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -376,10 +377,23 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
-    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
+    int image_cache_index = ImageCacheIndex();
+    StokesSlicer stokes_slicer;
+    if (image_cache_index < 0) {
+        // Get current channel and stokes image cache, including for computed stokes image
+        stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
+    } else if (!_image_caches.count(image_cache_index)) {
+        // Get cube image cache with respect to current stokes
+        stokes_slicer = GetImageSlicer(AxisRange(ALL_Z), _stokes_index);
+    } else {
+        // Cube image cache with respect to the stokes index already exists
+        _image_cache_valid = true;
+        return true;
+    }
+
     _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_cache = std::make_unique<float[]>(_image_cache_size);
-    if (!GetSlicerData(stokes_slicer, _image_cache.get())) {
+    _image_caches[image_cache_index] = std::make_unique<float[]>(_image_cache_size);
+    if (!GetSlicerData(stokes_slicer, _image_caches[image_cache_index].get())) {
         spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
@@ -445,11 +459,12 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     Timer t;
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        BlockSmooth(
-            _image_cache.get(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
+        BlockSmooth(_image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), image_data.data(), num_image_columns,
+            num_image_rows, row_length_region, num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-        NearestNeighbor(_image_cache.get(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
+        NearestNeighbor(_image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), image_data.data(), num_image_columns,
+            row_length_region, num_rows_region, x, y, mip);
     }
 
     auto dt = t.Elapsed();
@@ -621,8 +636,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_cache.get(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-            _contour_settings.chunk_size, partial_contour_callback);
+        TraceContours(_image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), _width, _height, scale, offset,
+            _contour_settings.levels, vertex_data, index_data, _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -634,8 +649,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_width = _width - (2 * kernel_width);
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(
-            _image_cache.get(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
+        smooth_successful = GaussianSmooth(_image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), dest_array.get(),
+            source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
@@ -848,7 +863,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
                 // cannot calculate
                 return false;
             }
-            CalcBasicStats(stats, _image_cache.get(), _image_cache_size);
+            CalcBasicStats(stats, _image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), _width * _height);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -917,7 +932,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, bounds, _image_cache.get(), _image_cache_size);
+        hist = CalcHistogram(num_bins, bounds, _image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), _width * _height);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -1074,8 +1089,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (_image_cache_valid) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        cursor_value_with_current_stokes = _image_cache[(y * _width) + x];
-        cache_lock.release();
+        cursor_value_with_current_stokes = _image_caches[ImageCacheIndex()][StartIdxOfCubeImageCache() + (y * _width) + x];
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
@@ -1247,15 +1261,15 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             auto x_start = y * _width;
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                auto idx = x_start + j;
-                                profile.push_back(_image_cache[idx]);
+                                auto idx = StartIdxOfCubeImageCache() + x_start + j;
+                                profile.push_back(_image_caches[ImageCacheIndex()][idx]);
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                auto idx = (j * _width) + x;
-                                profile.push_back(_image_cache[idx]);
+                                auto idx = StartIdxOfCubeImageCache() + (j * _width) + x;
+                                profile.push_back(_image_caches[ImageCacheIndex()][idx]);
                             }
                             cache_lock.release();
                         }
@@ -1781,9 +1795,9 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fixed_params, fitting_request.offset(),
-                fitting_request.solver(), fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response,
-                progress_callback);
+            success = _image_fitter->FitImage(_width, _height, _image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(),
+                initial_values, fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+                fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
@@ -2401,6 +2415,23 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
         _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, _z_index, progress, callback);
     }
     return true;
+}
+
+long long int Frame::StartIdxOfCubeImageCache() const {
+    if (_cube_image_cache && !IsComputedStokes(_stokes_index)) {
+        long long int idx = (long long int)_width * (long long int)_height * (long long int)_z_index;
+        if (idx < _image_cache_size) {
+            return idx;
+        }
+    }
+    return 0;
+}
+
+int Frame::ImageCacheIndex() const {
+    if (_cube_image_cache && !IsComputedStokes(_stokes_index)) {
+        return _stokes_index;
+    }
+    return -1;
 }
 
 } // namespace carta
