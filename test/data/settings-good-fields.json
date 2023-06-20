@@ -11,5 +11,6 @@
     "exit_timeout": 10,
     "initial_timeout": 11,
     "read_only_mode": true,
-    "enable_scripting": true
+    "enable_scripting": true,
+    "reserved_memory": 1000
 }

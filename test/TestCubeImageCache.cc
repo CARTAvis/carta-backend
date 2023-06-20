@@ -27,7 +27,8 @@ public:
     static void Fits3DImage(int default_channel, bool cube_image_cache) {
         auto path_string = GeneratedFitsImagePath("10 10 10", IMAGE_OPTS);
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, cube_image_cache));
+        int reserved_memory = cube_image_cache ? 10 * 10 * 10 * sizeof(float) : 0;
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
         FitsDataReader reader(path_string);
 
         int x(4), y(6);
@@ -74,7 +75,8 @@ public:
     static void Fits4DImage(int default_channel, bool cube_image_cache) {
         auto path_string = GeneratedFitsImagePath("10 10 10 4", IMAGE_OPTS);
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, cube_image_cache));
+        int reserved_memory = cube_image_cache ? 10 * 10 * 10 * 4 * sizeof(float) : 0;
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
         FitsDataReader reader(path_string);
 
         int x(4), y(6);

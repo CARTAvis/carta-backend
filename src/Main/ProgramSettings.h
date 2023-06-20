@@ -20,6 +20,7 @@
 
 #define OMP_THREAD_COUNT -1
 #define DEFAULT_SOCKET_PORT 3002
+#define RESERVED_MEMORY 0 // MB
 
 #ifndef CARTA_DEFAULT_FRONTEND_FOLDER
 #define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
@@ -57,6 +58,7 @@ struct ProgramSettings {
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
     bool enable_scripting = false;
+    int reserved_memory = RESERVED_MEMORY;
 
     std::string browser;
 
@@ -76,7 +78,8 @@ struct ProgramSettings {
         {"event_thread_count", &event_thread_count},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
-        {"idle_timeout", &idle_session_wait_time}
+        {"idle_timeout", &idle_session_wait_time},
+        {"reserved_memory", &reserved_memory}
     };
 
     std::unordered_map<std::string, bool*> bool_keys_map{
@@ -125,7 +128,7 @@ struct ProgramSettings {
     auto GetTuple() const {
         return std::tie(help, version, port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder, no_http,
             no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, verbosity, wait_time, init_wait_time,
-            idle_session_wait_time);
+            idle_session_wait_time, reserved_memory);
     }
     bool operator!=(const ProgramSettings& rhs) const;
     bool operator==(const ProgramSettings& rhs) const;

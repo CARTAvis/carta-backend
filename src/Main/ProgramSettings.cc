@@ -192,7 +192,8 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("enable_scripting", "enable HTTP scripting interface", cxxopts::value<bool>())
         ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
-        ("no_system_config", "ignore system configuration file", cxxopts::value<bool>());
+        ("no_system_config", "ignore system configuration file", cxxopts::value<bool>())
+        ("m,reserved_memory", "reserved memory per session", cxxopts::value<int>(), "<MB>");
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
@@ -268,6 +269,10 @@ saving regions or generated images).
     
 'no_user_config' and 'no_system_config' may be used to ignore the user and 
 global configuration files, respectively.
+
+'reserved_memory' defines the amount of memory per session can be used to cache
+the image data. By default, it is 0, in the unit of MB. If the defined amount of
+memory is above a certain cube image data, then the backend will cache it all.
 )",
         CARTA_DEFAULT_FRONTEND_FOLDER, DEFAULT_SOCKET_PORT, CARTA_USER_FOLDER_PREFIX, log_levels, CARTA_USER_FOLDER_PREFIX);
 
@@ -322,6 +327,8 @@ global configuration files, respectively.
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
+
+    applyOptionalArgument(reserved_memory, "reserved_memory", result);
 
     for (const auto& arg : positional_arguments) {
         fs::path p(arg);

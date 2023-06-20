@@ -99,8 +99,8 @@ bool Session::_exit_when_all_sessions_closed = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
-    bool enable_scripting)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int reserved_memory,
+    bool read_only_mode, bool enable_scripting)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -108,6 +108,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _top_level_folder(top_level_folder),
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
+      _reserved_memory(reserved_memory),
       _read_only_mode(read_only_mode),
       _enable_scripting(enable_scripting),
       _region_handler(nullptr),
@@ -512,7 +513,10 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             }
 
             // create Frame for image
-            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
+            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu, DEFAULT_Z, _reserved_memory));
+
+            // Update the reserved memory
+            _reserved_memory -= frame->UsedReservedMemory();
 
             // query loader for mipmap dataset
             bool has_mipmaps(loader->HasMip(2));
@@ -640,13 +644,15 @@ void Session::DeleteFrame(int file_id) {
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();                    // delete Frame
+            _reserved_memory += frame.second->UsedReservedMemory();
+            frame.second.reset(); // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+        _reserved_memory += _frames[file_id]->UsedReservedMemory();
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);

@@ -27,11 +27,13 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
+#define ONE_MILLION 1000000
+
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, bool cube_image_cache)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, int reserved_memory)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -42,7 +44,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _stokes_axis(-1),
       _z_index(default_z),
       _stokes_index(DEFAULT_STOKES),
-      _cube_image_cache(cube_image_cache),
+      _cube_image_cache(false),
       _depth(1),
       _num_stokes(1),
       _image_cache_valid(false),
@@ -83,6 +85,12 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _height = _image_shape(_y_axis);
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
+
+    int cube_image_size = (int)(_width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION); // MB
+    if (reserved_memory >= cube_image_size) {
+        _cube_image_cache = true;
+        spdlog::info("Cache the whole cube image data.");
+    }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
@@ -2432,6 +2440,13 @@ int Frame::ImageCacheIndex() const {
         return _stokes_index;
     }
     return -1;
+}
+
+int Frame::UsedReservedMemory() {
+    if (_cube_image_cache) {
+        return _width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION; // MB
+    }
+    return 0;
 }
 
 } // namespace carta

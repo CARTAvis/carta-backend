@@ -11,5 +11,6 @@
     "exit_timeout": false,
     "initial_timeout": false,
     "read_only_mode": "yes",
-    "enable_scripting": "maybe"
+    "enable_scripting": "maybe",
+    "reserved_memory": true
 }
