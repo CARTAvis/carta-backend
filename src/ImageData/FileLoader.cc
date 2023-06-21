@@ -75,6 +75,8 @@ FileLoader::FileLoader(const std::string& filename, const std::string& directory
       _directory(directory),
       _is_gz(is_gz),
       _is_generated(is_generated),
+      _support_aips_beam(false),
+      _is_aips_beam(false),
       _modify_time(0),
       _num_dims(0),
       _has_pixel_mask(false),
@@ -923,4 +925,12 @@ bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_
     // Override in ExprLoader
     message = "Cannot save image type from loader.";
     return false;
+}
+
+void FileLoader::SetAipsBeamSupport(bool support) {
+    _support_aips_beam = support;
+}
+
+bool FileLoader::GetAipsBeamSupport() {
+    return _support_aips_beam;
 }

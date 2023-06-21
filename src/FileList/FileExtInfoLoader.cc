@@ -39,7 +39,7 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
     bool map_ok(false);
 
     if (IsCompressedFits(filename)) {
-        CompressedFits cfits(filename);
+        CompressedFits cfits(filename, _loader->GetAipsBeamSupport());
         if (!cfits.GetFitsHeaderInfo(hdu_info_map)) {
             message = "Compressed FITS headers failed.";
             return map_ok;
@@ -53,11 +53,6 @@ bool FileExtInfoLoader::FillFitsFileInfoMap(
             int spectral_axis = cfits.GetSpectralAxis();
             int stokes_axis = cfits.GetStokesAxis();
             AddComputedEntriesFromHeaders(hdu_info.second, render_axes, spectral_axis, stokes_axis, &cfits);
-
-            const casacore::ImageBeamSet beam_set = cfits.GetBeamSet();
-            if (!beam_set.empty()) {
-                AddBeamEntry(hdu_info.second, beam_set);
-            }
         }
     } else {
         // Get list of image HDUs
@@ -138,6 +133,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
             bool check_data_type(false);
             auto image = _loader->GetImage(check_data_type);
+            bool is_history_beam = _loader->IsHistoryBeam();
 
             if (image) {
                 // Check dimensions
@@ -217,7 +213,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         extended_info, image_shape, spatial_axes, spectral_axis, stokes_axis, render_axes, depth_axis, axes_names);
 
                     // Computed entries for rendered image axes, depth axis (may not be spectral), stokes axis
-                    AddComputedEntries(extended_info, image.get(), render_axes, spectral_axis, stokes_axis, use_image_for_entries);
+                    AddComputedEntries(
+                        extended_info, image.get(), render_axes, spectral_axis, stokes_axis, use_image_for_entries, is_history_beam);
                     info_ok = true;
                 }
             } else { // image failed
@@ -821,7 +818,7 @@ void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, 
 }
 
 void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image,
-    const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries) {
+    const std::vector<int>& display_axes, int spectral_axis, int stokes_axis, bool use_image_for_entries, bool is_history_beam) {
     // Add computed entries to extended file info
     if (use_image_for_entries) {
         // Use image coordinate system
@@ -954,7 +951,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
     casacore::ImageInfo image_info = image->imageInfo();
     if (image_info.hasBeam()) {
         const casacore::ImageBeamSet beam_set = image_info.getBeamSet();
-        AddBeamEntry(extended_info, beam_set);
+        AddBeamEntry(extended_info, beam_set, is_history_beam);
     }
 
     AddCoordRanges(extended_info, image->coordinates(), image->shape());
@@ -1255,6 +1252,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
                         spectral_crval = rest_freq / (fits_offset + spectral_crval / casacore::C::c);
                         spectral_cdelt = rest_freq / (fits_offset + spectral_cdelt / casacore::C::c);
                     }
+
                     spectral_coordinate =
                         casacore::SpectralCoordinate(frequency_type, spectral_crval, spectral_cdelt, spectral_crpix, rest_freq);
                 }
@@ -1277,11 +1275,18 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
             coordsys.addCoordinate(stokes_coord);
         }
 
+        // Beams read from header, BEAMS table, or history
+        bool is_history_beam(false);
+        const casacore::ImageBeamSet beam_set = compressed_fits->GetBeamSet(is_history_beam);
+        if (!beam_set.empty()) {
+            AddBeamEntry(extended_info, beam_set, is_history_beam);
+        }
+
         AddCoordRanges(extended_info, coordsys, shape);
     }
 }
 
-void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set) {
+void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, const casacore::ImageBeamSet& beam_set, bool is_history_beam) {
     // Add restoring/median beam to computed entries.
     casacore::GaussianBeam gaussian_beam;
     std::string entry_name;
@@ -1296,6 +1301,9 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
     if (!gaussian_beam.isNull()) {
         std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
             gaussian_beam.getPA(casacore::Unit("deg")));
+        if (is_history_beam) {
+            beam_info += " (extracted from HISTORY)";
+        }
 
         auto entry = extended_info.add_computed_entries();
         entry->set_name(entry_name);

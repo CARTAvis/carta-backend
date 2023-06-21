@@ -213,7 +213,7 @@ void Session::ConnectCalled() {
 // File browser info
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-    const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message) {
+    const std::string& folder, const std::string& filename, const std::string& hdu, bool support_aips_beam, std::string& message) {
     // Fill CARTA::FileInfo and CARTA::FileInfoExtended
     // Map all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
@@ -231,6 +231,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             message = "Unsupported format.";
             return file_info_ok;
         }
+        loader->SetAipsBeamSupport(support_aips_beam);
         FileExtInfoLoader ext_info_loader(loader);
 
         std::string requested_hdu(hdu);
@@ -258,7 +259,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-    const std::string& filename, std::string& hdu, std::string& message, std::string& fullname) {
+    const std::string& filename, std::string& hdu, bool support_aips_beam, std::string& message, std::string& fullname) {
     // Fill FileInfoExtended for given file and hdu_name (may include extension name)
     bool file_info_ok(false);
 
@@ -274,6 +275,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             message = "Unsupported format.";
             return file_info_ok;
         }
+        loader->SetAipsBeamSupport(support_aips_beam);
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(loader);
 
         // Discern hdu for extended file info
@@ -420,7 +422,8 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto& file_info = *response.mutable_file_info();
     std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
     string message;
-    bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
+    bool success = FillExtendedFileInfo(
+        extended_info_map, file_info, request.directory(), request.file(), request.hdu(), request.support_aips_beam(), message);
 
     if (success) {
         // add extended info map to message
@@ -467,6 +470,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     std::string hdu(message.hdu());
     auto file_id(message.file_id());
     bool lel_expr(message.lel_expr());
+    bool support_aips_beam(message.support_aips_beam());
 
     // response message:
     CARTA::OpenFileAck ack;
@@ -495,7 +499,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         // Set _loader and get file info
         CARTA::FileInfo file_info;
         CARTA::FileInfoExtended file_info_extended;
-        bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message, fullname);
+        bool info_loaded =
+            FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, support_aips_beam, err_message, fullname);
 
         if (info_loaded) {
             // Get or create loader for frame
@@ -507,9 +512,12 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
                 std::string expression = "AMPLITUDE(" + filename + ")";
                 bool is_lel_expr(true);
-                auto open_file_message = Message::OpenFile(directory, expression, is_lel_expr, hdu, file_id, message.render_mode());
+                auto open_file_message =
+                    Message::OpenFile(directory, expression, is_lel_expr, hdu, file_id, support_aips_beam, message.render_mode());
                 return OnOpenFile(open_file_message, request_id, silent);
             }
+
+            loader->SetAipsBeamSupport(support_aips_beam);
 
             // create Frame for image
             auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu));
@@ -1115,7 +1123,8 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 err_file_ids.append(std::to_string(image.file_id()) + " ");
             }
         } else {
-            auto open_file_msg = Message::OpenFile(image.directory(), image.file(), image.lel_expr(), image.hdu(), image.file_id());
+            auto open_file_msg = Message::OpenFile(
+                image.directory(), image.file(), image.lel_expr(), image.hdu(), image.file_id(), image.support_aips_beam());
 
             // Open a file
             if (!OnOpenFile(open_file_msg, request_id, true)) {

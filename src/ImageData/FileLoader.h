@@ -59,6 +59,10 @@ public:
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const;
 
+    // Set whether to set beam from history headers when setting up image
+    void SetAipsBeamSupport(bool support);
+    bool GetAipsBeamSupport();
+
     // If not in use, temp close image to prevent caching
     void CloseImageIfUpdated();
 
@@ -131,12 +135,18 @@ public:
         return _is_generated;
     };
 
+    bool IsHistoryBeam() {
+        return _is_aips_beam;
+    }
+
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;
     std::string _hdu;
     bool _is_gz;
     bool _is_generated;
+    bool _support_aips_beam;
+    bool _is_aips_beam;
     unsigned int _modify_time;
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
