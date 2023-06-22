@@ -933,14 +933,15 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         num_bins = AutoBinSize();
     }
 
-    if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
+    if ((z == CurrentZ() && stokes == CurrentStokes()) || (_cube_image_cache && !IsComputedStokes(stokes))) {
         // calculate histogram from current image cache
         if ((_image_cache_size == 0) && !FillImageCache()) {
             return false;
         }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, bounds, _image_caches[ImageCacheIndex()].get() + StartIdxOfCubeImageCache(), _width * _height);
+        hist =
+            CalcHistogram(num_bins, bounds, _image_caches[ImageCacheIndex(stokes)].get() + StartIdxOfCubeImageCache(z), _width * _height);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -2425,9 +2426,12 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     return true;
 }
 
-long long int Frame::StartIdxOfCubeImageCache() const {
+long long int Frame::StartIdxOfCubeImageCache(int z_index) const {
     if (_cube_image_cache && !IsComputedStokes(_stokes_index)) {
-        long long int idx = (long long int)_width * (long long int)_height * (long long int)_z_index;
+        if (z_index == CURRENT_Z) {
+            z_index = _z_index;
+        }
+        long long int idx = (long long int)_width * (long long int)_height * (long long int)z_index;
         if (idx < _image_cache_size) {
             return idx;
         }
@@ -2435,16 +2439,19 @@ long long int Frame::StartIdxOfCubeImageCache() const {
     return 0;
 }
 
-int Frame::ImageCacheIndex() const {
-    if (_cube_image_cache && !IsComputedStokes(_stokes_index)) {
-        return _stokes_index;
+int Frame::ImageCacheIndex(int stokes_index) const {
+    if (stokes_index == CURRENT_STOKES) {
+        stokes_index = _stokes_index;
+    }
+    if (_cube_image_cache && !IsComputedStokes(stokes_index)) { // only return non-computed stokes index
+        return stokes_index;
     }
     return -1;
 }
 
 int Frame::UsedReservedMemory() {
     if (_cube_image_cache) {
-        return _width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION; // MB
+        return _width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION; // in the unit of MB
     }
     return 0;
 }
