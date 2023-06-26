@@ -1304,6 +1304,7 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
 
         std::string beam_info =
             fmt::format("{:g}\" X {:g}\", {:g} deg", major.get("arcsec").getValue(), minor.get("arcsec").getValue(), pa);
+
         if (is_history_beam) {
             beam_info += " (extracted from HISTORY)";
         }
@@ -1313,27 +1314,32 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
         computed_entry->set_entry_type(CARTA::EntryType::STRING);
         computed_entry->set_value(beam_info);
 
-        // Append beam header entries in degrees
-        double major_deg = major.get("deg").getValue();
-        double minor_deg = minor.get("deg").getValue();
-        auto header_entry = extended_info.add_header_entries();
-        header_entry->set_name("BMAJ");
-        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-        header_entry->set_value(fmt::format("{:E}", major_deg));
-        header_entry->set_numeric_value(major_deg);
-        header_entry->set_comment("extracted from HISTORY");
-        header_entry = extended_info.add_header_entries();
-        header_entry->set_name("BMIN");
-        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-        header_entry->set_value(fmt::format("{:E}", minor_deg));
-        header_entry->set_numeric_value(minor_deg);
-        header_entry->set_comment("extracted from HISTORY");
-        header_entry = extended_info.add_header_entries();
-        header_entry->set_name("BPA");
-        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-        header_entry->set_value(fmt::format("{:E}", pa));
-        header_entry->set_numeric_value(pa);
-        header_entry->set_comment("extracted from HISTORY");
+        if (is_history_beam) {
+            // Append beam header entries in degrees
+            double major_deg = major.get("deg").getValue();
+            double minor_deg = minor.get("deg").getValue();
+
+            auto header_entry = extended_info.add_header_entries();
+            header_entry->set_name("BMAJ");
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_value(fmt::format("{:E}", major_deg));
+            header_entry->set_numeric_value(major_deg);
+            header_entry->set_comment("extracted from HISTORY");
+
+            header_entry = extended_info.add_header_entries();
+            header_entry->set_name("BMIN");
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_value(fmt::format("{:E}", minor_deg));
+            header_entry->set_numeric_value(minor_deg);
+            header_entry->set_comment("extracted from HISTORY");
+
+            header_entry = extended_info.add_header_entries();
+            header_entry->set_name("BPA");
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_value(fmt::format("{:E}", pa));
+            header_entry->set_numeric_value(pa);
+            header_entry->set_comment("extracted from HISTORY");
+        }
     }
 }
 
