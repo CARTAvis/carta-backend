@@ -150,7 +150,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 auto equivalent_type = data_type; // for FITS only, for rescaled data
                 casacore::String image_type(image->imageType());
                 bool use_image_for_entries(false);
-
                 if (image_type == "FITSImage") {
                     // casacore FitsKeywordList has incomplete header names (no n on CRVALn, CDELTn, CROTA, etc.) so read with fitsio
                     casacore::FITSImage* fits_image = dynamic_cast<casacore::FITSImage*>(image.get());
@@ -1581,7 +1580,8 @@ casacore::Vector<casacore::String> FileExtInfoLoader::FitsHeaderStrings(casacore
     for (int i = 0; i < nkeys; ++i) {
         header_strings[i] = header_str.substr(pos, 80);
 
-        if (header_strings[i].contains("FELO-HEL")) {
+        if (!header_strings[i].contains("HISTORY") && header_strings[i].contains("FELO-HEL")) {
+            // not supported, use ImageHeaderToFITS instead
             header_strings.resize();
             return header_strings;
         }
