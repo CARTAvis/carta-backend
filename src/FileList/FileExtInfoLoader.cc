@@ -1298,16 +1298,42 @@ void FileExtInfoLoader::AddBeamEntry(CARTA::FileInfoExtended& extended_info, con
     }
 
     if (!gaussian_beam.isNull()) {
-        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
-            gaussian_beam.getPA(casacore::Unit("deg")));
+        casacore::Quantity major = gaussian_beam.getMajor();
+        casacore::Quantity minor = gaussian_beam.getMinor();
+        double pa = gaussian_beam.getPA().get("deg").getValue();
+
+        std::string beam_info =
+            fmt::format("{:g}\" X {:g}\", {:g} deg", major.get("arcsec").getValue(), minor.get("arcsec").getValue(), pa);
         if (is_history_beam) {
             beam_info += " (extracted from HISTORY)";
         }
 
-        auto entry = extended_info.add_computed_entries();
-        entry->set_name(entry_name);
-        entry->set_entry_type(CARTA::EntryType::STRING);
-        entry->set_value(beam_info);
+        auto computed_entry = extended_info.add_computed_entries();
+        computed_entry->set_name(entry_name);
+        computed_entry->set_entry_type(CARTA::EntryType::STRING);
+        computed_entry->set_value(beam_info);
+
+        // Append beam header entries in degrees
+        double major_deg = major.get("deg").getValue();
+        double minor_deg = minor.get("deg").getValue();
+        auto header_entry = extended_info.add_header_entries();
+        header_entry->set_name("BMAJ");
+        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+        header_entry->set_value(fmt::format("{:E}", major_deg));
+        header_entry->set_numeric_value(major_deg);
+        header_entry->set_comment("extracted from HISTORY");
+        header_entry = extended_info.add_header_entries();
+        header_entry->set_name("BMIN");
+        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+        header_entry->set_value(fmt::format("{:E}", minor_deg));
+        header_entry->set_numeric_value(minor_deg);
+        header_entry->set_comment("extracted from HISTORY");
+        header_entry = extended_info.add_header_entries();
+        header_entry->set_name("BPA");
+        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+        header_entry->set_value(fmt::format("{:E}", pa));
+        header_entry->set_numeric_value(pa);
+        header_entry->set_comment("extracted from HISTORY");
     }
 }
 
