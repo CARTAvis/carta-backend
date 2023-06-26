@@ -27,9 +27,8 @@
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
 
-#define ONE_MILLION 1000000
-
 static const int HIGH_COMPRESSION_QUALITY(32);
+static const double ONE_MILLION(1000000);
 
 namespace carta {
 
@@ -86,8 +85,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
-    int cube_image_size = (int)(_width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION); // MB
-    if (reserved_memory >= cube_image_size) {
+    size_t cube_image_size = (size_t)(_width * _height * _depth * _num_stokes * sizeof(float)); // Bytes
+    if ((size_t)reserved_memory * ONE_MILLION >= cube_image_size) {
         _cube_image_cache = true;
         spdlog::info("Cache the whole cube image data.");
     }
@@ -386,32 +385,15 @@ bool Frame::FillImageCache() {
 
     Timer t;
     int image_cache_index = ImageCacheIndex();
-    StokesSlicer stokes_slicer;
-    if (image_cache_index < 0) {
-        // Get current channel and stokes image cache, including for computed stokes image
-        stokes_slicer = GetImageSlicer(AxisRange(_z_index), _stokes_index);
-    } else if (!_image_caches.count(image_cache_index)) {
-        // Get cube image cache with respect to current stokes
-        stokes_slicer = GetImageSlicer(AxisRange(ALL_Z), _stokes_index);
-    } else {
-        // Cube image cache with respect to the stokes index already exists
+    int z_index = image_cache_index < 0 ? _z_index : ALL_Z;
+    if (GetImageCache(image_cache_index, z_index)) {
+        auto dt = t.Elapsed();
+        spdlog::performance(
+            "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt.ms(), (float)(_width * _height) / dt.us());
         _image_cache_valid = true;
         return true;
     }
-
-    _image_cache_size = stokes_slicer.slicer.length().product();
-    _image_caches[image_cache_index] = std::make_unique<float[]>(_image_cache_size);
-    if (!GetSlicerData(stokes_slicer, _image_caches[image_cache_index].get())) {
-        spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
-        return false;
-    }
-
-    auto dt = t.Elapsed();
-    spdlog::performance(
-        "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt.ms(), (float)(_width * _height) / dt.us());
-
-    _image_cache_valid = true;
-    return true;
+    return false;
 }
 
 void Frame::InvalidateImageCache() {
@@ -1467,6 +1449,20 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 // Use loader data
                 spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                 cb(profile_message);
+            } else if (_cube_image_cache && !IsComputedStokes(stokes)) {
+                if (GetImageCache(stokes)) {
+                    int x, y;
+                    start_cursor.ToIndex(x, y);
+                    spectral_data.resize(_depth);
+                    for (int z = 0; z < _depth; ++z) {
+                        size_t idx = (z * _width * _height) + (_width * y + x);
+                        spectral_data[z] = _image_caches[ImageCacheIndex(stokes)][idx];
+                    }
+                    spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
+                    cb(profile_message);
+                } else {
+                    spdlog::error("Invalid cube image cache for the cursor spectral profile!");
+                }
             } else {
                 // Send image slices
                 // Set up slicer
@@ -2431,10 +2427,7 @@ long long int Frame::StartIdxOfCubeImageCache(int z_index) const {
         if (z_index == CURRENT_Z) {
             z_index = _z_index;
         }
-        long long int idx = (long long int)_width * (long long int)_height * (long long int)z_index;
-        if (idx < _image_cache_size) {
-            return idx;
-        }
+        return (long long int)_width * (long long int)_height * (long long int)z_index;
     }
     return 0;
 }
@@ -2449,9 +2442,23 @@ int Frame::ImageCacheIndex(int stokes_index) const {
     return -1;
 }
 
-int Frame::UsedReservedMemory() {
+bool Frame::GetImageCache(int image_cache_index, int z_index) {
+    int stokes_index = image_cache_index < 0 ? _stokes_index : image_cache_index;
+    if (image_cache_index < 0 || !_image_caches.count(image_cache_index)) {
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z_index), stokes_index);
+        _image_cache_size = stokes_slicer.slicer.length().product();
+        _image_caches[image_cache_index] = std::make_unique<float[]>(_image_cache_size);
+        if (!GetSlicerData(stokes_slicer, _image_caches[image_cache_index].get())) {
+            spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
+            return false;
+        }
+    }
+    return true;
+}
+
+int Frame::UsedReservedMemory() const {
     if (_cube_image_cache) {
-        return _width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION; // in the unit of MB
+        return std::ceil(_width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION); // MB
     }
     return 0;
 }

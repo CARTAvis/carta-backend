@@ -220,7 +220,7 @@ public:
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    int UsedReservedMemory();
+    int UsedReservedMemory() const;
 
 protected:
     // Validate z and stokes index values
@@ -273,6 +273,8 @@ protected:
 
     // Get image cache index (-1 for current channel and stokes, or stokes indices 0, 1, 2, or 3, except for computed stokes indices)
     int ImageCacheIndex(int stokes_index = CURRENT_STOKES) const;
+
+    bool GetImageCache(int image_cache_index, int z_index = ALL_Z);
 
     // Setup
     uint32_t _session_id;
