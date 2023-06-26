@@ -160,23 +160,26 @@ void FitsLoader::ResetImageBeam(unsigned int hdu_num) {
         return;
     }
 
-    auto image_info = _image->imageInfo();
-    bool has_beam_headers = HasBeamHeaders(hdu_num);
+    bool has_beam_headers = HasBeamHeaders(hdu_num); // BMAJ, BMIN, and BPA
 
-    if (image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam() && !has_beam_headers) {
-        // No beam headers, so remove beam from image info
-        image_info.removeRestoringBeam();
-        _image->setImageInfo(image_info);
-    }
+    if (!has_beam_headers) {
+        auto image_info = _image->imageInfo();
 
-    if (!has_beam_headers && _support_aips_beam) {
-        // Set beam from last history header instead
-        casacore::Quantity major, minor, pa;
-
-        if (GetLastHistoryBeam(hdu_num, major, minor, pa)) {
-            image_info.setRestoringBeam(major, minor, pa);
+        if (image_info.hasBeam() && image_info.getBeamSet().hasSingleBeam()) {
+            // Remove beam set by casacore (first history beam)
+            image_info.removeRestoringBeam();
             _image->setImageInfo(image_info);
-            _is_aips_beam = true;
+        }
+
+        if (_support_aips_beam) {
+            // Set beam from last history header instead
+            casacore::Quantity major, minor, pa;
+
+            if (GetLastHistoryBeam(hdu_num, major, minor, pa)) {
+                image_info.setRestoringBeam(major, minor, pa);
+                _image->setImageInfo(image_info);
+                _is_aips_beam = true;
+            }
         }
     }
 }
