@@ -2002,6 +2002,22 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         cache_results[stat] = init_spectral;
     }
 
+    // Spectral profile for the point region
+    if (initial_region_state.type == CARTA::RegionType::POINT) {
+        casacore::IPosition origin = lc_region->boundingBox().start();
+        PointXy point_xy(origin(0), origin(1));
+        std::vector<float> profile;
+        if (_frames.at(file_id)->GetPointSpectralData(profile, stokes_index, point_xy)) {
+            std::vector<double> data(profile.begin(), profile.end());
+            auto stats_type = required_stats[0]; // Point region profile only has one statistical type
+            results[stats_type] = data;
+            partial_results_callback(results, 1.0); // progress = 1.0
+            memcpy(cache_results[stats_type].data(), data.data(), data.size() * sizeof(double));
+            _spectral_cache[cache_id] = SpectralCache(cache_results);
+            return true;
+        }
+    }
+
     // Calculate and cache profiles
     size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
@@ -2052,9 +2068,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
             auto stats_type = profile.first;
             const std::vector<double>& stats_data = profile.second;
             if (results.count(stats_type)) {
-                memcpy(&results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+                memcpy(&results[stats_type][profile_start], stats_data.data(), stats_data.size() * sizeof(double));
             }
-            memcpy(&cache_results[stats_type][profile_start], &stats_data[0], stats_data.size() * sizeof(double));
+            memcpy(&cache_results[stats_type][profile_start], stats_data.data(), stats_data.size() * sizeof(double));
         }
 
         start_z += count;

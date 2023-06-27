@@ -221,6 +221,7 @@ public:
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     int UsedReservedMemory() const;
+    bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
 
 protected:
     // Validate z and stokes index values
@@ -268,8 +269,8 @@ protected:
     // For vector field calculation
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    // Get the start index of cube image cache, if any
-    long long int StartIdxOfCubeImageCache(int z_index = CURRENT_Z) const;
+    // Get the start index of image cache
+    long long int ImageCacheStartIndex(int z_index = CURRENT_Z) const;
 
     // Get image cache index (-1 for current channel and stokes, or stokes indices 0, 1, 2, or 3, except for computed stokes indices)
     int ImageCacheIndex(int stokes_index = CURRENT_STOKES) const;
