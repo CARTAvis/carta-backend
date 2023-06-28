@@ -675,10 +675,14 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
     auto z = _frames.at(file_id)->CurrentZ();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     auto animation_id = AnimationRunning() ? _animation_id : 0;
-    if (!message.tiles().empty() && _frames.count(file_id)) {
+    if (_frames.count(file_id)) {
         if (skip_data) {
             // Update view settings and skip sending data
             _frames.at(file_id)->SetAnimationViewSettings(message);
+            return;
+        }
+
+        if (message.tiles().empty()) {
             return;
         }
 
@@ -2116,10 +2120,8 @@ void Session::ExecuteAnimationFrameInner() {
                     // Send vector field data if required
                     SendVectorFieldData(file_id);
 
-                    // Send tile data for active frame
-                    if (is_active_frame) {
-                        OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
-                    }
+                    // Send tile data
+                    OnAddRequiredTiles(_frames.at(file_id)->GetAnimationViewSettings());
 
                     // Send region histograms and profiles
                     UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
