@@ -847,13 +847,13 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
             return true;
         }
 
-        if ((z == CurrentZ()) && (stokes == CurrentStokes())) {
+        if ((z == CurrentZ() && stokes == CurrentStokes()) || (_cube_image_cache && !IsComputedStokes(stokes))) {
             // calculate histogram from image cache
             if ((_image_cache_size == 0) && !FillImageCache()) {
                 // cannot calculate
                 return false;
             }
-            CalcBasicStats(stats, _image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(), _width * _height);
+            CalcBasicStats(stats, _image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(z), _width * _height);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
