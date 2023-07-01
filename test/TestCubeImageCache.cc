@@ -17,6 +17,7 @@ using namespace carta;
 
 static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 static const double ONE_MILLION = 1000000;
+static const std::vector<std::string> STOKES_TYPES = {"I", "Q", "U", "V", "Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
 
 class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
 public:
@@ -27,7 +28,7 @@ public:
         return {data.profiles(1), data.profiles(0)};
     }
 
-    static void Fits3DSpatialProfile(const std::vector<int>& dims, int default_channel, bool cube_image_cache) {
+    static void SpatialProfile3D(const std::vector<int>& dims, int default_channel, bool cube_image_cache) {
         if (dims.size() != 3) {
             return;
         }
@@ -43,7 +44,8 @@ public:
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
         auto dt = t.Elapsed();
-        std::cout << fmt::format("Time spend on creating the Frame object: {:.3f} ms.\n", dt.ms());
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for creating a Frame object: {:.3f} ms.\n", prefix, dt.ms());
 
         FitsDataReader reader(path_string);
 
@@ -88,7 +90,7 @@ public:
         }
     }
 
-    static void Fits4DSpatialProfile(const std::vector<int>& dims, int default_channel, bool cube_image_cache) {
+    static void SpatialProfile4D(const std::vector<int>& dims, int default_channel, bool cube_image_cache) {
         if (dims.size() != 4) {
             return;
         }
@@ -105,7 +107,8 @@ public:
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
         auto dt = t.Elapsed();
-        std::cout << fmt::format("Time spend on creating the Frame object: {:.3f} ms.\n", dt.ms());
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for creating the Frame object: {:.3f} ms.\n", prefix, dt.ms());
 
         FitsDataReader reader(path_string);
 
@@ -151,7 +154,7 @@ public:
         }
     }
 
-    static std::vector<float> Fits3DCursorSpectralProfile(const std::vector<int>& dims, bool cube_image_cache) {
+    static std::vector<float> CursorSpectralProfile3D(const std::vector<int>& dims, bool cube_image_cache) {
         if (dims.size() != 3) {
             return std::vector<float>();
         }
@@ -191,13 +194,13 @@ public:
             },
             CURSOR_REGION_ID, stokes_changed);
         auto dt = t.Elapsed();
-        std::cout << fmt::format("Time spend on getting cursor spectral profile: {:.3f} ms.\n", dt.ms());
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for getting cursor spectral profile: {:.3f} ms.\n", prefix, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static std::vector<float> Fits4DCursorSpectralProfile(
-        const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+    static std::vector<float> CursorSpectralProfile4D(const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
         if (dims.size() != 4) {
             return std::vector<float>();
         }
@@ -237,7 +240,7 @@ public:
 
         // Get cursor spectral profile data from the Frame
         CARTA::SpectralProfile spectral_profile;
-        bool stokes_changed = (stokes_config_z == "z");
+        bool stokes_changed(false);
 
         Timer t;
         frame->FillSpectralProfileData(
@@ -248,7 +251,8 @@ public:
             },
             CURSOR_REGION_ID, stokes_changed);
         auto dt = t.Elapsed();
-        std::cout << fmt::format("Time spend on getting cursor spectral profile: {:.3f} ms.\n", dt.ms());
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for getting cursor spectral profile ({}): {:.3f} ms.\n", prefix, stokes_config_z, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
@@ -315,12 +319,13 @@ public:
             },
             region_id, file_id, stokes_changed);
         auto dt = t.Elapsed();
-        std::cout << fmt::format("Time spend on getting point region spectral profile: {:.3f} ms.\n", dt.ms());
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for getting point region spectral profile ({}): {:.3f} ms.\n", prefix, stokes_config_z, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static carta::Histogram CubeHistogram(const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+    static carta::Histogram CubeHistogram(const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
         if (dims.size() != 4) {
             return carta::Histogram();
         }
@@ -338,23 +343,23 @@ public:
         int channel(0);
         int stokes(0);
 
-        if (stokes_config_z == "I") {
+        if (stokes_config == "I") {
             stokes = 0;
-        } else if (stokes_config_z == "Q") {
+        } else if (stokes_config == "Q") {
             stokes = 1;
-        } else if (stokes_config_z == "U") {
+        } else if (stokes_config == "U") {
             stokes = 2;
-        } else if (stokes_config_z == "V") {
+        } else if (stokes_config == "V") {
             stokes = 3;
-        } else if (stokes_config_z == "Ptotal") {
+        } else if (stokes_config == "Ptotal") {
             stokes = COMPUTE_STOKES_PTOTAL;
-        } else if (stokes_config_z == "PFtotal") {
+        } else if (stokes_config == "PFtotal") {
             stokes = COMPUTE_STOKES_PFTOTAL;
-        } else if (stokes_config_z == "Plinear") {
+        } else if (stokes_config == "Plinear") {
             stokes = COMPUTE_STOKES_PLINEAR;
-        } else if (stokes_config_z == "PFlinear") {
+        } else if (stokes_config == "PFlinear") {
             stokes = COMPUTE_STOKES_PFLINEAR;
-        } else if (stokes_config_z == "Pangle") {
+        } else if (stokes_config == "Pangle") {
             stokes = COMPUTE_STOKES_PANGLE;
         }
 
@@ -393,148 +398,59 @@ public:
         }
 
         auto dt = t.Elapsed();
-        std::cout << fmt::format("Time spend on calculating cube histogram: {:.3f} ms.\n", dt.ms());
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for calculating cube histogram ({}): {:.3f} ms.\n", prefix, stokes_config, dt.ms());
 
         return cube_histogram;
     }
 };
 
-TEST_F(CubeImageCacheTest, Fits3DSpatialProfile) {
-    std::vector<int> image_dims = {100, 100, 100};
-    Fits3DSpatialProfile(image_dims, 0, false);
-    Fits3DSpatialProfile(image_dims, 0, true);
-    Fits3DSpatialProfile(image_dims, 1, false);
-    Fits3DSpatialProfile(image_dims, 1, true);
+TEST_F(CubeImageCacheTest, SpatialProfile3D) {
+    std::vector<int> image_dims = {10, 10, 10};
+    SpatialProfile3D(image_dims, 0, false);
+    SpatialProfile3D(image_dims, 0, true);
+    SpatialProfile3D(image_dims, 1, false);
+    SpatialProfile3D(image_dims, 1, true);
 }
 
-TEST_F(CubeImageCacheTest, Fits4DSpatialProfile) {
-    std::vector<int> image_dims = {100, 100, 100, 4};
-    Fits4DSpatialProfile(image_dims, 0, false);
-    Fits4DSpatialProfile(image_dims, 0, true);
-    Fits4DSpatialProfile(image_dims, 1, false);
-    Fits4DSpatialProfile(image_dims, 1, true);
+TEST_F(CubeImageCacheTest, SpatialProfile4D) {
+    std::vector<int> image_dims = {10, 10, 10, 4};
+    SpatialProfile4D(image_dims, 0, false);
+    SpatialProfile4D(image_dims, 0, true);
+    SpatialProfile4D(image_dims, 1, false);
+    SpatialProfile4D(image_dims, 1, true);
 }
 
-TEST_F(CubeImageCacheTest, Fits3DCursorSpectralProfile) {
-    std::vector<int> image_dims = {10, 10, 1000};
-    auto spectral_profile1 = Fits3DCursorSpectralProfile(image_dims, false);
-    auto spectral_profile2 = Fits3DCursorSpectralProfile(image_dims, true);
+TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
+    std::vector<int> image_dims = {10, 10, 100};
+    auto spectral_profile1 = CursorSpectralProfile3D(image_dims, false);
+    auto spectral_profile2 = CursorSpectralProfile3D(image_dims, true);
     CmpVectors(spectral_profile1, spectral_profile2);
 }
 
-TEST_F(CubeImageCacheTest, Fits4DCursorSpectralProfile) {
-    std::vector<int> image_dims = {10, 10, 1000, 4};
-    auto spectral_profile1 = Fits4DCursorSpectralProfile(image_dims, "Iz", false);
-    auto spectral_profile2 = Fits4DCursorSpectralProfile(image_dims, "Iz", true);
-    CmpVectors(spectral_profile1, spectral_profile2);
-
-    auto spectral_profile3 = Fits4DCursorSpectralProfile(image_dims, "Qz", false);
-    auto spectral_profile4 = Fits4DCursorSpectralProfile(image_dims, "Qz", true);
-    CmpVectors(spectral_profile3, spectral_profile4);
-
-    auto spectral_profile5 = Fits4DCursorSpectralProfile(image_dims, "Uz", false);
-    auto spectral_profile6 = Fits4DCursorSpectralProfile(image_dims, "Uz", true);
-    CmpVectors(spectral_profile5, spectral_profile6);
-
-    auto spectral_profile7 = Fits4DCursorSpectralProfile(image_dims, "Uz", false);
-    auto spectral_profile8 = Fits4DCursorSpectralProfile(image_dims, "Uz", true);
-    CmpVectors(spectral_profile7, spectral_profile8);
-
-    auto spectral_profile9 = Fits4DCursorSpectralProfile(image_dims, "Ptotalz", false);
-    auto spectral_profile10 = Fits4DCursorSpectralProfile(image_dims, "Ptotalz", true);
-    CmpVectors(spectral_profile9, spectral_profile10);
-
-    auto spectral_profile11 = Fits4DCursorSpectralProfile(image_dims, "PFtotalz", false);
-    auto spectral_profile12 = Fits4DCursorSpectralProfile(image_dims, "PFtotalz", true);
-    CmpVectors(spectral_profile11, spectral_profile12);
-
-    auto spectral_profile13 = Fits4DCursorSpectralProfile(image_dims, "Plinearz", false);
-    auto spectral_profile14 = Fits4DCursorSpectralProfile(image_dims, "Plinearz", true);
-    CmpVectors(spectral_profile13, spectral_profile14);
-
-    auto spectral_profile15 = Fits4DCursorSpectralProfile(image_dims, "PFlinearz", false);
-    auto spectral_profile16 = Fits4DCursorSpectralProfile(image_dims, "PFlinearz", true);
-    CmpVectors(spectral_profile15, spectral_profile16);
-
-    auto spectral_profile17 = Fits4DCursorSpectralProfile(image_dims, "Panglez", false);
-    auto spectral_profile18 = Fits4DCursorSpectralProfile(image_dims, "Panglez", true);
-    CmpVectors(spectral_profile17, spectral_profile18);
+TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
+    std::vector<int> image_dims = {10, 10, 100, 4};
+    for (auto stokes : STOKES_TYPES) {
+        auto spectral_profile1 = CursorSpectralProfile4D(image_dims, stokes + "z", false);
+        auto spectral_profile2 = CursorSpectralProfile4D(image_dims, stokes + "z", true);
+        CmpVectors(spectral_profile1, spectral_profile2);
+    }
 }
 
 TEST_F(CubeImageCacheTest, PointRegionSpectralProfile) {
-    std::vector<int> image_dims = {10, 10, 1000, 4};
-    auto spectral_profile1 = PointRegionSpectralProfile(image_dims, "Iz", false);
-    auto spectral_profile2 = PointRegionSpectralProfile(image_dims, "Iz", true);
-    CmpVectors(spectral_profile1, spectral_profile2);
-
-    auto spectral_profile3 = PointRegionSpectralProfile(image_dims, "Qz", false);
-    auto spectral_profile4 = PointRegionSpectralProfile(image_dims, "Qz", true);
-    CmpVectors(spectral_profile3, spectral_profile4);
-
-    auto spectral_profile5 = PointRegionSpectralProfile(image_dims, "Uz", false);
-    auto spectral_profile6 = PointRegionSpectralProfile(image_dims, "Uz", true);
-    CmpVectors(spectral_profile5, spectral_profile6);
-
-    auto spectral_profile7 = PointRegionSpectralProfile(image_dims, "Uz", false);
-    auto spectral_profile8 = PointRegionSpectralProfile(image_dims, "Uz", true);
-    CmpVectors(spectral_profile7, spectral_profile8);
-
-    auto spectral_profile9 = PointRegionSpectralProfile(image_dims, "Ptotalz", false);
-    auto spectral_profile10 = PointRegionSpectralProfile(image_dims, "Ptotalz", true);
-    CmpVectors(spectral_profile9, spectral_profile10);
-
-    auto spectral_profile11 = PointRegionSpectralProfile(image_dims, "PFtotalz", false);
-    auto spectral_profile12 = PointRegionSpectralProfile(image_dims, "PFtotalz", true);
-    CmpVectors(spectral_profile11, spectral_profile12);
-
-    auto spectral_profile13 = PointRegionSpectralProfile(image_dims, "Plinearz", false);
-    auto spectral_profile14 = PointRegionSpectralProfile(image_dims, "Plinearz", true);
-    CmpVectors(spectral_profile13, spectral_profile14);
-
-    auto spectral_profile15 = PointRegionSpectralProfile(image_dims, "PFlinearz", false);
-    auto spectral_profile16 = PointRegionSpectralProfile(image_dims, "PFlinearz", true);
-    CmpVectors(spectral_profile15, spectral_profile16);
-
-    auto spectral_profile17 = PointRegionSpectralProfile(image_dims, "Panglez", false);
-    auto spectral_profile18 = PointRegionSpectralProfile(image_dims, "Panglez", true);
-    CmpVectors(spectral_profile17, spectral_profile18);
+    std::vector<int> image_dims = {10, 10, 100, 4};
+    for (auto stokes : STOKES_TYPES) {
+        auto spectral_profile1 = PointRegionSpectralProfile(image_dims, stokes + "z", false);
+        auto spectral_profile2 = PointRegionSpectralProfile(image_dims, stokes + "z", true);
+        CmpVectors(spectral_profile1, spectral_profile2);
+    }
 }
 
 TEST_F(CubeImageCacheTest, CubeHistogram) {
-    std::vector<int> image_dims = {100, 100, 1000, 4};
-    auto hist1 = CubeHistogram(image_dims, "I", false);
-    auto hist2 = CubeHistogram(image_dims, "I", true);
-    EXPECT_TRUE(CmpHistograms(hist1, hist2));
-
-    auto hist3 = CubeHistogram(image_dims, "Q", false);
-    auto hist4 = CubeHistogram(image_dims, "Q", true);
-    EXPECT_TRUE(CmpHistograms(hist3, hist4));
-
-    auto hist5 = CubeHistogram(image_dims, "U", false);
-    auto hist6 = CubeHistogram(image_dims, "U", true);
-    EXPECT_TRUE(CmpHistograms(hist5, hist6));
-
-    auto hist7 = CubeHistogram(image_dims, "V", false);
-    auto hist8 = CubeHistogram(image_dims, "V", true);
-    EXPECT_TRUE(CmpHistograms(hist7, hist8));
-
-    auto hist9 = CubeHistogram(image_dims, "Ptotal", false);
-    auto hist10 = CubeHistogram(image_dims, "Ptotal", true);
-    EXPECT_TRUE(CmpHistograms(hist9, hist10));
-
-    auto hist11 = CubeHistogram(image_dims, "PFtotal", false);
-    auto hist12 = CubeHistogram(image_dims, "PFtotal", true);
-    EXPECT_TRUE(CmpHistograms(hist11, hist12));
-
-    auto hist13 = CubeHistogram(image_dims, "Plinear", false);
-    auto hist14 = CubeHistogram(image_dims, "Plinear", true);
-    EXPECT_TRUE(CmpHistograms(hist13, hist14));
-
-    auto hist15 = CubeHistogram(image_dims, "PFlinear", false);
-    auto hist16 = CubeHistogram(image_dims, "PFlinear", true);
-    EXPECT_TRUE(CmpHistograms(hist15, hist16));
-
-    auto hist17 = CubeHistogram(image_dims, "Pangle", false);
-    auto hist18 = CubeHistogram(image_dims, "Pangle", true);
-    EXPECT_TRUE(CmpHistograms(hist17, hist18));
+    std::vector<int> image_dims = {10, 10, 100, 4};
+    for (auto stokes : STOKES_TYPES) {
+        auto hist1 = CubeHistogram(image_dims, stokes, false);
+        auto hist2 = CubeHistogram(image_dims, stokes, true);
+        EXPECT_TRUE(CmpHistograms(hist1, hist2));
+    }
 }
