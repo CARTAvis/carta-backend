@@ -112,8 +112,6 @@ Collaboration diagram for carta::Hdf5Loader:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a36e4bd83a1c91dc4252a2e51044b7b3d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#a36e4bd83a1c91dc4252a2e51044b7b3d">Hdf5Loader</a> (const std::string &amp;filename)</td></tr>
 <tr class="separator:a36e4bd83a1c91dc4252a2e51044b7b3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a433df8c5d2f5155d6879a1e443e4112f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#a433df8c5d2f5155d6879a1e443e4112f">OpenFile</a> (const std::string &amp;hdu) override</td></tr>
-<tr class="separator:a433df8c5d2f5155d6879a1e443e4112f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb9de4af6432b5108e5870a67dfda5bb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#abb9de4af6432b5108e5870a67dfda5bb">HasData</a> (<a class="el" href="namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7">FileInfo::Data</a> ds) const override</td></tr>
 <tr class="separator:abb9de4af6432b5108e5870a67dfda5bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc59e4dbd158e8564d708b9e170c6b05"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#acc59e4dbd158e8564d708b9e170c6b05">GetCursorSpectralData</a> (std::vector&lt; float &gt; &amp;data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex &amp;image_mutex) override</td></tr>
@@ -137,6 +135,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aab4ad60b38570c3e8e209756abec12a3 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43a8481e01dde04a387525bd0fca93b0 inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a43a8481e01dde04a387525bd0fca93b0">CanOpenFile</a> (std::string &amp;error)</td></tr>
 <tr class="separator:a43a8481e01dde04a387525bd0fca93b0 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d91045ea868fea755a7be026806cea0 inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0">OpenFile</a> (const std::string &amp;hdu)</td></tr>
+<tr class="separator:a5d91045ea868fea755a7be026806cea0 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5101515d2dff6f6621b23699c5c7b3bf inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5101515d2dff6f6621b23699c5c7b3bf">CloseImageIfUpdated</a> ()</td></tr>
 <tr class="separator:a5101515d2dff6f6621b23699c5c7b3bf inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad006f05ccd020be05834212598e3a38b inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classcarta_1_1FileLoader.html#a71e6f6d410ccc6ce459ce5e546857eab">ImageRef</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b">GetImage</a> (bool check_data_type=true)</td></tr>
@@ -188,6 +188,8 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
+<tr class="memitem:ac261cf1c2029910d7bceaa02da0d969f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#ac261cf1c2029910d7bceaa02da0d969f">AllocateImage</a> (const std::string &amp;hdu) override</td></tr>
+<tr class="separator:ac261cf1c2029910d7bceaa02da0d969f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa5d819caee85e90912fece54d1896b4"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4">DataSetToString</a> (<a class="el" href="namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7">FileInfo::Data</a> ds) const</td></tr>
 <tr class="separator:afa5d819caee85e90912fece54d1896b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a160b643f0c37e494cabb6cfb70fda4ea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Hdf5Loader.html#a160b643f0c37e494cabb6cfb70fda4ea">HasData</a> (std::string ds_name) const</td></tr>
@@ -323,6 +325,40 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac261cf1c2029910d7bceaa02da0d969f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac261cf1c2029910d7bceaa02da0d969f">&#9670;&nbsp;</a></span>AllocateImage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::Hdf5Loader::AllocateImage </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>hdu</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">private</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78">carta::FileLoader</a>.</p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_ac261cf1c2029910d7bceaa02da0d969f_cgraph.svg" width="547" height="82"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
 <a id="afa5d819caee85e90912fece54d1896b4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afa5d819caee85e90912fece54d1896b4">&#9670;&nbsp;</a></span>DataSetToString()</h2>
 
@@ -349,7 +385,7 @@ Additional Inherited Members</h2></td></tr>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_afa5d819caee85e90912fece54d1896b4_icgraph.svg" width="100%" height="486"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_afa5d819caee85e90912fece54d1896b4_icgraph.svg" width="100%" height="500"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -691,7 +727,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_a8d207c173ff2974ee0636685eaf562cd_cgraph.svg" width="576" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_a8d207c173ff2974ee0636685eaf562cd_cgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -725,7 +761,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_aaf681888dcdc382db1cfad406d69bc41_cgraph.svg" width="579" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_aaf681888dcdc382db1cfad406d69bc41_cgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -951,40 +987,6 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_a805b038f504d25c8b13f3aa483e57cbf_icgraph.svg" width="599" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-
-</div>
-</div>
-<a id="a433df8c5d2f5155d6879a1e443e4112f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a433df8c5d2f5155d6879a1e443e4112f">&#9670;&nbsp;</a></span>OpenFile()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::Hdf5Loader::OpenFile </td>
-          <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>hdu</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classcarta_1_1FileLoader.html#aa94f8789f059e022e03e1e5a1da942eb">carta::FileLoader</a>.</p>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Hdf5Loader_a433df8c5d2f5155d6879a1e443e4112f_cgraph.svg" width="547" height="82"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 

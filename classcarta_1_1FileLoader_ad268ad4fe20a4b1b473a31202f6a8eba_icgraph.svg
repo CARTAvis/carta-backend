@@ -21,10 +21,10 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1ConcatLoader.html#a5b0b230f23267cacf97bf8cd7848ae7c" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1ConcatLoader.html#aa41523bbb8feda61c4efdbdaeb3aea9e" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="0,-0.5 0,-30.5 114,-30.5 114,-0.5 0,-0.5"/>
 <text text-anchor="start" x="8" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ConcatLoader</text>
-<text text-anchor="middle" x="57" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::OpenFile</text>
+<text text-anchor="middle" x="57" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::AllocateImage</text>
 </a>
 </g>
 </g>

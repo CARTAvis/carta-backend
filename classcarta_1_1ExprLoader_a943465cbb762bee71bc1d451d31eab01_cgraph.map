@@ -1,4 +1,4 @@
-<map id="carta::ExprLoader::OpenFile" name="carta::ExprLoader::OpenFile">
+<map id="carta::ExprLoader::AllocateImage" name="carta::ExprLoader::AllocateImage">
 <area shape="rect" id="node1" title=" " alt="" coords="5,104,149,145"/>
 <area shape="rect" id="node2" href="$classcarta_1_1CartaHdf5Image.html#aa6d40fb4a674d41a64c73408e8c05b89" title=" " alt="" coords="197,104,371,145"/>
 <area shape="rect" id="node3" href="$classcarta_1_1CartaHdf5Image.html#a70fa8ffe224050e4f928c0bce6077feb" title=" " alt="" coords="419,104,589,145"/>

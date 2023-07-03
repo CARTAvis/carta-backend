@@ -69,10 +69,10 @@
 <!-- Node4 -->
 <g id="node4" class="node">
 <title>Node4</title>
-<g id="a_node4"><a xlink:href="classcarta_1_1FitsLoader.html#a538c8e6f068973a8a34b2aacf7be029d" target="_top" xlink:title=" ">
+<g id="a_node4"><a xlink:href="classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="0,-24.5 0,-54.5 104,-54.5 104,-24.5 0,-24.5"/>
 <text text-anchor="start" x="8" y="-42.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FitsLoader::</text>
-<text text-anchor="middle" x="52" y="-31.5" font-family="Helvetica,sans-Serif" font-size="10.00">OpenFile</text>
+<text text-anchor="middle" x="52" y="-31.5" font-family="Helvetica,sans-Serif" font-size="10.00">AllocateImage</text>
 </a>
 </g>
 </g>

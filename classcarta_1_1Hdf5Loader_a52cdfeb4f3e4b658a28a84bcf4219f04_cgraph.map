@@ -1,13 +1,15 @@
 <map id="carta::Hdf5Loader::GetRegionSpectralData" name="carta::Hdf5Loader::GetRegionSpectralData">
 <area shape="rect" id="node1" title=" " alt="" coords="5,173,180,215"/>
 <area shape="rect" id="node2" href="$classcarta_1_1FileLoader.html#afad62acd2ff74fdef47e6a31500fe070" title=" " alt="" coords="238,95,389,136"/>
-<area shape="rect" id="node8" href="$classcarta_1_1Hdf5Loader.html#acc59e4dbd158e8564d708b9e170c6b05" title=" " alt="" coords="228,232,399,273"/>
-<area shape="rect" id="node9" href="$classcarta_1_1Hdf5Loader.html#abb9de4af6432b5108e5870a67dfda5bb" title=" " alt="" coords="455,192,601,233"/>
+<area shape="rect" id="node10" href="$classcarta_1_1Hdf5Loader.html#acc59e4dbd158e8564d708b9e170c6b05" title=" " alt="" coords="228,232,399,273"/>
+<area shape="rect" id="node11" href="$classcarta_1_1Hdf5Loader.html#abb9de4af6432b5108e5870a67dfda5bb" title=" " alt="" coords="455,192,601,233"/>
 <area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#a5101515d2dff6f6621b23699c5c7b3bf" title=" " alt="" coords="447,13,609,55"/>
 <area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="459,95,597,136"/>
 <area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#ab555e1d6ee27d451b910faeff3cf9796" title=" " alt="" coords="664,5,803,47"/>
 <area shape="rect" id="node6" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="657,71,809,112"/>
-<area shape="rect" id="node7" href="$classcarta_1_1FileLoader.html#aa94f8789f059e022e03e1e5a1da942eb" title=" " alt="" coords="664,136,803,177"/>
-<area shape="rect" id="node11" href="$classcarta_1_1Hdf5Loader.html#a805b038f504d25c8b13f3aa483e57cbf" title=" " alt="" coords="455,257,601,299"/>
-<area shape="rect" id="node10" href="$classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4" title=" " alt="" coords="660,201,807,243"/>
+<area shape="rect" id="node7" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="664,136,803,177"/>
+<area shape="rect" id="node8" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="857,107,996,148"/>
+<area shape="rect" id="node9" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="869,173,985,199"/>
+<area shape="rect" id="node13" href="$classcarta_1_1Hdf5Loader.html#a805b038f504d25c8b13f3aa483e57cbf" title=" " alt="" coords="455,257,601,299"/>
+<area shape="rect" id="node12" href="$classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4" title=" " alt="" coords="660,201,807,243"/>
 </map>

@@ -46,9 +46,9 @@ if (edges && edges.length) {
         </defs>
 
 <script type="text/javascript">
-var viewWidth = 712;
+var viewWidth = 852;
 var viewHeight = 345;
-var sectionId = 'dynsection-23';
+var sectionId = 'dynsection-24';
 </script>
 <script xlink:href="svgpan.js"/>
 <svg id="graph" class="graph">
@@ -177,19 +177,19 @@ var sectionId = 'dynsection-23';
 <path fill="none" stroke="midnightblue" d="M206.88,-147.28C222.91,-130.64 250.83,-104.35 280,-89.5 292.13,-83.32 305.87,-78.61 319.22,-75.04"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="320.45,-78.34 329.31,-72.53 318.76,-71.55 320.45,-78.34"/>
 </g>
-<!-- Node15 -->
-<g id="node15" class="node">
-<title>Node15</title>
-<g id="a_node15"><a xlink:href="structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" target="_top" xlink:title=" ">
+<!-- Node17 -->
+<g id="node17" class="node">
+<title>Node17</title>
+<g id="a_node17"><a xlink:href="structStokesSource.html#a7651d6cbedb427f5c00925c5111feac8" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="314.5,-0.5 314.5,-30.5 448.5,-30.5 448.5,-0.5 314.5,-0.5"/>
 <text text-anchor="start" x="322.5" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">StokesSource::IsOriginal</text>
 <text text-anchor="middle" x="381.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">Image</text>
 </a>
 </g>
 </g>
-<!-- Node2&#45;&gt;Node15 -->
-<g id="edge23" class="edge">
-<title>Node2&#45;&gt;Node15</title>
+<!-- Node2&#45;&gt;Node17 -->
+<g id="edge25" class="edge">
+<title>Node2&#45;&gt;Node17</title>
 <path fill="none" stroke="midnightblue" d="M199.34,-147.33C211.15,-121.04 239.05,-67.2 280,-39.5 287.53,-34.41 296.01,-30.39 304.78,-27.22"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="305.95,-30.52 314.38,-24.11 303.79,-23.87 305.95,-30.52"/>
 </g>
@@ -330,7 +330,7 @@ var sectionId = 'dynsection-23';
 <!-- Node14 -->
 <g id="node14" class="node">
 <title>Node14</title>
-<g id="a_node14"><a xlink:href="classcarta_1_1FileLoader.html#aa94f8789f059e022e03e1e5a1da942eb" target="_top" xlink:title=" ">
+<g id="a_node14"><a xlink:href="classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="559.5,-96.5 559.5,-126.5 663.5,-126.5 663.5,-96.5 559.5,-96.5"/>
 <text text-anchor="start" x="567.5" y="-114.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileLoader::</text>
 <text text-anchor="middle" x="611.5" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">OpenFile</text>
@@ -343,18 +343,49 @@ var sectionId = 'dynsection-23';
 <path fill="none" stroke="midnightblue" d="M433.67,-75.05C467.87,-82.1 513.05,-91.41 549.18,-98.86"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="548.61,-102.32 559.11,-100.91 550.02,-95.46 548.61,-102.32"/>
 </g>
+<!-- Node15 -->
+<g id="node15" class="node">
+<title>Node15</title>
+<g id="a_node15"><a xlink:href="classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="740,-118.5 740,-148.5 844,-148.5 844,-118.5 740,-118.5"/>
+<text text-anchor="start" x="748" y="-136.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FileLoader::</text>
+<text text-anchor="middle" x="792" y="-125.5" font-family="Helvetica,sans-Serif" font-size="10.00">AllocateImage</text>
+</a>
+</g>
+</g>
+<!-- Node14&#45;&gt;Node15 -->
+<g id="edge23" class="edge">
+<title>Node14&#45;&gt;Node15</title>
+<path fill="none" stroke="midnightblue" d="M663.65,-117.8C684.28,-120.35 708.26,-123.3 729.81,-125.96"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="729.49,-129.45 739.84,-127.19 730.34,-122.5 729.49,-129.45"/>
+</g>
 <!-- Node16 -->
 <g id="node16" class="node">
 <title>Node16</title>
-<g id="a_node16"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
+<g id="a_node16"><a xlink:href="Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="748.5,-80 748.5,-99 835.5,-99 835.5,-80 748.5,-80"/>
+<text text-anchor="middle" x="792" y="-87" font-family="Helvetica,sans-Serif" font-size="10.00">NormalizeUnit</text>
+</a>
+</g>
+</g>
+<!-- Node14&#45;&gt;Node16 -->
+<g id="edge24" class="edge">
+<title>Node14&#45;&gt;Node16</title>
+<path fill="none" stroke="midnightblue" d="M663.65,-105.2C686.98,-102.32 714.59,-98.92 738.13,-96.02"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="738.79,-99.46 748.28,-94.76 737.93,-92.51 738.79,-99.46"/>
+</g>
+<!-- Node18 -->
+<g id="node18" class="node">
+<title>Node18</title>
+<g id="a_node18"><a xlink:href="Stokes_8h.html#a30da07ffd67ed06c1e15e2da4d915e0c" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="558,-6 558,-25 665,-25 665,-6 558,-6"/>
 <text text-anchor="middle" x="611.5" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00">IsComputedStokes</text>
 </a>
 </g>
 </g>
-<!-- Node15&#45;&gt;Node16 -->
-<g id="edge24" class="edge">
-<title>Node15&#45;&gt;Node16</title>
+<!-- Node17&#45;&gt;Node18 -->
+<g id="edge26" class="edge">
+<title>Node17&#45;&gt;Node18</title>
 <path fill="none" stroke="midnightblue" d="M448.75,-15.5C479.94,-15.5 516.94,-15.5 547.68,-15.5"/>
 <polygon fill="midnightblue" stroke="midnightblue" points="547.85,-19 557.85,-15.5 547.85,-12 547.85,-19"/>
 </g>

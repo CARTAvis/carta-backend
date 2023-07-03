@@ -1,5 +1,7 @@
 var NAVTREEINDEX9 =
 {
+"namespacespdlog.html":[2,0,2],
+"namespacespdlog.html#a670c6a63d98e715c33a6063e6e0c7b0c":[2,0,2,1],
 "namespacespdlog_1_1sinks.html":[2,0,2,0],
 "pages.html":[],
 "structAxisRange.html":[3,0,4],
@@ -247,7 +249,5 @@ var NAVTREEINDEX9 =
 "structcarta_1_1ProgramSettings.html#aefe071713ac70beff41353d48328c362":[3,0,0,61,17],
 "structcarta_1_1ProgramSettings.html#af05baa44d6fd4297093fb69b3a6a6597":[3,0,0,61,24],
 "structcarta_1_1ProgramSettings.html#af26fc251ef3f54bfc0474666a820798f":[3,0,0,61,38],
-"structcarta_1_1ProgramSettings.html#af42dbe060133b411b2b9392a19466d1c":[3,0,0,61,9],
-"structcarta_1_1ProgramSettings.html#af79fed2fb510be1e30123ce5f788b4a7":[3,0,0,61,4],
-"structcarta_1_1ProgramSettings.html#af7d2adcd634e3d42023943597eb0a772":[3,0,0,61,47]
+"structcarta_1_1ProgramSettings.html#af42dbe060133b411b2b9392a19466d1c":[3,0,0,61,9]
 };

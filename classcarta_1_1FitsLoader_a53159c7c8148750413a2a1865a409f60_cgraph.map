@@ -1,4 +1,4 @@
-<map id="carta::FitsLoader::OpenFile" name="carta::FitsLoader::OpenFile">
+<map id="carta::FitsLoader::AllocateImage" name="carta::FitsLoader::AllocateImage">
 <area shape="rect" id="node1" title=" " alt="" coords="5,217,144,259"/>
 <area shape="rect" id="node2" href="$classcarta_1_1CompressedFits.html#a9c49b7aed1688648aabc4f3671b49f39" title=" " alt="" coords="204,64,371,105"/>
 <area shape="rect" id="node8" href="$classcarta_1_1CompressedFits.html#adb90e88cc345989dbc87a11d93471b4b" title=" " alt="" coords="204,129,371,171"/>

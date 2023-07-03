@@ -399,10 +399,10 @@ var sectionId = 'dynsection-1';
 <!-- Node6 -->
 <g id="node6" class="node">
 <title>Node6</title>
-<g id="a_node6"><a xlink:href="classcarta_1_1FitsLoader.html#a538c8e6f068973a8a34b2aacf7be029d" target="_top" xlink:title=" ">
+<g id="a_node6"><a xlink:href="classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1154.5,-790.28 1154.5,-820.28 1258.5,-820.28 1258.5,-790.28 1154.5,-790.28"/>
 <text text-anchor="start" x="1162.5" y="-808.28" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FitsLoader::</text>
-<text text-anchor="middle" x="1206.5" y="-797.28" font-family="Helvetica,sans-Serif" font-size="10.00">OpenFile</text>
+<text text-anchor="middle" x="1206.5" y="-797.28" font-family="Helvetica,sans-Serif" font-size="10.00">AllocateImage</text>
 </a>
 </g>
 </g>

@@ -86,6 +86,7 @@ $(document).ready(function(){initNavTree('classcarta_1_1MiriadLoader.html',''); 
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="classcarta_1_1MiriadLoader-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">carta::MiriadLoader Class Reference</div>  </div>
@@ -112,13 +113,13 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a2dbf4663937653017f60997586cb0ddb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a117a93473876245205b6c1128e839717"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MiriadLoader.html#a117a93473876245205b6c1128e839717">CanOpenFile</a> (std::string &amp;error) override</td></tr>
 <tr class="separator:a117a93473876245205b6c1128e839717"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a6e0b2505cfec5170a1c2a9aaf3cacc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MiriadLoader.html#a3a6e0b2505cfec5170a1c2a9aaf3cacc">OpenFile</a> (const std::string &amp;hdu) override</td></tr>
-<tr class="separator:a3a6e0b2505cfec5170a1c2a9aaf3cacc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classcarta_1_1FileLoader"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classcarta_1_1FileLoader')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classcarta_1_1FileLoader.html">carta::FileLoader</a></td></tr>
 <tr class="memitem:a93a405a4a9693d24f7f091a237ef476f inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a93a405a4a9693d24f7f091a237ef476f">FileLoader</a> (const std::string &amp;filename, const std::string &amp;directory=&quot;&quot;, bool is_gz=false, bool is_generated=false)</td></tr>
 <tr class="separator:a93a405a4a9693d24f7f091a237ef476f inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab4ad60b38570c3e8e209756abec12a3 inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aab4ad60b38570c3e8e209756abec12a3">~FileLoader</a> ()=default</td></tr>
 <tr class="separator:aab4ad60b38570c3e8e209756abec12a3 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d91045ea868fea755a7be026806cea0 inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0">OpenFile</a> (const std::string &amp;hdu)</td></tr>
+<tr class="separator:a5d91045ea868fea755a7be026806cea0 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa240e8e3019302df9f2ab7b24d4c5c04 inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aa240e8e3019302df9f2ab7b24d4c5c04">HasData</a> (<a class="el" href="namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7">FileInfo::Data</a> ds) const</td></tr>
 <tr class="separator:aa240e8e3019302df9f2ab7b24d4c5c04 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5101515d2dff6f6621b23699c5c7b3bf inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5101515d2dff6f6621b23699c5c7b3bf">CloseImageIfUpdated</a> ()</td></tr>
@@ -183,6 +184,11 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:afe99b54ffe694a795883f0aa5c6be8d8 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a407726076c702227887d352f41962116 inherit pub_methods_classcarta_1_1FileLoader"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a407726076c702227887d352f41962116">IsGenerated</a> ()</td></tr>
 <tr class="separator:a407726076c702227887d352f41962116 inherit pub_methods_classcarta_1_1FileLoader"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
+Private Member Functions</h2></td></tr>
+<tr class="memitem:a1f06c2895087e2ec9192a0cecd8e16bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1MiriadLoader.html#a1f06c2895087e2ec9192a0cecd8e16bb">AllocateImage</a> (const std::string &amp;hdu) override</td></tr>
+<tr class="separator:a1f06c2895087e2ec9192a0cecd8e16bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -291,6 +297,34 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a1f06c2895087e2ec9192a0cecd8e16bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f06c2895087e2ec9192a0cecd8e16bb">&#9670;&nbsp;</a></span>AllocateImage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::MiriadLoader::AllocateImage </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>hdu</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">private</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78">carta::FileLoader</a>.</p>
+
+</div>
+</div>
 <a id="a117a93473876245205b6c1128e839717"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a117a93473876245205b6c1128e839717">&#9670;&nbsp;</a></span>CanOpenFile()</h2>
 
@@ -316,34 +350,6 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Reimplemented from <a class="el" href="classcarta_1_1FileLoader.html#a43a8481e01dde04a387525bd0fca93b0">carta::FileLoader</a>.</p>
-
-</div>
-</div>
-<a id="a3a6e0b2505cfec5170a1c2a9aaf3cacc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3a6e0b2505cfec5170a1c2a9aaf3cacc">&#9670;&nbsp;</a></span>OpenFile()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::MiriadLoader::OpenFile </td>
-          <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>hdu</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classcarta_1_1FileLoader.html#aa94f8789f059e022e03e1e5a1da942eb">carta::FileLoader</a>.</p>
 
 </div>
 </div>

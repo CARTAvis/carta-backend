@@ -131,10 +131,10 @@ var sectionId = 'dynsection-25';
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1FitsLoader.html#a538c8e6f068973a8a34b2aacf7be029d" target="_top" xlink:title=" ">
+<g id="a_node3"><a xlink:href="classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1286.5,-201.5 1286.5,-231.5 1390.5,-231.5 1390.5,-201.5 1286.5,-201.5"/>
 <text text-anchor="start" x="1294.5" y="-219.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::FitsLoader::</text>
-<text text-anchor="middle" x="1338.5" y="-208.5" font-family="Helvetica,sans-Serif" font-size="10.00">OpenFile</text>
+<text text-anchor="middle" x="1338.5" y="-208.5" font-family="Helvetica,sans-Serif" font-size="10.00">AllocateImage</text>
 </a>
 </g>
 </g>

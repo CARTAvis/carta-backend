@@ -1,5 +1,7 @@
 var NAVTREEINDEX5 =
 {
+"classcarta_1_1ImageFitter.html#a63188042be1b3d3e4f07126ad7e8711f":[3,0,0,47,22],
+"classcarta_1_1ImageFitter.html#a659953697801f20e068304a46fc42005":[3,0,0,47,25],
 "classcarta_1_1ImageFitter.html#a6a182be33142889418ef9a9a4c273091":[3,0,0,47,26],
 "classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69":[3,0,0,47,12],
 "classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752":[3,0,0,47,6],
@@ -36,7 +38,7 @@ var NAVTREEINDEX5 =
 "classcarta_1_1ImageMoments.html#ad512d09713a16359bda9cc81b39679a3":[3,0,0,50,0],
 "classcarta_1_1ImagePtrLoader.html":[3,0,0,41],
 "classcarta_1_1ImagePtrLoader.html#a0096fc61ec95f2ac4467c145f3bee7f0":[3,0,0,41,0],
-"classcarta_1_1ImagePtrLoader.html#af1d91e55580d6fb72f06e781fa02d81e":[3,0,0,41,1],
+"classcarta_1_1ImagePtrLoader.html#a9d0a5367d1fe9fe97db1b55738f3270b":[3,0,0,41,1],
 "classcarta_1_1LineBoxRegions.html":[3,0,0,65],
 "classcarta_1_1LineBoxRegions.html#a011e5e6b552ea4062a03bb383459eb2d":[3,0,0,65,2],
 "classcarta_1_1LineBoxRegions.html#a066e62610d376757a766330151e21912":[3,0,0,65,12],
@@ -72,9 +74,9 @@ var NAVTREEINDEX5 =
 "classcarta_1_1LoaderCache.html#a897ac84091a6130db817be6409d61cd3":[3,0,0,82,5],
 "classcarta_1_1LoaderCache.html#af3aa0b840ea58f49518a1ca340e1ea1e":[3,0,0,82,6],
 "classcarta_1_1MiriadLoader.html":[3,0,0,42],
-"classcarta_1_1MiriadLoader.html#a117a93473876245205b6c1128e839717":[3,0,0,42,1],
+"classcarta_1_1MiriadLoader.html#a117a93473876245205b6c1128e839717":[3,0,0,42,2],
+"classcarta_1_1MiriadLoader.html#a1f06c2895087e2ec9192a0cecd8e16bb":[3,0,0,42,1],
 "classcarta_1_1MiriadLoader.html#a2dbf4663937653017f60997586cb0ddb":[3,0,0,42,0],
-"classcarta_1_1MiriadLoader.html#a3a6e0b2505cfec5170a1c2a9aaf3cacc":[3,0,0,42,2],
 "classcarta_1_1MomentGenerator.html":[3,0,0,51],
 "classcarta_1_1MomentGenerator.html#a05c58f42c49f90f56e43cba116373995":[3,0,0,51,20],
 "classcarta_1_1MomentGenerator.html#a1c4b1d5ed92bbc6fa3e7573073045bd6":[3,0,0,51,17],
@@ -247,7 +249,5 @@ var NAVTREEINDEX5 =
 "classcarta_1_1Region.html#a9891c6276749ba4296f7796c8c32f079":[3,0,0,67,9],
 "classcarta_1_1Region.html#a9ec0878ba3ff01974517769cbed3b352":[3,0,0,67,18],
 "classcarta_1_1Region.html#aa5ba8bd1f2fd72b4de352881ebb28ff8":[3,0,0,67,49],
-"classcarta_1_1Region.html#ab8585643f7391871459b5bb2a5b501a7":[3,0,0,67,53],
-"classcarta_1_1Region.html#ab8bbf4338dd204b36962ebeb5483aad1":[3,0,0,67,28],
-"classcarta_1_1Region.html#abb634583b379802b8712f1b7e2312a36":[3,0,0,67,20]
+"classcarta_1_1Region.html#ab8585643f7391871459b5bb2a5b501a7":[3,0,0,67,53]
 };

@@ -12,59 +12,59 @@
 <g id="node1" class="node">
 <title>Node1</title>
 <g id="a_node1"><a xlink:title=" ">
-<polygon fill="#bfbfbf" stroke="black" points="335,-71.5 335,-101.5 445,-101.5 445,-71.5 335,-71.5"/>
-<text text-anchor="start" x="343" y="-89.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
-<text text-anchor="middle" x="390" y="-78.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasData</text>
+<polygon fill="#bfbfbf" stroke="black" points="335,-66.5 335,-96.5 445,-96.5 445,-66.5 335,-66.5"/>
+<text text-anchor="start" x="343" y="-84.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
+<text text-anchor="middle" x="390" y="-73.5" font-family="Helvetica,sans-Serif" font-size="10.00">HasData</text>
 </a>
 </g>
 </g>
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1Hdf5Loader.html#acc59e4dbd158e8564d708b9e170c6b05" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="169,-137.5 169,-167.5 297,-167.5 297,-137.5 169,-137.5"/>
-<text text-anchor="start" x="177" y="-155.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
-<text text-anchor="middle" x="233" y="-144.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetCursorSpectralData</text>
+<g id="a_node2"><a xlink:href="classcarta_1_1Hdf5Loader.html#ac261cf1c2029910d7bceaa02da0d969f" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="178,-137.5 178,-167.5 288,-167.5 288,-137.5 178,-137.5"/>
+<text text-anchor="start" x="186" y="-155.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
+<text text-anchor="middle" x="233" y="-144.5" font-family="Helvetica,sans-Serif" font-size="10.00">AllocateImage</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node2 -->
 <g id="edge1" class="edge">
 <title>Node1&#45;&gt;Node2</title>
-<path fill="none" stroke="midnightblue" d="M343.94,-105.69C320.2,-115.79 291.51,-128.01 269.39,-137.43"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="345.61,-108.78 353.44,-101.64 342.87,-102.34 345.61,-108.78"/>
+<path fill="none" stroke="midnightblue" d="M353.11,-101.59C336.83,-110.35 317.18,-120.43 299,-128.5 292.07,-131.57 284.62,-134.59 277.32,-137.38"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="355.15,-104.46 362.27,-96.61 351.81,-98.31 355.15,-104.46"/>
 </g>
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1Hdf5Loader.html#a52cdfeb4f3e4b658a28a84bcf4219f04" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="0,-115.5 0,-145.5 131,-145.5 131,-115.5 0,-115.5"/>
-<text text-anchor="start" x="8" y="-133.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
-<text text-anchor="middle" x="65.5" y="-122.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetRegionSpectralData</text>
+<g id="a_node3"><a xlink:href="classcarta_1_1Hdf5Loader.html#acc59e4dbd158e8564d708b9e170c6b05" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="169,-88.5 169,-118.5 297,-118.5 297,-88.5 169,-88.5"/>
+<text text-anchor="start" x="177" y="-106.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
+<text text-anchor="middle" x="233" y="-95.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetCursorSpectralData</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node3 -->
-<g id="edge3" class="edge">
+<g id="edge2" class="edge">
 <title>Node1&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M324.47,-95.3C268.29,-102.97 187.27,-114.02 131.07,-121.69"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="325.22,-98.73 334.66,-93.91 324.28,-91.8 325.22,-98.73"/>
+<path fill="none" stroke="midnightblue" d="M324.67,-90.63C315.6,-91.92 306.27,-93.24 297.22,-94.53"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="325.38,-94.07 334.79,-89.19 324.4,-87.13 325.38,-94.07"/>
 </g>
 <!-- Node4 -->
 <g id="node4" class="node">
 <title>Node4</title>
-<g id="a_node4"><a xlink:href="classcarta_1_1Hdf5Loader.html#a433df8c5d2f5155d6879a1e443e4112f" target="_top" xlink:title=" ">
-<polygon fill="none" stroke="black" points="178,-49.5 178,-79.5 288,-79.5 288,-49.5 178,-49.5"/>
-<text text-anchor="start" x="186" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
-<text text-anchor="middle" x="233" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">OpenFile</text>
+<g id="a_node4"><a xlink:href="classcarta_1_1Hdf5Loader.html#a52cdfeb4f3e4b658a28a84bcf4219f04" target="_top" xlink:title=" ">
+<polygon fill="none" stroke="black" points="0,-66.5 0,-96.5 131,-96.5 131,-66.5 0,-66.5"/>
+<text text-anchor="start" x="8" y="-84.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Hdf5Loader::</text>
+<text text-anchor="middle" x="65.5" y="-73.5" font-family="Helvetica,sans-Serif" font-size="10.00">GetRegionSpectralData</text>
 </a>
 </g>
 </g>
 <!-- Node1&#45;&gt;Node4 -->
 <g id="edge4" class="edge">
 <title>Node1&#45;&gt;Node4</title>
-<path fill="none" stroke="midnightblue" d="M324.72,-77.38C312.57,-75.65 299.98,-73.86 288.18,-72.19"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="324.4,-80.87 334.79,-78.81 325.38,-73.93 324.4,-80.87"/>
+<path fill="none" stroke="midnightblue" d="M324.69,-79.9C316.06,-79.73 307.31,-79.59 299,-79.5 240.34,-78.85 225.66,-78.92 167,-79.5 155.4,-79.62 143.04,-79.81 131.1,-80.02"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="324.68,-83.4 334.75,-80.1 324.82,-76.4 324.68,-83.4"/>
 </g>
 <!-- Node5 -->
 <g id="node5" class="node">
@@ -79,14 +79,14 @@
 <!-- Node1&#45;&gt;Node5 -->
 <g id="edge5" class="edge">
 <title>Node1&#45;&gt;Node5</title>
-<path fill="none" stroke="midnightblue" d="M352.28,-66.63C336.13,-58.17 316.82,-48.45 299,-40.5 291.38,-37.1 283.15,-33.72 275.18,-30.59"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="350.92,-69.86 361.39,-71.44 354.18,-63.67 350.92,-69.86"/>
+<path fill="none" stroke="midnightblue" d="M343.94,-62.31C320.2,-52.21 291.51,-39.99 269.39,-30.57"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="342.87,-65.66 353.44,-66.36 345.61,-59.22 342.87,-65.66"/>
 </g>
-<!-- Node2&#45;&gt;Node3 -->
-<g id="edge2" class="edge">
-<title>Node2&#45;&gt;Node3</title>
-<path fill="none" stroke="midnightblue" d="M158.95,-142.79C149.64,-141.55 140.17,-140.29 131.01,-139.08"/>
-<polygon fill="midnightblue" stroke="midnightblue" points="158.59,-146.27 168.96,-144.12 159.51,-139.33 158.59,-146.27"/>
+<!-- Node3&#45;&gt;Node4 -->
+<g id="edge3" class="edge">
+<title>Node3&#45;&gt;Node4</title>
+<path fill="none" stroke="midnightblue" d="M158.95,-93.79C149.64,-92.55 140.17,-91.29 131.01,-90.08"/>
+<polygon fill="midnightblue" stroke="midnightblue" points="158.59,-97.27 168.96,-95.12 159.51,-90.33 158.59,-97.27"/>
 </g>
 </g>
 </svg>

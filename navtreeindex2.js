@@ -1,5 +1,6 @@
 var NAVTREEINDEX2 =
 {
+"classcarta_1_1AnimationObject.html#a91d1b64a671215bcdbb8596e93f30ffb":[3,0,0,71,5],
 "classcarta_1_1AnimationObject.html#a93cb86a2a46601786173d587a22ff8bf":[3,0,0,71,1],
 "classcarta_1_1AnimationObject.html#a9a0b4e3e6a71780288fefd962624034a":[3,0,0,71,3],
 "classcarta_1_1AnimationObject.html#aafaf7465d3eaedaf19f6aa86b25ee9cd":[3,0,0,71,12],
@@ -147,8 +148,8 @@ var NAVTREEINDEX2 =
 "classcarta_1_1CartaMiriadImage.html#af3ba1aaed3472db8ad4919a2f4579a8a":[3,0,0,27,16],
 "classcarta_1_1CartaMiriadImage.html#afd46ec5c20e1ab73c44af118f0c6fac6":[3,0,0,27,0],
 "classcarta_1_1CasaLoader.html":[3,0,0,28],
-"classcarta_1_1CasaLoader.html#a20dcd12793ff0bc1436b064a82ef51ed":[3,0,0,28,1],
-"classcarta_1_1CasaLoader.html#a9bbb5763a165b9a57e8312666b3abe8d":[3,0,0,28,2],
+"classcarta_1_1CasaLoader.html#a20dcd12793ff0bc1436b064a82ef51ed":[3,0,0,28,2],
+"classcarta_1_1CasaLoader.html#ad76eac5cd350336e4026d3fecaf1bb50":[3,0,0,28,1],
 "classcarta_1_1CasaLoader.html#ae2b3f45a91849adb67ec0fadf4cd7139":[3,0,0,28,0],
 "classcarta_1_1Column.html":[3,0,0,87],
 "classcarta_1_1Column.html#a0fe01d3667c0596bbc9b66d9cbd59485":[3,0,0,87,14],
@@ -174,8 +175,8 @@ var NAVTREEINDEX2 =
 "classcarta_1_1Column.html#aea7e3a2008ce54f52b67c1885d99c597":[3,0,0,87,0],
 "classcarta_1_1Column.html#af33f6855bcdef5a78152407caf8de2db":[3,0,0,87,21],
 "classcarta_1_1CompListLoader.html":[3,0,0,29],
-"classcarta_1_1CompListLoader.html#a260656e6666bcf2d28fbdd83b85e61a4":[3,0,0,29,1],
 "classcarta_1_1CompListLoader.html#aa92ba21d2f4b1e7aa10fd170e292e584":[3,0,0,29,0],
+"classcarta_1_1CompListLoader.html#ab39ebc6b0a59e1477ef6dc1184ea86f5":[3,0,0,29,1],
 "classcarta_1_1CompressedFits.html":[3,0,0,32],
 "classcarta_1_1CompressedFits.html#a067a3b895e9c95ecec6ebef781b5b002":[3,0,0,32,8],
 "classcarta_1_1CompressedFits.html#a08d166346f4e5dd3261602727205943d":[3,0,0,32,11],
@@ -209,7 +210,7 @@ var NAVTREEINDEX2 =
 "classcarta_1_1CompressedFits.html#aff921bf4a5e42d836298de856875217b":[3,0,0,32,21],
 "classcarta_1_1ConcatLoader.html":[3,0,0,33],
 "classcarta_1_1ConcatLoader.html#a05ecd73eb937e7cd761bde3d122e3786":[3,0,0,33,0],
-"classcarta_1_1ConcatLoader.html#a5b0b230f23267cacf97bf8cd7848ae7c":[3,0,0,33,1],
+"classcarta_1_1ConcatLoader.html#aa41523bbb8feda61c4efdbdaeb3aea9e":[3,0,0,33,1],
 "classcarta_1_1CrtfImportExport.html":[3,0,0,63],
 "classcarta_1_1CrtfImportExport.html#a0825242c8460b999da091ba1ee3b3762":[3,0,0,63,19],
 "classcarta_1_1CrtfImportExport.html#a0d23ae833c4df87677829d60296d2f26":[3,0,0,63,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX2 =
 "classcarta_1_1CursorSettings.html":[3,0,0,72],
 "classcarta_1_1CursorSettings.html#a0d6e27c8a1772bede7d5d4276df452bd":[3,0,0,72,5],
 "classcarta_1_1CursorSettings.html#a53b46e233581ad914a0d79ca6affb7d3":[3,0,0,72,6],
-"classcarta_1_1CursorSettings.html#a5ec299f2396ffb9ec97350328cbfd241":[3,0,0,72,4],
-"classcarta_1_1CursorSettings.html#a83fcd9dbda5d3c935d9e04f745b3f8b2":[3,0,0,72,0]
+"classcarta_1_1CursorSettings.html#a5ec299f2396ffb9ec97350328cbfd241":[3,0,0,72,4]
 };

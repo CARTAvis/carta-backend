@@ -123,8 +123,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aab4ad60b38570c3e8e209756abec12a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43a8481e01dde04a387525bd0fca93b0"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a43a8481e01dde04a387525bd0fca93b0">CanOpenFile</a> (std::string &amp;error)</td></tr>
 <tr class="separator:a43a8481e01dde04a387525bd0fca93b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa94f8789f059e022e03e1e5a1da942eb"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aa94f8789f059e022e03e1e5a1da942eb">OpenFile</a> (const std::string &amp;hdu)=0</td></tr>
-<tr class="separator:aa94f8789f059e022e03e1e5a1da942eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d91045ea868fea755a7be026806cea0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0">OpenFile</a> (const std::string &amp;hdu)</td></tr>
+<tr class="separator:a5d91045ea868fea755a7be026806cea0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa240e8e3019302df9f2ab7b24d4c5c04"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#aa240e8e3019302df9f2ab7b24d4c5c04">HasData</a> (<a class="el" href="namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7">FileInfo::Data</a> ds) const</td></tr>
 <tr class="separator:aa240e8e3019302df9f2ab7b24d4c5c04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5101515d2dff6f6621b23699c5c7b3bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#a5101515d2dff6f6621b23699c5c7b3bf">CloseImageIfUpdated</a> ()</td></tr>
@@ -217,6 +217,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a4fadf35c964777024ad46e991944c2fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afad62acd2ff74fdef47e6a31500fe070"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#afad62acd2ff74fdef47e6a31500fe070">CalculateBeamArea</a> ()</td></tr>
 <tr class="separator:afad62acd2ff74fdef47e6a31500fe070"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad372c5af25778bf6f0621b587e1f9c78"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78">AllocateImage</a> (const std::string &amp;hdu)=0</td></tr>
+<tr class="separator:ad372c5af25778bf6f0621b587e1f9c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -365,6 +367,40 @@ Here is the call graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ad372c5af25778bf6f0621b587e1f9c78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad372c5af25778bf6f0621b587e1f9c78">&#9670;&nbsp;</a></span>AllocateImage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void carta::FileLoader::AllocateImage </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>hdu</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="classcarta_1_1MiriadLoader.html#a1f06c2895087e2ec9192a0cecd8e16bb">carta::MiriadLoader</a>, <a class="el" href="classcarta_1_1ImagePtrLoader.html#a9d0a5367d1fe9fe97db1b55738f3270b">carta::ImagePtrLoader</a>, <a class="el" href="classcarta_1_1Hdf5Loader.html#ac261cf1c2029910d7bceaa02da0d969f">carta::Hdf5Loader</a>, <a class="el" href="classcarta_1_1FitsLoader.html#a53159c7c8148750413a2a1865a409f60">carta::FitsLoader</a>, <a class="el" href="classcarta_1_1ExprLoader.html#a943465cbb762bee71bc1d451d31eab01">carta::ExprLoader</a>, <a class="el" href="classcarta_1_1ConcatLoader.html#aa41523bbb8feda61c4efdbdaeb3aea9e">carta::ConcatLoader</a>, <a class="el" href="classcarta_1_1CompListLoader.html#ab39ebc6b0a59e1477ef6dc1184ea86f5">carta::CompListLoader</a>, and <a class="el" href="classcarta_1_1CasaLoader.html#ad76eac5cd350336e4026d3fecaf1bb50">carta::CasaLoader</a>.</p>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_ad372c5af25778bf6f0621b587e1f9c78_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+</div>
+
+</div>
+</div>
 <a id="afad62acd2ff74fdef47e6a31500fe070"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afad62acd2ff74fdef47e6a31500fe070">&#9670;&nbsp;</a></span>CalculateBeamArea()</h2>
 
@@ -390,7 +426,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_afad62acd2ff74fdef47e6a31500fe070_cgraph.svg" width="572" height="183"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_afad62acd2ff74fdef47e6a31500fe070_cgraph.svg" width="100%" height="454"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
@@ -551,7 +587,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a2a3ed90a3e52af565ba3f80f3b5b66b5_cgraph.svg" width="536" height="136"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a2a3ed90a3e52af565ba3f80f3b5b66b5_cgraph.svg" width="100%" height="418"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -843,7 +879,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_ad006f05ccd020be05834212598e3a38b_cgraph.svg" width="350" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_ad006f05ccd020be05834212598e3a38b_cgraph.svg" width="536" height="140"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -1305,7 +1341,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_aef375b5bfd4e812d73b9bc0bd01c582d_cgraph.svg" width="536" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_aef375b5bfd4e812d73b9bc0bd01c582d_cgraph.svg" width="100%" height="405"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1768,8 +1804,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="aa94f8789f059e022e03e1e5a1da942eb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa94f8789f059e022e03e1e5a1da942eb">&#9670;&nbsp;</a></span>OpenFile()</h2>
+<a id="a5d91045ea868fea755a7be026806cea0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d91045ea868fea755a7be026806cea0">&#9670;&nbsp;</a></span>OpenFile()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1778,7 +1814,7 @@ Here is the caller graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void carta::FileLoader::OpenFile </td>
+          <td class="memname">void FileLoader::OpenFile </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>hdu</em></td><td>)</td>
@@ -1787,16 +1823,20 @@ Here is the caller graph for this function:</div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-
-<p>Implemented in <a class="el" href="classcarta_1_1MiriadLoader.html#a3a6e0b2505cfec5170a1c2a9aaf3cacc">carta::MiriadLoader</a>, <a class="el" href="classcarta_1_1ImagePtrLoader.html#af1d91e55580d6fb72f06e781fa02d81e">carta::ImagePtrLoader</a>, <a class="el" href="classcarta_1_1Hdf5Loader.html#a433df8c5d2f5155d6879a1e443e4112f">carta::Hdf5Loader</a>, <a class="el" href="classcarta_1_1FitsLoader.html#a538c8e6f068973a8a34b2aacf7be029d">carta::FitsLoader</a>, <a class="el" href="classcarta_1_1ExprLoader.html#a434a2bf64efbb5ae6eaacfb061b8a93d">carta::ExprLoader</a>, <a class="el" href="classcarta_1_1ConcatLoader.html#a5b0b230f23267cacf97bf8cd7848ae7c">carta::ConcatLoader</a>, <a class="el" href="classcarta_1_1CompListLoader.html#a260656e6666bcf2d28fbdd83b85e61a4">carta::CompListLoader</a>, and <a class="el" href="classcarta_1_1CasaLoader.html#a9bbb5763a165b9a57e8312666b3abe8d">carta::CasaLoader</a>.</p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a5d91045ea868fea755a7be026806cea0_cgraph.svg" width="336" height="104"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_aa94f8789f059e022e03e1e5a1da942eb_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1FileLoader_a5d91045ea868fea755a7be026806cea0_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 

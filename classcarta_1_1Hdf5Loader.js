@@ -1,6 +1,7 @@
 var classcarta_1_1Hdf5Loader =
 [
     [ "Hdf5Loader", "classcarta_1_1Hdf5Loader.html#a36e4bd83a1c91dc4252a2e51044b7b3d", null ],
+    [ "AllocateImage", "classcarta_1_1Hdf5Loader.html#ac261cf1c2029910d7bceaa02da0d969f", null ],
     [ "DataSetToString", "classcarta_1_1Hdf5Loader.html#afa5d819caee85e90912fece54d1896b4", null ],
     [ "GetChunk", "classcarta_1_1Hdf5Loader.html#af2e0b172ffce7502373066db92815ced", null ],
     [ "GetCursorSpectralData", "classcarta_1_1Hdf5Loader.html#acc59e4dbd158e8564d708b9e170c6b05", null ],
@@ -15,7 +16,6 @@ var classcarta_1_1Hdf5Loader =
     [ "HasMip", "classcarta_1_1Hdf5Loader.html#a50e10744800a38d36c8bd6118f849223", null ],
     [ "LoadMipMapData", "classcarta_1_1Hdf5Loader.html#aa872fe5a14124def3216a5e688492320", null ],
     [ "LoadSwizzledData", "classcarta_1_1Hdf5Loader.html#a805b038f504d25c8b13f3aa483e57cbf", null ],
-    [ "OpenFile", "classcarta_1_1Hdf5Loader.html#a433df8c5d2f5155d6879a1e443e4112f", null ],
     [ "UseRegionSpectralData", "classcarta_1_1Hdf5Loader.html#a3e977a2be894479c4e26a88bbd4d6dfc", null ],
     [ "UseTileCache", "classcarta_1_1Hdf5Loader.html#a00c1f69879b1c2d59bbd902e93c70f31", null ],
     [ "_hdu", "classcarta_1_1Hdf5Loader.html#a3f8a19a7ba67d57e07dab56b11479598", null ],
