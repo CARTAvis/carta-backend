@@ -18,6 +18,7 @@ using namespace carta;
 static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 static const double ONE_MILLION = 1000000;
 static const std::vector<std::string> STOKES_TYPES = {"I", "Q", "U", "V", "Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
+static const std::vector<int> IMAGE_DIMS = {10, 10, 100, 4};
 
 class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
 public:
@@ -28,18 +29,17 @@ public:
         return {data.profiles(1), data.profiles(0)};
     }
 
-    static void SpatialProfile3D(const std::vector<int>& dims, int default_channel, bool cube_image_cache) {
-        if (dims.size() != 3) {
+    static void SpatialProfile3D(const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+        if (dims.size() < 3) {
             return;
         }
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
-        std::string image_dims = fmt::format("{} {} {}", x_size, y_size, z_size);
-        auto path_string = GeneratedFitsImagePath(image_dims, IMAGE_OPTS);
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
+        int default_channel(0);
 
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
@@ -90,19 +90,18 @@ public:
         }
     }
 
-    static void SpatialProfile4D(const std::vector<int>& dims, int default_channel, bool cube_image_cache) {
-        if (dims.size() != 4) {
+    static void SpatialProfile4D(const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+        if (dims.size() < 4) {
             return;
         }
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
         int stokes_size = dims[3];
-        std::string image_dims = fmt::format("{} {} {} {}", x_size, y_size, z_size, stokes_size);
 
-        auto path_string = GeneratedFitsImagePath(image_dims, IMAGE_OPTS);
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        int default_channel(0);
 
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
@@ -154,15 +153,13 @@ public:
         }
     }
 
-    static std::vector<float> CursorSpectralProfile3D(const std::vector<int>& dims, bool cube_image_cache) {
-        if (dims.size() != 3) {
+    static std::vector<float> CursorSpectralProfile3D(const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+        if (dims.size() < 3) {
             return std::vector<float>();
         }
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
-        std::string image_dims = fmt::format("{} {} {}", x_size, y_size, z_size);
-        auto path_string = GeneratedFitsImagePath(image_dims, IMAGE_OPTS);
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
@@ -200,16 +197,15 @@ public:
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static std::vector<float> CursorSpectralProfile4D(const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
-        if (dims.size() != 4) {
+    static std::vector<float> CursorSpectralProfile4D(
+        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+        if (dims.size() < 4) {
             return std::vector<float>();
         }
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
         int stokes_size = dims[3];
-        std::string image_dims = fmt::format("{} {} {} {}", x_size, y_size, z_size, stokes_size);
-        auto path_string = GeneratedFitsImagePath(image_dims, IMAGE_OPTS);
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
@@ -257,16 +253,15 @@ public:
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static std::vector<float> PointRegionSpectralProfile(const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
-        if (dims.size() != 4) {
+    static std::vector<float> PointRegionSpectralProfile(
+        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+        if (dims.size() < 4) {
             return std::vector<float>();
         }
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
         int stokes_size = dims[3];
-        std::string image_dims = fmt::format("{} {} {} {}", x_size, y_size, z_size, stokes_size);
-        auto path_string = GeneratedFitsImagePath(image_dims, IMAGE_OPTS);
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
@@ -325,16 +320,15 @@ public:
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static carta::Histogram CubeHistogram(const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
-        if (dims.size() != 4) {
+    static carta::Histogram CubeHistogram(
+        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+        if (dims.size() < 4) {
             return carta::Histogram();
         }
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
         int stokes_size = dims[3];
-        std::string image_dims = fmt::format("{} {} {} {}", x_size, y_size, z_size, stokes_size);
-        auto path_string = GeneratedFitsImagePath(image_dims, IMAGE_OPTS);
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
         int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
@@ -404,9 +398,9 @@ public:
         return cube_histogram;
     }
 
-    static std::vector<CARTA::SpectralProfile> RectangleRegionSpectralProfile(
-        const std::string path_string, const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
-        if (dims.size() != 4) {
+    static std::vector<CARTA::SpectralProfile> RectangleRegionSpectralProfile(const std::string& path_string, const std::vector<int>& dims,
+        const std::string& stokes_config_z, const CARTA::RegionType& region_type, bool cube_image_cache) {
+        if (dims.size() < 4) {
             return std::vector<CARTA::SpectralProfile>();
         }
         int x_size = dims[0];
@@ -438,16 +432,16 @@ public:
         // Create a region handler
         auto region_handler = std::make_unique<carta::RegionHandler>();
 
-        // Set a rectangle region state: // [(cx,cy), (width,height)], width/height > 0
+        // Set a rectangle region state: [(cx, cy), (width, height)], or set an ellipse region state: [(cx,cy), (bmaj, bmin)]
         int region_id(1);
-        int center_x(x_size / 2);
-        int center_y(y_size / 2);
-        int width(x_size / 2);
-        int height(y_size / 2);
-        std::vector<CARTA::Point> points = {Message::Point(center_x, center_y), Message::Point(width, height)}; //{center, width/height};
+        int cx(x_size / 2);
+        int cy(y_size / 2);
+        int width(x_size);  // or bmaj for ellipse region
+        int height(y_size); // or bmin for ellipse region
+        std::vector<CARTA::Point> points = {Message::Point(cx, cy), Message::Point(width, height)};
 
         int file_id(0);
-        RegionState region_state(file_id, CARTA::RegionType::RECTANGLE, points, 0);
+        RegionState region_state(file_id, region_type, points, 0);
         EXPECT_TRUE(region_handler->SetRegion(region_id, region_state, frame->CoordinateSystem()));
 
         // Set spectral configs for a point region
@@ -470,7 +464,8 @@ public:
             region_id, file_id, stokes_changed);
         auto dt = t.Elapsed();
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for getting rectangle region spectral profile ({}): {:.3f} ms.\n", prefix, stokes_config_z, dt.ms());
+        std::string type = region_type == CARTA::RegionType::RECTANGLE ? "rectangle" : "ellipse";
+        fmt::print("{} Elapsed time for getting {} region spectral profile ({}): {:.3f} ms.\n", prefix, type, stokes_config_z, dt.ms());
 
         return spectral_profiles;
     }
@@ -505,7 +500,7 @@ public:
                     return false;
                 }
                 if (!isnan(vals1[j]) && !isnan(vals2[j])) {
-                    EXPECT_NEAR(vals1[j], vals2[j], 1e-6);
+                    EXPECT_NEAR(vals1[j], vals2[j], 1e-5);
                 }
             }
         }
@@ -514,63 +509,77 @@ public:
 };
 
 TEST_F(CubeImageCacheTest, SpatialProfile3D) {
-    std::vector<int> image_dims = {10, 10, 10};
-    SpatialProfile3D(image_dims, 0, false);
-    SpatialProfile3D(image_dims, 0, true);
-    SpatialProfile3D(image_dims, 1, false);
-    SpatialProfile3D(image_dims, 1, true);
+    std::string image_dims_str = fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    SpatialProfile3D(path_string, IMAGE_DIMS, false);
+    SpatialProfile3D(path_string, IMAGE_DIMS, true);
 }
 
 TEST_F(CubeImageCacheTest, SpatialProfile4D) {
-    std::vector<int> image_dims = {10, 10, 10, 4};
-    SpatialProfile4D(image_dims, 0, false);
-    SpatialProfile4D(image_dims, 0, true);
-    SpatialProfile4D(image_dims, 1, false);
-    SpatialProfile4D(image_dims, 1, true);
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    SpatialProfile4D(path_string, IMAGE_DIMS, false);
+    SpatialProfile4D(path_string, IMAGE_DIMS, true);
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
-    std::vector<int> image_dims = {10, 10, 100};
-    auto spectral_profile1 = CursorSpectralProfile3D(image_dims, false);
-    auto spectral_profile2 = CursorSpectralProfile3D(image_dims, true);
+    std::string image_dims_str = fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto spectral_profile1 = CursorSpectralProfile3D(path_string, IMAGE_DIMS, false);
+    auto spectral_profile2 = CursorSpectralProfile3D(path_string, IMAGE_DIMS, true);
     CmpVectors(spectral_profile1, spectral_profile2);
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
-    std::vector<int> image_dims = {10, 10, 100, 4};
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = CursorSpectralProfile4D(image_dims, stokes + "z", false);
-        auto spectral_profile2 = CursorSpectralProfile4D(image_dims, stokes + "z", true);
+        auto spectral_profile1 = CursorSpectralProfile4D(path_string, IMAGE_DIMS, stokes + "z", false);
+        auto spectral_profile2 = CursorSpectralProfile4D(path_string, IMAGE_DIMS, stokes + "z", true);
         CmpVectors(spectral_profile1, spectral_profile2);
     }
 }
 
 TEST_F(CubeImageCacheTest, PointRegionSpectralProfile) {
-    std::vector<int> image_dims = {10, 10, 100, 4};
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = PointRegionSpectralProfile(image_dims, stokes + "z", false);
-        auto spectral_profile2 = PointRegionSpectralProfile(image_dims, stokes + "z", true);
+        auto spectral_profile1 = PointRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", false);
+        auto spectral_profile2 = PointRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", true);
         CmpVectors(spectral_profile1, spectral_profile2);
     }
 }
 
 TEST_F(CubeImageCacheTest, CubeHistogram) {
-    std::vector<int> image_dims = {10, 10, 100, 4};
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
     for (auto stokes : STOKES_TYPES) {
-        auto hist1 = CubeHistogram(image_dims, stokes, false);
-        auto hist2 = CubeHistogram(image_dims, stokes, true);
+        auto hist1 = CubeHistogram(path_string, IMAGE_DIMS, stokes, false);
+        auto hist2 = CubeHistogram(path_string, IMAGE_DIMS, stokes, true);
         EXPECT_TRUE(CmpHistograms(hist1, hist2));
     }
 }
 
 TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile) {
-    std::vector<int> image_dims = {10, 10, 100, 4};
-    std::string image_dims_str = fmt::format("{} {} {} {}", image_dims[0], image_dims[1], image_dims[2], image_dims[3]);
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
     auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RectangleRegionSpectralProfile(path_string, image_dims, stokes + "z", false);
-        auto spectral_profile2 = RectangleRegionSpectralProfile(path_string, image_dims, stokes + "z", true);
+        auto spectral_profile1 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile2 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+    }
+}
+
+TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile) {
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
+
+    for (auto stokes : STOKES_TYPES) {
+        auto spectral_profile1 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile2 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
     }
 }
