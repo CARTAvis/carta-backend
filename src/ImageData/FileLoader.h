@@ -131,6 +131,9 @@ public:
         return _is_generated;
     };
 
+    // Basic flux density calculation
+    double CalculateBeamArea();
+
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;
@@ -178,9 +181,6 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
-
-    // Basic flux density calculation
-    double CalculateBeamArea();
 };
 
 } // namespace carta

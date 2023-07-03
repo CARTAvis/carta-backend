@@ -403,6 +403,114 @@ public:
 
         return cube_histogram;
     }
+
+    static std::vector<CARTA::SpectralProfile> RectangleRegionSpectralProfile(
+        const std::string path_string, const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+        if (dims.size() != 4) {
+            return std::vector<CARTA::SpectralProfile>();
+        }
+        int x_size = dims[0];
+        int y_size = dims[1];
+        int z_size = dims[2];
+        int stokes_size = dims[3];
+
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+        int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        auto frame = std::make_shared<Frame>(0, loader, "0", 0, reserved_memory);
+
+        int channel(5);
+        int stokes(0);
+
+        if (stokes_config_z.size() == 2 && stokes_config_z.back() == 'z') {
+            char pol = stokes_config_z.front();
+            if (pol == 'Q') {
+                stokes = 1;
+            } else if (pol == 'U') {
+                stokes = 2;
+            } else if (pol == 'V') {
+                stokes = 3;
+            }
+        }
+
+        std::string msg;
+        frame->SetImageChannels(channel, stokes, msg);
+
+        // Create a region handler
+        auto region_handler = std::make_unique<carta::RegionHandler>();
+
+        // Set a rectangle region state: // [(cx,cy), (width,height)], width/height > 0
+        int region_id(1);
+        int center_x(x_size / 2);
+        int center_y(y_size / 2);
+        int width(x_size / 2);
+        int height(y_size / 2);
+        std::vector<CARTA::Point> points = {Message::Point(center_x, center_y), Message::Point(width, height)}; //{center, width/height};
+
+        int file_id(0);
+        RegionState region_state(file_id, CARTA::RegionType::RECTANGLE, points, 0);
+        EXPECT_TRUE(region_handler->SetRegion(region_id, region_state, frame->CoordinateSystem()));
+
+        // Set spectral configs for a point region
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectral_configs{Message::SpectralConfig(stokes_config_z)};
+        region_handler->SetSpectralRequirements(region_id, file_id, frame, spectral_configs);
+
+        // Get cursor spectral profile data from the RegionHandler
+        std::vector<CARTA::SpectralProfile> spectral_profiles;
+        bool stokes_changed(false);
+
+        Timer t;
+        region_handler->FillSpectralProfileData(
+            [&](CARTA::SpectralProfileData tmp_spectral_profile) {
+                if (tmp_spectral_profile.progress() >= 1.0) {
+                    for (int i = 0; i < tmp_spectral_profile.profiles_size(); ++i) {
+                        spectral_profiles.emplace_back(tmp_spectral_profile.profiles(i));
+                    }
+                }
+            },
+            region_id, file_id, stokes_changed);
+        auto dt = t.Elapsed();
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for getting rectangle region spectral profile ({}): {:.3f} ms.\n", prefix, stokes_config_z, dt.ms());
+
+        return spectral_profiles;
+    }
+
+    static bool CmpSpectralProfiles(
+        const std::vector<CARTA::SpectralProfile>& spectral_profiles1, const std::vector<CARTA::SpectralProfile>& spectral_profiles2) {
+        if (spectral_profiles1.size() != spectral_profiles2.size()) {
+            fmt::print("Size of spectral profiles are not equal!\n");
+            return false;
+        }
+
+        for (int i = 0; i < spectral_profiles1.size(); ++i) {
+            auto profile1 = spectral_profiles1[i];
+            auto profile2 = spectral_profiles2[i];
+            if (profile1.stats_type() != profile2.stats_type()) {
+                fmt::print("Statistics type of spectral profiles are not equal!\n");
+                return false;
+            }
+
+            auto vals1 = GetSpectralProfileValues<double>(profile1);
+            auto vals2 = GetSpectralProfileValues<double>(profile2);
+            if (vals1.size() != vals2.size()) {
+                fmt::print("Data size of spectral profiles are not equal!\n");
+                return false;
+            }
+
+            EXPECT_GT(vals1.size(), 0);
+
+            for (int j = 0; j < vals1.size(); ++j) {
+                if ((!isnan(vals1[j]) && isnan(vals2[j])) || (isnan(vals1[j]) && !isnan(vals2[j]))) {
+                    fmt::print("NaN data are not consistent: index = {}!\n", j);
+                    return false;
+                }
+                if (!isnan(vals1[j]) && !isnan(vals2[j])) {
+                    EXPECT_NEAR(vals1[j], vals2[j], 1e-6);
+                }
+            }
+        }
+        return true;
+    }
 };
 
 TEST_F(CubeImageCacheTest, SpatialProfile3D) {
@@ -452,5 +560,17 @@ TEST_F(CubeImageCacheTest, CubeHistogram) {
         auto hist1 = CubeHistogram(image_dims, stokes, false);
         auto hist2 = CubeHistogram(image_dims, stokes, true);
         EXPECT_TRUE(CmpHistograms(hist1, hist2));
+    }
+}
+
+TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile) {
+    std::vector<int> image_dims = {10, 10, 100, 4};
+    std::string image_dims_str = fmt::format("{} {} {} {}", image_dims[0], image_dims[1], image_dims[2], image_dims[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+
+    for (auto stokes : STOKES_TYPES) {
+        auto spectral_profile1 = RectangleRegionSpectralProfile(path_string, image_dims, stokes + "z", false);
+        auto spectral_profile2 = RectangleRegionSpectralProfile(path_string, image_dims, stokes + "z", true);
+        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
     }
 }

@@ -327,7 +327,16 @@ CARTA::ResumeSession Message::ResumeSession(std::vector<CARTA::ImageProperties> 
 CARTA::SetSpectralRequirements_SpectralConfig Message::SpectralConfig(const std::string& coordinate) {
     CARTA::SetSpectralRequirements_SpectralConfig spectral_config;
     spectral_config.set_coordinate(coordinate);
+    spectral_config.add_stats_types(CARTA::StatsType::Sum);
+    spectral_config.add_stats_types(CARTA::StatsType::FluxDensity);
     spectral_config.add_stats_types(CARTA::StatsType::Mean);
+    spectral_config.add_stats_types(CARTA::StatsType::RMS);
+    spectral_config.add_stats_types(CARTA::StatsType::Sigma);
+    spectral_config.add_stats_types(CARTA::StatsType::SumSq);
+    spectral_config.add_stats_types(CARTA::StatsType::Min);
+    spectral_config.add_stats_types(CARTA::StatsType::Max);
+    spectral_config.add_stats_types(CARTA::StatsType::Extrema);
+    spectral_config.add_stats_types(CARTA::StatsType::NumPixels);
     return spectral_config;
 }
 

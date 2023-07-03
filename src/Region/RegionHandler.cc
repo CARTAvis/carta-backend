@@ -2007,12 +2007,13 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         casacore::IPosition origin = lc_region->boundingBox().start();
         PointXy point_xy(origin(0), origin(1));
         std::vector<float> profile;
+        // Use cube image cache if it is available
         if (_frames.at(file_id)->GetPointSpectralData(profile, stokes_index, point_xy)) {
-            std::vector<double> data(profile.begin(), profile.end());
             auto stats_type = required_stats[0]; // Point region profile only has one statistical type
-            results[stats_type] = data;
+            std::vector<double> vals(profile.begin(), profile.end());
+            results[stats_type] = vals;
             partial_results_callback(results, 1.0); // progress = 1.0
-            memcpy(cache_results[stats_type].data(), data.data(), data.size() * sizeof(double));
+            memcpy(cache_results[stats_type].data(), vals.data(), vals.size() * sizeof(double));
             _spectral_cache[cache_id] = SpectralCache(cache_results);
             return true;
         }
@@ -2022,6 +2023,12 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     size_t start_z(z_range.from), count(0), end_z(0), profile_start(0);
     int delta_z = INIT_DELTA_Z;        // the increment of z for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
+
+    // Get 2D region mask and the region start points
+    casacore::ArrayLattice<casacore::Bool> mask = region->GetImageRegionMask(file_id);
+    casacore::IPosition origin = lc_region->boundingBox().start();
+    casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1));
+
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
 
     if (IsComputedStokes(stokes_index)) { // Need to re-calculate the lattice coordinate region for computed stokes index
@@ -2053,13 +2060,18 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         };
 
         ProfilesMap partial_profiles;
-        if (IsComputedStokes(stokes_index)) { // For computed stokes
+        if (IsComputedStokes(stokes_index)) {
+            // For computed stokes
             if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
                 return false;
             }
-        } else { // For regular stokes I, Q, U, or V
-            if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
-                return false;
+        } else {
+            // For regular stokes I, Q, U, or V
+            // Use cube image cache if it is available, otherwise get image data from the disk
+            if (!_frames.at(file_id)->GetRegionSpectralData(partial_z_range, stokes_index, mask, xy_origin, partial_profiles)) {
+                if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
+                    return false;
+                }
             }
         }
 
