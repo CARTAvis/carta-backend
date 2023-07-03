@@ -55,7 +55,7 @@ public:
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
     // Open and close file
-    virtual void OpenFile(const std::string& hdu) = 0;
+    virtual void OpenFile(const std::string& hdu);
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const;
 
@@ -181,6 +181,9 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
+
+    // Set the image object and its parameters
+    virtual void AllocateImage(const std::string& hdu) = 0;
 };
 
 } // namespace carta
