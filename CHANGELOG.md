@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed duplicate image histogram data sent to the frontend ([#1266](https://github.com/CARTAvis/carta-backend/issues/1266)).
 * Fixed FITS header and data errors ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233), [#1265](https://github.com/CARTAvis/carta-backend/issues/1265)).
 * Fixed the problem of resuming LEL images ([#1226](https://github.com/CARTAvis/carta-backend/issues/1226)).
+* Fixed the case-sensitive of reading BUNIT from a file header ([#1187](https://github.com/CARTAvis/carta-backend/issues/1187)).
 
 ## [4.0.0-beta.1]
 
