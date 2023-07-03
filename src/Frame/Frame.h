@@ -278,6 +278,7 @@ protected:
     int ImageCacheIndex(int stokes_index = CURRENT_STOKES) const;
 
     bool GetImageCache(int image_cache_index, int z_index = ALL_Z);
+    bool CubeImageCacheAvailable(int stokes) const;
 
     // Setup
     uint32_t _session_id;

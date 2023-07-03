@@ -847,7 +847,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
             return true;
         }
 
-        if ((z == CurrentZ() && stokes == CurrentStokes()) || (_cube_image_cache && !IsComputedStokes(stokes))) {
+        if ((z == CurrentZ() && stokes == CurrentStokes()) || CubeImageCacheAvailable(stokes)) {
             // calculate histogram from image cache
             if ((_image_cache_size == 0) && !FillImageCache()) {
                 // cannot calculate
@@ -915,7 +915,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         num_bins = AutoBinSize();
     }
 
-    if ((z == CurrentZ() && stokes == CurrentStokes()) || (_cube_image_cache && !IsComputedStokes(stokes))) {
+    if ((z == CurrentZ() && stokes == CurrentStokes()) || CubeImageCacheAvailable(stokes)) {
         // calculate histogram from current image cache
         if ((_image_cache_size == 0) && !FillImageCache()) {
             return false;
@@ -2412,7 +2412,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 }
 
 long long int Frame::ImageCacheStartIndex(int z_index) const {
-    if (_cube_image_cache && !IsComputedStokes(_stokes_index)) {
+    if (CubeImageCacheAvailable(_stokes_index)) {
         if (z_index == CURRENT_Z) {
             z_index = _z_index;
         }
@@ -2425,7 +2425,7 @@ int Frame::ImageCacheIndex(int stokes_index) const {
     if (stokes_index == CURRENT_STOKES) {
         stokes_index = _stokes_index;
     }
-    if (_cube_image_cache && !IsComputedStokes(stokes_index)) { // only return non-computed stokes index
+    if (CubeImageCacheAvailable(stokes_index)) { // only return non-computed stokes index
         return stokes_index;
     }
     return -1;
@@ -2452,8 +2452,12 @@ int Frame::UsedReservedMemory() const {
     return 0;
 }
 
+bool Frame::CubeImageCacheAvailable(int stokes) const {
+    return _cube_image_cache && !IsComputedStokes(stokes);
+}
+
 bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    if (_cube_image_cache && !IsComputedStokes(stokes)) {
+    if (CubeImageCacheAvailable(stokes)) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x, y;
         point.ToIndex(x, y);
@@ -2472,7 +2476,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
 
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    if (_cube_image_cache && !IsComputedStokes(stokes)) {
+    if (CubeImageCacheAvailable(stokes)) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x_min = origin(0);
         int y_min = origin(1);
