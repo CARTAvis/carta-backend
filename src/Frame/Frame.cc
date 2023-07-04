@@ -2500,6 +2500,7 @@ bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const ca
         profiles[CARTA::StatsType::Extrema] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
         profiles[CARTA::StatsType::NumPixels] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
 
+#pragma omp parallel for
         for (int z = start; z <= end; ++z) {
             double sum = 0;
             double mean = 0;
