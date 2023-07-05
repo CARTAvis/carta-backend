@@ -279,6 +279,7 @@ protected:
 
     bool GetImageCache(int image_cache_index, int z_index = ALL_Z);
     bool CubeImageCacheAvailable(int stokes) const;
+    float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
 
     // Setup
     uint32_t _session_id;

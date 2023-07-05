@@ -449,12 +449,11 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     Timer t;
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        BlockSmooth(_image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(), image_data.data(), num_image_columns, num_image_rows,
-            row_length_region, num_rows_region, x, y, mip);
+        BlockSmooth(
+            GetImageCacheData(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-        NearestNeighbor(_image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(), image_data.data(), num_image_columns,
-            row_length_region, num_rows_region, x, y, mip);
+        NearestNeighbor(GetImageCacheData(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
     auto dt = t.Elapsed();
@@ -626,8 +625,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(), _width, _height, scale, offset,
-            _contour_settings.levels, vertex_data, index_data, _contour_settings.chunk_size, partial_contour_callback);
+        TraceContours(GetImageCacheData(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+            _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -639,8 +638,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_width = _width - (2 * kernel_width);
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(_image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(), dest_array.get(), source_width,
-            source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
+        smooth_successful = GaussianSmooth(GetImageCacheData(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+            _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
@@ -853,7 +852,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
                 // cannot calculate
                 return false;
             }
-            CalcBasicStats(stats, _image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(z), _width * _height);
+            CalcBasicStats(stats, GetImageCacheData(z, stokes), _width * _height);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -922,7 +921,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, bounds, _image_caches[ImageCacheIndex(stokes)].get() + ImageCacheStartIndex(z), _width * _height);
+        hist = CalcHistogram(num_bins, bounds, GetImageCacheData(z, stokes), _width * _height);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -1789,9 +1788,9 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_caches[ImageCacheIndex()].get() + ImageCacheStartIndex(),
-                initial_values, fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
-                fitting_request.create_residual_image(), fitting_response, progress_callback);
+            success = _image_fitter->FitImage(_width, _height, GetImageCacheData(), initial_values, fixed_params, fitting_request.offset(),
+                fitting_request.solver(), fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response,
+                progress_callback);
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
@@ -2411,6 +2410,14 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     return true;
 }
 
+bool Frame::CubeImageCacheAvailable(int stokes) const {
+    return _cube_image_cache && !IsComputedStokes(stokes);
+}
+
+float* Frame::GetImageCacheData(int z, int stokes) {
+    return _image_caches[ImageCacheIndex(stokes)].get() + ImageCacheStartIndex(z);
+}
+
 long long int Frame::ImageCacheStartIndex(int z_index) const {
     if (CubeImageCacheAvailable(_stokes_index)) {
         if (z_index == CURRENT_Z) {
@@ -2450,10 +2457,6 @@ int Frame::UsedReservedMemory() const {
         return std::ceil(_width * _height * _depth * _num_stokes * sizeof(float) / ONE_MILLION); // MB
     }
     return 0;
-}
-
-bool Frame::CubeImageCacheAvailable(int stokes) const {
-    return _cube_image_cache && !IsComputedStokes(stokes);
 }
 
 bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
@@ -2552,5 +2555,4 @@ bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const ca
     }
     return false;
 }
-
 } // namespace carta
