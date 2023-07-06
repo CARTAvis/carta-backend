@@ -24,13 +24,15 @@ class ExprLoader : public FileLoader {
 public:
     ExprLoader(const std::string& filename, const std::string& directory = "");
 
-    void OpenFile(const std::string& hdu) override;
     bool SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) override;
+
+private:
+    void AllocateImage(const std::string& hdu) override;
 };
 
 ExprLoader::ExprLoader(const std::string& filename, const std::string& directory) : FileLoader(filename, directory) {}
 
-void ExprLoader::OpenFile(const std::string& /*hdu*/) {
+void ExprLoader::AllocateImage(const std::string& /*hdu*/) {
     if (!_image) {
         if (!_directory.empty()) {
             // create image from LEL expression stored in _filename
