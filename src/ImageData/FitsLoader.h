@@ -16,12 +16,11 @@ public:
     FitsLoader(const std::string& filename, bool is_gz = false);
     ~FitsLoader();
 
-    void OpenFile(const std::string& hdu) override;
-
 private:
     std::string _unzip_file;
     casacore::uInt _hdu_num;
 
+    void AllocateImage(const std::string& hdu) override;
     int GetNumHeaders(const std::string& filename, int hdu);
     void ResetImageBeam(unsigned int hdu_num);
     bool HasBeamHeaders(unsigned int hdu_num);

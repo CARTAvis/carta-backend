@@ -30,7 +30,9 @@ FitsLoader::~FitsLoader() {
     }
 }
 
-void FitsLoader::OpenFile(const std::string& hdu) {
+void FitsLoader::AllocateImage(const std::string& hdu) {
+    // Open image file as a casacore::ImageInterface<float>
+
     // Convert string to FITS hdu number
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
 

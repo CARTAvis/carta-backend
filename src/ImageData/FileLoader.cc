@@ -89,6 +89,19 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
+void FileLoader::OpenFile(const std::string& hdu) {
+    AllocateImage(hdu);
+
+    // Normalize the upper/lower cases of BUNIT string from header
+    if (_image) {
+        casacore::String bunit = _image->units().getName();
+        NormalizeUnit(bunit);
+        if (bunit != _image->units().getName() && casacore::UnitVal::check(bunit)) {
+            _image->setUnits(casacore::Unit(bunit));
+        }
+    }
+}
+
 typename FileLoader::ImageRef FileLoader::GetImage(bool check_data_type) {
     if (!_image) {
         OpenFile(_hdu);
