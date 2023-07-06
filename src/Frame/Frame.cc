@@ -891,7 +891,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBoun
     if (_cube_histograms.count(stokes)) {
         for (auto& result : _cube_histograms[stokes]) {
             // get from cache if correct num_bins
-            if (result.GetNbins() == num_bins && result.GetBounds() == bounds) {
+            if ((result.GetNbins() == num_bins || (num_bins == AUTO_BIN_SIZE)) && result.GetBounds() == bounds) {
                 hist = result;
                 return true;
             }

@@ -1504,32 +1504,37 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // stats for entire cube
             BasicStats<float> cube_stats;
-            for (size_t z = 0; z < depth; ++z) {
-                // stats for this z
-                BasicStats<float> z_stats;
-                if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
-                    return calculated;
-                }
-                cube_stats.join(z_stats);
+            if (!_frames.at(file_id)->GetBasicStats(ALL_Z, stokes, cube_stats)) {
+                for (size_t z = 0; z < depth; ++z) {
+                    // stats for this z
+                    BasicStats<float> z_stats;
+                    if (!_frames.at(file_id)->GetBasicStats(z, stokes, z_stats)) {
+                        return calculated;
+                    }
+                    cube_stats.join(z_stats);
 
-                // check for cancel
-                if (_histogram_context.is_group_execution_cancelled()) {
-                    break;
+                    // check for cancel
+                    if (_histogram_context.is_group_execution_cancelled()) {
+                        break;
+                    }
+
+                    // check for progress update
+                    auto t_end = std::chrono::high_resolution_clock::now();
+                    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                    if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                        // send progress
+                        float this_z(z);
+                        _histogram_progress = this_z / total_z;
+                        auto progress_msg = Message::RegionHistogramData(
+                            file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
+                        auto* message_histogram = progress_msg.mutable_histograms();
+                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
+                        t_start = t_end;
+                    }
                 }
 
-                // check for progress update
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
-                    // send progress
-                    float this_z(z);
-                    _histogram_progress = this_z / total_z;
-                    auto progress_msg =
-                        Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
-                    auto* message_histogram = progress_msg.mutable_histograms();
-                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
-                    t_start = t_end;
-                }
+                // cache stats for cube histogram
+                _frames.at(file_id)->CacheCubeStats(stokes, cube_stats);
             }
 
             // Set histogram bounds
@@ -1537,47 +1542,49 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             // check cancel and proceed
             if (!_histogram_context.is_group_execution_cancelled()) {
-                _frames.at(file_id)->CacheCubeStats(stokes, cube_stats);
-
                 // send progress message: half done
                 _histogram_progress = 0.50;
                 auto half_progress =
                     Message::RegionHistogramData(file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
-                auto* message_histogram = half_progress.mutable_histograms();
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
 
                 // get histogram bins for each z and accumulate bin counts in cube_bins
                 Histogram z_histogram; // histogram for each z using cube stats
                 Histogram cube_histogram;
-                for (size_t z = 0; z < depth; ++z) {
-                    if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
-                        return calculated; // z histogram failed
+                if (!_frames.at(file_id)->GetCachedCubeHistogram(stokes, num_bins, bounds, cube_histogram)) {
+                    for (size_t z = 0; z < depth; ++z) {
+                        if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
+                            return calculated; // z histogram failed
+                        }
+
+                        if (z == 0) {
+                            cube_histogram = std::move(z_histogram);
+                        } else {
+                            cube_histogram.Add(z_histogram);
+                        }
+
+                        // check for cancel
+                        if (_histogram_context.is_group_execution_cancelled()) {
+                            break;
+                        }
+
+                        auto t_end = std::chrono::high_resolution_clock::now();
+                        auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                        if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
+                            // Send progress update
+                            float this_z(z);
+                            _histogram_progress = 0.5 + (this_z / total_z);
+                            auto progress_msg = Message::RegionHistogramData(
+                                file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
+                            auto* message_histogram = progress_msg.mutable_histograms();
+                            FillHistogram(message_histogram, cube_stats, cube_histogram);
+                            SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
+                            t_start = t_end;
+                        }
                     }
 
-                    if (z == 0) {
-                        cube_histogram = std::move(z_histogram);
-                    } else {
-                        cube_histogram.Add(z_histogram);
-                    }
-
-                    // check for cancel
-                    if (_histogram_context.is_group_execution_cancelled()) {
-                        break;
-                    }
-
-                    auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                    if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
-                        // Send progress update
-                        float this_z(z);
-                        _histogram_progress = 0.5 + (this_z / total_z);
-                        auto progress_msg = Message::RegionHistogramData(
-                            file_id, CUBE_REGION_ID, ALL_Z, stokes, _histogram_progress, cube_histogram_config);
-                        auto* message_histogram = progress_msg.mutable_histograms();
-                        FillHistogram(message_histogram, cube_stats, cube_histogram);
-                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
-                        t_start = t_end;
-                    }
+                    // cache cube histogram
+                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
                 }
 
                 // set completed cube histogram
@@ -1591,9 +1598,6 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.clear_histograms();
                     auto* message_histogram = cube_histogram_message.mutable_histograms();
                     FillHistogram(message_histogram, cube_stats, cube_histogram);
-
-                    // cache cube histogram
-                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
 
                     auto dt = t.Elapsed();
                     spdlog::performance(

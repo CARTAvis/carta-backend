@@ -145,6 +145,7 @@ public:
     bool GetCubeHistogramConfig(HistogramConfig& config);
     void CacheCubeStats(int stokes, BasicStats<float>& stats);
     void CacheCubeHistogram(int stokes, Histogram& hist);
+    bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
@@ -250,7 +251,6 @@ protected:
     bool FillHistogramFromFrameCache(
         int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message
     bool GetCachedImageHistogram(int z, int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist); // internal histogram
-    bool GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist);         // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
