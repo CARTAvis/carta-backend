@@ -1350,48 +1350,51 @@ void CartaFitsImage::ReadBeamsTable(casacore::ImageInfo& image_info) {
     }
 
     // Read columns into vectors
-    int casesen(CASEINSEN), colnum(0), fdatatype(TFLOAT), idatatype(TINT), anynul(0);
+    int casesen(CASEINSEN), colnum(0), anynul(0), datatype(0);
+    long repeat, width;
     LONGLONG firstrow(1), firstelem(1);
     float* fnulval(nullptr);
     int* inulval(nullptr);
 
-    std::vector<float> bmaj(nrow), bmin(nrow), bpa(nrow);
-    std::vector<int> chan(nrow), pol(nrow);
+    std::unordered_map<std::string, std::vector<casacore::Quantity>> beam_qualities = {{"BMAJ", std::vector<casacore::Quantity>(nrow)},
+        {"BMIN", std::vector<casacore::Quantity>(nrow)}, {"BPA", std::vector<casacore::Quantity>(nrow)}};
 
-    char bmaj_name[] = "BMAJ";
-    status = 0;
-    fits_get_colnum(fptr, casesen, bmaj_name, &colnum, &status);
-    fits_read_col(fptr, fdatatype, colnum, firstrow, firstelem, nrow, fnulval, bmaj.data(), &anynul, &status);
+    for (auto& beam_quality : beam_qualities) {
+        auto name = beam_quality.first;
+        status = 0;
+        fits_get_colnum(fptr, casesen, name.data(), &colnum, &status);
+        fits_get_coltype(fptr, colnum, &datatype, &repeat, &width, &status);
 
-    char bmin_name[] = "BMIN";
-    status = 0;
-    fits_get_colnum(fptr, casesen, bmin_name, &colnum, &status);
-    fits_read_col(fptr, fdatatype, colnum, firstrow, firstelem, nrow, fnulval, bmin.data(), &anynul, &status);
+        if (datatype == TDOUBLE) {
+            std::vector<double> values(nrow);
+            fits_read_col(fptr, TDOUBLE, colnum, firstrow, firstelem, nrow, fnulval, values.data(), &anynul, &status);
+            for (int i = 0; i < nrow; ++i) {
+                beam_quality.second[i] = casacore::Quantity(values[i], beam_units[name]);
+            }
+        } else {
+            std::vector<float> values(nrow);
+            fits_read_col(fptr, TFLOAT, colnum, firstrow, firstelem, nrow, fnulval, values.data(), &anynul, &status);
+            for (int i = 0; i < nrow; ++i) {
+                beam_quality.second[i] = casacore::Quantity(values[i], beam_units[name]);
+            }
+        }
+    }
 
-    char bpa_name[] = "BPA";
-    status = 0;
-    fits_get_colnum(fptr, casesen, bpa_name, &colnum, &status);
-    fits_read_col(fptr, fdatatype, colnum, firstrow, firstelem, nrow, fnulval, bpa.data(), &anynul, &status);
+    std::unordered_map<std::string, std::vector<int>> beam_indices = {{"CHAN", std::vector<int>(nrow)}, {"POL", std::vector<int>(nrow)}};
 
-    char chan_name[] = "CHAN";
-    status = 0;
-    fits_get_colnum(fptr, casesen, chan_name, &colnum, &status);
-    fits_read_col(fptr, idatatype, colnum, firstrow, firstelem, nrow, inulval, chan.data(), &anynul, &status);
-
-    char pol_name[] = "POL";
-    status = 0;
-    fits_get_colnum(fptr, casesen, pol_name, &colnum, &status);
-    fits_read_col(fptr, idatatype, colnum, firstrow, firstelem, nrow, inulval, pol.data(), &anynul, &status);
+    for (auto& beam_index : beam_indices) {
+        auto name = beam_index.first;
+        status = 0;
+        fits_get_colnum(fptr, casesen, name.data(), &colnum, &status);
+        fits_read_col(fptr, TINT, colnum, firstrow, firstelem, nrow, inulval, beam_index.second.data(), &anynul, &status);
+    }
 
     fits_close_file(fptr, &status);
 
     image_info.setAllBeams(nchan, npol, casacore::GaussianBeam::NULL_BEAM);
     for (int i = 0; i < nrow; ++i) {
-        casacore::Quantity bmajq(bmaj[i], beam_units["BMAJ"]);
-        casacore::Quantity bminq(bmin[i], beam_units["BMIN"]);
-        casacore::Quantity bpaq(bpa[i], beam_units["BPA"]);
-        casacore::GaussianBeam beam(bmajq, bminq, bpaq);
-        image_info.setBeam(chan[i], pol[i], beam);
+        casacore::GaussianBeam beam(beam_qualities["BMAJ"][i], beam_qualities["BMIN"][i], beam_qualities["BPA"][i]);
+        image_info.setBeam(beam_indices["CHAN"][i], beam_indices["POL"][i], beam);
     }
 }
 
