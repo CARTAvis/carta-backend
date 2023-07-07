@@ -1,13 +1,14 @@
 <map id="carta::CartaFitsImage" name="carta::CartaFitsImage">
-<area shape="rect" id="node1" title=" " alt="" coords="591,218,753,245"/>
+<area shape="rect" id="node1" title=" " alt="" coords="591,243,753,270"/>
 <area shape="rect" id="node2" title=" " alt="" coords="199,5,385,47"/>
 <area shape="rect" id="node3" title=" " alt="" coords="255,71,329,98"/>
 <area shape="rect" id="node4" title=" " alt="" coords="225,122,359,149"/>
 <area shape="rect" id="node5" title=" " alt="" coords="253,173,331,199"/>
-<area shape="rect" id="node6" title=" " alt="" coords="245,223,339,250"/>
-<area shape="rect" id="node7" title=" " alt="" coords="273,293,311,319"/>
-<area shape="rect" id="node8" title=" " alt="" coords="267,367,317,394"/>
-<area shape="rect" id="node9" title=" " alt="" coords="249,418,335,445"/>
-<area shape="rect" id="node10" title=" " alt="" coords="5,411,144,452"/>
-<area shape="rect" id="node11" title=" " alt="" coords="193,473,391,499"/>
+<area shape="rect" id="node6" title=" " alt="" coords="246,223,338,250"/>
+<area shape="rect" id="node7" title=" " alt="" coords="245,274,339,301"/>
+<area shape="rect" id="node8" title=" " alt="" coords="273,341,311,367"/>
+<area shape="rect" id="node9" title=" " alt="" coords="267,415,317,442"/>
+<area shape="rect" id="node10" title=" " alt="" coords="249,466,335,493"/>
+<area shape="rect" id="node11" title=" " alt="" coords="5,459,144,500"/>
+<area shape="rect" id="node12" title=" " alt="" coords="193,521,391,547"/>
 </map>

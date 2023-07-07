@@ -1,5 +1,7 @@
 var NAVTREEINDEX5 =
 {
+"classcarta_1_1ImageFitter.html#a621c8378ac1d751ba73f1d3cb6658890":[3,0,0,47,14],
+"classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f":[3,0,0,47,11],
 "classcarta_1_1ImageFitter.html#a63188042be1b3d3e4f07126ad7e8711f":[3,0,0,47,22],
 "classcarta_1_1ImageFitter.html#a659953697801f20e068304a46fc42005":[3,0,0,47,25],
 "classcarta_1_1ImageFitter.html#a6a182be33142889418ef9a9a4c273091":[3,0,0,47,26],
@@ -247,7 +249,5 @@ var NAVTREEINDEX5 =
 "classcarta_1_1Region.html#a94dae002eb286f96a62b56298e90e93b":[3,0,0,67,25],
 "classcarta_1_1Region.html#a9557b22b60d93d7d5933c08f3a2e19c2":[3,0,0,67,31],
 "classcarta_1_1Region.html#a9891c6276749ba4296f7796c8c32f079":[3,0,0,67,9],
-"classcarta_1_1Region.html#a9ec0878ba3ff01974517769cbed3b352":[3,0,0,67,18],
-"classcarta_1_1Region.html#aa5ba8bd1f2fd72b4de352881ebb28ff8":[3,0,0,67,49],
-"classcarta_1_1Region.html#ab8585643f7391871459b5bb2a5b501a7":[3,0,0,67,53]
+"classcarta_1_1Region.html#a9ec0878ba3ff01974517769cbed3b352":[3,0,0,67,18]
 };

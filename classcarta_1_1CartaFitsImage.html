@@ -163,6 +163,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:aad75292f7a1ce528680c1acef3bdbcf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7dd373aa11933081095fd80e81af7aac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a7dd373aa11933081095fd80e81af7aac">CloseFileIfError</a> (const int &amp;status, const std::string &amp;error)</td></tr>
 <tr class="separator:a7dd373aa11933081095fd80e81af7aac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9f5024c4841b03d1f8a2053457776ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#ae9f5024c4841b03d1f8a2053457776ac">CheckFileStatus</a> (fitsfile *fptr)</td></tr>
+<tr class="separator:ae9f5024c4841b03d1f8a2053457776ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad98c05e53c5163dfa7b87cdd5eda5db7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#ad98c05e53c5163dfa7b87cdd5eda5db7">SetUpImage</a> ()</td></tr>
 <tr class="separator:ad98c05e53c5163dfa7b87cdd5eda5db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff1f2daec6344390f8d626744eebaafd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#aff1f2daec6344390f8d626744eebaafd">GetFitsHeaderString</a> (int &amp;nheaders, std::string &amp;hdrstr)</td></tr>
@@ -193,12 +195,12 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a29df4b49e93f8be725dc17a379603e6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65d1691d3c6e882f277db664d4d9def9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a65d1691d3c6e882f277db664d4d9def9">doGetNanMaskSlice</a> (casacore::Array&lt; bool &gt; &amp;buffer, const casacore::Slicer &amp;section)</td></tr>
 <tr class="separator:a65d1691d3c6e882f277db664d4d9def9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a381f4a1264d62aad5ee6bf0701273fd7"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a381f4a1264d62aad5ee6bf0701273fd7"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a381f4a1264d62aad5ee6bf0701273fd7">GetDataSubset</a> (fitsfile *fptr, int datatype, const casacore::Slicer &amp;section, casacore::Array&lt; float &gt; &amp;buffer)</td></tr>
-<tr class="separator:a381f4a1264d62aad5ee6bf0701273fd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a543dc0bd94e4f23f940c0378304dbddd"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a543dc0bd94e4f23f940c0378304dbddd"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a543dc0bd94e4f23f940c0378304dbddd">GetPixelMask</a> (fitsfile *fptr, int datatype, const casacore::IPosition &amp;<a class="el" href="classcarta_1_1CartaFitsImage.html#a86de5f9be94faf098f3529bb1afc506b">shape</a>, casacore::ArrayLattice&lt; bool &gt; &amp;mask)</td></tr>
-<tr class="separator:a543dc0bd94e4f23f940c0378304dbddd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac659951646e8e182d453aa9a47be64e9"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ac659951646e8e182d453aa9a47be64e9"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#ac659951646e8e182d453aa9a47be64e9">GetDataSubset</a> (int datatype, const casacore::Slicer &amp;section, casacore::Array&lt; float &gt; &amp;buffer)</td></tr>
+<tr class="separator:ac659951646e8e182d453aa9a47be64e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02e17c0bbc3457b0352a6367fca62518"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a02e17c0bbc3457b0352a6367fca62518"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a02e17c0bbc3457b0352a6367fca62518">GetPixelMask</a> (int datatype, const casacore::IPosition &amp;<a class="el" href="classcarta_1_1CartaFitsImage.html#a86de5f9be94faf098f3529bb1afc506b">shape</a>, casacore::ArrayLattice&lt; bool &gt; &amp;mask)</td></tr>
+<tr class="separator:a02e17c0bbc3457b0352a6367fca62518"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1dc4149aca8185e66c5aa46289777fc0"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a1dc4149aca8185e66c5aa46289777fc0"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a1dc4149aca8185e66c5aa46289777fc0">GetNanPixelMask</a> (casacore::ArrayLattice&lt; bool &gt; &amp;mask)</td></tr>
 <tr class="separator:a1dc4149aca8185e66c5aa46289777fc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -211,6 +213,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a9f610abc33badffd05097c934477688d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f6be701f8b821dcf0a4fb937b94817d"><td class="memItemLeft" align="right" valign="top">fitsfile *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a9f6be701f8b821dcf0a4fb937b94817d">_fptr</a></td></tr>
 <tr class="separator:a9f6be701f8b821dcf0a4fb937b94817d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c975dfae2a6605187e17bd2a8d37c40"><td class="memItemLeft" align="right" valign="top">std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a3c975dfae2a6605187e17bd2a8d37c40">_fptr_mutex</a></td></tr>
+<tr class="separator:a3c975dfae2a6605187e17bd2a8d37c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a621bf2181f21d4ff0872f7a000193248"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a621bf2181f21d4ff0872f7a000193248">_is_compressed</a></td></tr>
 <tr class="separator:a621bf2181f21d4ff0872f7a000193248"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a9f2aed413ebc7d4a1768008dc95ce8"><td class="memItemLeft" align="right" valign="top">casacore::IPosition&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CartaFitsImage.html#a8a9f2aed413ebc7d4a1768008dc95ce8">_shape</a></td></tr>
@@ -630,6 +634,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="ae9f5024c4841b03d1f8a2053457776ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9f5024c4841b03d1f8a2053457776ac">&#9670;&nbsp;</a></span>CheckFileStatus()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void carta::CartaFitsImage::CheckFileStatus </td>
+          <td>(</td>
+          <td class="paramtype">fitsfile *&#160;</td>
+          <td class="paramname"><em>fptr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ad0ca292e6e9b740437925114732cc956"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad0ca292e6e9b740437925114732cc956">&#9670;&nbsp;</a></span>cloneII()</h2>
 
@@ -813,7 +843,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_aba5163ae6bab1b755a775e61245e7bc3_cgraph.svg" width="100%" height="399"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_aba5163ae6bab1b755a775e61245e7bc3_cgraph.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -855,7 +885,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a65d1691d3c6e882f277db664d4d9def9_cgraph.svg" width="100%" height="378"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a65d1691d3c6e882f277db664d4d9def9_cgraph.svg" width="619" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -903,7 +933,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a56e6683ded5de93777beba05c6fbf013_cgraph.svg" width="100%" height="378"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a56e6683ded5de93777beba05c6fbf013_cgraph.svg" width="408" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -1012,8 +1042,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a381f4a1264d62aad5ee6bf0701273fd7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a381f4a1264d62aad5ee6bf0701273fd7">&#9670;&nbsp;</a></span>GetDataSubset()</h2>
+<a id="ac659951646e8e182d453aa9a47be64e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac659951646e8e182d453aa9a47be64e9">&#9670;&nbsp;</a></span>GetDataSubset()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1026,12 +1056,6 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="memname">bool carta::CartaFitsImage::GetDataSubset </td>
           <td>(</td>
-          <td class="paramtype">fitsfile *&#160;</td>
-          <td class="paramname"><em>fptr</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>datatype</em>, </td>
         </tr>
@@ -1170,8 +1194,8 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="a543dc0bd94e4f23f940c0378304dbddd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a543dc0bd94e4f23f940c0378304dbddd">&#9670;&nbsp;</a></span>GetPixelMask()</h2>
+<a id="a02e17c0bbc3457b0352a6367fca62518"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a02e17c0bbc3457b0352a6367fca62518">&#9670;&nbsp;</a></span>GetPixelMask()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1184,12 +1208,6 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="memname">bool carta::CartaFitsImage::GetPixelMask </td>
           <td>(</td>
-          <td class="paramtype">fitsfile *&#160;</td>
-          <td class="paramname"><em>fptr</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>datatype</em>, </td>
         </tr>
@@ -1499,7 +1517,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a1b88ee1696686d501769f69d1adaa686_cgraph.svg" width="100%" height="391"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a1b88ee1696686d501769f69d1adaa686_cgraph.svg" width="619" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -1798,7 +1816,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a29df4b49e93f8be725dc17a379603e6d_cgraph.svg" width="100%" height="391"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CartaFitsImage_a29df4b49e93f8be725dc17a379603e6d_cgraph.svg" width="408" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -1978,6 +1996,28 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">fitsfile* carta::CartaFitsImage::_fptr</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3c975dfae2a6605187e17bd2a8d37c40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c975dfae2a6605187e17bd2a8d37c40">&#9670;&nbsp;</a></span>_fptr_mutex</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::mutex carta::CartaFitsImage::_fptr_mutex</td>
         </tr>
       </table>
   </td>

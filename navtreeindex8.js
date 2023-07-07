@@ -1,5 +1,7 @@
 var NAVTREEINDEX8 =
 {
+"classcarta_1_1WebBrowser.html#a215b7b5d07c541e892dd2ff129eb8dae":[3,0,0,62,5],
+"classcarta_1_1WebBrowser.html#a2df19ea70f4daf32c85e5cbd064c1b6b":[3,0,0,62,3],
 "classcarta_1_1WebBrowser.html#a4e97c56be2c37bd2cd12962ba7b52b1e":[3,0,0,62,6],
 "classcarta_1_1WebBrowser.html#a577817b8b229e4a4af8915a747b2fb19":[3,0,0,62,8],
 "classcarta_1_1WebBrowser.html#a594f10bf3f989c1397dbabe5556c1ba4":[3,0,0,62,9],
@@ -53,8 +55,8 @@ var NAVTREEINDEX8 =
 "classspdlog_1_1sinks_1_1carta__sink.html#aec54abf7200855956bded90932b0f703":[3,0,1,0,0,8],
 "classspdlog_1_1sinks_1_1carta__sink.html#aef1c8469ff5709af4659ac0d6cc13608":[3,0,1,0,0,5],
 "files.html":[4,0],
-"functions.html":[3,3,0,0],
 "functions.html":[3,3,0],
+"functions.html":[3,3,0,0],
 "functions_a.html":[3,3,0,1],
 "functions_b.html":[3,3,0,2],
 "functions_c.html":[3,3,0,3],
@@ -247,7 +249,5 @@ var NAVTREEINDEX8 =
 "namespacemembers_enum.html":[2,1,4],
 "namespacemembers_eval.html":[2,1,5],
 "namespacemembers_func.html":[2,1,1],
-"namespacemembers_type.html":[2,1,3],
-"namespacemembers_vars.html":[2,1,2],
-"namespaces.html":[2,0]
+"namespacemembers_type.html":[2,1,3]
 };

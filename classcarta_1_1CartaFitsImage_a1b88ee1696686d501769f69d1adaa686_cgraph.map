@@ -1,8 +1,5 @@
 <map id="carta::CartaFitsImage::pixelMask" name="carta::CartaFitsImage::pixelMask">
-<area shape="rect" id="node1" title=" " alt="" coords="5,16,168,57"/>
-<area shape="rect" id="node2" href="$classcarta_1_1CartaFitsImage.html#a29df4b49e93f8be725dc17a379603e6d" title=" " alt="" coords="216,16,379,57"/>
-<area shape="rect" id="node3" href="$classcarta_1_1CartaFitsImage.html#aad75292f7a1ce528680c1acef3bdbcf4" title=" " alt="" coords="872,20,1035,61"/>
-<area shape="rect" id="node4" href="$classcarta_1_1CartaFitsImage.html#a16d3fdc222553528b79b761a6f14e14b" title=" " alt="" coords="427,23,613,50"/>
-<area shape="rect" id="node5" href="$classcarta_1_1CartaFitsImage.html#a4cb9089fd4a27b966e1349b15ad115a6" title=" " alt="" coords="439,75,601,116"/>
-<area shape="rect" id="node6" href="$classcarta_1_1CartaFitsImage.html#a7dd373aa11933081095fd80e81af7aac" title=" " alt="" coords="661,49,824,91"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,168,47"/>
+<area shape="rect" id="node2" href="$classcarta_1_1CartaFitsImage.html#a29df4b49e93f8be725dc17a379603e6d" title=" " alt="" coords="216,5,379,47"/>
+<area shape="rect" id="node3" href="$classcarta_1_1CartaFitsImage.html#a16d3fdc222553528b79b761a6f14e14b" title=" " alt="" coords="427,13,613,39"/>
 </map>
