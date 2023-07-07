@@ -113,33 +113,31 @@ casacore::DataType CartaFitsImage::internalDataType() const {
 casacore::Bool CartaFitsImage::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
     // Read section of data using cfitsio implicit data type conversion.
     // cfitsio scales the data by BSCALE and BZERO
-    fitsfile* fptr = OpenFile();
-
     // Read data subset from image
     bool ok(false);
     switch (_equiv_bitpix) {
         case 8: {
-            ok = GetDataSubset<unsigned char>(fptr, _equiv_bitpix, section, buffer);
+            ok = GetDataSubset<unsigned char>(_equiv_bitpix, section, buffer);
             break;
         }
         case 16: {
-            ok = GetDataSubset<short>(fptr, _equiv_bitpix, section, buffer);
+            ok = GetDataSubset<short>(_equiv_bitpix, section, buffer);
             break;
         }
         case 32: {
-            ok = GetDataSubset<int>(fptr, _equiv_bitpix, section, buffer);
+            ok = GetDataSubset<int>(_equiv_bitpix, section, buffer);
             break;
         }
         case 64: {
-            ok = GetDataSubset<LONGLONG>(fptr, _equiv_bitpix, section, buffer);
+            ok = GetDataSubset<LONGLONG>(_equiv_bitpix, section, buffer);
             break;
         }
         case -32: {
-            ok = GetDataSubset<float>(fptr, _equiv_bitpix, section, buffer);
+            ok = GetDataSubset<float>(_equiv_bitpix, section, buffer);
             break;
         }
         case -64: {
-            ok = GetDataSubset<double>(fptr, _equiv_bitpix, section, buffer);
+            ok = GetDataSubset<double>(_equiv_bitpix, section, buffer);
             break;
         }
     }
@@ -221,6 +219,7 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
     }
 
     if (_pixel_mask) {
+        _pixel_mask->getSlice(buffer, section);
         return _pixel_mask->getSlice(buffer, section);
     }
 
@@ -230,11 +229,12 @@ casacore::Bool CartaFitsImage::doGetMaskSlice(casacore::Array<bool>& buffer, con
 // private
 
 fitsfile* CartaFitsImage::OpenFile() {
-    // Open file and return file pointer
+    // Open file and return file pointer, or return existing file pointer.
+    // Caller should protect with mutex before calling this then proceeding with cfitsio call using returned fptr.
     if (!_fptr) {
         fitsfile* fptr;
-        int status(0);
-        fits_open_file(&fptr, _filename.c_str(), 0, &status);
+        int iomode(READONLY), status(0);
+        fits_open_file(&fptr, _filename.c_str(), iomode, &status);
 
         if (status) {
             throw(casacore::AipsError("Error opening FITS file."));
@@ -256,6 +256,7 @@ fitsfile* CartaFitsImage::OpenFile() {
 void CartaFitsImage::CloseFile() {
     if (_fptr) {
         int status = 0;
+        std::unique_lock<std::mutex> ulock(_fptr_mutex);
         fits_close_file(_fptr, &status);
         _fptr = nullptr;
     }
@@ -349,6 +350,7 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     // Read header values into single string, and store some image parameters.
     // Returns string and number of keys contained in string.
     // Throws exception if any headers missing.
+    std::unique_lock<std::mutex> ulock(_fptr_mutex);
     fitsfile* fptr = OpenFile();
     int status(0);
 
@@ -428,6 +430,7 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     } else {
         fits_hdr2str(fptr, no_comments, nullptr, 0, header, &nheaders, &status);
     }
+    ulock.unlock();
 
     if (status) {
         // Free memory allocated by cfitsio, close file, throw exception
@@ -442,7 +445,7 @@ void CartaFitsImage::GetFitsHeaderString(int& nheaders, std::string& hdrstr) {
     int free_status(0);
     fits_free_memory(*header, &free_status);
 
-    // Done with file
+    // Done with file setup
     CloseFile();
 }
 
@@ -1412,27 +1415,24 @@ void CartaFitsImage::AddObsInfo(casacore::CoordinateSystem& coord_sys, casacore:
 }
 
 void CartaFitsImage::SetPixelMask() {
-    // Set pixel mask for entire image
-    fitsfile* fptr = OpenFile();
-
     // Read blanked mask from image
     bool ok(false);
     casacore::ArrayLattice<bool> mask_lattice;
     switch (_bitpix) {
         case 8: {
-            ok = GetPixelMask<unsigned char>(fptr, _bitpix, _shape, mask_lattice);
+            ok = GetPixelMask<unsigned char>(_bitpix, _shape, mask_lattice);
             break;
         }
         case 16: {
-            ok = GetPixelMask<short>(fptr, _bitpix, _shape, mask_lattice);
+            ok = GetPixelMask<short>(_bitpix, _shape, mask_lattice);
             break;
         }
         case 32: {
-            ok = GetPixelMask<int>(fptr, _bitpix, _shape, mask_lattice);
+            ok = GetPixelMask<int>(_bitpix, _shape, mask_lattice);
             break;
         }
         case 64: {
-            ok = GetPixelMask<LONGLONG>(fptr, _bitpix, _shape, mask_lattice);
+            ok = GetPixelMask<LONGLONG>(_bitpix, _shape, mask_lattice);
             break;
         }
         case -32: {
@@ -1455,8 +1455,6 @@ void CartaFitsImage::SetPixelMask() {
     } else {
         _pixel_mask = new casacore::ArrayLattice<bool>(mask_lattice);
     }
-
-    CloseFile();
 }
 
 bool CartaFitsImage::doGetNanMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
