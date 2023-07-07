@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed FITS header and data errors ([#1233](https://github.com/CARTAvis/carta-backend/issues/1233), [#1265](https://github.com/CARTAvis/carta-backend/issues/1265)).
 * Fixed the problem of resuming LEL images ([#1226](https://github.com/CARTAvis/carta-backend/issues/1226)).
 * Fixed the case-sensitive of reading BUNIT from a file header ([#1187](https://github.com/CARTAvis/carta-backend/issues/1187)).
+* Fixed the crash when reading beam table with 64-bit floats ([#1166](https://github.com/CARTAvis/carta-backend/issues/1166)).
+* Fixed region spectral profile from FITS gz image ([#1271](https://github.com/CARTAvis/carta-backend/issues/1271)).
 
 ## [4.0.0-beta.1]
 

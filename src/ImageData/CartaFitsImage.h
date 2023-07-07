@@ -64,6 +64,7 @@ private:
     fitsfile* OpenFile();
     void CloseFile();
     void CloseFileIfError(const int& status, const std::string& error);
+    void CheckFileStatus(fitsfile* fptr);
 
     void SetUpImage();
     void GetFitsHeaderString(int& nheaders, std::string& hdrstr);
@@ -89,17 +90,20 @@ private:
     bool doGetNanMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section);
 
     template <typename T>
-    bool GetDataSubset(fitsfile* fptr, int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer);
+    bool GetDataSubset(int datatype, const casacore::Slicer& section, casacore::Array<float>& buffer);
     template <typename T>
-    bool GetPixelMask(fitsfile* fptr, int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask);
+    bool GetPixelMask(int datatype, const casacore::IPosition& shape, casacore::ArrayLattice<bool>& mask);
     template <typename T>
     bool GetNanPixelMask(casacore::ArrayLattice<bool>& mask);
 
     std::string _filename;
     unsigned int _hdu;
 
-    // File pointer for open file; nullptr when closed
+    // File pointer for open file; nullptr when closed.
+    // cfitsio docs: "Different threads should not share the same 'fitsfile' pointer to read an opened FITS file
+    // unless locks are placed around the calls to the CFITSIO reading routines."
     fitsfile* _fptr;
+    std::mutex _fptr_mutex;
 
     // FITS header values
     bool _is_compressed;

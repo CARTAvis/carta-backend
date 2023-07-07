@@ -22,6 +22,9 @@ private:
 
     void AllocateImage(const std::string& hdu) override;
     int GetNumHeaders(const std::string& filename, int hdu);
+
+    // Image beam headers/table
+    bool Is64BitBeamsTable(const std::string& filename);
     void ResetImageBeam(unsigned int hdu_num);
     bool HasBeamHeaders(unsigned int hdu_num);
     bool GetLastHistoryBeam(unsigned int hdu_num, casacore::Quantity& major, casacore::Quantity& minor, casacore::Quantity& pa);
