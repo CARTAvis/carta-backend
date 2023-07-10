@@ -1078,7 +1078,8 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (_image_cache_valid) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        cursor_value_with_current_stokes = _image_caches[ImageCacheIndex()][ImageCacheStartIndex() + (y * _width) + x];
+        int idx = ImageCacheStartIndex() + (y * _width) + x;
+        cursor_value_with_current_stokes = GetImageCacheValue(idx);
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
@@ -1251,14 +1252,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = ImageCacheStartIndex() + x_start + j;
-                                profile.push_back(_image_caches[ImageCacheIndex()][idx]);
+                                profile.push_back(GetImageCacheValue(idx));
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
                                 auto idx = ImageCacheStartIndex() + (j * _width) + x;
-                                profile.push_back(_image_caches[ImageCacheIndex()][idx]);
+                                profile.push_back(GetImageCacheValue(idx));
                             }
                             cache_lock.release();
                         }
@@ -2418,6 +2419,10 @@ float* Frame::GetImageCacheData(int z, int stokes) {
     return _image_caches[ImageCacheIndex(stokes)].get() + ImageCacheStartIndex(z);
 }
 
+float Frame::GetImageCacheValue(int index, int stokes) {
+    return _image_caches[ImageCacheIndex(stokes)][index];
+}
+
 long long int Frame::ImageCacheStartIndex(int z_index) const {
     if (CubeImageCacheAvailable(_stokes_index)) {
         if (z_index == CURRENT_Z) {
@@ -2468,7 +2473,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
             profile.resize(_depth);
             for (int z = 0; z < _depth; ++z) {
                 size_t idx = (z * _width * _height) + (_width * y + x);
-                profile[z] = _image_caches[ImageCacheIndex(stokes)][idx];
+                profile[z] = GetImageCacheValue(idx, stokes);
             }
             return true;
         }
@@ -2518,7 +2523,7 @@ bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const ca
             for (int x = x_min; x < x_min + width; ++x) {
                 for (int y = y_min; y < y_min + height; ++y) {
                     size_t idx = (z * _width * _height) + (_width * y + x);
-                    double val = _image_caches[ImageCacheIndex(stokes)][idx];
+                    double val = GetImageCacheValue(idx, stokes);
                     if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
                         sum += val;
                         sum_sq += val * val;

@@ -215,15 +215,29 @@ public:
         int channel(5);
         int stokes(0);
 
-        if (stokes_config_z.size() == 2 && stokes_config_z.back() == 'z') {
-            char pol = stokes_config_z.front();
-            if (pol == 'Q') {
-                stokes = 1;
-            } else if (pol == 'U') {
-                stokes = 2;
-            } else if (pol == 'V') {
-                stokes = 3;
-            }
+        std::string pol;
+        if (stokes_config_z.size() > 1 && stokes_config_z.back() == 'z') {
+            pol = stokes_config_z.substr(0, stokes_config_z.size() - 1);
+        } else {
+            pol = stokes_config_z;
+        }
+
+        if (pol == "Q") {
+            stokes = 1;
+        } else if (pol == "U") {
+            stokes = 2;
+        } else if (pol == "V") {
+            stokes = 3;
+        } else if (pol == "Ptotal") {
+            stokes = COMPUTE_STOKES_PTOTAL;
+        } else if (pol == "PFtotal") {
+            stokes = COMPUTE_STOKES_PFTOTAL;
+        } else if (pol == "Plinear") {
+            stokes = COMPUTE_STOKES_PLINEAR;
+        } else if (pol == "PFlinear") {
+            stokes = COMPUTE_STOKES_PFLINEAR;
+        } else if (pol == "Pangle") {
+            stokes = COMPUTE_STOKES_PANGLE;
         }
 
         std::string msg;
@@ -270,15 +284,29 @@ public:
         int channel(5);
         int stokes(0);
 
-        if (stokes_config_z.size() == 2 && stokes_config_z.back() == 'z') {
-            char pol = stokes_config_z.front();
-            if (pol == 'Q') {
-                stokes = 1;
-            } else if (pol == 'U') {
-                stokes = 2;
-            } else if (pol == 'V') {
-                stokes = 3;
-            }
+        std::string pol;
+        if (stokes_config_z.size() > 1 && stokes_config_z.back() == 'z') {
+            pol = stokes_config_z.substr(0, stokes_config_z.size() - 1);
+        } else {
+            pol = stokes_config_z;
+        }
+
+        if (pol == "Q") {
+            stokes = 1;
+        } else if (pol == "U") {
+            stokes = 2;
+        } else if (pol == "V") {
+            stokes = 3;
+        } else if (pol == "Ptotal") {
+            stokes = COMPUTE_STOKES_PTOTAL;
+        } else if (pol == "PFtotal") {
+            stokes = COMPUTE_STOKES_PFTOTAL;
+        } else if (pol == "Plinear") {
+            stokes = COMPUTE_STOKES_PLINEAR;
+        } else if (pol == "PFlinear") {
+            stokes = COMPUTE_STOKES_PFLINEAR;
+        } else if (pol == "Pangle") {
+            stokes = COMPUTE_STOKES_PANGLE;
         }
 
         std::string msg;
@@ -398,7 +426,7 @@ public:
         return cube_histogram;
     }
 
-    static std::vector<CARTA::SpectralProfile> RectangleRegionSpectralProfile(const std::string& path_string, const std::vector<int>& dims,
+    static std::vector<CARTA::SpectralProfile> RegionSpectralProfile(const std::string& path_string, const std::vector<int>& dims,
         const std::string& stokes_config_z, const CARTA::RegionType& region_type, bool cube_image_cache) {
         if (dims.size() < 4) {
             return std::vector<CARTA::SpectralProfile>();
@@ -415,15 +443,29 @@ public:
         int channel(5);
         int stokes(0);
 
-        if (stokes_config_z.size() == 2 && stokes_config_z.back() == 'z') {
-            char pol = stokes_config_z.front();
-            if (pol == 'Q') {
-                stokes = 1;
-            } else if (pol == 'U') {
-                stokes = 2;
-            } else if (pol == 'V') {
-                stokes = 3;
-            }
+        std::string pol;
+        if (stokes_config_z.size() > 1 && stokes_config_z.back() == 'z') {
+            pol = stokes_config_z.substr(0, stokes_config_z.size() - 1);
+        } else {
+            pol = stokes_config_z;
+        }
+
+        if (pol == "Q") {
+            stokes = 1;
+        } else if (pol == "U") {
+            stokes = 2;
+        } else if (pol == "V") {
+            stokes = 3;
+        } else if (pol == "Ptotal") {
+            stokes = COMPUTE_STOKES_PTOTAL;
+        } else if (pol == "PFtotal") {
+            stokes = COMPUTE_STOKES_PFTOTAL;
+        } else if (pol == "Plinear") {
+            stokes = COMPUTE_STOKES_PLINEAR;
+        } else if (pol == "PFlinear") {
+            stokes = COMPUTE_STOKES_PFLINEAR;
+        } else if (pol == "Pangle") {
+            stokes = COMPUTE_STOKES_PANGLE;
         }
 
         std::string msg;
@@ -566,8 +608,8 @@ TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile) {
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
-        auto spectral_profile2 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        auto spectral_profile1 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile2 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
     }
 }
@@ -578,8 +620,8 @@ TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile) {
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
-        auto spectral_profile2 = RectangleRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        auto spectral_profile1 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile2 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
     }
 }
