@@ -20,6 +20,24 @@ static const double ONE_MILLION = 1000000;
 static const std::vector<std::string> STOKES_TYPES = {"I", "Q", "U", "V", "Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
 static const std::vector<int> IMAGE_DIMS = {10, 10, 100, 4};
 
+class TestFrame : public Frame {
+public:
+    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z, int reserved_memory)
+        : Frame(session_id, loader, hdu, default_z, reserved_memory) {}
+    std::vector<float> GetImageDataPerChannel(int z, int stokes) {
+        std::vector<float> results;
+        if ((z == CurrentZ() && stokes == CurrentStokes()) || CubeImageCacheAvailable(stokes)) {
+            auto* data = GetImageCacheData(z, stokes);
+            for (int i = 0; i < _width * _height; ++i) {
+                results.push_back(data[i]);
+            }
+        } else {
+            GetZMatrix(results, z, stokes);
+        }
+        return results;
+    }
+};
+
 class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
 public:
     static std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
@@ -548,6 +566,57 @@ public:
         }
         return true;
     }
+
+    static std::vector<std::vector<float>> TestImagePixelData(
+        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+        int x_size = dims[0];
+        int y_size = dims[1];
+        int z_size = dims[2];
+        int stokes_size = dims[3];
+
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+        int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        auto frame = std::make_shared<TestFrame>(0, loader, "0", 0, reserved_memory);
+
+        int channel(0);
+        int stokes(0);
+
+        if (stokes_config == "I") {
+            stokes = 0;
+        } else if (stokes_config == "Q") {
+            stokes = 1;
+        } else if (stokes_config == "U") {
+            stokes = 2;
+        } else if (stokes_config == "V") {
+            stokes = 3;
+        } else if (stokes_config == "Ptotal") {
+            stokes = COMPUTE_STOKES_PTOTAL;
+        } else if (stokes_config == "PFtotal") {
+            stokes = COMPUTE_STOKES_PFTOTAL;
+        } else if (stokes_config == "Plinear") {
+            stokes = COMPUTE_STOKES_PLINEAR;
+        } else if (stokes_config == "PFlinear") {
+            stokes = COMPUTE_STOKES_PFLINEAR;
+        } else if (stokes_config == "Pangle") {
+            stokes = COMPUTE_STOKES_PANGLE;
+        }
+
+        std::string msg;
+        frame->SetImageChannels(channel, stokes, msg);
+
+        Timer t;
+
+        std::vector<std::vector<float>> results;
+        for (int z = 0; z < frame->Depth(); ++z) {
+            results.push_back(frame->GetImageDataPerChannel(z, stokes));
+        }
+
+        auto dt = t.Elapsed();
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{} Elapsed time for getting image pixel data  ({}): {:.3f} ms.\n", prefix, stokes_config, dt.ms());
+
+        return results;
+    }
 };
 
 TEST_F(CubeImageCacheTest, SpatialProfile3D) {
@@ -623,5 +692,18 @@ TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile) {
         auto spectral_profile1 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
         auto spectral_profile2 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+    }
+}
+
+TEST_F(CubeImageCacheTest, ImagePixelData) {
+    std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
+    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+
+    for (auto stokes : STOKES_TYPES) {
+        auto data1 = TestImagePixelData(path_string, IMAGE_DIMS, stokes, false);
+        auto data2 = TestImagePixelData(path_string, IMAGE_DIMS, stokes, true);
+        for (int i = 0; i < data1.size(); ++i) {
+            CmpVectors(data1[i], data2[i]);
+        }
     }
 }
