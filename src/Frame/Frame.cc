@@ -2419,11 +2419,16 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             return stokes > -1 && GetImageCache(stokes, ALL_Z);
         };
 
+        int stokes_i, stokes_q, stokes_u, stokes_v;
+        bool i_ok = get_stokes_data("I", stokes_i);
+        bool q_ok = get_stokes_data("Q", stokes_q);
+        bool u_ok = get_stokes_data("U", stokes_u);
+        bool v_ok = get_stokes_data("V", stokes_v);
+
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             // Get stokes Q, U, and V data
-            int stokes_q, stokes_u, stokes_v;
-            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) && get_stokes_data("V", stokes_v)) {
+            if (q_ok && u_ok && v_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     int idx = ImageCacheStartIndex(z, stokes_q) + i;
@@ -2440,8 +2445,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             // Get stokes Q and U data
-            int stokes_q, stokes_u;
-            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+            if (q_ok && u_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     int idx = ImageCacheStartIndex(z, stokes_q) + i;
@@ -2457,9 +2461,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             // Get stokes I, Q, U, and V data
-            int stokes_i, stokes_q, stokes_u, stokes_v;
-            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) &&
-                get_stokes_data("V", stokes_v)) {
+            if (i_ok && q_ok && u_ok && v_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     int idx = ImageCacheStartIndex(z, stokes_i) + i;
@@ -2477,8 +2479,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             // Get stokes I, Q, and U data
-            int stokes_i, stokes_q, stokes_u;
-            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+            if (i_ok && q_ok && u_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     int idx = ImageCacheStartIndex(z, stokes_i) + i;
@@ -2495,8 +2496,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             // Get stokes Q and U data
-            int stokes_q, stokes_u;
-            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+            if (q_ok && u_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     int idx = ImageCacheStartIndex(z, stokes_q) + i;
@@ -2523,11 +2523,16 @@ float Frame::GetImageCacheValue(int index, int stokes) {
             return stokes > -1 && GetImageCache(stokes, ALL_Z);
         };
 
+        int stokes_i, stokes_q, stokes_u, stokes_v;
+        bool i_ok = get_stokes_data("I", stokes_i);
+        bool q_ok = get_stokes_data("Q", stokes_q);
+        bool u_ok = get_stokes_data("U", stokes_u);
+        bool v_ok = get_stokes_data("V", stokes_v);
+
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             // Get stokes Q, U, and V data
-            int stokes_q, stokes_u, stokes_v;
-            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) && get_stokes_data("V", stokes_v)) {
+            if (q_ok && u_ok && v_ok) {
                 double val_q = _image_caches[stokes_q][index];
                 double val_u = _image_caches[stokes_u][index];
                 double val_v = _image_caches[stokes_v][index];
@@ -2538,8 +2543,7 @@ float Frame::GetImageCacheValue(int index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             // Get stokes Q and U data
-            int stokes_q, stokes_u;
-            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+            if (q_ok && u_ok) {
                 double val_q = _image_caches[stokes_q][index];
                 double val_u = _image_caches[stokes_u][index];
                 if (!std::isnan(val_q) && !std::isnan(val_u)) {
@@ -2549,9 +2553,7 @@ float Frame::GetImageCacheValue(int index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             // Get stokes I, Q, U, and V data
-            int stokes_i, stokes_q, stokes_u, stokes_v;
-            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) &&
-                get_stokes_data("V", stokes_v)) {
+            if (i_ok && q_ok && u_ok && v_ok) {
                 double val_i = _image_caches[stokes_i][index];
                 double val_q = _image_caches[stokes_q][index];
                 double val_u = _image_caches[stokes_u][index];
@@ -2563,8 +2565,7 @@ float Frame::GetImageCacheValue(int index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             // Get stokes I, Q, and U data
-            int stokes_i, stokes_q, stokes_u;
-            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+            if (i_ok && q_ok && u_ok) {
                 double val_i = _image_caches[stokes_i][index];
                 double val_q = _image_caches[stokes_q][index];
                 double val_u = _image_caches[stokes_u][index];
@@ -2575,8 +2576,7 @@ float Frame::GetImageCacheValue(int index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             // Get stokes Q and U data
-            int stokes_q, stokes_u;
-            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+            if (q_ok && u_ok) {
                 double val_q = _image_caches[stokes_q][index];
                 double val_u = _image_caches[stokes_u][index];
                 if (!std::isnan(val_q) && !std::isnan(val_u)) {
