@@ -2053,6 +2053,14 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
                     _frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles));
         };
 
+        auto get_profiles_data_from_cache = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
+            int tmp_stokes;
+            bool parallel(false);
+            return (
+                _frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
+                _frames.at(file_id)->GetRegionSpectralData(partial_z_range, tmp_stokes, mask, xy_origin, tmp_partial_profiles, parallel));
+        };
+
         auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
             int tmp_stokes;
             return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
@@ -2062,8 +2070,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         ProfilesMap partial_profiles;
         if (IsComputedStokes(stokes_index)) {
             // For computed stokes
-            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
-                return false;
+            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data_from_cache)) {
+                if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+                    return false;
+                }
             }
         } else {
             // For regular stokes I, Q, U, or V
