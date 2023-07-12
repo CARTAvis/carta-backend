@@ -88,6 +88,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     size_t cube_image_size = (size_t)(_width * _height * _depth * _num_stokes * sizeof(float)); // Bytes
     if ((size_t)reserved_memory * ONE_MILLION >= cube_image_size) {
         _cube_image_cache = true;
+        // Cache image data for all stokes
+        for (int stokes = 0; stokes < _num_stokes; ++stokes) {
+            GetImageCache(stokes, ALL_Z);
+        }
         spdlog::info("Cache the whole cube image data.");
     }
 
@@ -2589,9 +2593,8 @@ float Frame::GetImageCacheValue(int index, int stokes) {
 
     // Check the existence of cube image data cache
     if (ImageCacheIndex(stokes) > -1 && !_image_caches.count(ImageCacheIndex(stokes))) {
-        if (!GetImageCache(ImageCacheIndex(stokes), ALL_Z)) {
-            spdlog::error("Error getting cube image data for stokes {}!", stokes);
-        }
+        spdlog::error("Error getting cube image data for stokes {}!", stokes);
+        return std::numeric_limits<float>::quiet_NaN();
     }
     return _image_caches[ImageCacheIndex(stokes)][index];
 }
@@ -2649,21 +2652,22 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x, y;
         point.ToIndex(x, y);
-        if (GetImageCache(stokes) || IsComputedStokes(stokes)) {
+        if (_image_caches.count(stokes) || IsComputedStokes(stokes)) {
             profile.resize(_depth);
+#pragma omp parallel for
             for (int z = 0; z < _depth; ++z) {
                 size_t idx = (z * _width * _height) + (_width * y + x);
                 profile[z] = GetImageCacheValue(idx, stokes);
             }
             return true;
         }
-        spdlog::error("Invalid cube image cache for the cursor spectral profile!");
+        spdlog::error("Invalid cube image cache for the cursor/point region spectral profile!");
     }
     return false;
 }
 
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles, bool parallel) {
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     if (_cube_image_cache) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x_min = origin(0);
@@ -2688,111 +2692,53 @@ bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const ca
         profiles[CARTA::StatsType::Extrema] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
         profiles[CARTA::StatsType::NumPixels] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
 
-        auto loop_w_omp = [&]() {
 #pragma omp parallel for
-            for (int z = start; z <= end; ++z) {
-                double sum = 0;
-                double mean = 0;
-                double rms = 0;
-                double sigma = 0;
-                double sum_sq = 0;
-                double min = std::numeric_limits<float>::max();
-                double max = std::numeric_limits<float>::lowest();
-                double extrema = 0;
-                double num_pixels = 0;
+        for (int z = start; z <= end; ++z) {
+            double sum = 0;
+            double mean = 0;
+            double rms = 0;
+            double sigma = 0;
+            double sum_sq = 0;
+            double min = std::numeric_limits<float>::max();
+            double max = std::numeric_limits<float>::lowest();
+            double extrema = 0;
+            double num_pixels = 0;
 
-                for (int x = x_min; x < x_min + width; ++x) {
-                    for (int y = y_min; y < y_min + height; ++y) {
-                        size_t idx = (z * _width * _height) + (_width * y + x);
-                        double val = GetImageCacheValue(idx, stokes);
-                        if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
-                            sum += val;
-                            sum_sq += val * val;
-                            min = val < min ? val : min;
-                            max = val > max ? val : max;
-                            num_pixels++;
-                        }
-                    }
-                }
-
-                if (num_pixels) {
-                    mean = sum / num_pixels;
-                    rms = sqrt(sum_sq / num_pixels);
-                    sigma = num_pixels > 1 ? sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1)) : 0;
-                    extrema = (abs(min) > abs(max) ? min : max);
-                    size_t idx = z - start;
-
-                    profiles[CARTA::StatsType::Sum][idx] = sum;
-                    profiles[CARTA::StatsType::Mean][idx] = mean;
-                    profiles[CARTA::StatsType::RMS][idx] = rms;
-                    profiles[CARTA::StatsType::Sigma][idx] = sigma;
-                    profiles[CARTA::StatsType::SumSq][idx] = sum_sq;
-                    profiles[CARTA::StatsType::Min][idx] = min;
-                    profiles[CARTA::StatsType::Max][idx] = max;
-                    profiles[CARTA::StatsType::Extrema][idx] = extrema;
-                    profiles[CARTA::StatsType::NumPixels][idx] = num_pixels;
-
-                    if (has_flux) {
-                        profiles[CARTA::StatsType::FluxDensity][idx] = sum / beam_area;
+            for (int x = x_min; x < x_min + width; ++x) {
+                for (int y = y_min; y < y_min + height; ++y) {
+                    size_t idx = (z * _width * _height) + (_width * y + x);
+                    double val = GetImageCacheValue(idx, stokes);
+                    if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
+                        sum += val;
+                        sum_sq += val * val;
+                        min = val < min ? val : min;
+                        max = val > max ? val : max;
+                        num_pixels++;
                     }
                 }
             }
-        };
 
-        auto loop = [&]() {
-            for (int z = start; z <= end; ++z) {
-                double sum = 0;
-                double mean = 0;
-                double rms = 0;
-                double sigma = 0;
-                double sum_sq = 0;
-                double min = std::numeric_limits<float>::max();
-                double max = std::numeric_limits<float>::lowest();
-                double extrema = 0;
-                double num_pixels = 0;
+            if (num_pixels) {
+                mean = sum / num_pixels;
+                rms = sqrt(sum_sq / num_pixels);
+                sigma = num_pixels > 1 ? sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1)) : 0;
+                extrema = (abs(min) > abs(max) ? min : max);
+                size_t idx = z - start;
 
-                for (int x = x_min; x < x_min + width; ++x) {
-                    for (int y = y_min; y < y_min + height; ++y) {
-                        size_t idx = (z * _width * _height) + (_width * y + x);
-                        double val = GetImageCacheValue(idx, stokes);
-                        if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
-                            sum += val;
-                            sum_sq += val * val;
-                            min = val < min ? val : min;
-                            max = val > max ? val : max;
-                            num_pixels++;
-                        }
-                    }
-                }
+                profiles[CARTA::StatsType::Sum][idx] = sum;
+                profiles[CARTA::StatsType::Mean][idx] = mean;
+                profiles[CARTA::StatsType::RMS][idx] = rms;
+                profiles[CARTA::StatsType::Sigma][idx] = sigma;
+                profiles[CARTA::StatsType::SumSq][idx] = sum_sq;
+                profiles[CARTA::StatsType::Min][idx] = min;
+                profiles[CARTA::StatsType::Max][idx] = max;
+                profiles[CARTA::StatsType::Extrema][idx] = extrema;
+                profiles[CARTA::StatsType::NumPixels][idx] = num_pixels;
 
-                if (num_pixels) {
-                    mean = sum / num_pixels;
-                    rms = sqrt(sum_sq / num_pixels);
-                    sigma = num_pixels > 1 ? sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1)) : 0;
-                    extrema = (abs(min) > abs(max) ? min : max);
-                    size_t idx = z - start;
-
-                    profiles[CARTA::StatsType::Sum][idx] = sum;
-                    profiles[CARTA::StatsType::Mean][idx] = mean;
-                    profiles[CARTA::StatsType::RMS][idx] = rms;
-                    profiles[CARTA::StatsType::Sigma][idx] = sigma;
-                    profiles[CARTA::StatsType::SumSq][idx] = sum_sq;
-                    profiles[CARTA::StatsType::Min][idx] = min;
-                    profiles[CARTA::StatsType::Max][idx] = max;
-                    profiles[CARTA::StatsType::Extrema][idx] = extrema;
-                    profiles[CARTA::StatsType::NumPixels][idx] = num_pixels;
-
-                    if (has_flux) {
-                        profiles[CARTA::StatsType::FluxDensity][idx] = sum / beam_area;
-                    }
+                if (has_flux) {
+                    profiles[CARTA::StatsType::FluxDensity][idx] = sum / beam_area;
                 }
             }
-        };
-
-        if (parallel) {
-            loop_w_omp();
-        } else {
-            loop();
         }
         return true;
     }

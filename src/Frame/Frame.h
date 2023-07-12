@@ -224,7 +224,7 @@ public:
     int UsedReservedMemory() const;
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles, bool parallel = true);
+        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
 
 protected:
     // Validate z and stokes index values
