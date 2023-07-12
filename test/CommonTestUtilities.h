@@ -96,7 +96,7 @@ void CmpValues(float data1, float data2, float abs_err = 0);
 void CmpVectors(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err = 0);
 void CmpSpatialProfiles(
     const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles);
-bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2);
+bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2, bool exact = true);
 
 #include "CommonTestUtilities.tcc"
 

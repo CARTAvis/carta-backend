@@ -26,7 +26,7 @@ public:
         : Frame(session_id, loader, hdu, default_z, reserved_memory) {}
     std::vector<float> GetImageDataPerChannel(int z, int stokes) {
         std::vector<float> results;
-        if ((z == CurrentZ() && stokes == CurrentStokes()) || CubeImageCacheAvailable(stokes)) {
+        if ((z == CurrentZ() && stokes == CurrentStokes()) || _cube_image_cache) {
             auto* data = GetImageCacheData(z, stokes);
             for (int i = 0; i < _width * _height; ++i) {
                 results.push_back(data[i]);
@@ -664,10 +664,19 @@ TEST_F(CubeImageCacheTest, PointRegionSpectralProfile) {
 TEST_F(CubeImageCacheTest, CubeHistogram) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
     auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
-    for (auto stokes : STOKES_TYPES) {
+    std::vector<std::string> normal_stokes = {"I", "Q", "U", "V"};
+    std::vector<std::string> computed_stokes = {"Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
+
+    for (auto stokes : normal_stokes) {
         auto hist1 = CubeHistogram(path_string, IMAGE_DIMS, stokes, false);
         auto hist2 = CubeHistogram(path_string, IMAGE_DIMS, stokes, true);
         EXPECT_TRUE(CmpHistograms(hist1, hist2));
+    }
+
+    for (auto stokes : computed_stokes) {
+        auto hist1 = CubeHistogram(path_string, IMAGE_DIMS, stokes, false);
+        auto hist2 = CubeHistogram(path_string, IMAGE_DIMS, stokes, true);
+        EXPECT_TRUE(CmpHistograms(hist1, hist2, false));
     }
 }
 

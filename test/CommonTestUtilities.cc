@@ -410,26 +410,46 @@ void CmpValues(float data1, float data2, float abs_err) {
     }
 }
 
-bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2) {
+bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2, bool exact) {
     if (hist1.GetNbins() != hist2.GetNbins()) {
-        std::cerr << fmt::format("Histogram bin numbers are not equal: {} vs. {}\n", hist1.GetNbins(), hist2.GetNbins());
+        fmt::print("Histogram bin numbers are not equal: {} vs. {}\n", hist1.GetNbins(), hist2.GetNbins());
         return false;
     }
-    if (fabs(hist1.GetMinVal() - hist2.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
-        std::cerr << fmt::format("Histogram min values are not equal: {:.6f} vs. {:.6f}\n", hist1.GetMinVal(), hist2.GetMinVal());
-        return false;
+
+    auto len1 = hist1.GetMaxVal() - hist1.GetMinVal();
+    auto len2 = hist2.GetMaxVal() - hist2.GetMinVal();
+    auto diff_len = fabs(len1 - len2);
+    auto diff_min = fabs(hist1.GetMinVal() - hist2.GetMinVal());
+    auto diff_max = fabs(hist1.GetMaxVal() - hist2.GetMaxVal());
+
+    if (diff_min > std::numeric_limits<float>::epsilon()) {
+        fmt::print("Histogram min values are not equal: {:.6f} vs. {:.6f}\n", hist1.GetMinVal(), hist2.GetMinVal());
+        if (exact || (diff_min / len1 > 1e-6) || (diff_min / len2 > 1e-6)) {
+            return false;
+        }
     }
-    if (fabs(hist1.GetMaxVal() - hist2.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
-        std::cerr << fmt::format("Histogram max values are not equal: {:.6f} vs. {:.6f}\n", hist1.GetMaxVal(), hist2.GetMaxVal());
-        return false;
+
+    if (diff_max > std::numeric_limits<float>::epsilon()) {
+        fmt::print("Histogram max values are not equal: {:.6f} vs. {:.6f}\n", hist1.GetMaxVal(), hist2.GetMaxVal());
+        if (exact || (diff_max / len1 > 1e-6) || (diff_max / len2 > 1e-6)) {
+            return false;
+        }
+    }
+
+    if (diff_len > 0) {
+        if (exact || (diff_len / len1 > 1e-6) || (diff_len / len2 > 1e-6)) {
+            return false;
+        }
     }
 
     for (auto i = 0; i < hist1.GetNbins(); i++) {
         auto bin_a = hist1.GetHistogramBins()[i];
         auto bin_b = hist2.GetHistogramBins()[i];
         if (bin_a != bin_b) {
-            std::cerr << fmt::format("{}-th histogram bin values are not equal: {} vs. {}\n", i, bin_a, bin_b);
-            return false;
+            fmt::print("{}-th histogram bin values are not equal: {} vs. {}\n", i, bin_a, bin_b);
+            if (exact || abs(bin_a - bin_b) > 1) {
+                return false;
+            }
         }
     }
 

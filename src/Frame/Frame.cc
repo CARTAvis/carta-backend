@@ -846,7 +846,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
             return true;
         }
 
-        if ((z == CurrentZ() && stokes == CurrentStokes()) || CubeImageCacheAvailable(stokes)) {
+        if ((z == CurrentZ() && stokes == CurrentStokes()) || _cube_image_cache) {
             // calculate histogram from image cache
             if ((_image_cache_size == 0) && !FillImageCache()) {
                 // cannot calculate
@@ -914,7 +914,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         num_bins = AutoBinSize();
     }
 
-    if ((z == CurrentZ() && stokes == CurrentStokes()) || CubeImageCacheAvailable(stokes)) {
+    if ((z == CurrentZ() && stokes == CurrentStokes()) || _cube_image_cache) {
         // calculate histogram from current image cache
         if ((_image_cache_size == 0) && !FillImageCache()) {
             return false;
@@ -2411,20 +2411,196 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     return true;
 }
 
-bool Frame::CubeImageCacheAvailable(int stokes) const {
-    return _cube_image_cache && !IsComputedStokes(stokes);
-}
-
 float* Frame::GetImageCacheData(int z, int stokes) {
-    return _image_caches[ImageCacheIndex(stokes)].get() + ImageCacheStartIndex(z);
+    if (_cube_image_cache && IsComputedStokes(stokes)) {
+        _image_caches[ImageCacheIndex(stokes)] = std::make_unique<float[]>(_width * _height);
+        auto get_stokes_data = [&](const string& coordinate, int& stokes) {
+            GetStokesTypeIndex(coordinate, stokes);
+            return stokes > -1 && GetImageCache(stokes, ALL_Z);
+        };
+
+        auto stokes_type = StokesTypes[stokes];
+        if (stokes_type == CARTA::PolarizationType::Ptotal) {
+            // Get stokes Q, U, and V data
+            int stokes_q, stokes_u, stokes_v;
+            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) && get_stokes_data("V", stokes_v)) {
+#pragma omp parallel for
+                for (int i = 0; i < _width * _height; ++i) {
+                    int idx = ImageCacheStartIndex(z, stokes_q) + i;
+                    double val_q = _image_caches[stokes_q][idx];
+                    double val_u = _image_caches[stokes_u][idx];
+                    double val_v = _image_caches[stokes_v][idx];
+                    if (!std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
+                        double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2) + casacore::pow(val_v, 2);
+                        _image_caches[ImageCacheIndex(stokes)][i] = casacore::sqrt(sum);
+                    } else {
+                        _image_caches[ImageCacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
+                    }
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::Plinear) {
+            // Get stokes Q and U data
+            int stokes_q, stokes_u;
+            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+#pragma omp parallel for
+                for (int i = 0; i < _width * _height; ++i) {
+                    int idx = ImageCacheStartIndex(z, stokes_q) + i;
+                    double val_q = _image_caches[stokes_q][idx];
+                    double val_u = _image_caches[stokes_u][idx];
+                    if (!std::isnan(val_q) && !std::isnan(val_u)) {
+                        double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
+                        _image_caches[ImageCacheIndex(stokes)][i] = casacore::sqrt(sum);
+                    } else {
+                        _image_caches[ImageCacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
+                    }
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
+            // Get stokes I, Q, U, and V data
+            int stokes_i, stokes_q, stokes_u, stokes_v;
+            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) &&
+                get_stokes_data("V", stokes_v)) {
+#pragma omp parallel for
+                for (int i = 0; i < _width * _height; ++i) {
+                    int idx = ImageCacheStartIndex(z, stokes_i) + i;
+                    double val_i = _image_caches[stokes_i][idx];
+                    double val_q = _image_caches[stokes_q][idx];
+                    double val_u = _image_caches[stokes_u][idx];
+                    double val_v = _image_caches[stokes_v][idx];
+                    if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
+                        double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2) + casacore::pow(val_v, 2);
+                        _image_caches[ImageCacheIndex(stokes)][i] = 100.0 * casacore::sqrt(sum) / val_i;
+                    } else {
+                        _image_caches[ImageCacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
+                    }
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
+            // Get stokes I, Q, and U data
+            int stokes_i, stokes_q, stokes_u;
+            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+#pragma omp parallel for
+                for (int i = 0; i < _width * _height; ++i) {
+                    int idx = ImageCacheStartIndex(z, stokes_i) + i;
+                    double val_i = _image_caches[stokes_i][idx];
+                    double val_q = _image_caches[stokes_q][idx];
+                    double val_u = _image_caches[stokes_u][idx];
+                    if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u)) {
+                        double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
+                        _image_caches[ImageCacheIndex(stokes)][i] = 100.0 * casacore::sqrt(sum) / val_i;
+                    } else {
+                        _image_caches[ImageCacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
+                    }
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::Pangle) {
+            // Get stokes Q and U data
+            int stokes_q, stokes_u;
+            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+#pragma omp parallel for
+                for (int i = 0; i < _width * _height; ++i) {
+                    int idx = ImageCacheStartIndex(z, stokes_q) + i;
+                    double val_q = _image_caches[stokes_q][idx];
+                    double val_u = _image_caches[stokes_u][idx];
+                    if (!std::isnan(val_q) && !std::isnan(val_u)) {
+                        _image_caches[ImageCacheIndex(stokes)][i] = (180.0 / casacore::C::pi) * atan2(val_u, val_q) / 2;
+                    } else {
+                        _image_caches[ImageCacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
+                    }
+                }
+            }
+        }
+        return _image_caches[ImageCacheIndex(stokes)].get();
+    }
+
+    return _image_caches[ImageCacheIndex(stokes)].get() + ImageCacheStartIndex(z, stokes);
 }
 
 float Frame::GetImageCacheValue(int index, int stokes) {
+    if (_cube_image_cache && IsComputedStokes(stokes)) {
+        auto get_stokes_data = [&](const string& coordinate, int& stokes) {
+            GetStokesTypeIndex(coordinate, stokes);
+            return stokes > -1 && GetImageCache(stokes, ALL_Z);
+        };
+
+        auto stokes_type = StokesTypes[stokes];
+        if (stokes_type == CARTA::PolarizationType::Ptotal) {
+            // Get stokes Q, U, and V data
+            int stokes_q, stokes_u, stokes_v;
+            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) && get_stokes_data("V", stokes_v)) {
+                double val_q = _image_caches[stokes_q][index];
+                double val_u = _image_caches[stokes_u][index];
+                double val_v = _image_caches[stokes_v][index];
+                if (!std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
+                    double sum = std::pow(val_q, 2) + std::pow(val_u, 2) + std::pow(val_v, 2);
+                    return std::sqrt(sum);
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::Plinear) {
+            // Get stokes Q and U data
+            int stokes_q, stokes_u;
+            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+                double val_q = _image_caches[stokes_q][index];
+                double val_u = _image_caches[stokes_u][index];
+                if (!std::isnan(val_q) && !std::isnan(val_u)) {
+                    double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
+                    return casacore::sqrt(sum);
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
+            // Get stokes I, Q, U, and V data
+            int stokes_i, stokes_q, stokes_u, stokes_v;
+            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u) &&
+                get_stokes_data("V", stokes_v)) {
+                double val_i = _image_caches[stokes_i][index];
+                double val_q = _image_caches[stokes_q][index];
+                double val_u = _image_caches[stokes_u][index];
+                double val_v = _image_caches[stokes_v][index];
+                if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
+                    double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2) + casacore::pow(val_v, 2);
+                    return 100.0 * casacore::sqrt(sum) / val_i;
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
+            // Get stokes I, Q, and U data
+            int stokes_i, stokes_q, stokes_u;
+            if (get_stokes_data("I", stokes_i) && get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+                double val_i = _image_caches[stokes_i][index];
+                double val_q = _image_caches[stokes_q][index];
+                double val_u = _image_caches[stokes_u][index];
+                if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u)) {
+                    double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
+                    return 100.0 * casacore::sqrt(sum) / val_i;
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::Pangle) {
+            // Get stokes Q and U data
+            int stokes_q, stokes_u;
+            if (get_stokes_data("Q", stokes_q) && get_stokes_data("U", stokes_u)) {
+                double val_q = _image_caches[stokes_q][index];
+                double val_u = _image_caches[stokes_u][index];
+                if (!std::isnan(val_q) && !std::isnan(val_u)) {
+                    return (180.0 / casacore::C::pi) * atan2(val_u, val_q) / 2;
+                }
+            }
+        }
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+
+    // Check the existence of cube image data cache
+    if (ImageCacheIndex(stokes) > -1 && !_image_caches.count(ImageCacheIndex(stokes))) {
+        if (!GetImageCache(ImageCacheIndex(stokes), ALL_Z)) {
+            spdlog::error("Error getting cube image data for stokes {}!", stokes);
+        }
+    }
     return _image_caches[ImageCacheIndex(stokes)][index];
 }
 
-long long int Frame::ImageCacheStartIndex(int z_index) const {
-    if (CubeImageCacheAvailable(_stokes_index)) {
+long long int Frame::ImageCacheStartIndex(int z_index, int stokes_index) const {
+    if (stokes_index == CURRENT_STOKES) {
+        stokes_index = _stokes_index;
+    }
+    if (_cube_image_cache && !IsComputedStokes(stokes_index)) {
         if (z_index == CURRENT_Z) {
             z_index = _z_index;
         }
@@ -2437,13 +2613,16 @@ int Frame::ImageCacheIndex(int stokes_index) const {
     if (stokes_index == CURRENT_STOKES) {
         stokes_index = _stokes_index;
     }
-    if (CubeImageCacheAvailable(stokes_index)) { // only return non-computed stokes index
+
+    // Only return non-computed stokes index, since we only cache cube image data for existing stokes types from the file
+    if (_cube_image_cache && !IsComputedStokes(stokes_index)) {
         return stokes_index;
     }
     return -1;
 }
 
 bool Frame::GetImageCache(int image_cache_index, int z_index) {
+    // Update the image data cache for key = -1 (current channel and stokes), or > -1 (cube image data cache) if it does not exist
     int stokes_index = image_cache_index < 0 ? _stokes_index : image_cache_index;
     if (image_cache_index < 0 || !_image_caches.count(image_cache_index)) {
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z_index), stokes_index);
@@ -2465,11 +2644,11 @@ int Frame::UsedReservedMemory() const {
 }
 
 bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    if (CubeImageCacheAvailable(stokes)) {
+    if (_cube_image_cache) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x, y;
         point.ToIndex(x, y);
-        if (GetImageCache(stokes)) {
+        if (GetImageCache(stokes) || IsComputedStokes(stokes)) {
             profile.resize(_depth);
             for (int z = 0; z < _depth; ++z) {
                 size_t idx = (z * _width * _height) + (_width * y + x);
@@ -2484,7 +2663,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
 
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    if (CubeImageCacheAvailable(stokes)) {
+    if (_cube_image_cache) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x_min = origin(0);
         int y_min = origin(1);
