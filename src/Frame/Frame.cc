@@ -88,11 +88,13 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     size_t cube_image_size = (size_t)(_width * _height * _depth * _num_stokes * sizeof(float)); // Bytes
     if ((size_t)reserved_memory * ONE_MILLION >= cube_image_size) {
         _cube_image_cache = true;
-        // Cache image data for all stokes
-        for (int stokes = 0; stokes < _num_stokes; ++stokes) {
-            GetImageCache(stokes, ALL_Z);
+        // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
+        if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
+            spdlog::info("Cache the whole cube image data.");
+            for (int stokes = 0; stokes < _num_stokes; ++stokes) {
+                GetImageCache(stokes, ALL_Z);
+            }
         }
-        spdlog::info("Cache the whole cube image data.");
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps

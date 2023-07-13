@@ -40,6 +40,8 @@ public:
 
 class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
 public:
+    enum FileType { FITS, HDF5 };
+
     static std::tuple<CARTA::SpatialProfile, CARTA::SpatialProfile> GetProfiles(CARTA::SpatialProfileData& data) {
         if (data.profiles(0).coordinate().back() == 'x') {
             return {data.profiles(0), data.profiles(1)};
@@ -47,7 +49,8 @@ public:
         return {data.profiles(1), data.profiles(0)};
     }
 
-    static void SpatialProfile3D(const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+    static void SpatialProfile3D(
+        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
         if (dims.size() < 3) {
             return;
         }
@@ -62,10 +65,16 @@ public:
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for creating a Frame object: {:.3f} ms.\n", prefix, dt.ms());
+        fmt::print("{}{} Elapsed time for creating a Frame object: {:.3f} ms.\n", file, prefix, dt.ms());
 
-        FitsDataReader reader(path_string);
+        std::unique_ptr<DataReader> reader;
+        if (file_type == FileType::FITS) {
+            reader = std::make_unique<FitsDataReader>(path_string);
+        } else {
+            reader = std::make_unique<Hdf5DataReader>(path_string);
+        }
 
         int x(1), y(1);
         int channel(5);
@@ -87,7 +96,7 @@ public:
             EXPECT_EQ(data.y(), y);
             EXPECT_EQ(data.channel(), channel);
             EXPECT_EQ(data.stokes(), stokes);
-            CmpValues(data.value(), reader.ReadPointXY(x, y, channel));
+            CmpValues(data.value(), reader->ReadPointXY(x, y, channel));
             EXPECT_EQ(data.profiles_size(), 2);
 
             auto [x_profile, y_profile] = GetProfiles(data);
@@ -97,18 +106,19 @@ public:
             EXPECT_EQ(x_profile.mip(), 0);
             auto x_vals = GetSpatialProfileValues(x_profile);
             EXPECT_EQ(x_vals.size(), x_size);
-            CmpVectors(x_vals, reader.ReadProfileX(y, channel));
+            CmpVectors(x_vals, reader->ReadProfileX(y, channel));
 
             EXPECT_EQ(y_profile.start(), 0);
             EXPECT_EQ(y_profile.end(), y_size);
             EXPECT_EQ(y_profile.mip(), 0);
             auto y_vals = GetSpatialProfileValues(y_profile);
             EXPECT_EQ(y_vals.size(), y_size);
-            CmpVectors(y_vals, reader.ReadProfileY(x, channel));
+            CmpVectors(y_vals, reader->ReadProfileY(x, channel));
         }
     }
 
-    static void SpatialProfile4D(const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+    static void SpatialProfile4D(
+        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
         if (dims.size() < 4) {
             return;
         }
@@ -124,10 +134,16 @@ public:
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for creating the Frame object: {:.3f} ms.\n", prefix, dt.ms());
+        fmt::print("{}{} Elapsed time for creating the Frame object: {:.3f} ms.\n", file, prefix, dt.ms());
 
-        FitsDataReader reader(path_string);
+        std::unique_ptr<DataReader> reader;
+        if (file_type == FileType::FITS) {
+            reader = std::make_unique<FitsDataReader>(path_string);
+        } else {
+            reader = std::make_unique<Hdf5DataReader>(path_string);
+        }
 
         int x(4), y(6);
         int channel(5);
@@ -150,7 +166,7 @@ public:
             EXPECT_EQ(data.y(), y);
             EXPECT_EQ(data.channel(), channel);
             EXPECT_EQ(data.stokes(), spatial_config_stokes);
-            CmpValues(data.value(), reader.ReadPointXY(x, y, channel, spatial_config_stokes));
+            CmpValues(data.value(), reader->ReadPointXY(x, y, channel, spatial_config_stokes));
             EXPECT_EQ(data.profiles_size(), 2);
 
             auto [x_profile, y_profile] = GetProfiles(data);
@@ -160,18 +176,19 @@ public:
             EXPECT_EQ(x_profile.mip(), 0);
             auto x_vals = GetSpatialProfileValues(x_profile);
             EXPECT_EQ(x_vals.size(), x_size);
-            CmpVectors(x_vals, reader.ReadProfileX(y, channel, spatial_config_stokes));
+            CmpVectors(x_vals, reader->ReadProfileX(y, channel, spatial_config_stokes));
 
             EXPECT_EQ(y_profile.start(), 0);
             EXPECT_EQ(y_profile.end(), y_size);
             EXPECT_EQ(y_profile.mip(), 0);
             auto y_vals = GetSpatialProfileValues(y_profile);
             EXPECT_EQ(y_vals.size(), y_size);
-            CmpVectors(y_vals, reader.ReadProfileY(x, channel, spatial_config_stokes));
+            CmpVectors(y_vals, reader->ReadProfileY(x, channel, spatial_config_stokes));
         }
     }
 
-    static std::vector<float> CursorSpectralProfile3D(const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+    static std::vector<float> CursorSpectralProfile3D(
+        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
         if (dims.size() < 3) {
             return std::vector<float>();
         }
@@ -209,14 +226,15 @@ public:
             },
             CURSOR_REGION_ID, stokes_changed);
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for getting cursor spectral profile: {:.3f} ms.\n", prefix, dt.ms());
+        fmt::print("{}{} Elapsed time for getting cursor spectral profile: {:.3f} ms.\n", file, prefix, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static std::vector<float> CursorSpectralProfile4D(
-        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+    static std::vector<float> CursorSpectralProfile4D(const FileType file_type, const std::string& path_string,
+        const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
         if (dims.size() < 4) {
             return std::vector<float>();
         }
@@ -279,14 +297,15 @@ public:
             },
             CURSOR_REGION_ID, stokes_changed);
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for getting cursor spectral profile ({}): {:.3f} ms.\n", prefix, stokes_config_z, dt.ms());
+        fmt::print("{}{} Elapsed time for getting cursor spectral profile ({}): {:.3f} ms.\n", file, prefix, stokes_config_z, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static std::vector<float> PointRegionSpectralProfile(
-        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+    static std::vector<float> PointRegionSpectralProfile(const FileType file_type, const std::string& path_string,
+        const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
         if (dims.size() < 4) {
             return std::vector<float>();
         }
@@ -360,14 +379,16 @@ public:
             },
             region_id, file_id, stokes_changed);
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for getting point region spectral profile ({}): {:.3f} ms.\n", prefix, stokes_config_z, dt.ms());
+        fmt::print(
+            "{}{} Elapsed time for getting point region spectral profile ({}): {:.3f} ms.\n", file, prefix, stokes_config_z, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
-    static carta::Histogram CubeHistogram(
-        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+    static carta::Histogram CubeHistogram(const FileType file_type, const std::string& path_string, const std::vector<int>& dims,
+        std::string stokes_config, bool cube_image_cache) {
         if (dims.size() < 4) {
             return carta::Histogram();
         }
@@ -438,14 +459,15 @@ public:
         }
 
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for calculating cube histogram ({}): {:.3f} ms.\n", prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for calculating cube histogram ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
 
         return cube_histogram;
     }
 
-    static std::vector<CARTA::SpectralProfile> RegionSpectralProfile(const std::string& path_string, const std::vector<int>& dims,
-        const std::string& stokes_config_z, const CARTA::RegionType& region_type, bool cube_image_cache) {
+    static std::vector<CARTA::SpectralProfile> RegionSpectralProfile(const FileType file_type, const std::string& path_string,
+        const std::vector<int>& dims, const std::string& stokes_config_z, const CARTA::RegionType& region_type, bool cube_image_cache) {
         if (dims.size() < 4) {
             return std::vector<CARTA::SpectralProfile>();
         }
@@ -523,9 +545,11 @@ public:
             },
             region_id, file_id, stokes_changed);
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
         std::string type = region_type == CARTA::RegionType::RECTANGLE ? "rectangle" : "ellipse";
-        fmt::print("{} Elapsed time for getting {} region spectral profile ({}): {:.3f} ms.\n", prefix, type, stokes_config_z, dt.ms());
+        fmt::print(
+            "{}{} Elapsed time for getting {} region spectral profile ({}): {:.3f} ms.\n", file, prefix, type, stokes_config_z, dt.ms());
 
         return spectral_profiles;
     }
@@ -567,8 +591,8 @@ public:
         return true;
     }
 
-    static std::vector<std::vector<float>> TestImagePixelData(
-        const std::string& path_string, const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+    static std::vector<std::vector<float>> TestImagePixelData(const FileType file_type, const std::string& path_string,
+        const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
@@ -612,8 +636,9 @@ public:
         }
 
         auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{} Elapsed time for getting image pixel data  ({}): {:.3f} ms.\n", prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for getting image pixel data  ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
 
         return results;
     }
@@ -621,98 +646,153 @@ public:
 
 TEST_F(CubeImageCacheTest, SpatialProfile3D) {
     std::string image_dims_str = fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
-    SpatialProfile3D(path_string, IMAGE_DIMS, false);
-    SpatialProfile3D(path_string, IMAGE_DIMS, true);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
+
+    SpatialProfile3D(FileType::FITS, fits_path_string, IMAGE_DIMS, false);
+    SpatialProfile3D(FileType::FITS, fits_path_string, IMAGE_DIMS, true);
+
+    SpatialProfile3D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, false);
+    SpatialProfile3D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, true);
 }
 
 TEST_F(CubeImageCacheTest, SpatialProfile4D) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
-    SpatialProfile4D(path_string, IMAGE_DIMS, false);
-    SpatialProfile4D(path_string, IMAGE_DIMS, true);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
+
+    SpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, false);
+    SpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, true);
+
+    SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, false);
+    SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, true);
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
     std::string image_dims_str = fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
-    auto spectral_profile1 = CursorSpectralProfile3D(path_string, IMAGE_DIMS, false);
-    auto spectral_profile2 = CursorSpectralProfile3D(path_string, IMAGE_DIMS, true);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
+
+    auto spectral_profile1 = CursorSpectralProfile3D(FileType::FITS, fits_path_string, IMAGE_DIMS, false);
+    auto spectral_profile2 = CursorSpectralProfile3D(FileType::FITS, fits_path_string, IMAGE_DIMS, true);
     CmpVectors(spectral_profile1, spectral_profile2);
+
+    auto spectral_profile3 = CursorSpectralProfile3D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, false);
+    auto spectral_profile4 = CursorSpectralProfile3D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, true);
+    CmpVectors(spectral_profile3, spectral_profile4);
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
+
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = CursorSpectralProfile4D(path_string, IMAGE_DIMS, stokes + "z", false);
-        auto spectral_profile2 = CursorSpectralProfile4D(path_string, IMAGE_DIMS, stokes + "z", true);
+        auto spectral_profile1 = CursorSpectralProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", false);
+        auto spectral_profile2 = CursorSpectralProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", true);
         CmpVectors(spectral_profile1, spectral_profile2);
+
+        auto spectral_profile3 = CursorSpectralProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", false);
+        auto spectral_profile4 = CursorSpectralProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", true);
+        CmpVectors(spectral_profile3, spectral_profile4);
     }
 }
 
 TEST_F(CubeImageCacheTest, PointRegionSpectralProfile) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
+
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = PointRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", false);
-        auto spectral_profile2 = PointRegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", true);
+        auto spectral_profile1 = PointRegionSpectralProfile(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", false);
+        auto spectral_profile2 = PointRegionSpectralProfile(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", true);
         CmpVectors(spectral_profile1, spectral_profile2);
+
+        auto spectral_profile3 = PointRegionSpectralProfile(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", false);
+        auto spectral_profile4 = PointRegionSpectralProfile(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", true);
+        CmpVectors(spectral_profile3, spectral_profile4);
     }
 }
 
 TEST_F(CubeImageCacheTest, CubeHistogram) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
+
     std::vector<std::string> normal_stokes = {"I", "Q", "U", "V"};
     std::vector<std::string> computed_stokes = {"Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
 
     for (auto stokes : normal_stokes) {
-        auto hist1 = CubeHistogram(path_string, IMAGE_DIMS, stokes, false);
-        auto hist2 = CubeHistogram(path_string, IMAGE_DIMS, stokes, true);
+        auto hist1 = CubeHistogram(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, false);
+        auto hist2 = CubeHistogram(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, true);
         EXPECT_TRUE(CmpHistograms(hist1, hist2));
+
+        auto hist3 = CubeHistogram(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, false);
+        auto hist4 = CubeHistogram(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, true);
+        EXPECT_TRUE(CmpHistograms(hist3, hist4));
     }
 
     for (auto stokes : computed_stokes) {
-        auto hist1 = CubeHistogram(path_string, IMAGE_DIMS, stokes, false);
-        auto hist2 = CubeHistogram(path_string, IMAGE_DIMS, stokes, true);
+        auto hist1 = CubeHistogram(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, false);
+        auto hist2 = CubeHistogram(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, true);
         EXPECT_TRUE(CmpHistograms(hist1, hist2, false));
+
+        auto hist3 = CubeHistogram(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, false);
+        auto hist4 = CubeHistogram(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, true);
+        EXPECT_TRUE(CmpHistograms(hist3, hist4, false));
     }
 }
 
 TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
-        auto spectral_profile2 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        auto spectral_profile1 = RegionSpectralProfile(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile2 = RegionSpectralProfile(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", region_type, true);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+
+        auto spectral_profile3 = RegionSpectralProfile(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile4 = RegionSpectralProfile(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile3, spectral_profile4));
     }
 }
 
 TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, false);
-        auto spectral_profile2 = RegionSpectralProfile(path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        auto spectral_profile1 = RegionSpectralProfile(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile2 = RegionSpectralProfile(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes + "z", region_type, true);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+
+        auto spectral_profile3 = RegionSpectralProfile(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", region_type, false);
+        auto spectral_profile4 = RegionSpectralProfile(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes + "z", region_type, true);
+        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile3, spectral_profile4));
     }
 }
 
 TEST_F(CubeImageCacheTest, ImagePixelData) {
     std::string image_dims_str = fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]);
-    auto path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
+    auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
 
     for (auto stokes : STOKES_TYPES) {
-        auto data1 = TestImagePixelData(path_string, IMAGE_DIMS, stokes, false);
-        auto data2 = TestImagePixelData(path_string, IMAGE_DIMS, stokes, true);
+        auto data1 = TestImagePixelData(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, false);
+        auto data2 = TestImagePixelData(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, true);
         for (int i = 0; i < data1.size(); ++i) {
             CmpVectors(data1[i], data2[i]);
+        }
+
+        auto data3 = TestImagePixelData(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, false);
+        auto data4 = TestImagePixelData(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, true);
+        for (int i = 0; i < data3.size(); ++i) {
+            CmpVectors(data3[i], data4[i]);
         }
     }
 }
