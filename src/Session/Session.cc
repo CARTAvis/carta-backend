@@ -517,6 +517,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
             // Update the reserved memory
             _reserved_memory -= frame->UsedReservedMemory();
+            if (_reserved_memory > 0) {
+                spdlog::info("{} GB of reserved memory are available.", _reserved_memory);
+            }
 
             // query loader for mipmap dataset
             bool has_mipmaps(loader->HasMip(2));
@@ -660,6 +663,9 @@ void Session::DeleteFrame(int file_id) {
     }
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
+    }
+    if (_reserved_memory > 0) {
+        spdlog::info("{} GB of reserved memory are available.", _reserved_memory);
     }
 }
 
