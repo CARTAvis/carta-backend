@@ -251,6 +251,18 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             // Get extended file info for all FITS hdus
             file_info_ok = ext_info_loader.FillFitsFileInfoMap(hdu_info_map, fullname, message);
         }
+
+        if (file_info_ok && loader->IsHistoryBeam()) {
+            std::vector<CARTA::Beam> beams;
+            std::string error;
+            loader->GetBeams(beams, error);
+            if (!beams.empty()) {
+                auto log_message = fmt::format("Deriving {} beam info from HISTORY headers: BMAJ={:.4f}\" BMIN={:.4f}\" BPA={} deg",
+                    filename, beams[0].major_axis(), beams[0].minor_axis(), beams[0].pa());
+                spdlog::info(log_message);
+                SendLogEvent(log_message, {"file info"}, CARTA::ErrorSeverity::INFO);
+            }
+        }
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
     }
@@ -308,6 +320,18 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
         }
 
         file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, fullname, hdu, message);
+
+        if (file_info_ok && loader->IsHistoryBeam()) {
+            std::vector<CARTA::Beam> beams;
+            std::string error;
+            loader->GetBeams(beams, error);
+            if (!beams.empty()) {
+                auto log_message = fmt::format("Deriving {} beam info from HISTORY headers: BMAJ={:.4f}\" BMIN={:.4f}\" BPA={} deg",
+                    filename, beams[0].major_axis(), beams[0].minor_axis(), beams[0].pa());
+                spdlog::info(log_message);
+                SendLogEvent(log_message, {"file info"}, CARTA::ErrorSeverity::INFO);
+            }
+        }
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
     }
