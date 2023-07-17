@@ -277,7 +277,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         name.trim();
 
         // Flag whether to convert value to numeric
-        bool string_value(false);
+        bool is_string_value(false);
         casacore::String value, comment;
 
         if (eq_pos != std::string::npos) {
@@ -293,7 +293,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
                 // set value between quotes
                 value = remainder.substr(1, end_quote - 1);
                 value.trim();
-                string_value = true; // do not convert to numeric
+                is_string_value = true; // do not convert to numeric
 
                 // set beginning of comment
                 slash_pos = remainder.find('/', end_quote + 1);
@@ -323,19 +323,22 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
                 specsys = value.after('-');
                 value = "VELO";
             }
+            is_string_value = true;
         } else if (name.contains("UNIT")) {
             NormalizeUnit(value);
+            is_string_value = true;
         } else if (name == "EXTNAME") {
             extname = value;
+            is_string_value = true;
         } else if (name == "SIMPLE") {
             try {
                 // In some images, this is numeric value
                 int numval = std::stoi(value);
                 value = (numval ? "T" : "F");
-                string_value = true;
             } catch (std::invalid_argument& err) {
                 // not numeric
             }
+            is_string_value = true;
         }
 
         // Set name
@@ -343,7 +346,7 @@ void FileExtInfoLoader::AddEntriesFromHeaderStrings(
         entry->set_name(name);
 
         if (!value.empty()) {
-            if (string_value) {
+            if (is_string_value) {
                 *entry->mutable_value() = value;
             } else {
                 // Set numeric value
