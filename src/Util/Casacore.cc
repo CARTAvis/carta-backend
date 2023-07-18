@@ -245,14 +245,14 @@ bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string&
     if (header.find("Beam") != std::string::npos) {
         // Example:
         // HISTORY RESTOR Beam =  2.000E+00 x  1.800E+00 arcsec, pa =  8.000E+01 degrees
-        r = ".*Beam\\s*=\\s*([\\d\\.Ee+\\-]+)\\s*x\\s*([\\d\\.Ee+\\-]+)\\s*([A-Za-z]*)\\s*\\,*\\s*pa\\s*=\\s*([\\d\\.Ee+\\-]+)\\s*([A-Za-z]"
+        r = ".*Beam\\s*=\\s*([\\d.Ee+-]+)\\s*x\\s*([\\d\\.Ee+-]+)\\s*([A-Za-z]*)\\s*,*\\s*pa\\s*=\\s*([\\d.Ee+-]+)\\s*([A-Za-z]"
             "*).*";
         matched = std::regex_match(header.c_str(), results, r);
     } else if (header.find("BMAJ") != std::string::npos) {
         // Examples:
         // HISTORY CONVL BMAJ=  5.0000 BMIN=  5.0000 BPA=   0.0/Output beam
         // HISTORY AIPS   CLEAN BMAJ=  1.3889E-03 BMIN=  1.3889E-03 BPA=   0.00
-        r = ".*BMAJ\\s*=\\s*([\\d\\.Ee+\\-]+)\\s*BMIN\\s*=\\s*([\\d\\.Ee+\\-]+)\\s*BPA\\s*=\\s*([\\d\\.Ee+\\-]+).*";
+        r = ".*BMAJ\\s*=\\s*([\\d.Ee+-]+)\\s*BMIN\\s*=\\s*([\\d.Ee+-]+)\\s*BPA\\s*=\\s*([\\d.Ee+-]+).*";
         matched = std::regex_match(header.c_str(), results, r);
     }
 
