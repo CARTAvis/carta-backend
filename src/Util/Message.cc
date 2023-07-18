@@ -24,8 +24,8 @@ CARTA::CloseFile Message::CloseFile(int32_t file_id) {
     return close_file;
 }
 
-CARTA::OpenFile Message::OpenFile(std::string directory, std::string file, bool lel_expr, std::string hdu, int32_t file_id,
-    bool support_aips_beam, CARTA::RenderMode render_mode) {
+CARTA::OpenFile Message::OpenFile(
+    std::string directory, std::string file, bool lel_expr, std::string hdu, int32_t file_id, CARTA::RenderMode render_mode) {
     CARTA::OpenFile open_file;
     open_file.set_directory(directory);
     open_file.set_file(file);
@@ -33,7 +33,6 @@ CARTA::OpenFile Message::OpenFile(std::string directory, std::string file, bool 
     open_file.set_file_id(file_id);
     open_file.set_render_mode(render_mode);
     open_file.set_lel_expr(lel_expr);
-    open_file.set_support_aips_beam(support_aips_beam);
     return open_file;
 }
 
