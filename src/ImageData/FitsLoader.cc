@@ -185,7 +185,7 @@ void FitsLoader::ResetImageBeam(unsigned int hdu_num) {
             if (GetLastHistoryBeam(hdu_num, major, minor, pa)) {
                 image_info.setRestoringBeam(major, minor, pa);
                 _image->setImageInfo(image_info);
-                _is_aips_beam = true;
+                _is_history_beam = true;
             }
         }
     }

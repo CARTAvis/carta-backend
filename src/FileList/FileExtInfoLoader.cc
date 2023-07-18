@@ -1282,6 +1282,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& e
         const casacore::ImageBeamSet beam_set = compressed_fits->GetBeamSet(is_history_beam);
         if (!beam_set.empty()) {
             AddBeamEntry(extended_info, beam_set, is_history_beam);
+            if (is_history_beam) {
+                // For logging
+                _loader->SetHistoryBeam(beam_set.getBeam());
+            }
         }
 
         AddCoordRanges(extended_info, coordsys, shape);
