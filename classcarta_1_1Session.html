@@ -298,10 +298,10 @@ Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:ae5d6e7145e441059fb26e3f23834880d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ae5d6e7145e441059fb26e3f23834880d">FillExtendedFileInfo</a> (std::map&lt; std::string, CARTA::FileInfoExtended &gt; &amp;hdu_info_map, CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, const std::string &amp;hdu, std::string &amp;message)</td></tr>
-<tr class="separator:ae5d6e7145e441059fb26e3f23834880d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a37e738626d1cd28e14b5a9b90bb6415d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a37e738626d1cd28e14b5a9b90bb6415d">FillExtendedFileInfo</a> (CARTA::FileInfoExtended &amp;extended_info, CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, std::string &amp;hdu_name, std::string &amp;message, std::string &amp;fullname)</td></tr>
-<tr class="separator:a37e738626d1cd28e14b5a9b90bb6415d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3dc8e818765159809dfb28472a3c95a6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a3dc8e818765159809dfb28472a3c95a6">FillExtendedFileInfo</a> (std::map&lt; std::string, CARTA::FileInfoExtended &gt; &amp;hdu_info_map, CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, const std::string &amp;hdu, bool support_aips_beam, std::string &amp;message)</td></tr>
+<tr class="separator:a3dc8e818765159809dfb28472a3c95a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69d1ec0dfd2c518a8b4cdf56fa57b0b0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a69d1ec0dfd2c518a8b4cdf56fa57b0b0">FillExtendedFileInfo</a> (CARTA::FileInfoExtended &amp;extended_info, CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, std::string &amp;hdu_name, bool support_aips_beam, std::string &amp;message, std::string &amp;fullname)</td></tr>
+<tr class="separator:a69d1ec0dfd2c518a8b4cdf56fa57b0b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c490d8acff0517270d57a70a6956dc6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a6c490d8acff0517270d57a70a6956dc6">FillFileInfo</a> (CARTA::FileInfo &amp;file_info, const std::string &amp;folder, const std::string &amp;filename, std::string &amp;fullname, std::string &amp;message)</td></tr>
 <tr class="separator:a6c490d8acff0517270d57a70a6956dc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac671b008e48c5074c520343edb43beec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ac671b008e48c5074c520343edb43beec">FillExtendedFileInfo</a> (CARTA::FileInfoExtended &amp;extended_info, std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const std::string &amp;filename, std::string &amp;message, std::shared_ptr&lt; <a class="el" href="classcarta_1_1FileLoader.html">FileLoader</a> &gt; &amp;image_loader)</td></tr>
@@ -1208,8 +1208,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a37e738626d1cd28e14b5a9b90bb6415d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a37e738626d1cd28e14b5a9b90bb6415d">&#9670;&nbsp;</a></span>FillExtendedFileInfo() <span class="overload">[1/3]</span></h2>
+<a id="a69d1ec0dfd2c518a8b4cdf56fa57b0b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69d1ec0dfd2c518a8b4cdf56fa57b0b0">&#9670;&nbsp;</a></span>FillExtendedFileInfo() <span class="overload">[1/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1250,6 +1250,12 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>support_aips_beam</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>message</em>, </td>
         </tr>
@@ -1274,7 +1280,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a37e738626d1cd28e14b5a9b90bb6415d_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a69d1ec0dfd2c518a8b4cdf56fa57b0b0_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1340,8 +1346,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="ae5d6e7145e441059fb26e3f23834880d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae5d6e7145e441059fb26e3f23834880d">&#9670;&nbsp;</a></span>FillExtendedFileInfo() <span class="overload">[3/3]</span></h2>
+<a id="a3dc8e818765159809dfb28472a3c95a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3dc8e818765159809dfb28472a3c95a6">&#9670;&nbsp;</a></span>FillExtendedFileInfo() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1382,6 +1388,12 @@ Here is the call graph for this function:</div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>support_aips_beam</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">std::string &amp;&#160;</td>
           <td class="paramname"><em>message</em>&#160;</td>
         </tr>
@@ -1400,13 +1412,13 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ae5d6e7145e441059fb26e3f23834880d_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a3dc8e818765159809dfb28472a3c95a6_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ae5d6e7145e441059fb26e3f23834880d_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a3dc8e818765159809dfb28472a3c95a6_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
