@@ -99,7 +99,7 @@ bool Session::_exit_when_all_sessions_closed = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int reserved_memory,
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, float reserved_memory,
     bool read_only_mode, bool enable_scripting)
     : _socket(ws),
       _loop(loop),
@@ -518,7 +518,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             // Update the reserved memory
             _reserved_memory -= frame->UsedReservedMemory();
             if (_reserved_memory > 0) {
-                spdlog::info("{} GB of reserved memory are available.", _reserved_memory);
+                spdlog::info("{:.3f} GB of reserved memory are available.", _reserved_memory);
             }
 
             // query loader for mipmap dataset
@@ -665,7 +665,7 @@ void Session::DeleteFrame(int file_id) {
         _region_handler->RemoveFrame(file_id);
     }
     if (_reserved_memory > 0) {
-        spdlog::info("{} GB of reserved memory are available.", _reserved_memory);
+        spdlog::info("{:.3f} GB of reserved memory are available.", _reserved_memory);
     }
 }
 

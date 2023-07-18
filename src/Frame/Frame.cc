@@ -31,7 +31,7 @@ static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, int reserved_memory)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, float reserved_memory)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -84,8 +84,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
-    size_t cube_image_size = (size_t)(_width * _height * _depth * _num_stokes * sizeof(float)); // Bytes
-    if ((size_t)reserved_memory * 1e9 >= cube_image_size) {
+    float cube_image_size = (float)(_width * _height * _depth * _num_stokes * sizeof(float)); // Bytes
+    if (reserved_memory * 1.0e9 >= cube_image_size) {
         // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
         if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
             spdlog::info("Cache the whole cube image data.");
@@ -2641,9 +2641,9 @@ bool Frame::GetImageCache(int image_cache_index, int z_index) {
     return true;
 }
 
-int Frame::UsedReservedMemory() const {
+float Frame::UsedReservedMemory() const {
     if (_cube_image_cache) {
-        return std::ceil(_width * _height * _depth * _num_stokes * sizeof(float) / 1e9); // GB
+        return (float)_width * _height * _depth * _num_stokes * sizeof(float) / 1.0e9; // GB
     }
     return 0;
 }

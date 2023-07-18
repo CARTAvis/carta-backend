@@ -67,7 +67,7 @@ private:
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, int reserved_memory = 0,
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, float reserved_memory = 0,
         bool read_only_mode = false, bool enable_scripting = false);
     ~Session();
 
@@ -344,7 +344,7 @@ protected:
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 
     // Reserved memory
-    int _reserved_memory;
+    float _reserved_memory;
 };
 
 } // namespace carta
