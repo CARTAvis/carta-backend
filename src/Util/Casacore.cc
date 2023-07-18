@@ -174,12 +174,63 @@ std::string FormatQuantity(const casacore::Quantity& quantity) {
 
 void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
-    casacore::UnitMap::addFITS();
-    casacore::String unit_name(unit);
-    unit_name.upcase();
-    if (casacore::UnitVal::check(unit_name)) {
-        unit = casacore::UnitMap::fromFITS(unit_name).getName();
-        return;
+    // Fix nonstandard units which pass check
+    unit.gsub("JY", "Jy");
+    unit.gsub("jy", "Jy");
+    unit.gsub("Beam", "beam");
+    unit.gsub("BEAM", "beam");
+    unit.gsub("Jypb", "Jy/beam");
+    unit.gsub("JyPB", "Jy/beam");
+    unit.gsub("Jy beam-1", "Jy/beam");
+    unit.gsub("Jy beam^-1", "Jy/beam");
+    unit.gsub("beam-1 Jy", "Jy/beam");
+    unit.gsub("beam^-1 Jy", "Jy/beam");
+    unit.gsub("Pixel", "pixel");
+    unit.gsub("\"", "");
+
+    // Convert unit without prefix
+    try {
+        // Convert upper to mixed/lower case if needed
+        auto normalized_unit = casacore::UnitMap::fromFITS(unit).getName();
+
+        if (casacore::UnitVal::check(normalized_unit)) {
+            unit = normalized_unit;
+            return;
+        }
+    } catch (const casacore::AipsError& err) {
+        // check() should catch the error and return false, but does not
     }
-    // keep original unit
+
+    // Convert unit with (possible) prefix
+    casacore::String prefix(unit[0]);
+    casacore::UnitName unit_name;
+    if (casacore::UnitMap::getPref(prefix, unit_name)) {
+        try {
+            // Convert unit with "prefix" removed
+            casacore::String unit_no_prefix = unit.substr(1);
+            unit_no_prefix.upcase();
+            auto normalized_unit = casacore::UnitMap::fromFITS(unit_no_prefix).getName();
+
+            if (casacore::UnitVal::check(normalized_unit)) {
+                unit = prefix + normalized_unit;
+                return;
+            }
+        } catch (const casacore::AipsError& err) {
+            // not caught by check()
+        }
+    }
+
+    // Convert uppercase unit without prefix, else return unknown input unit
+    casacore::String up_unit(unit);
+    up_unit.upcase();
+    try {
+        // Convert upper to mixed/lower case
+        auto normalized_unit = casacore::UnitMap::fromFITS(up_unit).getName();
+
+        if (casacore::UnitVal::check(normalized_unit)) {
+            unit = normalized_unit;
+        }
+    } catch (const casacore::AipsError& err) {
+        // not caught by check()
+    }
 }
