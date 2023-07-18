@@ -130,9 +130,12 @@ int main(int argc, char* argv[]) {
             string start_info = fmt::format("Listening on port {} with top level folder {}, starting folder {}", port,
                 settings.top_level_folder, settings.starting_folder);
             if (settings.omp_thread_count > 0) {
-                start_info += fmt::format(", and {} OpenMP worker threads", settings.omp_thread_count);
+                start_info += fmt::format(", and {} OpenMP worker threads.", settings.omp_thread_count);
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
+            }
+            if (settings.reserved_memory > 0) {
+                start_info += fmt::format(" Total amount of reserved memory {} GB.", settings.reserved_memory);
             }
             spdlog::info(start_info);
 
