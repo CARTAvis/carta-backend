@@ -93,7 +93,6 @@ var files_dup =
     [ "FitsHduList.h", "FitsHduList_8h.html", [
       [ "FitsHduList", "classcarta_1_1FitsHduList.html", "classcarta_1_1FitsHduList" ]
     ] ],
-    [ "FitsLoader.cc", "FitsLoader_8cc.html", null ],
     [ "FitsLoader.h", "FitsLoader_8h.html", [
       [ "FitsLoader", "classcarta_1_1FitsLoader.html", "classcarta_1_1FitsLoader" ]
     ] ],

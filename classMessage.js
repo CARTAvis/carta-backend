@@ -25,7 +25,7 @@ var classMessage =
     [ "ListProgress", "classMessage.html#a03594461e68b148a3398fbaad3d651a7", null ],
     [ "MomentProgress", "classMessage.html#a895725a06f0df4252af255b13aa87546", null ],
     [ "MomentsRequest", "classMessage.html#a6f234b4ef734f525f08e0a4f7197d0a7", null ],
-    [ "OpenFile", "classMessage.html#a9d5199432a1267740c0ae22d436d5e30", null ],
+    [ "OpenFile", "classMessage.html#a2c96f4db0dc02d38cdca461a51b0c3eb", null ],
     [ "Point", "classMessage.html#a7305f83781e5ceeee5cb3243bd993062", null ],
     [ "Point", "classMessage.html#a6379f82e0b8de5655b90de71bb2edcf8", null ],
     [ "Point", "classMessage.html#ae05dec8a6ddb99079c23bca22516473d", null ],

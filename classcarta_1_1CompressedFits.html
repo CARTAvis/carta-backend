@@ -98,20 +98,20 @@ $(document).ready(function(){initNavTree('classcarta_1_1CompressedFits.html','')
 <div class="dynheader">
 Collaboration diagram for carta::CompressedFits:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits__coll__graph.svg" width="100%" height="582"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits__coll__graph.svg" width="100%" height="474"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad30053dfcea54ce80054ff84c7455bc4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#ad30053dfcea54ce80054ff84c7455bc4">CompressedFits</a> (const std::string &amp;filename, bool support_aips_beam=false)</td></tr>
-<tr class="separator:ad30053dfcea54ce80054ff84c7455bc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73e45c3ed6c9da5cec97de6c4ae099a4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a73e45c3ed6c9da5cec97de6c4ae099a4">CompressedFits</a> (const std::string &amp;filename)</td></tr>
+<tr class="separator:a73e45c3ed6c9da5cec97de6c4ae099a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a94e623f08d835889943c9d7a2fcb7f76"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a94e623f08d835889943c9d7a2fcb7f76">GetFitsHeaderInfo</a> (std::map&lt; std::string, CARTA::FileInfoExtended &gt; &amp;hdu_info_map)</td></tr>
 <tr class="separator:a94e623f08d835889943c9d7a2fcb7f76"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a265e6e3df28f138336939ae3f4c09e2a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a265e6e3df28f138336939ae3f4c09e2a">GetFirstImageHdu</a> (string &amp;hduname)</td></tr>
 <tr class="separator:a265e6e3df28f138336939ae3f4c09e2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c6fd7a3a5321b32240beb9e1844950c"><td class="memItemLeft" align="right" valign="top">const casacore::ImageBeamSet &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a3c6fd7a3a5321b32240beb9e1844950c">GetBeamSet</a> (bool &amp;is_history_beam)</td></tr>
-<tr class="separator:a3c6fd7a3a5321b32240beb9e1844950c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a208311366da6b5a5d6fd9c99b9bf8973"><td class="memItemLeft" align="right" valign="top">const casacore::ImageBeamSet &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a208311366da6b5a5d6fd9c99b9bf8973">GetBeamSet</a> ()</td></tr>
+<tr class="separator:a208311366da6b5a5d6fd9c99b9bf8973"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08d166346f4e5dd3261602727205943d"><td class="memItemLeft" align="right" valign="top">casacore::Matrix&lt; casacore::Double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a08d166346f4e5dd3261602727205943d">GetTransformMatrix</a> ()</td></tr>
 <tr class="separator:a08d166346f4e5dd3261602727205943d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae61f2a12e075ef2b396a97f50d3a81e9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#ae61f2a12e075ef2b396a97f50d3a81e9">SetShape</a> (casacore::IPosition shape)</td></tr>
@@ -147,10 +147,8 @@ Private Member Functions</h2></td></tr>
 <tr class="separator:a90e27790d73c48808973a18ac42a5d9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a340325b4ce79417c35f2b21fb1bdec82"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a340325b4ce79417c35f2b21fb1bdec82">IsBeamTable</a> (const std::string &amp;fits_block, <a class="el" href="structcarta_1_1BeamTableInfo.html">BeamTableInfo</a> &amp;beam_table_info)</td></tr>
 <tr class="separator:a340325b4ce79417c35f2b21fb1bdec82"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a329de09f59620a426d4a1c63fe007052"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a329de09f59620a426d4a1c63fe007052">SetHistoryBeam</a> (<a class="el" href="structcarta_1_1BeamInfo.html">BeamInfo</a> &amp;beam_info)</td></tr>
-<tr class="separator:a329de09f59620a426d4a1c63fe007052"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8d385844900700791fabde4c698ef11f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a8d385844900700791fabde4c698ef11f">SetBeam</a> (const <a class="el" href="structcarta_1_1BeamInfo.html">BeamInfo</a> &amp;beam_info)</td></tr>
-<tr class="separator:a8d385844900700791fabde4c698ef11f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a929e6874b0b04d20fac2260518064bea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a929e6874b0b04d20fac2260518064bea">SetBeam</a> (<a class="el" href="structcarta_1_1BeamInfo.html">BeamInfo</a> &amp;beam_info)</td></tr>
+<tr class="separator:a929e6874b0b04d20fac2260518064bea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b6e48a8fa3983af8ca125921fb6c2f1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a9b6e48a8fa3983af8ca125921fb6c2f1">ReadBeamsTable</a> (gzFile zip_file, <a class="el" href="structcarta_1_1BeamTableInfo.html">BeamTableInfo</a> &amp;beam_table_info)</td></tr>
 <tr class="separator:a9b6e48a8fa3983af8ca125921fb6c2f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27e31cc4d4f75f55f592a274b898c416"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a27e31cc4d4f75f55f592a274b898c416">SetDefaultTransformMatrix</a> ()</td></tr>
@@ -164,12 +162,6 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a677e2ffc42c8600e23a415b6e42a74e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b8f78975fde83745be105f72780bdec"><td class="memItemLeft" align="right" valign="top">casacore::ImageBeamSet&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a7b8f78975fde83745be105f72780bdec">_beam_set</a></td></tr>
 <tr class="separator:a7b8f78975fde83745be105f72780bdec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c188b0f9fe9c2ee3aa4b3c182266545"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a1c188b0f9fe9c2ee3aa4b3c182266545">_support_aips_beam</a></td></tr>
-<tr class="separator:a1c188b0f9fe9c2ee3aa4b3c182266545"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae679b3fc2ffb12e7639a7c8cdecddce"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#aae679b3fc2ffb12e7639a7c8cdecddce">_is_history_beam</a></td></tr>
-<tr class="separator:aae679b3fc2ffb12e7639a7c8cdecddce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0013d187ccf57d3738f6355415888970"><td class="memItemLeft" align="right" valign="top">std::vector&lt; casacore::String &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#a0013d187ccf57d3738f6355415888970">_history_beam_headers</a></td></tr>
-<tr class="separator:a0013d187ccf57d3738f6355415888970"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3576305ef1d82b5f56e55ef8938ba85"><td class="memItemLeft" align="right" valign="top">casacore::Matrix&lt; casacore::Double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#aa3576305ef1d82b5f56e55ef8938ba85">_xform</a></td></tr>
 <tr class="separator:aa3576305ef1d82b5f56e55ef8938ba85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab64d809f12ccc5da42a454773cf75c9d"><td class="memItemLeft" align="right" valign="top">casacore::IPosition&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1CompressedFits.html#ab64d809f12ccc5da42a454773cf75c9d">_shape</a></td></tr>
@@ -180,8 +172,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a099bca6dee652b0d224d6798939d360a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ad30053dfcea54ce80054ff84c7455bc4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad30053dfcea54ce80054ff84c7455bc4">&#9670;&nbsp;</a></span>CompressedFits()</h2>
+<a id="a73e45c3ed6c9da5cec97de6c4ae099a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73e45c3ed6c9da5cec97de6c4ae099a4">&#9670;&nbsp;</a></span>CompressedFits()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -190,25 +182,15 @@ Private Attributes</h2></td></tr>
           <td class="memname">CompressedFits::CompressedFits </td>
           <td>(</td>
           <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>filename</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>filename</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>support_aips_beam</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_ad30053dfcea54ce80054ff84c7455bc4_cgraph.svg" width="432" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a73e45c3ed6c9da5cec97de6c4ae099a4_cgraph.svg" width="432" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -346,25 +328,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a3c6fd7a3a5321b32240beb9e1844950c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c6fd7a3a5321b32240beb9e1844950c">&#9670;&nbsp;</a></span>GetBeamSet()</h2>
+<a id="a208311366da6b5a5d6fd9c99b9bf8973"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a208311366da6b5a5d6fd9c99b9bf8973">&#9670;&nbsp;</a></span>GetBeamSet()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const casacore::ImageBeamSet &amp; CompressedFits::GetBeamSet </td>
+          <td class="memname">const casacore::ImageBeamSet&amp; carta::CompressedFits::GetBeamSet </td>
           <td>(</td>
-          <td class="paramtype">bool &amp;&#160;</td>
-          <td class="paramname"><em>is_history_beam</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a3c6fd7a3a5321b32240beb9e1844950c_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a208311366da6b5a5d6fd9c99b9bf8973_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -816,8 +805,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a8d385844900700791fabde4c698ef11f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d385844900700791fabde4c698ef11f">&#9670;&nbsp;</a></span>SetBeam()</h2>
+<a id="a929e6874b0b04d20fac2260518064bea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a929e6874b0b04d20fac2260518064bea">&#9670;&nbsp;</a></span>SetBeam()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -828,7 +817,7 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">void CompressedFits::SetBeam </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structcarta_1_1BeamInfo.html">BeamInfo</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcarta_1_1BeamInfo.html">BeamInfo</a> &amp;&#160;</td>
           <td class="paramname"><em>beam_info</em></td><td>)</td>
           <td></td>
         </tr>
@@ -842,7 +831,7 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a8d385844900700791fabde4c698ef11f_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a929e6874b0b04d20fac2260518064bea_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -905,44 +894,6 @@ Here is the caller graph for this function:</div>
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a27e31cc4d4f75f55f592a274b898c416_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
-
-</div>
-</div>
-<a id="a329de09f59620a426d4a1c63fe007052"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a329de09f59620a426d4a1c63fe007052">&#9670;&nbsp;</a></span>SetHistoryBeam()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void CompressedFits::SetHistoryBeam </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structcarta_1_1BeamInfo.html">BeamInfo</a> &amp;&#160;</td>
-          <td class="paramname"><em>beam_info</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a329de09f59620a426d4a1c63fe007052_cgraph.svg" width="415" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1CompressedFits_a329de09f59620a426d4a1c63fe007052_icgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1089,50 +1040,6 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a0013d187ccf57d3738f6355415888970"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0013d187ccf57d3738f6355415888970">&#9670;&nbsp;</a></span>_history_beam_headers</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;casacore::String&gt; carta::CompressedFits::_history_beam_headers</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aae679b3fc2ffb12e7639a7c8cdecddce"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae679b3fc2ffb12e7639a7c8cdecddce">&#9670;&nbsp;</a></span>_is_history_beam</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool carta::CompressedFits::_is_history_beam</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="ab64d809f12ccc5da42a454773cf75c9d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab64d809f12ccc5da42a454773cf75c9d">&#9670;&nbsp;</a></span>_shape</h2>
 
@@ -1188,28 +1095,6 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">int carta::CompressedFits::_stokes_axis</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a1c188b0f9fe9c2ee3aa4b3c182266545"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1c188b0f9fe9c2ee3aa4b3c182266545">&#9670;&nbsp;</a></span>_support_aips_beam</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool carta::CompressedFits::_support_aips_beam</td>
         </tr>
       </table>
   </td>

@@ -1,12 +1,9 @@
 <map id="carta::CompressedFits" name="carta::CompressedFits">
-<area shape="rect" id="node1" title=" " alt="" coords="672,176,839,203"/>
-<area shape="rect" id="node2" title=" " alt="" coords="257,8,464,35"/>
-<area shape="rect" id="node3" title=" " alt="" coords="321,59,400,85"/>
-<area shape="rect" id="node4" title=" " alt="" coords="279,110,443,151"/>
-<area shape="rect" id="node5" title=" " alt="" coords="45,117,105,144"/>
-<area shape="rect" id="node6" title=" " alt="" coords="341,176,380,203"/>
-<area shape="rect" id="node7" title=" " alt="" coords="335,236,386,263"/>
-<area shape="rect" id="node8" title=" " alt="" coords="317,293,404,320"/>
-<area shape="rect" id="node9" title=" " alt="" coords="5,286,144,327"/>
-<area shape="rect" id="node10" title=" " alt="" coords="299,344,422,371"/>
+<area shape="rect" id="node1" title=" " alt="" coords="273,200,440,227"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,96,212,123"/>
+<area shape="rect" id="node3" title=" " alt="" coords="236,96,315,123"/>
+<area shape="rect" id="node4" title=" " alt="" coords="339,96,377,123"/>
+<area shape="rect" id="node5" title=" " alt="" coords="441,96,528,123"/>
+<area shape="rect" id="node6" title=" " alt="" coords="415,5,554,47"/>
+<area shape="rect" id="node7" title=" " alt="" coords="561,96,683,123"/>
 </map>

@@ -1,10 +1,9 @@
 <map id="carta::FileLoader::GetBeams" name="carta::FileLoader::GetBeams">
-<area shape="rect" id="node1" title=" " alt="" coords="5,57,144,98"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,27,144,69"/>
 <area shape="rect" id="node2" href="$classMessage.html#a50066c9b8734724d4be0ced5e2143dfd" title=" " alt="" coords="198,5,325,32"/>
 <area shape="rect" id="node3" href="$classcarta_1_1FileLoader.html#ad006f05ccd020be05834212598e3a38b" title=" " alt="" coords="192,57,331,98"/>
-<area shape="rect" id="node8" href="$classcarta_1_1FileLoader.html#a8e756d262c6f5a7af800a7d8e0e8ec17" title=" " alt="" coords="192,122,331,163"/>
-<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="379,25,531,66"/>
-<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="385,90,524,131"/>
-<area shape="rect" id="node6" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="579,61,717,102"/>
-<area shape="rect" id="node7" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="590,127,706,153"/>
+<area shape="rect" id="node4" href="$classcarta_1_1FileLoader.html#a1ec9887a1de28cd550d9ebe22f016976" title=" " alt="" coords="379,23,531,65"/>
+<area shape="rect" id="node5" href="$classcarta_1_1FileLoader.html#a5d91045ea868fea755a7be026806cea0" title=" " alt="" coords="385,89,524,130"/>
+<area shape="rect" id="node6" href="$classcarta_1_1FileLoader.html#ad372c5af25778bf6f0621b587e1f9c78" title=" " alt="" coords="579,59,717,101"/>
+<area shape="rect" id="node7" href="$Casacore_8cc.html#a8733accb41db0f83703779c667ae852e" title=" " alt="" coords="590,125,706,152"/>
 </map>

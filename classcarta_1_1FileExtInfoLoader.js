@@ -1,8 +1,8 @@
 var classcarta_1_1FileExtInfoLoader =
 [
     [ "FileExtInfoLoader", "classcarta_1_1FileExtInfoLoader.html#a98ea2c5ce5573fd46084a01ba69ad2cd", null ],
-    [ "AddBeamEntry", "classcarta_1_1FileExtInfoLoader.html#a52df8914847de227ba7be055b5c24d21", null ],
-    [ "AddComputedEntries", "classcarta_1_1FileExtInfoLoader.html#affaa06fa3899ed316c5afff483869fd7", null ],
+    [ "AddBeamEntry", "classcarta_1_1FileExtInfoLoader.html#ab48aafc0658d62a106134eb6a3836bb2", null ],
+    [ "AddComputedEntries", "classcarta_1_1FileExtInfoLoader.html#aa025b16ef380a9d2a54f471ca002efc3", null ],
     [ "AddComputedEntriesFromHeaders", "classcarta_1_1FileExtInfoLoader.html#aef51db70dd4f72d6f222e833a5c68b58", null ],
     [ "AddCoordRanges", "classcarta_1_1FileExtInfoLoader.html#a02cd16701178cf515aca3f5623537611", null ],
     [ "AddDataTypeEntry", "classcarta_1_1FileExtInfoLoader.html#a1e5d73b90a01fb2eac64c9e186c99348", null ],
