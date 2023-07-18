@@ -1031,20 +1031,24 @@ def pv_generator() {
                     ret = true
                 }
                 sh "pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_CANCEL.test.ts # test 1 of 7"
+                sh "CI=true npm test src/test/PV_GENERATOR_CANCEL.test.ts # test 1 of 9"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_CASA.test.ts # test 2 of 7"
+                sh "CI=true npm test src/test/PV_GENERATOR_CASA.test.ts # test 2 of 9"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_FITS.test.ts  # test 3 of 7"
+                sh "CI=true npm test src/test/PV_GENERATOR_FITS.test.ts  # test 3 of 9"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_HDF5_COMPARED_FITS.test.ts  # test 4 of 7"
+                sh "CI=true npm test src/test/PV_GENERATOR_HDF5_COMPARED_FITS.test.ts  # test 4 of 9"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_MATCH_SPATIAL.test.ts  # test 5 of 7"
+                sh "CI=true npm test src/test/PV_GENERATOR_MATCH_SPATIAL.test.ts  # test 5 of 9"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_NaN.test.ts  # test 6 of 7"
+                sh "CI=true npm test src/test/PV_GENERATOR_NaN.test.ts  # test 6 of 9"
                 sh "sleep 3 && pgrep carta_backend"
-                sh "CI=true npm test src/test/PV_GENERATOR_WIDE.test.ts  # test 7 of 7"                
+                sh "CI=true npm test src/test/PV_GENERATOR_WIDE.test.ts  # test 7 of 9"                
                 sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_PREVIEW.test.ts # test 8 of 9"
+                sh "sleep 3 && pgrep carta_backend"
+                sh "CI=true npm test src/test/PV_PREVIEW_CANCEL.test.ts # test 9 of 9"
+                sh "pgrep carta_backend"
             }
         }
     }
