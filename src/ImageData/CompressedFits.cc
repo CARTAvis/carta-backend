@@ -9,9 +9,8 @@
 #include <chrono>
 #include <cmath>
 
-#include "Logger/Logger.h"
+#include "../Logger/Logger.h"
 #include "Timer/Timer.h"
-#include "Util/Casacore.h"
 #include "Util/FileSystem.h"
 #include "Util/String.h"
 
@@ -21,8 +20,7 @@
 
 using namespace carta;
 
-CompressedFits::CompressedFits(const std::string& filename, bool support_aips_beam)
-    : _filename(filename), _support_aips_beam(support_aips_beam), _is_history_beam(false), _spectral_axis(-1), _stokes_axis(-1) {
+CompressedFits::CompressedFits(const std::string& filename) : _filename(filename), _spectral_axis(-1), _stokes_axis(-1) {
     // Initialize linear transformation matrix for the direction coordinate
     SetDefaultTransformMatrix();
 }
@@ -33,6 +31,7 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
     if (zip_file == Z_NULL) {
         return false;
     }
+
     Timer t;
 
     // For map:
@@ -160,11 +159,6 @@ bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExte
                     std::string hduname = std::to_string(hdu);
                     hdu_info_map[hduname] = file_info_ext;
 
-                    if (!beam_info.defined() && _support_aips_beam) {
-                        // Only use history headers if not set from headers or beam table
-                        SetHistoryBeam(beam_info);
-                    }
-
                     // Add beam to beam set
                     if (beam_info.defined()) {
                         SetBeam(beam_info);
@@ -237,12 +231,6 @@ bool CompressedFits::GetFirstImageHdu(string& hduname) {
 
     spdlog::performance("Get the first image hdu in {:.3f} ms", t.Elapsed().ms());
     return first_image_hdu_ok;
-}
-
-const casacore::ImageBeamSet& CompressedFits::GetBeamSet(bool& is_history_beam) {
-    // Returns beams and whether from AIPS history or headers/beam table.
-    is_history_beam = _is_history_beam;
-    return _beam_set;
 }
 
 gzFile CompressedFits::OpenGzFile() {
@@ -342,12 +330,6 @@ void CompressedFits::ParseFitsCard(
 
     if (fits_card.startsWith("HISTORY") || fits_card.startsWith("COMMENT")) {
         keyword = fits_card;
-
-        if (_support_aips_beam && fits_card.startsWith("HISTORY") && (fits_card.contains("BMAJ") || fits_card.contains("Beam"))) {
-            // AIPS beams are added as HISTORY with the task name
-            _history_beam_headers.push_back(fits_card);
-        }
-
         return;
     }
 
@@ -490,28 +472,7 @@ bool CompressedFits::IsBeamTable(const std::string& fits_block, BeamTableInfo& b
     return is_beam_table;
 }
 
-void CompressedFits::SetHistoryBeam(BeamInfo& beam_info) {
-    // Set BeamInfo from stored history headers
-    if (_history_beam_headers.empty()) {
-        return;
-    }
-
-    // Use *last* beam header which can be parsed into beam info
-    std::string bmaj, bmin, bpa;
-    for (size_t i = _history_beam_headers.size() - 1; i >= 0; --i) {
-        if (ParseHistoryBeamHeader(_history_beam_headers[i], bmaj, bmin, bpa)) {
-            beam_info.bmaj = bmaj;
-            beam_info.bmin = bmin;
-            beam_info.bpa = bpa;
-            _is_history_beam = true;
-            break;
-        }
-    }
-
-    _history_beam_headers.clear();
-}
-
-void CompressedFits::SetBeam(const BeamInfo& beam_info) {
+void CompressedFits::SetBeam(BeamInfo& beam_info) {
     // Set beam in ImageBeamSet using beam info
     try {
         casacore::Quantity bmajq, bminq, bpaq;
