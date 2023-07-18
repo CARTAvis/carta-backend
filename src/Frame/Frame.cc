@@ -2669,7 +2669,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
 
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    if (_cube_image_cache) {
+    if (!mask.shape().empty() && _cube_image_cache) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x_min = origin(0);
         int y_min = origin(1);
