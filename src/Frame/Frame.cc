@@ -94,6 +94,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
                 GetImageCache(stokes, ALL_Z);
             }
         }
+    } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
+        spdlog::info("Image too large. Not cache the whole cube image data.");
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
