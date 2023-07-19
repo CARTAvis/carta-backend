@@ -108,7 +108,6 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _top_level_folder(top_level_folder),
       _starting_folder(starting_folder),
       _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
-      _reserved_memory(reserved_memory),
       _read_only_mode(read_only_mode),
       _enable_scripting(enable_scripting),
       _region_handler(nullptr),
@@ -117,6 +116,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _animation_active(false),
       _cursor_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
+    _reserved_memory = reserved_memory > 0.0 ? reserved_memory : 0.0;
     _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;

@@ -73,6 +73,14 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
             j.erase(key);
         }
     }
+    for (const auto& [key, elem] : float_keys_map) {
+        if (j.contains(key) && !j[key].is_number_float()) {
+            auto msg = fmt::format(
+                "Problem in config file {} at key {}: current value is {}, but a number is expected.", json_file_path, key, j[key].dump());
+            warning_msgs.push_back(msg);
+            j.erase(key);
+        }
+    }
     for (const auto& [key, elem] : bool_keys_map) {
         if (j.contains(key) && !j[key].is_boolean()) {
             auto msg = fmt::format(
@@ -127,6 +135,13 @@ json ProgramSettings::JSONSettingsFromFile(const std::string& json_file_path) {
 
 void ProgramSettings::SetSettingsFromJSON(const json& j) {
     for (const auto& [key, elem] : int_keys_map) {
+        if (!j.contains(key)) {
+            continue;
+        }
+        *elem = j[key];
+    }
+
+    for (const auto& [key, elem] : float_keys_map) {
         if (!j.contains(key)) {
             continue;
         }
@@ -193,7 +208,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
         ("files", "files to load", cxxopts::value<std::vector<string>>(positional_arguments))
         ("no_user_config", "ignore user configuration file", cxxopts::value<bool>())
         ("no_system_config", "ignore system configuration file", cxxopts::value<bool>())
-        ("m,reserved_memory", "reserved memory per session", cxxopts::value<int>(), "<GB>");
+        ("m,reserved_memory", "reserved memory per session", cxxopts::value<float>(), "<GB>");
 
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
@@ -365,6 +380,11 @@ memory is above a certain cube image data, then the backend will cache it all.
     for (const auto& [key, elem] : int_keys_map) {
         if (result.count(key)) {
             command_line_settings[key] = result[key].as<int>();
+        }
+    }
+    for (const auto& [key, elem] : float_keys_map) {
+        if (result.count(key)) {
+            command_line_settings[key] = result[key].as<float>();
         }
     }
     for (const auto& [key, elem] : bool_keys_map) {
