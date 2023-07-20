@@ -85,7 +85,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     float cube_image_size = (float)(_width * _height * _depth * _num_stokes * sizeof(float)); // Bytes
-    if (reserved_memory * 1.0e9 >= cube_image_size) {
+    if (reserved_memory * 1.0e6 >= cube_image_size) {
         // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
         if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
             spdlog::info("Cache the whole cube image data.");
@@ -95,7 +95,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
             }
         }
     } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
-        spdlog::info("Image too large. Not cache the whole cube image data.");
+        spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", cube_image_size / 1.0e6);
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -2645,7 +2645,7 @@ bool Frame::GetImageCache(int image_cache_index, int z_index) {
 
 float Frame::UsedReservedMemory() const {
     if (_cube_image_cache) {
-        return (float)_width * _height * _depth * _num_stokes * sizeof(float) / 1.0e9; // GB
+        return (float)_width * _height * _depth * _num_stokes * sizeof(float) / 1.0e6; // MB
     }
     return 0;
 }

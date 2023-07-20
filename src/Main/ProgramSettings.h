@@ -20,7 +20,7 @@
 
 #define OMP_THREAD_COUNT -1
 #define DEFAULT_SOCKET_PORT 3002
-#define RESERVED_MEMORY 0 // GB
+#define RESERVED_MEMORY 0 // MB
 
 #ifndef CARTA_DEFAULT_FRONTEND_FOLDER
 #define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
@@ -58,7 +58,7 @@ struct ProgramSettings {
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
     bool enable_scripting = false;
-    float reserved_memory = RESERVED_MEMORY;
+    int reserved_memory = RESERVED_MEMORY;
 
     std::string browser;
 
@@ -78,10 +78,7 @@ struct ProgramSettings {
         {"event_thread_count", &event_thread_count},
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
-        {"idle_timeout", &idle_session_wait_time}
-    };
-
-    std::unordered_map<std::string, float*> float_keys_map{
+        {"idle_timeout", &idle_session_wait_time},
         {"reserved_memory", &reserved_memory}
     };
 

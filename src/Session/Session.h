@@ -343,7 +343,7 @@ protected:
     // Timestamp for the last protobuf message
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 
-    // Reserved memory
+    // Reserved memory (MB)
     float _reserved_memory;
 };
 

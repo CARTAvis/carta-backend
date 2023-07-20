@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
             if (settings.reserved_memory > 0) {
-                start_info += fmt::format(" Total amount of reserved memory {:.3f} GB.", settings.reserved_memory);
+                start_info += fmt::format(" Total amount of reserved memory {} MB.", settings.reserved_memory);
             }
             spdlog::info(start_info);
 
