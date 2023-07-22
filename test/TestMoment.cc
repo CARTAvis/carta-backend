@@ -224,6 +224,65 @@ public:
 
         return dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(results[0]);
     }
+
+    double GetDeltaV(std::shared_ptr<casacore::ImageInterface<float>> image) {
+        casacore::CoordinateSystem coord_sys = image->coordinates();
+        casacore::SpectralCoordinate spectral_coord = coord_sys.spectralCoordinate();
+        casacore::Quantum<casacore::Double> vel0;
+        casacore::Quantum<casacore::Double> vel1;
+        casacore::Double pix0 = spectral_coord.referencePixel()(0) - 0.5;
+        casacore::Double pix1 = spectral_coord.referencePixel()(0) + 0.5;
+        spectral_coord.pixelToVelocity(vel0, pix0);
+        spectral_coord.pixelToVelocity(vel1, pix1);
+        return abs(vel1.getValue() - vel0.getValue());
+    }
+
+    static void TestImageMoment(int moment_type) {
+        std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
+        std::shared_ptr<casacore::ImageInterface<float>> image;
+
+        if (OpenImage(image, file_path)) {
+            auto shape = image->shape();
+
+            // Moment requirements
+            int moment_axis(2);
+
+            // Carta moment calculator
+            std::vector<int> moment_types = {moment_type};
+            auto moment_calculator = carta::MomentCalculator(moment_types);
+            std::vector<float> moment_results1; // first way results
+
+            for (int x = 0; x < shape(0); ++x) {
+                for (int y = 0; y < shape(1); ++y) {
+                    std::vector<float> data;
+                    GetImageData(image, x, y, data);
+
+                    // Do calculations
+                    std::unordered_map<int, float> results;
+                    moment_calculator.DoCalculation(data.data(), data.size(), results);
+                    if (results.count(moment_type)) {
+                        moment_results1.push_back(results[moment_type]);
+                    }
+                }
+            }
+
+            // Carta moment generator
+            auto moment_image = GenerateMoments(image, moment_axis, moment_type);
+            auto moment_shape = moment_image->shape();
+
+            std::vector<float> moment_results2; // second way results
+            for (int x = 0; x < moment_shape(0); ++x) {
+                for (int y = 0; y < moment_shape(1); ++y) {
+                    std::vector<float> data;
+                    GetImageData(moment_image, x, y, data);
+                    moment_results2.push_back(data[0]);
+                }
+            }
+
+            // Check the consistency of two calculation results
+            CmpVectors(moment_results1, moment_results2);
+        }
+    }
 };
 
 TEST_F(MomentTest, CheckConsistency) {
@@ -251,47 +310,5 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
 }
 
 TEST_F(MomentTest, TestCollapser) {
-    std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
-    std::shared_ptr<casacore::ImageInterface<float>> image;
-
-    if (OpenImage(image, file_path)) {
-        auto shape = image->shape();
-
-        // Moment requirements
-        int moment_axis(2);
-        casacore::Int moment_type(0);
-
-        // Carta moment calculator
-        std::vector<int> moment_types = {moment_type};
-        auto moment_calculator = carta::MomentCalculator(moment_types);
-        std::vector<float> moment_results1; // first way results
-
-        for (int x = 0; x < shape(0); ++x) {
-            for (int y = 0; y < shape(1); ++y) {
-                std::vector<float> data;
-                GetImageData(image, x, y, data);
-
-                // Do calculations
-                std::unordered_map<int, float> results;
-                moment_calculator.DoCalculation(data.data(), data.size(), results);
-                moment_results1.push_back(results[moment_type]);
-            }
-        }
-
-        // Carta moment generator
-        auto moment_image = GenerateMoments(image, moment_axis, moment_type);
-        auto moment_shape = moment_image->shape();
-
-        std::vector<float> moment_results2; // second way results
-        for (int x = 0; x < moment_shape(0); ++x) {
-            for (int y = 0; y < moment_shape(1); ++y) {
-                std::vector<float> data;
-                GetImageData(moment_image, x, y, data);
-                moment_results2.push_back(data[0]);
-            }
-        }
-
-        // Check the consistency of two calculation results
-        CmpVectors(moment_results1, moment_results2);
-    }
+    TestImageMoment(0);
 }
