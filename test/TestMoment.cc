@@ -300,4 +300,5 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
 TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(0);
     TestImageMoment(1);
+    TestImageMoment(2);
 }

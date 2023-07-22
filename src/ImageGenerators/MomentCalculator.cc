@@ -28,12 +28,9 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
         }
     }
 
-    double m0 = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum;
-    double m1 = sum_iv / m0;
-
     results[0] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : sum / (double)counts;
-    results[1] = m0;
-    results[2] = m1;
+    results[1] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum;
+    results[2] = sum_iv / sum;
 }
 
 double MomentCalculator::GetDeltaVelocity() {
