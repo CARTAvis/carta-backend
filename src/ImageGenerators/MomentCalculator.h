@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND_IMAGEGENERATOR_MOMENTCOLLAPSER_H_
 #define CARTA_BACKEND_IMAGEGENERATOR_MOMENTCOLLAPSER_H_
 
+#include <casacore/images/Images/ImageInterface.h>
+
 #include <unordered_map>
 #include <vector>
 
@@ -14,12 +16,29 @@ namespace carta {
 
 class MomentCalculator {
 public:
-    MomentCalculator(const std::vector<int>& moment_types);
+    MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types);
     ~MomentCalculator() = default;
 
-    void DoCalculation(float* image, size_t length, std::unordered_map<int, float>& results);
+    void DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results);
 
 private:
+    double GetDeltaV();
+
+    std::shared_ptr<casacore::ImageInterface<float>> _image;
+
+    // Moment Types:
+    // 0: AVERAGE
+    // 1: INTEGRATED
+    // 2: WEIGHTED_MEAN_COORDINATE
+    // 3: WEIGHTED_DISPERSION_COORDINATE
+    // 4: MEDIAN
+    // 6: STANDARD_DEVIATION
+    // 7: RMS
+    // 8: ABS_MEAN_DEVIATION
+    // 9: MAXIMUM
+    // 10: MAXIMUM_COORDINATE
+    // 11: MINIMUM
+    // 12: MINIMUM_COORDINATE
     std::vector<int> _moment_types;
 };
 

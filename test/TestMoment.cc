@@ -225,18 +225,6 @@ public:
         return dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(results[0]);
     }
 
-    double GetDeltaV(std::shared_ptr<casacore::ImageInterface<float>> image) {
-        casacore::CoordinateSystem coord_sys = image->coordinates();
-        casacore::SpectralCoordinate spectral_coord = coord_sys.spectralCoordinate();
-        casacore::Quantum<casacore::Double> vel0;
-        casacore::Quantum<casacore::Double> vel1;
-        casacore::Double pix0 = spectral_coord.referencePixel()(0) - 0.5;
-        casacore::Double pix1 = spectral_coord.referencePixel()(0) + 0.5;
-        spectral_coord.pixelToVelocity(vel0, pix0);
-        spectral_coord.pixelToVelocity(vel1, pix1);
-        return abs(vel1.getValue() - vel0.getValue());
-    }
-
     static void TestImageMoment(int moment_type) {
         std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
         std::shared_ptr<casacore::ImageInterface<float>> image;
@@ -249,7 +237,7 @@ public:
 
             // Carta moment calculator
             std::vector<int> moment_types = {moment_type};
-            auto moment_calculator = carta::MomentCalculator(moment_types);
+            auto moment_calculator = carta::MomentCalculator(image, moment_types);
             std::vector<float> moment_results1; // first way results
 
             for (int x = 0; x < shape(0); ++x) {
@@ -309,6 +297,7 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
     }
 }
 
-TEST_F(MomentTest, TestCollapser) {
+TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(0);
+    TestImageMoment(1);
 }
