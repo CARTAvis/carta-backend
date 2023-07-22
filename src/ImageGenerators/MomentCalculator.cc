@@ -8,35 +8,46 @@
 #include "ImageGenerator.h"
 #include "Logger/Logger.h"
 
-#include <coordinates/Coordinates/SpectralCoordinate.h>
-
 using namespace carta;
 
 MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
-    : _image(image), _moment_types(moment_types) {}
+    : _image(image), _moment_types(moment_types) {
+    _coord_sys = _image->coordinates();
+    _spectral_coord = _coord_sys.spectralCoordinate();
+}
 
 void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results) {
     double sum(0);
+    double sum_iv(0);
     size_t counts(0);
     for (size_t i = 0; i < length; ++i) {
         if (!std::isnan(data[i])) {
             sum += data[i];
+            sum_iv += data[i] * GetVelocity(i);
             counts++;
         }
     }
 
-    results[0] = counts == 0 ? std::numeric_limits<float>::quiet_NaN() : sum / (double)counts;
-    results[1] = counts == 0 ? std::numeric_limits<float>::quiet_NaN() : GetDeltaV() * sum;
+    double m0 = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum;
+    double m1 = sum_iv / m0;
+
+    results[0] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : sum / (double)counts;
+    results[1] = m0;
+    results[2] = m1;
 }
 
-double MomentCalculator::GetDeltaV() {
-    casacore::CoordinateSystem coord_sys = _image->coordinates();
-    casacore::SpectralCoordinate spectral_coord = coord_sys.spectralCoordinate();
+double MomentCalculator::GetDeltaVelocity() {
     casacore::Quantum<casacore::Double> vel0;
     casacore::Quantum<casacore::Double> vel1;
-    casacore::Double pix0 = spectral_coord.referencePixel()(0) - 0.5;
-    casacore::Double pix1 = spectral_coord.referencePixel()(0) + 0.5;
-    spectral_coord.pixelToVelocity(vel0, pix0);
-    spectral_coord.pixelToVelocity(vel1, pix1);
+    casacore::Double pix0 = _spectral_coord.referencePixel()(0) - 0.5;
+    casacore::Double pix1 = _spectral_coord.referencePixel()(0) + 0.5;
+    _spectral_coord.pixelToVelocity(vel0, pix0);
+    _spectral_coord.pixelToVelocity(vel1, pix1);
     return abs(vel1.getValue() - vel0.getValue());
+}
+
+double MomentCalculator::GetVelocity(double chan) {
+    casacore::Quantum<casacore::Double> vel;
+    _spectral_coord.pixelToVelocity(vel, chan);
+    return vel.getValue();
 }

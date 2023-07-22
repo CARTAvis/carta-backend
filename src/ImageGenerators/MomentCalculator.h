@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND_IMAGEGENERATOR_MOMENTCOLLAPSER_H_
 #define CARTA_BACKEND_IMAGEGENERATOR_MOMENTCOLLAPSER_H_
 
+#include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <unordered_map>
@@ -22,9 +23,12 @@ public:
     void DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results);
 
 private:
-    double GetDeltaV();
+    double GetDeltaVelocity();
+    double GetVelocity(double chan);
 
     std::shared_ptr<casacore::ImageInterface<float>> _image;
+    casacore::CoordinateSystem _coord_sys;
+    casacore::SpectralCoordinate _spectral_coord;
 
     // Moment Types:
     // 0: AVERAGE
