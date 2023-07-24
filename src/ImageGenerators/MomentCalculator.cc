@@ -19,41 +19,49 @@ MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<floa
 }
 
 void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results) {
-    double sum(0);
+    double sum_i(0);
     double sum_iv(0);
     double sum_ivv(0);
     double sum_ii(0);
-    std::vector<float> pixels;
+    std::vector<float> intensities;
     size_t counts(0);
     for (size_t i = 0; i < length; ++i) {
         if (!std::isnan(data[i])) {
             double velocity = GetVelocity(i);
-            sum += data[i];
+            sum_i += data[i];
             sum_iv += data[i] * velocity;
             sum_ivv += data[i] * std::pow(velocity, 2);
             sum_ii += std::pow(data[i], 2);
-            pixels.push_back(data[i]);
+            intensities.push_back(data[i]);
             counts++;
         }
     }
 
-    double mean_coordinate = sum_iv / sum;
-    double dispersion_coordinate = std::sqrt(std::abs(sum_ivv / sum - std::pow(mean_coordinate, 2)));
-    double standard_deviation = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : (sum_ii - sum * sum / counts) / (counts - 1);
+    double mean_coordinate = sum_iv / sum_i;
+    double dispersion_coordinate = std::sqrt(std::abs(sum_ivv / sum_i - std::pow(mean_coordinate, 2)));
+    double standard_deviation = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : (sum_ii - sum_i * sum_i / counts) / (counts - 1);
     if (standard_deviation > 0) {
         standard_deviation = std::sqrt(standard_deviation);
     } else if (standard_deviation <= 0) {
         standard_deviation = 0.0;
     }
+    double abs_mean_deviation = 0.0;
+    if (counts) {
+        double mean_i = sum_i / counts;
+        for (auto intensity : intensities) {
+            abs_mean_deviation += std::abs(intensity - mean_i);
+        }
+    }
 
-    results[0] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : sum / (double)counts;
-    results[1] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum;
+    results[0] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : sum_i / (double)counts;
+    results[1] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum_i;
     results[2] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : mean_coordinate;
     results[3] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : dispersion_coordinate;
-    results[4] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : FindMedian(pixels);
+    results[4] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : FindMedian(intensities);
     // results[5]: median coordinate is not available so far
     results[6] = standard_deviation;
     results[7] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : std::sqrt(sum_ii / counts);
+    results[8] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : abs_mean_deviation / counts;
 }
 
 double MomentCalculator::GetDeltaVelocity() {

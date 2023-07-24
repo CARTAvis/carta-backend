@@ -306,4 +306,5 @@ TEST_F(MomentTest, TestMomentCalculator) {
     // TestImageMoment(5): median coordinate is not available so far
     TestImageMoment(6); // STANDARD_DEVIATION
     TestImageMoment(7); // RMS
+    TestImageMoment(8); // ABS_MEAN_DEVIATION
 }
