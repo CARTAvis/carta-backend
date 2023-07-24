@@ -8,6 +8,8 @@
 #include "ImageGenerator.h"
 #include "Logger/Logger.h"
 
+#include <algorithm>
+
 using namespace carta;
 
 MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
@@ -20,6 +22,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     double sum(0);
     double sum_iv(0);
     double sum_ivv(0);
+    std::vector<float> pixels;
     size_t counts(0);
     for (size_t i = 0; i < length; ++i) {
         if (!std::isnan(data[i])) {
@@ -27,6 +30,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
             sum += data[i];
             sum_iv += data[i] * velocity;
             sum_ivv += data[i] * std::pow(velocity, 2);
+            pixels.push_back(data[i]);
             counts++;
         }
     }
@@ -38,6 +42,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     results[1] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum;
     results[2] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : mean_coordinate;
     results[3] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : dispersion_coordinate;
+    results[4] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : FindMedian(pixels);
 }
 
 double MomentCalculator::GetDeltaVelocity() {
@@ -54,4 +59,15 @@ double MomentCalculator::GetVelocity(double chan) {
     casacore::Quantum<casacore::Double> vel;
     _spectral_coord.pixelToVelocity(vel, chan);
     return vel.getValue();
+}
+
+double MomentCalculator::FindMedian(std::vector<float>& array) {
+    size_t n = array.size();
+    if (n % 2 == 0) {
+        nth_element(array.begin(), array.begin() + n / 2, array.end());
+        nth_element(array.begin(), array.begin() + (n - 1) / 2, array.end());
+        return (double)(array[(n - 1) / 2] + array[n / 2]) / 2.0;
+    }
+    nth_element(array.begin(), array.begin() + n / 2, array.end());
+    return (double)array[n / 2];
 }

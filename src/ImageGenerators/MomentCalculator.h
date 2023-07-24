@@ -25,6 +25,7 @@ public:
 private:
     double GetDeltaVelocity();
     double GetVelocity(double chan);
+    double FindMedian(std::vector<float>& array);
 
     std::shared_ptr<casacore::ImageInterface<float>> _image;
     casacore::CoordinateSystem _coord_sys;

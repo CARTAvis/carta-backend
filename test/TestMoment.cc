@@ -302,4 +302,5 @@ TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(1);
     TestImageMoment(2);
     TestImageMoment(3, 1e-2);
+    TestImageMoment(4);
 }
