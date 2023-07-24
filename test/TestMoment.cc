@@ -303,4 +303,6 @@ TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(2);
     TestImageMoment(3, 1e-2);
     TestImageMoment(4);
+    // TestImageMoment(5): median coordinate is not available so far
+    TestImageMoment(6);
 }

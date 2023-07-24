@@ -22,6 +22,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     double sum(0);
     double sum_iv(0);
     double sum_ivv(0);
+    double sum_ii(0);
     std::vector<float> pixels;
     size_t counts(0);
     for (size_t i = 0; i < length; ++i) {
@@ -30,6 +31,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
             sum += data[i];
             sum_iv += data[i] * velocity;
             sum_ivv += data[i] * std::pow(velocity, 2);
+            sum_ii += std::pow(data[i], 2);
             pixels.push_back(data[i]);
             counts++;
         }
@@ -37,12 +39,20 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
 
     double mean_coordinate = sum_iv / sum;
     double dispersion_coordinate = std::sqrt(std::abs(sum_ivv / sum - std::pow(mean_coordinate, 2)));
+    double standard_deviation = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : (sum_ii - sum * sum / counts) / (counts - 1);
+    if (standard_deviation > 0) {
+        standard_deviation = std::sqrt(standard_deviation);
+    } else if (standard_deviation <= 0) {
+        standard_deviation = 0.0;
+    }
 
     results[0] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : sum / (double)counts;
     results[1] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum;
     results[2] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : mean_coordinate;
     results[3] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : dispersion_coordinate;
     results[4] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : FindMedian(pixels);
+    // results[5]: median coordinate is not available so far
+    results[6] = standard_deviation;
 }
 
 double MomentCalculator::GetDeltaVelocity() {
