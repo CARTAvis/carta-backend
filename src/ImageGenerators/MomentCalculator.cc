@@ -25,6 +25,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     double sum_ii(0);
     double max = std::numeric_limits<double>::lowest();
     double min = std::numeric_limits<double>::max();
+    double max_velocity, min_velocity;
     std::vector<float> intensities;
     size_t counts(0);
     for (size_t i = 0; i < length; ++i) {
@@ -37,9 +38,11 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
             intensities.push_back(data[i]);
             if (data[i] > max) {
                 max = data[i];
+                max_velocity = velocity;
             }
             if (data[i] < min) {
                 min = data[i];
+                min_velocity = velocity;
             }
             counts++;
         }
@@ -71,7 +74,9 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     results[7] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : std::sqrt(sum_ii / counts);
     results[8] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : abs_mean_deviation / counts;
     results[9] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : max;
+    results[10] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : max_velocity;
     results[11] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : min;
+    results[12] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : min_velocity;
 }
 
 double MomentCalculator::GetDeltaVelocity() {

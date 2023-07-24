@@ -307,6 +307,8 @@ TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(6);  // STANDARD_DEVIATION
     TestImageMoment(7);  // RMS
     TestImageMoment(8);  // ABS_MEAN_DEVIATION
-    TestImageMoment(9);  // MAX
-    TestImageMoment(11); // MIN
+    TestImageMoment(9);  // MAXIMUM
+    TestImageMoment(10); // MAXIMUM_COORDINATE
+    TestImageMoment(11); // MINIMUM
+    TestImageMoment(12); // MINIMUM_COORDINATE
 }
