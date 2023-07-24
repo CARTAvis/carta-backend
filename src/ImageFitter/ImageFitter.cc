@@ -429,7 +429,7 @@ double ImageFitter::GetMedianAbsDeviation(const size_t n, double x[]) {
     double* work = (double*)malloc(n * sizeof(double));
     double mad;
 
-    mad = gsl_stats_mad0(x, 1, n, work);
+    mad = gsl_stats_mad(x, 1, n, work);
 
     free(work);
     return mad;
