@@ -225,7 +225,7 @@ public:
         return dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(results[0]);
     }
 
-    static void TestImageMoment(int moment_type) {
+    static void TestImageMoment(int moment_type, float error = 0.0) {
         std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
         std::shared_ptr<casacore::ImageInterface<float>> image;
 
@@ -268,7 +268,7 @@ public:
             }
 
             // Check the consistency of two calculation results
-            CmpVectors(moment_results1, moment_results2);
+            CmpVectors(moment_results1, moment_results2, error);
         }
     }
 };
@@ -301,4 +301,5 @@ TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(0);
     TestImageMoment(1);
     TestImageMoment(2);
+    TestImageMoment(3, 1e-2);
 }
