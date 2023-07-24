@@ -23,6 +23,8 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     double sum_iv(0);
     double sum_ivv(0);
     double sum_ii(0);
+    double max = std::numeric_limits<double>::lowest();
+    double min = std::numeric_limits<double>::max();
     std::vector<float> intensities;
     size_t counts(0);
     for (size_t i = 0; i < length; ++i) {
@@ -33,6 +35,12 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
             sum_ivv += data[i] * std::pow(velocity, 2);
             sum_ii += std::pow(data[i], 2);
             intensities.push_back(data[i]);
+            if (data[i] > max) {
+                max = data[i];
+            }
+            if (data[i] < min) {
+                min = data[i];
+            }
             counts++;
         }
     }
@@ -62,6 +70,8 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     results[6] = standard_deviation;
     results[7] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : std::sqrt(sum_ii / counts);
     results[8] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : abs_mean_deviation / counts;
+    results[9] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : max;
+    results[11] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : min;
 }
 
 double MomentCalculator::GetDeltaVelocity() {

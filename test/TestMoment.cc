@@ -304,7 +304,9 @@ TEST_F(MomentTest, TestMomentCalculator) {
     TestImageMoment(3, 1e-2); // WEIGHTED_DISPERSION_COORDINATE
     TestImageMoment(4);       // MEDIAN
     // TestImageMoment(5): median coordinate is not available so far
-    TestImageMoment(6); // STANDARD_DEVIATION
-    TestImageMoment(7); // RMS
-    TestImageMoment(8); // ABS_MEAN_DEVIATION
+    TestImageMoment(6);  // STANDARD_DEVIATION
+    TestImageMoment(7);  // RMS
+    TestImageMoment(8);  // ABS_MEAN_DEVIATION
+    TestImageMoment(9);  // MAX
+    TestImageMoment(11); // MIN
 }
