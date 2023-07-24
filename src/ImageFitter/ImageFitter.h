@@ -9,6 +9,7 @@
 
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlinear.h>
+#include <gsl/gsl_statistics.h>
 #include <gsl/gsl_vector.h>
 #include <string>
 #include <vector>
@@ -84,6 +85,7 @@ private:
     static std::tuple<double, double, double, double, double, double> GetGaussianParams(const gsl_vector* value_vector, size_t index,
         std::vector<int>& fit_values_indexes, std::vector<double>& initial_values, size_t offset_x = 0, size_t offset_y = 0);
     static CARTA::GaussianComponent GetGaussianComponent(std::tuple<double, double, double, double, double, double> params);
+    static double GetMedianAbsDeviation(const size_t n, double x[]);
 };
 
 } // namespace carta

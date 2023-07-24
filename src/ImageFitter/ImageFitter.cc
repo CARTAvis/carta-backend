@@ -211,6 +211,7 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
 
     gsl_multifit_nlinear_init(_fit_values, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
+    const double image_std = GetMedianAbsDeviation(_fdf.n, f->data);
 
     GeneratorProgressCallback iteration_progress_callback = [&](size_t iter) {
         _progress_callback((iter + 1.0) / (_max_iter + 2.0)); // 2 for preparing fitting and generating results
@@ -225,7 +226,14 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
 
         gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
         gsl_multifit_nlinear_covar(jac, 0.0, covar);
-        const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
+
+        const double reduced_chi_squared = _fit_status.chisq / image_std / image_std / (_fit_data.n_notnan - p);
+        const double sqrt_reduced_chi_squared = sqrt(reduced_chi_squared);
+        spdlog::info("image std: {}", image_std);
+        spdlog::info("reduced chi-squared value: {}", reduced_chi_squared);
+        spdlog::info("sqrt of reduced chi-squared value: {}", sqrt_reduced_chi_squared);
+
+        const double c = GSL_MAX_DBL(1, sqrt_reduced_chi_squared) * sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
         for (size_t i = 0; i < p; i++) {
             gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
         }
@@ -415,4 +423,14 @@ CARTA::GaussianComponent ImageFitter::GetGaussianComponent(std::tuple<double, do
     auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
     auto component = Message::GaussianComponent(center, amp, fwhm, pa);
     return component;
+}
+
+double ImageFitter::GetMedianAbsDeviation(const size_t n, double x[]) {
+    double* work = (double*)malloc(n * sizeof(double));
+    double mad;
+
+    mad = gsl_stats_mad0(x, 1, n, work);
+
+    free(work);
+    return mad;
 }
