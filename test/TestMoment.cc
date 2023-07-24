@@ -298,11 +298,12 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
 }
 
 TEST_F(MomentTest, TestMomentCalculator) {
-    TestImageMoment(0);
-    TestImageMoment(1);
-    TestImageMoment(2);
-    TestImageMoment(3, 1e-2);
-    TestImageMoment(4);
+    TestImageMoment(0);       // AVERAGE
+    TestImageMoment(1);       // INTEGRATED
+    TestImageMoment(2);       // WEIGHTED_MEAN_COORDINATE
+    TestImageMoment(3, 1e-2); // WEIGHTED_DISPERSION_COORDINATE
+    TestImageMoment(4);       // MEDIAN
     // TestImageMoment(5): median coordinate is not available so far
-    TestImageMoment(6);
+    TestImageMoment(6); // STANDARD_DEVIATION
+    TestImageMoment(7); // RMS
 }

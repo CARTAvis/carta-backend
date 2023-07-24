@@ -53,6 +53,7 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     results[4] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : FindMedian(pixels);
     // results[5]: median coordinate is not available so far
     results[6] = standard_deviation;
+    results[7] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : std::sqrt(sum_ii / counts);
 }
 
 double MomentCalculator::GetDeltaVelocity() {
