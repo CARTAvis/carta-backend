@@ -1085,7 +1085,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (_image_cache_valid) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        int idx = ImageCacheStartIndex() + (y * _width) + x;
+        size_t idx = ImageCacheStartIndex() + (y * _width) + x;
         cursor_value_with_current_stokes = GetImageCacheValue(idx);
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
@@ -1258,14 +1258,14 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             auto x_start = y * _width;
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                auto idx = ImageCacheStartIndex() + x_start + j;
+                                size_t idx = ImageCacheStartIndex() + x_start + j;
                                 profile.push_back(GetImageCacheValue(idx));
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                auto idx = ImageCacheStartIndex() + (j * _width) + x;
+                                size_t idx = ImageCacheStartIndex() + (j * _width) + x;
                                 profile.push_back(GetImageCacheValue(idx));
                             }
                             cache_lock.release();
@@ -2438,7 +2438,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             if (q_ok && u_ok && v_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    int idx = ImageCacheStartIndex(z, stokes_q) + i;
+                    size_t idx = ImageCacheStartIndex(z, stokes_q) + i;
                     double val_q = _image_caches[stokes_q][idx];
                     double val_u = _image_caches[stokes_u][idx];
                     double val_v = _image_caches[stokes_v][idx];
@@ -2455,7 +2455,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             if (q_ok && u_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    int idx = ImageCacheStartIndex(z, stokes_q) + i;
+                    size_t idx = ImageCacheStartIndex(z, stokes_q) + i;
                     double val_q = _image_caches[stokes_q][idx];
                     double val_u = _image_caches[stokes_u][idx];
                     if (!std::isnan(val_q) && !std::isnan(val_u)) {
@@ -2471,7 +2471,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             if (i_ok && q_ok && u_ok && v_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    int idx = ImageCacheStartIndex(z, stokes_i) + i;
+                    size_t idx = ImageCacheStartIndex(z, stokes_i) + i;
                     double val_i = _image_caches[stokes_i][idx];
                     double val_q = _image_caches[stokes_q][idx];
                     double val_u = _image_caches[stokes_u][idx];
@@ -2489,7 +2489,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             if (i_ok && q_ok && u_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    int idx = ImageCacheStartIndex(z, stokes_i) + i;
+                    size_t idx = ImageCacheStartIndex(z, stokes_i) + i;
                     double val_i = _image_caches[stokes_i][idx];
                     double val_q = _image_caches[stokes_q][idx];
                     double val_u = _image_caches[stokes_u][idx];
@@ -2506,7 +2506,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             if (q_ok && u_ok) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    int idx = ImageCacheStartIndex(z, stokes_q) + i;
+                    size_t idx = ImageCacheStartIndex(z, stokes_q) + i;
                     double val_q = _image_caches[stokes_q][idx];
                     double val_u = _image_caches[stokes_u][idx];
                     if (!std::isnan(val_q) && !std::isnan(val_u)) {
@@ -2523,7 +2523,7 @@ float* Frame::GetImageCacheData(int z, int stokes) {
     return _image_caches[ImageCacheIndex(stokes)].get() + ImageCacheStartIndex(z, stokes);
 }
 
-float Frame::GetImageCacheValue(int index, int stokes) {
+float Frame::GetImageCacheValue(size_t index, int stokes) {
     if (_cube_image_cache && IsComputedStokes(stokes)) {
         auto get_stokes_data = [&](const string& coordinate, int& stokes) {
             GetStokesTypeIndex(coordinate, stokes);
@@ -2602,7 +2602,7 @@ float Frame::GetImageCacheValue(int index, int stokes) {
     return _image_caches[ImageCacheIndex(stokes)][index];
 }
 
-long long int Frame::ImageCacheStartIndex(int z_index, int stokes_index) const {
+size_t Frame::ImageCacheStartIndex(int z_index, int stokes_index) const {
     if (stokes_index == CURRENT_STOKES) {
         stokes_index = _stokes_index;
     }
@@ -2610,7 +2610,7 @@ long long int Frame::ImageCacheStartIndex(int z_index, int stokes_index) const {
         if (z_index == CURRENT_Z) {
             z_index = _z_index;
         }
-        return (long long int)_width * (long long int)_height * (long long int)z_index;
+        return (size_t)_width * (size_t)_height * (size_t)z_index;
     }
     return 0;
 }

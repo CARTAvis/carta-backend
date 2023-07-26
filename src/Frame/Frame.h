@@ -272,14 +272,14 @@ protected:
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // Get the start index of image cache
-    long long int ImageCacheStartIndex(int z_index = CURRENT_Z, int stokes_index = CURRENT_STOKES) const;
+    size_t ImageCacheStartIndex(int z_index = CURRENT_Z, int stokes_index = CURRENT_STOKES) const;
 
     // Get image cache index (-1 for current channel and stokes, or stokes indices 0, 1, 2, or 3, except for computed stokes indices)
     int ImageCacheIndex(int stokes_index = CURRENT_STOKES) const;
 
     bool GetImageCache(int image_cache_index, int z_index = ALL_Z);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
-    float GetImageCacheValue(int index, int stokes = CURRENT_STOKES);
+    float GetImageCacheValue(size_t index, int stokes = CURRENT_STOKES);
 
     // Setup
     uint32_t _session_id;
