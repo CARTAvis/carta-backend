@@ -318,9 +318,12 @@ protected:
     std::unordered_map<int, std::unique_ptr<float[]>> _image_caches;
     bool _cube_image_cache;        // if true, cache the whole cube image. Otherwise, only cache a channel image
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
+    int _stokes_i = -1;            // stokes type "I" index
+    int _stokes_q = -1;            // stokes type "Q" index
+    int _stokes_u = -1;            // stokes type "U" index
+    int _stokes_v = -1;            // stokes type "V" index
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
-    bool _cache_loaded;            // channel cache is set
     TileCache _tile_cache;         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;

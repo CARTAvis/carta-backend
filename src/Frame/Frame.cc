@@ -93,6 +93,11 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
             for (int stokes = 0; stokes < _num_stokes; ++stokes) {
                 GetImageCache(stokes, ALL_Z);
             }
+            // Get stokes type indices
+            GetStokesTypeIndex("I", _stokes_i);
+            GetStokesTypeIndex("Q", _stokes_q);
+            GetStokesTypeIndex("U", _stokes_u);
+            GetStokesTypeIndex("V", _stokes_v);
         }
     } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
         spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", cube_image_size / 1.0e6);
@@ -2421,27 +2426,17 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 float* Frame::GetImageCacheData(int z, int stokes) {
     if (_cube_image_cache && IsComputedStokes(stokes)) {
         _image_caches[ImageCacheIndex(stokes)] = std::make_unique<float[]>(_width * _height);
-        auto get_stokes_data = [&](const string& coordinate, int& stokes) {
-            GetStokesTypeIndex(coordinate, stokes);
-            return stokes > -1 && GetImageCache(stokes, ALL_Z);
-        };
-
-        int stokes_i, stokes_q, stokes_u, stokes_v;
-        bool i_ok = get_stokes_data("I", stokes_i);
-        bool q_ok = get_stokes_data("Q", stokes_q);
-        bool u_ok = get_stokes_data("U", stokes_u);
-        bool v_ok = get_stokes_data("V", stokes_v);
 
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             // Get stokes Q, U, and V data
-            if (q_ok && u_ok && v_ok) {
+            if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = ImageCacheStartIndex(z, stokes_q) + i;
-                    double val_q = _image_caches[stokes_q][idx];
-                    double val_u = _image_caches[stokes_u][idx];
-                    double val_v = _image_caches[stokes_v][idx];
+                    size_t idx = ImageCacheStartIndex(z, _stokes_q) + i;
+                    double val_q = _image_caches[_stokes_q][idx];
+                    double val_u = _image_caches[_stokes_u][idx];
+                    double val_v = _image_caches[_stokes_v][idx];
                     if (!std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
                         double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2) + casacore::pow(val_v, 2);
                         _image_caches[ImageCacheIndex(stokes)][i] = casacore::sqrt(sum);
@@ -2452,12 +2447,12 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             // Get stokes Q and U data
-            if (q_ok && u_ok) {
+            if (_stokes_q > -1 && _stokes_u > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = ImageCacheStartIndex(z, stokes_q) + i;
-                    double val_q = _image_caches[stokes_q][idx];
-                    double val_u = _image_caches[stokes_u][idx];
+                    size_t idx = ImageCacheStartIndex(z, _stokes_q) + i;
+                    double val_q = _image_caches[_stokes_q][idx];
+                    double val_u = _image_caches[_stokes_u][idx];
                     if (!std::isnan(val_q) && !std::isnan(val_u)) {
                         double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
                         _image_caches[ImageCacheIndex(stokes)][i] = casacore::sqrt(sum);
@@ -2468,14 +2463,14 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             // Get stokes I, Q, U, and V data
-            if (i_ok && q_ok && u_ok && v_ok) {
+            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = ImageCacheStartIndex(z, stokes_i) + i;
-                    double val_i = _image_caches[stokes_i][idx];
-                    double val_q = _image_caches[stokes_q][idx];
-                    double val_u = _image_caches[stokes_u][idx];
-                    double val_v = _image_caches[stokes_v][idx];
+                    size_t idx = ImageCacheStartIndex(z, _stokes_i) + i;
+                    double val_i = _image_caches[_stokes_i][idx];
+                    double val_q = _image_caches[_stokes_q][idx];
+                    double val_u = _image_caches[_stokes_u][idx];
+                    double val_v = _image_caches[_stokes_v][idx];
                     if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
                         double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2) + casacore::pow(val_v, 2);
                         _image_caches[ImageCacheIndex(stokes)][i] = 100.0 * casacore::sqrt(sum) / val_i;
@@ -2486,13 +2481,13 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             // Get stokes I, Q, and U data
-            if (i_ok && q_ok && u_ok) {
+            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = ImageCacheStartIndex(z, stokes_i) + i;
-                    double val_i = _image_caches[stokes_i][idx];
-                    double val_q = _image_caches[stokes_q][idx];
-                    double val_u = _image_caches[stokes_u][idx];
+                    size_t idx = ImageCacheStartIndex(z, _stokes_i) + i;
+                    double val_i = _image_caches[_stokes_i][idx];
+                    double val_q = _image_caches[_stokes_q][idx];
+                    double val_u = _image_caches[_stokes_u][idx];
                     if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u)) {
                         double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
                         _image_caches[ImageCacheIndex(stokes)][i] = 100.0 * casacore::sqrt(sum) / val_i;
@@ -2503,12 +2498,12 @@ float* Frame::GetImageCacheData(int z, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             // Get stokes Q and U data
-            if (q_ok && u_ok) {
+            if (_stokes_q > -1 && _stokes_u > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
-                    size_t idx = ImageCacheStartIndex(z, stokes_q) + i;
-                    double val_q = _image_caches[stokes_q][idx];
-                    double val_u = _image_caches[stokes_u][idx];
+                    size_t idx = ImageCacheStartIndex(z, _stokes_q) + i;
+                    double val_q = _image_caches[_stokes_q][idx];
+                    double val_u = _image_caches[_stokes_u][idx];
                     if (!std::isnan(val_q) && !std::isnan(val_u)) {
                         _image_caches[ImageCacheIndex(stokes)][i] = (180.0 / casacore::C::pi) * atan2(val_u, val_q) / 2;
                     } else {
@@ -2525,24 +2520,13 @@ float* Frame::GetImageCacheData(int z, int stokes) {
 
 float Frame::GetImageCacheValue(size_t index, int stokes) {
     if (_cube_image_cache && IsComputedStokes(stokes)) {
-        auto get_stokes_data = [&](const string& coordinate, int& stokes) {
-            GetStokesTypeIndex(coordinate, stokes);
-            return stokes > -1 && GetImageCache(stokes, ALL_Z);
-        };
-
-        int stokes_i, stokes_q, stokes_u, stokes_v;
-        bool i_ok = get_stokes_data("I", stokes_i);
-        bool q_ok = get_stokes_data("Q", stokes_q);
-        bool u_ok = get_stokes_data("U", stokes_u);
-        bool v_ok = get_stokes_data("V", stokes_v);
-
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             // Get stokes Q, U, and V data
-            if (q_ok && u_ok && v_ok) {
-                double val_q = _image_caches[stokes_q][index];
-                double val_u = _image_caches[stokes_u][index];
-                double val_v = _image_caches[stokes_v][index];
+            if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
+                double val_q = _image_caches[_stokes_q][index];
+                double val_u = _image_caches[_stokes_u][index];
+                double val_v = _image_caches[_stokes_v][index];
                 if (!std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
                     double sum = std::pow(val_q, 2) + std::pow(val_u, 2) + std::pow(val_v, 2);
                     return std::sqrt(sum);
@@ -2550,9 +2534,9 @@ float Frame::GetImageCacheValue(size_t index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             // Get stokes Q and U data
-            if (q_ok && u_ok) {
-                double val_q = _image_caches[stokes_q][index];
-                double val_u = _image_caches[stokes_u][index];
+            if (_stokes_q > -1 && _stokes_u > -1) {
+                double val_q = _image_caches[_stokes_q][index];
+                double val_u = _image_caches[_stokes_u][index];
                 if (!std::isnan(val_q) && !std::isnan(val_u)) {
                     double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
                     return casacore::sqrt(sum);
@@ -2560,11 +2544,11 @@ float Frame::GetImageCacheValue(size_t index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             // Get stokes I, Q, U, and V data
-            if (i_ok && q_ok && u_ok && v_ok) {
-                double val_i = _image_caches[stokes_i][index];
-                double val_q = _image_caches[stokes_q][index];
-                double val_u = _image_caches[stokes_u][index];
-                double val_v = _image_caches[stokes_v][index];
+            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
+                double val_i = _image_caches[_stokes_i][index];
+                double val_q = _image_caches[_stokes_q][index];
+                double val_u = _image_caches[_stokes_u][index];
+                double val_v = _image_caches[_stokes_v][index];
                 if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
                     double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2) + casacore::pow(val_v, 2);
                     return 100.0 * casacore::sqrt(sum) / val_i;
@@ -2572,10 +2556,10 @@ float Frame::GetImageCacheValue(size_t index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             // Get stokes I, Q, and U data
-            if (i_ok && q_ok && u_ok) {
-                double val_i = _image_caches[stokes_i][index];
-                double val_q = _image_caches[stokes_q][index];
-                double val_u = _image_caches[stokes_u][index];
+            if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
+                double val_i = _image_caches[_stokes_i][index];
+                double val_q = _image_caches[_stokes_q][index];
+                double val_u = _image_caches[_stokes_u][index];
                 if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u)) {
                     double sum = casacore::pow(val_q, 2) + casacore::pow(val_u, 2);
                     return 100.0 * casacore::sqrt(sum) / val_i;
@@ -2583,9 +2567,9 @@ float Frame::GetImageCacheValue(size_t index, int stokes) {
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             // Get stokes Q and U data
-            if (q_ok && u_ok) {
-                double val_q = _image_caches[stokes_q][index];
-                double val_u = _image_caches[stokes_u][index];
+            if (_stokes_q > -1 && _stokes_u > -1) {
+                double val_q = _image_caches[_stokes_q][index];
+                double val_u = _image_caches[_stokes_u][index];
                 if (!std::isnan(val_q) && !std::isnan(val_u)) {
                     return (180.0 / casacore::C::pi) * atan2(val_u, val_q) / 2;
                 }
@@ -2594,11 +2578,6 @@ float Frame::GetImageCacheValue(size_t index, int stokes) {
         return std::numeric_limits<float>::quiet_NaN();
     }
 
-    // Check the existence of cube image data cache
-    if (ImageCacheIndex(stokes) > -1 && !_image_caches.count(ImageCacheIndex(stokes))) {
-        spdlog::error("Error getting cube image data for stokes {}!", stokes);
-        return std::numeric_limits<float>::quiet_NaN();
-    }
     return _image_caches[ImageCacheIndex(stokes)][index];
 }
 
