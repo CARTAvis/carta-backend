@@ -112,6 +112,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _enable_scripting(enable_scripting),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
+      _sync_id(0),
       _animation_id(0),
       _animation_active(false),
       _cursor_settings(this),
@@ -657,65 +658,68 @@ void Session::DeleteFrame(int file_id) {
     }
 }
 
-void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
+void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int animation_id, bool skip_data) {
     auto file_id = message.file_id();
 
     if (!_frames.count(file_id)) {
         return;
     }
 
+    if (skip_data) {
+        // Update view settings and skip sending data
+        _frames.at(file_id)->SetAnimationViewSettings(message);
+        return;
+    }
+
+    if (message.tiles().empty()) {
+        return;
+    }
+
+    if (animation_id > 0 && _animation_object->_stop_called) {
+        return;
+    }
+
     auto z = _frames.at(file_id)->CurrentZ();
     auto stokes = _frames.at(file_id)->CurrentStokes();
-    auto animation_id = AnimationRunning() ? _animation_id : 0;
-    if (_frames.count(file_id)) {
-        if (skip_data) {
-            // Update view settings and skip sending data
-            _frames.at(file_id)->SetAnimationViewSettings(message);
-            return;
-        }
+    auto sync_id = ++_sync_id;
 
-        if (message.tiles().empty()) {
-            return;
-        }
+    auto start_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, false);
+    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
-        auto start_message = Message::RasterTileSync(file_id, z, stokes, animation_id, false);
-        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
+    int num_tiles = message.tiles_size();
+    CARTA::CompressionType compression_type = message.compression_type();
+    float compression_quality = message.compression_quality();
 
-        int num_tiles = message.tiles_size();
-        CARTA::CompressionType compression_type = message.compression_type();
-        float compression_quality = message.compression_quality();
-
-        Timer t;
-        ThreadManager::ApplyThreadLimit();
+    Timer t;
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
-        {
-            int num_threads = omp_get_num_threads();
-            int stride = std::min(num_tiles, std::min(num_threads, MAX_TILING_TASKS));
+    {
+        int num_threads = omp_get_num_threads();
+        int stride = std::min(num_tiles, std::min(num_threads, MAX_TILING_TASKS));
 #pragma omp for
-            for (int j = 0; j < stride; j++) {
-                for (int i = j; i < num_tiles; i += stride) {
-                    const auto& encoded_coordinate = message.tiles(i);
-                    auto raster_tile_data = Message::RasterTileData(file_id, animation_id);
-                    auto tile = Tile::Decode(encoded_coordinate);
-                    if (_frames.count(file_id) &&
-                        _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, z, stokes, compression_type, compression_quality)) {
-                        // Only use deflate on outgoing message if the raster image compression type is NONE
-                        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
-                            compression_type == CARTA::CompressionType::NONE);
-                    } else {
-                        spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
-                    }
+        for (int j = 0; j < stride; j++) {
+            for (int i = j; i < num_tiles; i += stride) {
+                const auto& encoded_coordinate = message.tiles(i);
+                auto raster_tile_data = Message::RasterTileData(file_id, sync_id, animation_id);
+                auto tile = Tile::Decode(encoded_coordinate);
+                if (_frames.count(file_id) &&
+                    _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, z, stokes, compression_type, compression_quality)) {
+                    // Only use deflate on outgoing message if the raster image compression type is NONE
+                    SendFileEvent(
+                        file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
+                } else {
+                    spdlog::warn("Discarding stale tile request for channel={}, layer={}, x={}, y={}", z, tile.layer, tile.x, tile.y);
                 }
             }
         }
-
-        // Measure duration for get tile data
-        spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
-
-        // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
-        auto final_message = Message::RasterTileSync(file_id, z, stokes, animation_id, true);
-        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
     }
+
+    // Measure duration for get tile data
+    spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
+
+    // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
+    auto final_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, true);
+    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
 }
 
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
@@ -2039,7 +2043,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     }
 }
 
-void Session::ExecuteAnimationFrameInner() {
+void Session::ExecuteAnimationFrameInner(int animation_id) {
     CARTA::AnimationFrame curr_frame;
 
     curr_frame = _animation_object->_next_frame;
@@ -2053,6 +2057,10 @@ void Session::ExecuteAnimationFrameInner() {
             auto active_frame_stokes = _animation_object->_stokes_indices[curr_frame.stokes()];
 
             if ((_animation_object->_context).is_group_execution_cancelled()) {
+                return;
+            }
+
+            if (_animation_object->_stop_called) {
                 return;
             }
 
@@ -2106,33 +2114,60 @@ void Session::ExecuteAnimationFrameInner() {
                     auto file_id = file_ids_to_update[i];
                     bool is_active_frame = file_id == active_file_id;
                     // Send contour data if required. Empty contour data messages are sent if there are no contour levels
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     SendContourData(file_id, is_active_frame);
 
                     // Send vector field data if required
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     SendVectorFieldData(file_id);
 
                     // Send tile data
-                    OnAddRequiredTiles(_frames.at(file_id)->GetAnimationViewSettings());
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
+                    OnAddRequiredTiles(_frames.at(file_id)->GetAnimationViewSettings(), animation_id);
 
                     // Send region histograms and profiles
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     UpdateRegionData(file_id, ALL_REGIONS, z_changed, stokes_changed);
                 }
             } else {
                 if (active_frame->SetImageChannels(active_frame_z, active_frame_stokes, err_message)) {
                     // Send image histogram and profiles
                     bool send_histogram(true);
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     UpdateImageData(active_file_id, send_histogram, z_changed, stokes_changed);
 
                     // Send contour data if required
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     SendContourData(active_file_id);
 
                     // Send vector field data if required
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     SendVectorFieldData(active_file_id);
 
                     // Send tile data
-                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
+                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings(), animation_id);
 
                     // Send region histograms and profiles
+                    if (_animation_object->_stop_called) {
+                        return;
+                    }
                     UpdateRegionData(active_file_id, ALL_REGIONS, z_changed, stokes_changed);
                 } else {
                     if (!err_message.empty()) {
@@ -2171,6 +2206,8 @@ bool Session::ExecuteAnimationFrame() {
         return false;
     }
 
+    auto animation_id = _animation_id; // Make sure tile data message has an id
+
     auto wait_duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(
         _animation_object->_t_last + _animation_object->_frame_interval - std::chrono::high_resolution_clock::now());
 
@@ -2183,7 +2220,7 @@ bool Session::ExecuteAnimationFrame() {
         }
 
         curr_frame = _animation_object->_next_frame;
-        ExecuteAnimationFrameInner();
+        ExecuteAnimationFrameInner(animation_id);
 
         CARTA::AnimationFrame tmp_frame;
         CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
