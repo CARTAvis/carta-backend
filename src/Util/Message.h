@@ -125,7 +125,7 @@ public:
         CARTA::ProfileAxisType axis_type, float crpix, float crval, float cdelt, std::string& unit);
     static CARTA::SpatialProfileData SpatialProfileData(int32_t x, int32_t y, int32_t channel, int32_t stokes, float value);
     static CARTA::RasterTileSync RasterTileSync(
-        int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, bool end_sync);
+        int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, int32_t tile_count, bool end_sync);
     static CARTA::SetRegionAck SetRegionAck(int32_t region_id, bool success, std::string err_message);
     static CARTA::RegisterViewerAck RegisterViewerAck(
         uint32_t session_id, bool success, const std::string& status, const CARTA::SessionType& type);

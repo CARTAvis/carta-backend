@@ -513,13 +513,14 @@ CARTA::SpatialProfileData Message::SpatialProfileData(int32_t x, int32_t y, int3
 }
 
 CARTA::RasterTileSync Message::RasterTileSync(
-    int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, bool end_sync) {
+    int32_t file_id, int32_t channel, int32_t stokes, int32_t sync_id, int32_t animation_id, int32_t tile_count, bool end_sync) {
     CARTA::RasterTileSync message;
     message.set_file_id(file_id);
     message.set_channel(channel);
     message.set_stokes(stokes);
     message.set_sync_id(sync_id);
     message.set_animation_id(animation_id);
+    message.set_tile_count(tile_count);
     message.set_end_sync(end_sync);
     return message;
 }
