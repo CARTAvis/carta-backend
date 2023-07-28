@@ -683,10 +683,10 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int ani
     auto stokes = _frames.at(file_id)->CurrentStokes();
     auto sync_id = ++_sync_id;
 
-    auto start_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, message.tiles().size(), false);
+    int num_tiles = message.tiles_size();
+    auto start_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, num_tiles, false);
     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
-    int num_tiles = message.tiles_size();
     CARTA::CompressionType compression_type = message.compression_type();
     float compression_quality = message.compression_quality();
 
@@ -718,7 +718,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int ani
     spdlog::performance("Get tile data group in {:.3f} ms", t.Elapsed().ms());
 
     // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
-    auto final_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, message.tiles().size(), true);
+    auto final_message = Message::RasterTileSync(file_id, z, stokes, sync_id, animation_id, num_tiles, true);
     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
 }
 
