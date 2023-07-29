@@ -22,6 +22,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
+#include "ImageCache.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -99,12 +100,12 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
-    size_t Width();     // length of x axis
-    size_t Height();    // length of y axis
-    size_t Depth();     // length of z axis
-    size_t NumStokes(); // if no stokes axis, nstokes=1
-    int CurrentZ();
-    int CurrentStokes();
+    size_t Width() const;     // length of x axis
+    size_t Height() const;    // length of y axis
+    size_t Depth() const;     // length of z axis
+    size_t NumStokes() const; // if no stokes axis, nstokes=1
+    int CurrentZ() const;
+    int CurrentStokes() const;
     int SpectralAxis();
     int StokesAxis();
     bool GetBeams(std::vector<CARTA::Beam>& beams);
@@ -271,15 +272,8 @@ protected:
     // For vector field calculation
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    // Get the start index of image cache
-    size_t ImageCacheStartIndex(int z_index = CURRENT_Z, int stokes_index = CURRENT_STOKES) const;
-
-    // Get image cache index (-1 for current channel and stokes, or stokes indices 0, 1, 2, or 3, except for computed stokes indices)
-    int ImageCacheIndex(int stokes_index = CURRENT_STOKES) const;
-
     bool GetImageCache(int image_cache_index, int z_index = ALL_Z);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
-    float GetImageCacheValue(size_t index, int stokes = CURRENT_STOKES);
 
     // Setup
     uint32_t _session_id;
@@ -298,8 +292,6 @@ protected:
     casacore::IPosition _image_shape;
     int _x_axis, _y_axis, _z_axis; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
     int _spectral_axis, _stokes_axis;
-    int _z_index, _stokes_index; // current index
-    size_t _width, _height, _depth, _num_stokes;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
@@ -311,17 +303,8 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    long long int _image_cache_size;
-    // Map of image caches
-    // key = -1: image cache of the current channel and stokes data
-    // key > -1: image cache of all channels data with respect to the stokes index, e.g., 0, 1, 2, or 3 (except for computed stokes indices)
-    std::unordered_map<int, std::unique_ptr<float[]>> _image_caches;
-    bool _cube_image_cache;        // if true, cache the whole cube image. Otherwise, only cache a channel image
+    ImageCache _image_cache;
     bool _image_cache_valid;       // cached image data is valid for current z and stokes
-    int _stokes_i = -1;            // stokes type "I" index
-    int _stokes_q = -1;            // stokes type "Q" index
-    int _stokes_u = -1;            // stokes type "U" index
-    int _stokes_v = -1;            // stokes type "V" index
     queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;       // only one disk access at a time
     TileCache _tile_cache;         // cache for full-resolution image tiles
