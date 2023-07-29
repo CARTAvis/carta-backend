@@ -272,7 +272,7 @@ protected:
     // For vector field calculation
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    bool GetImageCache(int image_cache_index, int z_index = ALL_Z);
+    bool GetImageCache(int image_cache_key, int z_index = ALL_Z);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
 
     // Setup

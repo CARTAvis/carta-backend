@@ -54,6 +54,9 @@
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
 
+#define FLOAT_NAN std::numeric_limits<float>::quiet_NaN()
+#define DOUBLE_NAN std::numeric_limits<double>::quiet_NaN()
+
 // AxisRange() defines the full axis ALL_Z
 // AxisRange(0) defines a single axis index, 0, in this example
 // AxisRange(0, 1) defines the axis range including [0, 1] in this example

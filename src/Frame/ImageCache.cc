@@ -30,8 +30,8 @@ std::unique_ptr<float[]>& ImageCache::GetData(int stokes) {
     return _data[stokes];
 }
 
-bool ImageCache::IsDataAvailable(int stokes) const {
-    return _data.count(stokes);
+bool ImageCache::IsDataAvailable(int key) const {
+    return _data.count(key);
 }
 
 int ImageCache::Size() const {
@@ -59,7 +59,7 @@ size_t ImageCache::StartIndex(int z_index, int stokes_index) const {
     return 0;
 }
 
-int ImageCache::CacheIndex(int stokes_index) const {
+int ImageCache::Key(int stokes_index) const {
     if (stokes_index == CURRENT_STOKES) {
         stokes_index = _stokes_index;
     }
@@ -67,7 +67,7 @@ int ImageCache::CacheIndex(int stokes_index) const {
     if (_cube_image_cache && !IsComputedStokes(stokes_index)) {
         return stokes_index;
     }
-    return -1;
+    return CURRENT_CHANNEL_STOKES;
 }
 
 float ImageCache::GetValue(size_t index, int stokes) {
@@ -75,57 +75,28 @@ float ImageCache::GetValue(size_t index, int stokes) {
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-                double val_q = _data[_stokes_q][index];
-                double val_u = _data[_stokes_u][index];
-                double val_v = _data[_stokes_v][index];
-                if (!std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
-                    double sum = std::pow(val_q, 2) + std::pow(val_u, 2) + std::pow(val_v, 2);
-                    return std::sqrt(sum);
-                }
+                return CalcPtotal(_data[_stokes_q][index], _data[_stokes_u][index], _data[_stokes_v][index]);
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             if (_stokes_q > -1 && _stokes_u > -1) {
-                double val_q = _data[_stokes_q][index];
-                double val_u = _data[_stokes_u][index];
-                if (!std::isnan(val_q) && !std::isnan(val_u)) {
-                    double sum = std::pow(val_q, 2) + std::pow(val_u, 2);
-                    return std::sqrt(sum);
-                }
+                return CalcPlinear(_data[_stokes_q][index], _data[_stokes_u][index]);
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-                double val_i = _data[_stokes_i][index];
-                double val_q = _data[_stokes_q][index];
-                double val_u = _data[_stokes_u][index];
-                double val_v = _data[_stokes_v][index];
-                if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
-                    double sum = std::pow(val_q, 2) + std::pow(val_u, 2) + std::pow(val_v, 2);
-                    return 100.0 * std::sqrt(sum) / val_i;
-                }
+                return CalcPFtotal(_data[_stokes_i][index], _data[_stokes_q][index], _data[_stokes_u][index], _data[_stokes_v][index]);
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
-                double val_i = _data[_stokes_i][index];
-                double val_q = _data[_stokes_q][index];
-                double val_u = _data[_stokes_u][index];
-                if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u)) {
-                    double sum = std::pow(val_q, 2) + std::pow(val_u, 2);
-                    return 100.0 * std::sqrt(sum) / val_i;
-                }
+                return CalcPFlinear(_data[_stokes_i][index], _data[_stokes_q][index], _data[_stokes_u][index]);
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             if (_stokes_q > -1 && _stokes_u > -1) {
-                double val_q = _data[_stokes_q][index];
-                double val_u = _data[_stokes_u][index];
-                if (!std::isnan(val_q) && !std::isnan(val_u)) {
-                    return (180.0 / casacore::C::pi) * atan2(val_u, val_q) / 2;
-                }
+                return CalcPangle(_data[_stokes_q][index], _data[_stokes_u][index]);
             }
         }
-        return std::numeric_limits<float>::quiet_NaN();
+        return FLOAT_NAN;
     }
-
-    return _data[CacheIndex(stokes)][index];
+    return _data[Key(stokes)][index];
 }
 
 bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
@@ -149,7 +120,7 @@ bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, P
 
 float* ImageCache::GetImageCacheData(int z, int stokes) {
     if (_cube_image_cache && IsComputedStokes(stokes)) {
-        _data[CacheIndex(stokes)] = std::make_unique<float[]>(_width * _height);
+        _data[CURRENT_CHANNEL_STOKES] = std::make_unique<float[]>(_width * _height);
 
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
@@ -157,15 +128,7 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = StartIndex(z, _stokes_q) + i;
-                    double val_q = _data[_stokes_q][idx];
-                    double val_u = _data[_stokes_u][idx];
-                    double val_v = _data[_stokes_v][idx];
-                    if (!std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
-                        double sum = std::pow(val_q, 2) + std::pow(val_u, 2) + std::pow(val_v, 2);
-                        _data[CacheIndex(stokes)][i] = std::sqrt(sum);
-                    } else {
-                        _data[CacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
-                    }
+                    _data[CURRENT_CHANNEL_STOKES][i] = CalcPtotal(_data[_stokes_q][idx], _data[_stokes_u][idx], _data[_stokes_v][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
@@ -173,14 +136,7 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = StartIndex(z, _stokes_q) + i;
-                    double val_q = _data[_stokes_q][idx];
-                    double val_u = _data[_stokes_u][idx];
-                    if (!std::isnan(val_q) && !std::isnan(val_u)) {
-                        double sum = std::pow(val_q, 2) + std::pow(val_u, 2);
-                        _data[CacheIndex(stokes)][i] = std::sqrt(sum);
-                    } else {
-                        _data[CacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
-                    }
+                    _data[CURRENT_CHANNEL_STOKES][i] = CalcPlinear(_data[_stokes_q][idx], _data[_stokes_u][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
@@ -188,16 +144,8 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = StartIndex(z, _stokes_i) + i;
-                    double val_i = _data[_stokes_i][idx];
-                    double val_q = _data[_stokes_q][idx];
-                    double val_u = _data[_stokes_u][idx];
-                    double val_v = _data[_stokes_v][idx];
-                    if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u) && !std::isnan(val_v)) {
-                        double sum = std::pow(val_q, 2) + std::pow(val_u, 2) + std::pow(val_v, 2);
-                        _data[CacheIndex(stokes)][i] = 100.0 * std::sqrt(sum) / val_i;
-                    } else {
-                        _data[CacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
-                    }
+                    _data[CURRENT_CHANNEL_STOKES][i] =
+                        CalcPFtotal(_data[_stokes_i][idx], _data[_stokes_q][idx], _data[_stokes_u][idx], _data[_stokes_v][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
@@ -205,15 +153,7 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = StartIndex(z, _stokes_i) + i;
-                    double val_i = _data[_stokes_i][idx];
-                    double val_q = _data[_stokes_q][idx];
-                    double val_u = _data[_stokes_u][idx];
-                    if (!std::isnan(val_i) && !std::isnan(val_q) && !std::isnan(val_u)) {
-                        double sum = std::pow(val_q, 2) + std::pow(val_u, 2);
-                        _data[CacheIndex(stokes)][i] = 100.0 * std::sqrt(sum) / val_i;
-                    } else {
-                        _data[CacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
-                    }
+                    _data[CURRENT_CHANNEL_STOKES][i] = CalcPFlinear(_data[_stokes_i][idx], _data[_stokes_q][idx], _data[_stokes_u][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
@@ -221,20 +161,13 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = StartIndex(z, _stokes_q) + i;
-                    double val_q = _data[_stokes_q][idx];
-                    double val_u = _data[_stokes_u][idx];
-                    if (!std::isnan(val_q) && !std::isnan(val_u)) {
-                        _data[CacheIndex(stokes)][i] = (180.0 / casacore::C::pi) * atan2(val_u, val_q) / 2;
-                    } else {
-                        _data[CacheIndex(stokes)][i] = std::numeric_limits<float>::quiet_NaN();
-                    }
+                    _data[CURRENT_CHANNEL_STOKES][i] = CalcPangle(_data[_stokes_q][idx], _data[_stokes_u][idx]);
                 }
             }
         }
-        return _data[CacheIndex(stokes)].get();
+        return _data[CURRENT_CHANNEL_STOKES].get();
     }
-
-    return _data[CacheIndex(stokes)].get() + StartIndex(z, stokes);
+    return _data[Key(stokes)].get() + StartIndex(z, stokes);
 }
 
 bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, double beam_area,
@@ -252,16 +185,16 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, dou
         size_t z_size = end - start + 1;
         bool has_flux = !std::isnan(beam_area);
 
-        profiles[CARTA::StatsType::Sum] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::FluxDensity] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::Mean] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::RMS] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::Sigma] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::SumSq] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::Min] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::Max] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::Extrema] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
-        profiles[CARTA::StatsType::NumPixels] = std::vector<double>(z_size, std::numeric_limits<double>::quiet_NaN());
+        profiles[CARTA::StatsType::Sum] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::FluxDensity] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::Mean] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::RMS] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::Sigma] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::SumSq] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::Min] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::Max] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::Extrema] = std::vector<double>(z_size, DOUBLE_NAN);
+        profiles[CARTA::StatsType::NumPixels] = std::vector<double>(z_size, DOUBLE_NAN);
 
 #pragma omp parallel for
         for (int z = start; z <= end; ++z) {

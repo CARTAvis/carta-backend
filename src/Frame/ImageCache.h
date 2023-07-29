@@ -12,7 +12,7 @@
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 
-#define FLOAT_NAN std::numeric_limits<float>::quiet_NaN()
+#define CURRENT_CHANNEL_STOKES -1
 
 namespace carta {
 
@@ -37,15 +37,12 @@ struct ImageCache {
     ImageCache();
 
     std::unique_ptr<float[]>& GetData(int stokes);
-    bool IsDataAvailable(int stokes) const;
+    bool IsDataAvailable(int key) const;
     int Size() const;
     float CubeImageSize() const;      // MB
     float UsedReservedMemory() const; // MB
     size_t StartIndex(int z_index = CURRENT_Z, int stokes_index = CURRENT_STOKES) const;
-
-    // Get image cache index (-1 for current channel and stokes, or stokes indices 0, 1, 2, or 3, except for computed stokes indices)
-    int CacheIndex(int stokes_index = CURRENT_STOKES) const;
-
+    int Key(int stokes_index = CURRENT_STOKES) const; // Get image cache key
     float GetValue(size_t index, int stokes = CURRENT_STOKES);
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);

@@ -393,9 +393,9 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
-    int image_cache_index = _image_cache.CacheIndex();
-    int z_index = image_cache_index < 0 ? CurrentZ() : ALL_Z;
-    if (GetImageCache(image_cache_index, z_index)) {
+    int image_cache_key = _image_cache.Key();
+    int z_index = image_cache_key == CURRENT_CHANNEL_STOKES ? CurrentZ() : ALL_Z;
+    if (GetImageCache(image_cache_key, z_index)) {
         auto dt = t.Elapsed();
         spdlog::performance(
             "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), dt.ms(), (float)(Width() * Height()) / dt.us());
@@ -2424,15 +2424,15 @@ float* Frame::GetImageCacheData(int z, int stokes) {
     return _image_cache.GetImageCacheData(z, stokes);
 }
 
-bool Frame::GetImageCache(int image_cache_index, int z_index) {
+bool Frame::GetImageCache(int image_cache_key, int z_index) {
     // Todo: Do we need a mutex here?
     // Update the image data cache for key = -1 (current channel and stokes), or > -1 (cube image data cache) if it does not exist
-    int stokes_index = image_cache_index < 0 ? CurrentStokes() : image_cache_index;
-    if (image_cache_index < 0 || !_image_cache.IsDataAvailable(image_cache_index)) {
+    int stokes_index = image_cache_key == CURRENT_CHANNEL_STOKES ? CurrentStokes() : image_cache_key;
+    if (image_cache_key == CURRENT_CHANNEL_STOKES || !_image_cache.IsDataAvailable(image_cache_key)) {
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z_index), stokes_index);
         auto image_data_size = stokes_slicer.slicer.length().product();
-        _image_cache.GetData(image_cache_index) = std::make_unique<float[]>(image_data_size);
-        if (!GetSlicerData(stokes_slicer, _image_cache.GetData(image_cache_index).get())) {
+        _image_cache.GetData(image_cache_key) = std::make_unique<float[]>(image_data_size);
+        if (!GetSlicerData(stokes_slicer, _image_cache.GetData(image_cache_key).get())) {
             spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
             return false;
         }

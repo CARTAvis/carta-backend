@@ -55,7 +55,6 @@ static std::unordered_map<int, casacore::Stokes::StokesTypes> StokesTypesToCasac
 
 int GetStokesValue(const CARTA::PolarizationType& stokes_type);
 CARTA::PolarizationType GetStokesType(int stokes_value);
-casacore::Stokes::StokesTypes GetCasacoreStokesValue(const CARTA::PolarizationType& stokes_type);
 bool IsComputedStokes(int stokes);
 bool IsComputedStokes(const std::string& stokes);
 
@@ -93,5 +92,12 @@ struct StokesSource {
         return false;
     }
 };
+
+// Get computed stokes value
+float CalcPtotal(float val_q, float val_u, float val_v);
+float CalcPlinear(float val_q, float val_u);
+float CalcPFtotal(float val_i, float val_q, float val_u, float val_v);
+float CalcPFlinear(float val_i, float val_q, float val_u);
+float CalcPangle(float val_q, float val_u);
 
 #endif // CARTA_BACKEND__UTIL_STOKES_H_
