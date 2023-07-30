@@ -170,9 +170,8 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
     return _data[Key(stokes)].get() + StartIndex(z, stokes);
 }
 
-bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, double beam_area,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     if (!mask.shape().empty() && _cube_image_cache) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x_min = origin(0);
@@ -183,7 +182,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, dou
         int start = z_range.from;
         int end = z_range.to;
         size_t z_size = end - start + 1;
-        bool has_flux = !std::isnan(beam_area);
+        bool has_flux = !std::isnan(_beam_area);
 
         profiles[CARTA::StatsType::Sum] = std::vector<double>(z_size, DOUBLE_NAN);
         profiles[CARTA::StatsType::FluxDensity] = std::vector<double>(z_size, DOUBLE_NAN);
@@ -240,7 +239,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, dou
                 profiles[CARTA::StatsType::NumPixels][idx] = num_pixels;
 
                 if (has_flux) {
-                    profiles[CARTA::StatsType::FluxDensity][idx] = sum / beam_area;
+                    profiles[CARTA::StatsType::FluxDensity][idx] = sum / _beam_area;
                 }
             }
         }

@@ -77,6 +77,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
+
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
     _image_cache._width = _image_shape(_x_axis);
     _image_cache._height = _image_shape(_y_axis);
     _image_cache._depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
@@ -86,19 +90,29 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
         if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
             spdlog::info("Cache the whole cube image data.");
-            _image_cache._cube_image_cache = true;
             for (int stokes = 0; stokes < NumStokes(); ++stokes) {
-                GetImageCache(stokes, ALL_Z);
+                if (!GetImageCache(stokes, ALL_Z)) {
+                    return;
+                }
             }
+
+            _image_cache._cube_image_cache = true;
+            _image_cache_valid = true;
+
             // Get stokes type indices
             GetStokesTypeIndex("I", _image_cache._stokes_i);
             GetStokesTypeIndex("Q", _image_cache._stokes_q);
             GetStokesTypeIndex("U", _image_cache._stokes_u);
             GetStokesTypeIndex("V", _image_cache._stokes_v);
+
+            // Get beam area
+            _image_cache._beam_area = _loader->CalculateBeamArea();
         }
     } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
         spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", _image_cache.CubeImageSize());
     }
+
+    cache_lock.release();
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
@@ -382,10 +396,16 @@ bool Frame::SetCursor(float x, float y) {
 }
 
 bool Frame::FillImageCache() {
-    // get image data for z, stokes
-
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
+    // Exit early if the image cache is for the whole cube image data
+    if (_image_cache._cube_image_cache) {
+        _image_cache_valid = true;
+        return true;
+    }
+
+    // get image data for current z, stokes
 
     // Exit early *after* acquiring lock if the cache has already been loaded by another thread
     if (_image_cache_valid) {
@@ -393,9 +413,7 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
-    int image_cache_key = _image_cache.Key();
-    int z_index = image_cache_key == CURRENT_CHANNEL_STOKES ? CurrentZ() : ALL_Z;
-    if (GetImageCache(image_cache_key, z_index)) {
+    if (GetImageCache(CURRENT_CHANNEL_STOKES, CurrentZ())) {
         auto dt = t.Elapsed();
         spdlog::performance(
             "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), dt.ms(), (float)(Width() * Height()) / dt.us());
@@ -2425,7 +2443,6 @@ float* Frame::GetImageCacheData(int z, int stokes) {
 }
 
 bool Frame::GetImageCache(int image_cache_key, int z_index) {
-    // Todo: Do we need a mutex here?
     // Update the image data cache for key = -1 (current channel and stokes), or > -1 (cube image data cache) if it does not exist
     int stokes_index = image_cache_key == CURRENT_CHANNEL_STOKES ? CurrentStokes() : image_cache_key;
     if (image_cache_key == CURRENT_CHANNEL_STOKES || !_image_cache.IsDataAvailable(image_cache_key)) {
@@ -2450,8 +2467,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
 
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    double beam_area = _loader->CalculateBeamArea();
-    return _image_cache.GetRegionSpectralData(z_range, stokes, beam_area, mask, origin, profiles);
+    return _image_cache.GetRegionSpectralData(z_range, stokes, mask, origin, profiles);
 }
 
 } // namespace carta
