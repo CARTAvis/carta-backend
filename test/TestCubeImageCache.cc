@@ -18,7 +18,7 @@ using namespace carta;
 static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 static const double ONE_MILLION = 1.0e6;
 static const std::vector<std::string> STOKES_TYPES = {"I", "Q", "U", "V", "Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
-static const std::vector<int> IMAGE_DIMS = {10, 10, 100, 4};
+static const std::vector<int> IMAGE_DIMS = {100, 100, 1000, 4};
 
 class TestFrame : public Frame {
 public:
@@ -186,6 +186,55 @@ public:
             EXPECT_EQ(y_vals.size(), y_size);
             CmpVectors(y_vals, reader->ReadProfileY(x, channel, stokes));
         }
+    }
+
+    static std::vector<CARTA::SpatialProfileData> GetSpatialProfile4D(const FileType file_type, const std::string& path_string,
+        const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+        if (dims.size() < 4) {
+            return std::vector<CARTA::SpatialProfileData>();
+        }
+        int x_size = dims[0];
+        int y_size = dims[1];
+        int z_size = dims[2];
+        int stokes_size = dims[3];
+
+        std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
+        int reserved_memory = cube_image_cache ? std::ceil(x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        int default_channel(0);
+
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
+
+        std::unique_ptr<DataReader> reader;
+        if (file_type == FileType::FITS) {
+            reader = std::make_unique<FitsDataReader>(path_string);
+        } else {
+            reader = std::make_unique<Hdf5DataReader>(path_string);
+        }
+
+        int x(4), y(6);
+        int channel(5);
+        int stokes(0);
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config, stokes));
+
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+            Message::SpatialConfig(stokes_config + "x"), Message::SpatialConfig(stokes_config + "y")};
+        frame->SetSpatialRequirements(profiles);
+        frame->SetCursor(x, y);
+        std::string msg;
+        frame->SetImageChannels(channel, stokes, msg);
+
+        std::vector<CARTA::SpatialProfileData> data_vec;
+
+        Timer t;
+
+        frame->FillSpatialProfileData(data_vec);
+
+        auto dt = t.Elapsed();
+        std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
+        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
+        fmt::print("{}{} Elapsed time for getting cursor spatial profile ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
+
+        return data_vec;
     }
 
     static std::vector<float> CursorSpectralProfile3D(
@@ -559,6 +608,16 @@ TEST_F(CubeImageCacheTest, SpatialProfile4D) {
 
         SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, false);
         SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, true);
+    }
+
+    for (auto stokes : STOKES_TYPES) {
+        auto results1 = GetSpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, false);
+        auto results2 = GetSpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, true);
+        CmpSpatialProfiles(results1, results2);
+
+        auto results3 = GetSpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, false);
+        auto results4 = GetSpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, true);
+        CmpSpatialProfiles(results3, results4);
     }
 }
 

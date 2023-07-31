@@ -42,14 +42,11 @@ float ImageCache::UsedReservedMemory() const {
     return cube_image_cache ? CubeImageSize() : 0.0;
 }
 
-size_t ImageCache::StartIndex(int z_index_, int stokes_index_) const {
-    if (stokes_index_ == CURRENT_STOKES) {
-        stokes_index_ = stokes_index;
-    }
-    if (z_index_ == CURRENT_Z) {
-        z_index_ = z_index;
-    }
-    if (cube_image_cache && !IsComputedStokes(stokes_index_)) {
+size_t ImageCache::StartIndex(int z_index_) const {
+    if (cube_image_cache) {
+        if (z_index_ == CURRENT_Z) {
+            z_index_ = z_index;
+        }
         return width * height * (size_t)z_index_;
     }
     return 0;
@@ -67,6 +64,9 @@ int ImageCache::Key(int stokes_index_) const {
 }
 
 float ImageCache::GetValue(size_t index, int stokes) {
+    if (stokes == CURRENT_STOKES) {
+        stokes = stokes_index;
+    }
     if (cube_image_cache && IsComputedStokes(stokes)) {
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
@@ -115,15 +115,23 @@ bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, P
 }
 
 float* ImageCache::GetImageCacheData(int z, int stokes) {
+    if (z == CURRENT_Z) {
+        z = z_index;
+    }
+    if (stokes == CURRENT_STOKES) {
+        stokes = stokes_index;
+    }
+
     if (cube_image_cache && IsComputedStokes(stokes)) {
         data[CURRENT_CHANNEL_STOKES] = std::make_unique<float[]>(width * height);
 
         auto stokes_type = StokesTypes[stokes];
+        size_t start_idx = z * width * height;
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
-                    size_t idx = StartIndex(z, stokes_q) + i;
+                    size_t idx = start_idx + i;
                     data[CURRENT_CHANNEL_STOKES][i] = CalcPtotal(data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
                 }
             }
@@ -131,7 +139,7 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
             if (stokes_q > -1 && stokes_u > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
-                    size_t idx = StartIndex(z, stokes_q) + i;
+                    size_t idx = start_idx + i;
                     data[CURRENT_CHANNEL_STOKES][i] = CalcPlinear(data[stokes_q][idx], data[stokes_u][idx]);
                 }
             }
@@ -139,7 +147,7 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
             if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
-                    size_t idx = StartIndex(z, stokes_i) + i;
+                    size_t idx = start_idx + i;
                     data[CURRENT_CHANNEL_STOKES][i] =
                         CalcPFtotal(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
                 }
@@ -148,7 +156,7 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
             if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
-                    size_t idx = StartIndex(z, stokes_i) + i;
+                    size_t idx = start_idx + i;
                     data[CURRENT_CHANNEL_STOKES][i] = CalcPFlinear(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx]);
                 }
             }
@@ -156,14 +164,14 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
             if (stokes_q > -1 && stokes_u > -1) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
-                    size_t idx = StartIndex(z, stokes_q) + i;
+                    size_t idx = start_idx + i;
                     data[CURRENT_CHANNEL_STOKES][i] = CalcPangle(data[stokes_q][idx], data[stokes_u][idx]);
                 }
             }
         }
         return data[CURRENT_CHANNEL_STOKES].get();
     }
-    return data[Key(stokes)].get() + StartIndex(z, stokes);
+    return data[Key(stokes)].get() + StartIndex(z);
 }
 
 bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

@@ -105,10 +105,11 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
             _image_cache_valid = true;
 
             // Get stokes type indices
-            GetStokesTypeIndex("I", _image_cache.stokes_i);
-            GetStokesTypeIndex("Q", _image_cache.stokes_q);
-            GetStokesTypeIndex("U", _image_cache.stokes_u);
-            GetStokesTypeIndex("V", _image_cache.stokes_v);
+            bool mute_err_msg(true);
+            GetStokesTypeIndex("I", _image_cache.stokes_i, mute_err_msg);
+            GetStokesTypeIndex("Q", _image_cache.stokes_q, mute_err_msg);
+            GetStokesTypeIndex("U", _image_cache.stokes_u, mute_err_msg);
+            GetStokesTypeIndex("V", _image_cache.stokes_v, mute_err_msg);
 
             // Get beam area
             _image_cache._beam_area = _loader->CalculateBeamArea();
@@ -1280,17 +1281,18 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                         profile.reserve(end - start);
 
                         if (config.coordinate().back() == 'x') {
-                            auto x_start = y * Width();
+                            auto x_start = _image_cache.StartIndex() + y * Width();
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                size_t idx = _image_cache.StartIndex() + x_start + j;
+                                size_t idx = x_start + j;
                                 profile.push_back(_image_cache.GetValue(idx));
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+                            size_t start_idx = _image_cache.StartIndex();
                             for (unsigned int j = start; j < end; ++j) {
-                                size_t idx = _image_cache.StartIndex() + (j * Width()) + x;
+                                size_t idx = start_idx + (j * Width()) + x;
                                 profile.push_back(_image_cache.GetValue(idx));
                             }
                             cache_lock.release();
@@ -2247,7 +2249,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
     return casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
 }
 
-bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
+bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg) {
     // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
     bool is_stokes_string = StokesStringTypes.find(coordinate) != StokesStringTypes.end();
     bool is_combination = (coordinate.size() > 1 && (coordinate.back() == 'x' || coordinate.back() == 'y' || coordinate.back() == 'z'));
@@ -2278,7 +2280,7 @@ bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index) {
                 }
             }
         }
-        if (!stokes_ok) {
+        if (!stokes_ok && !mute_err_msg) {
             spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
             return false;
         }

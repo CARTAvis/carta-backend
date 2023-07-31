@@ -382,12 +382,12 @@ std::vector<float> GetSpatialProfileValues(const CARTA::SpatialProfile& profile)
     return values;
 }
 
-void CmpSpatialProfiles(
-    const std::vector<CARTA::SpatialProfileData>& data_vec, const std::pair<std::vector<float>, std::vector<float>>& data_profiles) {
-    EXPECT_EQ(data_vec.size(), 1);
-    for (const auto& data : data_vec) {
-        CmpVectors(GetSpatialProfileValues(data.profiles(0)), data_profiles.first);
-        CmpVectors(GetSpatialProfileValues(data.profiles(1)), data_profiles.second);
+void CmpSpatialProfiles(const std::vector<CARTA::SpatialProfileData>& data_vec1, const std::vector<CARTA::SpatialProfileData>& data_vec2) {
+    EXPECT_EQ(data_vec1.size(), 1);
+    EXPECT_EQ(data_vec2.size(), 1);
+    if (data_vec1.size() == data_vec2.size()) {
+        CmpVectors(GetSpatialProfileValues(data_vec1[0].profiles(0)), GetSpatialProfileValues(data_vec2[0].profiles(0)));
+        CmpVectors(GetSpatialProfileValues(data_vec1[0].profiles(1)), GetSpatialProfileValues(data_vec2[0].profiles(1)));
     }
 }
 

@@ -43,9 +43,9 @@ struct ImageCache {
     float CubeImageSize() const;                       // MB
     float UsedReservedMemory() const;                  // MB
 
-    size_t StartIndex(int z_index_ = CURRENT_Z, int stokes_index_ = CURRENT_STOKES) const;
+    size_t StartIndex(int z_index_ = CURRENT_Z) const;
     float GetValue(size_t index, int stokes = CURRENT_STOKES);
-    float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
+    float* GetImageCacheData(int z, int stokes);
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);

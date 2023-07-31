@@ -203,7 +203,7 @@ public:
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
         std::shared_ptr<Region> image_region);
 
-    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index);
+    bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg = false);
     std::string GetStokesType(int stokes_index);
 
     std::shared_mutex& GetActiveTaskMutex();
