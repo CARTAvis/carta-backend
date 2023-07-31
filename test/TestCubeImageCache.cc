@@ -117,8 +117,8 @@ public:
         }
     }
 
-    static void SpatialProfile4D(
-        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+    static void SpatialProfile4D(const FileType file_type, const std::string& path_string, const std::vector<int>& dims,
+        std::string stokes_config, bool cube_image_cache) {
         if (dims.size() < 4) {
             return;
         }
@@ -136,7 +136,7 @@ public:
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for creating the Frame object: {:.3f} ms.\n", file, prefix, dt.ms());
+        fmt::print("{}{} Elapsed time for creating the Frame object ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
 
         std::unique_ptr<DataReader> reader;
         if (file_type == FileType::FITS) {
@@ -147,10 +147,11 @@ public:
 
         int x(4), y(6);
         int channel(5);
-        int stokes(2);
-        int spatial_config_stokes(1); // set spatial config coordinate = {"Qx", "Qy"}
+        int stokes(0);
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config, stokes));
 
-        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {Message::SpatialConfig("Qx"), Message::SpatialConfig("Qy")};
+        std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+            Message::SpatialConfig(stokes_config + "x"), Message::SpatialConfig(stokes_config + "y")};
         frame->SetSpatialRequirements(profiles);
         frame->SetCursor(x, y);
         std::string msg;
@@ -165,8 +166,8 @@ public:
             EXPECT_EQ(data.x(), x);
             EXPECT_EQ(data.y(), y);
             EXPECT_EQ(data.channel(), channel);
-            EXPECT_EQ(data.stokes(), spatial_config_stokes);
-            CmpValues(data.value(), reader->ReadPointXY(x, y, channel, spatial_config_stokes));
+            EXPECT_EQ(data.stokes(), stokes);
+            CmpValues(data.value(), reader->ReadPointXY(x, y, channel, stokes));
             EXPECT_EQ(data.profiles_size(), 2);
 
             auto [x_profile, y_profile] = GetProfiles(data);
@@ -176,14 +177,14 @@ public:
             EXPECT_EQ(x_profile.mip(), 0);
             auto x_vals = GetSpatialProfileValues(x_profile);
             EXPECT_EQ(x_vals.size(), x_size);
-            CmpVectors(x_vals, reader->ReadProfileX(y, channel, spatial_config_stokes));
+            CmpVectors(x_vals, reader->ReadProfileX(y, channel, stokes));
 
             EXPECT_EQ(y_profile.start(), 0);
             EXPECT_EQ(y_profile.end(), y_size);
             EXPECT_EQ(y_profile.mip(), 0);
             auto y_vals = GetSpatialProfileValues(y_profile);
             EXPECT_EQ(y_vals.size(), y_size);
-            CmpVectors(y_vals, reader->ReadProfileY(x, channel, spatial_config_stokes));
+            CmpVectors(y_vals, reader->ReadProfileY(x, channel, stokes));
         }
     }
 
@@ -250,31 +251,7 @@ public:
         int x(4), y(6);
         int channel(5);
         int stokes(0);
-
-        std::string pol;
-        if (stokes_config_z.size() > 1 && stokes_config_z.back() == 'z') {
-            pol = stokes_config_z.substr(0, stokes_config_z.size() - 1);
-        } else {
-            pol = stokes_config_z;
-        }
-
-        if (pol == "Q") {
-            stokes = 1;
-        } else if (pol == "U") {
-            stokes = 2;
-        } else if (pol == "V") {
-            stokes = 3;
-        } else if (pol == "Ptotal") {
-            stokes = COMPUTE_STOKES_PTOTAL;
-        } else if (pol == "PFtotal") {
-            stokes = COMPUTE_STOKES_PFTOTAL;
-        } else if (pol == "Plinear") {
-            stokes = COMPUTE_STOKES_PLINEAR;
-        } else if (pol == "PFlinear") {
-            stokes = COMPUTE_STOKES_PFLINEAR;
-        } else if (pol == "Pangle") {
-            stokes = COMPUTE_STOKES_PANGLE;
-        }
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config_z, stokes));
 
         std::string msg;
         frame->SetCursor(x, y);
@@ -320,31 +297,7 @@ public:
 
         int channel(5);
         int stokes(0);
-
-        std::string pol;
-        if (stokes_config_z.size() > 1 && stokes_config_z.back() == 'z') {
-            pol = stokes_config_z.substr(0, stokes_config_z.size() - 1);
-        } else {
-            pol = stokes_config_z;
-        }
-
-        if (pol == "Q") {
-            stokes = 1;
-        } else if (pol == "U") {
-            stokes = 2;
-        } else if (pol == "V") {
-            stokes = 3;
-        } else if (pol == "Ptotal") {
-            stokes = COMPUTE_STOKES_PTOTAL;
-        } else if (pol == "PFtotal") {
-            stokes = COMPUTE_STOKES_PFTOTAL;
-        } else if (pol == "Plinear") {
-            stokes = COMPUTE_STOKES_PLINEAR;
-        } else if (pol == "PFlinear") {
-            stokes = COMPUTE_STOKES_PFLINEAR;
-        } else if (pol == "Pangle") {
-            stokes = COMPUTE_STOKES_PANGLE;
-        }
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config_z, stokes));
 
         std::string msg;
         frame->SetImageChannels(channel, stokes, msg);
@@ -403,26 +356,7 @@ public:
 
         int channel(0);
         int stokes(0);
-
-        if (stokes_config == "I") {
-            stokes = 0;
-        } else if (stokes_config == "Q") {
-            stokes = 1;
-        } else if (stokes_config == "U") {
-            stokes = 2;
-        } else if (stokes_config == "V") {
-            stokes = 3;
-        } else if (stokes_config == "Ptotal") {
-            stokes = COMPUTE_STOKES_PTOTAL;
-        } else if (stokes_config == "PFtotal") {
-            stokes = COMPUTE_STOKES_PFTOTAL;
-        } else if (stokes_config == "Plinear") {
-            stokes = COMPUTE_STOKES_PLINEAR;
-        } else if (stokes_config == "PFlinear") {
-            stokes = COMPUTE_STOKES_PFLINEAR;
-        } else if (stokes_config == "Pangle") {
-            stokes = COMPUTE_STOKES_PANGLE;
-        }
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config, stokes));
 
         std::string msg;
         frame->SetImageChannels(channel, stokes, msg);
@@ -482,31 +416,7 @@ public:
 
         int channel(5);
         int stokes(0);
-
-        std::string pol;
-        if (stokes_config_z.size() > 1 && stokes_config_z.back() == 'z') {
-            pol = stokes_config_z.substr(0, stokes_config_z.size() - 1);
-        } else {
-            pol = stokes_config_z;
-        }
-
-        if (pol == "Q") {
-            stokes = 1;
-        } else if (pol == "U") {
-            stokes = 2;
-        } else if (pol == "V") {
-            stokes = 3;
-        } else if (pol == "Ptotal") {
-            stokes = COMPUTE_STOKES_PTOTAL;
-        } else if (pol == "PFtotal") {
-            stokes = COMPUTE_STOKES_PFTOTAL;
-        } else if (pol == "Plinear") {
-            stokes = COMPUTE_STOKES_PLINEAR;
-        } else if (pol == "PFlinear") {
-            stokes = COMPUTE_STOKES_PFLINEAR;
-        } else if (pol == "Pangle") {
-            stokes = COMPUTE_STOKES_PANGLE;
-        }
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config_z, stokes));
 
         std::string msg;
         frame->SetImageChannels(channel, stokes, msg);
@@ -604,26 +514,7 @@ public:
 
         int channel(0);
         int stokes(0);
-
-        if (stokes_config == "I") {
-            stokes = 0;
-        } else if (stokes_config == "Q") {
-            stokes = 1;
-        } else if (stokes_config == "U") {
-            stokes = 2;
-        } else if (stokes_config == "V") {
-            stokes = 3;
-        } else if (stokes_config == "Ptotal") {
-            stokes = COMPUTE_STOKES_PTOTAL;
-        } else if (stokes_config == "PFtotal") {
-            stokes = COMPUTE_STOKES_PFTOTAL;
-        } else if (stokes_config == "Plinear") {
-            stokes = COMPUTE_STOKES_PLINEAR;
-        } else if (stokes_config == "PFlinear") {
-            stokes = COMPUTE_STOKES_PFLINEAR;
-        } else if (stokes_config == "Pangle") {
-            stokes = COMPUTE_STOKES_PANGLE;
-        }
+        EXPECT_TRUE(frame->GetStokesTypeIndex(stokes_config, stokes));
 
         std::string msg;
         frame->SetImageChannels(channel, stokes, msg);
@@ -638,7 +529,7 @@ public:
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for getting image pixel data  ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for getting image pixel data ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
 
         return results;
     }
@@ -661,11 +552,14 @@ TEST_F(CubeImageCacheTest, SpatialProfile4D) {
     auto fits_path_string = GeneratedFitsImagePath(image_dims_str, IMAGE_OPTS);
     auto hdf5_path_string = GeneratedHdf5ImagePath(image_dims_str, IMAGE_OPTS);
 
-    SpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, false);
-    SpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, true);
+    std::vector<std::string> normal_stokes = {"I", "Q", "U", "V"};
+    for (auto stokes : normal_stokes) {
+        SpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, false);
+        SpatialProfile4D(FileType::FITS, fits_path_string, IMAGE_DIMS, stokes, true);
 
-    SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, false);
-    SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, true);
+        SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, false);
+        SpatialProfile4D(FileType::HDF5, hdf5_path_string, IMAGE_DIMS, stokes, true);
+    }
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
