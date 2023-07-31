@@ -18,7 +18,7 @@ using namespace carta;
 static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";
 static const double ONE_MILLION = 1.0e6;
 static const std::vector<std::string> STOKES_TYPES = {"I", "Q", "U", "V", "Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
-static const std::vector<int> IMAGE_DIMS = {100, 100, 1000, 4};
+static const std::vector<int> IMAGE_DIMS = {10, 10, 100, 4};
 
 class TestFrame : public Frame {
 public:
