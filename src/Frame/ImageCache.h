@@ -17,39 +17,38 @@
 namespace carta {
 
 struct ImageCache {
-    size_t _width;
-    size_t _height;
-    size_t _depth;
-    size_t _num_stokes;
-    int _stokes_index; // current stokes index
-    int _z_index;      // current channel
-    int _stokes_i;     // stokes type "I" index
-    int _stokes_q;     // stokes type "Q" index
-    int _stokes_u;     // stokes type "U" index
-    int _stokes_v;     // stokes type "V" index
+    size_t width;
+    size_t height;
+    size_t depth;
+    size_t num_stokes;
+    int stokes_index; // current stokes index
+    int z_index;      // current channel
+    int stokes_i;     // stokes type "I" index
+    int stokes_q;     // stokes type "Q" index
+    int stokes_u;     // stokes type "U" index
+    int stokes_v;     // stokes type "V" index
     double _beam_area;
-    bool _cube_image_cache; // if true, cache the whole cube image. Otherwise, only cache a channel image
+    bool cube_image_cache; // if true, cache the whole cube image. Otherwise, only cache a channel image
 
     // Map of image caches
     // key = -1: image cache of the current channel and stokes data
     // key > -1: image cache of all channels data with respect to the stokes index, e.g., 0, 1, 2, or 3 (except for computed stokes indices)
-    std::unordered_map<int, std::unique_ptr<float[]>> _data;
+    std::unordered_map<int, std::unique_ptr<float[]>> data;
 
     ImageCache();
 
-    std::unique_ptr<float[]>& GetData(int stokes);
-    bool IsDataAvailable(int key) const;
-    int Size() const;
-    float CubeImageSize() const;      // MB
-    float UsedReservedMemory() const; // MB
+    int Key(int stokes_index_ = CURRENT_STOKES) const; // Get the key of the image cache map with respect to the stokes index
+    bool Exist(int key) const;                         // Does the key of image cache map exist
+    int Size() const;                                  // Size of the image cache map
+    float CubeImageSize() const;                       // MB
+    float UsedReservedMemory() const;                  // MB
+
+    size_t StartIndex(int z_index_ = CURRENT_Z, int stokes_index_ = CURRENT_STOKES) const;
+    float GetValue(size_t index, int stokes = CURRENT_STOKES);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
-
-    size_t StartIndex(int z_index = CURRENT_Z, int stokes_index = CURRENT_STOKES) const;
-    int Key(int stokes_index = CURRENT_STOKES) const; // Get image cache key
-    float GetValue(size_t index, int stokes = CURRENT_STOKES);
 };
 
 } // namespace carta
