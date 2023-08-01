@@ -37,13 +37,13 @@ struct ImageCache {
 
     ImageCache();
 
-    int Key(int stokes_index_) const; // Get the key of the image cache map with respect to the stokes index
+    int Key(int stokes) const;        // Get the key of the image cache map with respect to the stokes index
     bool Exist(int key) const;        // Does the key of image cache map exist
     int Size() const;                 // Size of the image cache map
     float CubeImageSize() const;      // MB
     float UsedReservedMemory() const; // MB
 
-    size_t StartIndex(int z_index_) const;
+    size_t StartIndex(int z) const;
     float GetValue(int x, int y, int z, int stokes);
     float* GetImageCacheData(int z, int stokes);
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
