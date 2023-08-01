@@ -21,12 +21,12 @@ struct ImageCache {
     size_t height;
     size_t depth;
     size_t num_stokes;
-    int stokes_index; // current stokes index
-    int z_index;      // current channel
-    int stokes_i;     // stokes type "I" index
-    int stokes_q;     // stokes type "Q" index
-    int stokes_u;     // stokes type "U" index
-    int stokes_v;     // stokes type "V" index
+    int cur_stokes; // current stokes index
+    int cur_z;      // current channel
+    int stokes_i;   // stokes type "I" index
+    int stokes_q;   // stokes type "Q" index
+    int stokes_u;   // stokes type "U" index
+    int stokes_v;   // stokes type "V" index
     double _beam_area;
     bool cube_image_cache; // if true, cache the whole cube image. Otherwise, only cache a channel image
 
@@ -37,14 +37,14 @@ struct ImageCache {
 
     ImageCache();
 
-    int Key(int stokes_index_ = CURRENT_STOKES) const; // Get the key of the image cache map with respect to the stokes index
-    bool Exist(int key) const;                         // Does the key of image cache map exist
-    int Size() const;                                  // Size of the image cache map
-    float CubeImageSize() const;                       // MB
-    float UsedReservedMemory() const;                  // MB
+    int Key(int stokes_index_) const; // Get the key of the image cache map with respect to the stokes index
+    bool Exist(int key) const;        // Does the key of image cache map exist
+    int Size() const;                 // Size of the image cache map
+    float CubeImageSize() const;      // MB
+    float UsedReservedMemory() const; // MB
 
-    size_t StartIndex(int z_index_ = CURRENT_Z) const;
-    float GetValue(size_t index, int stokes = CURRENT_STOKES);
+    size_t StartIndex(int z_index_) const;
+    float GetValue(int x, int y, int z, int stokes);
     float* GetImageCacheData(int z, int stokes);
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

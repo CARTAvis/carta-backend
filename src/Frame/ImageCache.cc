@@ -18,8 +18,8 @@ ImageCache::ImageCache()
       height(-1),
       depth(-1),
       num_stokes(-1),
-      stokes_index(DEFAULT_STOKES),
-      z_index(0),
+      cur_stokes(DEFAULT_STOKES),
+      cur_z(0),
       stokes_i(-1),
       stokes_q(-1),
       stokes_u(-1),
@@ -44,18 +44,12 @@ float ImageCache::UsedReservedMemory() const {
 
 size_t ImageCache::StartIndex(int z_index_) const {
     if (cube_image_cache) {
-        if (z_index_ == CURRENT_Z) {
-            z_index_ = z_index;
-        }
         return width * height * (size_t)z_index_;
     }
     return 0;
 }
 
 int ImageCache::Key(int stokes_index_) const {
-    if (stokes_index_ == CURRENT_STOKES) {
-        stokes_index_ = stokes_index;
-    }
     // Only return non-computed stokes index, since we only cache cube image data for existing stokes types from the file
     if (cube_image_cache && !IsComputedStokes(stokes_index_)) {
         return stokes_index_;
@@ -63,10 +57,13 @@ int ImageCache::Key(int stokes_index_) const {
     return CURRENT_CHANNEL_STOKES;
 }
 
-float ImageCache::GetValue(size_t index, int stokes) {
-    if (stokes == CURRENT_STOKES) {
-        stokes = stokes_index;
+float ImageCache::GetValue(int x, int y, int z, int stokes) {
+    // Get the index of image cache
+    size_t index = width * y + x;
+    if (cube_image_cache) {
+        index += width * height * z;
     }
+
     if (cube_image_cache && IsComputedStokes(stokes)) {
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
@@ -104,8 +101,7 @@ bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, P
             profile.resize(depth);
 #pragma omp parallel for
             for (int z = 0; z < depth; ++z) {
-                size_t idx = (z * width * height) + (width * y + x);
-                profile[z] = GetValue(idx, stokes);
+                profile[z] = GetValue(x, y, z, stokes);
             }
             return true;
         }
@@ -116,10 +112,10 @@ bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, P
 
 float* ImageCache::GetImageCacheData(int z, int stokes) {
     if (z == CURRENT_Z) {
-        z = z_index;
+        z = cur_z;
     }
     if (stokes == CURRENT_STOKES) {
-        stokes = stokes_index;
+        stokes = cur_stokes;
     }
 
     if (cube_image_cache && IsComputedStokes(stokes)) {
@@ -213,8 +209,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, con
 
             for (int x = x_min; x < x_min + mask_width; ++x) {
                 for (int y = y_min; y < y_min + mask_height; ++y) {
-                    size_t idx = (z * width * height) + (width * y + x);
-                    double val = GetValue(idx, stokes);
+                    double val = GetValue(x, y, z, stokes);
                     if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
                         sum += val;
                         sum_sq += val * val;

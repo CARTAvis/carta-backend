@@ -47,7 +47,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
 
     // Set default channel
-    _image_cache.z_index = default_z;
+    _image_cache.cur_z = default_z;
 
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -204,11 +204,11 @@ size_t Frame::NumStokes() const {
 }
 
 int Frame::CurrentZ() const {
-    return _image_cache.z_index;
+    return _image_cache.cur_z;
 }
 
 int Frame::CurrentStokes() const {
-    return _image_cache.stokes_index;
+    return _image_cache.cur_stokes;
 }
 
 int Frame::SpectralAxis() {
@@ -368,8 +368,8 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             bool z_ok(CheckZ(new_z));
             bool stokes_ok(CheckStokes(new_stokes));
             if (z_ok && stokes_ok) {
-                _image_cache.z_index = new_z;
-                _image_cache.stokes_index = new_stokes;
+                _image_cache.cur_z = new_z;
+                _image_cache.cur_stokes = new_stokes;
 
                 // invalidate the image cache
                 InvalidateImageCache();
@@ -1111,8 +1111,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (_image_cache_valid) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        size_t idx = _image_cache.StartIndex() + (y * Width()) + x;
-        cursor_value_with_current_stokes = _image_cache.GetValue(idx);
+        cursor_value_with_current_stokes = _image_cache.GetValue(x, y, CurrentZ(), CurrentStokes());
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
@@ -1281,19 +1280,15 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                         profile.reserve(end - start);
 
                         if (config.coordinate().back() == 'x') {
-                            auto x_start = _image_cache.StartIndex() + y * Width();
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                size_t idx = x_start + j;
-                                profile.push_back(_image_cache.GetValue(idx));
+                                profile.push_back(_image_cache.GetValue(j, y, CurrentZ(), CurrentStokes()));
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-                            size_t start_idx = _image_cache.StartIndex();
                             for (unsigned int j = start; j < end; ++j) {
-                                size_t idx = start_idx + (j * Width()) + x;
-                                profile.push_back(_image_cache.GetValue(idx));
+                                profile.push_back(_image_cache.GetValue(x, j, CurrentZ(), CurrentStokes()));
                             }
                             cache_lock.release();
                         }
@@ -2453,11 +2448,11 @@ bool Frame::IsCubeImageCache() const {
     return _image_cache.cube_image_cache;
 }
 
-bool Frame::GetImageCache(int key, int z_index) {
+bool Frame::GetImageCache(int key, int z) {
     // Update the image data cache for key = -1 (current channel and stokes), or > -1 (cube image data cache) if it does not exist
-    int stokes_index = key == CURRENT_CHANNEL_STOKES ? CurrentStokes() : key;
+    int stokes = key == CURRENT_CHANNEL_STOKES ? CurrentStokes() : key;
     if (key == CURRENT_CHANNEL_STOKES || !_image_cache.Exist(key)) {
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z_index), stokes_index);
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         auto image_data_size = stokes_slicer.slicer.length().product();
         _image_cache.data[key] = std::make_unique<float[]>(image_data_size);
         if (!GetSlicerData(stokes_slicer, _image_cache.data[key].get())) {
