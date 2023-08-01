@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Add an option to cache all cube image data ([#1286](https://github.com/CARTAvis/carta-backend/issues/1286)).
 ### Changed
 * Support animation playback with matched images in multi-panel view ([#1860](https://github.com/CARTAvis/carta-frontend/issues/1860)).
 ### Fixed
