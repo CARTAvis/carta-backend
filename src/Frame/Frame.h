@@ -17,12 +17,12 @@
 #include <shared_mutex>
 #include <unordered_map>
 
+#include "Cache/ImageCache.h"
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
-#include "ImageCache.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -273,6 +273,7 @@ protected:
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // For image cache
+    void LoadCubeImageData();
     bool GetImageCache(int key, int z);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
     bool IsCubeImageCache() const;

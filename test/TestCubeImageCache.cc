@@ -477,8 +477,8 @@ public:
         int region_id(1);
         int cx(x_size / 2);
         int cy(y_size / 2);
-        int width(x_size);  // or bmaj for ellipse region
-        int height(y_size); // or bmin for ellipse region
+        int width(x_size / 2);  // or bmaj for ellipse region
+        int height(y_size / 2); // or bmin for ellipse region
         std::vector<CARTA::Point> points = {Message::Point(cx, cy), Message::Point(width, height)};
 
         int file_id(0);
@@ -543,7 +543,9 @@ public:
                     return false;
                 }
                 if (!isnan(vals1[j]) && !isnan(vals2[j])) {
-                    EXPECT_NEAR(vals1[j], vals2[j], 1e-5);
+                    auto diff = fabs(vals1[j] - vals2[j]);
+                    EXPECT_LT(diff / fabs(vals1[j]), 1.0e-6);
+                    EXPECT_LT(diff / fabs(vals2[j]), 1.0e-6);
                 }
             }
         }

@@ -209,7 +209,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, con
 
             for (int x = x_min; x < x_min + mask_width; ++x) {
                 for (int y = y_min; y < y_min + mask_height; ++y) {
-                    double val = GetValue(x, y, z, stokes);
+                    auto val = GetValue(x, y, z, stokes);
                     if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
                         sum += val;
                         sum_sq += val * val;

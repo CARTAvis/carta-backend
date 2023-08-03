@@ -46,9 +46,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     // Initialize for operator==
     _contour_settings = {std::vector<double>(), CARTA::SmoothingMode::NoSmoothing, 0, 0, 0, 0, 0};
 
-    // Set default channel
-    _image_cache.cur_z = default_z;
-
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         spdlog::error("Session {}: {}", session_id, _open_image_error);
@@ -78,9 +75,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
 
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-
+    _image_cache.cur_z = default_z;
     _image_cache.width = _image_shape(_x_axis);
     _image_cache.height = _image_shape(_y_axis);
     _image_cache.depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
@@ -90,35 +85,11 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
         if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
             spdlog::info("Cache the whole cube image data.");
-
-            Timer t;
-            for (int stokes = 0; stokes < NumStokes(); ++stokes) {
-                if (!GetImageCache(stokes, ALL_Z)) {
-                    return;
-                }
-            }
-            auto dt = t.Elapsed();
-            spdlog::performance("Load {}x{}x{}x{} cube image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), Depth(),
-                NumStokes(), dt.ms(), (float)(Width() * Height() * Depth() * NumStokes()) / dt.us());
-
-            _image_cache.cube_image_cache = true;
-            _image_cache_valid = true;
-
-            // Get stokes type indices
-            bool mute_err_msg(true);
-            GetStokesTypeIndex("I", _image_cache.stokes_i, mute_err_msg);
-            GetStokesTypeIndex("Q", _image_cache.stokes_q, mute_err_msg);
-            GetStokesTypeIndex("U", _image_cache.stokes_u, mute_err_msg);
-            GetStokesTypeIndex("V", _image_cache.stokes_v, mute_err_msg);
-
-            // Get beam area
-            _image_cache._beam_area = _loader->CalculateBeamArea();
+            LoadCubeImageData();
         }
     } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
         spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", _image_cache.CubeImageSize());
     }
-
-    cache_lock.release();
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
     if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
@@ -2438,6 +2409,34 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
         _vector_field.CalculatePiPa(stokes_data, stokes_flag, tile, width, height, CurrentZ(), progress, callback);
     }
     return true;
+}
+
+void Frame::LoadCubeImageData() {
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+
+    Timer t;
+    for (int stokes = 0; stokes < NumStokes(); ++stokes) {
+        if (!GetImageCache(stokes, ALL_Z)) {
+            return;
+        }
+    }
+    auto dt = t.Elapsed();
+    spdlog::performance("Load {}x{}x{}x{} cube image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), Depth(), NumStokes(),
+        dt.ms(), (float)(Width() * Height() * Depth() * NumStokes()) / dt.us());
+
+    _image_cache.cube_image_cache = true;
+    _image_cache_valid = true;
+
+    // Get stokes type indices
+    bool mute_err_msg(true);
+    GetStokesTypeIndex("I", _image_cache.stokes_i, mute_err_msg);
+    GetStokesTypeIndex("Q", _image_cache.stokes_q, mute_err_msg);
+    GetStokesTypeIndex("U", _image_cache.stokes_u, mute_err_msg);
+    GetStokesTypeIndex("V", _image_cache.stokes_v, mute_err_msg);
+
+    // Get beam area
+    _image_cache._beam_area = _loader->CalculateBeamArea();
 }
 
 float* Frame::GetImageCacheData(int z, int stokes) {

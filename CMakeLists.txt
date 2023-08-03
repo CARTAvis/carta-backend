@@ -189,6 +189,7 @@ set(LINK_LIBS
 set(SOURCE_FILES
         ${SOURCE_FILES}
 	third-party/pugixml/src/pugixml.cpp
+        src/Cache/ImageCache.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc
@@ -201,7 +202,6 @@ set(SOURCE_FILES
         src/FileList/FileListHandler.cc
         src/FileList/FitsHduList.cc
         src/Frame/Frame.cc
-        src/Frame/ImageCache.cc
         src/HttpServer/HttpServer.cc
         src/ImageData/CartaFitsImage.cc
         src/ImageData/CartaHdf5Image.cc
