@@ -22,8 +22,8 @@ class TestFrame : public Frame {
 public:
     TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z)
         : Frame(session_id, loader, hdu, default_z) {}
-    float* GetImageCacheData() {
-        return _image_cache.data[_image_cache.Key(CurrentStokes())].get() + _image_cache.StartIndex(CurrentZ());
+    float* ImageCacheData() {
+        return GetImageCacheData();
     };
     FRIEND_TEST(ImageFittingTest, OneComponentFitting);
     FRIEND_TEST(ImageFittingTest, ThreeComponentFitting);
@@ -64,8 +64,8 @@ public:
         CARTA::FittingResponse fitting_response;
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
         auto progress_callback = [&](float progress) {};
-        bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->GetImageCacheData(), _initial_values, _fixed_params,
-            0.0, CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
+        bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->ImageCacheData(), _initial_values, _fixed_params, 0.0,
+            CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
 
         CompareResults(fitting_response, success, failed_message);
 
@@ -80,7 +80,7 @@ public:
                 image, output_stokes_region.image_region, file_id, frame->GetFileName(), model_image, residual_image, fitting_response);
 
             EXPECT_TRUE(success);
-            CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->GetImageCacheData());
+            CompareImageResults(model_image, residual_image, fitting_response, frame->GetFileName(), frame->ImageCacheData());
         }
     }
 

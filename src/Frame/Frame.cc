@@ -74,7 +74,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
-
     _image_cache.cur_z = default_z;
     _image_cache.width = _image_shape(_x_axis);
     _image_cache.height = _image_shape(_y_axis);
@@ -390,7 +389,7 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
-    if (GetImageCache(CURRENT_CHANNEL_STOKES, CurrentZ())) {
+    if (LoadImageCacheData(CURRENT_CHANNEL_STOKES, CurrentZ())) {
         auto dt = t.Elapsed();
         spdlog::performance(
             "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), dt.ms(), (float)(Width() * Height()) / dt.us());
@@ -2417,7 +2416,7 @@ void Frame::LoadCubeImageData() {
 
     Timer t;
     for (int stokes = 0; stokes < NumStokes(); ++stokes) {
-        if (!GetImageCache(stokes, ALL_Z)) {
+        if (!LoadImageCacheData(stokes, ALL_Z)) {
             return;
         }
     }
@@ -2447,7 +2446,7 @@ bool Frame::IsCubeImageCache() const {
     return _image_cache.cube_image_cache;
 }
 
-bool Frame::GetImageCache(int key, int z) {
+bool Frame::LoadImageCacheData(int key, int z) {
     // Update the image data cache for key = -1 (current channel and stokes), or > -1 (cube image data cache) if it does not exist
     int stokes = key == CURRENT_CHANNEL_STOKES ? CurrentStokes() : key;
     if (key == CURRENT_CHANNEL_STOKES || !_image_cache.Exist(key)) {

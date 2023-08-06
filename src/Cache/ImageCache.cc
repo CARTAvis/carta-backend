@@ -42,13 +42,6 @@ float ImageCache::UsedReservedMemory() const {
     return cube_image_cache ? CubeImageSize() : 0.0;
 }
 
-size_t ImageCache::StartIndex(int z) const {
-    if (cube_image_cache) {
-        return width * height * (size_t)z;
-    }
-    return 0;
-}
-
 int ImageCache::Key(int stokes) const {
     // Only return non-computed stokes index, since we only cache cube image data for existing stokes types from the file
     if (cube_image_cache && !IsComputedStokes(stokes)) {
@@ -92,6 +85,63 @@ float ImageCache::GetValue(int x, int y, int z, int stokes) {
     return data[Key(stokes)][idx];
 }
 
+float* ImageCache::GetImageCacheData(int z, int stokes) {
+    z = z == CURRENT_Z ? cur_z : z;
+    stokes = stokes == CURRENT_STOKES ? cur_stokes : stokes;
+
+    if (cube_image_cache && IsComputedStokes(stokes)) {
+        data[Key(stokes)] = std::make_unique<float[]>(width * height);
+
+        auto stokes_type = StokesTypes[stokes];
+        size_t start_idx = z * width * height;
+        if (stokes_type == CARTA::PolarizationType::Ptotal) {
+            if (stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
+#pragma omp parallel for
+                for (int i = 0; i < width * height; ++i) {
+                    size_t idx = start_idx + i;
+                    data[Key(stokes)][i] = CalcPtotal(data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::Plinear) {
+            if (stokes_q > -1 && stokes_u > -1) {
+#pragma omp parallel for
+                for (int i = 0; i < width * height; ++i) {
+                    size_t idx = start_idx + i;
+                    data[Key(stokes)][i] = CalcPlinear(data[stokes_q][idx], data[stokes_u][idx]);
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
+            if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
+#pragma omp parallel for
+                for (int i = 0; i < width * height; ++i) {
+                    size_t idx = start_idx + i;
+                    data[Key(stokes)][i] = CalcPFtotal(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
+            if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1) {
+#pragma omp parallel for
+                for (int i = 0; i < width * height; ++i) {
+                    size_t idx = start_idx + i;
+                    data[Key(stokes)][i] = CalcPFlinear(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx]);
+                }
+            }
+        } else if (stokes_type == CARTA::PolarizationType::Pangle) {
+            if (stokes_q > -1 && stokes_u > -1) {
+#pragma omp parallel for
+                for (int i = 0; i < width * height; ++i) {
+                    size_t idx = start_idx + i;
+                    data[Key(stokes)][i] = CalcPangle(data[stokes_q][idx], data[stokes_u][idx]);
+                }
+            }
+        }
+        return data[Key(stokes)].get();
+    }
+
+    size_t start_idx = cube_image_cache ? width * height * z : 0;
+    return data[Key(stokes)].get() + start_idx;
+}
+
 bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     if (cube_image_cache) {
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
@@ -108,66 +158,6 @@ bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, P
         spdlog::error("Invalid cube image cache for the cursor/point region spectral profile!");
     }
     return false;
-}
-
-float* ImageCache::GetImageCacheData(int z, int stokes) {
-    if (z == CURRENT_Z) {
-        z = cur_z;
-    }
-    if (stokes == CURRENT_STOKES) {
-        stokes = cur_stokes;
-    }
-
-    if (cube_image_cache && IsComputedStokes(stokes)) {
-        data[CURRENT_CHANNEL_STOKES] = std::make_unique<float[]>(width * height);
-
-        auto stokes_type = StokesTypes[stokes];
-        size_t start_idx = z * width * height;
-        if (stokes_type == CARTA::PolarizationType::Ptotal) {
-            if (stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
-                    size_t idx = start_idx + i;
-                    data[CURRENT_CHANNEL_STOKES][i] = CalcPtotal(data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::Plinear) {
-            if (stokes_q > -1 && stokes_u > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
-                    size_t idx = start_idx + i;
-                    data[CURRENT_CHANNEL_STOKES][i] = CalcPlinear(data[stokes_q][idx], data[stokes_u][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
-            if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
-                    size_t idx = start_idx + i;
-                    data[CURRENT_CHANNEL_STOKES][i] =
-                        CalcPFtotal(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
-            if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
-                    size_t idx = start_idx + i;
-                    data[CURRENT_CHANNEL_STOKES][i] = CalcPFlinear(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx]);
-                }
-            }
-        } else if (stokes_type == CARTA::PolarizationType::Pangle) {
-            if (stokes_q > -1 && stokes_u > -1) {
-#pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
-                    size_t idx = start_idx + i;
-                    data[CURRENT_CHANNEL_STOKES][i] = CalcPangle(data[stokes_q][idx], data[stokes_u][idx]);
-                }
-            }
-        }
-        return data[CURRENT_CHANNEL_STOKES].get();
-    }
-    return data[Key(stokes)].get() + StartIndex(z);
 }
 
 bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
