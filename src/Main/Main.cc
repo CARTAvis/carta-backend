@@ -20,6 +20,13 @@
 #include "Util/Token.h"
 #include "WebBrowser.h"
 
+int GetTotalSystemMemory() {
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    unsigned long long memory_in_bytes = pages * page_size; // Bytes
+    return (int)(memory_in_bytes / 1e6);                    // MB
+}
+
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
     std::shared_ptr<FileListHandler> file_list_handler;
@@ -135,6 +142,13 @@ int main(int argc, char* argv[]) {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
             if (settings.reserved_memory > 0) {
+                // Check if required reserved memory is greater than the total system memory
+                int total_system_memory = GetTotalSystemMemory();
+                if (settings.reserved_memory > total_system_memory) {
+                    spdlog::warn("Reserved memory {} MB is greater than the system upper limit {} MB, reset it to {} MB.",
+                        settings.reserved_memory, total_system_memory, total_system_memory);
+                    settings.reserved_memory = total_system_memory;
+                }
                 start_info += fmt::format(" Total amount of reserved memory {} MB.", settings.reserved_memory);
             }
             spdlog::info(start_info);
