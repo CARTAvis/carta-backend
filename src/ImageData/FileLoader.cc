@@ -339,6 +339,20 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const StokesSlicer& stok
             // Use ImageExpr for slice
             casacore::Array<float> slice_data;
             image->doGetSlice(slice_data, slicer);
+
+            // Get mask data
+            casacore::Array<bool> mask_data;
+            image->getMaskSlice(mask_data, slicer);
+
+            // Reset the pixel value as NaN if its mask is false
+            casacore::Array<float>::iterator slice_data_iter = slice_data.begin();
+            casacore::Array<bool>::iterator mask_data_iter = mask_data.begin();
+            for (; slice_data_iter != slice_data.end(); ++slice_data_iter, ++mask_data_iter) {
+                if (!*mask_data_iter) {
+                    *slice_data_iter = NAN;
+                }
+            }
+
             data = slice_data; // copy from reference
             return true;
         } else if (image_type == "RebinImage") {
