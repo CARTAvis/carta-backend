@@ -142,12 +142,12 @@ int main(int argc, char* argv[]) {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
             if (settings.reserved_memory > 0) {
-                // Check if required reserved memory is greater than the total system memory
-                int total_system_memory = GetTotalSystemMemory();
-                if (settings.reserved_memory > total_system_memory) {
+                // Check if required reserved memory hits the upper limit based on the total system memory
+                int memory_upper_limit = GetTotalSystemMemory() * 9 / 10;
+                if (settings.reserved_memory > memory_upper_limit) {
                     spdlog::warn("Reserved memory {} MB is greater than the system upper limit {} MB, reset it to {} MB.",
-                        settings.reserved_memory, total_system_memory, total_system_memory);
-                    settings.reserved_memory = total_system_memory;
+                        settings.reserved_memory, memory_upper_limit, memory_upper_limit);
+                    settings.reserved_memory = memory_upper_limit;
                 }
                 start_info += fmt::format(" Total amount of reserved memory {} MB.", settings.reserved_memory);
             }
