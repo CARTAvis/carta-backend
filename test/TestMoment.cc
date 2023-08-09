@@ -208,10 +208,8 @@ public:
         carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr, true);
 
         // the other settings
-        casacore::Vector<float> include_pix;
-        casacore::Vector<float> exclude_pix;
-        casacore::Bool do_temp(true);
-        casacore::Bool remove_axis(false);
+        casacore::Vector<float> include_pix, exclude_pix;
+        casacore::Bool do_temp(true), remove_axis(false);
 
         // calculate moments with carta moment generator
         carta_image_moments.setMoments(moment_types);
@@ -231,18 +229,15 @@ public:
         std::shared_ptr<casacore::ImageInterface<float>> image;
 
         if (OpenImage(image, file_path)) {
-            auto shape = image->shape();
-
-            // Moment requirements
-            int moment_axis(2);
+            auto image_shape = image->shape();
 
             // Carta moment calculator
             std::vector<int> moment_types = {0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12};
             auto moment_calculator = carta::MomentCalculator(image, moment_types);
-            std::unordered_map<int, std::vector<float>> moment_results1; // first way results
+            std::unordered_map<int, std::vector<float>> results1; // first way results
 
-            for (int x = 0; x < shape(0); ++x) {
-                for (int y = 0; y < shape(1); ++y) {
+            for (int y = 0; y < image_shape(1); ++y) {
+                for (int x = 0; x < image_shape(0); ++x) {
                     std::vector<float> data;
                     GetImageData(image, x, y, data);
 
@@ -250,29 +245,21 @@ public:
                     std::unordered_map<int, float> results;
                     moment_calculator.DoCalculation(data.data(), data.size(), results);
                     for (auto type : moment_types) {
-                        moment_results1[type].push_back(results[type]);
+                        results1[type].push_back(results[type]);
                     }
                 }
             }
 
             // Carta moment generator
+            int moment_axis(2);
             auto moment_images = GenerateMoments(image, moment_axis, moment_types);
             for (int i = 0; i < moment_images.size(); ++i) {
-                auto moment_image = moment_images[i];
-                auto moment_shape = moment_image->shape();
-
-                std::vector<float> moment_results2; // second way results
-                for (int x = 0; x < moment_shape(0); ++x) {
-                    for (int y = 0; y < moment_shape(1); ++y) {
-                        std::vector<float> data;
-                        GetImageData(moment_image, x, y, data);
-                        moment_results2.push_back(data[0]);
-                    }
-                }
+                std::vector<float> results2; // second way results
+                GetImageData(moment_images[i], results2);
 
                 // Check the consistency of two calculation results
                 float error = moment_types[i] == 3 ? 1.0e-2 : 0.0;
-                CmpVectors(moment_results1[moment_types[i]], moment_results2, error);
+                CmpVectors(results1[moment_types[i]], results2, error);
             }
         }
     }
