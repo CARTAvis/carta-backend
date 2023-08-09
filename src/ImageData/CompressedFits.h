@@ -90,16 +90,13 @@ struct BeamTableInfo {
 
 class CompressedFits {
 public:
-    CompressedFits(const std::string& filename);
+    CompressedFits(const std::string& filename, bool support_aips_beam = false);
 
     // Headers for file info
     bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
     bool GetFirstImageHdu(string& hduname);
 
-    // Beams for file info and opening image
-    inline const casacore::ImageBeamSet& GetBeamSet() {
-        return _beam_set;
-    }
+    const casacore::ImageBeamSet& GetBeamSet(bool& is_history_beam);
 
     casacore::Matrix<casacore::Double> GetTransformMatrix();
 
@@ -139,14 +136,21 @@ private:
 
     // Image beam set
     bool IsBeamTable(const std::string& fits_block, BeamTableInfo& beam_table_info);
-    void SetBeam(BeamInfo& beam_info);
+    void SetHistoryBeam(BeamInfo& beam_info);
+    void SetBeam(const BeamInfo& beam_info);
     void ReadBeamsTable(gzFile zip_file, BeamTableInfo& beam_table_info);
 
     void SetDefaultTransformMatrix();
 
     std::string _filename;
     std::string _unzip_filename;
+
+    // Beams from headers, beam table, or AIPS history headers
     casacore::ImageBeamSet _beam_set;
+    bool _support_aips_beam;
+    bool _is_history_beam;
+    std::vector<casacore::String> _history_beam_headers;
+
     casacore::Matrix<casacore::Double> _xform; // Linear transform matrix for the direction coordinate
     casacore::IPosition _shape;                // Image shape
     int _spectral_axis;                        // Spectral axis from the header
