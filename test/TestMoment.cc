@@ -200,15 +200,12 @@ public:
         }
     }
 
-    static std::shared_ptr<casacore::ImageInterface<float>> GenerateMoments(
-        const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis, casacore::Int moment_type) {
+    static std::vector<std::shared_ptr<casacore::ImageInterface<float>>> GenerateMoments(
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis, const vector<int>& moment_types) {
         // create carta moments generators
         casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
         casacore::LogIO carta_os(carta_log);
         carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr, true);
-
-        // set moment types
-        casacore::Vector<casacore::Int> moments = {moment_type};
 
         // the other settings
         casacore::Vector<float> include_pix;
@@ -217,15 +214,19 @@ public:
         casacore::Bool remove_axis(false);
 
         // calculate moments with carta moment generator
-        carta_image_moments.setMoments(moments);
+        carta_image_moments.setMoments(moment_types);
         carta_image_moments.setMomentAxis(moments_axis);
         carta_image_moments.setInExCludeRange(include_pix, exclude_pix);
-        auto results = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
+        auto moment_images = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
 
-        return dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(results[0]);
+        std::vector<std::shared_ptr<casacore::ImageInterface<float>>> results;
+        for (int i = 0; i < moment_images.size(); ++i) {
+            results.push_back(dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(moment_images[i]));
+        }
+        return results;
     }
 
-    static void TestImageMoment(int moment_type, float error = 0.0) {
+    static void TestImageMoment() {
         std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
         std::shared_ptr<casacore::ImageInterface<float>> image;
 
@@ -236,9 +237,9 @@ public:
             int moment_axis(2);
 
             // Carta moment calculator
-            std::vector<int> moment_types = {moment_type};
+            std::vector<int> moment_types = {0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12};
             auto moment_calculator = carta::MomentCalculator(image, moment_types);
-            std::vector<float> moment_results1; // first way results
+            std::unordered_map<int, std::vector<float>> moment_results1; // first way results
 
             for (int x = 0; x < shape(0); ++x) {
                 for (int y = 0; y < shape(1); ++y) {
@@ -248,27 +249,31 @@ public:
                     // Do calculations
                     std::unordered_map<int, float> results;
                     moment_calculator.DoCalculation(data.data(), data.size(), results);
-                    if (results.count(moment_type)) {
-                        moment_results1.push_back(results[moment_type]);
+                    for (auto type : moment_types) {
+                        moment_results1[type].push_back(results[type]);
                     }
                 }
             }
 
             // Carta moment generator
-            auto moment_image = GenerateMoments(image, moment_axis, moment_type);
-            auto moment_shape = moment_image->shape();
+            auto moment_images = GenerateMoments(image, moment_axis, moment_types);
+            for (int i = 0; i < moment_images.size(); ++i) {
+                auto moment_image = moment_images[i];
+                auto moment_shape = moment_image->shape();
 
-            std::vector<float> moment_results2; // second way results
-            for (int x = 0; x < moment_shape(0); ++x) {
-                for (int y = 0; y < moment_shape(1); ++y) {
-                    std::vector<float> data;
-                    GetImageData(moment_image, x, y, data);
-                    moment_results2.push_back(data[0]);
+                std::vector<float> moment_results2; // second way results
+                for (int x = 0; x < moment_shape(0); ++x) {
+                    for (int y = 0; y < moment_shape(1); ++y) {
+                        std::vector<float> data;
+                        GetImageData(moment_image, x, y, data);
+                        moment_results2.push_back(data[0]);
+                    }
                 }
-            }
 
-            // Check the consistency of two calculation results
-            CmpVectors(moment_results1, moment_results2, error);
+                // Check the consistency of two calculation results
+                float error = moment_types[i] == 3 ? 1.0e-2 : 0.0;
+                CmpVectors(moment_results1[moment_types[i]], moment_results2, error);
+            }
         }
     }
 };
@@ -298,17 +303,5 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
 }
 
 TEST_F(MomentTest, TestMomentCalculator) {
-    TestImageMoment(0);       // AVERAGE
-    TestImageMoment(1);       // INTEGRATED
-    TestImageMoment(2);       // WEIGHTED_MEAN_COORDINATE
-    TestImageMoment(3, 1e-2); // WEIGHTED_DISPERSION_COORDINATE
-    TestImageMoment(4);       // MEDIAN
-    // TestImageMoment(5): median coordinate is not available so far
-    TestImageMoment(6);  // STANDARD_DEVIATION
-    TestImageMoment(7);  // RMS
-    TestImageMoment(8);  // ABS_MEAN_DEVIATION
-    TestImageMoment(9);  // MAXIMUM
-    TestImageMoment(10); // MAXIMUM_COORDINATE
-    TestImageMoment(11); // MINIMUM
-    TestImageMoment(12); // MINIMUM_COORDINATE
+    TestImageMoment();
 }

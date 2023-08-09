@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#define DOUBLE_NAN std::numeric_limits<double>::quiet_NaN()
+
 using namespace carta;
 
 MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
@@ -50,33 +52,60 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
 
     double mean_coordinate = sum_iv / sum_i;
     double dispersion_coordinate = std::sqrt(std::abs(sum_ivv / sum_i - std::pow(mean_coordinate, 2)));
-    double standard_deviation = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : (sum_ii - sum_i * sum_i / counts) / (counts - 1);
-    if (standard_deviation > 0) {
-        standard_deviation = std::sqrt(standard_deviation);
-    } else if (standard_deviation <= 0) {
-        standard_deviation = 0.0;
+
+    if (RequiredMomentType(0)) {
+        results[0] = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
     }
-    double abs_mean_deviation = 0.0;
-    if (counts) {
-        double mean_i = sum_i / counts;
-        for (auto intensity : intensities) {
-            abs_mean_deviation += std::abs(intensity - mean_i);
-        }
+    if (RequiredMomentType(1)) {
+        results[1] = counts == 0 ? DOUBLE_NAN : GetDeltaVelocity() * sum_i;
+    }
+    if (RequiredMomentType(2)) {
+        results[2] = counts == 0 ? DOUBLE_NAN : mean_coordinate;
+    }
+    if (RequiredMomentType(3)) {
+        results[3] = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
+    }
+    if (RequiredMomentType(4)) {
+        results[4] = counts == 0 ? DOUBLE_NAN : FindMedian(intensities);
     }
 
-    results[0] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : sum_i / (double)counts;
-    results[1] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : GetDeltaVelocity() * sum_i;
-    results[2] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : mean_coordinate;
-    results[3] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : dispersion_coordinate;
-    results[4] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : FindMedian(intensities);
-    // results[5]: median coordinate is not available so far
-    results[6] = standard_deviation;
-    results[7] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : std::sqrt(sum_ii / counts);
-    results[8] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : abs_mean_deviation / counts;
-    results[9] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : max;
-    results[10] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : max_velocity;
-    results[11] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : min;
-    results[12] = counts == 0 ? std::numeric_limits<double>::quiet_NaN() : min_velocity;
+    if (RequiredMomentType(6)) {
+        double standard_deviation = counts == 0 ? DOUBLE_NAN : (sum_ii - sum_i * sum_i / counts) / (counts - 1);
+        if (standard_deviation > 0) {
+            standard_deviation = std::sqrt(standard_deviation);
+        } else if (standard_deviation <= 0) {
+            standard_deviation = 0.0;
+        }
+        results[6] = standard_deviation;
+    }
+
+    if (RequiredMomentType(7)) {
+        results[7] = counts == 0 ? DOUBLE_NAN : std::sqrt(sum_ii / counts);
+    }
+
+    if (RequiredMomentType(8)) {
+        double abs_mean_deviation = 0.0;
+        if (counts) {
+            double mean_i = sum_i / counts;
+            for (auto intensity : intensities) {
+                abs_mean_deviation += std::abs(intensity - mean_i);
+            }
+        }
+        results[8] = counts == 0 ? DOUBLE_NAN : abs_mean_deviation / counts;
+    }
+
+    if (RequiredMomentType(9)) {
+        results[9] = counts == 0 ? DOUBLE_NAN : max;
+    }
+    if (RequiredMomentType(10)) {
+        results[10] = counts == 0 ? DOUBLE_NAN : max_velocity;
+    }
+    if (RequiredMomentType(11)) {
+        results[11] = counts == 0 ? DOUBLE_NAN : min;
+    }
+    if (RequiredMomentType(12)) {
+        results[12] = counts == 0 ? DOUBLE_NAN : min_velocity;
+    }
 }
 
 double MomentCalculator::GetDeltaVelocity() {
@@ -104,4 +133,8 @@ double MomentCalculator::FindMedian(std::vector<float>& array) {
     }
     nth_element(array.begin(), array.begin() + n / 2, array.end());
     return (double)array[n / 2];
+}
+
+bool MomentCalculator::RequiredMomentType(int type) {
+    return std::find(_moment_types.begin(), _moment_types.end(), type) != _moment_types.end();
 }
