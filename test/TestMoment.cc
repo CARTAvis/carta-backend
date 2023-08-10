@@ -22,7 +22,6 @@ public:
     static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
         // Get spectral and stokes indices
         casacore::CoordinateSystem coord_sys = image->coordinates();
-        casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
         int spectral_axis = coord_sys.spectralAxisNumber();
         int stokes_axis = coord_sys.polarizationAxisNumber();
 
@@ -171,38 +170,26 @@ public:
             int moment_axis(2);
             std::vector<int> moment_types = {0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12};
             auto moment_calculator = carta::MomentCalculator(image, moment_types);
-            std::unordered_map<int, std::vector<float>> results1; // first way results
 
             std::vector<float> image_data;
             GetImageData(image, image_data);
 
-            for (int y = 0; y < image_shape(1); ++y) {
-                for (int x = 0; x < image_shape(0); ++x) {
-                    // Get spectral data at pixel coordinate (x, y)
-                    std::vector<float> spectral_data;
-                    for (int z = 0; z < image_shape(moment_axis); ++z) {
-                        int idx = image_shape(0) * image_shape(1) * z + image_shape(0) * y + x;
-                        spectral_data.push_back(image_data[idx]);
-                    }
+            // First way to get image moments
+            auto moment_images1 = moment_calculator.CreateMoments(image_data.data(), moment_axis, 3);
 
-                    // Do calculations
-                    std::unordered_map<int, float> results;
-                    moment_calculator.DoCalculation(spectral_data.data(), spectral_data.size(), results);
-                    for (auto type : moment_types) {
-                        results1[type].push_back(results[type]);
-                    }
-                }
-            }
+            // Second way to get image moments, through the Carta moment generator
+            auto moment_images2 = GenerateMoments(image, moment_axis, moment_types);
 
-            // Carta moment generator
-            auto moment_images = GenerateMoments(image, moment_axis, moment_types);
-            for (int i = 0; i < moment_images.size(); ++i) {
-                std::vector<float> results2; // second way results
-                GetImageData(moment_images[i], results2);
+            // Check the consistency of two ways
+            for (int i = 0; i < moment_images2.size(); ++i) {
+                std::vector<float> results1;
+                GetImageData(moment_images1[i], results1);
 
-                // Check the consistency of two calculation results
+                std::vector<float> results2;
+                GetImageData(moment_images2[i], results2);
+
                 float error = moment_types[i] == 3 ? 1.0e-2 : 0.0;
-                CmpVectors(results1[moment_types[i]], results2, error);
+                CmpVectors(results1, results2, error);
             }
         }
     }

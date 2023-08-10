@@ -20,6 +20,87 @@ MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<floa
     _spectral_coord = _coord_sys.spectralCoordinate();
 }
 
+std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::CreateMoments(
+    float* image_data, int moment_axis, int stokes) {
+    // Set moment image shapes
+    casacore::CoordinateSystem coord_sys = _image->coordinates();
+    casacore::IPosition in_shape = _image->shape();
+    casacore::IPosition out_shape = in_shape;
+    out_shape(moment_axis) = 1;
+
+    // Get stokes axis, if any
+    int stokes_axis = coord_sys.polarizationAxisNumber();
+    if (stokes_axis > -1) {
+        out_shape(stokes_axis) = 1;
+    }
+
+    // Get display axis lengths
+    std::vector<int> display_axes;
+    std::vector<int> display_lengths;
+    for (int i = 0; i < out_shape.size(); ++i) {
+        if (out_shape(i) > 1) {
+            display_axes.emplace_back(i);
+            display_lengths.emplace_back(out_shape(i));
+        }
+    }
+
+    // Set moment images
+    int moments_size = _moment_types.size();
+    std::vector<std::shared_ptr<casacore::ImageInterface<float>>> out_images(moments_size);
+
+    if (display_lengths.size() != 2) {
+        spdlog::error("Error on image moments calculation: can not get display axes.");
+        return out_images;
+    }
+
+    // Initialize moment images data
+    std::unordered_map<int, casacore::Array<float>> moment_data;
+    for (auto type : _moment_types) {
+        moment_data[type] = casacore::Array<float>(out_shape);
+    }
+
+    // Do calculations through the display plane
+    for (int y = 0; y < display_lengths[1]; ++y) {
+        for (int x = 0; x < display_lengths[0]; ++x) {
+            // Get z-axis data at pixel coordinate (x, y)
+            std::vector<float> spectral_data;
+            for (int z = 0; z < in_shape(moment_axis); ++z) {
+                int idx = display_lengths[0] * display_lengths[1] * z + display_lengths[0] * y + x;
+                spectral_data.push_back(image_data[idx]);
+            }
+
+            // Do calculations
+            std::unordered_map<int, float> results;
+            DoCalculation(spectral_data.data(), spectral_data.size(), results);
+
+            // Fill calculation results
+            for (auto type : _moment_types) {
+                casacore::IPosition start_pos = casacore::IPosition(out_shape.size(), 0);
+                start_pos(display_axes[0]) = x;
+                start_pos(display_axes[1]) = y;
+                moment_data[type](start_pos) = results[type];
+            }
+        }
+    }
+
+    // Reset moment images
+    for (int i = 0; i < moments_size; ++i) {
+        std::shared_ptr<casacore::ImageInterface<float>>& image = out_images[i];
+        image.reset(new casacore::TempImage<float>(out_shape, coord_sys));
+        image->setUnits(_image->units());
+        image->setMiscInfo(_image->miscInfo());
+        image->setImageInfo(_image->imageInfo());
+        // image->makeMask("mask0", true, true);
+
+        // Fill data into the moment image
+        casacore::IPosition start_pos = casacore::IPosition(out_shape.size(), 0);
+        image->putSlice(moment_data[_moment_types[i]], start_pos);
+        image->flush();
+    }
+
+    return out_images;
+}
+
 void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results) {
     double sum_i(0);
     double sum_iv(0);

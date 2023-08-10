@@ -9,6 +9,7 @@
 
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/ImageInterface.h>
+#include <casacore/images/Images/TempImage.h>
 
 #include <unordered_map>
 #include <vector>
@@ -20,13 +21,14 @@ public:
     MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types);
     ~MomentCalculator() = default;
 
-    void DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results);
+    std::vector<std::shared_ptr<casacore::ImageInterface<float>>> CreateMoments(float* image_data, int moment_axis, int stokes);
 
 private:
     double GetDeltaVelocity();
     double GetVelocity(double chan);
     double FindMedian(std::vector<float>& array);
     bool RequiredMomentType(int type);
+    void DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results);
 
     std::shared_ptr<casacore::ImageInterface<float>> _image;
     casacore::CoordinateSystem _coord_sys;
