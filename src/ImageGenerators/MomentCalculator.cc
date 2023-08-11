@@ -20,8 +20,7 @@ MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<floa
     _spectral_coord = _coord_sys.spectralCoordinate();
 }
 
-std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::CreateMoments(
-    float* image_data, int moment_axis, int stokes) {
+std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::CreateMoments(float* image_data, int moment_axis) {
     // Set moment image shapes
     casacore::CoordinateSystem coord_sys = _image->coordinates();
     casacore::IPosition in_shape = _image->shape();
@@ -36,19 +35,20 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
 
     // Get display axis lengths
     std::vector<int> display_axes;
-    std::vector<int> display_lengths;
+    std::vector<size_t> display_sizes;
     for (int i = 0; i < out_shape.size(); ++i) {
         if (out_shape(i) > 1) {
             display_axes.emplace_back(i);
-            display_lengths.emplace_back(out_shape(i));
+            display_sizes.emplace_back(out_shape(i));
         }
     }
+    size_t depth = in_shape(moment_axis);
 
     // Set moment images
     int moments_size = _moment_types.size();
     std::vector<std::shared_ptr<casacore::ImageInterface<float>>> out_images(moments_size);
 
-    if (display_lengths.size() != 2) {
+    if (display_sizes.size() != 2) {
         spdlog::error("Error on image moments calculation: can not get display axes.");
         return out_images;
     }
@@ -60,18 +60,11 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
     }
 
     // Do calculations through the display plane
-    for (int y = 0; y < display_lengths[1]; ++y) {
-        for (int x = 0; x < display_lengths[0]; ++x) {
-            // Get z-axis data at pixel coordinate (x, y)
-            std::vector<float> spectral_data;
-            for (int z = 0; z < in_shape(moment_axis); ++z) {
-                int idx = display_lengths[0] * display_lengths[1] * z + display_lengths[0] * y + x;
-                spectral_data.push_back(image_data[idx]);
-            }
-
+    for (int y = 0; y < display_sizes[1]; ++y) {
+        for (int x = 0; x < display_sizes[0]; ++x) {
             // Do calculations
             std::unordered_map<int, float> results;
-            DoCalculation(spectral_data.data(), spectral_data.size(), results);
+            DoCalculation(image_data, x, y, display_sizes[0], display_sizes[1], depth, results);
 
             // Fill calculation results
             for (auto type : _moment_types) {
@@ -101,7 +94,8 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
     return out_images;
 }
 
-void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_map<int, float>& results) {
+void MomentCalculator::DoCalculation(
+    float* data, int x, int y, size_t width, size_t height, size_t depth, std::unordered_map<int, float>& results) {
     double sum_i(0);
     double sum_iv(0);
     double sum_ivv(0);
@@ -111,20 +105,21 @@ void MomentCalculator::DoCalculation(float* data, size_t length, std::unordered_
     double max_velocity, min_velocity;
     std::vector<float> intensities;
     size_t counts(0);
-    for (size_t i = 0; i < length; ++i) {
-        if (!std::isnan(data[i])) {
-            double velocity = GetVelocity(i);
-            sum_i += data[i];
-            sum_iv += data[i] * velocity;
-            sum_ivv += data[i] * std::pow(velocity, 2);
-            sum_ii += std::pow(data[i], 2);
-            intensities.push_back(data[i]);
-            if (data[i] > max) {
-                max = data[i];
+    for (size_t z = 0; z < depth; ++z) {
+        size_t idx = z * width * height + y * width + x;
+        if (!std::isnan(data[idx])) {
+            double velocity = GetVelocity(z);
+            sum_i += data[idx];
+            sum_iv += data[idx] * velocity;
+            sum_ivv += data[idx] * std::pow(velocity, 2);
+            sum_ii += std::pow(data[idx], 2);
+            intensities.push_back(data[idx]);
+            if (data[idx] > max) {
+                max = data[idx];
                 max_velocity = velocity;
             }
-            if (data[i] < min) {
-                min = data[i];
+            if (data[idx] < min) {
+                min = data[idx];
                 min_velocity = velocity;
             }
             counts++;

@@ -9,6 +9,7 @@
 #include "ImageGenerators/ImageMoments.h"
 #include "ImageGenerators/MomentCalculator.h"
 #include "Logger/Logger.h"
+#include "Timer/Timer.h"
 
 #include <casacore/images/Images/PagedImage.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
@@ -175,10 +176,14 @@ public:
             GetImageData(image, image_data);
 
             // First way to get image moments
-            auto moment_images1 = moment_calculator.CreateMoments(image_data.data(), moment_axis, 3);
+            Timer t1;
+            auto moment_images1 = moment_calculator.CreateMoments(image_data.data(), moment_axis);
+            fmt::print("Elapsed time for calculating moment images (1) {:.3f} ms\n", t1.Elapsed().ms());
 
             // Second way to get image moments, through the Carta moment generator
+            Timer t2;
             auto moment_images2 = GenerateMoments(image, moment_axis, moment_types);
+            fmt::print("Elapsed time for calculating moment images (2) {:.3f} ms\n", t2.Elapsed().ms());
 
             // Check the consistency of two ways
             for (int i = 0; i < moment_images2.size(); ++i) {
