@@ -210,7 +210,9 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
     gsl_vector* y = gsl_multifit_nlinear_position(work);
     gsl_matrix* covar = gsl_matrix_alloc(p, p);
 
-    gsl_multifit_nlinear_init(_fit_values, &_fdf, work);
+    gsl_vector* weights = gsl_vector_alloc(n);
+    gsl_vector_set_all(weights, 1 / _image_std / _image_std);
+    gsl_multifit_nlinear_winit(_fit_values, weights, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
 
     GeneratorProgressCallback iteration_progress_callback = [&](size_t iter) {
@@ -233,13 +235,17 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
 
         _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
         _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
+        _fit_status.chisq0 *= _image_std * _image_std;
+        _fit_status.chisq *= _image_std * _image_std;
 
         if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
+            gsl_vector_scale(f, _image_std);
             CalculateImageData(f);
         }
     }
 
     gsl_multifit_nlinear_free(work);
+    gsl_vector_free(weights);
     gsl_matrix_free(covar);
     return status;
 }
