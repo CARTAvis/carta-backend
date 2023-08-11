@@ -144,7 +144,7 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
         moment_data[3](start_pos) = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
     }
     if (RequiredMomentType(4)) {
-        moment_data[4](start_pos) = counts == 0 ? DOUBLE_NAN : FindMedian(intensities);
+        moment_data[4](start_pos) = counts == 0 ? DOUBLE_NAN : FindMedian(intensities, depth);
     }
 
     if (RequiredMomentType(6)) {
@@ -204,15 +204,18 @@ void MomentCalculator::GetVelocities(size_t spectral_axis_length) {
     }
 }
 
-double MomentCalculator::FindMedian(std::vector<float>& array) {
+double MomentCalculator::FindMedian(std::vector<float>& array, size_t depth) {
+    std::sort(array.begin(), array.end());
+
+    // This strange algorithm is to be consistent with the original moment calculation for pixel median value
     size_t n = array.size();
     if (n % 2 == 0) {
-        nth_element(array.begin(), array.begin() + n / 2, array.end());
-        nth_element(array.begin(), array.begin() + (n - 1) / 2, array.end());
-        return (double)(array[(n - 1) / 2] + array[n / 2]) / 2.0;
+        if (depth % 2 != 0) {
+            return (array[(n - 1) / 2] + array[n / 2]) / 2;
+        }
+        return array[(n - 1) / 2];
     }
-    nth_element(array.begin(), array.begin() + n / 2, array.end());
-    return (double)array[n / 2];
+    return array[n / 2];
 }
 
 bool MomentCalculator::RequiredMomentType(int type) {

@@ -26,7 +26,7 @@ public:
 private:
     void GetDeltaVelocity();
     void GetVelocities(size_t spectral_axis_length);
-    double FindMedian(std::vector<float>& array);
+    static double FindMedian(std::vector<float>& array, size_t depth);
     bool RequiredMomentType(int type);
     void DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth, const casacore::IPosition& start_pos,
         std::unordered_map<int, casacore::Array<float>>& moment_data);

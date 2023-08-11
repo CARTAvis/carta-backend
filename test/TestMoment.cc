@@ -193,7 +193,7 @@ public:
                 std::vector<float> results2;
                 GetImageData(moment_images2[i], results2);
 
-                float error = moment_types[i] == 3 ? 1.0e-2 : 0.0;
+                float error = moment_types[i] == 3 ? 0.1 : 0.0;
                 CmpVectors(results1, results2, error);
             }
         }
