@@ -24,8 +24,6 @@ public:
     std::vector<std::shared_ptr<casacore::ImageInterface<float>>> CreateMoments(float* image_data, int moment_axis);
 
 private:
-    void GetDeltaVelocity();
-    void GetVelocities(size_t spectral_axis_length);
     static double FindMedian(std::vector<float>& array, size_t depth);
     bool RequiredMomentType(int type);
     void DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth, const casacore::IPosition& start_pos,
@@ -33,7 +31,6 @@ private:
 
     std::shared_ptr<casacore::ImageInterface<float>> _image;
     casacore::CoordinateSystem _coord_sys;
-    casacore::SpectralCoordinate _spectral_coord;
     std::vector<double> _velocities;
     double _delta_velocity;
 

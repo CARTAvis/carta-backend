@@ -20,12 +20,24 @@ MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<floa
     int spectral_axis = _coord_sys.spectralAxisNumber();
 
     if (spectral_axis > -1) {
-        _spectral_coord = _coord_sys.spectralCoordinate();
-        GetDeltaVelocity();
+        // Get velocity difference (dV)
+        casacore::SpectralCoordinate spectral_coord = _coord_sys.spectralCoordinate();
+        casacore::Quantum<casacore::Double> vel0;
+        casacore::Quantum<casacore::Double> vel1;
+        casacore::Double pix0 = spectral_coord.referencePixel()(0) - 0.5;
+        casacore::Double pix1 = spectral_coord.referencePixel()(0) + 0.5;
+        spectral_coord.pixelToVelocity(vel0, pix0);
+        spectral_coord.pixelToVelocity(vel1, pix1);
+        _delta_velocity = abs(vel1.getValue() - vel0.getValue());
 
+        // Get velocities along the spectral axis
         auto image_shape = _image->shape();
         size_t spectral_axis_length = image_shape(spectral_axis);
-        GetVelocities(spectral_axis_length);
+        for (size_t chan = 0; chan < spectral_axis_length; ++chan) {
+            casacore::Quantum<casacore::Double> vel;
+            spectral_coord.pixelToVelocity(vel, chan);
+            _velocities.push_back(vel.getValue());
+        }
     }
 }
 
@@ -183,24 +195,6 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
     }
     if (RequiredMomentType(12)) {
         moment_data[12](start_pos) = counts == 0 ? DOUBLE_NAN : min_velocity;
-    }
-}
-
-void MomentCalculator::GetDeltaVelocity() {
-    casacore::Quantum<casacore::Double> vel0;
-    casacore::Quantum<casacore::Double> vel1;
-    casacore::Double pix0 = _spectral_coord.referencePixel()(0) - 0.5;
-    casacore::Double pix1 = _spectral_coord.referencePixel()(0) + 0.5;
-    _spectral_coord.pixelToVelocity(vel0, pix0);
-    _spectral_coord.pixelToVelocity(vel1, pix1);
-    _delta_velocity = abs(vel1.getValue() - vel0.getValue());
-}
-
-void MomentCalculator::GetVelocities(size_t spectral_axis_length) {
-    for (size_t chan = 0; chan < spectral_axis_length; ++chan) {
-        casacore::Quantum<casacore::Double> vel;
-        _spectral_coord.pixelToVelocity(vel, chan);
-        _velocities.push_back(vel.getValue());
     }
 }
 
