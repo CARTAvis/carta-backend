@@ -69,19 +69,13 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
     }
 
     // Do calculations through the display plane
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < display_sizes[1]; ++y) {
         for (int x = 0; x < display_sizes[0]; ++x) {
-            // Do calculations
-            std::unordered_map<int, float> results;
-            DoCalculation(image_data, x, y, display_sizes[0], display_sizes[1], depth, results);
-
-            // Fill calculation results
-            for (auto type : _moment_types) {
-                casacore::IPosition start_pos = casacore::IPosition(out_shape.size(), 0);
-                start_pos(display_axes[0]) = x;
-                start_pos(display_axes[1]) = y;
-                moment_data[type](start_pos) = results[type];
-            }
+            casacore::IPosition start_pos = casacore::IPosition(out_shape.size(), 0);
+            start_pos(display_axes[0]) = x;
+            start_pos(display_axes[1]) = y;
+            DoCalculation(image_data, x, y, display_sizes[0], display_sizes[1], depth, start_pos, moment_data);
         }
     }
 
@@ -103,8 +97,8 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
     return out_images;
 }
 
-void MomentCalculator::DoCalculation(
-    float* data, int x, int y, size_t width, size_t height, size_t depth, std::unordered_map<int, float>& results) {
+void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth,
+    const casacore::IPosition& start_pos, std::unordered_map<int, casacore::Array<float>>& moment_data) {
     double sum_i(0);
     double sum_iv(0);
     double sum_ivv(0);
@@ -138,19 +132,19 @@ void MomentCalculator::DoCalculation(
     double dispersion_coordinate = std::sqrt(std::abs(sum_ivv / sum_i - std::pow(mean_coordinate, 2)));
 
     if (RequiredMomentType(0)) {
-        results[0] = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
+        moment_data[0](start_pos) = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
     }
     if (RequiredMomentType(1)) {
-        results[1] = counts == 0 ? DOUBLE_NAN : _delta_velocity * sum_i;
+        moment_data[1](start_pos) = counts == 0 ? DOUBLE_NAN : _delta_velocity * sum_i;
     }
     if (RequiredMomentType(2)) {
-        results[2] = counts == 0 ? DOUBLE_NAN : mean_coordinate;
+        moment_data[2](start_pos) = counts == 0 ? DOUBLE_NAN : mean_coordinate;
     }
     if (RequiredMomentType(3)) {
-        results[3] = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
+        moment_data[3](start_pos) = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
     }
     if (RequiredMomentType(4)) {
-        results[4] = counts == 0 ? DOUBLE_NAN : FindMedian(intensities);
+        moment_data[4](start_pos) = counts == 0 ? DOUBLE_NAN : FindMedian(intensities);
     }
 
     if (RequiredMomentType(6)) {
@@ -160,11 +154,11 @@ void MomentCalculator::DoCalculation(
         } else if (standard_deviation <= 0) {
             standard_deviation = 0.0;
         }
-        results[6] = standard_deviation;
+        moment_data[6](start_pos) = standard_deviation;
     }
 
     if (RequiredMomentType(7)) {
-        results[7] = counts == 0 ? DOUBLE_NAN : std::sqrt(sum_ii / counts);
+        moment_data[7](start_pos) = counts == 0 ? DOUBLE_NAN : std::sqrt(sum_ii / counts);
     }
 
     if (RequiredMomentType(8)) {
@@ -175,20 +169,20 @@ void MomentCalculator::DoCalculation(
                 abs_mean_deviation += std::abs(intensity - mean_i);
             }
         }
-        results[8] = counts == 0 ? DOUBLE_NAN : abs_mean_deviation / counts;
+        moment_data[8](start_pos) = counts == 0 ? DOUBLE_NAN : abs_mean_deviation / counts;
     }
 
     if (RequiredMomentType(9)) {
-        results[9] = counts == 0 ? DOUBLE_NAN : max;
+        moment_data[9](start_pos) = counts == 0 ? DOUBLE_NAN : max;
     }
     if (RequiredMomentType(10)) {
-        results[10] = counts == 0 ? DOUBLE_NAN : max_velocity;
+        moment_data[10](start_pos) = counts == 0 ? DOUBLE_NAN : max_velocity;
     }
     if (RequiredMomentType(11)) {
-        results[11] = counts == 0 ? DOUBLE_NAN : min;
+        moment_data[11](start_pos) = counts == 0 ? DOUBLE_NAN : min;
     }
     if (RequiredMomentType(12)) {
-        results[12] = counts == 0 ? DOUBLE_NAN : min_velocity;
+        moment_data[12](start_pos) = counts == 0 ? DOUBLE_NAN : min_velocity;
     }
 }
 

@@ -28,7 +28,8 @@ private:
     void GetVelocities(size_t spectral_axis_length);
     double FindMedian(std::vector<float>& array);
     bool RequiredMomentType(int type);
-    void DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth, std::unordered_map<int, float>& results);
+    void DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth, const casacore::IPosition& start_pos,
+        std::unordered_map<int, casacore::Array<float>>& moment_data);
 
     std::shared_ptr<casacore::ImageInterface<float>> _image;
     casacore::CoordinateSystem _coord_sys;
