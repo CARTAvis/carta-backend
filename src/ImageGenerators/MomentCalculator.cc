@@ -15,9 +15,18 @@
 using namespace carta;
 
 MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
-    : _image(image), _moment_types(moment_types) {
+    : _image(image), _delta_velocity(DOUBLE_NAN), _moment_types(moment_types) {
     _coord_sys = _image->coordinates();
-    _spectral_coord = _coord_sys.spectralCoordinate();
+    int spectral_axis = _coord_sys.spectralAxisNumber();
+
+    if (spectral_axis > -1) {
+        _spectral_coord = _coord_sys.spectralCoordinate();
+        GetDeltaVelocity();
+
+        auto image_shape = _image->shape();
+        size_t spectral_axis_length = image_shape(spectral_axis);
+        GetVelocities(spectral_axis_length);
+    }
 }
 
 std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::CreateMoments(float* image_data, int moment_axis) {
@@ -108,19 +117,18 @@ void MomentCalculator::DoCalculation(
     for (size_t z = 0; z < depth; ++z) {
         size_t idx = z * width * height + y * width + x;
         if (!std::isnan(data[idx])) {
-            double velocity = GetVelocity(z);
             sum_i += data[idx];
-            sum_iv += data[idx] * velocity;
-            sum_ivv += data[idx] * std::pow(velocity, 2);
+            sum_iv += data[idx] * _velocities[z];
+            sum_ivv += data[idx] * std::pow(_velocities[z], 2);
             sum_ii += std::pow(data[idx], 2);
             intensities.push_back(data[idx]);
             if (data[idx] > max) {
                 max = data[idx];
-                max_velocity = velocity;
+                max_velocity = _velocities[z];
             }
             if (data[idx] < min) {
                 min = data[idx];
-                min_velocity = velocity;
+                min_velocity = _velocities[z];
             }
             counts++;
         }
@@ -133,7 +141,7 @@ void MomentCalculator::DoCalculation(
         results[0] = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
     }
     if (RequiredMomentType(1)) {
-        results[1] = counts == 0 ? DOUBLE_NAN : GetDeltaVelocity() * sum_i;
+        results[1] = counts == 0 ? DOUBLE_NAN : _delta_velocity * sum_i;
     }
     if (RequiredMomentType(2)) {
         results[2] = counts == 0 ? DOUBLE_NAN : mean_coordinate;
@@ -184,20 +192,22 @@ void MomentCalculator::DoCalculation(
     }
 }
 
-double MomentCalculator::GetDeltaVelocity() {
+void MomentCalculator::GetDeltaVelocity() {
     casacore::Quantum<casacore::Double> vel0;
     casacore::Quantum<casacore::Double> vel1;
     casacore::Double pix0 = _spectral_coord.referencePixel()(0) - 0.5;
     casacore::Double pix1 = _spectral_coord.referencePixel()(0) + 0.5;
     _spectral_coord.pixelToVelocity(vel0, pix0);
     _spectral_coord.pixelToVelocity(vel1, pix1);
-    return abs(vel1.getValue() - vel0.getValue());
+    _delta_velocity = abs(vel1.getValue() - vel0.getValue());
 }
 
-double MomentCalculator::GetVelocity(double chan) {
-    casacore::Quantum<casacore::Double> vel;
-    _spectral_coord.pixelToVelocity(vel, chan);
-    return vel.getValue();
+void MomentCalculator::GetVelocities(size_t spectral_axis_length) {
+    for (size_t chan = 0; chan < spectral_axis_length; ++chan) {
+        casacore::Quantum<casacore::Double> vel;
+        _spectral_coord.pixelToVelocity(vel, chan);
+        _velocities.push_back(vel.getValue());
+    }
 }
 
 double MomentCalculator::FindMedian(std::vector<float>& array) {
