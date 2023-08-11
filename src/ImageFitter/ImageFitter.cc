@@ -24,7 +24,7 @@ ImageFitter::ImageFitter() {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(size_t width, size_t height, float* image, float image_std,
+bool ImageFitter::FitImage(size_t width, size_t height, float* image, float image_std, double beam_size,
     const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
     CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
     GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
@@ -36,10 +36,11 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, float imag
     _fit_data.width = width;
     _fit_data.n = width * height;
     _fit_data.data = image;
-    _image_std = image_std;
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
+    _image_std = image_std;
+    _beam_size = beam_size;
     _create_model_data = create_model_image;
     _create_residual_data = create_residual_image;
     _progress_callback = progress_callback;

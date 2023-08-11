@@ -45,10 +45,10 @@ struct FitStatus {
 class ImageFitter {
 public:
     ImageFitter();
-    bool FitImage(size_t width, size_t height, float* image, float image_std, const std::vector<CARTA::GaussianComponent>& initial_values,
-        const std::vector<bool>& fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image,
-        bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback,
-        size_t offset_x = 0, size_t offset_y = 0);
+    bool FitImage(size_t width, size_t height, float* image, float image_std, double beam_size,
+        const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
+        CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
+        GeneratorProgressCallback progress_callback, size_t offset_x = 0, size_t offset_y = 0);
     bool GetGeneratedImages(std::shared_ptr<casacore::ImageInterface<float>> image, const casacore::ImageRegion& image_region, int file_id,
         const std::string& filename, GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response);
     void StopFitting();
@@ -56,6 +56,7 @@ public:
 private:
     FitData _fit_data;
     float _image_std;
+    double _beam_size;
     size_t _num_components;
     gsl_vector* _fit_values;
     gsl_vector* _fit_errors;

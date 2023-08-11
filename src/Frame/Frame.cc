@@ -1757,6 +1757,33 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
     bool success = false;
 
     if (_image_fitter) {
+        std::vector<CARTA::Beam> beams;
+        double beam_size;
+        if (GetBeams(beams)) {
+            CARTA::Beam currentBeam = beams[0];
+            if (beams.size() > 1) {
+                for (auto beam : beams) {
+                    if (beam.channel() == CurrentZ() && beam.stokes() == CurrentStokes()) {
+                        currentBeam = beam;
+                        break;
+                    }
+                }
+            }
+
+            if (currentBeam.major_axis() && currentBeam.minor_axis()) {
+                casacore::Vector<casacore::Double> increments(CoordinateSystem()->increment());
+                casacore::Vector<casacore::String> world_units = CoordinateSystem()->worldAxisUnits();
+                casacore::Quantity bmaj(currentBeam.major_axis(), casacore::Unit("arcsec"));
+                bmaj.convert(world_units(0));
+                casacore::Quantity bmin(currentBeam.minor_axis(), casacore::Unit("arcsec"));
+                bmin.convert(world_units(1));
+                double bmaj_pix = fabs(bmaj.getValue() / increments(0));
+                double bmin_pix = fabs(bmin.getValue() / increments(1));
+
+                beam_size = sqrt(bmaj_pix * bmin_pix);
+            }
+        }
+
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
         std::vector<bool> fixed_params(fitting_request.fixed_params().begin(), fitting_request.fixed_params().end());
@@ -1784,8 +1811,8 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), image_std, initial_values, fixed_params,
-                fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), image_std, beam_size, initial_values,
+                fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
@@ -1796,7 +1823,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 image_std = stats.stdDev;
             };
 
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), image_std, initial_values, fixed_params,
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), image_std, beam_size, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
