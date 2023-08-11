@@ -45,7 +45,7 @@ struct FitStatus {
 class ImageFitter {
 public:
     ImageFitter();
-    bool FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
+    bool FitImage(size_t width, size_t height, float* image, float image_std, const std::vector<CARTA::GaussianComponent>& initial_values,
         const std::vector<bool>& fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image,
         bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback,
         size_t offset_x = 0, size_t offset_y = 0);
@@ -55,6 +55,7 @@ public:
 
 private:
     FitData _fit_data;
+    float _image_std;
     size_t _num_components;
     gsl_vector* _fit_values;
     gsl_vector* _fit_errors;

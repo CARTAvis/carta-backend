@@ -1773,17 +1773,32 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 return false;
             }
 
+            float image_std;
+            std::vector<CARTA::StatsType> required_stats = {CARTA::StatsType::Sigma};
+            bool per_z = false;
+            std::map<CARTA::StatsType, std::vector<double>> stats_map;
+            if (GetRegionStats(*stokes_region, required_stats, per_z, stats_map)) {
+                image_std = stats_map[CARTA::StatsType::Sigma][0];
+            }
+
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), initial_values, fixed_params,
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), image_std, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), initial_values, fixed_params, fitting_request.offset(),
-                fitting_request.solver(), fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response,
-                progress_callback);
+
+            float image_std;
+            BasicStats<float> stats;
+            if (GetBasicStats(CurrentZ(), CurrentStokes(), stats)) {
+                image_std = stats.stdDev;
+            };
+
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), image_std, initial_values, fixed_params,
+                fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+                fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
 
         if (success && (fitting_request.create_model_image() || fitting_request.create_residual_image())) {
