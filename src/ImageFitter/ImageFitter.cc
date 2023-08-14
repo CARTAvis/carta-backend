@@ -227,12 +227,7 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
         gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
         gsl_vector_memcpy(_fit_values, y);
 
-        gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
-        gsl_multifit_nlinear_covar(jac, 0.0, covar);
-        const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
-        for (size_t i = 0; i < p; i++) {
-            gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
-        }
+        CalculateErrors();
 
         _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
         _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
@@ -249,6 +244,56 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
     gsl_vector_free(weights);
     gsl_matrix_free(covar);
     return status;
+}
+
+void ImageFitter::CalculateErrors() {
+    for (size_t i = 0; i < _num_components; i++) {
+        double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
+        std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) =
+            GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
+        double center_x_err, center_y_err, amp_err, fwhm_x_err, fwhm_y_err, pa_err;
+
+        if (_beam_size > 0) {
+            const double a = fwhm_x * fwhm_y / 4 / _beam_size / _beam_size * amp * amp / _image_std / _image_std;
+            const double b = 1 + (_beam_size / fwhm_x) * (_beam_size / fwhm_x);
+            const double c = 1 + (_beam_size / fwhm_y) * (_beam_size / fwhm_y);
+            const double rho_square_1 = a * pow(b, 3.0 / 2.0) * pow(c, 3.0 / 2.0); // for amp
+            const double rho_square_2 = a * pow(b, 5.0 / 2.0) * pow(c, 1.0 / 2.0); // for center x, fwhm x
+            const double rho_square_3 = a * pow(b, 1.0 / 2.0) * pow(c, 5.0 / 2.0); // for center y, fwhm y, pa
+
+            center_x_err = sqrt(fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_2);
+            center_y_err = sqrt(fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_3);
+            amp_err = sqrt(amp * amp * 2.0 / rho_square_1);
+            fwhm_x_err = sqrt(fwhm_x * fwhm_x * 2.0 / rho_square_2);
+            fwhm_y_err = sqrt(fwhm_y * fwhm_y * 2.0 / rho_square_3);
+            const double tmp = fwhm_x * fwhm_y / (fwhm_x * fwhm_x - fwhm_y * fwhm_y);
+            pa_err = sqrt(4.0 * tmp * tmp / rho_square_3) * 180.0 / M_PI;
+        } else {
+            const double rho_square = M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp * amp / _image_std / _image_std;
+
+            center_x_err = sqrt(fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square);
+            center_y_err = sqrt(fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square);
+            amp_err = sqrt(amp * amp * 2.0 / rho_square);
+            fwhm_x_err = sqrt(fwhm_x * fwhm_x * 2.0 / rho_square);
+            fwhm_y_err = sqrt(fwhm_y * fwhm_y * 2.0 / rho_square);
+            const double tmp = fwhm_x * fwhm_y / (fwhm_x * fwhm_x - fwhm_y * fwhm_y);
+            pa_err = sqrt(4.0 * tmp * tmp / rho_square) * 180.0 / M_PI;
+        }
+
+        auto setError = [&](int j, double value) {
+            int fit_values_index = _fit_data.fit_values_indexes[i * 6 + j];
+            if (fit_values_index >= 0) {
+                gsl_vector_set(_fit_errors, fit_values_index, value);
+            }
+        };
+
+        setError(0, center_x_err);
+        setError(1, center_y_err);
+        setError(2, amp_err);
+        setError(3, fwhm_x_err);
+        setError(4, fwhm_y_err);
+        setError(5, pa_err);
+    }
 }
 
 void ImageFitter::CalculateImageData(const gsl_vector* residual) {
