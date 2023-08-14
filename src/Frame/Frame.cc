@@ -1784,6 +1784,9 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             }
         }
 
+        casacore::ImageInterface<float>* image = _loader->GetImage().get();
+        const string unit = image->units().getName();
+
         std::vector<CARTA::GaussianComponent> initial_values(
             fitting_request.initial_values().begin(), fitting_request.initial_values().end());
         std::vector<bool> fixed_params(fitting_request.fixed_params().begin(), fitting_request.fixed_params().end());
@@ -1811,8 +1814,8 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), image_std, beam_size, initial_values,
-                fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), image_std, beam_size, unit,
+                initial_values, fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
@@ -1823,7 +1826,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 image_std = stats.stdDev;
             };
 
-            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), image_std, beam_size, initial_values, fixed_params,
+            success = _image_fitter->FitImage(_width, _height, _image_cache.get(), image_std, beam_size, unit, initial_values, fixed_params,
                 fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback);
         }
