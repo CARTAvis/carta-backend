@@ -1758,7 +1758,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
 
     if (_image_fitter) {
         std::vector<CARTA::Beam> beams;
-        double beam_size;
+        double beam_size = 0;
         if (GetBeams(beams)) {
             CARTA::Beam currentBeam = beams[0];
             if (beams.size() > 1) {
