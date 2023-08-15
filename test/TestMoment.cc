@@ -81,6 +81,25 @@ public:
         CmpVectors(data1, data2);
     }
 
+    static void CmpVectorsRatio(const std::vector<float>& data1, const std::vector<float>& data2, float abs_err) {
+        EXPECT_EQ(data1.size(), data2.size());
+        if (data1.size() == data2.size()) {
+            for (int i = 0; i < data1.size(); ++i) {
+                if (!std::isnan(data1[i]) || !std::isnan(data2[i])) {
+                    if (std::abs(data1[i]) >= 1.0 || std::abs(data2[i]) >= 1.0) {
+                        float diff = std::fabs(data1[i] - data2[i]);
+                        float ratio1 = diff / std::abs(data1[i]);
+                        float ratio2 = diff / std::abs(data2[i]);
+                        EXPECT_LT(ratio1, abs_err);
+                        EXPECT_LT(ratio2, abs_err);
+                    } else {
+                        EXPECT_NEAR(data1[i], data2[i], abs_err);
+                    }
+                }
+            }
+        }
+    }
+
     static void GenerateMoments(const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis) {
         // create casa/carta moments generators
         casacore::LogOrigin casa_log("casa::ImageMoment", "createMoments", WHERE);
@@ -137,14 +156,14 @@ public:
     }
 
     static std::vector<std::shared_ptr<casacore::ImageInterface<float>>> GenerateMoments(
-        const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis, const vector<int>& moment_types) {
+        const std::shared_ptr<casacore::ImageInterface<float>>& image, int moments_axis, const std::vector<float>& include_pix,
+        const std::vector<float>& exclude_pix, const vector<int>& moment_types) {
         // create carta moments generators
         casacore::LogOrigin carta_log("carta::ImageMoment", "createMoments", WHERE);
         casacore::LogIO carta_os(carta_log);
         carta::ImageMoments<float> carta_image_moments(*image, carta_os, nullptr, true);
 
         // the other settings
-        casacore::Vector<float> include_pix, exclude_pix;
         casacore::Bool do_temp(true), remove_axis(false);
 
         // calculate moments with carta moment generator
@@ -160,17 +179,16 @@ public:
         return results;
     }
 
-    static void TestImageMoment() {
-        std::string file_path = FitsImagePath("M17_SWex_unittest.fits");
+    static void TestImageMoment(std::string filename, const std::vector<float>& include_pix, const std::vector<float>& exclude_pix) {
         std::shared_ptr<casacore::ImageInterface<float>> image;
-
-        if (OpenImage(image, file_path)) {
+        if (OpenImage(image, filename)) {
             auto image_shape = image->shape();
 
             // Carta moment calculator
             int moment_axis(2);
             std::vector<int> moment_types = {0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12};
             auto moment_calculator = carta::MomentCalculator(image, moment_types);
+            moment_calculator.SetInExcludeRange(include_pix, exclude_pix);
 
             std::vector<float> image_data;
             GetImageData(image, image_data);
@@ -178,12 +196,12 @@ public:
             // First way to get image moments
             Timer t1;
             auto moment_images1 = moment_calculator.CreateMoments(image_data.data(), moment_axis);
-            fmt::print("Elapsed time for calculating moment images (1) {:.3f} ms\n", t1.Elapsed().ms());
+            fmt::print("Elapsed time for calculating moment images (new) {:.3f} ms\n", t1.Elapsed().ms());
 
             // Second way to get image moments, through the Carta moment generator
             Timer t2;
-            auto moment_images2 = GenerateMoments(image, moment_axis, moment_types);
-            fmt::print("Elapsed time for calculating moment images (2) {:.3f} ms\n", t2.Elapsed().ms());
+            auto moment_images2 = GenerateMoments(image, moment_axis, include_pix, exclude_pix, moment_types);
+            fmt::print("Elapsed time for calculating moment images (old) {:.3f} ms\n", t2.Elapsed().ms());
 
             // Check the consistency of two ways
             for (int i = 0; i < moment_images2.size(); ++i) {
@@ -193,8 +211,11 @@ public:
                 std::vector<float> results2;
                 GetImageData(moment_images2[i], results2);
 
-                float error = moment_types[i] == 3 ? 0.1 : 0.0;
-                CmpVectors(results1, results2, error);
+                if (moment_types[i] == 3) {
+                    CmpVectorsRatio(results1, results2, 1.0e-2);
+                } else {
+                    CmpVectors(results1, results2, 1.0e-6);
+                }
             }
         }
     }
@@ -225,5 +246,17 @@ TEST_F(MomentTest, CheckConsistencyForBeamConvolutions) {
 }
 
 TEST_F(MomentTest, TestMomentCalculator) {
-    TestImageMoment();
+    std::string filename = FitsImagePath("M17_SWex_unittest.fits");
+    float delta_pixel_range(1.0e-3);
+
+    // No pixel range requirements
+    TestImageMoment(filename, {}, {});
+
+    // Pixel range inclusive
+    TestImageMoment(filename, {delta_pixel_range}, {});
+    TestImageMoment(filename, {-delta_pixel_range, delta_pixel_range}, {});
+
+    // Pixel range exclusive
+    TestImageMoment(filename, {}, {delta_pixel_range});
+    TestImageMoment(filename, {}, {-delta_pixel_range, delta_pixel_range});
 }

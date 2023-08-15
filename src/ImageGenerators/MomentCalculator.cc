@@ -15,7 +15,7 @@
 using namespace carta;
 
 MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
-    : _image(image), _delta_velocity(DOUBLE_NAN), _moment_types(moment_types) {
+    : _image(image), _delta_velocity(DOUBLE_NAN), _moment_types(moment_types), _do_include(false), _do_exclude(false) {
     _coord_sys = _image->coordinates();
     int spectral_axis = _coord_sys.spectralAxisNumber();
 
@@ -38,6 +38,39 @@ MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<floa
             spectral_coord.pixelToVelocity(vel, chan);
             _velocities.push_back(vel.getValue());
         }
+    }
+}
+
+void MomentCalculator::SetInExcludeRange(const std::vector<float>& include_pix, const std::vector<float>& exclude_pix) {
+    if (!include_pix.empty() && !exclude_pix.empty()) {
+        spdlog::error("[MomentCalculator] You can only give one of arguments for included or excluded pixel range!");
+        return;
+    }
+
+    _pixel_range.resize(0);
+
+    if (include_pix.size() == 1) {
+        _pixel_range.resize(2);
+        _pixel_range[0] = -std::abs(include_pix[0]);
+        _pixel_range[1] = std::abs(include_pix[0]);
+        _do_include = true;
+    } else if (include_pix.size() == 2) {
+        _pixel_range.resize(2);
+        _pixel_range[0] = std::min(include_pix[0], include_pix[1]);
+        _pixel_range[1] = std::max(include_pix[0], include_pix[1]);
+        _do_include = true;
+    }
+
+    if (exclude_pix.size() == 1) {
+        _pixel_range.resize(2);
+        _pixel_range[0] = -std::abs(exclude_pix[0]);
+        _pixel_range[1] = std::abs(exclude_pix[0]);
+        _do_exclude = true;
+    } else if (exclude_pix.size() == 2) {
+        _pixel_range.resize(2);
+        _pixel_range[0] = std::min(exclude_pix[0], exclude_pix[1]);
+        _pixel_range[1] = std::max(exclude_pix[0], exclude_pix[1]);
+        _do_exclude = true;
     }
 }
 
@@ -132,9 +165,23 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
     double max_velocity, min_velocity;
     std::vector<float> intensities;
     size_t counts(0);
+
+    auto valid_pixel_range = [&](const float& pixel) {
+        if (!_do_include && !_do_exclude) {
+            return true;
+        }
+        if (_do_include && (pixel >= _pixel_range[0] && pixel <= _pixel_range[1])) {
+            return true;
+        }
+        if (_do_exclude && (pixel <= _pixel_range[0] || pixel >= _pixel_range[1])) {
+            return true;
+        }
+        return false;
+    };
+
     for (size_t z = 0; z < depth; ++z) {
         size_t idx = z * width * height + y * width + x;
-        if (!std::isnan(data[idx])) {
+        if (!std::isnan(data[idx]) && valid_pixel_range(data[idx])) {
             sum_i += data[idx];
             sum_iv += data[idx] * _velocities[z];
             sum_ivv += data[idx] * std::pow(_velocities[z], 2);
@@ -181,7 +228,7 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
         if (standard_deviation > 0) {
             standard_deviation = std::sqrt(standard_deviation);
         } else if (standard_deviation <= 0) {
-            standard_deviation = 0.0;
+            standard_deviation = DOUBLE_NAN;
         }
         moment_data[6](start_pos) = standard_deviation;
         mask_data[6](start_pos) = counts != 0;

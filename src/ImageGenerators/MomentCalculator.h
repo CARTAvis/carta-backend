@@ -21,6 +21,8 @@ public:
     MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types);
     ~MomentCalculator() = default;
 
+    void SetInExcludeRange(const std::vector<float>& include_pix, const std::vector<float>& exclude_pix);
+
     std::vector<std::shared_ptr<casacore::ImageInterface<float>>> CreateMoments(float* image_data, int moment_axis);
 
 private:
@@ -33,6 +35,8 @@ private:
     casacore::CoordinateSystem _coord_sys;
     std::vector<double> _velocities;
     double _delta_velocity;
+
+    // Moment requirements
 
     // Moment Types:
     // 0: AVERAGE
@@ -48,6 +52,11 @@ private:
     // 11: MINIMUM
     // 12: MINIMUM_COORDINATE
     std::vector<int> _moment_types;
+
+    // Pixel range
+    std::vector<float> _pixel_range;
+    bool _do_include;
+    bool _do_exclude;
 };
 
 } // namespace carta
