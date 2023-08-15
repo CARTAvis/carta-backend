@@ -897,6 +897,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBoun
             hist = target_hist;
             return true;
         }
+        _cube_histograms.erase(stokes);
     }
     return false;
 }
