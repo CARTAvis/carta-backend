@@ -76,8 +76,10 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
 
     // Initialize moment images data
     std::unordered_map<int, casacore::Array<float>> moment_data;
+    std::unordered_map<int, casacore::Array<bool>> mask_data;
     for (auto type : _moment_types) {
         moment_data[type] = casacore::Array<float>(out_shape);
+        mask_data[type] = casacore::Array<bool>(out_shape);
     }
 
     // Do calculations through the display plane
@@ -87,7 +89,7 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
             casacore::IPosition start_pos = casacore::IPosition(out_shape.size(), 0);
             start_pos(display_axes[0]) = x;
             start_pos(display_axes[1]) = y;
-            DoCalculation(image_data, x, y, display_sizes[0], display_sizes[1], depth, start_pos, moment_data);
+            DoCalculation(image_data, x, y, display_sizes[0], display_sizes[1], depth, start_pos, moment_data, mask_data);
         }
     }
 
@@ -98,11 +100,20 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
         image->setUnits(_image->units());
         image->setMiscInfo(_image->miscInfo());
         image->setImageInfo(_image->imageInfo());
-        // image->makeMask("mask0", true, true);
+        image->makeMask("mask0", true, true);
 
         // Fill data into the moment image
         casacore::IPosition start_pos = casacore::IPosition(out_shape.size(), 0);
         image->putSlice(moment_data[_moment_types[i]], start_pos);
+
+        // Fill mask data into the moment image
+        if (image->isMasked()) {
+            casacore::Lattice<casacore::Bool>& mask = image->pixelMask();
+            if (mask.isWritable()) {
+                mask.putSlice(mask_data[_moment_types[i]], start_pos);
+            }
+            mask.flush();
+        }
         image->flush();
     }
 
@@ -110,7 +121,8 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
 }
 
 void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth,
-    const casacore::IPosition& start_pos, std::unordered_map<int, casacore::Array<float>>& moment_data) {
+    const casacore::IPosition& start_pos, std::unordered_map<int, casacore::Array<float>>& moment_data,
+    std::unordered_map<int, casacore::Array<bool>>& mask_data) {
     double sum_i(0);
     double sum_iv(0);
     double sum_ivv(0);
@@ -145,18 +157,23 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
 
     if (RequiredMomentType(0)) {
         moment_data[0](start_pos) = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
+        mask_data[0](start_pos) = counts != 0;
     }
     if (RequiredMomentType(1)) {
         moment_data[1](start_pos) = counts == 0 ? DOUBLE_NAN : _delta_velocity * sum_i;
+        mask_data[1](start_pos) = counts != 0;
     }
     if (RequiredMomentType(2)) {
         moment_data[2](start_pos) = counts == 0 ? DOUBLE_NAN : mean_coordinate;
+        mask_data[2](start_pos) = counts != 0;
     }
     if (RequiredMomentType(3)) {
         moment_data[3](start_pos) = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
+        mask_data[3](start_pos) = counts != 0;
     }
     if (RequiredMomentType(4)) {
         moment_data[4](start_pos) = counts == 0 ? DOUBLE_NAN : FindMedian(intensities, depth);
+        mask_data[4](start_pos) = counts != 0;
     }
 
     if (RequiredMomentType(6)) {
@@ -167,10 +184,12 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
             standard_deviation = 0.0;
         }
         moment_data[6](start_pos) = standard_deviation;
+        mask_data[6](start_pos) = counts != 0;
     }
 
     if (RequiredMomentType(7)) {
         moment_data[7](start_pos) = counts == 0 ? DOUBLE_NAN : std::sqrt(sum_ii / counts);
+        mask_data[7](start_pos) = counts != 0;
     }
 
     if (RequiredMomentType(8)) {
@@ -182,19 +201,24 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
             }
         }
         moment_data[8](start_pos) = counts == 0 ? DOUBLE_NAN : abs_mean_deviation / counts;
+        mask_data[8](start_pos) = counts != 0;
     }
 
     if (RequiredMomentType(9)) {
         moment_data[9](start_pos) = counts == 0 ? DOUBLE_NAN : max;
+        mask_data[9](start_pos) = counts != 0;
     }
     if (RequiredMomentType(10)) {
         moment_data[10](start_pos) = counts == 0 ? DOUBLE_NAN : max_velocity;
+        mask_data[10](start_pos) = counts != 0;
     }
     if (RequiredMomentType(11)) {
         moment_data[11](start_pos) = counts == 0 ? DOUBLE_NAN : min;
+        mask_data[11](start_pos) = counts != 0;
     }
     if (RequiredMomentType(12)) {
         moment_data[12](start_pos) = counts == 0 ? DOUBLE_NAN : min_velocity;
+        mask_data[12](start_pos) = counts != 0;
     }
 }
 
