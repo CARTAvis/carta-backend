@@ -165,11 +165,13 @@ public:
 
         // the other settings
         casacore::Bool do_temp(true), remove_axis(false);
+        casacore::Vector<float> casa_include_pix = include_pix;
+        casacore::Vector<float> casa_exclude_pix = exclude_pix;
 
         // calculate moments with carta moment generator
         carta_image_moments.setMoments(moment_types);
         carta_image_moments.setMomentAxis(moments_axis);
-        carta_image_moments.setInExCludeRange(include_pix, exclude_pix);
+        carta_image_moments.setInExCludeRange(casa_include_pix, casa_exclude_pix);
         auto moment_images = carta_image_moments.createMoments(do_temp, "carta_image_moments", remove_axis);
 
         std::vector<std::shared_ptr<casacore::ImageInterface<float>>> results;
