@@ -941,8 +941,7 @@ void FileLoader::SetStokesCdelt(int stokes_cdelt) {
 }
 
 bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
-    // Override in ExprLoader
-    message = "Cannot save image type from loader.";
+    // Override in ExprLoader to save LEL image
     return false;
 }
 
