@@ -76,6 +76,8 @@ FileLoader::FileLoader(const std::string& filename, const std::string& directory
       _is_gz(is_gz),
       _is_generated(is_generated),
       _modify_time(0),
+      _support_aips_beam(false),
+      _is_history_beam(false),
       _num_dims(0),
       _has_pixel_mask(false),
       _stokes_cdelt(0) {
@@ -434,37 +436,43 @@ bool FileLoader::GetSubImage(
 bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     // Obtains beam table from ImageInfo
     bool success(false);
-    try {
-        auto image = GetImage();
-        if (!image) {
-            return success;
-        }
+    if (_is_gz && IsHistoryBeam() && !_history_beam.isNull()) {
+        beams.push_back(Message::Beam(
+            -1, -1, _history_beam.getMajor("arcsec"), _history_beam.getMinor("arcsec"), _history_beam.getPA(casacore::Unit("deg"))));
+    } else {
+        try {
+            auto image = GetImage();
+            if (!image) {
+                return success;
+            }
 
-        casacore::ImageInfo image_info = image->imageInfo();
-        if (!image_info.hasBeam()) {
-            error = "Image has no beam information.";
-            return success;
-        }
+            casacore::ImageInfo image_info = image->imageInfo();
+            if (!image_info.hasBeam()) {
+                error = "Image has no beam information.";
+                return success;
+            }
 
-        if (image_info.hasSingleBeam()) {
-            casacore::GaussianBeam gaussian_beam = image_info.restoringBeam();
-            beams.push_back(Message::Beam(
-                -1, -1, gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA(casacore::Unit("deg"))));
-        } else {
-            casacore::ImageBeamSet beam_set = image_info.getBeamSet();
-            casacore::GaussianBeam gaussian_beam;
-            for (unsigned int stokes = 0; stokes < beam_set.nstokes(); ++stokes) {
-                for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
-                    gaussian_beam = beam_set.getBeam(chan, stokes);
-                    beams.push_back(Message::Beam(chan, stokes, gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
-                        gaussian_beam.getPA(casacore::Unit("deg"))));
+            if (image_info.hasSingleBeam()) {
+                casacore::GaussianBeam gaussian_beam = image_info.restoringBeam();
+                beams.push_back(Message::Beam(-1, -1, gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
+                    gaussian_beam.getPA(casacore::Unit("deg"))));
+            } else {
+                casacore::ImageBeamSet beam_set = image_info.getBeamSet();
+                casacore::GaussianBeam gaussian_beam;
+                for (unsigned int stokes = 0; stokes < beam_set.nstokes(); ++stokes) {
+                    for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
+                        gaussian_beam = beam_set.getBeam(chan, stokes);
+                        beams.push_back(Message::Beam(chan, stokes, gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
+                            gaussian_beam.getPA(casacore::Unit("deg"))));
+                    }
                 }
             }
+            success = true;
+        } catch (casacore::AipsError& err) {
+            error = "Image beam error: " + err.getMesg();
         }
-        success = true;
-    } catch (casacore::AipsError& err) {
-        error = "Image beam error: " + err.getMesg();
     }
+
     return success;
 }
 
@@ -933,7 +941,14 @@ void FileLoader::SetStokesCdelt(int stokes_cdelt) {
 }
 
 bool FileLoader::SaveFile(const CARTA::FileType type, const std::string& output_filename, std::string& message) {
-    // Override in ExprLoader
-    message = "Cannot save image type from loader.";
+    // Override in ExprLoader to save LEL image
     return false;
+}
+
+void FileLoader::SetAipsBeamSupport(bool support) {
+    _support_aips_beam = support;
+}
+
+bool FileLoader::GetAipsBeamSupport() {
+    return _support_aips_beam;
 }
