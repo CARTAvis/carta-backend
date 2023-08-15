@@ -38,20 +38,6 @@ void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, C
 
     _filelist_folder = folder;
 
-    // resolve empty folder string or current dir "."
-    if (folder.empty() || folder.compare(".") == 0) {
-        folder = _top_level_folder;
-    }
-
-    // resolve $BASE keyword in folder string
-    if (folder.find("$BASE") != std::string::npos) {
-        casacore::String folder_string(folder);
-        folder_string.gsub("$BASE", _starting_folder);
-        folder = folder_string;
-    }
-    // strip root_folder from folder
-    GetRelativePath(folder);
-
     // get file list response and result message if any
     GetFileList(response, folder, result_msg, request.filter_mode());
 
@@ -59,67 +45,88 @@ void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, C
 }
 
 void FileListHandler::GetRelativePath(std::string& folder) {
-    // Remove root folder path from given folder string
+    // Remove top folder path from given folder string
     if (folder.find("./") == 0) {
-        folder.replace(0, 2, ""); // remove leading "./"
+        folder = folder.substr(2); // remove leading "./"
     } else if (folder.find(_top_level_folder) == 0) {
-        folder.replace(0, _top_level_folder.length(), ""); // remove root folder path
+        folder = folder.substr(_top_level_folder.length()); // remove top folder path
+
         if (!folder.empty() && folder.front() == '/') {
-            folder.replace(0, 1, "");
-        } // remove leading '/'
-    }
-    if (folder.empty()) {
-        folder = ".";
+            folder = folder.substr(1); // remove leading '/'
+        }
     }
 }
 
-void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg,
+void FileListHandler::GetFileList(CARTA::FileListResponse& file_list_response, const std::string& folder, ResultMsg& result_msg,
     CARTA::FileListFilterMode filter_mode, bool region_list) {
-    // fill FileListResponse
-    std::string requested_folder = ((folder.compare(".") == 0) ? _top_level_folder : folder);
-    casacore::Path requested_path(_top_level_folder);
+    // Fill FileListResponse message for folder (or folder path).
+    std::string requested_folder(folder);
+
+    if (requested_folder.empty() || requested_folder.compare(".") == 0) {
+        // Resolve empty folder or current dir "." to top folder
+        requested_folder = _top_level_folder;
+    } else if (requested_folder.find("$BASE") != std::string::npos) {
+        // Resolve $BASE keyword to starting folder
+        casacore::String folder_string(requested_folder);
+        folder_string.gsub("$BASE", _starting_folder);
+        requested_folder = folder_string;
+    }
+
+    std::string absolute_path(requested_folder), directory;
+
     if (requested_folder == _top_level_folder) {
-        // set directory in response; parent is null
-        file_list.set_directory(".");
-    } else { // append folder to root folder
-        requested_path.append(folder);
-        // set directory and parent in response
-        std::string parent_dir(requested_path.dirName());
-        GetRelativePath(parent_dir);
-        file_list.set_directory(folder);
-        file_list.set_parent(parent_dir);
+        // Set directory relative to top (current directory). Parent is empty string.
+        file_list_response.set_directory(".");
+    } else {
+        // Normalize folder relative to top, restore path
+        GetRelativePath(requested_folder);
+        casacore::Path path(_top_level_folder);
+        path.append(requested_folder);
+
+        // Resolve path (., .., ~, symlinks)
         try {
-            requested_folder = requested_path.resolvedName();
+            absolute_path = path.resolvedName();
         } catch (casacore::AipsError& err) {
             try {
-                requested_folder = requested_path.absoluteName();
+                absolute_path = path.absoluteName();
             } catch (casacore::AipsError& err) {
-                file_list.set_success(false);
-                file_list.set_message("Cannot resolve directory path.");
+                file_list_response.set_success(false);
+                file_list_response.set_message("Cannot resolve directory path for file list.");
                 return;
             }
         }
+
+        // Set parent relative to top
+        std::string parent(path.dirName());
+        GetRelativePath(parent);
+        file_list_response.set_parent(parent);
+
+        // Set directory relative to top
+        directory = absolute_path;
+        GetRelativePath(directory);
+        file_list_response.set_directory(directory);
     }
 
-    if ((_top_level_folder.find(requested_folder) == 0) && (requested_folder.length() < _top_level_folder.length())) {
-        file_list.set_success(false);
-        file_list.set_message("Forbidden path.");
+    if ((_top_level_folder.find(absolute_path) == 0) && (absolute_path.length() < _top_level_folder.length())) {
+        // absolute path is above top folder
+        file_list_response.set_success(false);
+        file_list_response.set_message("Forbidden path.");
         return;
     }
 
-    casacore::File folder_path(requested_folder);
+    casacore::File folder_path(absolute_path);
     std::string message;
 
     try {
         if (!folder_path.exists()) {
-            file_list.set_success(false);
-            file_list.set_message("Requested directory " + folder + " does not exist.");
+            file_list_response.set_success(false);
+            file_list_response.set_message("Requested directory " + directory + " does not exist.");
             return;
         }
 
         if (!folder_path.isDirectory()) {
-            file_list.set_success(false);
-            file_list.set_message("Requested path " + folder + " is not a directory.");
+            file_list_response.set_success(false);
+            file_list_response.set_message("Requested path " + directory + " is not a directory.");
             return;
         }
 
@@ -136,7 +143,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
-                file_list.set_cancel(true);
+                file_list_response.set_cancel(true);
                 break;
             }
 
@@ -158,14 +165,14 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
                             if (list_all_files || file_type != CARTA::UNKNOWN) {
                                 // Add file: known region file, or not checking type
-                                auto& file_info = *file_list.add_files();
+                                auto& file_info = *file_list_response.add_files();
                                 FillRegionFileInfo(file_info, full_path, file_type, false);
                             }
                         } else if (cc_file.isDirectory(true) && cc_file.isExecutable() &&
                                    (list_all_files || CasacoreImageType(full_path) == casacore::ImageOpener::UNKNOWN)) {
                             // Add directory: not image if checking type, or not checking type
                             casacore::String dir_name(cc_file.path().baseName());
-                            auto directory_info = file_list.add_subdirectories();
+                            auto directory_info = file_list_response.add_subdirectories();
                             directory_info->set_name(dir_name);
                             directory_info->set_date(cc_file.modifyTime());
                             directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
@@ -203,7 +210,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 case casacore::ImageOpener::UNKNOWN: {
                                     // UNKNOWN directories are directories
                                     casacore::String dir_name(cc_file.path().baseName());
-                                    auto directory_info = file_list.add_subdirectories();
+                                    auto directory_info = file_list_response.add_subdirectories();
                                     directory_info->set_name(dir_name);
                                     directory_info->set_date(cc_file.modifyTime());
                                     directory_info->set_item_count(GetNumItems(cc_file.path().absoluteName()));
@@ -219,7 +226,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                         }
 
                         if (add_image_file) {
-                            auto& file_info = *file_list.add_files();
+                            auto& file_info = *file_list_response.add_files();
                             file_info.set_name(name);
                             FileInfoLoader info_loader = FileInfoLoader(full_path, file_type);
                             info_loader.FillFileInfo(file_info);
@@ -245,12 +252,12 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
-        file_list.set_success(false);
-        file_list.set_message(err.getMesg());
+        file_list_response.set_success(false);
+        file_list_response.set_message(err.getMesg());
         return;
     }
 
-    file_list.set_success(true);
+    file_list_response.set_success(true);
 }
 
 void FileListHandler::OnRegionListRequest(
@@ -265,23 +272,10 @@ void FileListHandler::OnRegionListRequest(
 
     _regionlist_folder = folder;
 
-    // resolve empty folder string or current dir "."
-    if (folder.empty() || folder.compare(".") == 0) {
-        folder = _top_level_folder;
-    }
-
-    // resolve $BASE keyword in folder string
-    if (folder.find("$BASE") != std::string::npos) {
-        casacore::String folder_string(folder);
-        folder_string.gsub("$BASE", _starting_folder);
-        folder = folder_string;
-    }
-    // strip root_folder from folder
-    GetRelativePath(folder);
-
     // get file list response and result message if any
     CARTA::FileListResponse file_response;
     GetFileList(file_response, folder, result_msg, region_request.filter_mode(), true);
+
     // copy to region list message
     region_response.set_success(file_response.success());
     region_response.set_message(file_response.message());
@@ -332,11 +326,11 @@ bool FileListHandler::FillRegionFileInfo(
 void FileListHandler::OnRegionFileInfoRequest(
     const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg) {
     // Fill response message with file info and contents
-    casacore::Path root_path(_top_level_folder);
-    root_path.append(request.directory());
+    casacore::Path top_path(_top_level_folder);
+    top_path.append(request.directory());
     auto filename = request.file();
-    root_path.append(filename);
-    casacore::File cc_file(root_path);
+    top_path.append(filename);
+    casacore::File cc_file(top_path);
     std::string message, contents;
     bool success(false);
 
