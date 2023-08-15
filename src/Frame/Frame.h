@@ -326,8 +326,8 @@ protected:
     std::mutex _spectral_mutex;
 
     // Cache maps
-    // For image, key is cache key (z/stokes); for cube, key is stokes.
-    std::unordered_map<int, std::vector<Histogram>> _image_histograms, _cube_histograms;
+    std::unordered_map<int, std::vector<Histogram>> _image_histograms; // key is the hash of z and stokes
+    std::unordered_map<int, Histogram> _cube_histograms;               // key is stokes
     std::unordered_map<int, BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
 

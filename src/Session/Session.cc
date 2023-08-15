@@ -1591,6 +1591,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 Histogram z_histogram; // histogram for each z using cube stats
                 Histogram cube_histogram;
                 if (!_frames.at(file_id)->GetCachedCubeHistogram(stokes, num_bins, bounds, cube_histogram)) {
+                    bool loop_cancelled(false);
                     for (size_t z = 0; z < depth; ++z) {
                         if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, z, stokes, num_bins, bounds, z_histogram)) {
                             return calculated; // z histogram failed
@@ -1604,6 +1605,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                         // check for cancel
                         if (_histogram_context.is_group_execution_cancelled()) {
+                            loop_cancelled = true;
                             break;
                         }
 
@@ -1622,8 +1624,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         }
                     }
 
-                    // cache cube histogram
-                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
+                    if (!loop_cancelled) {
+                        _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
+                    }
                 }
 
                 // set completed cube histogram

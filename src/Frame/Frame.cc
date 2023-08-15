@@ -892,12 +892,10 @@ bool Frame::GetCachedImageHistogram(int z, int stokes, int num_bins, const Histo
 bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, const HistogramBounds& bounds, Histogram& hist) {
     // Get cube histogram results from cache
     if (_cube_histograms.count(stokes)) {
-        for (auto& result : _cube_histograms[stokes]) {
-            // get from cache if correct num_bins
-            if ((result.GetNbins() == num_bins || (num_bins == AUTO_BIN_SIZE)) && result.GetBounds() == bounds) {
-                hist = result;
-                return true;
-            }
+        Histogram& target_hist = _cube_histograms.at(stokes);
+        if ((target_hist.GetNbins() == num_bins || (num_bins == AUTO_BIN_SIZE)) && target_hist.GetBounds() == bounds) {
+            hist = target_hist;
+            return true;
         }
     }
     return false;
@@ -954,7 +952,7 @@ void Frame::CacheCubeStats(int stokes, BasicStats<float>& stats) {
 }
 
 void Frame::CacheCubeHistogram(int stokes, Histogram& hist) {
-    _cube_histograms[stokes].push_back(hist);
+    _cube_histograms[stokes] = hist;
 }
 
 // ****************************************************
