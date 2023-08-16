@@ -199,8 +199,9 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
         }
     }
 
-    double mean_coordinate = sum_iv / sum_i;
-    double dispersion_coordinate = std::sqrt(std::abs(sum_ivv / sum_i - std::pow(mean_coordinate, 2)));
+    double mean_coordinate = std::abs(sum_i) > 0.0 ? sum_iv / sum_i : DOUBLE_NAN;
+    double dispersion_coordinate =
+        std::abs(sum_i) > 0.0 ? std::sqrt(std::abs((sum_ivv / sum_i) - std::pow(mean_coordinate, 2))) : DOUBLE_NAN;
 
     if (RequiredMomentType(0)) {
         moment_data[0](start_pos) = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
@@ -212,11 +213,11 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
     }
     if (RequiredMomentType(2)) {
         moment_data[2](start_pos) = counts == 0 ? DOUBLE_NAN : mean_coordinate;
-        mask_data[2](start_pos) = counts != 0;
+        mask_data[2](start_pos) = counts != 0 && !std::isnan(mean_coordinate);
     }
     if (RequiredMomentType(3)) {
         moment_data[3](start_pos) = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
-        mask_data[3](start_pos) = counts != 0;
+        mask_data[3](start_pos) = counts != 0 && !std::isnan(dispersion_coordinate);
     }
     if (RequiredMomentType(4)) {
         moment_data[4](start_pos) = counts == 0 ? DOUBLE_NAN : FindMedian(intensities, depth);
