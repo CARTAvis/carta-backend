@@ -15,7 +15,7 @@
 using namespace carta;
 
 MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
-    : _image(image), _delta_velocity(DOUBLE_NAN), _moment_types(moment_types), _do_include(false), _do_exclude(false) {
+    : _image(image), _delta_velocity(DOUBLE_NAN), _moment_types(moment_types), _do_include(false), _do_exclude(false), _cancelled(false) {
     _coord_sys = _image->coordinates();
     int spectral_axis = _coord_sys.spectralAxisNumber();
 
@@ -126,6 +126,11 @@ std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::
         }
     }
 
+    // Check is process cancelled
+    if (_cancelled) {
+        return out_images;
+    }
+
     // Reset moment images
     for (int i = 0; i < moments_size; ++i) {
         std::shared_ptr<casacore::ImageInterface<float>>& image = out_images[i];
@@ -180,6 +185,10 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
     };
 
     for (size_t z = 0; z < depth; ++z) {
+        if (_cancelled) {
+            break;
+        }
+
         size_t idx = z * width * height + y * width + x;
         if (!std::isnan(data[idx]) && valid_pixel_range(data[idx])) {
             sum_i += data[idx];
@@ -197,6 +206,10 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
             }
             counts++;
         }
+    }
+
+    if (_cancelled) {
+        return;
     }
 
     double mean_coordinate = std::abs(sum_i) > 0.0 ? sum_iv / sum_i : DOUBLE_NAN;
@@ -286,4 +299,8 @@ double MomentCalculator::FindMedian(std::vector<float>& array, size_t depth) {
 
 bool MomentCalculator::RequiredMomentType(int type) {
     return std::find(_moment_types.begin(), _moment_types.end(), type) != _moment_types.end();
+}
+
+void MomentCalculator::StopCalculation() {
+    _cancelled = true;
 }

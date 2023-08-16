@@ -25,12 +25,15 @@ public:
 
     std::vector<std::shared_ptr<casacore::ImageInterface<float>>> CreateMoments(float* image_data, int moment_axis);
 
+    void StopCalculation();
+
 private:
     static double FindMedian(std::vector<float>& array, size_t depth);
     bool RequiredMomentType(int type);
     void DoCalculation(float* data, int x, int y, size_t width, size_t height, size_t depth, const casacore::IPosition& start_pos,
         std::unordered_map<int, casacore::Array<float>>& moment_data, std::unordered_map<int, casacore::Array<bool>>& mask_data);
 
+    // Image properties
     std::shared_ptr<casacore::ImageInterface<float>> _image;
     casacore::CoordinateSystem _coord_sys;
     std::vector<double> _velocities;
@@ -57,6 +60,9 @@ private:
     std::vector<float> _pixel_range;
     bool _do_include;
     bool _do_exclude;
+
+    // Cancel moments calculation
+    volatile bool _cancelled;
 };
 
 } // namespace carta
