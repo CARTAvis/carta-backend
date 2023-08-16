@@ -20,7 +20,8 @@ using namespace carta;
 
 class MomentTest : public ::testing::Test, public FileFinder {
 public:
-    static void GetImageData(std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data) {
+    static void GetImageData(
+        std::shared_ptr<const casacore::ImageInterface<casacore::Float>> image, std::vector<float>& data, int stokes = 0) {
         // Get spectral and stokes indices
         casacore::CoordinateSystem coord_sys = image->coordinates();
         int spectral_axis = coord_sys.spectralAxisNumber();
@@ -37,8 +38,8 @@ public:
             end(spectral_axis) = image->shape()[spectral_axis] - 1;
         }
         if (stokes_axis >= 0) {
-            start(stokes_axis) = 0;
-            end(stokes_axis) = 0;
+            start(stokes_axis) = stokes;
+            end(stokes_axis) = stokes;
         }
 
         // Get image data
@@ -184,19 +185,18 @@ public:
     static void TestImageMoment(std::string filename, const std::vector<float>& include_pix, const std::vector<float>& exclude_pix) {
         std::shared_ptr<casacore::ImageInterface<float>> image;
         if (OpenImage(image, filename)) {
-            auto image_shape = image->shape();
-
-            // Carta moment calculator
+            // Set moment requests
             int moment_axis(2);
             std::vector<int> moment_types = {0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12};
-            auto moment_calculator = carta::MomentCalculator(image, moment_types);
-            moment_calculator.SetInExcludeRange(include_pix, exclude_pix);
 
+            // Get image data
             std::vector<float> image_data;
             GetImageData(image, image_data);
 
             // First way to get image moments
             Timer t1;
+            auto moment_calculator = carta::MomentCalculator(image, moment_types);
+            moment_calculator.SetInExcludeRange(include_pix, exclude_pix);
             auto moment_images1 = moment_calculator.CreateMoments(image_data.data(), moment_axis);
             fmt::print("Elapsed time for calculating moment images (new) {:.3f} ms\n", t1.Elapsed().ms());
 
