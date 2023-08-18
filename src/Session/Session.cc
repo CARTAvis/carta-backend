@@ -408,6 +408,11 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     auto ack_message = Message::RegisterViewerAck(session_id, success, status, type);
     auto& platform_string_map = *ack_message.mutable_platform_strings();
     platform_string_map["release_info"] = GetReleaseInformation();
+
+#ifdef DEPLOYMENT_TYPE
+    platform_string_map["deployment"] = DEPLOYMENT_TYPE;
+#endif
+
 #if __APPLE__
     platform_string_map["platform"] = "macOS";
 #else
