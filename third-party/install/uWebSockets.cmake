@@ -5,19 +5,18 @@ macro(install_uWebSockets)
     include_directories(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src)
     include_directories(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/src)
 
-    set(USOCKETS_SOURCE_FILES
-            ${SOURCE_FILES}
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/crypto/openssl.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/crypto/wolfssl.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing/epoll_kqueue.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing/gcd.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing/libuv.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/bsd.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/context.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/loop.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/socket.c)
+    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src USOCKETS_FILES)
+    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/crypto USOCKETS_CRYPTO_FILES)
+    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing USOCKETS_EVENTING_FILES)
+    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/internal USOCKETS_INTERNAL_FILES)
+    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/io_uring USOCKETS_IO_URING_FILES)
 
-    add_library(uSockets ${USOCKETS_SOURCE_FILES})
+    add_library(uSockets
+            ${USOCKETS_FILES}
+            ${USOCKETS_CRYPTO_FILES}
+            ${USOCKETS_EVENTING_FILES}
+            ${USOCKETS_INTERNAL_FILES}
+            ${USOCKETS_IO_URING_FILES})
 
 endmacro()
 
