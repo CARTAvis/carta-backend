@@ -9,6 +9,7 @@
 
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlinear.h>
+#include <gsl/gsl_statistics.h>
 #include <gsl/gsl_vector.h>
 #include <string>
 #include <vector>
@@ -52,7 +53,6 @@ public:
      * @param width The width of the image
      * @param height The height of the image
      * @param image Pointer to the image data
-     * @param image_std Standard deviation of the image data
      * @param beam_size Beam size of the image
      * @param unit Unit of the image
      * @param initial_values Initial fitting parameters
@@ -67,7 +67,7 @@ public:
      * @param offset_y Y-axis offset from the fitting region to the entire image
      * @return Whether the fitting is successful
      */
-    bool FitImage(size_t width, size_t height, float* image, float image_std, double beam_size, string unit,
+    bool FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
         const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
         CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
         GeneratorProgressCallback progress_callback, size_t offset_x = 0, size_t offset_y = 0);
@@ -91,7 +91,7 @@ private:
     /** @brief Fitting-related data. */
     FitData _fit_data;
     /** @brief Standard deviation of the image data. */
-    float _image_std;
+    double _image_std;
     /** @brief Beam size of the image. */
     double _beam_size;
     /** @brief Unit of the image. */
@@ -216,6 +216,13 @@ private:
      * @return A Gaussian component sub-message
      */
     static CARTA::GaussianComponent GetGaussianComponent(std::tuple<double, double, double, double, double, double> params);
+    /**
+     * @brief Calculate the Median Absolute Deviation (MAD) of an array of data.
+     * @param n The number of data points in the array.
+     * @param x An array containing the data points.
+     * @return The calculated MAD.
+     */
+    static double GetMedianAbsDeviation(const size_t n, double x[]);
 };
 
 } // namespace carta

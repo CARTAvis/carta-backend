@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#define SQ_FWHM_TO_SIGMA 1 / 8 / log(2)
+#define SQ_FWHM_TO_SIGMA 1.0 / 8.0 / log(2.0)
 #define DEG_TO_RAD M_PI / 180.0
 
 #include "ImageFitter.h"
@@ -24,7 +24,7 @@ ImageFitter::ImageFitter() {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(size_t width, size_t height, float* image, float image_std, double beam_size, string unit,
+bool ImageFitter::FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
     const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
     CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
     GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
@@ -41,7 +41,6 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, float imag
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
-    _image_std = image_std;
     _beam_size = beam_size;
     _unit = unit;
     _create_model_data = create_model_image;
@@ -221,6 +220,9 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
     gsl_vector* f = gsl_multifit_nlinear_residual(work);
     gsl_vector* y = gsl_multifit_nlinear_position(work);
     gsl_matrix* covar = gsl_matrix_alloc(p, p);
+
+    gsl_multifit_nlinear_init(_fit_values, &_fdf, work); // work-around for filling in f
+    _image_std = GetMedianAbsDeviation(_fdf.n, f->data);
 
     gsl_vector* weights = gsl_vector_alloc(n);
     gsl_vector_set_all(weights, 1 / _image_std / _image_std);
@@ -508,4 +510,14 @@ CARTA::GaussianComponent ImageFitter::GetGaussianComponent(std::tuple<double, do
     auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
     auto component = Message::GaussianComponent(center, amp, fwhm, pa);
     return component;
+}
+
+double ImageFitter::GetMedianAbsDeviation(const size_t n, double x[]) {
+    double* work = (double*)malloc(n * sizeof(double));
+    double mad;
+
+    mad = gsl_stats_mad(x, 1, n, work);
+
+    free(work);
+    return mad;
 }
