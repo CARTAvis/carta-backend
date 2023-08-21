@@ -24,26 +24,41 @@
 
 namespace carta {
 
+/** @brief Data structure for storing fitting-related data. */
 struct FitData {
+    /** @brief Pointer to the image data. */
     float* data;
+    /** @brief The width of the image. */
     size_t width;
+    /** @brief Number of pixels. */
     size_t n;
-    size_t n_notnan; // number of pixels excluding nan pixels
+    /** @brief Number of pixels excluding nan pixels. */
+    size_t n_notnan;
+    /** @brief X-axis offset from the fitting region to the entire image. */
     size_t offset_x;
+    /** @brief Y-axis offset from the fitting region to the entire image. */
     size_t offset_y;
+    /** @brief Indexes of the Gaussian parameters in the fittig parameters. */
     std::vector<int> fit_values_indexes;
+    /** @brief Initial fitting parameters. */
     std::vector<double> initial_values;
+    /** @brief Whether to stop the fitting process. */
     bool stop_fitting;
 };
 
+/** @brief Data structure for storing status of the fitting result. */
 struct FitStatus {
+    /** @brief Used fitting method. */
     std::string method;
+    /** @brief Number of iteration. */
     size_t num_iter;
+    /** @brief Reason for stopping the iteration. */
     int info;
+    /** @brief Initial cost, final cost, and final cond(J). */
     double chisq0, chisq, rcond;
 };
 
-/** @brief  A class for fitting multiple Gaussian components to an image and generating model and residual images. */
+/** @brief A class for fitting multiple Gaussian components to an image and generating model and residual images. */
 class ImageFitter {
 public:
     /** @brief Constructor for the ImageFitter class. */

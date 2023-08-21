@@ -1806,8 +1806,8 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
             casacore::IPosition origin(2, 0, 0);
             casacore::IPosition region_origin = stokes_region->image_region.asLCRegion().expand(origin);
 
-            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), beam_size, unit,
-                initial_values, fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
+            success = _image_fitter->FitImage(region_shape(0), region_shape(1), region_data.data(), beam_size, unit, initial_values,
+                fixed_params, fitting_request.offset(), fitting_request.solver(), fitting_request.create_model_image(),
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
