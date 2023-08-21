@@ -19,12 +19,13 @@ class ConcatLoader : public FileLoader {
 public:
     ConcatLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
+private:
+    void AllocateImage(const std::string& hdu) override;
 };
 
 ConcatLoader::ConcatLoader(const std::string& filename) : FileLoader(filename) {}
 
-void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
+void ConcatLoader::AllocateImage(const std::string& /*hdu*/) {
     if (!_image) {
         casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(this->GetFileName() + "/imageconcat.json");
         _image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));

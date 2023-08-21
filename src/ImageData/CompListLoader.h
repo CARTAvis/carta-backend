@@ -19,12 +19,13 @@ class CompListLoader : public FileLoader {
 public:
     CompListLoader(const std::string& filename);
 
-    void OpenFile(const std::string& hdu) override;
+private:
+    void AllocateImage(const std::string& hdu) override;
 };
 
 CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CompListLoader::OpenFile(const std::string& /*hdu*/) {
+void CompListLoader::AllocateImage(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new casa::ComponentListImage(_filename));
 

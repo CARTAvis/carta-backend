@@ -176,8 +176,17 @@ void NormalizeUnit(casacore::String& unit) {
     // Convert unit string to "proper" units according to casacore
     // Fix nonstandard units which pass check
     unit.gsub("JY", "Jy");
+    unit.gsub("jy", "Jy");
     unit.gsub("Beam", "beam");
+    unit.gsub("BEAM", "beam");
+    unit.gsub("Jypb", "Jy/beam");
+    unit.gsub("JyPB", "Jy/beam");
+    unit.gsub("Jy beam-1", "Jy/beam");
+    unit.gsub("Jy beam^-1", "Jy/beam");
+    unit.gsub("beam-1 Jy", "Jy/beam");
+    unit.gsub("beam^-1 Jy", "Jy/beam");
     unit.gsub("Pixel", "pixel");
+    unit.gsub("\"", "");
 
     // Convert unit without prefix
     try {
@@ -224,4 +233,46 @@ void NormalizeUnit(casacore::String& unit) {
     } catch (const casacore::AipsError& err) {
         // not caught by check()
     }
+}
+
+bool ParseHistoryBeamHeader(std::string& header, std::string& bmaj, std::string& bmin, std::string& bpa) {
+    // Parse AIPS beam header using regex_match.
+    // Returns false if regex failed, else true with beam value-unit strings.
+    std::regex r;
+    std::cmatch results;
+    bool matched(false);
+
+    if (header.find("Beam") != std::string::npos) {
+        // Example:
+        // HISTORY RESTOR Beam =  2.000E+00 x  1.800E+00 arcsec, pa =  8.000E+01 degrees
+        r = R"/(.*Beam\s*=\s*([\d.Ee+-]+)\s*x\s*([\d.Ee+-]+)\s*([A-Za-z]*)\s*,*\s*pa\s*=\s*([\d.Ee+-]+)\s*([A-Za-z]*).*)/";
+        matched = std::regex_match(header.c_str(), results, r);
+    } else if (header.find("BMAJ") != std::string::npos) {
+        // Examples:
+        // HISTORY CONVL BMAJ=  5.0000 BMIN=  5.0000 BPA=   0.0/Output beam
+        // HISTORY AIPS   CLEAN BMAJ=  1.3889E-03 BMIN=  1.3889E-03 BPA=   0.00
+        r = R"/(.*BMAJ\s*=\s*([\d.Ee+-]+)\s*BMIN\s*=\s*([\d.Ee+-]+)\s*BPA\s*=\s*([\d.Ee+-]+).*)/";
+        matched = std::regex_match(header.c_str(), results, r);
+    }
+
+    if (matched) {
+        if (results.size() == 4) {
+            // 0 matched expr, 1 bmaj, 2 bmin, 3 bpa. Use default unit.
+            bmaj = results.str(1) + "deg";
+            bmin = results.str(2) + "deg";
+            bpa = results.str(3) + "deg";
+        } else if (results.size() == 6) {
+            // 0 matched expr, 1 bmaj, 2 bmin, 3 unit, 4 bpa, 5 unit
+            auto unit3 = results.str(3);
+            auto unit5 = results.str(5);
+            bmaj = results.str(1) + (unit3 == "degrees" ? "deg" : unit3);
+            bmin = results.str(2) + (unit3 == "degrees" ? "deg" : unit3);
+            bpa = results.str(4) + (unit5 == "degrees" ? "deg" : unit5);
+        } else {
+            spdlog::debug("Unable to set history beam header {}: unexpected format.", header);
+            matched = false;
+        }
+    }
+
+    return matched;
 }

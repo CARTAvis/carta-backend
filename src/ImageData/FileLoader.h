@@ -55,9 +55,13 @@ public:
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
     // Open and close file
-    virtual void OpenFile(const std::string& hdu) = 0;
+    virtual void OpenFile(const std::string& hdu);
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const;
+
+    // Whether to set image beam from history headers
+    void SetAipsBeamSupport(bool support);
+    bool GetAipsBeamSupport();
 
     // If not in use, temp close image to prevent caching
     void CloseImageIfUpdated();
@@ -131,6 +135,16 @@ public:
         return _is_generated;
     };
 
+    bool IsHistoryBeam() {
+        return _is_history_beam;
+    }
+
+    void SetHistoryBeam(const casacore::GaussianBeam& history_beam) {
+        // For compressed fits.gz, where this is determined from headers only
+        _is_history_beam = true;
+        _history_beam = history_beam;
+    }
+
 protected:
     // Full name and characteristics of the image file
     std::string _filename, _directory;
@@ -138,6 +152,11 @@ protected:
     bool _is_gz;
     bool _is_generated;
     unsigned int _modify_time;
+
+    // AIPS HISTORY beam support
+    bool _support_aips_beam;
+    bool _is_history_beam;
+    casacore::GaussianBeam _history_beam; // for compressed fits file info
 
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> _image;
 
@@ -181,6 +200,9 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
+
+    // Set the image object and its parameters
+    virtual void AllocateImage(const std::string& hdu) = 0;
 };
 
 } // namespace carta
