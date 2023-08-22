@@ -289,8 +289,12 @@ void ImageFitter::CalculateErrors() {
             const double rho_square_2 = a * pow(b, 5.0 / 2.0) * pow(c, 1.0 / 2.0); // for center x, fwhm x
             const double rho_square_3 = a * pow(b, 1.0 / 2.0) * pow(c, 5.0 / 2.0); // for center y, fwhm y, pa
 
-            center_x_err = sqrt(fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_2);
-            center_y_err = sqrt(fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_3);
+            const double sq_center_major_err = fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_2;
+            const double sq_center_minor_err = fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_3;
+            center_x_err =
+                sqrt(sq_center_major_err * pow(sin(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(cos(pa * DEG_TO_RAD), 2.0));
+            center_y_err =
+                sqrt(sq_center_major_err * pow(cos(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(sin(pa * DEG_TO_RAD), 2.0));
             amp_err = sqrt(amp * amp * 2.0 / rho_square_1);
             fwhm_x_err = sqrt(fwhm_x * fwhm_x * 2.0 / rho_square_2);
             fwhm_y_err = sqrt(fwhm_y * fwhm_y * 2.0 / rho_square_3);
@@ -307,8 +311,12 @@ void ImageFitter::CalculateErrors() {
         } else {
             const double rho_square = M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp * amp / _image_std / _image_std;
 
-            center_x_err = sqrt(fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square);
-            center_y_err = sqrt(fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square);
+            const double sq_center_major_err = fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square;
+            const double sq_center_minor_err = fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square;
+            center_x_err =
+                sqrt(sq_center_major_err * pow(sin(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(cos(pa * DEG_TO_RAD), 2.0));
+            center_y_err =
+                sqrt(sq_center_major_err * pow(cos(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(sin(pa * DEG_TO_RAD), 2.0));
             amp_err = sqrt(amp * amp * 2.0 / rho_square);
             fwhm_x_err = sqrt(fwhm_x * fwhm_x * 2.0 / rho_square);
             fwhm_y_err = sqrt(fwhm_y * fwhm_y * 2.0 / rho_square);
