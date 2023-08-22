@@ -195,7 +195,8 @@ public:
 
             // First way to get image moments
             Timer t1;
-            auto moment_calculator = carta::MomentCalculator(image, moment_types);
+            auto moment_calculator = carta::MomentCalculator(image);
+            moment_calculator.SetMomentTypes(moment_types);
             moment_calculator.SetInExcludeRange(include_pix, exclude_pix);
             auto moment_images1 = moment_calculator.CreateMoments(image_data.data(), moment_axis);
             fmt::print("Elapsed time for calculating moment images (new) {:.3f} ms\n", t1.Elapsed().ms());

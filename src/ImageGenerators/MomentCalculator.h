@@ -18,10 +18,11 @@ namespace carta {
 
 class MomentCalculator {
 public:
-    MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types);
+    MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image);
     ~MomentCalculator() = default;
 
     void SetInExcludeRange(const std::vector<float>& include_pix, const std::vector<float>& exclude_pix);
+    void SetMomentTypes(const std::vector<int>& moment_types);
 
     std::vector<std::shared_ptr<casacore::ImageInterface<float>>> CreateMoments(float* image_data, int moment_axis);
 

@@ -14,8 +14,8 @@
 
 using namespace carta;
 
-MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image, const std::vector<int>& moment_types)
-    : _image(image), _delta_velocity(DOUBLE_NAN), _moment_types(moment_types), _do_include(false), _do_exclude(false), _cancelled(false) {
+MomentCalculator::MomentCalculator(std::shared_ptr<casacore::ImageInterface<float>> image)
+    : _image(image), _delta_velocity(DOUBLE_NAN), _do_include(false), _do_exclude(false), _cancelled(false) {
     _coord_sys = _image->coordinates();
     int spectral_axis = _coord_sys.spectralAxisNumber();
 
@@ -72,6 +72,10 @@ void MomentCalculator::SetInExcludeRange(const std::vector<float>& include_pix, 
         _pixel_range[1] = std::max(exclude_pix[0], exclude_pix[1]);
         _do_exclude = true;
     }
+}
+
+void MomentCalculator::SetMomentTypes(const std::vector<int>& moment_types) {
+    _moment_types = moment_types;
 }
 
 std::vector<std::shared_ptr<casacore::ImageInterface<float>>> MomentCalculator::CreateMoments(float* image_data, int moment_axis) {
