@@ -123,8 +123,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ae9c7b649790d7ab36f01a4a966674a63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05f27239922f154deb2a3e00ee81097f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a05f27239922f154deb2a3e00ee81097f">OnCloseFile</a> (const CARTA::CloseFile &amp;message)</td></tr>
 <tr class="separator:a05f27239922f154deb2a3e00ee81097f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae2f8b2d8d25c937a3c6ec96abc339045"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ae2f8b2d8d25c937a3c6ec96abc339045">OnAddRequiredTiles</a> (const CARTA::AddRequiredTiles &amp;message, bool skip_data=false)</td></tr>
-<tr class="separator:ae2f8b2d8d25c937a3c6ec96abc339045"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad769ec04ffbfb2289af256be174e3059"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ad769ec04ffbfb2289af256be174e3059">OnAddRequiredTiles</a> (const CARTA::AddRequiredTiles &amp;message, int animation_id=0, bool skip_data=false)</td></tr>
+<tr class="separator:ad769ec04ffbfb2289af256be174e3059"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5f49139f41c92e209aee736bb1cd260"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#af5f49139f41c92e209aee736bb1cd260">OnSetImageChannels</a> (const CARTA::SetImageChannels &amp;message)</td></tr>
 <tr class="separator:af5f49139f41c92e209aee736bb1cd260"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa076ddc044321ae415f7d1d29df176da"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aa076ddc044321ae415f7d1d29df176da">OnSetCursor</a> (const CARTA::SetCursor &amp;message, uint32_t request_id)</td></tr>
@@ -203,8 +203,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af35d01f76314dfa92b6cb9b63280210a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7cbd24871105659a8520975e92d4eab"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aa7cbd24871105659a8520975e92d4eab">ExecuteAnimationFrame</a> ()</td></tr>
 <tr class="separator:aa7cbd24871105659a8520975e92d4eab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74bb5c365ac00159f0b11e44add4a414"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a74bb5c365ac00159f0b11e44add4a414">ExecuteAnimationFrameInner</a> ()</td></tr>
-<tr class="separator:a74bb5c365ac00159f0b11e44add4a414"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa550cd4106356e47e4254ecddff6f809"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aa550cd4106356e47e4254ecddff6f809">ExecuteAnimationFrameInner</a> (int animation_id)</td></tr>
+<tr class="separator:aa550cd4106356e47e4254ecddff6f809"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a50f48862a67578a8c056016e9f1e4ef5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a50f48862a67578a8c056016e9f1e4ef5">StopAnimation</a> (int file_id, const ::CARTA::AnimationFrame &amp;frame)</td></tr>
 <tr class="separator:a50f48862a67578a8c056016e9f1e4ef5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5738e575acc2761f8fa66254811b38e4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a5738e575acc2761f8fa66254811b38e4">HandleAnimationFlowControlEvt</a> (CARTA::AnimationFlowControl &amp;message)</td></tr>
@@ -387,6 +387,8 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:ace89d0643c601c0ff441d8ddf3ca9971"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe4f00718b3a6592d54c7874a9a9b7c5"><td class="memItemLeft" align="right" valign="top">std::atomic&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#abe4f00718b3a6592d54c7874a9a9b7c5">_ref_count</a></td></tr>
 <tr class="separator:abe4f00718b3a6592d54c7874a9a9b7c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4d32c51c4ae8714e4a050aa15c41449"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ac4d32c51c4ae8714e4a050aa15c41449">_sync_id</a></td></tr>
+<tr class="separator:ac4d32c51c4ae8714e4a050aa15c41449"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9679ae2c38564ee53b87371863dd46f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ad9679ae2c38564ee53b87371863dd46f">_animation_id</a></td></tr>
 <tr class="separator:ad9679ae2c38564ee53b87371863dd46f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaeabfdcc50fb0c7272c3b2bbe6eb1ee0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aaeabfdcc50fb0c7272c3b2bbe6eb1ee0">_connected</a></td></tr>
@@ -678,12 +680,6 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ae5fd18bfcf840d630f3c136e9c5671a8_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-</div>
 
 </div>
 </div>
@@ -1141,8 +1137,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a74bb5c365ac00159f0b11e44add4a414"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a74bb5c365ac00159f0b11e44add4a414">&#9670;&nbsp;</a></span>ExecuteAnimationFrameInner()</h2>
+<a id="aa550cd4106356e47e4254ecddff6f809"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa550cd4106356e47e4254ecddff6f809">&#9670;&nbsp;</a></span>ExecuteAnimationFrameInner()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1150,7 +1146,8 @@ Here is the caller graph for this function:</div>
         <tr>
           <td class="memname">void Session::ExecuteAnimationFrameInner </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>animation_id</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -1158,13 +1155,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a74bb5c365ac00159f0b11e44add4a414_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_aa550cd4106356e47e4254ecddff6f809_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_a74bb5c365ac00159f0b11e44add4a414_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_aa550cd4106356e47e4254ecddff6f809_icgraph.svg" width="100%" height="300"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -1851,8 +1848,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="ae2f8b2d8d25c937a3c6ec96abc339045"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae2f8b2d8d25c937a3c6ec96abc339045">&#9670;&nbsp;</a></span>OnAddRequiredTiles()</h2>
+<a id="ad769ec04ffbfb2289af256be174e3059"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad769ec04ffbfb2289af256be174e3059">&#9670;&nbsp;</a></span>OnAddRequiredTiles()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1862,6 +1859,12 @@ Here is the caller graph for this function:</div>
           <td>(</td>
           <td class="paramtype">const CARTA::AddRequiredTiles &amp;&#160;</td>
           <td class="paramname"><em>message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>animation_id</em> = <code>0</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1879,13 +1882,13 @@ Here is the caller graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ae2f8b2d8d25c937a3c6ec96abc339045_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ad769ec04ffbfb2289af256be174e3059_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ae2f8b2d8d25c937a3c6ec96abc339045_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_ad769ec04ffbfb2289af256be174e3059_icgraph.svg" width="100%" height="437"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -5021,6 +5024,28 @@ Here is the caller graph for this function:</div>
       <table class="memname">
         <tr>
           <td class="memname">std::unique_ptr&lt;<a class="el" href="classcarta_1_1StokesFilesConnector.html">StokesFilesConnector</a>&gt; carta::Session::_stokes_files_connector</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac4d32c51c4ae8714e4a050aa15c41449"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4d32c51c4ae8714e4a050aa15c41449">&#9670;&nbsp;</a></span>_sync_id</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int carta::Session::_sync_id</td>
         </tr>
       </table>
   </td>

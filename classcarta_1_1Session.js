@@ -22,7 +22,7 @@ var classcarta_1_1Session =
     [ "DecreaseRefCount", "classcarta_1_1Session.html#a8e85b273c852b8da7eff9b48251276db", null ],
     [ "DeleteFrame", "classcarta_1_1Session.html#aab36b319ffe1c796a753ea63b1eee575", null ],
     [ "ExecuteAnimationFrame", "classcarta_1_1Session.html#aa7cbd24871105659a8520975e92d4eab", null ],
-    [ "ExecuteAnimationFrameInner", "classcarta_1_1Session.html#a74bb5c365ac00159f0b11e44add4a414", null ],
+    [ "ExecuteAnimationFrameInner", "classcarta_1_1Session.html#aa550cd4106356e47e4254ecddff6f809", null ],
     [ "ExecuteSetChannelEvt", "classcarta_1_1Session.html#a258addc8994b72cb71c51280d3850bf4", null ],
     [ "FillExtendedFileInfo", "classcarta_1_1Session.html#a69d1ec0dfd2c518a8b4cdf56fa57b0b0", null ],
     [ "FillExtendedFileInfo", "classcarta_1_1Session.html#ac671b008e48c5074c520343edb43beec", null ],
@@ -40,7 +40,7 @@ var classcarta_1_1Session =
     [ "ImageChannelUnlock", "classcarta_1_1Session.html#a1b5dc0f6238e5e7ca7925caa0c77f52a", null ],
     [ "IncreaseRefCount", "classcarta_1_1Session.html#aa8700ef4efe32de89e1ff78b50c607b6", null ],
     [ "NumberOfSessions", "classcarta_1_1Session.html#aee1fa8ef086344ce942db6cf237d9d1d", null ],
-    [ "OnAddRequiredTiles", "classcarta_1_1Session.html#ae2f8b2d8d25c937a3c6ec96abc339045", null ],
+    [ "OnAddRequiredTiles", "classcarta_1_1Session.html#ad769ec04ffbfb2289af256be174e3059", null ],
     [ "OnCatalogFileInfo", "classcarta_1_1Session.html#a7f9dd9449b743d929e2e3609eea9c97a", null ],
     [ "OnCatalogFileList", "classcarta_1_1Session.html#a85ae5fdf5dfa34aa0b28f4143a20252a", null ],
     [ "OnCatalogFilter", "classcarta_1_1Session.html#a09b1a3bf5b197b32bd37a48e9b8b401d", null ],
@@ -141,6 +141,7 @@ var classcarta_1_1Session =
     [ "_socket", "classcarta_1_1Session.html#a5507e74f16bb11a4f153fe081b6ae061", null ],
     [ "_starting_folder", "classcarta_1_1Session.html#a3d71b1d271371e6a35f0ba0ac771c2c7", null ],
     [ "_stokes_files_connector", "classcarta_1_1Session.html#a3ef31e8318a55ab57658bed5b7141a8b", null ],
+    [ "_sync_id", "classcarta_1_1Session.html#ac4d32c51c4ae8714e4a050aa15c41449", null ],
     [ "_table_controller", "classcarta_1_1Session.html#aeb78096afd300df488c69b5561d5cad9", null ],
     [ "_top_level_folder", "classcarta_1_1Session.html#ac2b9f398fb1cc9f17fabaa1fb97798fe", null ]
 ];

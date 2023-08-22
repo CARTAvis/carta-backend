@@ -232,7 +232,6 @@ var NAVTREEINDEX6 =
 "classcarta_1_1Session.html#a6f3187e3a8df59e5750672be1781c0cc":[3,0,0,83,2],
 "classcarta_1_1Session.html#a71f84bdc7dd1db7fcb8652d5cde07883":[3,0,0,83,36],
 "classcarta_1_1Session.html#a730b80401bd39846e6a679bf74f337be":[3,0,0,83,128],
-"classcarta_1_1Session.html#a74bb5c365ac00159f0b11e44add4a414":[3,0,0,83,22],
 "classcarta_1_1Session.html#a7da253515534ff383511f00e768635a5":[3,0,0,83,54],
 "classcarta_1_1Session.html#a7f12d32e3500b147fcff9f49240e8fe5":[3,0,0,83,33],
 "classcarta_1_1Session.html#a7f682c7e48eada830bf9ed4a27ced3ae":[3,0,0,83,105],
@@ -249,5 +248,6 @@ var NAVTREEINDEX6 =
 "classcarta_1_1Session.html#a8fe2527b0a83c67240ef4a31a86e4978":[3,0,0,83,53],
 "classcarta_1_1Session.html#a94a1bb9a9457b278fd768d729d7e6c2b":[3,0,0,83,77],
 "classcarta_1_1Session.html#a94dedbbfed0a0ef04359409bd8d7dea1":[3,0,0,83,115],
-"classcarta_1_1Session.html#a95fd8340769d98224e53cc818288bbcf":[3,0,0,83,137]
+"classcarta_1_1Session.html#a95fd8340769d98224e53cc818288bbcf":[3,0,0,83,137],
+"classcarta_1_1Session.html#a9614e33dea4622ec90432fa7aad7a451":[3,0,0,83,84]
 };

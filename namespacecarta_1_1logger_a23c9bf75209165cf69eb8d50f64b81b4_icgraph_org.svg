@@ -636,7 +636,7 @@
 <!-- Node43 -->
 <g id="node32" class="node">
 <title>Node43</title>
-<g id="a_node32"><a xlink:href="classcarta_1_1Session.html#ae2f8b2d8d25c937a3c6ec96abc339045" target="_top" xlink:title=" ">
+<g id="a_node32"><a xlink:href="classcarta_1_1Session.html#ad769ec04ffbfb2289af256be174e3059" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="black" points="1157.5,-1359.25 1157.5,-1389.25 1324.5,-1389.25 1324.5,-1359.25 1157.5,-1359.25"/>
 <text text-anchor="start" x="1165.5" y="-1377.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::OnAddRequired</text>
 <text text-anchor="middle" x="1241" y="-1366.25" font-family="Helvetica,sans-Serif" font-size="10.00">Tiles</text>
@@ -775,7 +775,7 @@
 <!-- Node33 -->
 <g id="node33" class="node">
 <title>Node33</title>
-<g id="a_node33"><a xlink:href="classcarta_1_1Session.html#a74bb5c365ac00159f0b11e44add4a414" target="_top" xlink:title=" ">
+<g id="a_node33"><a xlink:href="classcarta_1_1Session.html#aa550cd4106356e47e4254ecddff6f809" target="_top" xlink:title=" ">
 <polygon fill="none" stroke="red" points="938,-1310.25 938,-1340.25 1117,-1340.25 1117,-1310.25 938,-1310.25"/>
 <text text-anchor="start" x="946" y="-1328.25" font-family="Helvetica,sans-Serif" font-size="10.00">carta::Session::ExecuteAnimation</text>
 <text text-anchor="middle" x="1027.5" y="-1317.25" font-family="Helvetica,sans-Serif" font-size="10.00">FrameInner</text>
