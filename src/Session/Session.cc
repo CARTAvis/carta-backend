@@ -415,6 +415,10 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     platform_string_map["deployment"] = "unknown";
 #endif
 
+    if (std::getenv("USER_DEPLOYMENT")) {
+        platform_string_map["deployment"] += fmt::format(" ({})", std::getenv("USER_DEPLOYMENT"));
+    }
+
 #if __APPLE__
     platform_string_map["platform"] = "macOS";
 #else
