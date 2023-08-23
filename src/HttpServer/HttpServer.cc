@@ -445,7 +445,7 @@ void HttpServer::HandleGetObject(const std::string& object_type, Res* res, Req* 
         return;
     }
 
-    if (!existing_object["name"]) {
+    if (!existing_object.contains("name")) {
         existing_object["name"] = object_name_string;
     }
 
