@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed region spectral profile from FITS gz image ([#1271](https://github.com/CARTAvis/carta-backend/issues/1271)).
 * Fixed the lack of mask for LEL images ([#1291](https://github.com/CARTAvis/carta-backend/issues/1291)).
 * Fixed file path to save generated image ([#1252](https://github.com/CARTAvis/carta-backend/issues/1252)).
+* Fixed missing tiles issue ([#1282](https://github.com/CARTAvis/carta-backend/issues/1282)).
 
 ## [4.0.0-beta.1]
 
