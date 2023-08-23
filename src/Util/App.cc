@@ -82,3 +82,27 @@ std::string GetReleaseInformation() {
 #endif
     return std::string("Platform information not available");
 }
+
+std::string ExecuteCommand(const char* command) {
+    std::ostringstream output;
+
+    // Open a pipe to execute the command and read its output
+    FILE* pipe = popen(command, "r");
+    if (!pipe) {
+        std::cerr << "Error executing command." << std::endl;
+        return "";
+    }
+
+    // Read the command output and store it in the output stream
+    char buffer[128];
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+        output << buffer;
+    }
+
+    // Close the pipe
+    pclose(pipe);
+
+    std::string result = output.str().erase(output.str().find_last_not_of("\n") + 1);
+
+    return result;
+}
