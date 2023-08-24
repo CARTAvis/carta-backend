@@ -415,23 +415,19 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     platform_string_map["deployment"] = "unknown";
 #endif
 
-    if (std::getenv("USER_DEPLOYMENT")) {
-        platform_string_map["deployment"] += fmt::format(" ({})", std::getenv("USER_DEPLOYMENT"));
+    if (std::getenv("CARTA_USER_DEPLOYMENT")) {
+        platform_string_map["deployment"] += fmt::format(" ({})", std::getenv("CARTA_USER_DEPLOYMENT"));
     }
 
-    string arch = ExecuteCommand("uname -m");
-    string version = ExecuteCommand("uname -r");
+    string arch = OutputOfCommand("uname -m");
+
+    std::cout<< VERSION_ID << "   "<< std::endl;
+    platform_string_map["architecture"] = fmt::format("{}", arch);
 
 #if __APPLE__
     platform_string_map["platform"] = "macOS";
-    string macOSVersion = ExecuteCommand(
-        "grep -A1 \"ProductUserVisibleVersion\" /System/Library/CoreServices/SystemVersion.plist | tail -n 1 | awk -F'[<>]' '{print $3}'");
-    platform_string_map["backendPlatformInfo"] = fmt::format("{{distro: macOS, version: {}, arch: {}}}", macOSVersion, arch);
 #else
     platform_string_map["platform"] = "Linux";
-    string linuxVariant = ExecuteCommand("grep -oP '(?<=^ID=)[^\"]+' /etc/os-release");
-    platform_string_map["backendPlatformInfo"] =
-        fmt::format("{{distro: Linux, variant: {}, version: {}, arch: {}}}", linuxVariant, version, arch);
 #endif
 
     uint32_t feature_flags;

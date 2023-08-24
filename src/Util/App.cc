@@ -83,7 +83,7 @@ std::string GetReleaseInformation() {
     return std::string("Platform information not available");
 }
 
-std::string ExecuteCommand(const char* command) {
+std::string OutputOfCommand(const char* command) {
     std::ostringstream output;
 
     // Open a pipe to execute the command and read its output
