@@ -419,10 +419,8 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
         platform_string_map["deployment"] += fmt::format(" ({})", std::getenv("CARTA_USER_DEPLOYMENT"));
     }
 
-    string arch = OutputOfCommand("uname -m");
-
-    std::cout << VERSION_ID << "   " << std::endl;
-    platform_string_map["architecture"] = fmt::format("{}", arch);
+    std::string arch = OutputOfCommand("uname -m");
+    platform_string_map["architecture"] = arch;
 
 #if __APPLE__
     platform_string_map["platform"] = "macOS";
