@@ -216,45 +216,54 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
         return;
     }
 
-    double mean_coordinate = std::abs(sum_i) > 0.0 ? sum_iv / sum_i : DOUBLE_NAN;
-    double dispersion_coordinate =
-        std::abs(sum_i) > 0.0 ? std::sqrt(std::abs((sum_ivv / sum_i) - std::pow(mean_coordinate, 2))) : DOUBLE_NAN;
+    bool has_counts(counts > 0);
+
+    double mean_coordinate;
+    if (RequiredMomentType(2) || RequiredMomentType(3)) {
+        mean_coordinate = std::abs(sum_i) > 0.0 ? sum_iv / sum_i : DOUBLE_NAN;
+    }
 
     if (RequiredMomentType(0)) {
-        moment_data[0](start_pos) = counts == 0 ? DOUBLE_NAN : sum_i / (double)counts;
-        mask_data[0](start_pos) = counts != 0;
+        moment_data[0](start_pos) = !has_counts ? DOUBLE_NAN : sum_i / (double)counts;
+        mask_data[0](start_pos) = has_counts;
     }
+
     if (RequiredMomentType(1)) {
-        moment_data[1](start_pos) = counts == 0 ? DOUBLE_NAN : _delta_velocity * sum_i;
-        mask_data[1](start_pos) = counts != 0;
+        moment_data[1](start_pos) = !has_counts ? DOUBLE_NAN : _delta_velocity * sum_i;
+        mask_data[1](start_pos) = has_counts;
     }
+
     if (RequiredMomentType(2)) {
-        moment_data[2](start_pos) = counts == 0 ? DOUBLE_NAN : mean_coordinate;
-        mask_data[2](start_pos) = counts != 0 && !std::isnan(mean_coordinate);
+        moment_data[2](start_pos) = !has_counts ? DOUBLE_NAN : mean_coordinate;
+        mask_data[2](start_pos) = has_counts && !std::isnan(mean_coordinate);
     }
+
     if (RequiredMomentType(3)) {
-        moment_data[3](start_pos) = counts == 0 ? DOUBLE_NAN : dispersion_coordinate;
-        mask_data[3](start_pos) = counts != 0 && !std::isnan(dispersion_coordinate);
+        double dispersion_coordinate =
+            std::abs(sum_i) > 0.0 ? std::sqrt(std::abs((sum_ivv / sum_i) - std::pow(mean_coordinate, 2))) : DOUBLE_NAN;
+        moment_data[3](start_pos) = !has_counts ? DOUBLE_NAN : dispersion_coordinate;
+        mask_data[3](start_pos) = has_counts && !std::isnan(dispersion_coordinate);
     }
+
     if (RequiredMomentType(4)) {
-        moment_data[4](start_pos) = counts == 0 ? DOUBLE_NAN : FindMedian(intensities, depth);
-        mask_data[4](start_pos) = counts != 0;
+        moment_data[4](start_pos) = !has_counts ? DOUBLE_NAN : FindMedian(intensities, depth);
+        mask_data[4](start_pos) = has_counts;
     }
 
     if (RequiredMomentType(6)) {
-        double standard_deviation = counts == 0 ? DOUBLE_NAN : (sum_ii - sum_i * sum_i / counts) / (counts - 1);
+        double standard_deviation = !has_counts ? DOUBLE_NAN : (sum_ii - sum_i * sum_i / counts) / (counts - 1);
         if (standard_deviation > 0) {
             standard_deviation = std::sqrt(standard_deviation);
         } else if (standard_deviation <= 0) {
             standard_deviation = DOUBLE_NAN;
         }
         moment_data[6](start_pos) = standard_deviation;
-        mask_data[6](start_pos) = counts != 0;
+        mask_data[6](start_pos) = has_counts;
     }
 
     if (RequiredMomentType(7)) {
-        moment_data[7](start_pos) = counts == 0 ? DOUBLE_NAN : std::sqrt(sum_ii / counts);
-        mask_data[7](start_pos) = counts != 0;
+        moment_data[7](start_pos) = !has_counts ? DOUBLE_NAN : std::sqrt(sum_ii / counts);
+        mask_data[7](start_pos) = has_counts;
     }
 
     if (RequiredMomentType(8)) {
@@ -265,25 +274,28 @@ void MomentCalculator::DoCalculation(float* data, int x, int y, size_t width, si
                 abs_mean_deviation += std::abs(intensity - mean_i);
             }
         }
-        moment_data[8](start_pos) = counts == 0 ? DOUBLE_NAN : abs_mean_deviation / counts;
-        mask_data[8](start_pos) = counts != 0;
+        moment_data[8](start_pos) = !has_counts ? DOUBLE_NAN : abs_mean_deviation / counts;
+        mask_data[8](start_pos) = has_counts;
     }
 
     if (RequiredMomentType(9)) {
-        moment_data[9](start_pos) = counts == 0 ? DOUBLE_NAN : max;
-        mask_data[9](start_pos) = counts != 0;
+        moment_data[9](start_pos) = !has_counts ? DOUBLE_NAN : max;
+        mask_data[9](start_pos) = has_counts;
     }
+
     if (RequiredMomentType(10)) {
-        moment_data[10](start_pos) = counts == 0 ? DOUBLE_NAN : max_velocity;
-        mask_data[10](start_pos) = counts != 0;
+        moment_data[10](start_pos) = !has_counts ? DOUBLE_NAN : max_velocity;
+        mask_data[10](start_pos) = has_counts;
     }
+
     if (RequiredMomentType(11)) {
-        moment_data[11](start_pos) = counts == 0 ? DOUBLE_NAN : min;
-        mask_data[11](start_pos) = counts != 0;
+        moment_data[11](start_pos) = !has_counts ? DOUBLE_NAN : min;
+        mask_data[11](start_pos) = has_counts;
     }
+
     if (RequiredMomentType(12)) {
-        moment_data[12](start_pos) = counts == 0 ? DOUBLE_NAN : min_velocity;
-        mask_data[12](start_pos) = counts != 0;
+        moment_data[12](start_pos) = !has_counts ? DOUBLE_NAN : min_velocity;
+        mask_data[12](start_pos) = has_counts;
     }
 }
 
