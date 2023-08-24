@@ -421,7 +421,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 
     string arch = OutputOfCommand("uname -m");
 
-    std::cout<< VERSION_ID << "   "<< std::endl;
+    std::cout << VERSION_ID << "   " << std::endl;
     platform_string_map["architecture"] = fmt::format("{}", arch);
 
 #if __APPLE__
