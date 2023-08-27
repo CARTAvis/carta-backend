@@ -86,6 +86,10 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        if (settings.controller_build) {
+            setenv("CARTA_USER_DEPLOYMENT", "controller", 1);
+        }
+
         carta::ThreadManager::StartEventHandlingThreads(settings.event_thread_count);
         carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
 
