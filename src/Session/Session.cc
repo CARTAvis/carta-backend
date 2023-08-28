@@ -417,8 +417,8 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 
     if (std::getenv("CONTROLLER_DEPLOYMENT")) {
         platform_string_map["controller_deployment"] = "true";
-    } 
-    
+    }
+
     if (std::getenv("DOCKER_DEPLOYMENT")) {
         platform_string_map["docker_deployment"] = "true";
     }
