@@ -415,8 +415,12 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     platform_string_map["deployment"] = "unknown";
 #endif
 
-    if (std::getenv("CARTA_USER_DEPLOYMENT")) {
-        platform_string_map["deployment"] += fmt::format(" ({})", std::getenv("CARTA_USER_DEPLOYMENT"));
+    if (std::getenv("CONTROLLER_DEPLOYMENT")) {
+        platform_string_map["controller_deployment"] = "true";
+    } 
+    
+    if (std::getenv("DOCKER_DEPLOYMENT")) {
+        platform_string_map["docker_deployment"] = "true";
     }
 
     std::string arch = OutputOfCommand("uname -m");

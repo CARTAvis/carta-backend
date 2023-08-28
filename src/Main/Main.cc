@@ -86,8 +86,10 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (settings.controller_build) {
-            setenv("CARTA_USER_DEPLOYMENT", "controller", 1);
+        if (settings.controller_deployment) {
+            setenv("CONTROLLER_DEPLOYMENT", "controller", 1);
+        } else {
+            unsetenv("CONTROLLER_DEPLOYMENT");
         }
 
         carta::ThreadManager::StartEventHandlingThreads(settings.event_thread_count);

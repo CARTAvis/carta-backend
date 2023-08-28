@@ -197,7 +197,7 @@ void ProgramSettings::ApplyCommandLineSettings(int argc, char** argv) {
     options.add_options("Deprecated and debug")
         ("debug_no_auth", "accept all incoming WebSocket connections on the specified port(s) (not secure; use with caution!)", cxxopts::value<bool>())
         ("no_runtime_config", "do not send a runtime config object to frontend clients", cxxopts::value<bool>())
-        ("controller_build", "used when the backend is hosted for carta-controller", cxxopts::value<bool>())
+        ("controller_deployment", "used when the backend is hosted for carta-controller", cxxopts::value<bool>())
         ("threads", "[deprecated] manually set number of event processing threads (no longer supported)", cxxopts::value<int>(), "<threads>")
         ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<string>(), "<dir>")
         ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>")
@@ -298,7 +298,7 @@ global configuration files, respectively.
     no_frontend = result["no_frontend"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_runtime_config = result["no_runtime_config"].as<bool>();
-    controller_build = result["controller_build"].as<bool>();
+    controller_deployment = result["controller_deployment"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
     read_only_mode = result["read_only_mode"].as<bool>();
     enable_scripting = result["enable_scripting"].as<bool>();

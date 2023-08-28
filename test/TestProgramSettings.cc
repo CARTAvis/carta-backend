@@ -69,7 +69,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_FALSE(settings.debug_no_auth);
     EXPECT_FALSE(settings.read_only_mode);
     EXPECT_FALSE(settings.enable_scripting);
-    EXPECT_FALSE(settings.controller_build);
+    EXPECT_FALSE(settings.controller_deployment);
 
     EXPECT_TRUE(settings.frontend_folder.empty());
     EXPECT_TRUE(settings.files.empty());
