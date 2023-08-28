@@ -24,15 +24,8 @@ ImageCache::ImageCache()
       stokes_q(-1),
       stokes_u(-1),
       stokes_v(-1),
+      computed_stokes_channel(-1),
       cube_image_cache(false) {}
-
-bool ImageCache::Exist(int key) const {
-    return data.count(key);
-}
-
-int ImageCache::Size() const {
-    return data.size();
-}
 
 float ImageCache::CubeImageSize() const {
     return (float)(width * height * depth * num_stokes * sizeof(float)) / 1.0e6; // MB
@@ -42,16 +35,8 @@ float ImageCache::UsedReservedMemory() const {
     return cube_image_cache ? CubeImageSize() : 0.0;
 }
 
-int ImageCache::Key(int stokes) const {
-    // Only return non-computed stokes index, since we only cache cube image data for existing stokes types from the file
-    if (cube_image_cache && !IsComputedStokes(stokes)) {
-        return stokes;
-    }
-    return CURRENT_CHANNEL_STOKES;
-}
-
 float ImageCache::GetValue(int x, int y, int z, int stokes) {
-    // Get the idx of image cache
+    // Set the index of image cache
     size_t idx = width * y + x;
     if (cube_image_cache) {
         idx += width * height * z;
@@ -61,28 +46,34 @@ float ImageCache::GetValue(int x, int y, int z, int stokes) {
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
-                return CalcPtotal(data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
+                return CalcPtotal(cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx], cube_image_data[stokes_v][idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             if (stokes_q > -1 && stokes_u > -1) {
-                return CalcPlinear(data[stokes_q][idx], data[stokes_u][idx]);
+                return CalcPlinear(cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
-                return CalcPFtotal(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
+                return CalcPFtotal(cube_image_data[stokes_i][idx], cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx],
+                    cube_image_data[stokes_v][idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             if (stokes_i > -1 && stokes_q > -1 && stokes_u > -1) {
-                return CalcPFlinear(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx]);
+                return CalcPFlinear(cube_image_data[stokes_i][idx], cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             if (stokes_q > -1 && stokes_u > -1) {
-                return CalcPangle(data[stokes_q][idx], data[stokes_u][idx]);
+                return CalcPangle(cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx]);
             }
         }
         return FLOAT_NAN;
     }
-    return data[Key(stokes)][idx];
+
+    if (cube_image_cache) {
+        return cube_image_data[stokes][idx];
+    }
+
+    return channel_image_data[idx];
 }
 
 float* ImageCache::GetImageCacheData(int z, int stokes) {
@@ -90,7 +81,13 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
     stokes = stokes == CURRENT_STOKES ? cur_stokes : stokes;
 
     if (cube_image_cache && IsComputedStokes(stokes)) {
-        data[Key(stokes)] = std::make_unique<float[]>(width * height);
+        if (computed_stokes_channel_image_data.count(stokes) && computed_stokes_channel == z) {
+            return computed_stokes_channel_image_data[stokes].get();
+        }
+
+        // Calculate the channel image data for computed stokes
+        computed_stokes_channel_image_data[stokes] = std::make_unique<float[]>(width * height);
+        computed_stokes_channel = z;
 
         auto stokes_type = StokesTypes[stokes];
         size_t start_idx = z * width * height;
@@ -99,7 +96,8 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
                     size_t idx = start_idx + i;
-                    data[Key(stokes)][i] = CalcPtotal(data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
+                    computed_stokes_channel_image_data[stokes][i] =
+                        CalcPtotal(cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx], cube_image_data[stokes_v][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
@@ -107,7 +105,8 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
                     size_t idx = start_idx + i;
-                    data[Key(stokes)][i] = CalcPlinear(data[stokes_q][idx], data[stokes_u][idx]);
+                    computed_stokes_channel_image_data[stokes][i] =
+                        CalcPlinear(cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
@@ -115,7 +114,8 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
                     size_t idx = start_idx + i;
-                    data[Key(stokes)][i] = CalcPFtotal(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx], data[stokes_v][idx]);
+                    computed_stokes_channel_image_data[stokes][i] = CalcPFtotal(cube_image_data[stokes_i][idx],
+                        cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx], cube_image_data[stokes_v][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
@@ -123,7 +123,8 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
                     size_t idx = start_idx + i;
-                    data[Key(stokes)][i] = CalcPFlinear(data[stokes_i][idx], data[stokes_q][idx], data[stokes_u][idx]);
+                    computed_stokes_channel_image_data[stokes][i] =
+                        CalcPFlinear(cube_image_data[stokes_i][idx], cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx]);
                 }
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
@@ -131,15 +132,19 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
 #pragma omp parallel for
                 for (int i = 0; i < width * height; ++i) {
                     size_t idx = start_idx + i;
-                    data[Key(stokes)][i] = CalcPangle(data[stokes_q][idx], data[stokes_u][idx]);
+                    computed_stokes_channel_image_data[stokes][i] =
+                        CalcPangle(cube_image_data[stokes_q][idx], cube_image_data[stokes_u][idx]);
                 }
             }
         }
-        return data[Key(stokes)].get();
+        return computed_stokes_channel_image_data[stokes].get();
     }
 
-    size_t start_idx = cube_image_cache ? width * height * z : 0;
-    return data[Key(stokes)].get() + start_idx;
+    if (cube_image_cache) {
+        return cube_image_data[stokes].get() + width * height * z;
+    }
+
+    return channel_image_data.get();
 }
 
 bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
@@ -147,7 +152,7 @@ bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, P
         // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
         int x, y;
         point.ToIndex(x, y);
-        if (Exist(stokes) || IsComputedStokes(stokes)) {
+        if (cube_image_data.count(stokes) || IsComputedStokes(stokes)) {
             profile.resize(depth);
 #pragma omp parallel for
             for (int z = 0; z < depth; ++z) {

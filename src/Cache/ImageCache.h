@@ -12,8 +12,6 @@
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 
-#define CURRENT_CHANNEL_STOKES -1
-
 namespace carta {
 
 struct ImageCache {
@@ -30,20 +28,22 @@ struct ImageCache {
     double _beam_area;
     bool cube_image_cache; // if true, cache the whole cube image. Otherwise, only cache a channel image
 
-    // Map of image caches
-    // key = -1: image cache for the current channel and stokes (cube_image_cache = false), or for a certain channel and computed stokes
-    // (cube_image_cache = true)
-    // key > -1: image cache for all channels with respect to the stokes index, e.g., 0, 1, 2, or 3, (key = stokes index). Except the
-    // computed stokes (cube_image_cache = true)
-    std::unordered_map<int, std::unique_ptr<float[]>> data;
+    // Current channel and stokes image cache
+    std::unique_ptr<float[]> channel_image_data;
+
+    // Map of cube image cache, key is the stokes index
+    std::unordered_map<int, std::unique_ptr<float[]>> cube_image_data;
+
+    // Map of computed stokes channel image cache, key is the computed stokes index
+    std::unordered_map<int, std::unique_ptr<float[]>> computed_stokes_channel_image_data;
+
+    // Current channel of computed stokes image cache
+    int computed_stokes_channel;
 
     ImageCache();
 
-    bool Exist(int key) const;        // Does the key of image cache map exist
-    int Size() const;                 // Size of the image cache map
     float CubeImageSize() const;      // MB
     float UsedReservedMemory() const; // MB
-    int Key(int stokes) const;        // Get the key of the image cache map with respect to the stokes index
 
     float GetValue(int x, int y, int z, int stokes);
     float* GetImageCacheData(int z, int stokes);
