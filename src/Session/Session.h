@@ -68,7 +68,7 @@ class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
         std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false,
-        bool enable_scripting = false);
+        bool enable_scripting = false, bool controller_deployment = false);
     ~Session();
 
     // CARTA ICD
@@ -287,6 +287,7 @@ protected:
     std::string _starting_folder;
     bool _read_only_mode;
     bool _enable_scripting;
+    bool _controller_deployment;
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;

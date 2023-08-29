@@ -100,7 +100,7 @@ std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
     std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
-    bool enable_scripting)
+    bool enable_scripting, bool controller_deployment)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -110,6 +110,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
       _read_only_mode(read_only_mode),
       _enable_scripting(enable_scripting),
+      _controller_deployment(controller_deployment),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),
@@ -415,11 +416,11 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     platform_string_map["deployment"] = "unknown";
 #endif
 
-    if (std::getenv("CONTROLLER_DEPLOYMENT")) {
+    if (_controller_deployment) {
         platform_string_map["controller_deployment"] = "true";
     }
 
-    if (std::getenv("DOCKER_DEPLOYMENT")) {
+    if (std::getenv("CARTA_DOCKER_DEPLOYMENT")) {
         platform_string_map["docker_deployment"] = "true";
     }
 
