@@ -16,7 +16,7 @@ namespace carta {
 CubeImageCache::CubeImageCache()
     : stokes_i(-1), stokes_q(-1), stokes_u(-1), stokes_v(-1), beam_area(DOUBLE_NAN), computed_stokes_channel(-1) {}
 
-float* CubeImageCache::GetImageCacheData(int z, int stokes, size_t width, size_t height) {
+float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, size_t height) {
     if (IsComputedStokes(stokes)) {
         if (computed_stokes_channel_data.count(stokes) && computed_stokes_channel == z) {
             return computed_stokes_channel_data[stokes].get();

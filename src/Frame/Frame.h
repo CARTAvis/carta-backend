@@ -275,7 +275,7 @@ protected:
     // For image cache
     void LoadCubeImageData();
     bool LoadImageCacheData(int stokes);
-    float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
+    float* GetImageCache(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
     float GetValue(int x, int y, int z, int stokes);
 
     // Setup

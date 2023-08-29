@@ -32,7 +32,7 @@ struct CubeImageCache {
 
     CubeImageCache();
 
-    float* GetImageCacheData(int z, int stokes, size_t width, size_t height);
+    float* GetChannelImageCache(int z, int stokes, size_t width, size_t height);
     float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
