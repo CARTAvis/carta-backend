@@ -7,10 +7,7 @@
 #ifndef CARTA_BACKEND__FRAME_IMAGECACHE_H_
 #define CARTA_BACKEND__FRAME_IMAGECACHE_H_
 
-#include "Util/Image.h"
-
-#include <casacore/casa/Arrays/IPosition.h>
-#include <casacore/lattices/Lattices/ArrayLattice.h>
+#include <unordered_map>
 
 namespace carta {
 
@@ -33,11 +30,6 @@ struct CubeImageCache {
     CubeImageCache();
 
     float* GetChannelImageCache(int z, int stokes, size_t width, size_t height);
-    float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
-    bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth);
-    bool GetRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
-        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-        std::map<CARTA::StatsType, std::vector<double>>& profiles);
 };
 
 } // namespace carta

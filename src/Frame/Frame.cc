@@ -20,6 +20,7 @@
 #include <casacore/lattices/LRegions/LattRegionHolder.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
+#include "Cache/ImageCacheCalculator.h"
 #include "DataStream/Compression.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Smoothing.h"
@@ -2484,7 +2485,7 @@ bool Frame::LoadImageCacheData(int stokes) {
 }
 
 float Frame::ReservedMemory() const {
-    float image_cubes_size = (float)(_width * _height * _depth * _num_stokes * sizeof(float)) / 1.0e6;
+    float image_cubes_size = _width * _height * _depth * _num_stokes * sizeof(float);
 
     // Conservatively estimate the number of computed stokes will be generated
     int num_computed_stokes = 0;
@@ -2496,12 +2497,12 @@ float Frame::ReservedMemory() const {
         num_computed_stokes = 2;
     }
 
-    return image_cubes_size + (float)(num_computed_stokes * _width * _height * sizeof(float)) / 1.0e6; // MB
+    return (image_cubes_size + num_computed_stokes * _width * _height * sizeof(float)) / 1.0e6; // MB
 }
 
 bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     if (_cube_image_cache_valid) {
-        return _cube_image_cache.GetPointSpectralData(profile, stokes, point, _width, _height, _depth);
+        return ImageCacheCalculator::GetPointSpectralData(_cube_image_cache, profile, stokes, point, _width, _height, _depth);
     }
     return false;
 }
@@ -2509,14 +2510,14 @@ bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointX
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     if (_cube_image_cache_valid) {
-        return _cube_image_cache.GetRegionSpectralData(z_range, stokes, _width, _height, mask, origin, profiles);
+        return ImageCacheCalculator::GetRegionSpectralData(_cube_image_cache, z_range, stokes, _width, _height, mask, origin, profiles);
     }
     return false;
 }
 
 float Frame::GetValue(int x, int y, int z, int stokes) {
     if (_cube_image_cache_valid) {
-        return _cube_image_cache.GetValue(x, y, z, stokes, _width, _height);
+        return ImageCacheCalculator::GetValue(_cube_image_cache, x, y, z, stokes, _width, _height);
     }
     return _channel_image_cache[_width * y + x];
 }
