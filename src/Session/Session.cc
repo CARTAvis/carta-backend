@@ -96,11 +96,12 @@ std::string LoaderCache::GetKey(const std::string& filename, const std::string& 
 volatile int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
+bool Session::_controller_deployment = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
     std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
-    bool enable_scripting, bool controller_deployment)
+    bool enable_scripting)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -110,7 +111,6 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _table_controller(std::make_unique<TableController>(_top_level_folder, _starting_folder)),
       _read_only_mode(read_only_mode),
       _enable_scripting(enable_scripting),
-      _controller_deployment(controller_deployment),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _animation_id(0),

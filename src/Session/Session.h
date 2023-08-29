@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Session.h: representation of a client connected to a server; processes requests from frontend
+// # Session.h: representation of a client connected to a server; processes requests from frontend
 
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
@@ -68,7 +68,7 @@ class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
         std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false,
-        bool enable_scripting = false, bool controller_deployment = false);
+        bool enable_scripting = false);
     ~Session();
 
     // CARTA ICD
@@ -201,6 +201,10 @@ public:
     }
     static void SetInitExitTimeout(int secs);
 
+    static void SetControllerDeploymentFlag(bool controller_deployment) {
+        _controller_deployment = controller_deployment;
+    }
+
     inline uint32_t GetId() {
         return _id;
     }
@@ -287,7 +291,6 @@ protected:
     std::string _starting_folder;
     bool _read_only_mode;
     bool _enable_scripting;
-    bool _controller_deployment;
 
     // File browser
     std::shared_ptr<FileListHandler> _file_list_handler;
@@ -335,6 +338,7 @@ protected:
     static volatile int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
+    static bool _controller_deployment;
     static std::thread* _animation_thread;
 
     // Callbacks for scripting responses from the frontend

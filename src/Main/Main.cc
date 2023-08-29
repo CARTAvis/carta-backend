@@ -87,9 +87,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (settings.controller_deployment) {
-            setenv("CONTROLLER_DEPLOYMENT", "controller", 1);
-        } else {
-            unsetenv("CONTROLLER_DEPLOYMENT");
+            Session::SetControllerDeploymentFlag(settings.controller_deployment);
         }
 
         carta::ThreadManager::StartEventHandlingThreads(settings.event_thread_count);
