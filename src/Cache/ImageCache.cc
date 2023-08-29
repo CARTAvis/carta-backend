@@ -13,36 +13,13 @@
 
 namespace carta {
 
-ImageCache::ImageCache()
-    : width(-1),
-      height(-1),
-      depth(-1),
-      num_stokes(-1),
-      cur_stokes(DEFAULT_STOKES),
-      cur_z(0),
-      stokes_i(-1),
-      stokes_q(-1),
-      stokes_u(-1),
-      stokes_v(-1),
-      computed_stokes_channel(-1),
-      cube_image_cache(false) {}
+ImageCache::ImageCache() : stokes_i(-1), stokes_q(-1), stokes_u(-1), stokes_v(-1), beam_area(DOUBLE_NAN), computed_stokes_channel(-1) {}
 
-float ImageCache::CubeImageSize() const {
-    return (float)(width * height * depth * num_stokes * sizeof(float)) / 1.0e6; // MB
-}
-
-float ImageCache::UsedReservedMemory() const {
-    return cube_image_cache ? CubeImageSize() : 0.0;
-}
-
-float ImageCache::GetValue(int x, int y, int z, int stokes) {
+float ImageCache::GetValue(int x, int y, int z, int stokes, size_t width, size_t height) {
     // Set the index of image cache
-    size_t idx = width * y + x;
-    if (cube_image_cache) {
-        idx += width * height * z;
-    }
+    size_t idx = width * height * z + width * y + x;
 
-    if (cube_image_cache && IsComputedStokes(stokes)) {
+    if (IsComputedStokes(stokes)) {
         auto stokes_type = StokesTypes[stokes];
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (stokes_q > -1 && stokes_u > -1 && stokes_v > -1) {
@@ -69,18 +46,11 @@ float ImageCache::GetValue(int x, int y, int z, int stokes) {
         return FLOAT_NAN;
     }
 
-    if (cube_image_cache) {
-        return cube_image_data[stokes][idx];
-    }
-
-    return channel_image_data[idx];
+    return cube_image_data[stokes][idx];
 }
 
-float* ImageCache::GetImageCacheData(int z, int stokes) {
-    z = z == CURRENT_Z ? cur_z : z;
-    stokes = stokes == CURRENT_STOKES ? cur_stokes : stokes;
-
-    if (cube_image_cache && IsComputedStokes(stokes)) {
+float* ImageCache::GetImageCacheData(int z, int stokes, size_t width, size_t height) {
+    if (IsComputedStokes(stokes)) {
         if (computed_stokes_channel_image_data.count(stokes) && computed_stokes_channel == z) {
             return computed_stokes_channel_image_data[stokes].get();
         }
@@ -140,35 +110,27 @@ float* ImageCache::GetImageCacheData(int z, int stokes) {
         return computed_stokes_channel_image_data[stokes].get();
     }
 
-    if (cube_image_cache) {
-        return cube_image_data[stokes].get() + width * height * z;
-    }
-
-    return channel_image_data.get();
+    return cube_image_data[stokes].get() + width * height * z;
 }
 
-bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    if (cube_image_cache) {
-        // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
-        int x, y;
-        point.ToIndex(x, y);
-        if (cube_image_data.count(stokes) || IsComputedStokes(stokes)) {
-            profile.resize(depth);
+bool ImageCache::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth) {
+    int x, y;
+    point.ToIndex(x, y);
+    if (cube_image_data.count(stokes) || IsComputedStokes(stokes)) {
+        profile.resize(depth);
 #pragma omp parallel for
-            for (int z = 0; z < depth; ++z) {
-                profile[z] = GetValue(x, y, z, stokes);
-            }
-            return true;
+        for (int z = 0; z < depth; ++z) {
+            profile[z] = GetValue(x, y, z, stokes, width, height);
         }
-        spdlog::error("Invalid cube image cache for the cursor/point region spectral profile!");
+        return true;
     }
     return false;
 }
 
-bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    if (!mask.shape().empty() && cube_image_cache) {
-        // A lock for cube image cache is not required here, since this process is already locked via the spectral profile mutex
+bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
+    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+    if (!mask.shape().empty() && (cube_image_data.count(stokes) || IsComputedStokes(stokes))) {
         int x_min = origin(0);
         int y_min = origin(1);
         casacore::IPosition mask_shape(mask.shape());
@@ -177,7 +139,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, con
         int start = z_range.from;
         int end = z_range.to;
         size_t z_size = end - start + 1;
-        bool has_flux = !std::isnan(_beam_area);
+        bool has_flux = !std::isnan(beam_area);
 
         profiles[CARTA::StatsType::Sum] = std::vector<double>(z_size, DOUBLE_NAN);
         profiles[CARTA::StatsType::FluxDensity] = std::vector<double>(z_size, DOUBLE_NAN);
@@ -204,7 +166,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, con
 
             for (int x = x_min; x < x_min + mask_width; ++x) {
                 for (int y = y_min; y < y_min + mask_height; ++y) {
-                    auto val = GetValue(x, y, z, stokes);
+                    auto val = GetValue(x, y, z, stokes, width, height);
                     if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
                         sum += val;
                         sum_sq += val * val;
@@ -233,7 +195,7 @@ bool ImageCache::GetRegionSpectralData(const AxisRange& z_range, int stokes, con
                 profiles[CARTA::StatsType::NumPixels][idx] = num_pixels;
 
                 if (has_flux) {
-                    profiles[CARTA::StatsType::FluxDensity][idx] = sum / _beam_area;
+                    profiles[CARTA::StatsType::FluxDensity][idx] = sum / beam_area;
                 }
             }
         }

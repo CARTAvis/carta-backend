@@ -40,7 +40,12 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _y_axis(1),
       _z_axis(-1),
       _stokes_axis(-1),
+      _z_index(default_z),
+      _stokes_index(DEFAULT_STOKES),
+      _depth(1),
+      _num_stokes(1),
       _image_cache_valid(false),
+      _cube_image_cache_valid(false),
       _moment_generator(nullptr),
       _moment_name_index(0) {
     // Initialize for operator==
@@ -74,21 +79,20 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     _x_axis = render_axes[0];
     _y_axis = render_axes[1];
-    _image_cache.cur_z = default_z;
-    _image_cache.width = _image_shape(_x_axis);
-    _image_cache.height = _image_shape(_y_axis);
-    _image_cache.depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
-    _image_cache.num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
+    _width = _image_shape(_x_axis);
+    _height = _image_shape(_y_axis);
+    _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
+    _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
-    if (reserved_memory >= _image_cache.CubeImageSize()) {
+    if (reserved_memory >= UsedReservedMemory()) {
         // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
         if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
             spdlog::info("Cache the whole cube image data.");
-            _image_cache.cube_image_cache = true;
+            _cube_image_cache_valid = true;
             LoadCubeImageData();
         }
     } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
-        spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", _image_cache.CubeImageSize());
+        spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", UsedReservedMemory());
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -158,28 +162,28 @@ casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
     return ipos;
 }
 
-size_t Frame::Width() const {
-    return _image_cache.width;
+size_t Frame::Width() {
+    return _width;
 }
 
-size_t Frame::Height() const {
-    return _image_cache.height;
+size_t Frame::Height() {
+    return _height;
 }
 
-size_t Frame::Depth() const {
-    return _image_cache.depth;
+size_t Frame::Depth() {
+    return _depth;
 }
 
-size_t Frame::NumStokes() const {
-    return _image_cache.num_stokes;
+size_t Frame::NumStokes() {
+    return _num_stokes;
 }
 
-int Frame::CurrentZ() const {
-    return _image_cache.cur_z;
+int Frame::CurrentZ() {
+    return _z_index;
 }
 
-int Frame::CurrentStokes() const {
-    return _image_cache.cur_stokes;
+int Frame::CurrentStokes() {
+    return _stokes_index;
 }
 
 int Frame::SpectralAxis() {
@@ -339,8 +343,8 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             bool z_ok(CheckZ(new_z));
             bool stokes_ok(CheckStokes(new_stokes));
             if (z_ok && stokes_ok) {
-                _image_cache.cur_z = new_z;
-                _image_cache.cur_stokes = new_stokes;
+                _z_index = new_z;
+                _stokes_index = new_stokes;
 
                 // invalidate the image cache
                 InvalidateImageCache();
@@ -390,7 +394,7 @@ bool Frame::FillImageCache() {
     }
 
     Timer t;
-    if (LoadImageCacheData(CurrentZ(), CurrentStokes())) {
+    if (LoadImageCacheData(CurrentStokes())) {
         auto dt = t.Elapsed();
         spdlog::performance(
             "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), dt.ms(), (float)(Width() * Height()) / dt.us());
@@ -856,7 +860,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
                 // Fail to get cube image cache
                 return false;
             }
-            if (!IsCubeImageCache() && !_image_cache.channel_image_data) {
+            if (!IsCubeImageCache() && !_channel_image_data) {
                 // Fail to get channel image cache
                 return false;
             }
@@ -927,7 +931,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
             // Fail to get cube image cache
             return false;
         }
-        if (!IsCubeImageCache() && !_image_cache.channel_image_data) {
+        if (!IsCubeImageCache() && !_channel_image_data) {
             // Fail to get channel image cache
             return false;
         }
@@ -1090,7 +1094,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (_image_cache_valid) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        cursor_value_with_current_stokes = _image_cache.GetValue(x, y, CurrentZ(), CurrentStokes());
+        cursor_value_with_current_stokes = GetValue(x, y, CurrentZ(), CurrentStokes());
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
@@ -1261,13 +1265,13 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                         if (config.coordinate().back() == 'x') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                profile.push_back(_image_cache.GetValue(j, y, CurrentZ(), CurrentStokes()));
+                                profile.push_back(GetValue(j, y, CurrentZ(), CurrentStokes()));
                             }
                             cache_lock.release();
                         } else if (config.coordinate().back() == 'y') {
                             queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                             for (unsigned int j = start; j < end; ++j) {
-                                profile.push_back(_image_cache.GetValue(x, j, CurrentZ(), CurrentStokes()));
+                                profile.push_back(GetValue(x, j, CurrentZ(), CurrentStokes()));
                             }
                             cache_lock.release();
                         }
@@ -2425,7 +2429,7 @@ void Frame::LoadCubeImageData() {
 
     Timer t;
     for (int stokes = 0; stokes < NumStokes(); ++stokes) {
-        if (!LoadImageCacheData(ALL_Z, stokes)) {
+        if (!LoadImageCacheData(stokes)) {
             return;
         }
     }
@@ -2443,18 +2447,28 @@ void Frame::LoadCubeImageData() {
     GetStokesTypeIndex("V", _image_cache.stokes_v, mute_err_msg);
 
     // Get beam area
-    _image_cache._beam_area = _loader->CalculateBeamArea();
+    _image_cache.beam_area = _loader->CalculateBeamArea();
 }
 
 float* Frame::GetImageCacheData(int z, int stokes) {
-    return _image_cache.GetImageCacheData(z, stokes);
+    if (z == CURRENT_Z) {
+        z = _z_index;
+    }
+    if (stokes == CURRENT_STOKES) {
+        stokes = _stokes_index;
+    }
+
+    if (IsCubeImageCache()) {
+        return _image_cache.GetImageCacheData(z, stokes, _width, _height);
+    }
+    return _channel_image_data.get();
 }
 
 bool Frame::IsCubeImageCache() const {
-    return _image_cache.cube_image_cache;
+    return _cube_image_cache_valid;
 }
 
-bool Frame::LoadImageCacheData(int z, int stokes) {
+bool Frame::LoadImageCacheData(int stokes) {
     if (IsCubeImageCache() && !_image_cache.cube_image_data.count(stokes)) {
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_Z), stokes);
         auto image_data_size = stokes_slicer.slicer.length().product();
@@ -2464,10 +2478,10 @@ bool Frame::LoadImageCacheData(int z, int stokes) {
             return false;
         }
     } else if (!IsCubeImageCache()) {
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(CurrentZ()), stokes);
         auto image_data_size = stokes_slicer.slicer.length().product();
-        _image_cache.channel_image_data = std::make_unique<float[]>(image_data_size);
-        if (!GetSlicerData(stokes_slicer, _image_cache.channel_image_data.get())) {
+        _channel_image_data = std::make_unique<float[]>(image_data_size);
+        if (!GetSlicerData(stokes_slicer, _channel_image_data.get())) {
             spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed.");
             return false;
         }
@@ -2476,16 +2490,29 @@ bool Frame::LoadImageCacheData(int z, int stokes) {
 }
 
 float Frame::UsedReservedMemory() const {
-    return _image_cache.UsedReservedMemory();
+    return (float)(_width * _height * _depth * _num_stokes * sizeof(float)) / 1.0e6; // MB
 }
 
 bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    return _image_cache.GetPointSpectralData(profile, stokes, point);
+    if (IsCubeImageCache()) {
+        return _image_cache.GetPointSpectralData(profile, stokes, point, _width, _height, _depth);
+    }
+    return false;
 }
 
 bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    return _image_cache.GetRegionSpectralData(z_range, stokes, mask, origin, profiles);
+    if (IsCubeImageCache()) {
+        return _image_cache.GetRegionSpectralData(z_range, stokes, _width, _height, mask, origin, profiles);
+    }
+    return false;
+}
+
+float Frame::GetValue(int x, int y, int z, int stokes) {
+    if (IsCubeImageCache()) {
+        return _image_cache.GetValue(x, y, z, stokes, _width, _height);
+    }
+    return _channel_image_data[Width() * y + x];
 }
 
 } // namespace carta

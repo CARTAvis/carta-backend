@@ -15,21 +15,14 @@
 namespace carta {
 
 struct ImageCache {
-    size_t width;
-    size_t height;
-    size_t depth;
-    size_t num_stokes;
-    int cur_stokes; // current stokes index
-    int cur_z;      // current channel
-    int stokes_i;   // stokes type "I" index
-    int stokes_q;   // stokes type "Q" index
-    int stokes_u;   // stokes type "U" index
-    int stokes_v;   // stokes type "V" index
-    double _beam_area;
-    bool cube_image_cache; // if true, cache the whole cube image. Otherwise, only cache a channel image
+    int stokes_i; // stokes type "I" index
+    int stokes_q; // stokes type "Q" index
+    int stokes_u; // stokes type "U" index
+    int stokes_v; // stokes type "V" index
+    double beam_area;
 
-    // Current channel and stokes image cache
-    std::unique_ptr<float[]> channel_image_data;
+    // Current channel of computed stokes image cache
+    int computed_stokes_channel;
 
     // Map of cube image cache, key is the stokes index
     std::unordered_map<int, std::unique_ptr<float[]>> cube_image_data;
@@ -37,19 +30,14 @@ struct ImageCache {
     // Map of computed stokes channel image cache, key is the computed stokes index
     std::unordered_map<int, std::unique_ptr<float[]>> computed_stokes_channel_image_data;
 
-    // Current channel of computed stokes image cache
-    int computed_stokes_channel;
-
     ImageCache();
 
-    float CubeImageSize() const;      // MB
-    float UsedReservedMemory() const; // MB
-
-    float GetValue(int x, int y, int z, int stokes);
-    float* GetImageCacheData(int z, int stokes);
-    bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
-    bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
+    float* GetImageCacheData(int z, int stokes, size_t width, size_t height);
+    float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
+    bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth);
+    bool GetRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
+        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
+        std::map<CARTA::StatsType, std::vector<double>>& profiles);
 };
 
 } // namespace carta
