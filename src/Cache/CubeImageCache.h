@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND__FRAME_IMAGECACHE_H_
 #define CARTA_BACKEND__FRAME_IMAGECACHE_H_
 
+#include <memory>
 #include <unordered_map>
 
 namespace carta {
