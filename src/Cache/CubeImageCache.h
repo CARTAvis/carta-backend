@@ -14,7 +14,7 @@
 
 namespace carta {
 
-struct ImageCache {
+struct CubeImageCache {
     int stokes_i; // stokes type "I" index
     int stokes_q; // stokes type "Q" index
     int stokes_u; // stokes type "U" index
@@ -25,12 +25,12 @@ struct ImageCache {
     int computed_stokes_channel;
 
     // Map of cube image cache, key is the stokes index
-    std::unordered_map<int, std::unique_ptr<float[]>> cube_image_data;
+    std::unordered_map<int, std::unique_ptr<float[]>> stokes_data;
 
     // Map of computed stokes channel image cache, key is the computed stokes index
-    std::unordered_map<int, std::unique_ptr<float[]>> computed_stokes_channel_image_data;
+    std::unordered_map<int, std::unique_ptr<float[]>> computed_stokes_channel_data;
 
-    ImageCache();
+    CubeImageCache();
 
     float* GetImageCacheData(int z, int stokes, size_t width, size_t height);
     float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);

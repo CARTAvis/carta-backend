@@ -26,7 +26,7 @@ public:
         : Frame(session_id, loader, hdu, default_z, reserved_memory) {}
     std::vector<float> GetImageDataPerChannel(int z, int stokes) {
         std::vector<float> results;
-        if ((z == CurrentZ() && stokes == CurrentStokes()) || IsCubeImageCache()) {
+        if ((z == _z_index && stokes == _stokes_index) || _cube_image_cache_valid) {
             auto* data = GetImageCacheData(z, stokes);
             for (int i = 0; i < Width() * Height(); ++i) {
                 results.push_back(data[i]);

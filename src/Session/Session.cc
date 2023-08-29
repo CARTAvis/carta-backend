@@ -549,7 +549,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu, DEFAULT_Z, _reserved_memory));
 
             // Update the reserved memory
-            _reserved_memory -= frame->UsedReservedMemory();
+            _reserved_memory -= frame->ReservedMemory();
             if (_reserved_memory > 0) {
                 spdlog::info("{:.0f} MB of reserved memory are available.", _reserved_memory);
             }
@@ -680,7 +680,7 @@ void Session::DeleteFrame(int file_id) {
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-            _reserved_memory += frame.second->UsedReservedMemory();
+            _reserved_memory += frame.second->ReservedMemory();
             frame.second.reset(); // delete Frame
         }
         _frames.clear();
@@ -688,7 +688,7 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-        _reserved_memory += _frames[file_id]->UsedReservedMemory();
+        _reserved_memory += _frames[file_id]->ReservedMemory();
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);

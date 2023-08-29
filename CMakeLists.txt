@@ -189,7 +189,7 @@ set(LINK_LIBS
 set(SOURCE_FILES
         ${SOURCE_FILES}
 	third-party/pugixml/src/pugixml.cpp
-        src/Cache/ImageCache.cc
+        src/Cache/CubeImageCache.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc

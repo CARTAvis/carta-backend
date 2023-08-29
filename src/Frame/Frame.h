@@ -17,7 +17,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 
-#include "Cache/ImageCache.h"
+#include "Cache/CubeImageCache.h"
 #include "Cache/RequirementsCache.h"
 #include "Cache/TileCache.h"
 #include "DataStream/Contouring.h"
@@ -222,7 +222,7 @@ public:
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    float UsedReservedMemory() const; // MB
+    float ReservedMemory() const; // MB
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
@@ -276,7 +276,6 @@ protected:
     void LoadCubeImageData();
     bool LoadImageCacheData(int stokes);
     float* GetImageCacheData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
-    bool IsCubeImageCache() const;
     float GetValue(int x, int y, int z, int stokes);
 
     // Setup
@@ -309,13 +308,13 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    bool _image_cache_valid;                      // Cached image data is valid for current z and stokes
-    std::unique_ptr<float[]> _channel_image_data; // Current channel and stokes image cache
-    bool _cube_image_cache_valid;                 // Cached cube image data is valid for all stokes
-    ImageCache _image_cache;                      // Cube image cache
-    queuing_rw_mutex _cache_mutex;                // allow concurrent reads but lock for write
-    std::mutex _image_mutex;                      // only one disk access at a time
-    TileCache _tile_cache;                        // cache for full-resolution image tiles
+    bool _channel_image_cache_valid;               // Cached image data is valid for current z and stokes
+    std::unique_ptr<float[]> _channel_image_cache; // Current channel and stokes image cache
+    bool _cube_image_cache_valid;                  // Cached cube image data is valid for all stokes
+    CubeImageCache _cube_image_cache;              // Cube image cache
+    queuing_rw_mutex _cache_mutex;                 // allow concurrent reads but lock for write
+    std::mutex _image_mutex;                       // only one disk access at a time
+    TileCache _tile_cache;                         // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 
