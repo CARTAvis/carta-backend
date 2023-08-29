@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__SPECTRALPROFILES_H_
-#define CARTA_BACKEND__SPECTRALPROFILES_H_
+#ifndef CARTA_BACKEND__IMAGECACHECALCULATOR_H_
+#define CARTA_BACKEND__IMAGECACHECALCULATOR_H_
 
 #include "Cache/CubeImageCache.h"
 #include "Util/Image.h"
@@ -31,4 +31,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__SPECTRALPROFILES_H_
+#endif // CARTA_BACKEND__IMAGECACHECALCULATOR_H_

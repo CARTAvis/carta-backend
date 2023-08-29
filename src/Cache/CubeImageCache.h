@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__FRAME_IMAGECACHE_H_
-#define CARTA_BACKEND__FRAME_IMAGECACHE_H_
+#ifndef CARTA_BACKEND__FRAME_CUBEIMAGECACHE_H_
+#define CARTA_BACKEND__FRAME_CUBEIMAGECACHE_H_
 
 #include <memory>
 #include <unordered_map>
@@ -25,7 +25,7 @@ struct CubeImageCache {
     // Map of cube image cache, key is the stokes index
     std::unordered_map<int, std::unique_ptr<float[]>> stokes_data;
 
-    // Map of computed stokes channel image cache, key is the computed stokes index
+    // Map of computed stokes *channel* image cache, key is the computed stokes index
     std::unordered_map<int, std::unique_ptr<float[]>> computed_stokes_channel_data;
 
     CubeImageCache();
@@ -35,4 +35,4 @@ struct CubeImageCache {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FRAME_IMAGECACHE_H_
+#endif // CARTA_BACKEND__FRAME_CUBEIMAGECACHE_H_

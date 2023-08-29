@@ -85,16 +85,16 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _depth = (_z_axis >= 0 ? _image_shape(_z_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
-    if (reserved_memory >= ReservedMemory()) {
-        // Cache image data for all stokes, only for non-HDF5 files or HDF5 files without tile cache and mip data
-        if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
-            spdlog::info("Cache the whole cube image data.");
+    // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
+    if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
+        if (reserved_memory >= ReservedMemory()) {
+            spdlog::info("Cache the whole image data.");
             _cube_image_cache_valid = true;
             _channel_image_cache_valid = true;
             LoadCubeImageData();
+        } else if (reserved_memory > 0.0) {
+            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", ReservedMemory());
         }
-    } else if (reserved_memory > 0.0 && !(_loader->UseTileCache() && _loader->HasMip(2))) {
-        spdlog::info("Image too large ({:.0f} MB). Not cache the whole cube image data.", ReservedMemory());
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -382,7 +382,7 @@ bool Frame::FillImageCache() {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
-    // Exit early if the image cache is for the whole cube image data
+    // Exit early if the cube image cache is available
     if (_cube_image_cache_valid) {
         _channel_image_cache_valid = true;
         return true;
@@ -2469,7 +2469,7 @@ bool Frame::LoadImageCacheData(int stokes) {
         auto image_data_size = stokes_slicer.slicer.length().product();
         _cube_image_cache.stokes_data[stokes] = std::make_unique<float[]>(image_data_size);
         if (!GetSlicerData(stokes_slicer, _cube_image_cache.stokes_data[stokes].get())) {
-            spdlog::error("Session {}: {}", _session_id, "Loading cube image cache failed. Stokes: {}", stokes);
+            spdlog::error("Session {}: {}", _session_id, "Loading cube image cache failed. Stokes index: {}", stokes);
             return false;
         }
     } else if (!_cube_image_cache_valid) {
@@ -2477,7 +2477,7 @@ bool Frame::LoadImageCacheData(int stokes) {
         auto image_data_size = stokes_slicer.slicer.length().product();
         _channel_image_cache = std::make_unique<float[]>(image_data_size);
         if (!GetSlicerData(stokes_slicer, _channel_image_cache.get())) {
-            spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed. Stokes: {}", stokes);
+            spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed. Stokes index: {}", stokes);
             return false;
         }
     }
