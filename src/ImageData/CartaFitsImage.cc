@@ -318,7 +318,7 @@ void CartaFitsImage::SetUpImage() {
         setCoordinateInfo(coord_sys);
 
         // Set image units
-        setUnits(GetBrightnessUnit(unused_headers));
+        setUnits(casacore::ImageFITSConverter::getBrightnessUnit(unused_headers, log));
 
         // Set image info
         casacore::ImageInfo image_info = casacore::ImageFITSConverter::getImageInfo(unused_headers);
@@ -460,6 +460,14 @@ void CartaFitsImage::SetFitsHeaderStrings(int nheaders, const std::string& heade
         _all_header_strings(i) = hstring;
 
         if (!hstring.startsWith("HISTORY")) {
+            if (hstring.startsWith("BUNIT")) {
+                // Handle the expression of arcsec^2 for JCMT-SCUBA2 header
+                std::string arcsec2_expr(" s**0.5");
+                size_t start_pos = hstring.find(arcsec2_expr);
+                if (start_pos != std::string::npos) {
+                    hstring.replace(start_pos, arcsec2_expr.length(), "/arcsec^2");
+                }
+            }
             no_history_strings.push_back(hstring);
         }
 
@@ -1466,71 +1474,4 @@ bool CartaFitsImage::doGetNanMaskSlice(casacore::Array<bool>& buffer, const casa
     }
 
     return false;
-}
-
-// This function is modified from the *getBrightnessUnit* method in *ImageFITSConverter* class.
-// The original function can be found in the file: casacore/images/Images/ImageFITS2Converter.cc
-casacore::Unit CartaFitsImage::GetBrightnessUnit(casacore::RecordInterface& header) {
-    casacore::Unit result_unit;
-    if (header.isDefined("bunit")) {
-        casacore::Record sub_rec = header.asRecord("bunit");
-        if (sub_rec.dataType("value") == casacore::DataType::TpString) {
-            casacore::String unit_string;
-            sub_rec.get("value", unit_string);
-
-            // Handle the expression of arcsec^2 for JCMT-SCUBA2 header
-            std::string arcsec2_expr(" s**0.5");
-            size_t start_pos = unit_string.find(arcsec2_expr);
-            if (start_pos != std::string::npos) {
-                unit_string.replace(start_pos, arcsec2_expr.length(), "/arcsec^2");
-            }
-
-            casacore::UnitMap::addFITS();
-            if (casacore::UnitVal::check(unit_string)) {
-                // Translate units from FITS units to true Casacore units
-                // There is no scale factor in this translation.
-                result_unit = casacore::UnitMap::fromFITS(casacore::Unit(unit_string));
-            } else { // unit check failed
-                casacore::Bool unit_fixed = casacore::False;
-                // try to recover by removing bracketed comments like in "K (Tb)"
-                casacore::String::size_type bracket_pos;
-                casacore::String trunc_unit_string(unit_string);
-                if ((bracket_pos = unit_string.find("(")) != casacore::String::npos ||
-                    (bracket_pos = unit_string.find("[")) != casacore::String::npos) {
-                    // remove everything beginning at bracket_pos from the string
-                    trunc_unit_string = unit_string.substr(0, bracket_pos);
-                    spdlog::warn("FITS unit \"{}\" unknown to CASA, was truncated to \"{}\"", unit_string, trunc_unit_string);
-                    if (casacore::UnitVal::check(trunc_unit_string)) {
-                        result_unit = casacore::UnitMap::fromFITS(casacore::Unit(trunc_unit_string));
-                        unit_fixed = casacore::True;
-                    }
-                }
-                if (!unit_fixed) { // try adding the most common problematic units occuring in BUNIT
-                    casacore::UnitMap::putUser("Pixel", casacore::UnitVal(1.0), "Pixel unit");
-                    casacore::UnitMap::putUser("Beam", casacore::UnitVal(1.0), "Beam area");
-                    if (casacore::UnitVal::check(trunc_unit_string)) {
-                        unit_fixed = casacore::True;
-                        result_unit = casacore::UnitMap::fromFITS(casacore::Unit(trunc_unit_string));
-                        spdlog::info(
-                            "FITS unit \"{}\" does not conform to the FITS standard. Correct units are always lower case except when "
-                            "derived from a name. Please use \"beam\" instead of \"Beam\", \"pixel\" instead of \"Pixel\".",
-                            trunc_unit_string);
-                    }
-                }
-
-                if (!unit_fixed) { // recovery attempt failed as well
-                    casacore::UnitMap::putUser(
-                        "\"" + unit_string + "\"", casacore::UnitVal(1.0, casacore::UnitDim::Dnon), "\"" + unit_string + "\"");
-                    spdlog::warn(
-                        "FITS unit \"{}\" unknown to CASA - will treat it as non-dimensional. See "
-                        "http://fits.gsfc.nasa.gov/fits_standard.html for a list of valid units.",
-                        unit_string);
-                    result_unit.setName("\"" + unit_string + "\"");
-                    result_unit.setValue(casacore::UnitVal(1.0, casacore::UnitDim::Dnon));
-                }
-            }
-        }
-        header.removeField("bunit");
-    }
-    return result_unit;
 }
