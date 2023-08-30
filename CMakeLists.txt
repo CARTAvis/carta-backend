@@ -15,6 +15,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
 
+if(DEPLOYMENT_TYPE)
+    add_definitions(-DDEPLOYMENT_TYPE="${DEPLOYMENT_TYPE}")
+endif()
+
 # Enable OpenMP if package is found
 find_package(OpenMP)
 if (OPENMP_CXX_FOUND)

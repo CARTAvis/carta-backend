@@ -58,6 +58,7 @@ struct ProgramSettings {
     int idle_session_wait_time = -1;
     bool read_only_mode = false;
     bool enable_scripting = false;
+    bool controller_deployment = false;
     int reserved_memory = RESERVED_MEMORY;
 
     std::string browser;
@@ -127,8 +128,8 @@ struct ProgramSettings {
     // TODO: this is outdated. It's used by the equality operator, which is used by a test.
     auto GetTuple() const {
         return std::tie(help, version, port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder, no_http,
-            no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, verbosity, wait_time, init_wait_time,
-            idle_session_wait_time, reserved_memory);
+            no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, controller_deployment, verbosity, wait_time,
+            init_wait_time, idle_session_wait_time, reserved_memory);
     }
     bool operator!=(const ProgramSettings& rhs) const;
     bool operator==(const ProgramSettings& rhs) const;

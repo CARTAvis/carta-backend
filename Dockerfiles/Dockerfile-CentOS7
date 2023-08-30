@@ -30,6 +30,7 @@ ENV LD_LIBRARY_PATH "/usr/local/lib"
 ENV PKG_CONFIG_PATH "/usr/local/lib/pkgconfig"
 
 ENV HOME /root
+ENV CARTA_DOCKER_DEPLOYMENT=1
 WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile

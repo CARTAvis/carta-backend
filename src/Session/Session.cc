@@ -96,6 +96,7 @@ std::string LoaderCache::GetKey(const std::string& filename, const std::string& 
 volatile int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
+bool Session::_controller_deployment = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
@@ -410,6 +411,24 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     auto ack_message = Message::RegisterViewerAck(session_id, success, status, type);
     auto& platform_string_map = *ack_message.mutable_platform_strings();
     platform_string_map["release_info"] = GetReleaseInformation();
+
+#ifdef DEPLOYMENT_TYPE
+    platform_string_map["deployment"] = DEPLOYMENT_TYPE;
+#else
+    platform_string_map["deployment"] = "unknown";
+#endif
+
+    if (_controller_deployment) {
+        platform_string_map["controller_deployment"] = "true";
+    }
+
+    if (std::getenv("CARTA_DOCKER_DEPLOYMENT")) {
+        platform_string_map["docker_deployment"] = "true";
+    }
+
+    std::string arch = OutputOfCommand("uname -m");
+    platform_string_map["architecture"] = arch;
+
 #if __APPLE__
     platform_string_map["platform"] = "macOS";
 #else
