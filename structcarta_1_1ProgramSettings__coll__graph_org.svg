@@ -48,16 +48,16 @@
 <title>Node3&#45;&gt;Node1</title>
 <path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M270.11,-592.52C359.9,-600.14 638.01,-618.97 707,-566.95 779.83,-512.03 787.36,-386.04 787.99,-349.84"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="270.38,-589.03 260.12,-591.65 269.78,-596.01 270.38,-589.03"/>
-<text text-anchor="middle" x="499" y="-714.95" font-family="Helvetica,sans-Serif" font-size="10.00"> debug_no_auth</text>
-<text text-anchor="middle" x="499" y="-703.95" font-family="Helvetica,sans-Serif" font-size="10.00">enable_scripting</text>
-<text text-anchor="middle" x="499" y="-692.95" font-family="Helvetica,sans-Serif" font-size="10.00">help</text>
-<text text-anchor="middle" x="499" y="-681.95" font-family="Helvetica,sans-Serif" font-size="10.00">log_performance</text>
-<text text-anchor="middle" x="499" y="-670.95" font-family="Helvetica,sans-Serif" font-size="10.00">log_protocol_messages</text>
-<text text-anchor="middle" x="499" y="-659.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_browser</text>
-<text text-anchor="middle" x="499" y="-648.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_database</text>
-<text text-anchor="middle" x="499" y="-637.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_frontend</text>
-<text text-anchor="middle" x="499" y="-626.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_http</text>
-<text text-anchor="middle" x="499" y="-615.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_log</text>
+<text text-anchor="middle" x="499" y="-714.95" font-family="Helvetica,sans-Serif" font-size="10.00"> controller_deployment</text>
+<text text-anchor="middle" x="499" y="-703.95" font-family="Helvetica,sans-Serif" font-size="10.00">debug_no_auth</text>
+<text text-anchor="middle" x="499" y="-692.95" font-family="Helvetica,sans-Serif" font-size="10.00">enable_scripting</text>
+<text text-anchor="middle" x="499" y="-681.95" font-family="Helvetica,sans-Serif" font-size="10.00">help</text>
+<text text-anchor="middle" x="499" y="-670.95" font-family="Helvetica,sans-Serif" font-size="10.00">log_performance</text>
+<text text-anchor="middle" x="499" y="-659.95" font-family="Helvetica,sans-Serif" font-size="10.00">log_protocol_messages</text>
+<text text-anchor="middle" x="499" y="-648.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_browser</text>
+<text text-anchor="middle" x="499" y="-637.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_database</text>
+<text text-anchor="middle" x="499" y="-626.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_frontend</text>
+<text text-anchor="middle" x="499" y="-615.95" font-family="Helvetica,sans-Serif" font-size="10.00">no_http</text>
 <text text-anchor="middle" x="499" y="-604.95" font-family="Helvetica,sans-Serif" font-size="10.00">...</text>
 </g>
 <!-- Node3&#45;&gt;Node2 -->

@@ -288,6 +288,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:ab1d2ce7daa4e4dfd3a76a67297457b6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad8a393254598d44b7b2c518b57d667e0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ad8a393254598d44b7b2c518b57d667e0">SetInitExitTimeout</a> (int secs)</td></tr>
 <tr class="separator:ad8a393254598d44b7b2c518b57d667e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78272e362e162a848d709f39120468c3"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a78272e362e162a848d709f39120468c3">SetControllerDeploymentFlag</a> (bool controller_deployment)</td></tr>
+<tr class="separator:a78272e362e162a848d709f39120468c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -408,6 +410,8 @@ Static Protected Attributes</h2></td></tr>
 <tr class="separator:ae3d080ef6dc4b2dad9ced248a38c18ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2b40bf7a784f3da526cb9445eee74ef"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#ad2b40bf7a784f3da526cb9445eee74ef">_exit_when_all_sessions_closed</a> = false</td></tr>
 <tr class="separator:ad2b40bf7a784f3da526cb9445eee74ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2dbf23bc5fbaaea4c00a913b4af832c5"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#a2dbf23bc5fbaaea4c00a913b4af832c5">_controller_deployment</a> = false</td></tr>
+<tr class="separator:a2dbf23bc5fbaaea4c00a913b4af832c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac1d1e35c1bb381168de245b698adb08"><td class="memItemLeft" align="right" valign="top">static std::thread *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1Session.html#aac1d1e35c1bb381168de245b698adb08">_animation_thread</a> = nullptr</td></tr>
 <tr class="separator:aac1d1e35c1bb381168de245b698adb08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -2628,7 +2632,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_add3b0e0836be0e2fa056cb7cc0607f72_cgraph.svg" width="100%" height="459"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1Session_add3b0e0836be0e2fa056cb7cc0607f72_cgraph.svg" width="100%" height="497"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 <div class="dynheader">
@@ -3911,6 +3915,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a78272e362e162a848d709f39120468c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78272e362e162a848d709f39120468c3">&#9670;&nbsp;</a></span>SetControllerDeploymentFlag()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void carta::Session::SetControllerDeploymentFlag </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>controller_deployment</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ab1d2ce7daa4e4dfd3a76a67297457b6c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab1d2ce7daa4e4dfd3a76a67297457b6c">&#9670;&nbsp;</a></span>SetExitTimeout()</h2>
 
@@ -4473,6 +4503,28 @@ Here is the caller graph for this function:</div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2dbf23bc5fbaaea4c00a913b4af832c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2dbf23bc5fbaaea4c00a913b4af832c5">&#9670;&nbsp;</a></span>_controller_deployment</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Session::_controller_deployment = false</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">protected</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

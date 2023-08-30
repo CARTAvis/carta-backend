@@ -15,6 +15,7 @@ var structcarta_1_1ProgramSettings =
     [ "bool_keys_map", "structcarta_1_1ProgramSettings.html#a2a55ad68cd6e236de43cee51bbc2f385", null ],
     [ "browser", "structcarta_1_1ProgramSettings.html#a09c0ed2f5a3eff7e84ca8e25ab58e373", null ],
     [ "command_line_settings", "structcarta_1_1ProgramSettings.html#a78c341ba61be92463475a46e15544913", null ],
+    [ "controller_deployment", "structcarta_1_1ProgramSettings.html#a3d95a3072052a718598c2a1830550970", null ],
     [ "debug_msgs", "structcarta_1_1ProgramSettings.html#ae0230976c9aaa51446bd75fefd1aeb7f", null ],
     [ "debug_no_auth", "structcarta_1_1ProgramSettings.html#a7ec7930c75c7ed449ebb6ee1d392a2ec", null ],
     [ "deprecated_options", "structcarta_1_1ProgramSettings.html#aefe071713ac70beff41353d48328c362", null ],

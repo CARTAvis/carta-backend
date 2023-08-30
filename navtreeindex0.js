@@ -8,10 +8,12 @@ var NAVTREEINDEX0 =
 "App_8cc.html#a41a3266785a8ac3360dd09466acc91c4":[4,0,1,2],
 "App_8cc.html#a88efa1f2f554a9f807784421cef88c32":[4,0,1,3],
 "App_8cc.html#aa699391ecf7704747fe9f4489ed09f4c":[4,0,1,0],
+"App_8cc.html#ae7f5c27bbd73739e53d5ab0a59ec1110":[4,0,1,4],
 "App_8h.html":[4,0,2],
 "App_8h.html#a0329409ff88c6a7b673ef9282aaae01c":[4,0,2,0],
 "App_8h.html#a41a3266785a8ac3360dd09466acc91c4":[4,0,2,1],
 "App_8h.html#a88efa1f2f554a9f807784421cef88c32":[4,0,2,2],
+"App_8h.html#ae7f5c27bbd73739e53d5ab0a59ec1110":[4,0,2,3],
 "BasicStatsCalculator_8h.html":[4,0,3],
 "BasicStatsCalculator_8tcc.html":[4,0,4],
 "CartaFitsImage_8cc.html":[4,0,5],
@@ -247,7 +249,5 @@ var NAVTREEINDEX0 =
 "Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce":[4,0,76,1],
 "Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,76,7],
 "Logger_8h.html#aae919ba7488e6353a8c239b5f081247c":[4,0,76,3],
-"Logger_8h.html#ab9e339746ee51ea21696ab43b50841d5":[4,0,76,10],
-"Logger_8h.html#ad4a0c9622fee38ec4d034e102a1f12d5":[4,0,76,4],
-"Logger_8h.html#af83a37930db1378a80ee446f1242d3ae":[4,0,76,5]
+"Logger_8h.html#ab9e339746ee51ea21696ab43b50841d5":[4,0,76,10]
 };
