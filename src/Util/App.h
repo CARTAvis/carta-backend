@@ -14,5 +14,6 @@
 
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
+std::string OutputOfCommand(const char* command);
 
 #endif // CARTA_BACKEND__UTIL_APP_H_
