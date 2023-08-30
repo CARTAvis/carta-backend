@@ -96,6 +96,9 @@ private:
     template <typename T>
     bool GetNanPixelMask(casacore::ArrayLattice<bool>& mask);
 
+    // Parse the brightness unit
+    casacore::Unit GetBrightnessUnit(casacore::RecordInterface& header);
+
     std::string _filename;
     unsigned int _hdu;
 
