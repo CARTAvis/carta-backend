@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
+        auto url_prefix = getenv("URL_PREFIX");
         if (!settings.no_frontend || !settings.no_database || settings.enable_scripting) {
             fs::path frontend_path;
 
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
 
             http_server =
                 std::make_unique<HttpServer>(session_manager, frontend_path, settings.user_directory, auth_token, settings.read_only_mode,
-                    !settings.no_frontend, !settings.no_database, settings.enable_scripting, !settings.no_runtime_config);
+                    !settings.no_frontend, !settings.no_database, settings.enable_scripting, !settings.no_runtime_config, url_prefix);
             http_server->RegisterRoutes();
 
             if (!settings.no_frontend && !http_server->CanServeFrontend()) {
@@ -151,7 +152,7 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-                string base_url = fmt::format("http://{}:{}", default_host_string, port);
+                string base_url = fmt::format("http://{}:{}/{}", default_host_string, port, url_prefix);
 
                 if (!settings.no_frontend && http_server->CanServeFrontend()) {
                     string frontend_url = base_url;

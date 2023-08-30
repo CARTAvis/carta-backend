@@ -30,7 +30,7 @@ uint32_t HttpServer::_scripting_request_id = 0;
 
 HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path root_folder, fs::path user_directory,
     std::string auth_token, bool read_only_mode, bool enable_frontend, bool enable_database, bool enable_scripting,
-    bool enable_runtime_config)
+    bool enable_runtime_config, std::string url_prefix)
     : _session_manager(session_manager),
       _http_root_folder(root_folder),
       _auth_token(auth_token),
@@ -39,7 +39,8 @@ HttpServer::HttpServer(std::shared_ptr<SessionManager> session_manager, fs::path
       _enable_frontend(enable_frontend),
       _enable_database(enable_database),
       _enable_scripting(enable_scripting),
-      _enable_runtime_config(enable_runtime_config) {
+      _enable_runtime_config(enable_runtime_config),
+      _url_prefix(url_prefix) {
     if (_enable_frontend && !root_folder.empty()) {
         _frontend_found = IsValidFrontendFolder(root_folder);
 
@@ -118,13 +119,15 @@ void HttpServer::HandleGetConfig(Res* res, Req* req) {
 void HttpServer::HandleStaticRequest(Res* res, Req* req) {
     std::string_view url = req->getUrl();
     fs::path path = _http_root_folder;
+
+    // Trim all leading '/' and prefix
+    url.remove_prefix(url.find_first_not_of("/"));
+    url.remove_prefix(_url_prefix.size());
+    url.remove_prefix(url.find_first_not_of("/") - 1);
+
     if (url.empty() || url == "/") {
         path /= "index.html";
     } else {
-        // Trim all leading '/'
-        while (url.size() && url[0] == '/') {
-            url = url.substr(1);
-        }
         path /= std::string(url);
     }
 
