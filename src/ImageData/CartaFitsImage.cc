@@ -1474,9 +1474,16 @@ casacore::Unit CartaFitsImage::GetBrightnessUnit(casacore::RecordInterface& head
     casacore::Unit result_unit;
     if (header.isDefined("bunit")) {
         casacore::Record sub_rec = header.asRecord("bunit");
-        if (sub_rec.dataType("value") == casacore::TpString) {
+        if (sub_rec.dataType("value") == casacore::DataType::TpString) {
             casacore::String unit_string;
             sub_rec.get("value", unit_string);
+
+            // Handle the expression of arcsec^2 for JCMT-SCUBA2 header
+            std::string arcsec2_expr(" s**0.5");
+            size_t start_pos = unit_string.find(arcsec2_expr);
+            if (start_pos != std::string::npos) {
+                unit_string.replace(start_pos, arcsec2_expr.length(), "/arcsec^2");
+            }
 
             casacore::UnitMap::addFITS();
             if (casacore::UnitVal::check(unit_string)) {
