@@ -89,11 +89,25 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
     if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
         if (RESERVED_MEMORY >= MemorySizeOfWholeImage()) {
-            spdlog::info("Cache the whole image data.");
             RESERVED_MEMORY -= MemorySizeOfWholeImage();
             _cube_image_cache_valid = true;
-            _channel_image_cache_valid = true;
-            LoadCubeImageData();
+
+            spdlog::info("Cache the whole image data.");
+            for (int stokes = 0; stokes < _num_stokes; ++stokes) {
+                if (!FillImageCache(stokes)) {
+                    return;
+                }
+            }
+
+            // Get stokes type indices
+            bool mute_err_msg(true);
+            GetStokesTypeIndex("I", _cube_image_cache.stokes_i, mute_err_msg);
+            GetStokesTypeIndex("Q", _cube_image_cache.stokes_q, mute_err_msg);
+            GetStokesTypeIndex("U", _cube_image_cache.stokes_u, mute_err_msg);
+            GetStokesTypeIndex("V", _cube_image_cache.stokes_v, mute_err_msg);
+
+            // Get beam area
+            _cube_image_cache.beam_area = _loader->CalculateBeamArea();
         } else if (RESERVED_MEMORY > 0) {
             spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", MemorySizeOfWholeImage());
         }
@@ -380,32 +394,56 @@ bool Frame::SetCursor(float x, float y) {
     return changed;
 }
 
-bool Frame::FillImageCache() {
+bool Frame::FillImageCache(int stokes) {
+    if (stokes == CURRENT_STOKES) {
+        stokes = _stokes_index;
+    }
+
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
-    // Exit early if the cube image cache is available
     if (_cube_image_cache_valid) {
+        // Fill cube image cache
+        if (!_cube_image_cache.stokes_data.count(stokes)) {
+            Timer t;
+            StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_Z), stokes);
+            auto image_data_size = stokes_slicer.slicer.length().product();
+            _cube_image_cache.stokes_data[stokes] = std::make_unique<float[]>(image_data_size);
+            if (!GetSlicerData(stokes_slicer, _cube_image_cache.stokes_data[stokes].get())) {
+                spdlog::error("Session {}: {}", _session_id, "Loading cube image cache failed. Stokes index: {}", stokes);
+                return false;
+            }
+
+            auto dt = t.Elapsed();
+            spdlog::performance("Load {}x{}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth, dt.ms(),
+                (float)(_width * _height * _depth) / dt.us());
+        }
+
         _channel_image_cache_valid = true;
-        return true;
-    }
+    } else {
+        // Fill channel image cache
 
-    // get image data for current z, stokes
+        // Exit early *after* acquiring lock if the cache has already been loaded by another thread
+        if (_channel_image_cache_valid) {
+            return true;
+        }
 
-    // Exit early *after* acquiring lock if the cache has already been loaded by another thread
-    if (_channel_image_cache_valid) {
-        return true;
-    }
+        Timer t;
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), stokes);
+        auto image_data_size = stokes_slicer.slicer.length().product();
+        _channel_image_cache = std::make_unique<float[]>(image_data_size);
+        if (!GetSlicerData(stokes_slicer, _channel_image_cache.get())) {
+            spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed. Stokes index: {}", stokes);
+            return false;
+        }
 
-    Timer t;
-    if (LoadImageCacheData(_stokes_index)) {
         auto dt = t.Elapsed();
         spdlog::performance(
             "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt.ms(), (float)(_width * _height) / dt.us());
+
         _channel_image_cache_valid = true;
-        return true;
     }
-    return false;
+    return true;
 }
 
 void Frame::InvalidateImageCache() {
@@ -2426,64 +2464,17 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     return true;
 }
 
-void Frame::LoadCubeImageData() {
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-
-    Timer t;
-    for (int stokes = 0; stokes < _num_stokes; ++stokes) {
-        if (!LoadImageCacheData(stokes)) {
-            return;
-        }
-    }
-    auto dt = t.Elapsed();
-    spdlog::performance("Load {}x{}x{}x{} cube image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth, _num_stokes, dt.ms(),
-        (float)(_width * _height * _depth * _num_stokes) / dt.us());
-
-    // Get stokes type indices
-    bool mute_err_msg(true);
-    GetStokesTypeIndex("I", _cube_image_cache.stokes_i, mute_err_msg);
-    GetStokesTypeIndex("Q", _cube_image_cache.stokes_q, mute_err_msg);
-    GetStokesTypeIndex("U", _cube_image_cache.stokes_u, mute_err_msg);
-    GetStokesTypeIndex("V", _cube_image_cache.stokes_v, mute_err_msg);
-
-    // Get beam area
-    _cube_image_cache.beam_area = _loader->CalculateBeamArea();
-}
-
 float* Frame::GetImageCache(int z, int stokes) {
-    if (z == CURRENT_Z) {
-        z = _z_index;
-    }
-    if (stokes == CURRENT_STOKES) {
-        stokes = _stokes_index;
-    }
-
     if (_cube_image_cache_valid) {
+        if (z == CURRENT_Z) {
+            z = _z_index;
+        }
+        if (stokes == CURRENT_STOKES) {
+            stokes = _stokes_index;
+        }
         return _cube_image_cache.GetChannelImageCache(z, stokes, _width, _height);
     }
     return _channel_image_cache.get();
-}
-
-bool Frame::LoadImageCacheData(int stokes) {
-    if (_cube_image_cache_valid && !_cube_image_cache.stokes_data.count(stokes)) {
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_Z), stokes);
-        auto image_data_size = stokes_slicer.slicer.length().product();
-        _cube_image_cache.stokes_data[stokes] = std::make_unique<float[]>(image_data_size);
-        if (!GetSlicerData(stokes_slicer, _cube_image_cache.stokes_data[stokes].get())) {
-            spdlog::error("Session {}: {}", _session_id, "Loading cube image cache failed. Stokes index: {}", stokes);
-            return false;
-        }
-    } else if (!_cube_image_cache_valid) {
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), stokes);
-        auto image_data_size = stokes_slicer.slicer.length().product();
-        _channel_image_cache = std::make_unique<float[]>(image_data_size);
-        if (!GetSlicerData(stokes_slicer, _channel_image_cache.get())) {
-            spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed. Stokes index: {}", stokes);
-            return false;
-        }
-    }
-    return true;
 }
 
 float Frame::MemorySize() const {

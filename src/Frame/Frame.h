@@ -236,7 +236,7 @@ protected:
     bool ZStokesChanged(int z, int stokes);
 
     // Cache image plane data for current z, stokes
-    bool FillImageCache();
+    bool FillImageCache(int stokes = CURRENT_STOKES);
     void InvalidateImageCache();
 
     // Downsampled data from image cache
@@ -273,8 +273,6 @@ protected:
     bool DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
     // For image cache
-    void LoadCubeImageData();
-    bool LoadImageCacheData(int stokes);
     float* GetImageCache(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
     float GetValue(int x, int y, int z, int stokes);
 
