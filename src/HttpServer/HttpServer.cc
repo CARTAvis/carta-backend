@@ -56,45 +56,45 @@ void HttpServer::RegisterRoutes() {
     uWS::App& app = _session_manager->App();
 
     if (_enable_scripting) {
-        app.post("/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
+        app.post(_url_prefix + "/api/scripting/action", [&](auto res, auto req) { HandleScriptingAction(res, req); });
     } else {
-        app.post("/api/scripting/action", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.post(_url_prefix + "/api/scripting/action", [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     if (_enable_database) {
         // Dynamic routes for preferences, layouts, snippets and workspaces
-        app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
-        app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
-        app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
+        app.get(_url_prefix + "/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
+        app.put(_url_prefix + "/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
+        app.del(_url_prefix + "/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
-        app.get("/api/database/list/layouts", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
-        app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
-        app.get("/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
-        app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
-        app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+        app.get(_url_prefix + "/api/database/list/layouts", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
+        app.get(_url_prefix + "/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
+        app.get(_url_prefix + "/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
+        app.put(_url_prefix + "/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
+        app.del(_url_prefix + "/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
 
-        app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("snippet", res, req); });
-        app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
-        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("snippet", res, req); });
-        app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
-        app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
+        app.get(_url_prefix + "/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("snippet", res, req); });
+        app.get(_url_prefix + "/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
+        app.get(_url_prefix + "/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("snippet", res, req); });
+        app.put(_url_prefix + "/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
+        app.del(_url_prefix + "/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
 
-        app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("workspace", res, req); });
-        app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
-        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("workspace", res, req); });
-        app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
-        app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
+        app.get(_url_prefix + "/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("workspace", res, req); });
+        app.get(_url_prefix + "/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
+        app.get(_url_prefix + "/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("workspace", res, req); });
+        app.put(_url_prefix + "/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
+        app.del(_url_prefix + "/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
     } else {
-        app.get("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
-        app.put("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
-        app.del("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.get(_url_prefix + "/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.put(_url_prefix + "/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
+        app.del(_url_prefix + "/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     if (_enable_frontend) {
         if (_enable_runtime_config) {
-            app.get("/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
+            app.get(_url_prefix + "/config", [&](auto res, auto req) { HandleGetConfig(res, req); });
         } else {
-            app.get("/config", [&](auto res, auto req) { DefaultSuccess(res, req); });
+            app.get(_url_prefix + "/config", [&](auto res, auto req) { DefaultSuccess(res, req); });
         }
         // Static routes for all other files
         app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
@@ -103,7 +103,7 @@ void HttpServer::RegisterRoutes() {
     }
 
     // CORS support for the API
-    app.options("/api/*", [&](auto res, auto req) {
+    app.options(_url_prefix + "/api/*", [&](auto res, auto req) {
         AddCorsHeaders(res);
         res->end();
     });
@@ -121,11 +121,16 @@ void HttpServer::HandleStaticRequest(Res* res, Req* req) {
     fs::path path = _http_root_folder;
 
     // Trim all leading '/' and prefix
-    url.remove_prefix(url.find_first_not_of("/"));
+    while (url.size() && url[0] == '/') {
+        url = url.substr(1);
+    }
     url.remove_prefix(_url_prefix.size());
-    url.remove_prefix(url.find_first_not_of("/") - 1);
+    // Trim all '/' are behind url_prefix
+    while (url.size() && url[0] == '/') {
+        url = url.substr(1);
+    }
 
-    if (url.empty() || url == "/") {
+    if (url.empty()) {
         path /= "index.html";
     } else {
         path /= std::string(url);
