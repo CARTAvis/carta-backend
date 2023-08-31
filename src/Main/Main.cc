@@ -101,7 +101,17 @@ int main(int argc, char* argv[]) {
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
-        auto url_prefix = getenv("URL_PREFIX");
+        std::string url_prefix = getenv("CARTA_URL_PREFIX");
+        for (auto it = url_prefix.begin(); it < url_prefix.end(); it++) {
+            int iit = int(*it);
+            if ((iit < 48 || (iit < 65 && iit > 57) || (iit > 90 && iit < 97) || iit > 122) && // [0-9], [A-Z], [a-z]
+                (iit != 43 && iit != 45 && iit != 64 && iit != 95) // +, -, @, _
+                ) {
+                spdlog::critical("Custom prefix must be the following characters: [0-9], [A-Z], [a-z], +, -, @, _");
+                carta::logger::FlushLogFile();
+                return 1;
+            }
+        }
         if (!settings.no_frontend || !settings.no_database || settings.enable_scripting) {
             fs::path frontend_path;
 
