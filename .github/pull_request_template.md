@@ -8,7 +8,8 @@
 **Checklist**
 
 - [ ] changelog updated / no changelog update needed
-- [ ] e2e test passing / added corresponding fix
+- [ ] e2e test passing
+- [ ] corresponding fix added to e2e test / new e2e test created
 - [ ] protobuf updated to the latest dev commit / no protobuf update needed
 - [ ] added reviewers and assignee
 - [ ] added ZenHub estimate, milestone, and release
