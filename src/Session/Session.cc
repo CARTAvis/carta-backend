@@ -100,8 +100,8 @@ bool Session::_controller_deployment = false;
 std::thread* Session::_animation_thread = nullptr;
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address,
-    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, float reserved_memory,
-    bool read_only_mode, bool enable_scripting)
+    std::string top_level_folder, std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode,
+    bool enable_scripting)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -118,7 +118,6 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _animation_active(false),
       _cursor_settings(this),
       _loaders(LOADER_CACHE_SIZE) {
-    _reserved_memory = reserved_memory > 0.0 ? reserved_memory : 0.0;
     _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -565,12 +564,11 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             loader->SetAipsBeamSupport(support_aips_beam);
 
             // create Frame for image
-            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu, DEFAULT_Z, _reserved_memory));
+            auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu, DEFAULT_Z));
 
             // Update the reserved memory
-            _reserved_memory -= frame->ReservedMemory();
-            if (_reserved_memory > 0) {
-                spdlog::info("{:.0f} MB of reserved memory are available.", _reserved_memory);
+            if (RESERVED_MEMORY > 0) {
+                spdlog::info("{:.0f} MB of reserved memory are available.", RESERVED_MEMORY);
             }
 
             // query loader for mipmap dataset
@@ -699,7 +697,7 @@ void Session::DeleteFrame(int file_id) {
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-            _reserved_memory += frame.second->ReservedMemory();
+            RESERVED_MEMORY += frame.second->MemorySize();
             frame.second.reset(); // delete Frame
         }
         _frames.clear();
@@ -707,7 +705,7 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-        _reserved_memory += _frames[file_id]->ReservedMemory();
+        RESERVED_MEMORY += _frames[file_id]->MemorySize();
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -716,8 +714,8 @@ void Session::DeleteFrame(int file_id) {
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
     }
-    if (_reserved_memory > 0) {
-        spdlog::info("{:.0f} MB of reserved memory are available.", _reserved_memory);
+    if (RESERVED_MEMORY > 0) {
+        spdlog::info("{:.0f} MB of reserved memory are available.", RESERVED_MEMORY);
     }
 }
 

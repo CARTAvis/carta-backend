@@ -12,6 +12,9 @@
 // version
 #define VERSION_ID "4.0.0-beta.1"
 
+// Global variable
+extern float RESERVED_MEMORY; // MB
+
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
 std::string OutputOfCommand(const char* command);

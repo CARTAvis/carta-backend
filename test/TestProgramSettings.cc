@@ -82,7 +82,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
     EXPECT_EQ(settings.idle_session_wait_time, -1);
-    EXPECT_EQ(settings.reserved_memory, RESERVED_MEMORY);
+    EXPECT_EQ(settings.reserved_memory, 0);
 }
 
 TEST_F(ProgramSettingsTest, EmptyArugments) {
@@ -337,7 +337,7 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     EXPECT_EQ(settings.init_wait_time, -1);
     EXPECT_EQ(settings.read_only_mode, false);
     EXPECT_EQ(settings.enable_scripting, false);
-    EXPECT_EQ(settings.reserved_memory, RESERVED_MEMORY);
+    EXPECT_EQ(settings.reserved_memory, 0);
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {

@@ -27,12 +27,13 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Logger/Logger.h"
 #include "Timer/Timer.h"
+#include "Util/App.h"
 
 static const int HIGH_COMPRESSION_QUALITY(32);
 
 namespace carta {
 
-Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z, float reserved_memory)
+Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z)
     : _session_id(session_id),
       _valid(true),
       _loader(loader),
@@ -87,13 +88,14 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
     if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
-        if (reserved_memory >= ReservedMemory()) {
+        if (RESERVED_MEMORY >= MemorySizeOfWholeImage()) {
             spdlog::info("Cache the whole image data.");
+            RESERVED_MEMORY -= MemorySizeOfWholeImage();
             _cube_image_cache_valid = true;
             _channel_image_cache_valid = true;
             LoadCubeImageData();
-        } else if (reserved_memory > 0.0) {
-            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", ReservedMemory());
+        } else if (RESERVED_MEMORY > 0) {
+            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", MemorySizeOfWholeImage());
         }
     }
 
@@ -2484,7 +2486,14 @@ bool Frame::LoadImageCacheData(int stokes) {
     return true;
 }
 
-float Frame::ReservedMemory() const {
+float Frame::MemorySize() const {
+    if (_cube_image_cache_valid) {
+        return MemorySizeOfWholeImage();
+    }
+    return 0;
+}
+
+float Frame::MemorySizeOfWholeImage() const {
     float image_cubes_size = _width * _height * _depth * _num_stokes * sizeof(float);
 
     // Conservatively estimate the number of computed stokes will be generated

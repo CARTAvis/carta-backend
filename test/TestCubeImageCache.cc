@@ -11,7 +11,10 @@
 #include "ImageData/FileLoader.h"
 #include "Region/RegionHandler.h"
 #include "Timer/Timer.h"
+#include "Util/App.h"
 #include "Util/Message.h"
+
+float RESERVED_MEMORY = 0;
 
 using namespace carta;
 
@@ -22,8 +25,8 @@ static const std::vector<int> IMAGE_DIMS = {10, 10, 100, 4};
 
 class TestFrame : public Frame {
 public:
-    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z, int reserved_memory)
-        : Frame(session_id, loader, hdu, default_z, reserved_memory) {}
+    TestFrame(uint32_t session_id, std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, int default_z)
+        : Frame(session_id, loader, hdu, default_z) {}
     std::vector<float> GetImageDataPerChannel(int z, int stokes) {
         std::vector<float> results;
         if ((z == _z_index && stokes == _stokes_index) || _cube_image_cache_valid) {
@@ -59,11 +62,11 @@ public:
         int z_size = dims[2];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
         int default_channel(0);
 
         Timer t;
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel));
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
@@ -128,11 +131,11 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
         int default_channel(0);
 
         Timer t;
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel));
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
         std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
@@ -199,10 +202,10 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
         int default_channel(0);
 
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel, reserved_memory));
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel));
 
         std::unique_ptr<DataReader> reader;
         if (file_type == FileType::FITS) {
@@ -247,8 +250,8 @@ public:
         int z_size = dims[2];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", 0, reserved_memory));
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", 0));
 
         int x(4), y(6);
         int channel(5);
@@ -294,8 +297,8 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", 0, reserved_memory));
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        std::unique_ptr<Frame> frame(new Frame(0, loader, "0", 0));
 
         int x(4), y(6);
         int channel(5);
@@ -341,8 +344,8 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        auto frame = std::make_shared<Frame>(0, loader, "0", 0, reserved_memory);
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        auto frame = std::make_shared<Frame>(0, loader, "0", 0);
 
         int channel(5);
         int stokes(0);
@@ -400,8 +403,8 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        auto frame = std::make_shared<Frame>(0, loader, "0", 0, reserved_memory);
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        auto frame = std::make_shared<Frame>(0, loader, "0", 0);
 
         int channel(0);
         int stokes(0);
@@ -460,8 +463,8 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        auto frame = std::make_shared<Frame>(0, loader, "0", 0, reserved_memory);
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        auto frame = std::make_shared<Frame>(0, loader, "0", 0);
 
         int channel(5);
         int stokes(0);
@@ -560,8 +563,8 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        int reserved_memory = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        auto frame = std::make_shared<TestFrame>(0, loader, "0", 0, reserved_memory);
+        RESERVED_MEMORY = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
+        auto frame = std::make_shared<TestFrame>(0, loader, "0", 0);
 
         int channel(0);
         int stokes(0);

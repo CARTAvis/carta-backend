@@ -85,8 +85,7 @@ static std::unordered_map<CARTA::PolarizationType, std::string> ComputedStokesNa
 class Frame {
 public:
     // Load image cache for default_z, except for PV preview image which needs cube
-    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z,
-        float reserved_memory = 0);
+    Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
     ~Frame(){};
 
     bool IsValid();
@@ -222,7 +221,8 @@ public:
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    float ReservedMemory() const; // MB
+    float MemorySize() const;             // MB
+    float MemorySizeOfWholeImage() const; // MB
     bool GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);

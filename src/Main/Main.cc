@@ -20,6 +20,8 @@
 #include "Util/Token.h"
 #include "WebBrowser.h"
 
+float RESERVED_MEMORY = 0; // MB
+
 int GetTotalSystemMemory() {
     long pages = sysconf(_SC_PHYS_PAGES);
     long page_size = sysconf(_SC_PAGE_SIZE);
@@ -153,7 +155,10 @@ int main(int argc, char* argv[]) {
                         settings.reserved_memory, memory_upper_limit, memory_upper_limit);
                     settings.reserved_memory = memory_upper_limit;
                 }
-                start_info += fmt::format(" Total amount of reserved memory {} MB.", settings.reserved_memory);
+
+                // Set the global variable for reserved memory
+                RESERVED_MEMORY = settings.reserved_memory;
+                start_info += fmt::format(" Total amount of reserved memory {} MB.", RESERVED_MEMORY);
             }
             spdlog::info(start_info);
 

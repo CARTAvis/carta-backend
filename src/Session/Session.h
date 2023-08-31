@@ -67,8 +67,8 @@ private:
 class Session {
 public:
     Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
-        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, float reserved_memory = 0,
-        bool read_only_mode = false, bool enable_scripting = false);
+        std::string starting_folder, std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false,
+        bool enable_scripting = false);
     ~Session();
 
     // CARTA ICD
@@ -348,9 +348,6 @@ protected:
 
     // Timestamp for the last protobuf message
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
-
-    // Reserved memory (MB)
-    float _reserved_memory;
 };
 
 } // namespace carta

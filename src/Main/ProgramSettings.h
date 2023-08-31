@@ -16,11 +16,11 @@
 #include <nlohmann/json.hpp>
 
 #include "Logger/Logger.h"
+#include "Util/App.h"
 #include "Util/FileSystem.h"
 
 #define OMP_THREAD_COUNT -1
 #define DEFAULT_SOCKET_PORT 3002
-#define RESERVED_MEMORY 0 // MB
 
 #ifndef CARTA_DEFAULT_FRONTEND_FOLDER
 #define CARTA_DEFAULT_FRONTEND_FOLDER "../share/carta/frontend"
