@@ -56,54 +56,54 @@ void HttpServer::RegisterRoutes() {
     uWS::App& app = _session_manager->App();
 
     if (_enable_scripting) {
-        app.post(fmt::format("/{}/api/scripting/action", _url_prefix), [&](auto res, auto req) { HandleScriptingAction(res, req); });
+        app.post(fmt::format("{}/api/scripting/action", _url_prefix), [&](auto res, auto req) { HandleScriptingAction(res, req); });
     } else {
-        app.post(fmt::format("/{}/api/scripting/action", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.post(fmt::format("{}/api/scripting/action", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     if (_enable_database) {
         // Dynamic routes for preferences, layouts, snippets and workspaces
-        app.get(fmt::format("/{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleGetPreferences(res, req); });
-        app.put(fmt::format("/{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleSetPreferences(res, req); });
-        app.del(fmt::format("/{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleClearPreferences(res, req); });
+        app.get(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleGetPreferences(res, req); });
+        app.put(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleSetPreferences(res, req); });
+        app.del(fmt::format("{}/api/database/preferences", _url_prefix), [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
-        app.get(fmt::format("/{}/api/database/list/layouts", _url_prefix), [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
-        app.get(fmt::format("/{}/api/database/layouts", _url_prefix), [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
-        app.get(fmt::format("/{}/api/database/layout/:name", _url_prefix), [&](auto res, auto req) { HandleGetObject("layout", res, req); });
-        app.put(fmt::format("/{}/api/database/layout", _url_prefix), [&](auto res, auto req) { HandleSetObject("layout", res, req); });
-        app.del(fmt::format("/{}/api/database/layout", _url_prefix), [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+        app.get(fmt::format("{}/api/database/list/layouts", _url_prefix), [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
+        app.get(fmt::format("{}/api/database/layouts", _url_prefix), [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
+        app.get(fmt::format("{}/api/database/layout/:name", _url_prefix), [&](auto res, auto req) { HandleGetObject("layout", res, req); });
+        app.put(fmt::format("{}/api/database/layout", _url_prefix), [&](auto res, auto req) { HandleSetObject("layout", res, req); });
+        app.del(fmt::format("{}/api/database/layout", _url_prefix), [&](auto res, auto req) { HandleClearObject("layout", res, req); });
 
-        app.get(fmt::format("/{}/api/database/list/snippets", _url_prefix), [&](auto res, auto req) { HandleGetObjectList("snippet", res, req); });
-        app.get(fmt::format("/{}/api/database/snippets", _url_prefix), [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
-        app.get(fmt::format("/{}/api/database/snippet/:name", _url_prefix), [&](auto res, auto req) { HandleGetObject("snippet", res, req); });
-        app.put(fmt::format("/{}/api/database/snippet", _url_prefix), [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
-        app.del(fmt::format("/{}/api/database/snippet", _url_prefix), [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
+        app.get(fmt::format("{}/api/database/list/snippets", _url_prefix), [&](auto res, auto req) { HandleGetObjectList("snippet", res, req); });
+        app.get(fmt::format("{}/api/database/snippets", _url_prefix), [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
+        app.get(fmt::format("{}/api/database/snippet/:name", _url_prefix), [&](auto res, auto req) { HandleGetObject("snippet", res, req); });
+        app.put(fmt::format("{}/api/database/snippet", _url_prefix), [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
+        app.del(fmt::format("{}/api/database/snippet", _url_prefix), [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
 
-        app.get(fmt::format("/{}/api/database/list/workspaces", _url_prefix), [&](auto res, auto req) { HandleGetObjectList("workspace", res, req); });
-        app.get(fmt::format("/{}/api/database/workspaces", _url_prefix), [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
-        app.get(fmt::format("/{}/api/database/workspace/:name", _url_prefix), [&](auto res, auto req) { HandleGetObject("workspace", res, req); });
-        app.put(fmt::format("/{}/api/database/workspace", _url_prefix), [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
-        app.del(fmt::format("/{}/api/database/workspace", _url_prefix), [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
+        app.get(fmt::format("{}/api/database/list/workspaces", _url_prefix), [&](auto res, auto req) { HandleGetObjectList("workspace", res, req); });
+        app.get(fmt::format("{}/api/database/workspaces", _url_prefix), [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
+        app.get(fmt::format("{}/api/database/workspace/:name", _url_prefix), [&](auto res, auto req) { HandleGetObject("workspace", res, req); });
+        app.put(fmt::format("{}/api/database/workspace", _url_prefix), [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
+        app.del(fmt::format("{}/api/database/workspace", _url_prefix), [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
     } else {
-        app.get(fmt::format("/{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
-        app.put(fmt::format("/{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
-        app.del(fmt::format("/{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.get(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.put(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.del(fmt::format("{}/api/database/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     if (_enable_frontend) {
         if (_enable_runtime_config) {
-            app.get(fmt::format("/{}/config", _url_prefix), [&](auto res, auto req) { HandleGetConfig(res, req); });
+            app.get(fmt::format("{}/config", _url_prefix), [&](auto res, auto req) { HandleGetConfig(res, req); });
         } else {
-            app.get(fmt::format("/{}/config", _url_prefix), [&](auto res, auto req) { DefaultSuccess(res, req); });
+            app.get(fmt::format("{}/config", _url_prefix), [&](auto res, auto req) { DefaultSuccess(res, req); });
         }
         // Static routes for all other files
-        app.get(fmt::format("/{}/*", _url_prefix), [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
+        app.get(fmt::format("{}/*", _url_prefix), [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
     } else {
-        app.get(fmt::format("/{}/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
+        app.get(fmt::format("{}/*", _url_prefix), [&](auto res, auto req) { NotImplemented(res, req); });
     }
 
     // CORS support for the API
-    app.options(fmt::format("/{}/api/*", _url_prefix), [&](auto res, auto req) {
+    app.options(fmt::format("{}/api/*", _url_prefix), [&](auto res, auto req) {
         AddCorsHeaders(res);
         res->end();
     });
@@ -124,7 +124,10 @@ void HttpServer::HandleStaticRequest(Res* res, Req* req) {
     while (url.size() && url[0] == '/') {
         url = url.substr(1);
     }
-    url.remove_prefix(_url_prefix.size());
+    // internal _url_prefix saved an additional '/'
+    if (_url_prefix.size()) {
+        url.remove_prefix(_url_prefix.size() - 1);
+    }
     // Trim all '/' behind url_prefix
     while (url.size() && url[0] == '/') {
         url = url.substr(1);
