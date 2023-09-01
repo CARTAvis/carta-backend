@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed file path to save generated image ([#1252](https://github.com/CARTAvis/carta-backend/issues/1252)).
 * Fixed missing tiles issue ([#1282](https://github.com/CARTAvis/carta-backend/issues/1282)).
 * Fixed the crash of loading JCMT-SCUBA2 FITS images ([#1301](https://github.com/CARTAvis/carta-backend/issues/1301)).
+* Fixed updating the PV preview for a matched image ([#1304](https://github.com/CARTAvis/carta-backend/issues/1304)).
 
 ## [4.0.0-beta.1]
 
