@@ -232,10 +232,11 @@ double LineBoxRegions::GetPointSeparation(
     std::shared_ptr<casacore::CoordinateSystem> coord_sys, const std::vector<double>& point1, const std::vector<double>& point2) {
     // Returns angular separation in arcsec. Both points must be inside image or returns zero (use GetWorldLength instead, not as accurate).
     double separation(0.0);
+    casacore::Vector<double> const point1V(point1), point2V(point2);
     std::lock_guard<std::mutex> guard(_mvdir_mutex);
     try {
-        casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(point1);
-        casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(point2);
+        casacore::MVDirection mvdir1 = coord_sys->directionCoordinate().toWorld(point1V);
+        casacore::MVDirection mvdir2 = coord_sys->directionCoordinate().toWorld(point2V);
         separation = mvdir1.separation(mvdir2, "arcsec").getValue();
     } catch (casacore::AipsError& err) {
         // invalid pixel coordinates - outside image

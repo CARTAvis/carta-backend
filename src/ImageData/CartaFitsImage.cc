@@ -475,7 +475,8 @@ void CartaFitsImage::SetFitsHeaderStrings(int nheaders, const std::string& heade
     }
 
     // For setting up image
-    _image_header_strings = no_history_strings;
+    casacore::Vector<casacore::String> const no_history_stringsV(no_history_strings);
+    _image_header_strings = no_history_stringsV;
 }
 
 casacore::Vector<casacore::String> CartaFitsImage::FitsHeaderStrings() {
