@@ -302,7 +302,8 @@ void ImageFitter::CalculateErrors() {
             pa_err = sqrt(4.0 * tmp * tmp / rho_square_3) * 180.0 / M_PI;
 
             if (_unit == "Jy/beam") {
-                const double flux = 2 * M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp / _beam_size / _beam_size;
+                const double beam = M_PI * _beam_size * _beam_size / 4.0 / log(2.0);
+                const double flux = 2 * M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp / beam;
                 _integrated_flux_values[i] = flux;
                 _integrated_flux_errors[i] =
                     sqrt(flux * flux *
