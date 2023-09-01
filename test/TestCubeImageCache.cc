@@ -30,7 +30,7 @@ public:
     std::vector<float> GetImageDataPerChannel(int z, int stokes) {
         std::vector<float> results;
         if ((z == _z_index && stokes == _stokes_index) || _cube_image_cache_valid) {
-            auto* data = GetImageCache(z, stokes);
+            auto* data = GetImageData(z, stokes);
             for (int i = 0; i < Width() * Height(); ++i) {
                 results.push_back(data[i]);
             }

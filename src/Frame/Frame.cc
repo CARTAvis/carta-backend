@@ -499,10 +499,10 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     Timer t;
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        BlockSmooth(GetImageCache(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
+        BlockSmooth(GetImageData(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-        NearestNeighbor(GetImageCache(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
+        NearestNeighbor(GetImageData(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
     auto dt = t.Elapsed();
@@ -674,7 +674,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(GetImageCache(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+        TraceContours(GetImageData(), _width, _height, scale, offset, _contour_settings.levels, vertex_data, index_data,
             _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
@@ -688,7 +688,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_height = _height - (2 * kernel_width);
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
         smooth_successful = GaussianSmooth(
-            GetImageCache(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
+            GetImageData(), dest_array.get(), source_width, source_height, dest_width, dest_height, _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
@@ -905,7 +905,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
                 // Fail to get channel image cache
                 return false;
             }
-            CalcBasicStats(stats, GetImageCache(z, stokes), _width * _height);
+            CalcBasicStats(stats, GetImageData(z, stokes), _width * _height);
             _image_basic_stats[cache_key] = stats;
             return true;
         }
@@ -978,7 +978,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        hist = CalcHistogram(num_bins, bounds, GetImageCache(z, stokes), _width * _height);
+        hist = CalcHistogram(num_bins, bounds, GetImageData(z, stokes), _width * _height);
     } else {
         // calculate histogram for z/stokes data
         std::vector<float> data;
@@ -1842,7 +1842,7 @@ bool Frame::FitImage(const CARTA::FittingRequest& fitting_request, CARTA::Fittin
                 fitting_request.create_residual_image(), fitting_response, progress_callback, region_origin(0), region_origin(1));
         } else {
             FillImageCache();
-            success = _image_fitter->FitImage(_width, _height, GetImageCache(), initial_values, fixed_params, fitting_request.offset(),
+            success = _image_fitter->FitImage(_width, _height, GetImageData(), initial_values, fixed_params, fitting_request.offset(),
                 fitting_request.solver(), fitting_request.create_model_image(), fitting_request.create_residual_image(), fitting_response,
                 progress_callback);
         }
@@ -2464,7 +2464,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
     return true;
 }
 
-float* Frame::GetImageCache(int z, int stokes) {
+float* Frame::GetImageData(int z, int stokes) {
     if (_cube_image_cache_valid) {
         if (z == CURRENT_Z) {
             z = _z_index;
