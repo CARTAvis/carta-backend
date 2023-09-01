@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
-        std::string url_prefix = getenv("CARTA_URL_PREFIX");
+        std::string url_prefix = getenv("CARTA_URL_PREFIX") ? getenv("CARTA_URL_PREFIX") : "";
         for (auto it = url_prefix.begin(); it < url_prefix.end(); it++) {
             int iit = int(*it);
             if ((iit < 48 || (iit < 65 && iit > 57) || (iit > 90 && iit < 97) || iit > 122) && // [0-9], [A-Z], [a-z]
