@@ -1501,7 +1501,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 // Use loader data
                 spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                 cb(profile_message);
-            } else if (GetPointSpectralData(spectral_data, stokes, start_cursor)) {
+            } else if (LoadCachedPointSpectralData(spectral_data, stokes, start_cursor)) {
                 // Use cube image cache if it is available
                 spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                 cb(profile_message);
@@ -2500,14 +2500,14 @@ float Frame::MemorySizeOfWholeImage() const {
     return (image_cubes_size + num_computed_stokes * _width * _height * sizeof(float)) / 1.0e6; // MB
 }
 
-bool Frame::GetPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     if (_cube_image_cache_valid) {
         return ImageCacheCalculator::GetPointSpectralData(_cube_image_cache, profile, stokes, point, _width, _height, _depth);
     }
     return false;
 }
 
-bool Frame::GetRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     if (_cube_image_cache_valid) {
         return ImageCacheCalculator::GetRegionSpectralData(_cube_image_cache, z_range, stokes, _width, _height, mask, origin, profiles);

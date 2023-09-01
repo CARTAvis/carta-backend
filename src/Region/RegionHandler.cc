@@ -2008,7 +2008,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         PointXy point_xy(origin(0), origin(1));
         std::vector<float> profile;
         // Use cube image cache if it is available
-        if (_frames.at(file_id)->GetPointSpectralData(profile, stokes_index, point_xy)) {
+        if (_frames.at(file_id)->LoadCachedPointSpectralData(profile, stokes_index, point_xy)) {
             auto stats_type = required_stats[0]; // Point region profile only has one statistical type
             std::vector<double> vals(profile.begin(), profile.end());
             results[stats_type] = vals;
@@ -2056,7 +2056,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         auto get_profiles_data_from_cache = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
             int tmp_stokes;
             return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
-                    _frames.at(file_id)->GetRegionSpectralData(partial_z_range, tmp_stokes, mask, xy_origin, tmp_partial_profiles));
+                    _frames.at(file_id)->LoadCachedRegionSpectralData(partial_z_range, tmp_stokes, mask, xy_origin, tmp_partial_profiles));
         };
 
         auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
@@ -2076,7 +2076,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         } else {
             // For regular stokes I, Q, U, or V
             // Use cube image cache if it is available, otherwise get image data from the disk
-            if (!_frames.at(file_id)->GetRegionSpectralData(partial_z_range, stokes_index, mask, xy_origin, partial_profiles)) {
+            if (!_frames.at(file_id)->LoadCachedRegionSpectralData(partial_z_range, stokes_index, mask, xy_origin, partial_profiles)) {
                 if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
                     return false;
                 }
