@@ -1,5 +1,6 @@
 var NAVTREEINDEX5 =
 {
+"classcarta_1_1Image2DConvolver.html#adec50c6b5a4a994e0a61f2eb540bd3be":[3,0,0,48,34],
 "classcarta_1_1Image2DConvolver.html#ae12813c5ef59a697ce469d3e3c1de849":[3,0,0,48,2],
 "classcarta_1_1Image2DConvolver.html#ae14b9c3e1eed752c41ba3d2a4577b422":[3,0,0,48,11],
 "classcarta_1_1Image2DConvolver.html#ae67311f4167cb172be3ffaaf2e36f1f9":[3,0,0,48,30],
@@ -205,19 +206,20 @@ var NAVTREEINDEX5 =
 "classcarta_1_1PvPreviewCube.html#adaba25f353bc8314ec76eb5bdce35b39":[3,0,0,54,12],
 "classcarta_1_1PvPreviewCut.html":[3,0,0,56],
 "classcarta_1_1PvPreviewCut.html#a13178f0ba52fb9b188d10e14dc0bcc1e":[3,0,0,56,0],
-"classcarta_1_1PvPreviewCut.html#a18280610f819dafae35a7209847e4c91":[3,0,0,56,13],
+"classcarta_1_1PvPreviewCut.html#a18280610f819dafae35a7209847e4c91":[3,0,0,56,14],
 "classcarta_1_1PvPreviewCut.html#a5818d165c040a09155bce62b51b7c413":[3,0,0,56,7],
-"classcarta_1_1PvPreviewCut.html#a65d92d7902a68a6cb0ec897d200a6a24":[3,0,0,56,11],
-"classcarta_1_1PvPreviewCut.html#a66f72f3b4a43231fae95fec5d86885e6":[3,0,0,56,8],
-"classcarta_1_1PvPreviewCut.html#a78238a66c48bd5376bf05d5ab8acdfac":[3,0,0,56,9],
+"classcarta_1_1PvPreviewCut.html#a65d92d7902a68a6cb0ec897d200a6a24":[3,0,0,56,12],
+"classcarta_1_1PvPreviewCut.html#a78238a66c48bd5376bf05d5ab8acdfac":[3,0,0,56,10],
 "classcarta_1_1PvPreviewCut.html#a7f8af98e97ceb2377b7a9b8605d56c83":[3,0,0,56,3],
-"classcarta_1_1PvPreviewCut.html#a9deedaebef4161afc08520ff6a9a3a47":[3,0,0,56,10],
+"classcarta_1_1PvPreviewCut.html#a9deedaebef4161afc08520ff6a9a3a47":[3,0,0,56,11],
 "classcarta_1_1PvPreviewCut.html#aa52c6b23d9b460a0e71a4c796ce25e3a":[3,0,0,56,1],
+"classcarta_1_1PvPreviewCut.html#aaadb7133c2256b4d8a40d4cae88ce272":[3,0,0,56,9],
 "classcarta_1_1PvPreviewCut.html#aad4e1676c16757527a8fc399210a0b7a":[3,0,0,56,4],
 "classcarta_1_1PvPreviewCut.html#aad9eee257bf90e40ad2fc6ba5afa1101":[3,0,0,56,2],
 "classcarta_1_1PvPreviewCut.html#ab5206f998e292cebe47ecb46fc00f631":[3,0,0,56,5],
+"classcarta_1_1PvPreviewCut.html#ace76ec09ba7123dc0e3b2a37b894442b":[3,0,0,56,8],
 "classcarta_1_1PvPreviewCut.html#adb14a36f084715532b96ee32203e8dc6":[3,0,0,56,6],
-"classcarta_1_1PvPreviewCut.html#afee28c17d2d5f6634b0278ce3524f855":[3,0,0,56,12],
+"classcarta_1_1PvPreviewCut.html#afee28c17d2d5f6634b0278ce3524f855":[3,0,0,56,13],
 "classcarta_1_1PvPreviewUpdateTask.html":[3,0,0,80],
 "classcarta_1_1PvPreviewUpdateTask.html#a020420d305a4d4015b96d4914213a49f":[3,0,0,80,0],
 "classcarta_1_1PvPreviewUpdateTask.html#a24253e10feadcdda998efedb79df0c10":[3,0,0,80,3],
@@ -247,7 +249,5 @@ var NAVTREEINDEX5 =
 "classcarta_1_1Region.html#a444b707d8eb2cbaab7215ab75972de79":[3,0,0,67,1],
 "classcarta_1_1Region.html#a49cb8010edef8b404b28c21591458b68":[3,0,0,67,46],
 "classcarta_1_1Region.html#a52da5cfdb063642a101ee15a5ee952c1":[3,0,0,67,55],
-"classcarta_1_1Region.html#a5ce51737dfb759cf79397872ebd67f72":[3,0,0,67,47],
-"classcarta_1_1Region.html#a64e897a14f3153f717c8b8a5a0290764":[3,0,0,67,45],
-"classcarta_1_1Region.html#a6772d2cd106dcffca1a19790810c86e3":[3,0,0,67,11]
+"classcarta_1_1Region.html#a5ce51737dfb759cf79397872ebd67f72":[3,0,0,67,47]
 };

@@ -65,7 +65,7 @@ var classcarta_1_1RegionHandler =
     [ "StopPvPreviewUpdates", "classcarta_1_1RegionHandler.html#a882b501e30e61f46ca6f0503c34335c1", null ],
     [ "UpdateNewSpectralRequirements", "classcarta_1_1RegionHandler.html#a0eb05bb05f83089ec6767553981760a9", null ],
     [ "UpdatePvPreviewImage", "classcarta_1_1RegionHandler.html#ab556b1d44e6a4ca48fba195023769038", null ],
-    [ "UpdatePvPreviewRegion", "classcarta_1_1RegionHandler.html#ab3511caa0292e445bffb931f2a2511aa", null ],
+    [ "UpdatePvPreviewRegion", "classcarta_1_1RegionHandler.html#ab87a5350ff52c5da3dd49533e4cd39b8", null ],
     [ "_frames", "classcarta_1_1RegionHandler.html#aa383be9b40acecaf9a7302aa6b036127", null ],
     [ "_histogram_cache", "classcarta_1_1RegionHandler.html#a846360320ffd5b6ecfc001c5e2e0d82d", null ],
     [ "_histogram_req", "classcarta_1_1RegionHandler.html#a26c88d32fdc63b3b2ac2a71c362599c2", null ],

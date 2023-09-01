@@ -1,10 +1,10 @@
 <map id="carta::PvPreviewCut" name="carta::PvPreviewCut">
-<area shape="rect" id="node1" title=" " alt="" coords="205,228,358,255"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,124,152,165"/>
-<area shape="rect" id="node3" href="$structcarta_1_1PreviewCutParameters.html" title=" " alt="" coords="176,131,387,158"/>
+<area shape="rect" id="node1" title=" " alt="" coords="205,257,358,284"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,153,152,195"/>
+<area shape="rect" id="node3" href="$structcarta_1_1PreviewCutParameters.html" title=" " alt="" coords="176,161,387,187"/>
 <area shape="rect" id="node4" title=" " alt="" coords="44,5,95,32"/>
 <area shape="rect" id="node5" title=" " alt="" coords="154,5,291,32"/>
 <area shape="rect" id="node6" title=" " alt="" coords="322,5,361,32"/>
-<area shape="rect" id="node7" title=" " alt="" coords="408,5,459,32"/>
-<area shape="rect" id="node8" title=" " alt="" coords="411,131,503,158"/>
+<area shape="rect" id="node7" title=" " alt="" coords="457,5,508,32"/>
+<area shape="rect" id="node8" title=" " alt="" coords="411,161,503,187"/>
 </map>
