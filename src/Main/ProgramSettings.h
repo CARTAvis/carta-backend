@@ -59,7 +59,7 @@ struct ProgramSettings {
     bool read_only_mode = false;
     bool enable_scripting = false;
     bool controller_deployment = false;
-    int reserved_memory = RESERVED_MEMORY;
+    int full_image_cache = FULL_IMAGE_CACHE;
 
     std::string browser;
 
@@ -80,7 +80,7 @@ struct ProgramSettings {
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
         {"idle_timeout", &idle_session_wait_time},
-        {"reserved_memory", &reserved_memory}
+        {"full_image_cache", &full_image_cache}
     };
 
     std::unordered_map<std::string, bool*> bool_keys_map{
@@ -129,7 +129,7 @@ struct ProgramSettings {
     auto GetTuple() const {
         return std::tie(help, version, port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder, no_http,
             no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, controller_deployment, verbosity, wait_time,
-            init_wait_time, idle_session_wait_time, reserved_memory);
+            init_wait_time, idle_session_wait_time, full_image_cache);
     }
     bool operator!=(const ProgramSettings& rhs) const;
     bool operator==(const ProgramSettings& rhs) const;

@@ -88,8 +88,8 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
     if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
-        if (RESERVED_MEMORY >= MemorySizeOfWholeImage()) {
-            RESERVED_MEMORY -= MemorySizeOfWholeImage();
+        if (FULL_IMAGE_CACHE >= MemorySizeOfWholeImage()) {
+            FULL_IMAGE_CACHE -= MemorySizeOfWholeImage();
             _cube_image_cache_valid = true;
 
             spdlog::info("Cache the whole image data.");
@@ -108,7 +108,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
             // Get beam area
             _cube_image_cache.beam_area = _loader->CalculateBeamArea();
-        } else if (RESERVED_MEMORY > 0) {
+        } else if (FULL_IMAGE_CACHE > 0) {
             spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", MemorySizeOfWholeImage());
         }
     }

@@ -20,7 +20,7 @@
 #include "Util/Token.h"
 #include "WebBrowser.h"
 
-float RESERVED_MEMORY = 0; // MB
+float FULL_IMAGE_CACHE = 0; // MB
 
 int GetTotalSystemMemory() {
     long pages = sysconf(_SC_PHYS_PAGES);
@@ -147,18 +147,18 @@ int main(int argc, char* argv[]) {
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
-            if (settings.reserved_memory > 0) {
-                // Check if required reserved memory hits the upper limit based on the total system memory
+            if (settings.full_image_cache > 0) {
+                // Check if required full image cache hits the upper limit based on the total system memory
                 int memory_upper_limit = GetTotalSystemMemory() * 9 / 10;
-                if (settings.reserved_memory > memory_upper_limit) {
-                    spdlog::warn("Reserved memory {} MB is greater than the system upper limit {} MB, reset it to {} MB.",
-                        settings.reserved_memory, memory_upper_limit, memory_upper_limit);
-                    settings.reserved_memory = memory_upper_limit;
+                if (settings.full_image_cache > memory_upper_limit) {
+                    spdlog::warn("Full image cache {} MB is greater than the system upper limit {} MB, reset it to {} MB.",
+                        settings.full_image_cache, memory_upper_limit, memory_upper_limit);
+                    settings.full_image_cache = memory_upper_limit;
                 }
 
-                // Set the global variable for reserved memory
-                RESERVED_MEMORY = settings.reserved_memory;
-                start_info += fmt::format(" Total amount of reserved memory {} MB.", RESERVED_MEMORY);
+                // Set the global variable for full image cache
+                FULL_IMAGE_CACHE = settings.full_image_cache;
+                start_info += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE);
             }
             spdlog::info(start_info);
 

@@ -13,7 +13,7 @@
 #define VERSION_ID "4.0.0-beta.1"
 
 // Global variable
-extern float RESERVED_MEMORY; // MB
+extern float FULL_IMAGE_CACHE; // MB
 
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();

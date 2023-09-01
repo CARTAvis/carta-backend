@@ -566,9 +566,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             // create Frame for image
             auto frame = std::shared_ptr<Frame>(new Frame(_id, loader, hdu, DEFAULT_Z));
 
-            // Update the reserved memory
-            if (RESERVED_MEMORY > 0) {
-                spdlog::info("{:.0f} MB of reserved memory are available.", RESERVED_MEMORY);
+            // Update the full image cache
+            if (FULL_IMAGE_CACHE > 0) {
+                spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE);
             }
 
             // query loader for mipmap dataset
@@ -697,7 +697,7 @@ void Session::DeleteFrame(int file_id) {
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-            RESERVED_MEMORY += frame.second->MemorySize();
+            FULL_IMAGE_CACHE += frame.second->MemorySize();
             frame.second.reset(); // delete Frame
         }
         _frames.clear();
@@ -705,7 +705,7 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
-        RESERVED_MEMORY += _frames[file_id]->MemorySize();
+        FULL_IMAGE_CACHE += _frames[file_id]->MemorySize();
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -714,8 +714,8 @@ void Session::DeleteFrame(int file_id) {
     if (_region_handler) {
         _region_handler->RemoveFrame(file_id);
     }
-    if (RESERVED_MEMORY > 0) {
-        spdlog::info("{:.0f} MB of reserved memory are available.", RESERVED_MEMORY);
+    if (FULL_IMAGE_CACHE > 0) {
+        spdlog::info("{:.0f} MB of full image cache are available.", FULL_IMAGE_CACHE);
     }
 }
 
