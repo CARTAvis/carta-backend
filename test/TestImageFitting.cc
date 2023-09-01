@@ -64,8 +64,8 @@ public:
         CARTA::FittingResponse fitting_response;
         std::unique_ptr<carta::ImageFitter> image_fitter(new carta::ImageFitter());
         auto progress_callback = [&](float progress) {};
-        bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->ImageCacheData(), _initial_values, _fixed_params, 0.0,
-            CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
+        bool success = image_fitter->FitImage(frame->Width(), frame->Height(), frame->ImageCacheData(), 0.0, "", _initial_values,
+            _fixed_params, 0.0, CARTA::FittingSolverType::Cholesky, true, true, fitting_response, progress_callback);
 
         CompareResults(fitting_response, success, failed_message);
 

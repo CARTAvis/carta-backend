@@ -879,7 +879,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
     if (success) {
         // Move data streams off main thread by queueing tasks
-        if (_region_handler->UpdatePvPreviewRegion(file_id, region_id, region_state)) {
+        if (_region_handler->UpdatePvPreviewRegion(region_id, region_state)) {
             // Update pv preview (if region is pv cut for preview)
             OnMessageTask* tsk = new PvPreviewUpdateTask(this, ALL_FILES, region_id, preview_region);
             ThreadManager::QueueTask(tsk);

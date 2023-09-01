@@ -22,9 +22,14 @@ bool PvPreviewCut::HasSameParameters(const PreviewCutParameters& parameters) {
     return _cut_parameters == parameters;
 }
 
-bool PvPreviewCut::HasFileRegionIds(int file_id, int region_id) {
-    // Check if file and region ids are for this cut
-    return _cut_parameters.HasFileRegionIds(file_id, region_id);
+bool PvPreviewCut::HasPreviewFileRegionIds(int file_id, int region_id) {
+    // Check if preview file and region ids are for this cut
+    return _cut_parameters.HasPreviewFileRegionIds(file_id, region_id);
+}
+
+bool PvPreviewCut::HasPreviewCutRegion(int region_id, int region_reference_file) {
+    // Check if region id and reference file are for this cut
+    return _cut_parameters.HasPreviewCutRegion(region_id, region_reference_file);
 }
 
 int PvPreviewCut::GetWidth() {
