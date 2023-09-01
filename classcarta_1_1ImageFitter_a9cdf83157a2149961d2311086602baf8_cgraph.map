@@ -1,6 +1,6 @@
 <map id="carta::ImageFitter::ImageFitter" name="carta::ImageFitter::ImageFitter">
-<area shape="rect" id="node1" title=" " alt="" coords="5,39,144,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4" title=" " alt="" coords="192,5,331,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752" title=" " alt="" coords="192,71,331,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title=" " alt="" coords="379,71,540,112"/>
+<area shape="rect" id="node1" title="Constructor for the ImageFitter class." alt="" coords="5,39,144,80"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4" title="Customize GSL errors." alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752" title="Calculate the residual of the image data with the provided fitting parameters." alt="" coords="192,71,331,112"/>
+<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title="Extract Gaussian parameters from a vector." alt="" coords="379,71,540,112"/>
 </map>

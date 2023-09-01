@@ -1,4 +1,4 @@
 <map id="carta::ImageFitter::GetImageData" name="carta::ImageFitter::GetImageData">
-<area shape="rect" id="node1" title=" " alt="" coords="223,5,361,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e" title=" " alt="" coords="5,5,175,47"/>
+<area shape="rect" id="node1" title="Generate a casacore ImageInterface object from the provided image data." alt="" coords="223,5,361,47"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e" title="Generate model and residual images based on the fitting results." alt="" coords="5,5,175,47"/>
 </map>

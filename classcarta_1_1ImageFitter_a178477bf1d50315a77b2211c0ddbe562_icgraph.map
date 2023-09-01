@@ -1,5 +1,5 @@
 <map id="carta::ImageFitter::GetFilename" name="carta::ImageFitter::GetFilename">
-<area shape="rect" id="node1" title=" " alt="" coords="505,5,644,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e" title=" " alt="" coords="5,5,175,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f" title=" " alt="" coords="223,35,457,76"/>
+<area shape="rect" id="node1" title="Generate filenames by adding a suffix." alt="" coords="505,5,644,47"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e" title="Generate model and residual images based on the fitting results." alt="" coords="5,5,175,47"/>
+<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f" title="Generate filenames by adding a suffix for generated moment images." alt="" coords="223,35,457,76"/>
 </map>

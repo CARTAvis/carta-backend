@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="node1" class="node">
 <title>Node1</title>
-<g id="a_node1"><a xlink:title=" ">
+<g id="a_node1"><a xlink:title="Generate model and residual images based on the fitting results.">
 <polygon fill="#bfbfbf" stroke="black" points="0,-49.5 0,-79.5 127,-79.5 127,-49.5 0,-49.5"/>
 <text text-anchor="start" x="8" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="63.5" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGeneratedImages</text>
@@ -21,7 +21,7 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562" target="_top" xlink:title="Generate filenames by adding a suffix.">
 <polygon fill="none" stroke="black" points="375,-71.5 375,-101.5 479,-101.5 479,-71.5 375,-71.5"/>
 <text text-anchor="start" x="383" y="-89.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="427" y="-78.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetFilename</text>
@@ -37,7 +37,7 @@
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f" target="_top" xlink:title=" ">
+<g id="a_node3"><a xlink:href="classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f" target="_top" xlink:title="Generate filenames by adding a suffix for generated moment images.">
 <polygon fill="none" stroke="black" points="163,-49.5 163,-79.5 339,-79.5 339,-49.5 163,-49.5"/>
 <text text-anchor="start" x="171" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="251" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGeneratedMomentFilename</text>
@@ -53,7 +53,7 @@
 <!-- Node4 -->
 <g id="node4" class="node">
 <title>Node4</title>
-<g id="a_node4"><a xlink:href="classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69" target="_top" xlink:title=" ">
+<g id="a_node4"><a xlink:href="classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69" target="_top" xlink:title="Generate a casacore ImageInterface object from the provided image data.">
 <polygon fill="none" stroke="black" points="199,-0.5 199,-30.5 303,-30.5 303,-0.5 199,-0.5"/>
 <text text-anchor="start" x="207" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="251" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetImageData</text>

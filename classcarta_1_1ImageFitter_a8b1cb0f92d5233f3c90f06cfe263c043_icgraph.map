@@ -1,6 +1,8 @@
 <map id="carta::ImageFitter::GetGaussianParams" name="carta::ImageFitter::GetGaussianParams">
-<area shape="rect" id="node1" title=" " alt="" coords="379,39,540,80"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a47cbfb16ddaa05b8ce82b2770e3a4bbe" title=" " alt="" coords="192,5,331,47"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752" title=" " alt="" coords="192,71,331,112"/>
-<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8" title=" " alt="" coords="5,71,144,112"/>
+<area shape="rect" id="node1" title="Extract Gaussian parameters from a vector." alt="" coords="565,64,727,105"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="379,5,517,47"/>
+<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,35,144,76"/>
+<area shape="rect" id="node5" href="$classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752" title="Calculate the residual of the image data with the provided fitting parameters." alt="" coords="379,123,517,164"/>
+<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe" title="Main function for the multiple Gaussian image fitting." alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node6" href="$classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8" title="Constructor for the ImageFitter class." alt="" coords="192,123,331,164"/>
 </map>

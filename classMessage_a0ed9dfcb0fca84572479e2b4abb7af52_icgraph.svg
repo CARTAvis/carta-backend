@@ -20,7 +20,7 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175" target="_top" xlink:title="Create a Gaussian component sub&#45;message from Gaussian parameters.">
 <polygon fill="none" stroke="black" points="140,-0.5 140,-30.5 281,-30.5 281,-0.5 140,-0.5"/>
 <text text-anchor="start" x="148" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="210.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGaussianComponent</text>
@@ -36,7 +36,7 @@
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1ImageFitter.html#a47cbfb16ddaa05b8ce82b2770e3a4bbe" target="_top" xlink:title=" ">
+<g id="a_node3"><a xlink:href="classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" target="_top" xlink:title="Fit Gaussian components to an image and generate fitting results along with model and residual data.">
 <polygon fill="none" stroke="black" points="0,-0.5 0,-30.5 104,-30.5 104,-0.5 0,-0.5"/>
 <text text-anchor="start" x="8" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="52" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::FitImage</text>

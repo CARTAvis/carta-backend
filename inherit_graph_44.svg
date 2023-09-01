@@ -11,7 +11,7 @@
 <!-- Node0 -->
 <g id="node1" class="node">
 <title>Node0</title>
-<g id="a_node1"><a xlink:href="classcarta_1_1ImageFitter.html" target="_top" xlink:title=" ">
+<g id="a_node1"><a xlink:href="classcarta_1_1ImageFitter.html" target="_top" xlink:title="A class for fitting multiple Gaussian components to an image and generating model and residual images...">
 <polygon fill="none" stroke="black" points="0,-0.5 0,-19.5 104,-19.5 104,-0.5 0,-0.5"/>
 <text text-anchor="middle" x="52" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 </a>

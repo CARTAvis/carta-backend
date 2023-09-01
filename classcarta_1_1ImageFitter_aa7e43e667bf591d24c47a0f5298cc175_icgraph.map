@@ -1,4 +1,4 @@
 <map id="carta::ImageFitter::GetGaussianComponent" name="carta::ImageFitter::GetGaussianComponent">
-<area shape="rect" id="node1" title=" " alt="" coords="192,5,380,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a47cbfb16ddaa05b8ce82b2770e3a4bbe" title=" " alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node1" title="Create a Gaussian component sub&#45;message from Gaussian parameters." alt="" coords="192,5,380,47"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,47"/>
 </map>

@@ -1,18 +1,19 @@
 <map id="carta::ImageFitter" name="carta::ImageFitter">
-<area shape="rect" id="node1" title=" " alt="" coords="945,318,1084,345"/>
-<area shape="rect" id="node2" title=" " alt="" coords="596,103,768,130"/>
-<area shape="rect" id="node3" href="$structcarta_1_1FitStatus.html" title=" " alt="" coords="622,154,742,181"/>
-<area shape="rect" id="node4" title=" " alt="" coords="41,99,108,126"/>
-<area shape="rect" id="node15" title=" " alt="" coords="257,318,423,345"/>
-<area shape="rect" id="node5" title=" " alt="" coords="310,226,370,253"/>
-<area shape="rect" id="node11" href="$structcarta_1_1FitData.html" title=" " alt="" coords="627,405,737,431"/>
-<area shape="rect" id="node6" title=" " alt="" coords="55,261,94,287"/>
-<area shape="rect" id="node14" title=" " alt="" coords="271,398,409,425"/>
-<area shape="rect" id="node7" title=" " alt="" coords="297,13,383,39"/>
-<area shape="rect" id="node8" title=" " alt="" coords="5,5,144,47"/>
-<area shape="rect" id="node9" title=" " alt="" coords="632,293,732,319"/>
-<area shape="rect" id="node10" title=" " alt="" coords="598,343,766,370"/>
-<area shape="rect" id="node12" title=" " alt="" coords="315,469,365,495"/>
-<area shape="rect" id="node16" title=" " alt="" coords="607,501,757,527"/>
-<area shape="rect" id="node13" title=" " alt="" coords="315,558,365,585"/>
+<area shape="rect" id="node1" title="A class for fitting multiple Gaussian components to an image and generating model and residual images..." alt="" coords="945,320,1084,347"/>
+<area shape="rect" id="node2" title=" " alt="" coords="596,13,768,40"/>
+<area shape="rect" id="node3" title=" " alt="" coords="653,64,711,91"/>
+<area shape="rect" id="node4" title=" " alt="" coords="41,197,108,224"/>
+<area shape="rect" id="node5" href="$structcarta_1_1FitStatus.html" title="Data structure for storing status of the fitting result." alt="" coords="622,676,742,703"/>
+<area shape="rect" id="node16" title=" " alt="" coords="257,197,423,224"/>
+<area shape="rect" id="node6" title=" " alt="" coords="310,352,370,379"/>
+<area shape="rect" id="node12" href="$structcarta_1_1FitData.html" title="Data structure for storing fitting&#45;related data." alt="" coords="627,436,737,463"/>
+<area shape="rect" id="node7" title=" " alt="" coords="55,673,94,700"/>
+<area shape="rect" id="node15" title=" " alt="" coords="271,548,409,575"/>
+<area shape="rect" id="node8" title=" " alt="" coords="297,757,383,784"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,750,144,791"/>
+<area shape="rect" id="node10" title=" " alt="" coords="632,320,732,347"/>
+<area shape="rect" id="node11" title=" " alt="" coords="598,371,766,397"/>
+<area shape="rect" id="node13" title=" " alt="" coords="315,497,365,524"/>
+<area shape="rect" id="node17" title=" " alt="" coords="607,625,757,652"/>
+<area shape="rect" id="node14" title=" " alt="" coords="315,447,365,473"/>
 </map>

@@ -92,6 +92,9 @@ $(document).ready(function(){initNavTree('structcarta_1_1FitStatus.html',''); in
 </div><!--header-->
 <div class="contents">
 
+<p>Data structure for storing status of the fitting result.  
+ <a href="structcarta_1_1FitStatus.html#details">More...</a></p>
+
 <p><code>#include &lt;ImageFitter.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for carta::FitStatus:</div>
@@ -103,19 +106,25 @@ Collaboration diagram for carta::FitStatus:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a23c1a555efd20c6af61a3bae2a2dddb9"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1FitStatus.html#a23c1a555efd20c6af61a3bae2a2dddb9">method</a></td></tr>
+<tr class="memdesc:a23c1a555efd20c6af61a3bae2a2dddb9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used fitting method.  <a href="structcarta_1_1FitStatus.html#a23c1a555efd20c6af61a3bae2a2dddb9">More...</a><br /></td></tr>
 <tr class="separator:a23c1a555efd20c6af61a3bae2a2dddb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae08494841b31270364591d7a175d6939"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1FitStatus.html#ae08494841b31270364591d7a175d6939">num_iter</a></td></tr>
+<tr class="memdesc:ae08494841b31270364591d7a175d6939"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of iteration.  <a href="structcarta_1_1FitStatus.html#ae08494841b31270364591d7a175d6939">More...</a><br /></td></tr>
 <tr class="separator:ae08494841b31270364591d7a175d6939"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1cc8198fbcaab29c5a1e3308c6fcc14f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1FitStatus.html#a1cc8198fbcaab29c5a1e3308c6fcc14f">info</a></td></tr>
+<tr class="memdesc:a1cc8198fbcaab29c5a1e3308c6fcc14f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reason for stopping the iteration.  <a href="structcarta_1_1FitStatus.html#a1cc8198fbcaab29c5a1e3308c6fcc14f">More...</a><br /></td></tr>
 <tr class="separator:a1cc8198fbcaab29c5a1e3308c6fcc14f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad6b680e816346f91b04dae7bac78eca3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1FitStatus.html#ad6b680e816346f91b04dae7bac78eca3">chisq0</a></td></tr>
+<tr class="memdesc:ad6b680e816346f91b04dae7bac78eca3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial cost, final cost, and final cond(J).  <a href="structcarta_1_1FitStatus.html#ad6b680e816346f91b04dae7bac78eca3">More...</a><br /></td></tr>
 <tr class="separator:ad6b680e816346f91b04dae7bac78eca3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75c2e761044fbe625b876efb7ed3eabc"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1FitStatus.html#a75c2e761044fbe625b876efb7ed3eabc">chisq</a></td></tr>
 <tr class="separator:a75c2e761044fbe625b876efb7ed3eabc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a060ac529bf23880f23b13fdd88b22fe8"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcarta_1_1FitStatus.html#a060ac529bf23880f23b13fdd88b22fe8">rcond</a></td></tr>
 <tr class="separator:a060ac529bf23880f23b13fdd88b22fe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Data Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Data structure for storing status of the fitting result. </p>
+</div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a75c2e761044fbe625b876efb7ed3eabc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a75c2e761044fbe625b876efb7ed3eabc">&#9670;&nbsp;</a></span>chisq</h2>
 
@@ -142,6 +151,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Initial cost, final cost, and final cond(J). </p>
+
 </div>
 </div>
 <a id="a1cc8198fbcaab29c5a1e3308c6fcc14f"></a>
@@ -155,6 +166,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Reason for stopping the iteration. </p>
 
 </div>
 </div>
@@ -170,6 +183,8 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Used fitting method. </p>
+
 </div>
 </div>
 <a id="ae08494841b31270364591d7a175d6939"></a>
@@ -183,6 +198,8 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Number of iteration. </p>
 
 </div>
 </div>

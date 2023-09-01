@@ -95,6 +95,9 @@ $(document).ready(function(){initNavTree('classcarta_1_1ImageFitter.html',''); i
 </div><!--header-->
 <div class="contents">
 
+<p>A class for fitting multiple Gaussian components to an image and generating model and residual images.  
+ <a href="classcarta_1_1ImageFitter.html#details">More...</a></p>
+
 <p><code>#include &lt;ImageFitter.h&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for carta::ImageFitter:</div>
@@ -106,76 +109,126 @@ Collaboration diagram for carta::ImageFitter:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a9cdf83157a2149961d2311086602baf8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8">ImageFitter</a> ()</td></tr>
+<tr class="memdesc:a9cdf83157a2149961d2311086602baf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for the <a class="el" href="classcarta_1_1ImageFitter.html" title="A class for fitting multiple Gaussian components to an image and generating model and residual images...">ImageFitter</a> class.  <a href="classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8">More...</a><br /></td></tr>
 <tr class="separator:a9cdf83157a2149961d2311086602baf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47cbfb16ddaa05b8ce82b2770e3a4bbe"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a47cbfb16ddaa05b8ce82b2770e3a4bbe">FitImage</a> (size_t width, size_t height, float *image, const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
-<tr class="separator:a47cbfb16ddaa05b8ce82b2770e3a4bbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed4497f70e14e441c9e33950f8f9ab44"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44">FitImage</a> (size_t width, size_t height, float *image, double beam_size, string unit, const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, const std::vector&lt; bool &gt; &amp;fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse &amp;fitting_response, <a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a> progress_callback, size_t offset_x=0, size_t offset_y=0)</td></tr>
+<tr class="memdesc:aed4497f70e14e441c9e33950f8f9ab44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fit Gaussian components to an image and generate fitting results along with model and residual data.  <a href="classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44">More...</a><br /></td></tr>
+<tr class="separator:aed4497f70e14e441c9e33950f8f9ab44"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0cda5d39e25c707d58f1459914f49b7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e">GetGeneratedImages</a> (std::shared_ptr&lt; casacore::ImageInterface&lt; float &gt;&gt; image, const casacore::ImageRegion &amp;image_region, int file_id, const std::string &amp;filename, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;model_image, <a class="el" href="structcarta_1_1GeneratedImage.html">GeneratedImage</a> &amp;residual_image, CARTA::FittingResponse &amp;fitting_response)</td></tr>
+<tr class="memdesc:a0cda5d39e25c707d58f1459914f49b7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate model and residual images based on the fitting results.  <a href="classcarta_1_1ImageFitter.html#a0cda5d39e25c707d58f1459914f49b7e">More...</a><br /></td></tr>
 <tr class="separator:a0cda5d39e25c707d58f1459914f49b7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42b7d3b5141dc7d3777af3355496fb91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a42b7d3b5141dc7d3777af3355496fb91">StopFitting</a> ()</td></tr>
+<tr class="memdesc:a42b7d3b5141dc7d3777af3355496fb91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop the ongoing fitting process.  <a href="classcarta_1_1ImageFitter.html#a42b7d3b5141dc7d3777af3355496fb91">More...</a><br /></td></tr>
 <tr class="separator:a42b7d3b5141dc7d3777af3355496fb91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a85fff0ddc5414112e3cebbcae80b739b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a85fff0ddc5414112e3cebbcae80b739b">CalculateNanNum</a> ()</td></tr>
+<tr class="memdesc:a85fff0ddc5414112e3cebbcae80b739b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate the number of NaN values in the image data.  <a href="classcarta_1_1ImageFitter.html#a85fff0ddc5414112e3cebbcae80b739b">More...</a><br /></td></tr>
 <tr class="separator:a85fff0ddc5414112e3cebbcae80b739b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a621c8378ac1d751ba73f1d3cb6658890"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a621c8378ac1d751ba73f1d3cb6658890">SetInitialValues</a> (const std::vector&lt; CARTA::GaussianComponent &gt; &amp;initial_values, double background_offset, const std::vector&lt; bool &gt; &amp;fixed_params)</td></tr>
+<tr class="memdesc:a621c8378ac1d751ba73f1d3cb6658890"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set initial fitting parameters for the fitting.  <a href="classcarta_1_1ImageFitter.html#a621c8378ac1d751ba73f1d3cb6658890">More...</a><br /></td></tr>
 <tr class="separator:a621c8378ac1d751ba73f1d3cb6658890"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3796f44fac3ba6b9dbe37b9261491abe"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe">SolveSystem</a> (CARTA::FittingSolverType solver)</td></tr>
+<tr class="memdesc:a3796f44fac3ba6b9dbe37b9261491abe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main function for the multiple Gaussian image fitting.  <a href="classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe">More...</a><br /></td></tr>
 <tr class="separator:a3796f44fac3ba6b9dbe37b9261491abe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb41334cf11084df588a1a9752c4df29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29">CalculateErrors</a> ()</td></tr>
+<tr class="memdesc:adb41334cf11084df588a1a9752c4df29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate parameter errors after fitting.  <a href="classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29">More...</a><br /></td></tr>
+<tr class="separator:adb41334cf11084df588a1a9752c4df29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5824b306b9f2af74b8c26a60f5bd95d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5">CalculateImageData</a> (const gsl_vector *residual)</td></tr>
+<tr class="memdesc:a5824b306b9f2af74b8c26a60f5bd95d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate the model and residual image data after fitting.  <a href="classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5">More...</a><br /></td></tr>
 <tr class="separator:a5824b306b9f2af74b8c26a60f5bd95d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c8ade73522345593eb784d0f248b1a6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3c8ade73522345593eb784d0f248b1a6">SetResults</a> ()</td></tr>
-<tr class="separator:a3c8ade73522345593eb784d0f248b1a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af94fd497184c191cee7e2ccfed44c085"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#af94fd497184c191cee7e2ccfed44c085">GetLog</a> ()</td></tr>
+<tr class="memdesc:af94fd497184c191cee7e2ccfed44c085"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a log message describing the fitting status.  <a href="classcarta_1_1ImageFitter.html#af94fd497184c191cee7e2ccfed44c085">More...</a><br /></td></tr>
 <tr class="separator:af94fd497184c191cee7e2ccfed44c085"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6de0511604f66daf077814e64edb5c69"><td class="memItemLeft" align="right" valign="top">casa::SPIIF&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69">GetImageData</a> (casa::SPIIF image, const casacore::ImageRegion &amp;image_region, std::vector&lt; float &gt; image_data)</td></tr>
+<tr class="memdesc:a6de0511604f66daf077814e64edb5c69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate a casacore ImageInterface object from the provided image data.  <a href="classcarta_1_1ImageFitter.html#a6de0511604f66daf077814e64edb5c69">More...</a><br /></td></tr>
 <tr class="separator:a6de0511604f66daf077814e64edb5c69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a178477bf1d50315a77b2211c0ddbe562"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562">GetFilename</a> (const std::string &amp;filename, std::string suffix)</td></tr>
+<tr class="memdesc:a178477bf1d50315a77b2211c0ddbe562"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate filenames by adding a suffix.  <a href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562">More...</a><br /></td></tr>
 <tr class="separator:a178477bf1d50315a77b2211c0ddbe562"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6284a9df68da6eeaf25d316fc7d62d4f"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f">GetGeneratedMomentFilename</a> (const std::string &amp;filename, std::string suffix)</td></tr>
+<tr class="memdesc:a6284a9df68da6eeaf25d316fc7d62d4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate filenames by adding a suffix for generated moment images.  <a href="classcarta_1_1ImageFitter.html#a6284a9df68da6eeaf25d316fc7d62d4f">More...</a><br /></td></tr>
 <tr class="separator:a6284a9df68da6eeaf25d316fc7d62d4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
 <tr class="memitem:a70b66aea12783fb8aefe723312746752"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752">FuncF</a> (const gsl_vector *fit_params, void *fit_data, gsl_vector *f)</td></tr>
+<tr class="memdesc:a70b66aea12783fb8aefe723312746752"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate the residual of the image data with the provided fitting parameters.  <a href="classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752">More...</a><br /></td></tr>
 <tr class="separator:a70b66aea12783fb8aefe723312746752"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac84e37d5ca28378c500f18c6a4d9be1b"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b">Callback</a> (const size_t iter, void *params, const gsl_multifit_nlinear_workspace *w)</td></tr>
+<tr class="memdesc:ac84e37d5ca28378c500f18c6a4d9be1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after each iteration of the fitting.  <a href="classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b">More...</a><br /></td></tr>
 <tr class="separator:ac84e37d5ca28378c500f18c6a4d9be1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab6682d3f70cacb34af30da27dee81b4"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4">ErrorHandler</a> (const char *reason, const char *file, int line, int gsl_errno)</td></tr>
+<tr class="memdesc:aab6682d3f70cacb34af30da27dee81b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Customize GSL errors.  <a href="classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4">More...</a><br /></td></tr>
 <tr class="separator:aab6682d3f70cacb34af30da27dee81b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b1cb0f92d5233f3c90f06cfe263c043"><td class="memItemLeft" align="right" valign="top">static std::tuple&lt; double, double, double, double, double, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043">GetGaussianParams</a> (const gsl_vector *value_vector, size_t index, std::vector&lt; int &gt; &amp;fit_values_indexes, std::vector&lt; double &gt; &amp;initial_values, size_t offset_x=0, size_t offset_y=0)</td></tr>
+<tr class="memdesc:a8b1cb0f92d5233f3c90f06cfe263c043"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract Gaussian parameters from a vector.  <a href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043">More...</a><br /></td></tr>
 <tr class="separator:a8b1cb0f92d5233f3c90f06cfe263c043"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa7e43e667bf591d24c47a0f5298cc175"><td class="memItemLeft" align="right" valign="top">static CARTA::GaussianComponent&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175">GetGaussianComponent</a> (std::tuple&lt; double, double, double, double, double, double &gt; params)</td></tr>
+<tr class="memdesc:aa7e43e667bf591d24c47a0f5298cc175"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a Gaussian component sub-message from Gaussian parameters.  <a href="classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175">More...</a><br /></td></tr>
 <tr class="separator:aa7e43e667bf591d24c47a0f5298cc175"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69cbe382ee0df6a3aae2d1e239427b44"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a69cbe382ee0df6a3aae2d1e239427b44">GetMedianAbsDeviation</a> (const size_t n, double x[])</td></tr>
+<tr class="memdesc:a69cbe382ee0df6a3aae2d1e239427b44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate the Median Absolute Deviation (MAD) of an array of data.  <a href="classcarta_1_1ImageFitter.html#a69cbe382ee0df6a3aae2d1e239427b44">More...</a><br /></td></tr>
+<tr class="separator:a69cbe382ee0df6a3aae2d1e239427b44"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr class="memitem:a07fc27bac4a09bc4255d4341ace1a300"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1FitData.html">FitData</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a07fc27bac4a09bc4255d4341ace1a300">_fit_data</a></td></tr>
+<tr class="memdesc:a07fc27bac4a09bc4255d4341ace1a300"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fitting-related data.  <a href="classcarta_1_1ImageFitter.html#a07fc27bac4a09bc4255d4341ace1a300">More...</a><br /></td></tr>
 <tr class="separator:a07fc27bac4a09bc4255d4341ace1a300"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23ac7a76bc721dc2c58ae75b5d50fa2b"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a23ac7a76bc721dc2c58ae75b5d50fa2b">_image_std</a></td></tr>
+<tr class="memdesc:a23ac7a76bc721dc2c58ae75b5d50fa2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Standard deviation of the image data.  <a href="classcarta_1_1ImageFitter.html#a23ac7a76bc721dc2c58ae75b5d50fa2b">More...</a><br /></td></tr>
+<tr class="separator:a23ac7a76bc721dc2c58ae75b5d50fa2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83ba9c12b24bf630a1f5da9fc8e232ea"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a83ba9c12b24bf630a1f5da9fc8e232ea">_beam_size</a></td></tr>
+<tr class="memdesc:a83ba9c12b24bf630a1f5da9fc8e232ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Beam size of the image.  <a href="classcarta_1_1ImageFitter.html#a83ba9c12b24bf630a1f5da9fc8e232ea">More...</a><br /></td></tr>
+<tr class="separator:a83ba9c12b24bf630a1f5da9fc8e232ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee69676eed847c984fd93ff129aece31"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aee69676eed847c984fd93ff129aece31">_unit</a></td></tr>
+<tr class="memdesc:aee69676eed847c984fd93ff129aece31"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unit of the image.  <a href="classcarta_1_1ImageFitter.html#aee69676eed847c984fd93ff129aece31">More...</a><br /></td></tr>
+<tr class="separator:aee69676eed847c984fd93ff129aece31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a26a200d71bc9fc92928ca46c9957f181"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a26a200d71bc9fc92928ca46c9957f181">_num_components</a></td></tr>
+<tr class="memdesc:a26a200d71bc9fc92928ca46c9957f181"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of Gaussian components.  <a href="classcarta_1_1ImageFitter.html#a26a200d71bc9fc92928ca46c9957f181">More...</a><br /></td></tr>
 <tr class="separator:a26a200d71bc9fc92928ca46c9957f181"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f3071d9d6c04b9a6cc16158f1d48f19"><td class="memItemLeft" align="right" valign="top">gsl_vector *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a1f3071d9d6c04b9a6cc16158f1d48f19">_fit_values</a></td></tr>
+<tr class="memdesc:a1f3071d9d6c04b9a6cc16158f1d48f19"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fitting parameter values.  <a href="classcarta_1_1ImageFitter.html#a1f3071d9d6c04b9a6cc16158f1d48f19">More...</a><br /></td></tr>
 <tr class="separator:a1f3071d9d6c04b9a6cc16158f1d48f19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63188042be1b3d3e4f07126ad7e8711f"><td class="memItemLeft" align="right" valign="top">gsl_vector *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a63188042be1b3d3e4f07126ad7e8711f">_fit_errors</a></td></tr>
+<tr class="memdesc:a63188042be1b3d3e4f07126ad7e8711f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fitting parameter errors.  <a href="classcarta_1_1ImageFitter.html#a63188042be1b3d3e4f07126ad7e8711f">More...</a><br /></td></tr>
 <tr class="separator:a63188042be1b3d3e4f07126ad7e8711f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ce4364d0d316a15f0ce4dc5bd4a830e"><td class="memItemLeft" align="right" valign="top">std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a0ce4364d0d316a15f0ce4dc5bd4a830e">_integrated_flux_values</a></td></tr>
+<tr class="memdesc:a0ce4364d0d316a15f0ce4dc5bd4a830e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Integrated flux values of components.  <a href="classcarta_1_1ImageFitter.html#a0ce4364d0d316a15f0ce4dc5bd4a830e">More...</a><br /></td></tr>
+<tr class="separator:a0ce4364d0d316a15f0ce4dc5bd4a830e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d25194dc3e9a2c21ae54b6f4da21b89"><td class="memItemLeft" align="right" valign="top">std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a0d25194dc3e9a2c21ae54b6f4da21b89">_integrated_flux_errors</a></td></tr>
+<tr class="memdesc:a0d25194dc3e9a2c21ae54b6f4da21b89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Integrated flux errors of components.  <a href="classcarta_1_1ImageFitter.html#a0d25194dc3e9a2c21ae54b6f4da21b89">More...</a><br /></td></tr>
+<tr class="separator:a0d25194dc3e9a2c21ae54b6f4da21b89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae20c3e812323f0a57ad79614b71040c"><td class="memItemLeft" align="right" valign="top">gsl_multifit_nlinear_fdf&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aae20c3e812323f0a57ad79614b71040c">_fdf</a></td></tr>
+<tr class="memdesc:aae20c3e812323f0a57ad79614b71040c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Object for the fitting model.  <a href="classcarta_1_1ImageFitter.html#aae20c3e812323f0a57ad79614b71040c">More...</a><br /></td></tr>
 <tr class="separator:aae20c3e812323f0a57ad79614b71040c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae057f0bb7bd287b6429aa1bcaa61f48d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcarta_1_1FitStatus.html">FitStatus</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#ae057f0bb7bd287b6429aa1bcaa61f48d">_fit_status</a></td></tr>
+<tr class="memdesc:ae057f0bb7bd287b6429aa1bcaa61f48d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Status of the fitting result.  <a href="classcarta_1_1ImageFitter.html#ae057f0bb7bd287b6429aa1bcaa61f48d">More...</a><br /></td></tr>
 <tr class="separator:ae057f0bb7bd287b6429aa1bcaa61f48d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae8f6858339c8ccc0e54b99899c2d36bc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#ae8f6858339c8ccc0e54b99899c2d36bc">_create_model_data</a></td></tr>
+<tr class="memdesc:ae8f6858339c8ccc0e54b99899c2d36bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether to create a model image.  <a href="classcarta_1_1ImageFitter.html#ae8f6858339c8ccc0e54b99899c2d36bc">More...</a><br /></td></tr>
 <tr class="separator:ae8f6858339c8ccc0e54b99899c2d36bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b00f5dfdcd9e97527cde182e930def6"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3b00f5dfdcd9e97527cde182e930def6">_create_residual_data</a></td></tr>
+<tr class="memdesc:a3b00f5dfdcd9e97527cde182e930def6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether to create a residual image.  <a href="classcarta_1_1ImageFitter.html#a3b00f5dfdcd9e97527cde182e930def6">More...</a><br /></td></tr>
 <tr class="separator:a3b00f5dfdcd9e97527cde182e930def6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a182be33142889418ef9a9a4c273091"><td class="memItemLeft" align="right" valign="top">std::vector&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a6a182be33142889418ef9a9a4c273091">_model_data</a></td></tr>
+<tr class="memdesc:a6a182be33142889418ef9a9a4c273091"><td class="mdescLeft">&#160;</td><td class="mdescRight">Model image data.  <a href="classcarta_1_1ImageFitter.html#a6a182be33142889418ef9a9a4c273091">More...</a><br /></td></tr>
 <tr class="separator:a6a182be33142889418ef9a9a4c273091"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedb27859d2f5e9834eccaefaf71b7aac"><td class="memItemLeft" align="right" valign="top">std::vector&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#aedb27859d2f5e9834eccaefaf71b7aac">_residual_data</a></td></tr>
+<tr class="memdesc:aedb27859d2f5e9834eccaefaf71b7aac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Residual image data.  <a href="classcarta_1_1ImageFitter.html#aedb27859d2f5e9834eccaefaf71b7aac">More...</a><br /></td></tr>
 <tr class="separator:aedb27859d2f5e9834eccaefaf71b7aac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a659953697801f20e068304a46fc42005"><td class="memItemLeft" align="right" valign="top">const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a659953697801f20e068304a46fc42005">_max_iter</a> = 200</td></tr>
+<tr class="memdesc:a659953697801f20e068304a46fc42005"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of fitting iterations.  <a href="classcarta_1_1ImageFitter.html#a659953697801f20e068304a46fc42005">More...</a><br /></td></tr>
 <tr class="separator:a659953697801f20e068304a46fc42005"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3603153e19638b29516c985b6fe3a736"><td class="memItemLeft" align="right" valign="top"><a class="el" href="ImageGenerator_8h.html#ad63b0ae474eb2e8b576f0207252016b7">GeneratorProgressCallback</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcarta_1_1ImageFitter.html#a3603153e19638b29516c985b6fe3a736">_progress_callback</a></td></tr>
+<tr class="memdesc:a3603153e19638b29516c985b6fe3a736"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback function for updating fitting progress.  <a href="classcarta_1_1ImageFitter.html#a3603153e19638b29516c985b6fe3a736">More...</a><br /></td></tr>
 <tr class="separator:a3603153e19638b29516c985b6fe3a736"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A class for fitting multiple Gaussian components to an image and generating model and residual images. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a9cdf83157a2149961d2311086602baf8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9cdf83157a2149961d2311086602baf8">&#9670;&nbsp;</a></span>ImageFitter()</h2>
 
@@ -190,6 +243,8 @@ Private Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Constructor for the <a class="el" href="classcarta_1_1ImageFitter.html" title="A class for fitting multiple Gaussian components to an image and generating model and residual images...">ImageFitter</a> class. </p>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -200,6 +255,45 @@ Here is the call graph for this function:</div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="adb41334cf11084df588a1a9752c4df29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb41334cf11084df588a1a9752c4df29">&#9670;&nbsp;</a></span>CalculateErrors()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ImageFitter::CalculateErrors </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Calculate parameter errors after fitting. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_adb41334cf11084df588a1a9752c4df29_cgraph.svg" width="359" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_adb41334cf11084df588a1a9752c4df29_icgraph.svg" width="523" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
 <a id="a5824b306b9f2af74b8c26a60f5bd95d5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5824b306b9f2af74b8c26a60f5bd95d5">&#9670;&nbsp;</a></span>CalculateImageData()</h2>
 
@@ -223,6 +317,14 @@ Here is the call graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Calculate the model and residual image data after fitting. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">residual</td><td>Pointer to the residual values </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -254,6 +356,8 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Calculate the number of NaN values in the image data. </p>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -302,6 +406,16 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Called after each iteration of the fitting. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">iter</td><td>The current iteration number </td></tr>
+    <tr><td class="paramname">params</td><td>Fitting parameters </td></tr>
+    <tr><td class="paramname">w</td><td>The workspace for the fitting </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -356,6 +470,17 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Customize GSL errors. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">reason</td><td>The error reason </td></tr>
+    <tr><td class="paramname">file</td><td>The source file where the error occurred </td></tr>
+    <tr><td class="paramname">line</td><td>The line number where the error occurred </td></tr>
+    <tr><td class="paramname">gsl_errno</td><td>The GSL error number </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -365,8 +490,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a47cbfb16ddaa05b8ce82b2770e3a4bbe"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a47cbfb16ddaa05b8ce82b2770e3a4bbe">&#9670;&nbsp;</a></span>FitImage()</h2>
+<a id="aed4497f70e14e441c9e33950f8f9ab44"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed4497f70e14e441c9e33950f8f9ab44">&#9670;&nbsp;</a></span>FitImage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -388,6 +513,18 @@ Here is the caller graph for this function:</div>
           <td></td>
           <td class="paramtype">float *&#160;</td>
           <td class="paramname"><em>image</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>beam_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>unit</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -456,10 +593,33 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Fit Gaussian components to an image and generate fitting results along with model and residual data. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">width</td><td>The width of the image </td></tr>
+    <tr><td class="paramname">height</td><td>The height of the image </td></tr>
+    <tr><td class="paramname">image</td><td>Pointer to the image data </td></tr>
+    <tr><td class="paramname">beam_size</td><td>Beam size of the image </td></tr>
+    <tr><td class="paramname">unit</td><td>Unit of the image </td></tr>
+    <tr><td class="paramname">initial_values</td><td>Initial fitting parameters </td></tr>
+    <tr><td class="paramname">fixed_params</td><td>Whether the fitting parameters are fixed </td></tr>
+    <tr><td class="paramname">background_offset</td><td>Background offset of the image </td></tr>
+    <tr><td class="paramname">solver</td><td>The type of solver to use. </td></tr>
+    <tr><td class="paramname">create_model_image</td><td>Whether to create a model image </td></tr>
+    <tr><td class="paramname">create_residual_image</td><td>Whether to create a residual image </td></tr>
+    <tr><td class="paramname">fitting_response</td><td>The fitting response message </td></tr>
+    <tr><td class="paramname">progress_callback</td><td>Callback function for updating fitting progress </td></tr>
+    <tr><td class="paramname">offset_x</td><td>X-axis offset from the fitting region to the entire image </td></tr>
+    <tr><td class="paramname">offset_y</td><td>Y-axis offset from the fitting region to the entire image </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether the fitting is successful </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a47cbfb16ddaa05b8ce82b2770e3a4bbe_cgraph.svg" width="656" height="411"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_aed4497f70e14e441c9e33950f8f9ab44_cgraph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -504,6 +664,16 @@ Here is the call graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Calculate the residual of the image data with the provided fitting parameters. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">fit_params</td><td>Fitting parameters </td></tr>
+    <tr><td class="paramname">fit_data</td><td>Fitting-related data </td></tr>
+    <tr><td class="paramname">f</td><td>The residual of the image data </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -552,6 +722,16 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Generate filenames by adding a suffix. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>Name of the fitting image file </td></tr>
+    <tr><td class="paramname">suffix</td><td>The suffix to add </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The modified filename </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -584,6 +764,15 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Create a Gaussian component sub-message from Gaussian parameters. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">params</td><td>Tuple containing Gaussian parameters </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A Gaussian component sub-message </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -656,10 +845,24 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Extract Gaussian parameters from a vector. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">value_vector</td><td>The vector containing fitting parameters </td></tr>
+    <tr><td class="paramname">index</td><td>The index of the Gaussian component </td></tr>
+    <tr><td class="paramname">fit_values_indexes</td><td>Indexes of the Gaussian parameters in the fittig parameters </td></tr>
+    <tr><td class="paramname">initial_values</td><td>Initial fitting parameter </td></tr>
+    <tr><td class="paramname">offset_x</td><td>X-axis offset from the fitting region to the entire image </td></tr>
+    <tr><td class="paramname">offset_y</td><td>Y-axis offset from the fitting region to the entire image </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A tuple of Gaussian parameters </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a8b1cb0f92d5233f3c90f06cfe263c043_icgraph.svg" width="546" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a8b1cb0f92d5233f3c90f06cfe263c043_icgraph.svg" width="100%" height="427"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 </div>
 
@@ -720,6 +923,21 @@ Here is the caller graph for this function:</div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Generate model and residual images based on the fitting results. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>Pointer to the casacore ImageInterface object </td></tr>
+    <tr><td class="paramname">image_region</td><td>The fitting region </td></tr>
+    <tr><td class="paramname">file_id</td><td>ID of the fitting image file </td></tr>
+    <tr><td class="paramname">filename</td><td>Name of the fitting image file </td></tr>
+    <tr><td class="paramname">model_image</td><td>The generated model image </td></tr>
+    <tr><td class="paramname">residual_image</td><td>The generated residual image </td></tr>
+    <tr><td class="paramname">fitting_response</td><td>The fitting response message </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Whether the images are successfully generated </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -762,6 +980,16 @@ Here is the call graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Generate filenames by adding a suffix for generated moment images. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>Name of the fitting image file </td></tr>
+    <tr><td class="paramname">suffix</td><td>The suffix to add </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The modified filename </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -816,6 +1044,17 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Generate a casacore ImageInterface object from the provided image data. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>The casacore ImageInterface object of the entire image </td></tr>
+    <tr><td class="paramname">image_region</td><td>The fitting region </td></tr>
+    <tr><td class="paramname">image_data</td><td>The image data for the generated casacore ImageInterface object </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A casacore ImageInterface object </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -847,10 +1086,65 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Retrieve a log message describing the fitting status. </p>
+<dl class="section return"><dt>Returns</dt><dd>The log message </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_af94fd497184c191cee7e2ccfed44c085_icgraph.svg" width="336" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
+
+</div>
+</div>
+<a id="a69cbe382ee0df6a3aae2d1e239427b44"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69cbe382ee0df6a3aae2d1e239427b44">&#9670;&nbsp;</a></span>GetMedianAbsDeviation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double ImageFitter::GetMedianAbsDeviation </td>
+          <td>(</td>
+          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramname"><em>n</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x</em>[]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Calculate the Median Absolute Deviation (MAD) of an array of data. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">n</td><td>The number of data points in the array. </td></tr>
+    <tr><td class="paramname">x</td><td>An array containing the data points. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The calculated MAD. </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a69cbe382ee0df6a3aae2d1e239427b44_icgraph.svg" width="572" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 
@@ -895,37 +1189,22 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Set initial fitting parameters for the fitting. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">initial_values</td><td>Initial fitting parameters </td></tr>
+    <tr><td class="paramname">background_offset</td><td>Background offset of the image </td></tr>
+    <tr><td class="paramname">fixed_params</td><td>Whether the fitting parameters are fixed </td></tr>
+  </table>
+  </dd>
+</dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a621c8378ac1d751ba73f1d3cb6658890_icgraph.svg" width="336" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
-
-</div>
-</div>
-<a id="a3c8ade73522345593eb784d0f248b1a6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3c8ade73522345593eb784d0f248b1a6">&#9670;&nbsp;</a></span>SetResults()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void carta::ImageFitter::SetResults </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -952,10 +1231,19 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Main function for the multiple Gaussian image fitting. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">solver</td><td>The type of solver to use </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The status of the fitting </dd></dl>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a3796f44fac3ba6b9dbe37b9261491abe_cgraph.svg" width="360" height="118"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classcarta_1_1ImageFitter_a3796f44fac3ba6b9dbe37b9261491abe_cgraph.svg" width="595" height="248"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
 </div>
 </div>
 <div class="dynheader">
@@ -982,9 +1270,35 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
+<p>Stop the ongoing fitting process. </p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="a83ba9c12b24bf630a1f5da9fc8e232ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83ba9c12b24bf630a1f5da9fc8e232ea">&#9670;&nbsp;</a></span>_beam_size</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double carta::ImageFitter::_beam_size</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Beam size of the image. </p>
+
+</div>
+</div>
 <a id="ae8f6858339c8ccc0e54b99899c2d36bc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae8f6858339c8ccc0e54b99899c2d36bc">&#9670;&nbsp;</a></span>_create_model_data</h2>
 
@@ -1004,6 +1318,8 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Whether to create a model image. </p>
 
 </div>
 </div>
@@ -1027,6 +1343,8 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Whether to create a residual image. </p>
+
 </div>
 </div>
 <a id="aae20c3e812323f0a57ad79614b71040c"></a>
@@ -1048,6 +1366,8 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Object for the fitting model. </p>
 
 </div>
 </div>
@@ -1071,6 +1391,8 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Fitting-related data. </p>
+
 </div>
 </div>
 <a id="a63188042be1b3d3e4f07126ad7e8711f"></a>
@@ -1092,6 +1414,8 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Fitting parameter errors. </p>
 
 </div>
 </div>
@@ -1115,6 +1439,8 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Status of the fitting result. </p>
+
 </div>
 </div>
 <a id="a1f3071d9d6c04b9a6cc16158f1d48f19"></a>
@@ -1136,6 +1462,80 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Fitting parameter values. </p>
+
+</div>
+</div>
+<a id="a23ac7a76bc721dc2c58ae75b5d50fa2b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23ac7a76bc721dc2c58ae75b5d50fa2b">&#9670;&nbsp;</a></span>_image_std</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double carta::ImageFitter::_image_std</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Standard deviation of the image data. </p>
+
+</div>
+</div>
+<a id="a0d25194dc3e9a2c21ae54b6f4da21b89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d25194dc3e9a2c21ae54b6f4da21b89">&#9670;&nbsp;</a></span>_integrated_flux_errors</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;double&gt; carta::ImageFitter::_integrated_flux_errors</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Integrated flux errors of components. </p>
+
+</div>
+</div>
+<a id="a0ce4364d0d316a15f0ce4dc5bd4a830e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ce4364d0d316a15f0ce4dc5bd4a830e">&#9670;&nbsp;</a></span>_integrated_flux_values</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;double&gt; carta::ImageFitter::_integrated_flux_values</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Integrated flux values of components. </p>
 
 </div>
 </div>
@@ -1159,6 +1559,8 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Maximum number of fitting iterations. </p>
+
 </div>
 </div>
 <a id="a6a182be33142889418ef9a9a4c273091"></a>
@@ -1180,6 +1582,8 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Model image data. </p>
 
 </div>
 </div>
@@ -1203,6 +1607,8 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Number of Gaussian components. </p>
+
 </div>
 </div>
 <a id="a3603153e19638b29516c985b6fe3a736"></a>
@@ -1225,6 +1631,8 @@ Here is the caller graph for this function:</div>
 </table>
 </div><div class="memdoc">
 
+<p>Callback function for updating fitting progress. </p>
+
 </div>
 </div>
 <a id="aedb27859d2f5e9834eccaefaf71b7aac"></a>
@@ -1246,6 +1654,32 @@ Here is the caller graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Residual image data. </p>
+
+</div>
+</div>
+<a id="aee69676eed847c984fd93ff129aece31"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee69676eed847c984fd93ff129aece31">&#9670;&nbsp;</a></span>_unit</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">string carta::ImageFitter::_unit</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Unit of the image. </p>
 
 </div>
 </div>

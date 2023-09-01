@@ -1,5 +1,5 @@
 <map id="carta::ImageFitter::GetGaussianComponent" name="carta::ImageFitter::GetGaussianComponent">
-<area shape="rect" id="node1" title=" " alt="" coords="5,23,193,65"/>
+<area shape="rect" id="node1" title="Create a Gaussian component sub&#45;message from Gaussian parameters." alt="" coords="5,23,193,65"/>
 <area shape="rect" id="node2" href="$classMessage.html#a2e8cdef60c335b1a50208053aa4b7f22" title=" " alt="" coords="269,5,436,32"/>
 <area shape="rect" id="node3" href="$classMessage.html#a0ed9dfcb0fca84572479e2b4abb7af52" title=" " alt="" coords="241,56,464,83"/>
 </map>

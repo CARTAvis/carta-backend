@@ -1,0 +1,15 @@
+<map id="carta::ImageFitter::FitImage" name="carta::ImageFitter::FitImage">
+<area shape="rect" id="node1" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,159,144,200"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a85fff0ddc5414112e3cebbcae80b739b" title="Calculate the number of NaN values in the image data." alt="" coords="212,5,360,47"/>
+<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#aa7e43e667bf591d24c47a0f5298cc175" title="Create a Gaussian component sub&#45;message from Gaussian parameters." alt="" coords="192,71,380,112"/>
+<area shape="rect" id="node6" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title="Extract Gaussian parameters from a vector." alt="" coords="699,159,860,200"/>
+<area shape="rect" id="node7" href="$classcarta_1_1ImageFitter.html#af94fd497184c191cee7e2ccfed44c085" title="Retrieve a log message describing the fitting status." alt="" coords="217,188,355,229"/>
+<area shape="rect" id="node8" href="$classcarta_1_1ImageFitter.html#a621c8378ac1d751ba73f1d3cb6658890" title="Set initial fitting parameters for the fitting." alt="" coords="217,253,355,295"/>
+<area shape="rect" id="node9" href="$classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe" title="Main function for the multiple Gaussian image fitting." alt="" coords="217,319,355,360"/>
+<area shape="rect" id="node4" href="$classMessage.html#a2e8cdef60c335b1a50208053aa4b7f22" title=" " alt="" coords="456,31,623,58"/>
+<area shape="rect" id="node5" href="$classMessage.html#a0ed9dfcb0fca84572479e2b4abb7af52" title=" " alt="" coords="428,82,651,109"/>
+<area shape="rect" id="node10" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="470,188,609,229"/>
+<area shape="rect" id="node11" href="$classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5" title="Calculate the model and residual image data after fitting." alt="" coords="458,253,621,295"/>
+<area shape="rect" id="node12" href="$classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b" title="Called after each iteration of the fitting." alt="" coords="470,319,609,360"/>
+<area shape="rect" id="node13" href="$classcarta_1_1ImageFitter.html#a69cbe382ee0df6a3aae2d1e239427b44" title="Calculate the Median Absolute Deviation (MAD) of an array of data." alt="" coords="445,384,633,425"/>
+</map>

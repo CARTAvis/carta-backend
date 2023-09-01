@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="node1" class="node">
 <title>Node1</title>
-<g id="a_node1"><a xlink:title=" ">
+<g id="a_node1"><a xlink:title="Constructor for the ImageFitter class.">
 <polygon fill="#bfbfbf" stroke="black" points="0,-24.5 0,-54.5 104,-54.5 104,-24.5 0,-24.5"/>
 <text text-anchor="start" x="8" y="-42.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="52" y="-31.5" font-family="Helvetica,sans-Serif" font-size="10.00">::ImageFitter</text>
@@ -21,7 +21,7 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4" target="_top" xlink:title="Customize GSL errors.">
 <polygon fill="none" stroke="black" points="140,-49.5 140,-79.5 244,-79.5 244,-49.5 140,-49.5"/>
 <text text-anchor="start" x="148" y="-67.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="192" y="-56.5" font-family="Helvetica,sans-Serif" font-size="10.00">::ErrorHandler</text>
@@ -37,7 +37,7 @@
 <!-- Node3 -->
 <g id="node3" class="node">
 <title>Node3</title>
-<g id="a_node3"><a xlink:href="classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752" target="_top" xlink:title=" ">
+<g id="a_node3"><a xlink:href="classcarta_1_1ImageFitter.html#a70b66aea12783fb8aefe723312746752" target="_top" xlink:title="Calculate the residual of the image data with the provided fitting parameters.">
 <polygon fill="none" stroke="black" points="140,-0.5 140,-30.5 244,-30.5 244,-0.5 140,-0.5"/>
 <text text-anchor="start" x="148" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="192" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::FuncF</text>
@@ -53,7 +53,7 @@
 <!-- Node4 -->
 <g id="node4" class="node">
 <title>Node4</title>
-<g id="a_node4"><a xlink:href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" target="_top" xlink:title=" ">
+<g id="a_node4"><a xlink:href="classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" target="_top" xlink:title="Extract Gaussian parameters from a vector.">
 <polygon fill="none" stroke="black" points="280,-0.5 280,-30.5 401,-30.5 401,-0.5 280,-0.5"/>
 <text text-anchor="start" x="288" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="340.5" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGaussianParams</text>

@@ -11,7 +11,7 @@
 <!-- Node1 -->
 <g id="node1" class="node">
 <title>Node1</title>
-<g id="a_node1"><a xlink:title=" ">
+<g id="a_node1"><a xlink:title="Generate filenames by adding a suffix for generated moment images.">
 <polygon fill="#bfbfbf" stroke="black" points="0,-0.5 0,-30.5 176,-30.5 176,-0.5 0,-0.5"/>
 <text text-anchor="start" x="8" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="88" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetGeneratedMomentFilename</text>
@@ -21,7 +21,7 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562" target="_top" xlink:title=" ">
+<g id="a_node2"><a xlink:href="classcarta_1_1ImageFitter.html#a178477bf1d50315a77b2211c0ddbe562" target="_top" xlink:title="Generate filenames by adding a suffix.">
 <polygon fill="none" stroke="black" points="212,-0.5 212,-30.5 316,-30.5 316,-0.5 212,-0.5"/>
 <text text-anchor="start" x="220" y="-18.5" font-family="Helvetica,sans-Serif" font-size="10.00">carta::ImageFitter</text>
 <text text-anchor="middle" x="264" y="-7.5" font-family="Helvetica,sans-Serif" font-size="10.00">::GetFilename</text>
