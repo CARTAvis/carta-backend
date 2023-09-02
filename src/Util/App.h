@@ -10,7 +10,7 @@
 #include <string>
 
 // version
-#define VERSION_ID "4.0.0-beta.1"
+#define VERSION_ID "4.0.0-rc.0"
 
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
