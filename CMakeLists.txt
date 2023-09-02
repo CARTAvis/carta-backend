@@ -194,7 +194,6 @@ set(SOURCE_FILES
         ${SOURCE_FILES}
 	third-party/pugixml/src/pugixml.cpp
         src/Cache/CubeImageCache.cc
-        src/Cache/ImageCacheCalculator.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc
