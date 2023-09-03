@@ -1,0 +1,42 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018-2022 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
+#ifndef CARTA_BACKEND__FRAME_CHANNELIMAGECACHE_H_
+#define CARTA_BACKEND__FRAME_CHANNELIMAGECACHE_H_
+
+#include "ImageCache.h"
+
+#include "Util/Image.h"
+
+#include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/lattices/Lattices/ArrayLattice.h>
+
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
+namespace carta {
+
+class ChannelImageCache : public ImageCache {
+public:
+    ChannelImageCache();
+
+    float* AllocateData(int stokes, size_t data_size) override;
+    float* GetChannelImageCache(int z, int stokes, size_t width, size_t height) override;
+
+    float GetValue(int x, int y, int z, int stokes, size_t width, size_t height) override;
+
+    bool DataExist() const override {
+        return static_cast<bool>(_channel_data);
+    }
+
+private:
+    std::unique_ptr<float[]> _channel_data;
+};
+
+} // namespace carta
+
+#endif // CARTA_BACKEND__FRAME_CHANNELIMAGECACHE_H_

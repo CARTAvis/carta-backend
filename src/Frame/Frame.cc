@@ -430,8 +430,8 @@ bool Frame::FillImageCache(int stokes) {
         Timer t;
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), stokes);
         auto image_data_size = stokes_slicer.slicer.length().product();
-        _channel_image_cache = std::make_unique<float[]>(image_data_size);
-        if (!GetSlicerData(stokes_slicer, _channel_image_cache.get())) {
+        auto* image_data_ptr = _channel_image_cache.AllocateData(stokes, image_data_size);
+        if (image_data_ptr && !GetSlicerData(stokes_slicer, image_data_ptr)) {
             spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed. Stokes index: {}", stokes);
             return false;
         }
@@ -900,7 +900,7 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
                 // Fail to get cube image cache
                 return false;
             }
-            if (!_cube_image_cache_valid && !_channel_image_cache) {
+            if (!_cube_image_cache_valid && !_channel_image_cache.DataExist()) {
                 // Fail to get channel image cache
                 return false;
             }
@@ -971,7 +971,7 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
             // Fail to get cube image cache
             return false;
         }
-        if (!_cube_image_cache_valid && !_channel_image_cache) {
+        if (!_cube_image_cache_valid && !_channel_image_cache.DataExist()) {
             // Fail to get channel image cache
             return false;
         }
@@ -2504,7 +2504,7 @@ float* Frame::GetImageData(int z, int stokes) {
         }
         return _cube_image_cache.GetChannelImageCache(z, stokes, _width, _height);
     }
-    return _channel_image_cache.get();
+    return _channel_image_cache.GetChannelImageCache(z, stokes, _width, _height);
 }
 
 float Frame::MemorySize() const {
@@ -2549,7 +2549,7 @@ float Frame::GetValue(int x, int y, int z, int stokes) {
     if (_cube_image_cache_valid) {
         return _cube_image_cache.GetValue(x, y, z, stokes, _width, _height);
     }
-    return _channel_image_cache[_width * y + x];
+    return _channel_image_cache.GetValue(x, y, z, stokes, _width, _height);
 }
 
 } // namespace carta

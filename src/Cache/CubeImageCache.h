@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND__FRAME_CUBEIMAGECACHE_H_
 #define CARTA_BACKEND__FRAME_CUBEIMAGECACHE_H_
 
+#include "ImageCache.h"
+
 #include "Util/Image.h"
 
 #include <casacore/casa/Arrays/IPosition.h>
@@ -18,18 +20,26 @@
 
 namespace carta {
 
-class CubeImageCache {
+class CubeImageCache : public ImageCache {
 public:
     CubeImageCache();
 
-    float* AllocateData(int stokes, size_t data_size);
-    float* GetChannelImageCache(int z, int stokes, size_t width, size_t height);
+    float* AllocateData(int stokes, size_t data_size) override;
+    float* GetChannelImageCache(int z, int stokes, size_t width, size_t height) override;
 
-    bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth);
+    bool LoadCachedPointSpectralData(
+        std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-        std::map<CARTA::StatsType, std::vector<double>>& profiles);
-    float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
+        std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
+    float GetValue(int x, int y, int z, int stokes, size_t width, size_t height) override;
+
+    bool DataExist() const override {
+        return !_stokes_data.empty();
+    }
+    bool DataExist(int stokes) const override {
+        return _stokes_data.count(stokes);
+    }
 
     int& StokesI() {
         return _stokes_i;
@@ -45,13 +55,6 @@ public:
     }
     double& BeamArea() {
         return _beam_area;
-    }
-
-    bool DataExist() const {
-        return !_stokes_data.empty();
-    }
-    bool DataExist(int stokes) const {
-        return _stokes_data.count(stokes);
     }
 
 private:
