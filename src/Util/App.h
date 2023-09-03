@@ -10,7 +10,7 @@
 #include <string>
 
 // version
-#define VERSION_ID "4.0.0-beta.1"
+#define VERSION_ID "4.0.0-rc.0"
 
 // Global variable
 extern float FULL_IMAGE_CACHE; // MB
