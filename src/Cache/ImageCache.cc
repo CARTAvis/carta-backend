@@ -11,7 +11,8 @@
 
 namespace carta {
 
-ImageCache::ImageCache(ImageCacheType type) : _type(type) {}
+ImageCache::ImageCache(ImageCacheType type)
+    : _type(type), _stokes_i(-1), _stokes_q(-1), _stokes_u(-1), _stokes_v(-1), _beam_area(DOUBLE_NAN) {}
 
 float* ImageCache::AllocateData(int stokes, size_t data_size) {
     return nullptr;

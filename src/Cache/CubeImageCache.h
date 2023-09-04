@@ -41,29 +41,7 @@ public:
         return _stokes_data.count(stokes);
     }
 
-    int& StokesI() {
-        return _stokes_i;
-    }
-    int& StokesQ() {
-        return _stokes_q;
-    }
-    int& StokesU() {
-        return _stokes_u;
-    }
-    int& StokesV() {
-        return _stokes_v;
-    }
-    double& BeamArea() {
-        return _beam_area;
-    }
-
 private:
-    int _stokes_i; // stokes type "I" index
-    int _stokes_q; // stokes type "Q" index
-    int _stokes_u; // stokes type "U" index
-    int _stokes_v; // stokes type "V" index
-    double _beam_area;
-
     // Current channel of computed stokes image cache
     int _computed_stokes_channel;
 

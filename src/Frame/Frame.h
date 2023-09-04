@@ -307,13 +307,11 @@ protected:
     ContourSettings _contour_settings;
 
     // Image data cache and mutex
-    bool _channel_image_cache_valid;        // Cached image data is valid for current z and stokes
-    ChannelImageCache _channel_image_cache; // Current channel and stokes image cache
-    bool _cube_image_cache_valid;           // Cached cube image data is valid for all stokes
-    CubeImageCache _cube_image_cache;       // Cube image cache
-    queuing_rw_mutex _cache_mutex;          // allow concurrent reads but lock for write
-    std::mutex _image_mutex;                // only one disk access at a time
-    TileCache _tile_cache;                  // cache for full-resolution image tiles
+    bool _channel_image_cache_valid;          // Cached image data is valid for current z and stokes
+    std::unique_ptr<ImageCache> _image_cache; // Image cache for current z and stokes, or for the whole image
+    queuing_rw_mutex _cache_mutex;            // allow concurrent reads but lock for write
+    std::mutex _image_mutex;                  // only one disk access at a time
+    TileCache _tile_cache;                    // cache for full-resolution image tiles
     std::mutex _ignore_interrupt_X_mutex;
     std::mutex _ignore_interrupt_Y_mutex;
 

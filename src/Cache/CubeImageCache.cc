@@ -10,14 +10,7 @@
 
 namespace carta {
 
-CubeImageCache::CubeImageCache()
-    : ImageCache(ImageCacheType::Cube),
-      _stokes_i(-1),
-      _stokes_q(-1),
-      _stokes_u(-1),
-      _stokes_v(-1),
-      _beam_area(DOUBLE_NAN),
-      _computed_stokes_channel(-1) {}
+CubeImageCache::CubeImageCache() : ImageCache(ImageCacheType::Cube), _computed_stokes_channel(-1) {}
 
 float* CubeImageCache::AllocateData(int stokes, size_t data_size) {
     _stokes_data[stokes] = std::make_unique<float[]>(data_size);
