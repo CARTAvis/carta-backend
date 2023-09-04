@@ -11,7 +11,7 @@ if [ ! -z $FIRST_IP ]; then
     export SERVER_IP=$FIRST_IP
 fi
 
-if [[ ! "$@" =~ "--version" ]] && [[ ! "$@" =~ "-v" ]]; then
+if [[ ! "$@" =~ (--version|-v|--help|-h) ]]; then
     if [ -x "$(command -v casa_data_autoupdate)" ]; then
         casa_data_autoupdate
     fi
