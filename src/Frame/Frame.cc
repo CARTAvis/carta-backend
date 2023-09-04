@@ -45,7 +45,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _stokes_index(DEFAULT_STOKES),
       _depth(1),
       _num_stokes(1),
-      _channel_image_cache_valid(false),
       _image_cache(nullptr),
       _moment_generator(nullptr),
       _moment_name_index(0) {
@@ -405,6 +404,17 @@ bool Frame::FillImageCache(int stokes) {
         stokes = _stokes_index;
     }
 
+    auto load_image_data_to_cache = [&](int required_z) {
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(required_z), stokes);
+        auto image_data_size = stokes_slicer.slicer.length().product();
+        auto* image_data_ptr = _image_cache->AllocateData(stokes, image_data_size);
+        if (image_data_ptr && !GetSlicerData(stokes_slicer, image_data_ptr)) {
+            spdlog::error("Session {}: {}", _session_id, "Loading image cache failed (z: {}, stokes: {})", required_z, stokes);
+            return false;
+        }
+        return true;
+    };
+
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
@@ -412,14 +422,9 @@ bool Frame::FillImageCache(int stokes) {
         // Fill cube image cache
         if (!_image_cache->DataExist(stokes)) {
             Timer t;
-            StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_Z), stokes);
-            auto image_data_size = stokes_slicer.slicer.length().product();
-            auto* image_data_ptr = _image_cache->AllocateData(stokes, image_data_size);
-            if (image_data_ptr && !GetSlicerData(stokes_slicer, image_data_ptr)) {
-                spdlog::error("Session {}: {}", _session_id, "Loading cube image cache failed. Stokes index: {}", stokes);
+            if (!load_image_data_to_cache(ALL_Z)) {
                 return false;
             }
-
             auto dt = t.Elapsed();
             spdlog::performance("Load {}x{}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth, dt.ms(),
                 (float)(_width * _height * _depth) / dt.us());
@@ -428,32 +433,27 @@ bool Frame::FillImageCache(int stokes) {
         // Fill channel image cache
 
         // Exit early *after* acquiring lock if the cache has already been loaded by another thread
-        if (_channel_image_cache_valid) {
+        if (_image_cache->ChannelImageCacheValid()) {
             return true;
         }
 
         Timer t;
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(_z_index), stokes);
-        auto image_data_size = stokes_slicer.slicer.length().product();
-        auto* image_data_ptr = _image_cache->AllocateData(stokes, image_data_size);
-        if (image_data_ptr && !GetSlicerData(stokes_slicer, image_data_ptr)) {
-            spdlog::error("Session {}: {}", _session_id, "Loading channel image cache failed. Stokes index: {}", stokes);
+        if (!load_image_data_to_cache(_z_index)) {
             return false;
         }
-
         auto dt = t.Elapsed();
         spdlog::performance(
             "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt.ms(), (float)(_width * _height) / dt.us());
-    }
 
-    _channel_image_cache_valid = true;
+        _image_cache->ValidateChannelImageCache();
+    }
     return true;
 }
 
 void Frame::InvalidateImageCache() {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    _channel_image_cache_valid = false;
+    _image_cache->InvalidateChannelImageCache();
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
@@ -468,7 +468,7 @@ void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
 
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid || !_channel_image_cache_valid) {
+    if (!_valid || !_image_cache->ChannelImageCacheValid()) {
         return false;
     }
 
@@ -631,7 +631,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     if (mip > 1 && !IsComputedStokes(_stokes_index)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (!_channel_image_cache_valid && _loader->UseTileCache()) {
+    } else if (!_image_cache->ChannelImageCacheValid() && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
         tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
         if (tile_data_ptr) {
@@ -1130,7 +1130,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     float cursor_value_with_current_stokes(0.0);
 
     // Get the cursor value with current stokes
-    if (_channel_image_cache_valid) {
+    if (_image_cache->ChannelImageCacheValid()) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         cursor_value_with_current_stokes = GetValue(x, y, _z_index, _stokes_index);

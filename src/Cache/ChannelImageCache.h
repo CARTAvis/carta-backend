@@ -33,8 +33,14 @@ public:
         return static_cast<bool>(_channel_data);
     }
 
+    virtual void ValidateChannelImageCache() override;
+    virtual void InvalidateChannelImageCache() override;
+    virtual bool ChannelImageCacheValid() const override;
+
 private:
     std::unique_ptr<float[]> _channel_data;
+
+    bool _channel_image_cache_valid; // Cached image data is valid for current z and stokes
 };
 
 } // namespace carta

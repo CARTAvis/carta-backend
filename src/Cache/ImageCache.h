@@ -38,6 +38,10 @@ public:
     virtual bool DataExist() const;
     virtual bool DataExist(int stokes) const;
 
+    virtual void ValidateChannelImageCache();
+    virtual void InvalidateChannelImageCache();
+    virtual bool ChannelImageCacheValid() const;
+
     ImageCacheType Type() const {
         return _type;
     }

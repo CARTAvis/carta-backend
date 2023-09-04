@@ -10,7 +10,7 @@
 
 namespace carta {
 
-ChannelImageCache::ChannelImageCache() : ImageCache(ImageCacheType::Channel), _channel_data(nullptr) {}
+ChannelImageCache::ChannelImageCache() : ImageCache(ImageCacheType::Channel), _channel_data(nullptr), _channel_image_cache_valid(false) {}
 
 float* ChannelImageCache::AllocateData(int stokes, size_t data_size) {
     _channel_data = std::make_unique<float[]>(data_size);
@@ -23,6 +23,18 @@ float* ChannelImageCache::GetChannelImageCache(int z, int stokes, size_t width, 
 
 float ChannelImageCache::GetValue(int x, int y, int z, int stokes, size_t width, size_t height) {
     return _channel_data[width * y + x];
+}
+
+void ChannelImageCache::ValidateChannelImageCache() {
+    _channel_image_cache_valid = true;
+}
+
+void ChannelImageCache::InvalidateChannelImageCache() {
+    _channel_image_cache_valid = false;
+}
+
+bool ChannelImageCache::ChannelImageCacheValid() const {
+    return _channel_image_cache_valid;
 }
 
 } // namespace carta

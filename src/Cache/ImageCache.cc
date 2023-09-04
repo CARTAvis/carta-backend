@@ -45,4 +45,12 @@ bool ImageCache::DataExist(int stokes) const {
     return false;
 }
 
+void ImageCache::ValidateChannelImageCache() {}
+
+void ImageCache::InvalidateChannelImageCache() {}
+
+bool ImageCache::ChannelImageCacheValid() const {
+    return true;
+}
+
 } // namespace carta
