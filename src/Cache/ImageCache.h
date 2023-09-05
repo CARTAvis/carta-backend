@@ -35,7 +35,6 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& profiles);
     virtual float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
 
-    virtual bool DataExist() const;
     virtual bool DataExist(int stokes) const;
 
     virtual void ValidateChannelImageCache();

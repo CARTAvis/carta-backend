@@ -29,10 +29,6 @@ public:
 
     float GetValue(int x, int y, int z, int stokes, size_t width, size_t height) override;
 
-    bool DataExist() const override {
-        return static_cast<bool>(_channel_data);
-    }
-
     virtual void ValidateChannelImageCache() override;
     virtual void InvalidateChannelImageCache() override;
     virtual bool ChannelImageCacheValid() const override;

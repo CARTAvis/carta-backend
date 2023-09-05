@@ -899,13 +899,8 @@ bool Frame::GetBasicStats(int z, int stokes, BasicStats<float>& stats) {
             return true;
         }
 
-        if (((_image_cache->Type() == ImageCacheType::Channel && z == _z_index && stokes == _stokes_index) ||
-                _image_cache->Type() == ImageCacheType::Cube)) {
+        if (ImageCacheAvailable(z, stokes)) {
             // calculate histogram from image cache
-            if (!_image_cache->DataExist()) {
-                // Fail to get cube or channel image cache
-                return false;
-            }
             CalcBasicStats(stats, GetImageData(z, stokes), _width * _height);
             _image_basic_stats[cache_key] = stats;
             return true;
@@ -967,13 +962,8 @@ bool Frame::CalculateHistogram(int region_id, int z, int stokes, int num_bins, c
         num_bins = AutoBinSize();
     }
 
-    if ((_image_cache->Type() == ImageCacheType::Channel && z == _z_index && stokes == _stokes_index) ||
-        _image_cache->Type() == ImageCacheType::Cube) {
+    if (ImageCacheAvailable(z, stokes)) {
         // calculate histogram from image cache
-        if (!_image_cache->DataExist()) {
-            // Fail to get cube or channel image cache
-            return false;
-        }
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         hist = CalcHistogram(num_bins, bounds, GetImageData(z, stokes), _width * _height);
@@ -1244,6 +1234,26 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     end = config.coordinate().back() == 'x' ? std::min(end, _width) : std::min(end, _height);
                 }
 
+                auto get_spatial_profile_from_cache = [&](int required_stokes) {
+                    profile.reserve(end - start);
+
+                    if (config.coordinate().back() == 'x') {
+                        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+                        for (unsigned int j = start; j < end; ++j) {
+                            profile.push_back(GetValue(j, y, _z_index, required_stokes));
+                        }
+                        cache_lock.release();
+                    } else if (config.coordinate().back() == 'y') {
+                        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+                        for (unsigned int j = start; j < end; ++j) {
+                            profile.push_back(GetValue(x, j, _z_index, required_stokes));
+                        }
+                        cache_lock.release();
+                    }
+
+                    have_profile = true;
+                };
+
                 if (is_current_stokes) {
                     if (_loader->UseTileCache()) { // Use tile cache to return full resolution data or prepare data for decimation
                         profile.resize(end - start);
@@ -1299,36 +1309,25 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                             have_profile = true;
                         }
                     } else { // Use image cache to return full resolution data or prepare data for decimation
+                        get_spatial_profile_from_cache(_stokes_index);
+                    }
+                } else {
+                    // Required stokes is not the current stokes or the stokes needs to be computed
+                    if (ImageCacheAvailable(_z_index, stokes)) {
+                        get_spatial_profile_from_cache(stokes);
+                    } else {
                         profile.reserve(end - start);
 
+                        StokesSlicer stokes_slicer;
                         if (config.coordinate().back() == 'x') {
-                            queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-                            for (unsigned int j = start; j < end; ++j) {
-                                profile.push_back(GetValue(j, y, _z_index, _stokes_index));
-                            }
-                            cache_lock.release();
+                            stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(_z_index), stokes);
                         } else if (config.coordinate().back() == 'y') {
-                            queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-                            for (unsigned int j = start; j < end; ++j) {
-                                profile.push_back(GetValue(x, j, _z_index, _stokes_index));
-                            }
-                            cache_lock.release();
+                            stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(_z_index), stokes);
                         }
 
-                        have_profile = true;
+                        profile.resize(stokes_slicer.slicer.length().product());
+                        have_profile = GetSlicerData(stokes_slicer, profile.data());
                     }
-                } else { // When required stokes is not the current stokes or the stokes needs to be computed
-                    profile.reserve(end - start);
-
-                    StokesSlicer stokes_slicer;
-                    if (config.coordinate().back() == 'x') {
-                        stokes_slicer = GetImageSlicer(AxisRange(start, end - 1), AxisRange(y), AxisRange(_z_index), stokes);
-                    } else if (config.coordinate().back() == 'y') {
-                        stokes_slicer = GetImageSlicer(AxisRange(x), AxisRange(start, end - 1), AxisRange(_z_index), stokes);
-                    }
-
-                    profile.resize(stokes_slicer.slicer.length().product());
-                    have_profile = GetSlicerData(stokes_slicer, profile.data());
                 }
             }
 
@@ -2500,14 +2499,11 @@ float* Frame::GetImageData(int z, int stokes) {
     if (stokes == CURRENT_STOKES) {
         stokes = _stokes_index;
     }
-    return _image_cache->GetChannelImageCache(z, stokes, _width, _height);
+    return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelImageCache(z, stokes, _width, _height) : nullptr;
 }
 
 float Frame::MemorySize() const {
-    if (_image_cache->Type() == ImageCacheType::Cube) {
-        return MemorySizeOfWholeImage();
-    }
-    return 0;
+    return _image_cache->Type() == ImageCacheType::Cube ? MemorySizeOfWholeImage() : 0;
 }
 
 float Frame::MemorySizeOfWholeImage() const {
@@ -2536,7 +2532,13 @@ bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, c
 }
 
 float Frame::GetValue(int x, int y, int z, int stokes) {
-    return _image_cache->GetValue(x, y, z, stokes, _width, _height);
+    return ImageCacheAvailable(z, stokes) ? _image_cache->GetValue(x, y, z, stokes, _width, _height) : FLOAT_NAN;
+}
+
+bool Frame::ImageCacheAvailable(int z, int stokes) const {
+    return (_image_cache->Type() == ImageCacheType::Channel && z == _z_index && stokes == _stokes_index &&
+               _image_cache->ChannelImageCacheValid()) ||
+           _image_cache->Type() == ImageCacheType::Cube;
 }
 
 } // namespace carta

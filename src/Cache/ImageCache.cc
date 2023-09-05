@@ -37,10 +37,6 @@ bool ImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stok
     return false;
 }
 
-bool ImageCache::DataExist() const {
-    return false;
-}
-
 bool ImageCache::DataExist(int stokes) const {
     return false;
 }

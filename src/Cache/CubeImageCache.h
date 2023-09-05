@@ -34,9 +34,6 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
     float GetValue(int x, int y, int z, int stokes, size_t width, size_t height) override;
 
-    bool DataExist() const override {
-        return !_stokes_data.empty();
-    }
     bool DataExist(int stokes) const override {
         return _stokes_data.count(stokes);
     }

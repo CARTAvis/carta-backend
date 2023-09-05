@@ -276,6 +276,7 @@ protected:
     // For image cache
     float* GetImageData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
     float GetValue(int x, int y, int z, int stokes);
+    bool ImageCacheAvailable(int z, int stokes) const;
 
     // Setup
     uint32_t _session_id;
