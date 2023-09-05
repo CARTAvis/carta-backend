@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-//# Session.h: representation of a client connected to a server; processes requests from frontend
+// # Session.h: representation of a client connected to a server; processes requests from frontend
 
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
@@ -79,7 +79,7 @@ public:
     bool OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
         CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, int animation_id = 0, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
@@ -140,7 +140,7 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
-    void ExecuteAnimationFrameInner();
+    void ExecuteAnimationFrameInner(int animation_id);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
     int CurrentFlowWindowSize() {
@@ -200,6 +200,10 @@ public:
         _exit_when_all_sessions_closed = true;
     }
     static void SetInitExitTimeout(int secs);
+
+    static void SetControllerDeploymentFlag(bool controller_deployment) {
+        _controller_deployment = controller_deployment;
+    }
 
     inline uint32_t GetId() {
         return _id;
@@ -329,11 +333,13 @@ protected:
     SessionContext _animation_context;
 
     std::atomic<int> _ref_count;
+    int _sync_id;
     int _animation_id;
     bool _connected;
     static volatile int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
+    static bool _controller_deployment;
     static std::thread* _animation_thread;
 
     // Callbacks for scripting responses from the frontend
