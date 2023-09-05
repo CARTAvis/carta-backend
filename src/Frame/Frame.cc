@@ -408,7 +408,7 @@ bool Frame::FillImageCache(int stokes) {
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(required_z), stokes);
         auto image_data_size = stokes_slicer.slicer.length().product();
         auto* image_data_ptr = _image_cache->AllocateData(stokes, image_data_size);
-        if (image_data_ptr && !GetSlicerData(stokes_slicer, image_data_ptr)) {
+        if (!image_data_ptr || !GetSlicerData(stokes_slicer, image_data_ptr)) {
             spdlog::error("Session {}: {}", _session_id, "Loading image cache failed (z: {}, stokes: {})", required_z, stokes);
             return false;
         }
@@ -420,7 +420,7 @@ bool Frame::FillImageCache(int stokes) {
 
     if (_image_cache->Type() == ImageCacheType::Cube) {
         // Fill cube image cache
-        if (!_image_cache->DataExist(stokes)) {
+        if (!_image_cache->DataExist(stokes) && !IsComputedStokes(stokes)) {
             Timer t;
             if (!load_image_data_to_cache(ALL_Z)) {
                 return false;
