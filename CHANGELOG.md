@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.0-rc.0]
 
 ### Changed
 * Support animation playback with matched images in multi-panel view ([#1860](https://github.com/CARTAvis/carta-frontend/issues/1860)).
@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed the lack of mask for LEL images ([#1291](https://github.com/CARTAvis/carta-backend/issues/1291)).
 * Fixed file path to save generated image ([#1252](https://github.com/CARTAvis/carta-backend/issues/1252)).
 * Fixed missing tiles issue ([#1282](https://github.com/CARTAvis/carta-backend/issues/1282)).
+* Fixed the crash of loading JCMT-SCUBA2 FITS images ([#1301](https://github.com/CARTAvis/carta-backend/issues/1301)).
+* Fixed updating the PV preview for a matched image ([#1304](https://github.com/CARTAvis/carta-backend/issues/1304)).
 
 ## [4.0.0-beta.1]
 
@@ -40,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Removed CASA CRTF parser for performance and annotation region support ([#1219](https://github.com/CARTAvis/carta-backend/issues/1219)).
+* Adjusted image fitting error calculation considering correlated noise; added integrated flux information in the fitting result ([#1277](https://github.com/CARTAvis/carta-backend/issues/1277)).
 
 ### Fixed
 * Fixed issues with AIPS velocity axis by restoring previous casacore headers ([#1771](https://github.com/CARTAvis/carta-frontend/issues/1771)).

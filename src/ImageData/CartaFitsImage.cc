@@ -460,6 +460,14 @@ void CartaFitsImage::SetFitsHeaderStrings(int nheaders, const std::string& heade
         _all_header_strings(i) = hstring;
 
         if (!hstring.startsWith("HISTORY")) {
+            if (hstring.startsWith("BUNIT")) {
+                // Handle the expression of arcsec^2 for JCMT-SCUBA2 header
+                std::string arcsec2_expr(" s**0.5");
+                size_t start_pos = hstring.find(arcsec2_expr);
+                if (start_pos != std::string::npos) {
+                    hstring.replace(start_pos, arcsec2_expr.length(), "/arcsec^2");
+                }
+            }
             no_history_strings.push_back(hstring);
         }
 

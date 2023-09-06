@@ -84,7 +84,7 @@ public:
     bool CalculatePvImage(const CARTA::PvRequest& pv_request, std::shared_ptr<Frame>& frame, GeneratorProgressCallback progress_callback,
         CARTA::PvResponse& pv_response, GeneratedImage& pv_image);
     // Update PV preview image when PV cut region (region_id) changes
-    bool UpdatePvPreviewRegion(int file_id, int region_id, RegionState& region_state);
+    bool UpdatePvPreviewRegion(int region_id, RegionState& region_state);
     bool UpdatePvPreviewImage(
         int file_id, int region_id, bool quick_update, std::function<void(CARTA::PvResponse& pv_response, GeneratedImage& pv_image)> cb);
     void StopPvCalc(int file_id);
