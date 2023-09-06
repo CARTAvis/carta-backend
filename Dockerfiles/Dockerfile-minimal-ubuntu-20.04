@@ -27,6 +27,7 @@ RUN \
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
 
+ENV CARTA_DOCKER_DEPLOYMENT=1
 USER cartauser
 WORKDIR /home/cartauser
 
