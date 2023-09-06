@@ -25,7 +25,7 @@ ImageFitter::ImageFitter() {
 }
 
 bool ImageFitter::FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
-    const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
+    std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
     CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
     GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
@@ -48,7 +48,33 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     _progress_callback = progress_callback;
 
     CalculateNanNumAndStd();
-    SetInitialValues(initial_values, background_offset, fixed_params);
+    success = SetInitialValues(initial_values, background_offset, fixed_params);
+
+    // TODO: allow multiple components with invalid initial value
+    if (!success && _num_components > 1) {
+        fitting_response.set_message("invalid initial value");
+        fitting_response.set_success(success);
+
+        gsl_vector_free(_fit_values);
+        gsl_vector_free(_fit_errors);
+        return false;
+    }
+
+    if (!success) {
+        success = CalculateInitialValues(initial_values);
+        if (success) {
+            success = SetInitialValues(initial_values, background_offset, fixed_params);
+        }
+    }
+
+    if (!success) {
+        fitting_response.set_message("error in setting initial values");
+        fitting_response.set_success(success);
+
+        gsl_vector_free(_fit_values);
+        gsl_vector_free(_fit_errors);
+        return false;
+    }
 
     // avoid SolveSystem crashes with insufficient data points
     if (_fit_data.n_notnan < _fit_values->size) {
@@ -145,7 +171,7 @@ void ImageFitter::CalculateNanNumAndStd() {
     spdlog::debug("MAD = {}", _image_std);
 }
 
-void ImageFitter::SetInitialValues(
+bool ImageFitter::SetInitialValues(
     const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params) {
     _num_components = initial_values.size();
     _fit_data.initial_values.clear();
@@ -168,6 +194,11 @@ void ImageFitter::SetInitialValues(
         _fit_values = gsl_vector_alloc(p);
         _fit_errors = gsl_vector_alloc(p);
         for (size_t i = 0; i < p - 1; i++) {
+            if (isnan(_fit_data.initial_values[i])) {
+                spdlog::info("Found invalid value in the provided initial values.");
+                return false;
+            }
+
             _fit_data.fit_values_indexes.push_back(i);
             gsl_vector_set(_fit_values, i, _fit_data.initial_values[i]);
         }
@@ -178,6 +209,11 @@ void ImageFitter::SetInitialValues(
         _fit_errors = gsl_vector_alloc(p);
         size_t iter = 0;
         for (size_t i = 0; i < fixed_params.size(); i++) {
+            if (isnan(_fit_data.initial_values[i])) {
+                spdlog::info("Found invalid value in the provided initial values.");
+                return false;
+            }
+
             if (!fixed_params[i]) {
                 _fit_data.fit_values_indexes.push_back(iter);
                 gsl_vector_set(_fit_values, iter, _fit_data.initial_values[i]);
@@ -188,6 +224,13 @@ void ImageFitter::SetInitialValues(
         }
     }
     _fdf.p = p;
+
+    return true;
+}
+
+bool ImageFitter::CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values) {
+    // TODO: generate intial values
+    return false;
 }
 
 int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {

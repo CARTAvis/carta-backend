@@ -83,7 +83,7 @@ public:
      * @return Whether the fitting is successful
      */
     bool FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
-        const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
+        std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
         CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
         GeneratorProgressCallback progress_callback, size_t offset_x = 0, size_t offset_y = 0);
     /**
@@ -147,9 +147,16 @@ private:
      * @param initial_values Initial fitting parameters
      * @param background_offset Background offset of the image
      * @param fixed_params Whether the fitting parameters are fixed
+     * @return Whether all parameters are valid
      */
-    void SetInitialValues(
+    bool SetInitialValues(
         const std::vector<CARTA::GaussianComponent>& initial_values, double background_offset, const std::vector<bool>& fixed_params);
+    /**
+     * @brief Calculate initial fitting parameters from the provided image data.
+     * @param initial_values Vector to store the resulting initial fitting parameters
+     * @return Whether the process if successful
+     */
+    bool CalculateInitialValues(std::vector<CARTA::GaussianComponent>& initial_values);
     /**
      * @brief Main function for the multiple Gaussian image fitting.
      * @param solver The type of solver to use
