@@ -104,13 +104,18 @@ int main(int argc, char* argv[]) {
         auto carta_url_prefix = getenv("CARTA_URL_PREFIX");
         std::string url_prefix = "";
         if (carta_url_prefix && carta_url_prefix[0]) {
+            if (int(carta_url_prefix[0]) == 47) {
+                spdlog::critical("Custom url prefix is not allowed to start with '/'");
+                carta::logger::FlushLogFile();
+                return 1;
+            } 
             url_prefix = fmt::format("/{}", carta_url_prefix);
-            for (auto it = url_prefix.begin() + 1; it < url_prefix.end(); it++) {
+            for (auto it = url_prefix.begin(); it < url_prefix.end(); it++) {
                 int iit = int(*it);
                 if ((iit < 48 || (iit < 65 && iit > 57) || (iit > 90 && iit < 97) || iit > 122) && // [0-9], [A-Z], [a-z]
-                    (iit != 43 && iit != 45 && iit != 64 && iit != 95) // +, -, @, _
+                    (iit != 43 && iit != 45 && iit != 47 && iit != 64 && iit != 95) // +, -, /, @, _
                     ) {
-                    spdlog::critical("Custom prefix must be the following characters: [0-9], [A-Z], [a-z], +, -, @, _");
+                    spdlog::critical("Custom prefix must be the following characters: [0-9], [A-Z], [a-z], +, -, /, @, _");
                     carta::logger::FlushLogFile();
                     return 1;
                 }
