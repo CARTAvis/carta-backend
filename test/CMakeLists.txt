@@ -79,7 +79,6 @@ add_executable(${BINARY} ${SOURCES} ${TEST_SOURCES})
 # Add dependencies of third-party
 add_dependencies(${BINARY} uWebSockets-build)
 add_dependencies(${BINARY} uSockets-build)
-target_link_libraries(${BINARY} ${USOCKETS_LINK_LIB})
 
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY}
