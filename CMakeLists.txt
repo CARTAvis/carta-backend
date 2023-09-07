@@ -257,8 +257,8 @@ add_definitions(-DHAVE_HDF5 -DPUGIXML_COMPACT)
 add_executable(carta_backend ${SOURCE_FILES})
 
 # Add dependencies of third-party
-add_dependencies(carta_backend uWebSockets-build)
 add_dependencies(carta_backend uSockets-build)
+add_dependencies(carta_backend uWebSockets-build)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(REMOVE_ITEM LINK_LIBS uuid)

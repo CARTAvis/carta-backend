@@ -1,18 +1,6 @@
 macro(install_uWebSockets)
     INCLUDE(ExternalProject)
 
-    # Build uWebSockets project
-    SET(UWEBSOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uWebSockets)
-
-    ExternalProject_Add(uWebSockets-build
-            URL               https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.46.0.zip
-            SOURCE_DIR        ${UWEBSOCKETS_SOURCE_DIR}
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND     ""
-            INSTALL_COMMAND   "")
-
-    INCLUDE_DIRECTORIES(${UWEBSOCKETS_SOURCE_DIR}/src)
-
     # Build uSocket project
     SET(USOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uSockets)
 
@@ -27,6 +15,18 @@ macro(install_uWebSockets)
 
     ADD_LIBRARY(uSockets STATIC IMPORTED)
     SET_TARGET_PROPERTIES(uSockets PROPERTIES IMPORTED_LOCATION ${USOCKETS_SOURCE_DIR}/uSockets.a)
+
+    # Build uWebSockets project
+    SET(UWEBSOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uWebSockets)
+
+    ExternalProject_Add(uWebSockets-build
+            URL               https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.46.0.zip
+            SOURCE_DIR        ${UWEBSOCKETS_SOURCE_DIR}
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND     ""
+            INSTALL_COMMAND   "")
+
+    INCLUDE_DIRECTORIES(${UWEBSOCKETS_SOURCE_DIR}/src)
 
 endmacro()
 
