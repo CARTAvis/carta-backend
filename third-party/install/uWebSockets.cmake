@@ -1,22 +1,25 @@
 macro(install_uWebSockets)
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLIBUS_NO_SSL")
+    # Build uWebSockets project
+    SET(UWEBSOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uWebSockets)
 
-    include_directories(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src)
-    include_directories(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/src)
+    INCLUDE_DIRECTORIES(${UWEBSOCKETS_SOURCE_DIR}/src)
 
-    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src USOCKETS_FILES)
-    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/crypto USOCKETS_CRYPTO_FILES)
-    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing USOCKETS_EVENTING_FILES)
-    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/internal USOCKETS_INTERNAL_FILES)
-    aux_source_directory(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/io_uring USOCKETS_IO_URING_FILES)
+    # Build uSocket project
+    SET(USOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uSockets)
 
-    add_library(uSockets
-            ${USOCKETS_FILES}
-            ${USOCKETS_CRYPTO_FILES}
-            ${USOCKETS_EVENTING_FILES}
-            ${USOCKETS_INTERNAL_FILES}
-            ${USOCKETS_IO_URING_FILES})
+    INCLUDE(ExternalProject)
+
+    ExternalProject_Add(uSockets-build
+            URL               https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.6.zip
+            SOURCE_DIR        ${USOCKETS_SOURCE_DIR}
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND     cd ${USOCKETS_SOURCE_DIR} && make
+            INSTALL_COMMAND   "")
+
+    INCLUDE_DIRECTORIES(${USOCKETS_SOURCE_DIR}/src)
+
+    SET(USOCKETS_LINK_LIB ${USOCKETS_SOURCE_DIR}/uSockets.a)
 
 endmacro()
 
