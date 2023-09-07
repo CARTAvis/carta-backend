@@ -77,6 +77,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/image-generator/make_image.
 add_executable(${BINARY} ${SOURCES} ${TEST_SOURCES})
 
 # Add dependencies of third-party
+add_dependencies(${BINARY} uWebSockets-build)
 add_dependencies(${BINARY} uSockets-build)
 target_link_libraries(${BINARY} ${USOCKETS_LINK_LIB})
 

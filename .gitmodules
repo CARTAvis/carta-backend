@@ -22,7 +22,3 @@
 [submodule "docs/doxygen-awesome-css"]
 	path = docs/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
-[submodule "third-party/uWebSockets"]
-	path = third-party/uWebSockets
-	url = https://github.com/CARTAvis/uWebSockets.git
-	branch = carta/remove_unused_submodules
