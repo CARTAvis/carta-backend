@@ -6,14 +6,14 @@ macro(install_uWebSockets)
 
     FetchContent_Declare(
             uSockets-build
-            URL        https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.6.zip
+            URL https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.6.zip
             SOURCE_DIR ${USOCKETS_SOURCE_DIR}
     )
 
     FetchContent_GetProperties(uSockets-build)
     if (NOT uSockets-build_POPULATED)
         FetchContent_Populate(uSockets-build)
-    endif()
+    endif ()
 
     INCLUDE_DIRECTORIES(${USOCKETS_SOURCE_DIR}/src)
 
@@ -37,14 +37,14 @@ macro(install_uWebSockets)
 
     FetchContent_Declare(
             uWebSockets-build
-            URL        https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.46.0.zip
+            URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.46.0.zip
             SOURCE_DIR ${UWEBSOCKETS_SOURCE_DIR}
     )
 
     FetchContent_GetProperties(uWebSockets-build)
     if (NOT uWebSockets-build_POPULATED)
         FetchContent_Populate(uWebSockets-build)
-    endif()
+    endif ()
 
     INCLUDE_DIRECTORIES(${UWEBSOCKETS_SOURCE_DIR}/src)
 
