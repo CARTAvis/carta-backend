@@ -75,11 +75,6 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DI
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/image-generator/make_image.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 add_executable(${BINARY} ${SOURCES} ${TEST_SOURCES})
-
-# Add dependencies of third-party
-add_dependencies(${BINARY} uSockets-build)
-add_dependencies(${BINARY} uWebSockets-build)
-
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY}
         ${TEST_COMMON_LIBS}
