@@ -4,7 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#define SQ_FWHM_TO_SIGMA 1 / 8 / log(2)
+#define SQ_FWHM_TO_SIGMA 1.0 / 8.0 / log(2.0)
 #define DEG_TO_RAD M_PI / 180.0
 
 #include "ImageFitter.h"
@@ -24,12 +24,14 @@ ImageFitter::ImageFitter() {
     gsl_set_error_handler(&ErrorHandler);
 }
 
-bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std::vector<CARTA::GaussianComponent>& initial_values,
-    const std::vector<bool>& fixed_params, double background_offset, CARTA::FittingSolverType solver, bool create_model_image,
-    bool create_residual_image, CARTA::FittingResponse& fitting_response, GeneratorProgressCallback progress_callback, size_t offset_x,
-    size_t offset_y) {
+bool ImageFitter::FitImage(size_t width, size_t height, float* image, double beam_size, string unit,
+    const std::vector<CARTA::GaussianComponent>& initial_values, const std::vector<bool>& fixed_params, double background_offset,
+    CARTA::FittingSolverType solver, bool create_model_image, bool create_residual_image, CARTA::FittingResponse& fitting_response,
+    GeneratorProgressCallback progress_callback, size_t offset_x, size_t offset_y) {
     bool success = false;
     _fit_data.stop_fitting = false;
+    _integrated_flux_values.clear();
+    _integrated_flux_errors.clear();
     _model_data.clear();
     _residual_data.clear();
 
@@ -39,6 +41,8 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
     _fit_data.offset_x = offset_x;
     _fit_data.offset_y = offset_y;
     _fdf.n = _fit_data.n;
+    _beam_size = beam_size;
+    _unit = unit;
     _create_model_data = create_model_image;
     _create_residual_data = create_residual_image;
     _progress_callback = progress_callback;
@@ -84,6 +88,13 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
                 *fitting_response.mutable_result_errors(i) = GetGaussianComponent(errors);
             }
 
+            if (_integrated_flux_values.size() == _num_components && _integrated_flux_errors.size() == _num_components) {
+                for (size_t i = 0; i < _num_components; i++) {
+                    fitting_response.add_integrated_flux_values(_integrated_flux_values[i]);
+                    fitting_response.add_integrated_flux_errors(_integrated_flux_errors[i]);
+                }
+            }
+
             size_t last_index = _fit_data.fit_values_indexes.size() - 1;
             int background_offset_index = _fit_data.fit_values_indexes[last_index];
             double background_offset =
@@ -91,6 +102,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, const std:
             double background_offset_error = background_offset_index < 0 ? 0.0 : gsl_vector_get(_fit_errors, background_offset_index);
             fitting_response.set_offset_value(background_offset);
             fitting_response.set_offset_error(background_offset_error);
+
             fitting_response.set_log(GetLog());
         }
     }
@@ -209,7 +221,12 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
     gsl_vector* y = gsl_multifit_nlinear_position(work);
     gsl_matrix* covar = gsl_matrix_alloc(p, p);
 
-    gsl_multifit_nlinear_init(_fit_values, &_fdf, work);
+    gsl_multifit_nlinear_init(_fit_values, &_fdf, work); // work-around for filling in f
+    _image_std = GetMedianAbsDeviation(_fdf.n, f->data);
+
+    gsl_vector* weights = gsl_vector_alloc(n);
+    gsl_vector_set_all(weights, 1 / _image_std / _image_std);
+    gsl_multifit_nlinear_winit(_fit_values, weights, &_fdf, work);
     gsl_blas_ddot(f, f, &_fit_status.chisq0);
 
     GeneratorProgressCallback iteration_progress_callback = [&](size_t iter) {
@@ -223,24 +240,111 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
         gsl_multifit_nlinear_rcond(&_fit_status.rcond, work);
         gsl_vector_memcpy(_fit_values, y);
 
-        gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
-        gsl_multifit_nlinear_covar(jac, 0.0, covar);
-        const double c = sqrt(_fit_status.chisq / (_fit_data.n_notnan - p));
-        for (size_t i = 0; i < p; i++) {
-            gsl_vector_set(_fit_errors, i, c * sqrt(gsl_matrix_get(covar, i, i)));
+        CalculateErrors();
+
+        size_t last_index = _fit_data.fit_values_indexes.size() - 1;
+        int background_offset_index = _fit_data.fit_values_indexes[last_index];
+        if (background_offset_index >= 0) {
+            gsl_matrix* jac = gsl_multifit_nlinear_jac(work);
+            gsl_multifit_nlinear_covar(jac, 0.0, covar);
+            const double c = GSL_MAX_DBL(1, sqrt(_fit_status.chisq / (_fit_data.n_notnan - p)));
+            gsl_vector_set(
+                _fit_errors, background_offset_index, c * sqrt(gsl_matrix_get(covar, background_offset_index, background_offset_index)));
         }
 
         _fit_status.method = fmt::format("{}/{}", gsl_multifit_nlinear_name(work), gsl_multifit_nlinear_trs_name(work));
         _fit_status.num_iter = gsl_multifit_nlinear_niter(work);
+        _fit_status.chisq0 *= _image_std * _image_std;
+        _fit_status.chisq *= _image_std * _image_std;
 
         if (!status || (status == GSL_EMAXITER && _fit_status.num_iter == _max_iter)) {
+            gsl_vector_scale(f, _image_std);
             CalculateImageData(f);
         }
     }
 
     gsl_multifit_nlinear_free(work);
+    gsl_vector_free(weights);
     gsl_matrix_free(covar);
     return status;
+}
+
+void ImageFitter::CalculateErrors() {
+    if (_unit == "Jy/beam" || _unit == "Jy/pixel") {
+        _integrated_flux_values.resize(_num_components);
+        _integrated_flux_errors.resize(_num_components);
+    }
+
+    for (size_t i = 0; i < _num_components; i++) {
+        double center_x, center_y, amp, fwhm_x, fwhm_y, pa;
+        std::tie(center_x, center_y, amp, fwhm_x, fwhm_y, pa) =
+            GetGaussianParams(_fit_values, i * 6, _fit_data.fit_values_indexes, _fit_data.initial_values, 0, 0);
+        double center_x_err, center_y_err, amp_err, fwhm_x_err, fwhm_y_err, pa_err;
+
+        if (_beam_size > 0) {
+            const double a = fwhm_x * fwhm_y / 4 / _beam_size / _beam_size * amp * amp / _image_std / _image_std;
+            const double b = 1 + (_beam_size / fwhm_x) * (_beam_size / fwhm_x);
+            const double c = 1 + (_beam_size / fwhm_y) * (_beam_size / fwhm_y);
+            const double rho_square_1 = a * pow(b, 3.0 / 2.0) * pow(c, 3.0 / 2.0); // for amp
+            const double rho_square_2 = a * pow(b, 5.0 / 2.0) * pow(c, 1.0 / 2.0); // for center x, fwhm x
+            const double rho_square_3 = a * pow(b, 1.0 / 2.0) * pow(c, 5.0 / 2.0); // for center y, fwhm y, pa
+
+            const double sq_center_major_err = fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_2;
+            const double sq_center_minor_err = fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square_3;
+            center_x_err =
+                sqrt(sq_center_major_err * pow(sin(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(cos(pa * DEG_TO_RAD), 2.0));
+            center_y_err =
+                sqrt(sq_center_major_err * pow(cos(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(sin(pa * DEG_TO_RAD), 2.0));
+            amp_err = sqrt(amp * amp * 2.0 / rho_square_1);
+            fwhm_x_err = sqrt(fwhm_x * fwhm_x * 2.0 / rho_square_2);
+            fwhm_y_err = sqrt(fwhm_y * fwhm_y * 2.0 / rho_square_3);
+            const double tmp = fwhm_x * fwhm_y / (fwhm_x * fwhm_x - fwhm_y * fwhm_y);
+            pa_err = sqrt(4.0 * tmp * tmp / rho_square_3) * 180.0 / M_PI;
+
+            if (_unit == "Jy/beam") {
+                const double beam = M_PI * _beam_size * _beam_size / 4.0 / log(2.0);
+                const double flux = 2 * M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp / beam;
+                _integrated_flux_values[i] = flux;
+                _integrated_flux_errors[i] =
+                    sqrt(flux * flux *
+                         (2.0 / rho_square_1 + (_beam_size * _beam_size / fwhm_x / fwhm_y) * (2.0 / rho_square_2 + 2.0 / rho_square_3)));
+            }
+        } else {
+            const double rho_square = M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp * amp / _image_std / _image_std;
+
+            const double sq_center_major_err = fwhm_x * fwhm_x * SQ_FWHM_TO_SIGMA * 2.0 / rho_square;
+            const double sq_center_minor_err = fwhm_y * fwhm_y * SQ_FWHM_TO_SIGMA * 2.0 / rho_square;
+            center_x_err =
+                sqrt(sq_center_major_err * pow(sin(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(cos(pa * DEG_TO_RAD), 2.0));
+            center_y_err =
+                sqrt(sq_center_major_err * pow(cos(pa * DEG_TO_RAD), 2.0) + sq_center_minor_err * pow(sin(pa * DEG_TO_RAD), 2.0));
+            amp_err = sqrt(amp * amp * 2.0 / rho_square);
+            fwhm_x_err = sqrt(fwhm_x * fwhm_x * 2.0 / rho_square);
+            fwhm_y_err = sqrt(fwhm_y * fwhm_y * 2.0 / rho_square);
+            const double tmp = fwhm_x * fwhm_y / (fwhm_x * fwhm_x - fwhm_y * fwhm_y);
+            pa_err = sqrt(4.0 * tmp * tmp / rho_square) * 180.0 / M_PI;
+
+            if (_unit == "Jy/pixel") {
+                const double flux = 2 * M_PI * fwhm_x * fwhm_y * SQ_FWHM_TO_SIGMA * amp;
+                _integrated_flux_values[i] = flux;
+                _integrated_flux_errors[i] = sqrt(flux * flux * 2.0 / rho_square);
+            }
+        }
+
+        auto setError = [&](int j, double value) {
+            int fit_values_index = _fit_data.fit_values_indexes[i * 6 + j];
+            if (fit_values_index >= 0) {
+                gsl_vector_set(_fit_errors, fit_values_index, value);
+            }
+        };
+
+        setError(0, center_x_err);
+        setError(1, center_y_err);
+        setError(2, amp_err);
+        setError(3, fwhm_x_err);
+        setError(4, fwhm_y_err);
+        setError(5, pa_err);
+    }
 }
 
 void ImageFitter::CalculateImageData(const gsl_vector* residual) {
@@ -415,4 +519,14 @@ CARTA::GaussianComponent ImageFitter::GetGaussianComponent(std::tuple<double, do
     auto fwhm = Message::DoublePoint(fwhm_x, fwhm_y);
     auto component = Message::GaussianComponent(center, amp, fwhm, pa);
     return component;
+}
+
+double ImageFitter::GetMedianAbsDeviation(const size_t n, double x[]) {
+    double* work = (double*)malloc(n * sizeof(double));
+    double mad;
+
+    mad = gsl_stats_mad(x, 1, n, work);
+
+    free(work);
+    return mad;
 }

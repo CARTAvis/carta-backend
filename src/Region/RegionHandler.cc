@@ -709,7 +709,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             // Do not attempt to get lock for removing temporary box region.
             std::unique_lock pv_cut_lock(_pv_cut_mutex);
             for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
-                if ((*it).second->HasFileRegionIds(ALL_FILES, region_id)) {
+                if ((*it).second->HasPreviewFileRegionIds(ALL_FILES, region_id)) {
                     it = _pv_preview_cuts.erase(it);
                 } else {
                     ++it;
@@ -804,7 +804,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
 
         std::unique_lock pv_cut_lock(_pv_cut_mutex);
         for (auto it = _pv_preview_cuts.begin(); it != _pv_preview_cuts.end();) {
-            if ((*it).second->HasFileRegionIds(file_id, ALL_REGIONS)) {
+            if ((*it).second->HasPreviewFileRegionIds(file_id, ALL_REGIONS)) {
                 it = _pv_preview_cuts.erase(it);
             } else {
                 ++it;
@@ -1050,7 +1050,8 @@ bool RegionHandler::CalculatePvPreviewImage(int file_id, int region_id, int line
     // Save cut and cube settings for updates, including current pv cut region state
     RegionState region_state = GetRegion(region_id)->GetRegionState();
     auto stokes = frame->CurrentStokes();
-    PreviewCutParameters cut_parameters(file_id, region_id, line_width, reverse, compression, image_quality, animation_quality);
+    PreviewCutParameters cut_parameters(
+        file_id, region_id, line_width, reverse, compression, image_quality, animation_quality, region_state.reference_file_id);
     PreviewCubeParameters cube_parameters(file_id, preview_region_id, spectral_range, rebin_xy, rebin_z, stokes, preview_region_state);
 
     // Update cut and/or cube settings for existing preview ID.
@@ -1409,7 +1410,7 @@ bool RegionHandler::CalculatePvImage(int file_id, int region_id, int width, Axis
     return pv_success;
 }
 
-bool RegionHandler::UpdatePvPreviewRegion(int file_id, int region_id, RegionState& region_state) {
+bool RegionHandler::UpdatePvPreviewRegion(int region_id, RegionState& region_state) {
     // Set region state in PvPreviewCut, if region is pv cut.  Returns this status.
     if (region_state.type != CARTA::RegionType::LINE) {
         return false;
@@ -1417,7 +1418,7 @@ bool RegionHandler::UpdatePvPreviewRegion(int file_id, int region_id, RegionStat
     std::shared_lock pv_cut_lock(_pv_cut_mutex);
     bool is_preview_cut(false);
     for (auto& preview_cut : _pv_preview_cuts) {
-        if (preview_cut.second->HasFileRegionIds(file_id, region_id)) {
+        if (preview_cut.second->HasPreviewCutRegion(region_id, region_state.reference_file_id)) {
             preview_cut.second->AddRegion(region_state);
             is_preview_cut = true;
         }
@@ -1436,7 +1437,7 @@ bool RegionHandler::UpdatePvPreviewImage(
     for (auto& pv_preview_cut : _pv_preview_cuts) {
         // Find and update pv preview settings with input file and region
         auto preview_cut = pv_preview_cut.second;
-        if (preview_cut->HasFileRegionIds(file_id, region_id)) {
+        if (preview_cut->HasPreviewFileRegionIds(file_id, region_id)) {
             auto preview_id = pv_preview_cut.first;
 
             if (_pv_preview_cubes.find(preview_id) == _pv_preview_cubes.end()) {

@@ -24,6 +24,7 @@ RUN \
 EXPOSE 3002
 
 ENV HOME /root
+ENV CARTA_DOCKER_DEPLOYMENT=1
 WORKDIR /root
 
 # overwrite this with 'CMD []' in a dependent Dockerfile

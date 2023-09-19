@@ -24,25 +24,32 @@ struct PreviewCutParameters {
     CARTA::CompressionType compression;
     float image_quality;
     float animation_quality;
+    int region_reference_file;
 
     PreviewCutParameters() : file_id(-1), region_id(-1) {}
     PreviewCutParameters(int file_id_, int region_id_, int width_, bool reverse_, CARTA::CompressionType compression_, float image_quality_,
-        float animation_quality_)
+        float animation_quality_, int reference_file_id_)
         : file_id(file_id_),
           region_id(region_id_),
           width(width_),
           reverse(reverse_),
           compression(compression_),
           image_quality(image_quality_),
-          animation_quality(animation_quality_) {}
+          animation_quality(animation_quality_),
+          region_reference_file(reference_file_id_) {}
 
     bool operator==(const PreviewCutParameters& other) {
-        return (HasFileRegionIds(other.file_id, other.region_id) && width == other.width && reverse == other.reverse &&
-                compression == other.compression && image_quality == other.image_quality && animation_quality == other.animation_quality);
+        return ((other.file_id == file_id) && (region_id == other.region_id) && (width == other.width) && (reverse == other.reverse) &&
+                (compression == other.compression) && (image_quality == other.image_quality) &&
+                (animation_quality == other.animation_quality) && (region_reference_file == other.region_reference_file));
     }
 
-    bool HasFileRegionIds(int file_id_, int region_id_) {
+    bool HasPreviewFileRegionIds(int file_id_, int region_id_) {
         return ((file_id_ == ALL_FILES || file_id_ == file_id) && (region_id_ == ALL_REGIONS || region_id_ == region_id));
+    }
+
+    bool HasPreviewCutRegion(int region_id_, int region_reference_file_) {
+        return ((region_id_ == region_id) && (region_reference_file_ == region_reference_file));
     }
 };
 
@@ -53,7 +60,8 @@ public:
 
     // Preview settings
     bool HasSameParameters(const PreviewCutParameters& parameters);
-    bool HasFileRegionIds(int file_id, int region_id);
+    bool HasPreviewFileRegionIds(int file_id, int region_id);
+    bool HasPreviewCutRegion(int region_id, int region_reference_file);
     int GetWidth();
     int GetReverse();
 
