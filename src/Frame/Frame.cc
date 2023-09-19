@@ -1235,23 +1235,13 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                 }
 
                 auto get_spatial_profile_from_cache = [&](int required_stokes) {
-                    profile.reserve(end - start);
-
-                    if (config.coordinate().back() == 'x') {
+                    if (ImageCacheAvailable(_z_index, required_stokes)) {
                         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-                        for (unsigned int j = start; j < end; ++j) {
-                            profile.push_back(GetValue(j, y, _z_index, required_stokes));
-                        }
+                        _image_cache->LoadCachedPointSpatialData(
+                            profile, config.coordinate().back(), point, start, end, _z_index, required_stokes, _width, _height);
                         cache_lock.release();
-                    } else if (config.coordinate().back() == 'y') {
-                        queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-                        for (unsigned int j = start; j < end; ++j) {
-                            profile.push_back(GetValue(x, j, _z_index, required_stokes));
-                        }
-                        cache_lock.release();
+                        have_profile = true;
                     }
-
-                    have_profile = true;
                 };
 
                 if (is_current_stokes) {

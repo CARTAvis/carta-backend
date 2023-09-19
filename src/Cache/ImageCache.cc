@@ -37,6 +37,22 @@ bool ImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stok
     return false;
 }
 
+void ImageCache::LoadCachedPointSpatialData(
+    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes, size_t width, size_t height) {
+    profile.reserve(end - start);
+    if (config == 'x') {
+        for (unsigned int i = start; i < end; ++i) {
+            profile.push_back(GetValue(i, point.y, z, stokes, width, height));
+        }
+    } else if (config == 'y') {
+        for (unsigned int i = start; i < end; ++i) {
+            profile.push_back(GetValue(point.x, i, z, stokes, width, height));
+        }
+    } else {
+        spdlog::error("Unknown point spatial profile config: {}", config);
+    }
+}
+
 bool ImageCache::DataExist(int stokes) const {
     return false;
 }
@@ -44,9 +60,5 @@ bool ImageCache::DataExist(int stokes) const {
 void ImageCache::ValidateChannelImageCache() {}
 
 void ImageCache::InvalidateChannelImageCache() {}
-
-bool ImageCache::ChannelImageCacheValid() const {
-    return true;
-}
 
 } // namespace carta

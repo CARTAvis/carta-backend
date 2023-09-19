@@ -35,11 +35,14 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& profiles);
     virtual float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
 
+    virtual void LoadCachedPointSpatialData(
+        std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes, size_t width, size_t height);
+
     virtual bool DataExist(int stokes) const;
 
     virtual void ValidateChannelImageCache();
     virtual void InvalidateChannelImageCache();
-    virtual bool ChannelImageCacheValid() const;
+    virtual bool ChannelImageCacheValid() const = 0;
 
     ImageCacheType Type() const {
         return _type;

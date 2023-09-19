@@ -38,6 +38,10 @@ public:
         return _stokes_data.count(stokes);
     }
 
+    bool ChannelImageCacheValid() const override {
+        return true;
+    }
+
 private:
     // Current channel of computed stokes image cache
     int _computed_stokes_channel;

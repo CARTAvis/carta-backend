@@ -174,6 +174,7 @@ Session::~Session() {
             setitimer(ITIMER_REAL, &itimer, nullptr);
         }
     }
+    DeleteFrame(ALL_FILES);
     logger::FlushLogFile();
 }
 

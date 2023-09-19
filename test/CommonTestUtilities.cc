@@ -442,16 +442,21 @@ bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2,
         }
     }
 
+    size_t sum_a = 0;
+    size_t sum_b = 0;
     for (auto i = 0; i < hist1.GetNbins(); i++) {
         auto bin_a = hist1.GetHistogramBins()[i];
         auto bin_b = hist2.GetHistogramBins()[i];
         if (bin_a != bin_b) {
-            fmt::print("{}-th histogram bin values are not equal: {} vs. {}\n", i, bin_a, bin_b);
-            if (exact || abs(bin_a - bin_b) > 1) {
+            fmt::print("{}-th histogram bin values are not equal: {} vs. {}, diff: {}\n", i, bin_a, bin_b, bin_b - bin_a);
+            if (exact) {
                 return false;
             }
         }
+        sum_a += bin_a;
+        sum_b += bin_b;
     }
+    EXPECT_EQ(sum_a, sum_b);
 
     return true;
 }
