@@ -22,6 +22,7 @@
 #include "WebBrowser.h"
 
 #include <casacore/casa/Logging/LogIO.h>
+#include <casacore/casa/Logging/NullLogSink.h>
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
@@ -55,12 +56,13 @@ int main(int argc, char* argv[]) {
             settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
-        // Send casacore log messages to sink
-        casacore::LogSink log_sink;                          // null sink, throws messages away
-        casacore::LogSinkInterface* carta_log_sink(nullptr); // sends messages to spdlog
+        // Send casacore log messages (global and local) to sink.
+        // CartaLogSink sends messages to spdlog, NullLogSink discards messages.
+        casacore::LogSinkInterface* carta_log_sink(nullptr);
         switch (settings.verbosity) {
             case 0:
-                break; // use null sink
+                carta_log_sink = new casacore::NullLogSink();
+                break;
             case 1:
             case 2:
                 carta_log_sink = new CartaLogSink(casacore::LogMessage::SEVERE);
@@ -73,10 +75,8 @@ int main(int argc, char* argv[]) {
             default:
                 carta_log_sink = new CartaLogSink(casacore::LogMessage::NORMAL);
         }
-        if (carta_log_sink) {
-            log_sink = casacore::LogSink(carta_log_sink->filter(), casacore::CountedPtr<LogSinkInterface>(carta_log_sink));
-            casacore::LogSink::globalSink(carta_log_sink);
-        }
+        casacore::LogSink log_sink(carta_log_sink->filter(), casacore::CountedPtr<casacore::LogSinkInterface>(carta_log_sink));
+        casacore::LogSink::globalSink(carta_log_sink);
         casacore::LogIO casacore_log(log_sink);
 
         if (settings.wait_time >= 0) {
