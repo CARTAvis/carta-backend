@@ -41,6 +41,8 @@
 
 using namespace carta;
 
+static const std::set<std::string> COMPATIBLE_FRONTEND_VERSIONS{"4.0.0"};
+
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
 std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {
@@ -384,12 +386,28 @@ bool Session::FillFileInfo(
 
 void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id) {
     auto session_id = message.session_id();
+    auto frontend_version = message.version();
     bool success(true);
     std::string status;
     CARTA::SessionType type(CARTA::SessionType::NEW);
 
-    if (icd_version != ICD_VERSION) {
-        status = fmt::format("Invalid ICD version number. Expected {}, got {}", ICD_VERSION, icd_version);
+    bool icd_version_valid(icd_version == ICD_VERSION);
+    bool frontend_version_valid(COMPATIBLE_FRONTEND_VERSIONS.find(frontend_version) != COMPATIBLE_FRONTEND_VERSIONS.end());
+
+    if (!icd_version_valid || !frontend_version_valid) {
+        if (!icd_version_valid) {
+            status = fmt::format("Invalid ICD version number. Expected {}, got {}. ", ICD_VERSION, icd_version);
+        }
+        if (!frontend_version_valid) {
+            std::ostringstream oss;
+            oss << "[";
+            for (auto compatible_version : COMPATIBLE_FRONTEND_VERSIONS) {
+                oss << compatible_version << ", ";
+            }
+            std::string compatible_frontend_versions = oss.str();
+            compatible_frontend_versions.replace(compatible_frontend_versions.size() - 2, 2, "]");
+            status += fmt::format("Incompatible frontend version. Expected {}, got {}.", compatible_frontend_versions, frontend_version);
+        }
         success = false;
     } else if (!session_id) {
         session_id = _id;
