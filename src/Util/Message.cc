@@ -7,12 +7,14 @@
 #include "Message.h"
 #include "Cache/RequirementsCache.h"
 #include "DataStream/Compression.h"
+#include "Util/App.h"
 
 #include <chrono>
 
 CARTA::RegisterViewer Message::RegisterViewer(uint32_t session_id, std::string api_key, uint32_t client_feature_flags) {
     CARTA::RegisterViewer register_viewer;
     register_viewer.set_session_id(session_id);
+    register_viewer.set_version(VERSION_ID);
     register_viewer.set_api_key(api_key);
     register_viewer.set_client_feature_flags(client_feature_flags);
     return register_viewer;

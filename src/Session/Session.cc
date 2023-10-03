@@ -41,7 +41,7 @@
 
 using namespace carta;
 
-static const std::set<std::string> COMPATIBLE_FRONTEND_VERSIONS{"4.0.0"};
+static const std::set<std::string> COMPATIBLE_FRONTEND_VERSIONS{VERSION_ID, "4.0.0"};
 
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
