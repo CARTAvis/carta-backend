@@ -41,8 +41,6 @@
 
 using namespace carta;
 
-static const std::set<std::string> COMPATIBLE_FRONTEND_VERSIONS{VERSION_ID, "4.0.0"};
-
 LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
 
 std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {

@@ -8,9 +8,12 @@
 #define CARTA_BACKEND__UTIL_APP_H_
 
 #include <string>
+#include <unordered_set>
 
 // version
 #define VERSION_ID "4.0.0-rc.0"
+
+static const std::unordered_set<std::string> COMPATIBLE_FRONTEND_VERSIONS{VERSION_ID, "4.0.0"};
 
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
