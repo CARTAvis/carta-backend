@@ -363,9 +363,8 @@ bool Session::FillFileInfo(
     // Resolve filename and fill file info submessage
     bool file_info_ok(false);
 
-    fullname = GetResolvedFilename(_top_level_folder, folder, filename);
+    fullname = GetResolvedFilename(_top_level_folder, folder, filename, message);
     if (fullname.empty()) {
-        message = fmt::format("File {} does not exist.", filename);
         return file_info_ok;
     }
 
@@ -524,18 +523,17 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (lel_expr) {
         // filename field is LEL expression
-        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
-        auto loader = _loaders.Get(filename, dir_path);
-
-        try {
-            loader->OpenFile(hdu);
-
-            auto image = loader->GetImage();
-            success = OnOpenFile(file_id, filename, image, &ack);
-        } catch (const casacore::AipsError& err) {
-            _loaders.Remove(filename, dir_path);
-            success = false;
-            err_message = err.getMesg();
+        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "", err_message);
+        if (!dir_path.empty()) {
+            auto loader = _loaders.Get(filename, dir_path);
+            try {
+                loader->OpenFile(hdu);
+                auto image = loader->GetImage();
+                success = OnOpenFile(file_id, filename, image, &ack);
+            } catch (const casacore::AipsError& err) {
+                _loaders.Remove(filename, dir_path);
+                err_message = err.getMesg();
+            }
         }
     } else {
         ack.set_file_id(file_id);
@@ -919,10 +917,10 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::string region_file; // name or contents
         if (import_file) {
             // check that file can be opened
-            region_file = GetResolvedFilename(_top_level_folder, directory, filename);
-            casacore::File ccfile(region_file);
-            if (!ccfile.exists() || !ccfile.isReadable()) {
-                auto import_ack = Message::ImportRegionAck(false, "Import region failed: cannot open file.");
+            std::string error;
+            region_file = GetResolvedFilename(_top_level_folder, directory, filename, error);
+            if (region_file.empty()) {
+                auto import_ack = Message::ImportRegionAck(false, "Import region failed: " + error);
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
@@ -2456,8 +2454,12 @@ std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp(
 }
 
 void Session::CloseCachedImage(const std::string& directory, const std::string& file) {
-    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file);
-    for (auto& frame : _frames) {
-        frame.second->CloseCachedImage(fullname);
+    std::string message;
+    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file, message);
+
+    if (!fullname.empty()) {
+        for (auto& frame : _frames) {
+            frame.second->CloseCachedImage(fullname);
+        }
     }
 }

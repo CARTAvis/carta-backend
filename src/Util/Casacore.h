@@ -12,8 +12,11 @@
 #include <casacore/scimath/Mathematics/GaussianBeam.h>
 
 bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
+
 bool IsSubdirectory(std::string folder, std::string top_folder);
-casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
+
+casacore::String GetResolvedFilename(
+    const std::string& root_dir, const std::string& directory, const std::string& file, std::string& message);
 
 // Determine image type from filename
 inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
