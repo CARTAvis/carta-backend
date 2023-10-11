@@ -142,12 +142,18 @@ void ImageFitter::StopFitting() {
 }
 
 void ImageFitter::CalculateNanNum() {
+    std::vector<double> data_notnan;
+
     _fit_data.n_notnan = _fit_data.n;
     for (size_t i = 0; i < _fit_data.n; i++) {
         if (isnan(_fit_data.data[i])) {
             _fit_data.n_notnan--;
+        } else {
+            data_notnan.push_back(_fit_data.data[i]);
         }
     }
+
+    _image_std = GetMedianAbsDeviation(_fit_data.n_notnan, data_notnan.data());
 }
 
 void ImageFitter::SetInitialValues(
@@ -220,9 +226,6 @@ int ImageFitter::SolveSystem(CARTA::FittingSolverType solver) {
     gsl_vector* f = gsl_multifit_nlinear_residual(work);
     gsl_vector* y = gsl_multifit_nlinear_position(work);
     gsl_matrix* covar = gsl_matrix_alloc(p, p);
-
-    gsl_multifit_nlinear_init(_fit_values, &_fdf, work); // work-around for filling in f
-    _image_std = GetMedianAbsDeviation(_fdf.n, f->data);
 
     gsl_vector* weights = gsl_vector_alloc(n);
     gsl_vector_set_all(weights, 1 / _image_std / _image_std);
