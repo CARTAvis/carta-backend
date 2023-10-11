@@ -72,6 +72,9 @@ var hierarchy =
     [ "carta::LineBoxRegions", "classcarta_1_1LineBoxRegions.html", null ],
     [ "carta::ListProgressReporter", "classcarta_1_1ListProgressReporter.html", null ],
     [ "carta::LoaderCache", "classcarta_1_1LoaderCache.html", null ],
+    [ "casacore::LogSinkInterface", null, [
+      [ "carta::CartaLogSink", "classcarta_1_1CartaLogSink.html", null ]
+    ] ],
     [ "Message", "classMessage.html", null ],
     [ "casacore::MIRIADImage", null, [
       [ "carta::CartaMiriadImage", "classcarta_1_1CartaMiriadImage.html", null ]

@@ -66,6 +66,7 @@ var annotated_dup =
       [ "BasicStats", "structcarta_1_1BasicStats.html", "structcarta_1_1BasicStats" ],
       [ "BasicStatsCalculator", "classcarta_1_1BasicStatsCalculator.html", "classcarta_1_1BasicStatsCalculator" ],
       [ "Histogram", "classcarta_1_1Histogram.html", "classcarta_1_1Histogram" ],
+      [ "CartaLogSink", "classcarta_1_1CartaLogSink.html", "classcarta_1_1CartaLogSink" ],
       [ "ProgramSettings", "structcarta_1_1ProgramSettings.html", "structcarta_1_1ProgramSettings" ],
       [ "WebBrowser", "classcarta_1_1WebBrowser.html", "classcarta_1_1WebBrowser" ],
       [ "CrtfImportExport", "classcarta_1_1CrtfImportExport.html", "classcarta_1_1CrtfImportExport" ],

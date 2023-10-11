@@ -139,11 +139,13 @@ Macros</h2></td></tr>
 <tr class="separator:a3a30c8519779f61e8148bc6bcc19a489"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ab032d47dbab9ca28d1fa3f65ec7e5d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d">CARTA_LOGGER_TAG</a>&#160;&#160;&#160;&quot;CARTA&quot;</td></tr>
 <tr class="separator:a0ab032d47dbab9ca28d1fa3f65ec7e5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ae94642fa899f39b026522f0b4359ce"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce">CARTA_LOGGER_PATTERN</a>&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v&quot;</td></tr>
+<tr class="memitem:a7ae94642fa899f39b026522f0b4359ce"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce">CARTA_LOGGER_PATTERN</a>&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%eZ] [%n] [%^%l%$] %v&quot;</td></tr>
 <tr class="separator:a7ae94642fa899f39b026522f0b4359ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd4f93fb7e8e6b3c79d009a370ff6869"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#afd4f93fb7e8e6b3c79d009a370ff6869">CARTA_FILE_LOGGER_PATTERN</a>&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%eZ] [%^%l%$] %v&quot;</td></tr>
+<tr class="separator:afd4f93fb7e8e6b3c79d009a370ff6869"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af83a37930db1378a80ee446f1242d3ae"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#af83a37930db1378a80ee446f1242d3ae">PERF_TAG</a>&#160;&#160;&#160;&quot;performance&quot;</td></tr>
 <tr class="separator:af83a37930db1378a80ee446f1242d3ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4a0c9622fee38ec4d034e102a1f12d5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#ad4a0c9622fee38ec4d034e102a1f12d5">PERF_PATTERN</a>&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v&quot;</td></tr>
+<tr class="memitem:ad4a0c9622fee38ec4d034e102a1f12d5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Logger_8h.html#ad4a0c9622fee38ec4d034e102a1f12d5">PERF_PATTERN</a>&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%eZ] [%^%l%$] [%n] %v&quot;</td></tr>
 <tr class="separator:ad4a0c9622fee38ec4d034e102a1f12d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
@@ -163,6 +165,20 @@ Variables</h2></td></tr>
 <tr class="separator:a670c6a63d98e715c33a6063e6e0c7b0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="afd4f93fb7e8e6b3c79d009a370ff6869"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afd4f93fb7e8e6b3c79d009a370ff6869">&#9670;&nbsp;</a></span>CARTA_FILE_LOGGER_PATTERN</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CARTA_FILE_LOGGER_PATTERN&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%eZ] [%^%l%$] %v&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a7ae94642fa899f39b026522f0b4359ce"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7ae94642fa899f39b026522f0b4359ce">&#9670;&nbsp;</a></span>CARTA_LOGGER_PATTERN</h2>
 
@@ -170,7 +186,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CARTA_LOGGER_PATTERN&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v&quot;</td>
+          <td class="memname">#define CARTA_LOGGER_PATTERN&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%eZ] [%n] [%^%l%$] %v&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -212,7 +228,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define PERF_PATTERN&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v&quot;</td>
+          <td class="memname">#define PERF_PATTERN&#160;&#160;&#160;&quot;[%Y-%m-%d %H:%M:%S.%eZ] [%^%l%$] [%n] %v&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">

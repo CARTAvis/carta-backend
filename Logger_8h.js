@@ -1,6 +1,7 @@
 var Logger_8h =
 [
     [ "carta_sink", "classspdlog_1_1sinks_1_1carta__sink.html", "classspdlog_1_1sinks_1_1carta__sink" ],
+    [ "CARTA_FILE_LOGGER_PATTERN", "Logger_8h.html#afd4f93fb7e8e6b3c79d009a370ff6869", null ],
     [ "CARTA_LOGGER_PATTERN", "Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce", null ],
     [ "CARTA_LOGGER_TAG", "Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d", null ],
     [ "LOG_FILE_SIZE", "Logger_8h.html#aae919ba7488e6353a8c239b5f081247c", null ],
