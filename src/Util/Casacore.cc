@@ -204,6 +204,7 @@ void NormalizeUnit(casacore::String& unit) {
     unit.gsub("beam-1 Jy", "Jy/beam");
     unit.gsub("beam^-1 Jy", "Jy/beam");
     unit.gsub("Pixel", "pixel");
+    unit.gsub("DEGREE", "deg");
     unit.gsub("\"", "");
 
     // Convert unit without prefix
