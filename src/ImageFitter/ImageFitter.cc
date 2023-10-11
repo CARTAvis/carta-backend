@@ -47,7 +47,7 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     _create_residual_data = create_residual_image;
     _progress_callback = progress_callback;
 
-    CalculateNanNum();
+    CalculateNanNumAndStd();
     SetInitialValues(initial_values, background_offset, fixed_params);
 
     // avoid SolveSystem crashes with insufficient data points
@@ -141,7 +141,7 @@ void ImageFitter::StopFitting() {
     _fit_data.stop_fitting = true;
 }
 
-void ImageFitter::CalculateNanNum() {
+void ImageFitter::CalculateNanNumAndStd() {
     std::vector<double> data_notnan;
 
     _fit_data.n_notnan = _fit_data.n;
