@@ -112,8 +112,8 @@ Functions</h2></td></tr>
 <tr class="separator:aa05a1fe4e2176aee249351f3e2544441"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa743c537861c278f5c5620fa996f8153"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#aa743c537861c278f5c5620fa996f8153">IsSubdirectory</a> (std::string folder, std::string top_folder)</td></tr>
 <tr class="separator:aa743c537861c278f5c5620fa996f8153"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2490e15d7422f50140156a197a8bd2f5"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a2490e15d7422f50140156a197a8bd2f5">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file)</td></tr>
-<tr class="separator:a2490e15d7422f50140156a197a8bd2f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memItemLeft" align="right" valign="top">casacore::String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#ad560f4fdd266b9e1503ae3f24a60aa52">GetResolvedFilename</a> (const std::string &amp;root_dir, const std::string &amp;directory, const std::string &amp;file, std::string &amp;message)</td></tr>
+<tr class="separator:ad560f4fdd266b9e1503ae3f24a60aa52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f2e1b7b1fdc56656757ae21fa22be67"><td class="memItemLeft" align="right" valign="top">casacore::ImageOpener::ImageTypes&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a7f2e1b7b1fdc56656757ae21fa22be67">CasacoreImageType</a> (const std::string &amp;filename)</td></tr>
 <tr class="separator:a7f2e1b7b1fdc56656757ae21fa22be67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2710acccf40d0db8b686e21bc111cc56"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Casacore_8h.html#a2710acccf40d0db8b686e21bc111cc56">GetSpectralCoordPreferences</a> (casacore::ImageInterface&lt; float &gt; *image, bool &amp;prefer_velocity, bool &amp;optical_velocity, bool &amp;prefer_wavelength, bool &amp;air_wavelength)</td></tr>
@@ -224,8 +224,8 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a2490e15d7422f50140156a197a8bd2f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2490e15d7422f50140156a197a8bd2f5">&#9670;&nbsp;</a></span>GetResolvedFilename()</h2>
+<a id="ad560f4fdd266b9e1503ae3f24a60aa52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad560f4fdd266b9e1503ae3f24a60aa52">&#9670;&nbsp;</a></span>GetResolvedFilename()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -246,7 +246,13 @@ Here is the caller graph for this function:</div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>file</em>&#160;</td>
+          <td class="paramname"><em>file</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>message</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

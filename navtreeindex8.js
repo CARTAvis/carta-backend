@@ -1,5 +1,6 @@
 var NAVTREEINDEX8 =
 {
+"classcarta_1_1TileCache.html#af5b5981844470552335b430ce0c6f4d3":[3,0,0,13,1],
 "classcarta_1_1Timer.html":[3,0,0,100],
 "classcarta_1_1Timer.html#a5f16e8da27d2a5a5242dead46de05d97":[3,0,0,100,0],
 "classcarta_1_1Timer.html#a6bd1978a731d3f335cd8974d0b5ead54":[3,0,0,100,3],
@@ -93,8 +94,8 @@ var NAVTREEINDEX8 =
 "classspdlog_1_1sinks_1_1carta__sink.html#aec54abf7200855956bded90932b0f703":[3,0,1,0,0,8],
 "classspdlog_1_1sinks_1_1carta__sink.html#aef1c8469ff5709af4659ac0d6cc13608":[3,0,1,0,0,5],
 "files.html":[4,0],
-"functions.html":[3,3,0,0],
 "functions.html":[3,3,0],
+"functions.html":[3,3,0,0],
 "functions_a.html":[3,3,0,1],
 "functions_b.html":[3,3,0,2],
 "functions_c.html":[3,3,0,3],
@@ -183,8 +184,8 @@ var NAVTREEINDEX8 =
 "globals_type.html":[4,1,3],
 "globals_vars.html":[4,1,2],
 "hierarchy.html":[3,2],
-"index.html":[0],
 "index.html":[],
+"index.html":[0],
 "index.html#autotoc_md3":[0,0],
 "md_docs_static_faq.html":[1],
 "md_docs_static_faq.html#autotoc_md0":[1,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX8 =
 "namespacecarta.html#af7359c825e152777546c5e50b44b6e20":[2,0,0,143],
 "namespacecarta_1_1FileInfo.html":[2,0,0,0],
 "namespacecarta_1_1FileInfo.html#a9d39a2471bd27de0ee08bc5d6d3af17e":[2,0,0,0,5],
-"namespacecarta_1_1FileInfo.html#adb5dd85385b249a9f718ee5c87dfd57e":[2,0,0,0,4],
-"namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7":[2,0,0,0,3]
+"namespacecarta_1_1FileInfo.html#adb5dd85385b249a9f718ee5c87dfd57e":[2,0,0,0,4]
 };
