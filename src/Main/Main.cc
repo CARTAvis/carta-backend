@@ -10,6 +10,7 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
+#include "GlobalValues.h"
 #include "HttpServer/HttpServer.h"
 #include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
@@ -46,14 +47,13 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // Main
-        carta::ProgramSettings settings(argc, argv);
+        auto settings = GlobalValues::GetInstance().GetSettings() = std::move(carta::ProgramSettings(argc, argv));
 
         if (settings.help || settings.version) {
             exit(0);
         }
 
-        carta::logger::InitLogger(
-            settings.no_log, settings.verbosity, settings.log_performance, settings.log_protocol_messages, settings.user_directory);
+        carta::logger::InitLogger();
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         // Send casacore log messages (global and local) to sink.
@@ -79,13 +79,8 @@ int main(int argc, char* argv[]) {
         casacore::LogSink::globalSink(carta_log_sink);
         casacore::LogIO casacore_log(log_sink);
 
-        if (settings.wait_time >= 0) {
-            Session::SetExitTimeout(settings.wait_time);
-        }
-
-        if (settings.init_wait_time >= 0) {
-            Session::SetInitExitTimeout(settings.init_wait_time);
-        }
+        Session::SetExitTimeout();
+        Session::SetInitExitTimeout();
 
         std::string executable_path;
         bool have_executable_path(FindExecutablePath(executable_path));
@@ -124,7 +119,7 @@ int main(int argc, char* argv[]) {
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
 
         // Session manager
-        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler);
+        session_manager = make_shared<SessionManager>(auth_token, file_list_handler);
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server

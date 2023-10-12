@@ -6,6 +6,8 @@
 
 #include "Logger.h"
 
+#include "Main/GlobalValues.h"
+
 #include <string>
 
 namespace carta {
@@ -13,9 +15,7 @@ namespace logger {
 
 static bool log_protocol_messages(false);
 
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_, fs::path user_directory) {
-    log_protocol_messages = log_protocol_messages_;
-
+void InitLogger() {
     // Set the stdout/stderr console
     auto console_sink = std::make_shared<spdlog::sinks::carta_sink>();
     console_sink->set_pattern(CARTA_LOGGER_PATTERN);
@@ -26,8 +26,8 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 
     // Set a log file with its full name, maximum size and the number of rotated files
     std::string log_fullname;
-    if (!no_log_file) {
-        log_fullname = (user_directory / "log/carta.log").string();
+    if (!Global::NoLog()) {
+        log_fullname = (Global::UserDirectory() / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_formatter(
             std::make_unique<spdlog::pattern_formatter>(CARTA_FILE_LOGGER_PATTERN, spdlog::pattern_time_type::utc));
@@ -41,7 +41,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     default_logger->flush_on(spdlog::level::err);
 
     // Set the stdout logger level according to the verbosity number
-    switch (verbosity) {
+    switch (Global::Verbosity()) {
         case 0:
             default_logger->set_level(spdlog::level::off);
             break;
@@ -72,11 +72,11 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     // Set as the default logger
     spdlog::set_default_logger(default_logger);
 
-    if (!no_log_file) {
+    if (!Global::NoLog()) {
         spdlog::info("Writing to the log file: {}", log_fullname);
     }
 
-    if (log_performance) {
+    if (Global::LogPerformance()) {
         // Set the performance console
         auto perf_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         perf_console_sink->set_formatter(std::make_unique<spdlog::pattern_formatter>(PERF_PATTERN, spdlog::pattern_time_type::utc));
@@ -87,8 +87,8 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 
         // Set a log file with its full name, maximum size and the number of rotated files
         std::string perf_log_fullname;
-        if (!no_log_file) {
-            perf_log_fullname = (user_directory / "log/performance.log").string();
+        if (!Global::NoLog()) {
+            perf_log_fullname = (Global::UserDirectory() / "log/performance.log").string();
             auto perf_log_file_sink =
                 std::make_shared<spdlog::sinks::rotating_file_sink_mt>(perf_log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
             perf_log_file_sink->set_formatter(std::make_unique<spdlog::pattern_formatter>(PERF_PATTERN, spdlog::pattern_time_type::utc));

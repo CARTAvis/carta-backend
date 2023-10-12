@@ -26,6 +26,7 @@
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
+#include "Main/GlobalValues.h"
 #include "OnMessageTask.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"
@@ -177,14 +178,23 @@ Session::~Session() {
     logger::FlushLogFile();
 }
 
-void Session::SetInitExitTimeout(int secs) {
-    __exit_backend_timer = secs;
-    struct sigaction sig_handler;
-    sig_handler.sa_handler = ExitNoSessions;
-    sigemptyset(&sig_handler.sa_mask);
-    sig_handler.sa_flags = 0;
-    sigaction(SIGALRM, &sig_handler, nullptr);
-    alarm(1);
+void Session::SetExitTimeout() {
+    if (Global::WaitTime() >= 0) {
+        _exit_after_num_seconds = Global::WaitTime();
+        _exit_when_all_sessions_closed = true;
+    }
+}
+
+void Session::SetInitExitTimeout() {
+    if (Global::InitWaitTime() >= 0) {
+        __exit_backend_timer = Global::InitWaitTime();
+        struct sigaction sig_handler;
+        sig_handler.sa_handler = ExitNoSessions;
+        sigemptyset(&sig_handler.sa_mask);
+        sig_handler.sa_flags = 0;
+        sigaction(SIGALRM, &sig_handler, nullptr);
+        alarm(1);
+    }
 }
 
 void Session::WaitForTaskCancellation() {

@@ -195,11 +195,9 @@ public:
         return _animation_object && !_animation_object->_stop_called;
     }
     int CalculateAnimationFlowWindow();
-    static void SetExitTimeout(int secs) {
-        _exit_after_num_seconds = secs;
-        _exit_when_all_sessions_closed = true;
-    }
-    static void SetInitExitTimeout(int secs);
+
+    static void SetExitTimeout();
+    static void SetInitExitTimeout();
 
     static void SetControllerDeploymentFlag(bool controller_deployment) {
         _controller_deployment = controller_deployment;

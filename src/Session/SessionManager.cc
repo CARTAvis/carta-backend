@@ -6,6 +6,7 @@
 
 #include "SessionManager.h"
 #include "Logger/Logger.h"
+#include "Main/GlobalValues.h"
 #include "OnMessageTask.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/Message.h"
@@ -13,8 +14,8 @@
 
 namespace carta {
 
-SessionManager::SessionManager(ProgramSettings& settings, std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
-    : _session_number(0), _app(uWS::App()), _settings(settings), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
+SessionManager::SessionManager(std::string auth_token, std::shared_ptr<FileListHandler> file_list_handler)
+    : _session_number(0), _app(uWS::App()), _auth_token(auth_token), _file_list_handler(file_list_handler) {}
 
 void SessionManager::DeleteSession(uint32_t session_id) {
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
@@ -87,8 +88,8 @@ void SessionManager::OnConnect(WSType* ws) {
 
     // create a Session
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    _sessions[session_id] = new Session(ws, loop, session_id, address, _settings.top_level_folder, _settings.starting_folder,
-        _file_list_handler, _settings.read_only_mode, _settings.enable_scripting);
+    _sessions[session_id] = new Session(ws, loop, session_id, address, Global::TopLevelFolder(), Global::StartingFolder(),
+        _file_list_handler, Global::ReadOnlyMode(), Global::EnableScripting());
 
     _sessions[session_id]->IncreaseRefCount();
 
@@ -531,7 +532,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             auto t_session = session->GetLastMessageTimestamp();
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
-            if ((_settings.idle_session_wait_time > 0) && (dt.count() >= _settings.idle_session_wait_time)) {
+            if ((Global::IdleSessionWaitTime() > 0) && (dt.count() >= Global::IdleSessionWaitTime())) {
                 spdlog::warn("Client {} has been idle for {} seconds. Disconnecting..", session->GetId(), dt.count());
                 ws->close();
             } else {
