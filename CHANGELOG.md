@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Include casacore log messages in carta log ([#1169](https://github.com/CARTAvis/carta-backend/issues/1169)).
 * Fixed the problem of opening old IRAM fits images ([#1312](https://github.com/CARTAvis/carta-backend/issues/1312)).
 
+### Changed
+* Updated for compatibility with latest carta-casacore using CASA 6.6.0.
+
 ## [4.0.0]
 
 ### Changed
