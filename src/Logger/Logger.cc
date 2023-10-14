@@ -13,8 +13,6 @@
 namespace carta {
 namespace logger {
 
-static bool log_protocol_messages(false);
-
 void InitLogger() {
     // Set the stdout/stderr console
     auto console_sink = std::make_shared<spdlog::sinks::carta_sink>();
@@ -109,7 +107,7 @@ void InitLogger() {
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (log_protocol_messages) {
+    if (Global::LogProtocolMessages()) {
         auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
         if (!event_name.empty()) {
             spdlog::debug("[protocol] <== {}", event_name);
@@ -120,7 +118,7 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (log_protocol_messages) {
+    if (Global::LogProtocolMessages()) {
         auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
         if (!event_name.empty()) {
             spdlog::debug("[protocol] ==> {}", event_name);
