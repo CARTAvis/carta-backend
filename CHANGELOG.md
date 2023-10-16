@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Store global settings in a singleton class ([#1302](https://github.com/CARTAvis/carta-backend/issues/1302)).
+
 ### Fixed
 * Fixed scripting interface and symlink directory issues ([#1283](https://github.com/CARTAvis/carta-frontend/issues/1283), [#1284](https://github.com/CARTAvis/carta-frontend/issues/1284), [#1314](https://github.com/CARTAvis/carta-frontend/issues/1314)).
 * Include casacore log messages in carta log ([#1169](https://github.com/CARTAvis/carta-backend/issues/1169)).
