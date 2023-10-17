@@ -113,26 +113,13 @@ bool ImageFitter::FitImage(size_t width, size_t height, float* image, double bea
     return success;
 }
 
-bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region, int file_id, const std::string& filename,
+bool ImageFitter::GetGeneratedImages(casa::SPIIF image, const casacore::ImageRegion& image_region, const std::string& filename,
     GeneratedImage& model_image, GeneratedImage& residual_image, CARTA::FittingResponse& fitting_response) {
-    if (file_id < 0) {
-        fitting_response.set_message("generating images from generated PV and model/residual images is not supported");
-        return false;
-    }
-
-    // Todo: find another better way to assign the temp file Id
-    bool is_moment = file_id > 999;
-    int model_id = (file_id + 1) * (is_moment ? FITTING_WITH_MOMENT_ID_MULTIPLIER : FITTING_ID_MULTIPLIER) + 1;
-    int residual_id = model_id + 1;
-
     if (_create_model_data) {
-        model_image = GeneratedImage(model_id, is_moment ? GetGeneratedMomentFilename(filename, "model") : GetFilename(filename, "model"),
-            GetImageData(image, image_region, _model_data));
+        model_image = GeneratedImage(GetFilename(filename, "model"), GetImageData(image, image_region, _model_data));
     }
     if (_create_residual_data) {
-        residual_image =
-            GeneratedImage(residual_id, is_moment ? GetGeneratedMomentFilename(filename, "residual") : GetFilename(filename, "residual"),
-                GetImageData(image, image_region, _residual_data));
+        residual_image = GeneratedImage(GetFilename(filename, "residual"), GetImageData(image, image_region, _residual_data));
     }
     return true;
 }
@@ -417,17 +404,20 @@ casa::SPIIF ImageFitter::GetImageData(casa::SPIIF image, const casacore::ImageRe
 }
 
 std::string ImageFitter::GetFilename(const std::string& filename, std::string suffix) {
-    fs::path filepath(filename);
+    std::string moment_suffix;
+    fs::path filepath;
+    if (filename.rfind(".moment.") != std::string::npos) {
+        std::string input_filename = filename.substr(0, filename.rfind(".moment."));
+        filepath = fs::path(input_filename);
+        moment_suffix = filename.substr(filename.rfind(".moment."));
+    } else {
+        filepath = fs::path(filename);
+    }
+
     fs::path output_filename = filepath.stem();
     output_filename += "_" + suffix;
     output_filename += filepath.extension();
-    return output_filename.string();
-}
-
-std::string ImageFitter::GetGeneratedMomentFilename(const std::string& filename, std::string suffix) {
-    std::string output_filename = filename.substr(0, filename.rfind(".moment."));
-    std::string moment_suffix = filename.substr(filename.rfind(".moment."));
-    return GetFilename(output_filename, suffix) + moment_suffix;
+    return output_filename.string() + moment_suffix;
 }
 
 int ImageFitter::FuncF(const gsl_vector* fit_values, void* fit_data, gsl_vector* f) {

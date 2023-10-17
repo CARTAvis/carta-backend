@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Improve file IDs for generated images ([#1224](https://github.com/CARTAvis/carta-frontend/issues/1224)).
+
 ## [4.0.0]
 
 ### Changed

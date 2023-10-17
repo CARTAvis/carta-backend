@@ -11,23 +11,16 @@
 
 #include <functional>
 
-#define MOMENT_ID_MULTIPLIER 1000
-#define PV_ID_MULTIPLIER -1000
-#define FITTING_ID_MULTIPLIER -1000
-#define FITTING_WITH_MOMENT_ID_MULTIPLIER -10
-
 using GeneratorProgressCallback = std::function<void(float)>;
 
 namespace carta {
 
 struct GeneratedImage {
-    int file_id;
     std::string name;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
 
     GeneratedImage() {}
-    GeneratedImage(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
-        file_id = file_id_;
+    GeneratedImage(std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
         name = name_;
         image = image_;
     }
