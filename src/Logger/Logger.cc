@@ -30,7 +30,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
         log_fullname = (user_directory / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_formatter(
-            std::make_unique<spdlog::pattern_formatter>(CARTA_LOGGER_PATTERN, spdlog::pattern_time_type::utc));
+            std::make_unique<spdlog::pattern_formatter>(CARTA_FILE_LOGGER_PATTERN, spdlog::pattern_time_type::utc));
         console_sinks.push_back(stdout_log_file_sink);
     }
 

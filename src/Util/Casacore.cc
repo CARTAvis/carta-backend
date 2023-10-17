@@ -98,19 +98,37 @@ bool IsSubdirectory(string folder, string top_folder) {
     return false;
 }
 
-casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file) {
+casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file, string& message) {
     // Given directory (relative to root folder) and file, return resolved path and filename
     // (absolute pathname with symlinks resolved)
     casacore::String resolved_filename;
-    casacore::Path root_path(root_dir);
-    root_path.append(directory);
-    root_path.append(file);
-    casacore::File cc_file(root_path);
-    if (cc_file.exists()) {
-        try {
-            resolved_filename = cc_file.path().resolvedName();
-        } catch (casacore::AipsError& err) {
-            // return empty string
+    casacore::Path path(root_dir);
+    path.append(directory);
+    casacore::File cc_directory(path);
+
+    if (!cc_directory.exists()) {
+        message = "Directory " + directory + " does not exist.";
+    } else if (!cc_directory.isReadable()) {
+        message = "Directory " + directory + " is not readable.";
+    } else {
+        path.append(file);
+        casacore::File cc_file(path);
+
+        if (!cc_file.exists()) {
+            message = "File " + file + " does not exist.";
+        } else if (!cc_file.isReadable()) {
+            message = "File " + file + " is not readable.";
+        } else {
+            try {
+                resolved_filename = cc_file.path().resolvedName();
+            } catch (const casacore::AipsError& err) {
+                try {
+                    resolved_filename = cc_file.path().absoluteName();
+                } catch (const casacore::AipsError& err) {
+                    // return empty string
+                    message = "Cannot resolve file path.";
+                }
+            }
         }
     }
     return resolved_filename;
@@ -186,6 +204,7 @@ void NormalizeUnit(casacore::String& unit) {
     unit.gsub("beam-1 Jy", "Jy/beam");
     unit.gsub("beam^-1 Jy", "Jy/beam");
     unit.gsub("Pixel", "pixel");
+    unit.gsub("DEGREE", "deg");
     unit.gsub("\"", "");
 
     // Convert unit without prefix
