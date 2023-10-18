@@ -78,8 +78,13 @@ int main(int argc, char* argv[]) {
         casacore::LogSink::globalSink(carta_log_sink);
         casacore::LogIO casacore_log(log_sink);
 
-        Session::SetExitTimeout();
-        Session::SetInitExitTimeout();
+        if (settings.wait_time >= 0) {
+            Session::SetExitTimeout(settings.wait_time);
+        }
+
+        if (settings.init_wait_time >= 0) {
+            Session::SetInitExitTimeout(settings.init_wait_time);
+        }
 
         std::string executable_path;
         bool have_executable_path(FindExecutablePath(executable_path));

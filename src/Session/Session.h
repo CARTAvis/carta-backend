@@ -195,8 +195,8 @@ public:
     }
     int CalculateAnimationFlowWindow();
 
-    static void SetExitTimeout();
-    static void SetInitExitTimeout();
+    static void SetExitTimeout(int secs);
+    static void SetInitExitTimeout(int secs);
 
     static void SetControllerDeploymentFlag(bool controller_deployment) {
         _controller_deployment = controller_deployment;
