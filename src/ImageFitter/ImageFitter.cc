@@ -143,6 +143,7 @@ void ImageFitter::StopFitting() {
 
 void ImageFitter::CalculateNanNumAndStd() {
     std::vector<double> data_notnan;
+    data_notnan.reserve(_fit_data.n);
 
     _fit_data.n_notnan = _fit_data.n;
     for (size_t i = 0; i < _fit_data.n; i++) {
