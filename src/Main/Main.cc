@@ -10,7 +10,6 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
-#include "Global.h"
 #include "HttpServer/HttpServer.h"
 #include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
