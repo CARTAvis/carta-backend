@@ -36,6 +36,10 @@ struct ProgramSettings {
         return settings;
     }
 
+    static ProgramSettings& Initialise(int argc, char** argv) {
+        return GetInstance() = std::move(carta::ProgramSettings(argc, argv));
+    }
+
     bool version = false;
     bool help = false;
     std::vector<int> port;
