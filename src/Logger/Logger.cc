@@ -6,7 +6,7 @@
 
 #include "Logger.h"
 
-#include "Main/GlobalValues.h"
+#include "Main/Global.h"
 
 #include <string>
 

@@ -13,10 +13,10 @@
 
 namespace carta {
 
-class GlobalValues {
+class Global {
 public:
-    static GlobalValues& GetInstance() {
-        static GlobalValues global_values;
+    static Global& GetInstance() {
+        static Global global_values;
         return global_values;
     }
 
@@ -24,64 +24,58 @@ public:
         return _program_settings;
     }
 
-private:
-    GlobalValues() {}
-
-    ProgramSettings _program_settings;
-};
-
-class Global {
-    Global() {}
-    ~Global() = default;
-
-public:
     static bool NoLog() {
-        return GlobalValues::GetInstance().GetSettings().no_log;
+        return Global::GetInstance().GetSettings().no_log;
     }
 
     static int Verbosity() {
-        return GlobalValues::GetInstance().GetSettings().verbosity;
+        return Global::GetInstance().GetSettings().verbosity;
     }
 
     static bool LogPerformance() {
-        return GlobalValues::GetInstance().GetSettings().log_performance;
+        return Global::GetInstance().GetSettings().log_performance;
     }
 
     static bool LogProtocolMessages() {
-        return GlobalValues::GetInstance().GetSettings().log_protocol_messages;
+        return Global::GetInstance().GetSettings().log_protocol_messages;
     }
 
     static fs::path UserDirectory() {
-        return GlobalValues::GetInstance().GetSettings().user_directory;
+        return Global::GetInstance().GetSettings().user_directory;
     }
 
     static std::string TopLevelFolder() {
-        return GlobalValues::GetInstance().GetSettings().top_level_folder;
+        return Global::GetInstance().GetSettings().top_level_folder;
     }
 
     static std::string StartingFolder() {
-        return GlobalValues::GetInstance().GetSettings().starting_folder;
+        return Global::GetInstance().GetSettings().starting_folder;
     }
 
     static bool ReadOnlyMode() {
-        return GlobalValues::GetInstance().GetSettings().read_only_mode;
+        return Global::GetInstance().GetSettings().read_only_mode;
     }
 
     static bool EnableScripting() {
-        return GlobalValues::GetInstance().GetSettings().enable_scripting;
+        return Global::GetInstance().GetSettings().enable_scripting;
     }
 
     static int IdleSessionWaitTime() {
-        return GlobalValues::GetInstance().GetSettings().idle_session_wait_time;
+        return Global::GetInstance().GetSettings().idle_session_wait_time;
     }
 
     static int WaitTime() {
-        return GlobalValues::GetInstance().GetSettings().wait_time;
+        return Global::GetInstance().GetSettings().wait_time;
     }
 
     static int InitWaitTime() {
-        return GlobalValues::GetInstance().GetSettings().init_wait_time;
+        return Global::GetInstance().GetSettings().init_wait_time;
     }
+
+private:
+    Global() {}
+
+    ProgramSettings _program_settings;
 };
 
 } // namespace carta

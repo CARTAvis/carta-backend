@@ -26,7 +26,7 @@
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
-#include "Main/GlobalValues.h"
+#include "Main/Global.h"
 #include "OnMessageTask.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"

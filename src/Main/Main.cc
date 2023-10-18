@@ -10,7 +10,7 @@
 #include <signal.h>
 
 #include "FileList/FileListHandler.h"
-#include "GlobalValues.h"
+#include "Global.h"
 #include "HttpServer/HttpServer.h"
 #include "Logger/CartaLogSink.h"
 #include "Logger/Logger.h"
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // Main
-        auto settings = GlobalValues::GetInstance().GetSettings() = std::move(carta::ProgramSettings(argc, argv));
+        auto settings = Global::GetInstance().GetSettings() = std::move(carta::ProgramSettings(argc, argv));
 
         if (settings.help || settings.version) {
             exit(0);
