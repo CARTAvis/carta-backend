@@ -155,6 +155,7 @@ void ImageFitter::CalculateNanNumAndStd() {
     }
 
     _image_std = GetMedianAbsDeviation(_fit_data.n_notnan, data_notnan.data());
+    spdlog::debug("MAD = {}", _image_std);
 }
 
 void ImageFitter::SetInitialValues(
