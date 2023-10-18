@@ -28,12 +28,12 @@
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
 #include "ImageData/StokesFilesConnector.h"
+#include "Main/ProgramSettings.h"
 #include "Region/RegionHandler.h"
 #include "SessionContext.h"
+#include "Table/TableController.h"
 #include "ThreadingManager/Concurrency.h"
 #include "Util/Message.h"
-
-#include "Table/TableController.h"
 
 #define HISTOGRAM_CANCEL -1.0
 #define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
@@ -341,6 +341,9 @@ protected:
 
     // Timestamp for the last protobuf message
     std::chrono::high_resolution_clock::time_point _last_message_timestamp;
+
+    // Reference to the global settings object
+    ProgramSettings& _settings;
 };
 
 } // namespace carta

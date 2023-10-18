@@ -26,7 +26,6 @@
 #include "ImageData/CompressedFits.h"
 #include "ImageGenerators/ImageGenerator.h"
 #include "Logger/Logger.h"
-#include "Main/ProgramSettings.h"
 #include "OnMessageTask.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Timer/Timer.h"
@@ -113,7 +112,8 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _animation_id(0),
       _animation_active(false),
       _cursor_settings(this),
-      _loaders(LOADER_CACHE_SIZE) {
+      _loaders(LOADER_CACHE_SIZE),
+      _settings(ProgramSettings::GetInstance()) {
     _histogram_progress = 1.0;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -363,7 +363,7 @@ bool Session::FillFileInfo(
     // Resolve filename and fill file info submessage
     bool file_info_ok(false);
 
-    fullname = GetResolvedFilename(ProgramSettings::GetInstance().top_level_folder, folder, filename, message);
+    fullname = GetResolvedFilename(_settings.top_level_folder, folder, filename, message);
     if (fullname.empty()) {
         return file_info_ok;
     }
@@ -435,12 +435,12 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 #endif
 
     uint32_t feature_flags;
-    if (ProgramSettings::GetInstance().read_only_mode) {
+    if (_settings.read_only_mode) {
         feature_flags = CARTA::ServerFeatureFlags::READ_ONLY;
     } else {
         feature_flags = CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE;
     }
-    if (ProgramSettings::GetInstance().enable_scripting) {
+    if (_settings.enable_scripting) {
         feature_flags |= CARTA::ServerFeatureFlags::SCRIPTING;
     }
     ack_message.set_server_feature_flags(feature_flags);
@@ -523,7 +523,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (lel_expr) {
         // filename field is LEL expression
-        auto dir_path = GetResolvedFilename(ProgramSettings::GetInstance().top_level_folder, directory, "", err_message);
+        auto dir_path = GetResolvedFilename(_settings.top_level_folder, directory, "", err_message);
         if (!dir_path.empty()) {
             auto loader = _loaders.Get(filename, dir_path);
             try {
@@ -908,7 +908,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         if (import_file) {
             // check that file can be opened
             std::string error;
-            region_file = GetResolvedFilename(ProgramSettings::GetInstance().top_level_folder, directory, filename, error);
+            region_file = GetResolvedFilename(_settings.top_level_folder, directory, filename, error);
             if (region_file.empty()) {
                 auto import_ack = Message::ImportRegionAck(false, "Import region failed: " + error);
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
@@ -955,7 +955,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
         }
 
         CARTA::ExportRegionAck export_ack;
-        if (ProgramSettings::GetInstance().read_only_mode) {
+        if (_settings.read_only_mode) {
             string error = "Exporting region is not allowed in read-only mode";
             spdlog::error(error);
             SendLogEvent(error, {"Export region"}, CARTA::ErrorSeverity::ERROR);
@@ -967,7 +967,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             std::string abs_filename;
             if (!directory.empty() && !filename.empty()) {
                 // export file is on server, form path with filename
-                casacore::Path top_level_path(ProgramSettings::GetInstance().top_level_folder);
+                casacore::Path top_level_path(_settings.top_level_folder);
                 top_level_path.append(directory);
                 top_level_path.append(filename);
                 abs_filename = top_level_path.absoluteName();
@@ -1325,7 +1325,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         CARTA::SaveFileAck save_file_ack;
         auto active_frame = _frames.at(file_id);
 
-        if (ProgramSettings::GetInstance().read_only_mode) {
+        if (_settings.read_only_mode) {
             string error = "Saving files is not allowed in read-only mode";
             spdlog::error(error);
             SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::ERROR);
@@ -1334,14 +1334,14 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         } else if (region_id) {
             std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
             if (_region) {
-                active_frame->SaveFile(ProgramSettings::GetInstance().top_level_folder, save_file, save_file_ack, _region);
+                active_frame->SaveFile(_settings.top_level_folder, save_file, save_file_ack, _region);
             } else {
                 save_file_ack.set_success(false);
                 save_file_ack.set_message("No region with id {} found.", region_id);
             }
         } else {
             // Save full image
-            _frames.at(file_id)->SaveFile(ProgramSettings::GetInstance().top_level_folder, save_file, save_file_ack, nullptr);
+            _frames.at(file_id)->SaveFile(_settings.top_level_folder, save_file, save_file_ack, nullptr);
         }
 
         // Send response message
@@ -1355,7 +1355,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
 bool Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id) {
     bool success(false);
     if (!_stokes_files_connector) {
-        _stokes_files_connector = std::make_unique<StokesFilesConnector>(ProgramSettings::GetInstance().top_level_folder);
+        _stokes_files_connector = std::make_unique<StokesFilesConnector>(_settings.top_level_folder);
     }
 
     CARTA::ConcatStokesFilesAck response;
@@ -2440,7 +2440,7 @@ std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp(
 
 void Session::CloseCachedImage(const std::string& directory, const std::string& file) {
     std::string message;
-    std::string fullname = GetResolvedFilename(ProgramSettings::GetInstance().top_level_folder, directory, file, message);
+    std::string fullname = GetResolvedFilename(_settings.top_level_folder, directory, file, message);
 
     if (!fullname.empty()) {
         for (auto& frame : _frames) {
