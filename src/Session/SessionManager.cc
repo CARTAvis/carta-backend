@@ -6,7 +6,7 @@
 
 #include "SessionManager.h"
 #include "Logger/Logger.h"
-#include "Main/Global.h"
+#include "Main/ProgramSettings.h"
 #include "OnMessageTask.h"
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/Message.h"
@@ -531,7 +531,8 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             auto t_session = session->GetLastMessageTimestamp();
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
-            if ((Global::IdleSessionWaitTime() > 0) && (dt.count() >= Global::IdleSessionWaitTime())) {
+            if ((ProgramSettings::GetInstance().idle_session_wait_time > 0) &&
+                (dt.count() >= ProgramSettings::GetInstance().idle_session_wait_time)) {
                 spdlog::warn("Client {} has been idle for {} seconds. Disconnecting..", session->GetId(), dt.count());
                 ws->close();
             } else {

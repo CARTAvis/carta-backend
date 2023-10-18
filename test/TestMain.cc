@@ -12,7 +12,7 @@
 
 #include "CommonTestUtilities.h"
 #include "Logger/Logger.h"
-#include "Main/Global.h"
+#include "Main/ProgramSettings.h"
 #include "ThreadingManager/ThreadingManager.h"
 
 #define TASK_THREAD_COUNT 3
@@ -46,10 +46,10 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    Global::GetInstance().GetSettings().verbosity = result["verbosity"].as<int>();
-    Global::GetInstance().GetSettings().no_log = result["no_log"].as<bool>();
-    Global::GetInstance().GetSettings().log_performance = result["log_performance"].as<bool>();
-    Global::GetInstance().GetSettings().log_protocol_messages = result["log_protocol_messages"].as<bool>();
+    ProgramSettings::GetInstance().verbosity = result["verbosity"].as<int>();
+    ProgramSettings::GetInstance().no_log = result["no_log"].as<bool>();
+    ProgramSettings::GetInstance().log_performance = result["log_performance"].as<bool>();
+    ProgramSettings::GetInstance().log_protocol_messages = result["log_protocol_messages"].as<bool>();
     omp_threads = result["omp_threads"].as<int>();
 
     if (omp_threads < 0) {
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     carta::ThreadManager::StartEventHandlingThreads(TASK_THREAD_COUNT);
     carta::ThreadManager::SetThreadLimit(omp_threads);
 
-    Global::GetInstance().GetSettings().user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
+    ProgramSettings::GetInstance().user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
     carta::logger::InitLogger();
 
     int run_all_tests = RUN_ALL_TESTS();

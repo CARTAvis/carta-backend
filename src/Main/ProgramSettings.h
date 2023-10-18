@@ -31,6 +31,11 @@
 
 namespace carta {
 struct ProgramSettings {
+    static ProgramSettings& GetInstance() {
+        static ProgramSettings global_values;
+        return global_values;
+    }
+
     bool version = false;
     bool help = false;
     std::vector<int> port;

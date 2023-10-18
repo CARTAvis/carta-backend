@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // Main
-        auto settings = Global::GetInstance().GetSettings() = std::move(carta::ProgramSettings(argc, argv));
+        auto settings = ProgramSettings::GetInstance() = std::move(carta::ProgramSettings(argc, argv));
 
         if (settings.help || settings.version) {
             exit(0);

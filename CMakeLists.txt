@@ -225,7 +225,6 @@ set(SOURCE_FILES
         src/ImageStats/StatsCalculator.cc
         src/Logger/Logger.cc
 		src/Logger/CartaLogSink.cc
-        src/Main/Global.cc
         src/Main/Main.cc
         src/Main/ProgramSettings.cc
         src/Main/WebBrowser.cc
