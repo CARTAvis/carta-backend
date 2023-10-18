@@ -12,9 +12,8 @@
 
 class TestSession : public Session {
 public:
-    TestSession(uint32_t id, std::string address, std::string top_level_folder, std::string starting_folder,
-        std::shared_ptr<FileListHandler> file_list_handler, bool read_only_mode = false, bool enable_scripting = false)
-        : Session(nullptr, nullptr, id, address, top_level_folder, starting_folder, file_list_handler, read_only_mode, enable_scripting) {}
+    TestSession(uint32_t id, std::string address, std::shared_ptr<FileListHandler> file_list_handler)
+        : Session(nullptr, nullptr, id, address, file_list_handler) {}
 
     bool TryPopMessagesQueue(std::pair<std::vector<char>, bool>& message);
     void ClearMessagesQueue();
@@ -22,8 +21,7 @@ public:
 
 class BackendModel {
 public:
-    BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
-        std::string top_level_folder, std::string starting_folder, bool read_only_mode, bool enable_scripting);
+    BackendModel();
     ~BackendModel();
 
     static std::unique_ptr<BackendModel> GetDummyBackend();

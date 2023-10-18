@@ -88,8 +88,7 @@ void SessionManager::OnConnect(WSType* ws) {
 
     // create a Session
     std::unique_lock<std::mutex> ulock(_sessions_mutex);
-    _sessions[session_id] = new Session(ws, loop, session_id, address, Global::TopLevelFolder(), Global::StartingFolder(),
-        _file_list_handler, Global::ReadOnlyMode(), Global::EnableScripting());
+    _sessions[session_id] = new Session(ws, loop, session_id, address, _file_list_handler);
 
     _sessions[session_id]->IncreaseRefCount();
 

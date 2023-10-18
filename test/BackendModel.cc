@@ -23,23 +23,12 @@ void TestSession::ClearMessagesQueue() {
 }
 
 std::unique_ptr<BackendModel> BackendModel::GetDummyBackend() {
-    uint32_t session_id(0);
-    std::string address;
-    std::string top_level_folder("/");
-    std::string starting_folder("data/images");
-    bool read_only_mode(false);
-    bool enable_scripting(false);
-
-    return std::make_unique<BackendModel>(
-        nullptr, nullptr, session_id, address, top_level_folder, starting_folder, read_only_mode, enable_scripting);
+    return std::make_unique<BackendModel>();
 }
 
-BackendModel::BackendModel(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop, uint32_t session_id, std::string address,
-    std::string top_level_folder, std::string starting_folder, bool read_only_mode, bool enable_scripting) {
-    _file_list_handler = std::make_shared<FileListHandler>(top_level_folder, starting_folder);
-    _session =
-        new TestSession(session_id, address, top_level_folder, starting_folder, _file_list_handler, read_only_mode, enable_scripting);
-
+BackendModel::BackendModel() {
+    _file_list_handler = std::make_shared<FileListHandler>("/", "data/images");
+    _session = new TestSession(0, "", _file_list_handler);
     _session->IncreaseRefCount(); // increase the reference count to avoid being deleted by the OnMessageTask
 }
 
