@@ -32,8 +32,8 @@
 namespace carta {
 struct ProgramSettings {
     static ProgramSettings& GetInstance() {
-        static ProgramSettings global_values;
-        return global_values;
+        static ProgramSettings settings;
+        return settings;
     }
 
     bool version = false;
