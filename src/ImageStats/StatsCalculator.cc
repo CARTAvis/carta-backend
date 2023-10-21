@@ -31,8 +31,8 @@ Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float
     return Histogram(num_bins, bounds, data, data_size);
 }
 
-bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
-    const casacore::ImageInterface<float>& image, bool per_channel) {
+bool CalcStatsValues(std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values,
+    const std::vector<CARTA::StatsType>& requested_stats, const casacore::ImageInterface<float>& image, bool per_channel) {
     // Use ImageStatistics to fill statistics values according to type;
     // template type matches image type
     casacore::ImageStatistics<float> image_stats = casacore::ImageStatistics<float>(image,

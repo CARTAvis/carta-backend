@@ -21,6 +21,14 @@
 
 namespace carta {
 
+struct RegionStatsIdHash {
+    std::size_t operator()(FileInfo::RegionStatsId const& id) const noexcept {
+        std::size_t h1 = std::hash<int>{}(id.region_id);
+        std::size_t h2 = std::hash<int>{}(id.stokes);
+        return h1 ^ (h2 << 1);
+    }
+};
+
 class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
@@ -33,7 +41,7 @@ public:
     bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
     bool GetRegionSpectralData(int region_id, const AxisRange& spectral_range, int stokes,
         const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin, std::mutex& image_mutex,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
+        std::unordered_map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
     bool GetDownsampledRasterData(
         std::vector<float>& data, int z, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
     bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int z, int stokes,
@@ -47,7 +55,7 @@ private:
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
     std::unordered_map<int, std::unique_ptr<casacore::HDF5Lattice<float>>> _mipmaps;
 
-    std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
+    std::unordered_map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats, RegionStatsIdHash> _region_stats;
 
     H5D_layout_t _layout;
 

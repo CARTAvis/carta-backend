@@ -93,7 +93,7 @@ public:
     CompressedFits(const std::string& filename, bool support_aips_beam = false);
 
     // Headers for file info
-    bool GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
+    bool GetFitsHeaderInfo(std::unordered_map<std::string, CARTA::FileInfoExtended>& hdu_info_map);
     bool GetFirstImageHdu(string& hduname);
 
     const casacore::ImageBeamSet& GetBeamSet(bool& is_history_beam);

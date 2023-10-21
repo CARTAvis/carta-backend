@@ -174,10 +174,10 @@ struct RegionSpectralConfig {
 };
 
 struct SpectralCache {
-    std::map<CARTA::StatsType, std::vector<double>> profiles;
+    std::unordered_map<CARTA::StatsType, std::vector<double>> profiles;
 
     SpectralCache() {}
-    SpectralCache(std::map<CARTA::StatsType, std::vector<double>>& profiles_) : profiles(profiles_) {}
+    SpectralCache(std::unordered_map<CARTA::StatsType, std::vector<double>>& profiles_) : profiles(profiles_) {}
 
     bool GetProfile(CARTA::StatsType type_, std::vector<double>& profile_) {
         if (!profiles.empty() && profiles.count(type_)) {
@@ -200,14 +200,14 @@ struct RegionStatsConfig {
 };
 
 struct StatsCache {
-    std::map<CARTA::StatsType, double> stats;
+    std::unordered_map<CARTA::StatsType, double> stats;
 
     StatsCache() {}
-    StatsCache(std::map<CARTA::StatsType, double>& stats_) {
+    StatsCache(std::unordered_map<CARTA::StatsType, double>& stats_) {
         stats = stats_;
     }
 
-    bool GetStats(std::map<CARTA::StatsType, double>& stats_) {
+    bool GetStats(std::unordered_map<CARTA::StatsType, double>& stats_) {
         if (!stats.empty()) {
             stats_ = stats;
             return true;

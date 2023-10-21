@@ -27,7 +27,7 @@ CompressedFits::CompressedFits(const std::string& filename, bool support_aips_be
     SetDefaultTransformMatrix();
 }
 
-bool CompressedFits::GetFitsHeaderInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map) {
+bool CompressedFits::GetFitsHeaderInfo(std::unordered_map<std::string, CARTA::FileInfoExtended>& hdu_info_map) {
     // Read compressed file headers to fill map
     auto zip_file = OpenGzFile();
     if (zip_file == Z_NULL) {

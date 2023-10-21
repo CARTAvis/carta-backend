@@ -223,7 +223,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 }
 
 void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
-    CARTA::CoordinateType coord_type, std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename,
+    CARTA::CoordinateType coord_type, std::unordered_map<int, CARTA::RegionStyle>& region_styles, std::string& filename,
     CARTA::ExportRegionAck& export_ack) {
     // Export regions to given filename, or return export file contents in ack
     // Check if any regions to export
@@ -1813,7 +1813,7 @@ bool RegionHandler::FillSpectralProfileData(
                 bool report_error(true);
                 AxisRange z_range(0, _frames.at(config_file_id)->Depth() - 1); // all channels
                 profile_ok = GetRegionSpectralData(config_region_id, config_file_id, z_range, coordinate, stokes_index, required_stats,
-                    report_error, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+                    report_error, [&](std::unordered_map<CARTA::StatsType, std::vector<double>> results, float progress) {
                         auto profile_message = Message::SpectralProfileData(
                             config_file_id, config_region_id, stokes_index, progress, coordinate, required_stats, results);
                         cb(profile_message); // send (partial profile) data
@@ -1827,7 +1827,7 @@ bool RegionHandler::FillSpectralProfileData(
 
 bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,
     std::vector<CARTA::StatsType>& required_stats, bool report_error,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
+    const std::function<void(std::unordered_map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // Fill spectral profile message for given region, file, and requirement
     if (!RegionFileIdsValid(region_id, file_id, true)) {
         return false;
@@ -1850,7 +1850,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     size_t profile_end = z_range.to;
     size_t profile_size = z_range.to - z_range.from + 1;
     std::vector<double> init_spectral(profile_size, nan(""));
-    std::map<CARTA::StatsType, std::vector<double>> results;
+    std::unordered_map<CARTA::StatsType, std::vector<double>> results;
     for (const auto& stat : required_stats) {
         results[stat] = init_spectral;
     }
@@ -1998,7 +1998,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
     } // end loader swizzled data
 
     // Initialize cache results for *all* spectral stats
-    std::map<CARTA::StatsType, std::vector<double>> cache_results;
+    std::unordered_map<CARTA::StatsType, std::vector<double>> cache_results;
     for (const auto& stat : _spectral_stats) {
         cache_results[stat] = init_spectral;
     }
@@ -2197,7 +2197,7 @@ bool RegionHandler::GetRegionStatsData(
     // Check cache
     CacheId cache_id = CacheId(file_id, region_id, stokes, z);
     if (_stats_cache.count(cache_id)) {
-        std::map<CARTA::StatsType, double> stats_results;
+        std::unordered_map<CARTA::StatsType, double> stats_results;
         if (_stats_cache[cache_id].GetStats(stats_results)) {
             FillStatistics(stats_message, required_stats, stats_results);
             return true;
@@ -2210,7 +2210,7 @@ bool RegionHandler::GetRegionStatsData(
     std::shared_ptr<casacore::LCRegion> lc_region;
     if (!ApplyRegionToFile(region_id, file_id, z_range, stokes, lc_region, stokes_region)) {
         // region outside image: NaN results
-        std::map<CARTA::StatsType, double> stats_results;
+        std::unordered_map<CARTA::StatsType, double> stats_results;
         for (const auto& carta_stat : required_stats) {
             if (carta_stat == CARTA::StatsType::NumPixels) {
                 stats_results[carta_stat] = 0.0;
@@ -2226,10 +2226,10 @@ bool RegionHandler::GetRegionStatsData(
 
     // calculate stats
     bool per_z(false);
-    std::map<CARTA::StatsType, std::vector<double>> stats_map;
+    std::unordered_map<CARTA::StatsType, std::vector<double>> stats_map;
     if (_frames.at(file_id)->GetRegionStats(stokes_region, required_stats, per_z, stats_map)) {
         // convert vector to single value in map
-        std::map<CARTA::StatsType, double> stats_results;
+        std::unordered_map<CARTA::StatsType, double> stats_results;
         for (auto& value : stats_map) {
             stats_results[value.first] = value.second[0];
         }
@@ -2588,7 +2588,7 @@ casacore::Vector<float> RegionHandler::GetTemporaryRegionProfile(int region_idx,
 
         // Get region spectral profiles converted to file_id image if necessary
         GetRegionSpectralData(region_id, file_id, z_range, coordinate, stokes_index, required_stats, report_error,
-            [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+            [&](std::unordered_map<CARTA::StatsType, std::vector<double>> results, float progress) {
                 // Callback only sets return values when progress is complete.
                 if (progress == 1.0) {
                     // Get mean spectral profile and max NumPixels for small region.

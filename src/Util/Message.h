@@ -118,7 +118,7 @@ public:
     // Response messages
     static CARTA::SpectralProfileData SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
         std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
-        std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+        std::unordered_map<CARTA::StatsType, std::vector<double>>& spectral_data);
     static CARTA::SpectralProfileData SpectralProfileData(int32_t stokes, float progress);
     static CARTA::SpatialProfileData SpatialProfileData(int32_t file_id, int32_t region_id, int32_t x, int32_t y, int32_t channel,
         int32_t stokes, float value, int32_t start, int32_t end, std::vector<float>& profile, std::string& coordinate, int32_t mip,
@@ -161,7 +161,7 @@ void FillHistogram(CARTA::Histogram* histogram, int32_t num_bins, double bin_wid
     const std::vector<int32_t>& bins, double mean, double std_dev);
 void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
-    std::map<CARTA::StatsType, double>& stats_value_map);
+    std::unordered_map<CARTA::StatsType, double>& stats_value_map);
 
 #include "Message.tcc"
 

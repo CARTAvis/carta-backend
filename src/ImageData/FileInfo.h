@@ -20,7 +20,7 @@ namespace carta {
 namespace FileInfo {
 
 struct ImageStats {
-    std::map<CARTA::StatsType, double> basic_stats;
+    std::unordered_map<CARTA::StatsType, double> basic_stats;
 
     std::vector<float> percentiles;
     std::vector<float> percentile_ranks;
@@ -42,12 +42,16 @@ struct RegionStatsId {
     bool operator<(const RegionStatsId& rhs) const {
         return (region_id < rhs.region_id) || ((region_id == rhs.region_id) && (stokes < rhs.stokes));
     }
+
+    bool operator==(const RegionStatsId& rhs) const {
+        return (this->region_id == rhs.region_id) && (this->stokes == rhs.stokes);
+    }
 };
 
 struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
-    std::map<CARTA::StatsType, std::vector<double>> stats;
+    std::unordered_map<CARTA::StatsType, std::vector<double>> stats;
     volatile bool completed = false;
     size_t latest_x = 0;
 

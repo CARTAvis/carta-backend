@@ -23,8 +23,8 @@ void CalcBasicStats(BasicStats<float>& stats, const float* data, const size_t da
 
 Histogram CalcHistogram(int num_bins, const HistogramBounds& bounds, const float* data, const size_t data_size);
 
-bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
-    const casacore::ImageInterface<float>& image, bool per_channel = true);
+bool CalcStatsValues(std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values,
+    const std::vector<CARTA::StatsType>& requested_stats, const casacore::ImageInterface<float>& image, bool per_channel = true);
 
 } // namespace carta
 

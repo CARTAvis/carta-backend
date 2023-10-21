@@ -447,7 +447,7 @@ CARTA::EventType Message::EventType(std::vector<char>& message) {
 
 CARTA::SpectralProfileData Message::SpectralProfileData(int32_t file_id, int32_t region_id, int32_t stokes, float progress,
     std::string& coordinate, std::vector<CARTA::StatsType>& required_stats,
-    std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+    std::unordered_map<CARTA::StatsType, std::vector<double>>& spectral_data) {
     CARTA::SpectralProfileData profile_message;
     profile_message.set_file_id(file_id);
     profile_message.set_region_id(region_id);
@@ -710,7 +710,7 @@ void FillHistogram(CARTA::Histogram* histogram, const carta::BasicStats<float>& 
 }
 
 void FillStatistics(CARTA::RegionStatsData& stats_data, const std::vector<CARTA::StatsType>& required_stats,
-    std::map<CARTA::StatsType, double>& stats_value_map) {
+    std::unordered_map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {
         double value(0.0); // default

@@ -43,7 +43,7 @@ public:
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,
         bool file_is_filename, CARTA::ImportRegionAck& import_ack);
     void ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, CARTA::CoordinateType coord_type,
-        std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename, CARTA::ExportRegionAck& export_ack);
+        std::unordered_map<int, CARTA::RegionStyle>& region_styles, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Frames
     void RemoveFrame(int file_id);
@@ -132,7 +132,7 @@ private:
         int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages);
     bool GetRegionSpectralData(int region_id, int file_id, const AxisRange& z_range, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats, bool report_error,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
+        const std::function<void(std::unordered_map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
         int region_id, int file_id, int stokes, const std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
     bool GetLineSpatialData(int file_id, int region_id, const std::string& coordinate, int stokes_index, int width,
@@ -148,7 +148,7 @@ private:
         std::shared_ptr<casacore::CoordinateSystem> csys, bool per_z, const AxisRange& z_range, int stokes_index, double& num_pixels);
 
     // Get computed stokes profiles for a region
-    using ProfilesMap = std::map<CARTA::StatsType, std::vector<double>>;
+    using ProfilesMap = std::unordered_map<CARTA::StatsType, std::vector<double>>;
     void GetStokesPtotal(
         const ProfilesMap& profiles_q, const ProfilesMap& profiles_u, const ProfilesMap& profiles_v, ProfilesMap& profiles_ptotal);
     void GetStokesPftotal(const ProfilesMap& profiles_i, const ProfilesMap& profiles_q, const ProfilesMap& profiles_u,

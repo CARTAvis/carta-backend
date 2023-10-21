@@ -34,7 +34,7 @@ using namespace carta;
 FileExtInfoLoader::FileExtInfoLoader(std::shared_ptr<FileLoader> loader) : _loader(loader) {}
 
 bool FileExtInfoLoader::FillFitsFileInfoMap(
-    std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message) {
+    std::unordered_map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message) {
     // Fill map with FileInfoExtended for all FITS image HDUs
     bool map_ok(false);
 
