@@ -24,7 +24,13 @@ using json = nlohmann::json;
 
 namespace carta {
 
-const std::string success_string = json({{"success", true}}).dump();
+const std::string SUCCESS_STRING = json({{"success", true}}).dump();
+const std::string LAYOUT = "layout";
+const std::string SNIPPET = "snippet";
+const std::string WORKSPACE = "workspace";
+
+const std::unordered_map<std::string, std::string> SCHEMA_URLS = {
+    {LAYOUT, CARTA_LAYOUT_SCHEMA_URL}, {SNIPPET, CARTA_SNIPPET_SCHEMA_URL}, {WORKSPACE, CARTA_WORKSPACE_SCHEMA_URL}};
 
 uint32_t HttpServer::_scripting_request_id = 0;
 
@@ -66,23 +72,23 @@ void HttpServer::RegisterRoutes() {
         app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
         app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
-        app.get("/api/database/list/layouts", [&](auto res, auto req) { HandleGetObjectList("layout", res, req); });
-        app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects("layout", res, req); });
-        app.get("/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject("layout", res, req); });
-        app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject("layout", res, req); });
-        app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject("layout", res, req); });
+        app.get("/api/database/list/layouts", [&](auto res, auto req) { HandleGetObjectList(LAYOUT, res, req); });
+        app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetObjects(LAYOUT, res, req); });
+        app.get("/api/database/layout/:name", [&](auto res, auto req) { HandleGetObject(LAYOUT, res, req); });
+        app.put("/api/database/layout", [&](auto res, auto req) { HandleSetObject(LAYOUT, res, req); });
+        app.del("/api/database/layout", [&](auto res, auto req) { HandleClearObject(LAYOUT, res, req); });
 
-        app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList("snippet", res, req); });
-        app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects("snippet", res, req); });
-        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject("snippet", res, req); });
-        app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject("snippet", res, req); });
-        app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject("snippet", res, req); });
+        app.get("/api/database/list/snippets", [&](auto res, auto req) { HandleGetObjectList(SNIPPET, res, req); });
+        app.get("/api/database/snippets", [&](auto res, auto req) { HandleGetObjects(SNIPPET, res, req); });
+        app.get("/api/database/snippet/:name", [&](auto res, auto req) { HandleGetObject(SNIPPET, res, req); });
+        app.put("/api/database/snippet", [&](auto res, auto req) { HandleSetObject(SNIPPET, res, req); });
+        app.del("/api/database/snippet", [&](auto res, auto req) { HandleClearObject(SNIPPET, res, req); });
 
-        app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList("workspace", res, req); });
-        app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects("workspace", res, req); });
-        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject("workspace", res, req); });
-        app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject("workspace", res, req); });
-        app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject("workspace", res, req); });
+        app.get("/api/database/list/workspaces", [&](auto res, auto req) { HandleGetObjectList(WORKSPACE, res, req); });
+        app.get("/api/database/workspaces", [&](auto res, auto req) { HandleGetObjects(WORKSPACE, res, req); });
+        app.get("/api/database/workspace/:name", [&](auto res, auto req) { HandleGetObject(WORKSPACE, res, req); });
+        app.put("/api/database/workspace", [&](auto res, auto req) { HandleSetObject(WORKSPACE, res, req); });
+        app.del("/api/database/workspace", [&](auto res, auto req) { HandleClearObject(WORKSPACE, res, req); });
     } else {
         app.get("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
         app.put("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
@@ -336,7 +342,7 @@ void HttpServer::HandleSetPreferences(Res* res, Req* req) {
         res->writeHeader("Content-Type", "application/json");
         AddNoCacheHeaders(res);
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -391,7 +397,7 @@ void HttpServer::HandleClearPreferences(Res* res, Req* req) {
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -468,7 +474,7 @@ void HttpServer::HandleSetObject(const std::string& object_type, Res* res, Req* 
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -487,7 +493,7 @@ void HttpServer::HandleClearObject(const std::string& object_type, Res* res, Req
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -584,12 +590,11 @@ bool HttpServer::WriteObjectFile(const std::string& object_type, const std::stri
         fs::create_directories(object_path.parent_path());
         std::ofstream file(object_path.string());
         // Ensure correct schema value is written
-        if (object_type == "layout") {
-            obj["$schema"] = CARTA_LAYOUT_SCHEMA_URL;
-        } else if (object_type == "snippet") {
-            obj["$schema"] = CARTA_SNIPPET_SCHEMA_URL;
-        } else if (object_type == "workspace") {
-            obj["$schema"] = CARTA_WORKSPACE_SCHEMA_URL;
+        if (SCHEMA_URLS.count(object_type)) {
+            obj["$schema"] = SCHEMA_URLS.at(object_type);
+        } else {
+            spdlog::error("Unknown object types: {}.", object_type);
+            return false;
         }
 
         auto json_string = obj.dump(4);
