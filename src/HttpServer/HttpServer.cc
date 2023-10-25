@@ -24,7 +24,7 @@ using json = nlohmann::json;
 
 namespace carta {
 
-const std::string success_string = json({{"success", true}}).dump();
+const std::string SUCCESS_STRING = json({{"success", true}}).dump();
 const std::string LAYOUT = "layout";
 const std::string SNIPPET = "snippet";
 const std::string WORKSPACE = "workspace";
@@ -335,7 +335,7 @@ void HttpServer::HandleSetPreferences(Res* res, Req* req) {
         res->writeHeader("Content-Type", "application/json");
         AddNoCacheHeaders(res);
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -390,7 +390,7 @@ void HttpServer::HandleClearPreferences(Res* res, Req* req) {
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -467,7 +467,7 @@ void HttpServer::HandleSetObject(const std::string& object_type, Res* res, Req* 
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
@@ -486,7 +486,7 @@ void HttpServer::HandleClearObject(const std::string& object_type, Res* res, Req
         AddNoCacheHeaders(res);
         res->writeHeader("Content-Type", "application/json");
         if (status == HTTP_200) {
-            res->end(success_string);
+            res->end(SUCCESS_STRING);
         } else {
             res->end();
         }
