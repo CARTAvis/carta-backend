@@ -6,8 +6,8 @@
 
 //# StatsCalculator.h: functions for calculating statistics and histograms
 
-#ifndef CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_
-#define CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_
+#ifndef CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_
+#define CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_
 
 #include <vector>
 
@@ -28,4 +28,4 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_
+#endif // CARTA_SRC_IMAGESTATS_STATSCALCULATOR_H_

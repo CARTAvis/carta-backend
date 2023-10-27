@@ -6,8 +6,8 @@
 
 //# CrtfImportExport.h: handle CRTF region file import and export
 
-#ifndef CARTA_BACKEND_REGION_CRTFIMPORTEXPORT_H_
-#define CARTA_BACKEND_REGION_CRTFIMPORTEXPORT_H_
+#ifndef CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_
+#define CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_
 
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
@@ -101,4 +101,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_CRTFIMPORTEXPORT_H_
+#endif // CARTA_SRC_REGION_CRTFIMPORTEXPORT_H_

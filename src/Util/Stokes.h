@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_STOKES_H_
-#define CARTA_BACKEND__UTIL_STOKES_H_
+#ifndef CARTA_SRC_UTIL_STOKES_H_
+#define CARTA_SRC_UTIL_STOKES_H_
 
 #include <string>
 
@@ -94,4 +94,4 @@ struct StokesSource {
     }
 };
 
-#endif // CARTA_BACKEND__UTIL_STOKES_H_
+#endif // CARTA_SRC_UTIL_STOKES_H_

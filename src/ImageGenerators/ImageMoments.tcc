@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
 //
-#ifndef CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
-#define CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
+#ifndef CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
+#define CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_
 
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -728,4 +728,4 @@ casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casac
     return chunk_shape;
 }
 
-#endif // CARTA_BACKEND__MOMENT_IMAGEMOMENTS_TCC_
+#endif // CARTA_SRC_IMAGEGENERATORS_IMAGEMOMENTS_TCC_

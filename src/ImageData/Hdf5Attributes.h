@@ -5,8 +5,8 @@
 */
 
 //# Hdf5Attributes.h: get HDF5 header attributes in casacore::Record
-#ifndef CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_
-#define CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_
+#ifndef CARTA_SRC_IMAGEDATA_HDF5ATTRIBUTES_H_
+#define CARTA_SRC_IMAGEDATA_HDF5ATTRIBUTES_H_
 
 #pragma once
 
@@ -27,4 +27,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_
+#endif // CARTA_SRC_IMAGEDATA_HDF5ATTRIBUTES_H_

@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_HDF5LOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_HDF5LOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_HDF5LOADER_H_
+#define CARTA_SRC_IMAGEDATA_HDF5LOADER_H_
 
 #include <regex>
 #include <unordered_map>
@@ -72,4 +72,4 @@ private:
 
 #include "Hdf5Loader.tcc"
 
-#endif // CARTA_BACKEND_IMAGEDATA_HDF5LOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_HDF5LOADER_H_

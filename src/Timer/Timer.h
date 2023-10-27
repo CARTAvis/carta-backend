@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_TIMER_TIMER_H_
-#define CARTA_BACKEND_TIMER_TIMER_H_
+#ifndef CARTA_SRC_TIMER_TIMER_H_
+#define CARTA_SRC_TIMER_TIMER_H_
 
 #include <chrono>
 #include <string>
@@ -37,4 +37,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_TIMER_TIMER_H_
+#endif // CARTA_SRC_TIMER_TIMER_H_
