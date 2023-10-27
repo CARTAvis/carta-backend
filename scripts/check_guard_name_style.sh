@@ -22,17 +22,29 @@ function CheckGuardNameStyle () {
 
   if [[ $line_num -gt 0 ]]; then
     # Replace with the guard name in the line number for the first occurence of '#ifndef ...'
-    sed -i '' "${line_num}s/.*/#ifndef $guardname/" $filename
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "${line_num}s/.*/#ifndef $guardname/" $filename
+    else
+      sed -i "${line_num}s/.*/#ifndef $guardname/" $filename
+    fi
 
     # Get the line number after the first occurence of '#ifndef ...'
     line_num=$((line_num + 1))
 
     # Replace with the guard name in the line number after the first occurence of '#ifndef ...'
-    sed -i '' "${line_num}s/.*/#define $guardname/" $filename
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "${line_num}s/.*/#define $guardname/" $filename
+    else
+      sed -i "${line_num}s/.*/#define $guardname/" $filename
+    fi
   fi
 
   # Replace the last occurence of matched '#endif ...'
-  sed -i '' "$ s/^#endif .*$/#endif \/\/ $guardname/" $filename
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "$ s/^#endif .*$/#endif \/\/ $guardname/" $filename
+  else
+    sed -i "$ s/^#endif .*$/#endif \/\/ $guardname/" $filename
+  fi
 }
 
 function CheckFolder() {
