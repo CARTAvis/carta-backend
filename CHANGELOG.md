@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-* Make the style of including guard names consistent ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
+* Normalize the style of guard names in header files ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
 
 ### Fixed
 * Fixed scripting interface and symlink directory issues ([#1283](https://github.com/CARTAvis/carta-frontend/issues/1283), [#1284](https://github.com/CARTAvis/carta-frontend/issues/1284), [#1314](https://github.com/CARTAvis/carta-frontend/issues/1314)).
