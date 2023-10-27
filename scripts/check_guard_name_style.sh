@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Execute this bash script in the current folder, and it will normalize the guard names from all header files
+
 function CheckGuardNameStyle () {
   filename=$1
 
@@ -8,13 +10,18 @@ function CheckGuardNameStyle () {
 
   # Split the file path name by '/' as an array
   sub_names=(${filename//\// })
+
+  # Concatenate the sub-names of the file path name
   for i in "${sub_names[@]}"
   do
     guard_name+=$i
     guard_name+="_"
   done
 
+  # Capitalize all letters
   guard_name=$(echo "${guard_name}" | tr '[:lower:]' '[:upper:]')
+
+  # Replace '.' with '_'
   guard_name=$(echo "${guard_name}" | sed "s/\./\_/g")
 
   # Get the line number for the first occurrence of '#ifndef ...'
