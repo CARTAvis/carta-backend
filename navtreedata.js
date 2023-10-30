@@ -73,17 +73,17 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"",
-"Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f",
-"classcarta_1_1AnimationObject.html#a56dbb294ef54486e215750b468536d14",
-"classcarta_1_1CrtfImportExport.html#a829dc1d18b0da020bf57a933ff90c35d",
-"classcarta_1_1Frame.html#a02636ffeb64925348c5fdbec7ad346db",
-"classcarta_1_1Image2DConvolver.html#a97c836867119437687d52f6303c689e4",
-"classcarta_1_1Region.html#a1a39929d7d9da5841d9a42728b6365d6",
-"classcarta_1_1Session.html#a6f3187e3a8df59e5750672be1781c0cc",
-"classcarta_1_1TileCache.html#af5b5981844470552335b430ce0c6f4d3",
-"namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7",
-"structcarta_1_1ProgramSettings.html#a173ca96d891ccc2b5a4f4c601af44c75"
+"AnimationObject_8h.html",
+"Logger_8h.html#aae919ba7488e6353a8c239b5f081247c",
+"classcarta_1_1AnimationObject.html#a65b088c063188de12ee402426c1a1a6a",
+"classcarta_1_1CrtfImportExport.html#a884110e3ba5e06302d02846589f5420b",
+"classcarta_1_1Frame.html#a03a1722c3e3ff0b2f84c4b734ccd3a02",
+"classcarta_1_1Image2DConvolver.html#a9caa4d013c25a2e48e804336d699a3c1",
+"classcarta_1_1Region.html#a1eeffb075bd57ea317c37a2d99cbeff5",
+"classcarta_1_1Session.html#a71f84bdc7dd1db7fcb8652d5cde07883",
+"classcarta_1_1Timer.html",
+"namespacecarta_1_1FileInfo.html#af17bd99f75cc6f5c27fb1f2c2f6294d7a0a9501840acacfc8efe7522f5340000c",
+"structcarta_1_1ProgramSettings.html#a2521653ef67d47c6b48aa3d4a74edcfb"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
