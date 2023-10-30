@@ -52,6 +52,7 @@ set(TEST_SOURCES
         TestImageFitting.cc
 		TestLineSpatialProfiles.cc
         TestMain.cc
+        TestMapPerf.cc
         TestMoment.cc
         TestNormalizedUnits.cc
         TestProgramSettings.cc

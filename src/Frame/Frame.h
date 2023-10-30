@@ -177,14 +177,14 @@ public:
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
-        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+        std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
-        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+        std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     bool GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+        const casacore::IPosition& origin, std::unordered_map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
     // Moments calculation
     bool CalculateMoments(int file_id, GeneratorProgressCallback progress_callback, const StokesRegion& stokes_region,
@@ -322,7 +322,7 @@ protected:
     // For image, key is cache key (z/stokes); for cube, key is stokes.
     std::unordered_map<int, std::vector<Histogram>> _image_histograms, _cube_histograms;
     std::unordered_map<int, BasicStats<float>> _image_basic_stats, _cube_basic_stats;
-    std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
+    std::unordered_map<int, std::unordered_map<CARTA::StatsType, double>> _image_stats;
 
     // Moment generator
     std::unique_ptr<MomentGenerator> _moment_generator;

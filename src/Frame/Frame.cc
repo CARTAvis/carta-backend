@@ -1010,10 +1010,10 @@ bool Frame::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_
         // Calculate stats map using slicer
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(z), stokes);
         bool per_z(false);
-        std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
+        std::unordered_map<CARTA::StatsType, std::vector<double>> stats_vector_map;
         if (GetSlicerStats(stokes_slicer, required_stats, per_z, stats_vector_map)) {
             // convert vector to single value in map
-            std::map<CARTA::StatsType, double> stats_map;
+            std::unordered_map<CARTA::StatsType, double> stats_map;
             for (auto& value : stats_vector_map) {
                 stats_map[value.first] = value.second[0];
             }
@@ -1671,7 +1671,7 @@ bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
 }
 
 bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
-    std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+    std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
     bool subimage_ok = GetRegionSubImage(stokes_region, sub_image);
@@ -1686,7 +1686,7 @@ bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<
 }
 
 bool Frame::GetSlicerStats(const StokesSlicer& stokes_slicer, std::vector<CARTA::StatsType>& required_stats, bool per_z,
-    std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+    std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
     bool subimage_ok = GetSlicerSubImage(stokes_slicer, sub_image);
@@ -1709,7 +1709,7 @@ bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, 
 }
 
 bool Frame::GetLoaderSpectralData(int region_id, const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    const casacore::IPosition& origin, std::unordered_map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)
     return _loader->GetRegionSpectralData(region_id, z_range, stokes, mask, origin, _image_mutex, results, progress);
 }

@@ -214,7 +214,7 @@ void Session::ConnectCalled() {
 // ********************************************************************************
 // File browser info
 
-bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
+bool Session::FillExtendedFileInfo(std::unordered_map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
     const std::string& folder, const std::string& filename, const std::string& hdu, bool support_aips_beam, std::string& message) {
     // Fill CARTA::FileInfo and CARTA::FileInfoExtended
     // Map all hdus if no hdu_name supplied and FITS image
@@ -463,7 +463,7 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
 void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id) {
     CARTA::FileInfoResponse response;
     auto& file_info = *response.mutable_file_info();
-    std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+    std::unordered_map<std::string, CARTA::FileInfoExtended> extended_info_map;
     string message;
     bool success = FillExtendedFileInfo(
         extended_info_map, file_info, request.directory(), request.file(), request.hdu(), request.support_aips_beam(), message);
@@ -972,7 +972,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
                 abs_filename = top_level_path.absoluteName();
             }
 
-            std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+            std::unordered_map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
 
             _region_handler->ExportRegion(
                 file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);

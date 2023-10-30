@@ -51,7 +51,7 @@ public:
         FileExtInfoLoader ext_info_loader(loader);
         bool file_info_ok;
         std::string message;
-        std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map;
+        std::unordered_map<std::string, CARTA::FileInfoExtended> file_info_extended_map;
 
         if (request_file_type == CARTA::FileType::FITS) {
             file_info_ok = ext_info_loader.FillFitsFileInfoMap(file_info_extended_map, fullname, message);
@@ -66,7 +66,7 @@ public:
         CheckFileInfoExtended(file_info_extended_map, request_filename, request_hdu);
     }
 
-    static void CheckFileInfoExtended(std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map,
+    static void CheckFileInfoExtended(std::unordered_map<std::string, CARTA::FileInfoExtended> file_info_extended_map,
         const std::string& expect_filename, const std::string& expect_hdu) {
         EXPECT_NE(file_info_extended_map.find(expect_hdu), file_info_extended_map.end());
         if (file_info_extended_map.find(expect_hdu) == file_info_extended_map.end()) {
@@ -171,7 +171,8 @@ public:
 
         auto file_info_extended = response.file_info_extended();
         // convert protobuf map to std map
-        std::map<std::string, CARTA::FileInfoExtended> file_info_extended_map = {file_info_extended.begin(), file_info_extended.end()};
+        std::unordered_map<std::string, CARTA::FileInfoExtended> file_info_extended_map = {
+            file_info_extended.begin(), file_info_extended.end()};
 
         FileExtInfoLoaderTest::CheckFileInfoExtended(file_info_extended_map, expect_filename, expect_hdu);
     }
@@ -185,7 +186,7 @@ public:
         auto request = Message::FileInfoRequest(SAMPLE_FILES_PATH, request_filename, request_hdu);
         CARTA::FileInfoResponse response;
         auto& file_info = *response.mutable_file_info();
-        std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+        std::unordered_map<std::string, CARTA::FileInfoExtended> extended_info_map;
         bool support_aips_beam(false);
         string message;
         bool success = FillExtendedFileInfo(

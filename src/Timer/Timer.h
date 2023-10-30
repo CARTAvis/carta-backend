@@ -30,6 +30,7 @@ public:
     ~Timer() = default;
 
     TimeDelta Elapsed();
+    void Restart();
 
 private:
     std::chrono::high_resolution_clock::time_point _t_start;

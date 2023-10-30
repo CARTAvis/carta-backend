@@ -30,7 +30,7 @@ public:
 
     // Fill extended file info for all FITS image hdus
     bool FillFitsFileInfoMap(
-        std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message);
+        std::unordered_map<std::string, CARTA::FileInfoExtended>& hdu_info_map, const std::string& filename, std::string& message);
 
     // Fill extended file info for specified hdu
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);

@@ -14,3 +14,7 @@ TimeDelta Timer::Elapsed() {
     auto t_end = std::chrono::high_resolution_clock::now();
     return {(double)std::chrono::duration_cast<std::chrono::microseconds>(t_end - _t_start).count()};
 }
+
+void Timer::Restart() {
+    _t_start = std::chrono::high_resolution_clock::now();
+}
