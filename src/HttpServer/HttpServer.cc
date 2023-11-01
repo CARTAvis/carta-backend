@@ -72,16 +72,23 @@ void HttpServer::RegisterRoutes() {
         app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
         app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
 
-        std::vector<std::string> object_types = {LAYOUT, SNIPPET, WORKSPACE};
-        for (const auto& object_type : object_types) {
-            app.get(fmt::format("/api/database/list/{}s", object_type),
-                [&](auto res, auto req) { HandleGetObjectList(object_type, res, req); });
-            app.get(fmt::format("/api/database/{}s", object_type), [&](auto res, auto req) { HandleGetObjects(object_type, res, req); });
-            app.get(
-                fmt::format("/api/database/{}/:name", object_type), [&](auto res, auto req) { HandleGetObject(object_type, res, req); });
-            app.put(fmt::format("/api/database/{}", object_type), [&](auto res, auto req) { HandleSetObject(object_type, res, req); });
-            app.del(fmt::format("/api/database/{}", object_type), [&](auto res, auto req) { HandleClearObject(object_type, res, req); });
-        }
+        app.get(fmt::format("/api/database/list/{}s", LAYOUT), [&](auto res, auto req) { HandleGetObjectList(LAYOUT, res, req); });
+        app.get(fmt::format("/api/database/{}s", LAYOUT), [&](auto res, auto req) { HandleGetObjects(LAYOUT, res, req); });
+        app.get(fmt::format("/api/database/{}/:name", LAYOUT), [&](auto res, auto req) { HandleGetObject(LAYOUT, res, req); });
+        app.put(fmt::format("/api/database/{}", LAYOUT), [&](auto res, auto req) { HandleSetObject(LAYOUT, res, req); });
+        app.del(fmt::format("/api/database/{}", LAYOUT), [&](auto res, auto req) { HandleClearObject(LAYOUT, res, req); });
+
+        app.get(fmt::format("/api/database/list/{}s", SNIPPET), [&](auto res, auto req) { HandleGetObjectList(SNIPPET, res, req); });
+        app.get(fmt::format("/api/database/{}s", SNIPPET), [&](auto res, auto req) { HandleGetObjects(SNIPPET, res, req); });
+        app.get(fmt::format("/api/database/{}/:name", SNIPPET), [&](auto res, auto req) { HandleGetObject(SNIPPET, res, req); });
+        app.put(fmt::format("/api/database/{}", SNIPPET), [&](auto res, auto req) { HandleSetObject(SNIPPET, res, req); });
+        app.del(fmt::format("/api/database/{}", SNIPPET), [&](auto res, auto req) { HandleClearObject(SNIPPET, res, req); });
+
+        app.get(fmt::format("/api/database/list/{}s", WORKSPACE), [&](auto res, auto req) { HandleGetObjectList(WORKSPACE, res, req); });
+        app.get(fmt::format("/api/database/{}s", WORKSPACE), [&](auto res, auto req) { HandleGetObjects(WORKSPACE, res, req); });
+        app.get(fmt::format("/api/database/{}/:name", WORKSPACE), [&](auto res, auto req) { HandleGetObject(WORKSPACE, res, req); });
+        app.put(fmt::format("/api/database/{}", WORKSPACE), [&](auto res, auto req) { HandleSetObject(WORKSPACE, res, req); });
+        app.del(fmt::format("/api/database/{}", WORKSPACE), [&](auto res, auto req) { HandleClearObject(WORKSPACE, res, req); });
     } else {
         app.get("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
         app.put("/api/database/*", [&](auto res, auto req) { NotImplemented(res, req); });
