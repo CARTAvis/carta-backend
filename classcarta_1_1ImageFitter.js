@@ -3,7 +3,7 @@ var classcarta_1_1ImageFitter =
     [ "ImageFitter", "classcarta_1_1ImageFitter.html#a9cdf83157a2149961d2311086602baf8", null ],
     [ "CalculateErrors", "classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29", null ],
     [ "CalculateImageData", "classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5", null ],
-    [ "CalculateNanNum", "classcarta_1_1ImageFitter.html#a85fff0ddc5414112e3cebbcae80b739b", null ],
+    [ "CalculateNanNumAndStd", "classcarta_1_1ImageFitter.html#aaffd05e392d76e77c31a087af5608ab9", null ],
     [ "Callback", "classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b", null ],
     [ "ErrorHandler", "classcarta_1_1ImageFitter.html#aab6682d3f70cacb34af30da27dee81b4", null ],
     [ "FitImage", "classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44", null ],

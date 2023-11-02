@@ -1,8 +1,7 @@
 <map id="carta::ImageFitter::SolveSystem" name="carta::ImageFitter::SolveSystem">
-<area shape="rect" id="node1" title="Main function for the multiple Gaussian image fitting." alt="" coords="5,104,144,145"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="217,5,355,47"/>
-<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5" title="Calculate the model and residual image data after fitting." alt="" coords="205,71,367,112"/>
-<area shape="rect" id="node5" href="$classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b" title="Called after each iteration of the fitting." alt="" coords="217,136,355,177"/>
-<area shape="rect" id="node6" href="$classcarta_1_1ImageFitter.html#a69cbe382ee0df6a3aae2d1e239427b44" title="Calculate the Median Absolute Deviation (MAD) of an array of data." alt="" coords="192,201,380,243"/>
-<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title="Extract Gaussian parameters from a vector." alt="" coords="428,5,589,47"/>
+<area shape="rect" id="node1" title="Main function for the multiple Gaussian image fitting." alt="" coords="5,71,144,112"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#adb41334cf11084df588a1a9752c4df29" title="Calculate parameter errors after fitting." alt="" coords="204,5,343,47"/>
+<area shape="rect" id="node4" href="$classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5" title="Calculate the model and residual image data after fitting." alt="" coords="192,71,355,112"/>
+<area shape="rect" id="node5" href="$classcarta_1_1ImageFitter.html#ac84e37d5ca28378c500f18c6a4d9be1b" title="Called after each iteration of the fitting." alt="" coords="204,136,343,177"/>
+<area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#a8b1cb0f92d5233f3c90f06cfe263c043" title="Extract Gaussian parameters from a vector." alt="" coords="403,5,564,47"/>
 </map>

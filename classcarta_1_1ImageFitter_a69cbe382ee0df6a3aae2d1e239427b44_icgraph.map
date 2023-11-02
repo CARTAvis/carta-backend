@@ -1,5 +1,5 @@
 <map id="carta::ImageFitter::GetMedianAbsDeviation" name="carta::ImageFitter::GetMedianAbsDeviation">
-<area shape="rect" id="node1" title="Calculate the Median Absolute Deviation (MAD) of an array of data." alt="" coords="379,5,567,47"/>
-<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#a3796f44fac3ba6b9dbe37b9261491abe" title="Main function for the multiple Gaussian image fitting." alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node1" title="Calculate the Median Absolute Deviation (MAD) of an array of data." alt="" coords="435,5,623,47"/>
+<area shape="rect" id="node2" href="$classcarta_1_1ImageFitter.html#aaffd05e392d76e77c31a087af5608ab9" title="Calculate the number of NaN values and standard deviation of the image data." alt="" coords="192,5,387,47"/>
 <area shape="rect" id="node3" href="$classcarta_1_1ImageFitter.html#aed4497f70e14e441c9e33950f8f9ab44" title="Fit Gaussian components to an image and generate fitting results along with model and residual data." alt="" coords="5,5,144,47"/>
 </map>

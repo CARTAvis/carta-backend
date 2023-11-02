@@ -18,7 +18,7 @@ var searchData=
   ['calculatehistogram_477',['CalculateHistogram',['../classcarta_1_1Frame.html#a2e88a8481229d116d2976f51b32ac326',1,'carta::Frame']]],
   ['calculateimagedata_478',['CalculateImageData',['../classcarta_1_1ImageFitter.html#a5824b306b9f2af74b8c26a60f5bd95d5',1,'carta::ImageFitter']]],
   ['calculatemoments_479',['CalculateMoments',['../classcarta_1_1RegionHandler.html#a18c5dbca7dd3627e96767d039a80009d',1,'carta::RegionHandler::CalculateMoments()'],['../classcarta_1_1Frame.html#a141a8029b71bbbb13ee36461d73fdcf8',1,'carta::Frame::CalculateMoments()'],['../classcarta_1_1MomentGenerator.html#a72ed0de83810cde08599ca4af6f857ea',1,'carta::MomentGenerator::CalculateMoments()']]],
-  ['calculatenannum_480',['CalculateNanNum',['../classcarta_1_1ImageFitter.html#a85fff0ddc5414112e3cebbcae80b739b',1,'carta::ImageFitter']]],
+  ['calculatenannumandstd_480',['CalculateNanNumAndStd',['../classcarta_1_1ImageFitter.html#aaffd05e392d76e77c31a087af5608ab9',1,'carta::ImageFitter']]],
   ['calculatepa_481',['CalculatePa',['../classcarta_1_1VectorField.html#a8052152add4b017199530f668be73159',1,'carta::VectorField']]],
   ['calculatepi_482',['CalculatePi',['../classcarta_1_1VectorField.html#a877ebbedc732501a20f18f7a261d375c',1,'carta::VectorField']]],
   ['calculatepipa_483',['CalculatePiPa',['../classcarta_1_1VectorField.html#a647fc9c5e7323efef169a741c30a97cf',1,'carta::VectorField']]],
