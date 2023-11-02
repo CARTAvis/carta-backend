@@ -8,6 +8,7 @@ var namespacecarta =
       [ "LogReceivedEventType", "namespacecarta_1_1logger.html#a579b36ca7fa898b7052001d151fc34cd", null ],
       [ "LogSentEventType", "namespacecarta_1_1logger.html#ab9e339746ee51ea21696ab43b50841d5", null ]
     ] ],
+    [ "LoaderCache", "classcarta_1_1LoaderCache.html", "classcarta_1_1LoaderCache" ],
     [ "ConfigId", "structcarta_1_1ConfigId.html", "structcarta_1_1ConfigId" ],
     [ "ConfigIdHash", "structcarta_1_1ConfigIdHash.html", "structcarta_1_1ConfigIdHash" ],
     [ "CacheId", "structcarta_1_1CacheId.html", "structcarta_1_1CacheId" ],
@@ -90,7 +91,6 @@ var namespacecarta =
     [ "SpectralProfileTask", "classcarta_1_1SpectralProfileTask.html", "classcarta_1_1SpectralProfileTask" ],
     [ "PvPreviewUpdateTask", "classcarta_1_1PvPreviewUpdateTask.html", "classcarta_1_1PvPreviewUpdateTask" ],
     [ "PerSocketData", "structcarta_1_1PerSocketData.html", "structcarta_1_1PerSocketData" ],
-    [ "LoaderCache", "classcarta_1_1LoaderCache.html", "classcarta_1_1LoaderCache" ],
     [ "Session", "classcarta_1_1Session.html", "classcarta_1_1Session" ],
     [ "SessionContext", "classcarta_1_1SessionContext.html", "classcarta_1_1SessionContext" ],
     [ "SessionManager", "classcarta_1_1SessionManager.html", "classcarta_1_1SessionManager" ],

@@ -1,7 +1,6 @@
 var Session_8h =
 [
     [ "PerSocketData", "structcarta_1_1PerSocketData.html", "structcarta_1_1PerSocketData" ],
-    [ "LoaderCache", "classcarta_1_1LoaderCache.html", "classcarta_1_1LoaderCache" ],
     [ "Session", "classcarta_1_1Session.html", "classcarta_1_1Session" ],
     [ "HISTOGRAM_CANCEL", "Session_8h.html#a1abfdf98ad4368a6911c02dcfe63f9c8", null ],
     [ "LOADER_CACHE_SIZE", "Session_8h.html#a9e48d43721cf0f913bb3dae7134d07df", null ],

@@ -1,6 +1,5 @@
 var NAVTREEINDEX0 =
 {
-"":[2,0,3],
 "AnimationObject_8h.html":[4,0,0],
 "AnimationObject_8h.html#a7ffe0cee0422c9c50de63e10a01a3b01":[4,0,0,1],
 "AnimationObject_8h.html#aa4c49ddab4b04a2c6ccf74e8884890df":[4,0,0,2],
@@ -241,13 +240,14 @@ var NAVTREEINDEX0 =
 "LineBoxRegions_8h.html":[4,0,74],
 "ListProgressReporter_8cc.html":[4,0,75],
 "ListProgressReporter_8h.html":[4,0,76],
-"Logger_8cc.html":[4,0,77],
-"Logger_8cc.html#a220224f8f0ac091a4555ac30dfc7619d":[4,0,77,1],
-"Logger_8cc.html#a23c9bf75209165cf69eb8d50f64b81b4":[4,0,77,2],
-"Logger_8cc.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,77,3],
-"Logger_8cc.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,77,0],
-"Logger_8cc.html#ab9e339746ee51ea21696ab43b50841d5":[4,0,77,4],
-"Logger_8h.html":[4,0,78],
-"Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d":[4,0,78,3],
-"Logger_8h.html#a220224f8f0ac091a4555ac30dfc7619d":[4,0,78,9]
+"LoaderCache_8cc.html":[4,0,77],
+"LoaderCache_8h.html":[4,0,78],
+"Logger_8cc.html":[4,0,79],
+"Logger_8cc.html#a220224f8f0ac091a4555ac30dfc7619d":[4,0,79,1],
+"Logger_8cc.html#a23c9bf75209165cf69eb8d50f64b81b4":[4,0,79,2],
+"Logger_8cc.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,79,3],
+"Logger_8cc.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,79,0],
+"Logger_8cc.html#ab9e339746ee51ea21696ab43b50841d5":[4,0,79,4],
+"Logger_8h.html":[4,0,80],
+"Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d":[4,0,80,3]
 };

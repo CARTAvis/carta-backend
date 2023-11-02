@@ -143,6 +143,10 @@ var files_dup =
     [ "ListProgressReporter.h", "ListProgressReporter_8h.html", [
       [ "ListProgressReporter", "classcarta_1_1ListProgressReporter.html", "classcarta_1_1ListProgressReporter" ]
     ] ],
+    [ "LoaderCache.cc", "LoaderCache_8cc.html", null ],
+    [ "LoaderCache.h", "LoaderCache_8h.html", [
+      [ "LoaderCache", "classcarta_1_1LoaderCache.html", "classcarta_1_1LoaderCache" ]
+    ] ],
     [ "Logger.cc", "Logger_8cc.html", "Logger_8cc" ],
     [ "Logger.h", "Logger_8h.html", "Logger_8h" ],
     [ "Main.cc", "Main_8cc.html", "Main_8cc" ],
