@@ -160,6 +160,10 @@ var namespacecarta =
     [ "ComputedStokesName", "namespacecarta.html#a13be33c4c61fc2acef8d41a09410fd9e", null ],
     [ "FileTypeString", "namespacecarta.html#aa00c6e2a51560be72e87cad1c67f7d2a", null ],
     [ "ICD_VERSION", "namespacecarta.html#ab956cf731110ba23b135cca4982ce525", null ],
+    [ "LAYOUT", "namespacecarta.html#a1507d2cefdaa01d5695e4fb962c01281", null ],
     [ "MimeTypes", "namespacecarta.html#a55d0e4a09efee3dc6cb3aa79af60bbbb", null ],
-    [ "success_string", "namespacecarta.html#a4262964fd29ac905d328d8d61295ebfc", null ]
+    [ "SCHEMA_URLS", "namespacecarta.html#a6ae770367fed7f2b28315cd997b3dae1", null ],
+    [ "SNIPPET", "namespacecarta.html#a276b31a07a77cce605e901c674d66356", null ],
+    [ "SUCCESS_STRING", "namespacecarta.html#a0adeabfb442db034ca83092b1a2ee1e4", null ],
+    [ "WORKSPACE", "namespacecarta.html#af9830509695cfe9bd0ed310dec7033be", null ]
 ];

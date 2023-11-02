@@ -179,8 +179,12 @@ var NAVTREEINDEX0 =
 "Histogram_8h.html":[4,0,61],
 "Histogram_8h.html#a8e5e52c4e8fa6d21995384f1d39280c6":[4,0,61,1],
 "HttpServer_8cc.html":[4,0,62],
-"HttpServer_8cc.html#a4262964fd29ac905d328d8d61295ebfc":[4,0,62,1],
+"HttpServer_8cc.html#a0adeabfb442db034ca83092b1a2ee1e4":[4,0,62,4],
+"HttpServer_8cc.html#a1507d2cefdaa01d5695e4fb962c01281":[4,0,62,1],
+"HttpServer_8cc.html#a276b31a07a77cce605e901c674d66356":[4,0,62,3],
+"HttpServer_8cc.html#a6ae770367fed7f2b28315cd997b3dae1":[4,0,62,2],
 "HttpServer_8cc.html#ab701e3ac61a85b337ec5c1abaad6742d":[4,0,62,0],
+"HttpServer_8cc.html#af9830509695cfe9bd0ed310dec7033be":[4,0,62,5],
 "HttpServer_8h.html":[4,0,63],
 "HttpServer_8h.html#a03de961a098b39862343b6df887057c1":[4,0,63,3],
 "HttpServer_8h.html#a124878fc0d651de043bd48a51d20f6d5":[4,0,63,9],
@@ -245,9 +249,5 @@ var NAVTREEINDEX0 =
 "Logger_8h.html":[4,0,78],
 "Logger_8h.html#a0ab032d47dbab9ca28d1fa3f65ec7e5d":[4,0,78,3],
 "Logger_8h.html#a220224f8f0ac091a4555ac30dfc7619d":[4,0,78,9],
-"Logger_8h.html#a3a30c8519779f61e8148bc6bcc19a489":[4,0,78,7],
-"Logger_8h.html#a579b36ca7fa898b7052001d151fc34cd":[4,0,78,10],
-"Logger_8h.html#a670c6a63d98e715c33a6063e6e0c7b0c":[4,0,78,12],
-"Logger_8h.html#a7ae94642fa899f39b026522f0b4359ce":[4,0,78,2],
-"Logger_8h.html#a7b334512783c98ccfdac74bd38aa2f9f":[4,0,78,8]
+"Logger_8h.html#a3a30c8519779f61e8148bc6bcc19a489":[4,0,78,7]
 };
