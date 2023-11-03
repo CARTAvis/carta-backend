@@ -4,10 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0-rc.0]
+## [Unreleased]
+
+### Changed
+* Move the loader cache to separate files ([#1021](https://github.com/CARTAvis/carta-backend/issues/1021)).
+* Improve the code style in HTTP server ([#1260](https://github.com/CARTAvis/carta-backend/issues/1260)).
+
+### Fixed
+* Fixed scripting interface and symlink directory issues ([#1283](https://github.com/CARTAvis/carta-frontend/issues/1283), [#1284](https://github.com/CARTAvis/carta-frontend/issues/1284), [#1314](https://github.com/CARTAvis/carta-frontend/issues/1314)).
+* Include casacore log messages in carta log ([#1169](https://github.com/CARTAvis/carta-backend/issues/1169)).
+* Fixed the problem of opening old IRAM fits images ([#1312](https://github.com/CARTAvis/carta-backend/issues/1312)).
+* Fixed incorrect std calculation when fitting images with nan values ([#1318](https://github.com/CARTAvis/carta-backend/issues/1318)).
+
+## [4.0.0]
 
 ### Changed
 * Support animation playback with matched images in multi-panel view ([#1860](https://github.com/CARTAvis/carta-frontend/issues/1860)).
+* Update the submodule uWebSockets ([#1297](https://github.com/CARTAvis/carta-backend/issues/1297)).
 
 ### Fixed
 * Prevent the installation of pugixml library files ([#1261](https://github.com/CARTAvis/carta-backend/issues/1261)).

@@ -1,9 +1,6 @@
 [submodule "carta-protobuf"]
 	path = carta-protobuf
 	url = https://github.com/CARTAvis/carta-protobuf.git
-[submodule "uWebSockets"]
-	path = third-party/uWebSockets
-	url = https://github.com/uNetworking/uWebSockets.git
 [submodule "cxxopts"]
 	path = third-party/cxxopts
 	url = https://github.com/jarro2783/cxxopts
