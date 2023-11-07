@@ -137,7 +137,6 @@ std::shared_ptr<Region> RegionHandler::GetRegion(int region_id) {
 bool RegionHandler::RegionSet(int region_id, bool check_annotation) {
     // Check whether a particular region is set or any regions are set
     bool region_set(false);
-    std::lock_guard<std::mutex> region_guard(_region_mutex);
     if (region_id == ALL_REGIONS) {
         region_set = _regions.size() > 0;
     } else {

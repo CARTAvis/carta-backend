@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Include casacore log messages in carta log ([#1169](https://github.com/CARTAvis/carta-backend/issues/1169)).
 * Fixed the problem of opening old IRAM fits images ([#1312](https://github.com/CARTAvis/carta-backend/issues/1312)).
 * Fixed incorrect std calculation when fitting images with nan values ([#1318](https://github.com/CARTAvis/carta-backend/issues/1318)).
+* Fixed the hanging problem when deleting a region during the spectral profile process ([#1328](https://github.com/CARTAvis/carta-backend/issues/1328)).
 
 ## [4.0.0]
 
