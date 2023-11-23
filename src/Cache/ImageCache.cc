@@ -11,42 +11,48 @@
 
 namespace carta {
 
-ImageCache::ImageCache(ImageCacheType type)
-    : _type(type), _stokes_i(-1), _stokes_q(-1), _stokes_u(-1), _stokes_v(-1), _beam_area(DOUBLE_NAN) {}
+ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth)
+    : _type(type),
+      _width(width),
+      _height(height),
+      _depth(depth),
+      _stokes_i(-1),
+      _stokes_q(-1),
+      _stokes_u(-1),
+      _stokes_v(-1),
+      _beam_area(DOUBLE_NAN) {}
 
 float* ImageCache::AllocateData(int stokes, size_t data_size) {
     return nullptr;
 }
 
-float* ImageCache::GetChannelImageCache(int z, int stokes, size_t width, size_t height) {
+float* ImageCache::GetChannelImageCache(int z, int stokes) {
     return nullptr;
 }
 
-float ImageCache::GetValue(int x, int y, int z, int stokes, size_t width, size_t height) {
+float ImageCache::GetValue(int x, int y, int z, int stokes) {
     return FLOAT_NAN;
 }
 
-bool ImageCache::LoadCachedPointSpectralData(
-    std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth) {
+bool ImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     return false;
 }
 
-bool ImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+bool ImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     return false;
 }
 
 void ImageCache::LoadCachedPointSpatialData(
-    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes, size_t width, size_t height) {
+    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) {
     profile.reserve(end - start);
     if (config == 'x') {
         for (unsigned int i = start; i < end; ++i) {
-            profile.push_back(GetValue(i, point.y, z, stokes, width, height));
+            profile.push_back(GetValue(i, point.y, z, stokes));
         }
     } else if (config == 'y') {
         for (unsigned int i = start; i < end; ++i) {
-            profile.push_back(GetValue(point.x, i, z, stokes, width, height));
+            profile.push_back(GetValue(point.x, i, z, stokes));
         }
     } else {
         spdlog::error("Unknown point spatial profile config: {}", config);

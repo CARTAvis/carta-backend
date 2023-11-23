@@ -22,12 +22,12 @@ namespace carta {
 
 class ChannelImageCache : public ImageCache {
 public:
-    ChannelImageCache();
+    ChannelImageCache(size_t width, size_t height, size_t depth);
 
     float* AllocateData(int stokes, size_t data_size) override;
-    float* GetChannelImageCache(int z, int stokes, size_t width, size_t height) override;
+    float* GetChannelImageCache(int z, int stokes) override;
 
-    float GetValue(int x, int y, int z, int stokes, size_t width, size_t height) override;
+    float GetValue(int x, int y, int z, int stokes) override;
 
     virtual void ValidateChannelImageCache() override;
     virtual void InvalidateChannelImageCache() override;

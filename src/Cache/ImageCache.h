@@ -22,21 +22,19 @@ enum ImageCacheType { Cube, Channel };
 
 class ImageCache {
 public:
-    ImageCache(ImageCacheType type);
+    ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth);
     virtual ~ImageCache() = default;
 
     virtual float* AllocateData(int stokes, size_t data_size);
-    virtual float* GetChannelImageCache(int z, int stokes, size_t width, size_t height);
+    virtual float* GetChannelImageCache(int z, int stokes);
 
-    virtual bool LoadCachedPointSpectralData(
-        std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth);
-    virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
-        const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-        std::map<CARTA::StatsType, std::vector<double>>& profiles);
-    virtual float GetValue(int x, int y, int z, int stokes, size_t width, size_t height);
+    virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
+    virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
+    virtual float GetValue(int x, int y, int z, int stokes);
 
     virtual void LoadCachedPointSpatialData(
-        std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes, size_t width, size_t height);
+        std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
 
     virtual bool DataExist(int stokes) const;
 
@@ -66,6 +64,11 @@ public:
 
 protected:
     enum ImageCacheType _type;
+
+    // Cube image cache size
+    size_t _width;
+    size_t _height;
+    size_t _depth;
 
     int _stokes_i; // stokes type "I" index
     int _stokes_q; // stokes type "Q" index

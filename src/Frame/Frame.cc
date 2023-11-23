@@ -90,7 +90,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
             FULL_IMAGE_CACHE -= MemorySizeOfWholeImage();
 
             // Create an image cache for the whole image data
-            _image_cache = std::make_unique<CubeImageCache>();
+            _image_cache = std::make_unique<CubeImageCache>(_width, _height, _depth);
 
             spdlog::info("Cache the whole image data.");
             for (int stokes = 0; stokes < _num_stokes; ++stokes) {
@@ -115,7 +115,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     if (!_image_cache) {
         // By default, the image cache is per channel, if it is not assigned as for the whole image data
-        _image_cache = std::make_unique<ChannelImageCache>();
+        _image_cache = std::make_unique<ChannelImageCache>(_width, _height, _depth);
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -1238,7 +1238,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
                     if (ImageCacheAvailable(_z_index, required_stokes)) {
                         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
                         _image_cache->LoadCachedPointSpatialData(
-                            profile, config.coordinate().back(), point, start, end, _z_index, required_stokes, _width, _height);
+                            profile, config.coordinate().back(), point, start, end, _z_index, required_stokes);
                         cache_lock.release();
                         have_profile = true;
                     }
@@ -2489,7 +2489,7 @@ float* Frame::GetImageData(int z, int stokes) {
     if (stokes == CURRENT_STOKES) {
         stokes = _stokes_index;
     }
-    return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelImageCache(z, stokes, _width, _height) : nullptr;
+    return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelImageCache(z, stokes) : nullptr;
 }
 
 float Frame::MemorySize() const {
@@ -2513,16 +2513,16 @@ float Frame::MemorySizeOfWholeImage() const {
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    return _image_cache->LoadCachedPointSpectralData(profile, stokes, point, _width, _height, _depth);
+    return _image_cache->LoadCachedPointSpectralData(profile, stokes, point);
 }
 
 bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    return _image_cache->LoadCachedRegionSpectralData(z_range, stokes, _width, _height, mask, origin, profiles);
+    return _image_cache->LoadCachedRegionSpectralData(z_range, stokes, mask, origin, profiles);
 }
 
 float Frame::GetValue(int x, int y, int z, int stokes) {
-    return ImageCacheAvailable(z, stokes) ? _image_cache->GetValue(x, y, z, stokes, _width, _height) : FLOAT_NAN;
+    return ImageCacheAvailable(z, stokes) ? _image_cache->GetValue(x, y, z, stokes) : FLOAT_NAN;
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {

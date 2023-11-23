@@ -10,29 +10,30 @@
 
 namespace carta {
 
-CubeImageCache::CubeImageCache() : ImageCache(ImageCacheType::Cube), _computed_stokes_channel(-1) {}
+CubeImageCache::CubeImageCache(size_t width, size_t height, size_t depth)
+    : ImageCache(ImageCacheType::Cube, width, height, depth), _computed_stokes_channel(-1) {}
 
 float* CubeImageCache::AllocateData(int stokes, size_t data_size) {
     _stokes_data[stokes] = std::make_unique<float[]>(data_size);
     return _stokes_data[stokes].get();
 }
 
-float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, size_t height) {
+float* CubeImageCache::GetChannelImageCache(int z, int stokes) {
     if (IsComputedStokes(stokes)) {
         if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
             return _computed_stokes_channel_data[stokes].get();
         }
 
         // Calculate the channel image data for computed stokes
-        _computed_stokes_channel_data[stokes] = std::make_unique<float[]>(width * height);
+        _computed_stokes_channel_data[stokes] = std::make_unique<float[]>(_width * _height);
         _computed_stokes_channel = z;
 
         auto stokes_type = StokesTypes[stokes];
-        size_t start_idx = z * width * height;
+        size_t start_idx = z * _width * _height;
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
 #pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
+                for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = start_idx + i;
                     _computed_stokes_channel_data[stokes][i] =
                         CalcPtotal(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
@@ -41,7 +42,7 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, siz
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             if (_stokes_q > -1 && _stokes_u > -1) {
 #pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
+                for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = start_idx + i;
                     _computed_stokes_channel_data[stokes][i] = CalcPlinear(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
                 }
@@ -49,7 +50,7 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, siz
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
 #pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
+                for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = start_idx + i;
                     _computed_stokes_channel_data[stokes][i] = CalcPFtotal(_stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx],
                         _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
@@ -58,7 +59,7 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, siz
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
 #pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
+                for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = start_idx + i;
                     _computed_stokes_channel_data[stokes][i] =
                         CalcPFlinear(_stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
@@ -67,7 +68,7 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, siz
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             if (_stokes_q > -1 && _stokes_u > -1) {
 #pragma omp parallel for
-                for (int i = 0; i < width * height; ++i) {
+                for (int i = 0; i < _width * _height; ++i) {
                     size_t idx = start_idx + i;
                     _computed_stokes_channel_data[stokes][i] = CalcPangle(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
                 }
@@ -76,11 +77,11 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes, size_t width, siz
         return _computed_stokes_channel_data[stokes].get();
     }
 
-    return _stokes_data[stokes].get() + width * height * z;
+    return _stokes_data[stokes].get() + _width * _height * z;
 }
 
-float CubeImageCache::GetValue(int x, int y, int z, int stokes, size_t width, size_t height) {
-    size_t idx = width * height * z + width * y + x;
+float CubeImageCache::GetValue(int x, int y, int z, int stokes) {
+    size_t idx = _width * _height * z + _width * y + x;
 
     if (IsComputedStokes(stokes)) {
         auto stokes_type = StokesTypes[stokes];
@@ -113,24 +114,22 @@ float CubeImageCache::GetValue(int x, int y, int z, int stokes, size_t width, si
     return _stokes_data[stokes][idx];
 }
 
-bool CubeImageCache::LoadCachedPointSpectralData(
-    std::vector<float>& profile, int stokes, PointXy point, size_t width, size_t height, size_t depth) {
+bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     int x, y;
     point.ToIndex(x, y);
     if (_stokes_data.count(stokes) || IsComputedStokes(stokes)) {
-        profile.resize(depth);
+        profile.resize(_depth);
 #pragma omp parallel for
-        for (int z = 0; z < depth; ++z) {
-            profile[z] = GetValue(x, y, z, stokes, width, height);
+        for (int z = 0; z < _depth; ++z) {
+            profile[z] = GetValue(x, y, z, stokes);
         }
         return true;
     }
     return false;
 }
 
-bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, size_t width, size_t height,
-    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
-    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     if (!mask.shape().empty() && (_stokes_data.count(stokes) || IsComputedStokes(stokes))) {
         int x_min = origin(0);
         int y_min = origin(1);
@@ -167,7 +166,7 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
 
             for (int x = x_min; x < x_min + mask_width; ++x) {
                 for (int y = y_min; y < y_min + mask_height; ++y) {
-                    auto val = GetValue(x, y, z, stokes, width, height);
+                    auto val = GetValue(x, y, z, stokes);
                     if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
                         sum += val;
                         sum_sq += val * val;
