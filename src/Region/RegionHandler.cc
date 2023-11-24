@@ -110,14 +110,20 @@ void RegionHandler::RemoveRegion(int region_id) {
         return;
     }
 
-    std::unique_lock<std::mutex> region_lock(_region_mutex);
+    // Disconnect region(s)
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
             region.second->WaitForTaskCancellation();
         }
-        _regions.clear();
     } else {
         _regions.at(region_id)->WaitForTaskCancellation();
+    }
+
+    // Erase region(s)
+    std::unique_lock<std::mutex> region_lock(_region_mutex);
+    if (region_id == ALL_REGIONS) {
+        _regions.clear();
+    } else {
         _regions.erase(region_id);
     }
     region_lock.unlock();
