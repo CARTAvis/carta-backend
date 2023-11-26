@@ -432,12 +432,4 @@ void ProgramSettings::AddDeprecationWarning(const std::string& option, std::stri
     warning_msgs.push_back(fmt::format("Option {} found in {} is deprecated. {}", option, where, message));
 }
 
-bool ProgramSettings::operator!=(const ProgramSettings& rhs) const {
-    return GetTuple() != rhs.GetTuple();
-}
-
-bool ProgramSettings::operator==(const ProgramSettings& rhs) const {
-    return GetTuple() == rhs.GetTuple();
-}
-
 } // namespace carta

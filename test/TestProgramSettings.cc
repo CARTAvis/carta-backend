@@ -55,6 +55,58 @@ public:
         fs::current_path(working_directory);
     }
 
+    static void CheckConsistency(const ProgramSettings& p1, const ProgramSettings& p2) {
+        EXPECT_TRUE(p1.version == p2.version);
+        EXPECT_TRUE(p1.help == p2.help);
+        if (!p1.port.empty() || !p2.port.empty()) {
+            EXPECT_TRUE(p1.port == p2.port);
+        }
+        EXPECT_TRUE(p1.omp_thread_count == p2.omp_thread_count);
+        EXPECT_TRUE(p1.event_thread_count == p2.event_thread_count);
+        EXPECT_TRUE(p1.top_level_folder == p2.top_level_folder);
+        EXPECT_TRUE(p1.starting_folder == p2.starting_folder);
+        EXPECT_TRUE(p1.host == p2.host);
+        if (!p1.files.empty() || !p2.files.empty()) {
+            EXPECT_TRUE(p1.files == p2.files);
+        }
+        if (!p1.file_paths.empty() || !p2.file_paths.empty()) {
+            EXPECT_TRUE(p1.file_paths == p2.file_paths);
+        }
+        EXPECT_TRUE(p1.frontend_folder == p2.frontend_folder);
+        EXPECT_TRUE(p1.no_http == p2.no_http);
+        EXPECT_TRUE(p1.no_frontend == p2.no_frontend);
+        EXPECT_TRUE(p1.no_database == p2.no_database);
+        EXPECT_TRUE(p1.no_runtime_config == p2.no_runtime_config);
+        EXPECT_TRUE(p1.debug_no_auth == p2.debug_no_auth);
+        EXPECT_TRUE(p1.no_browser == p2.no_browser);
+        EXPECT_TRUE(p1.no_log == p2.no_log);
+        EXPECT_TRUE(p1.log_performance == p2.log_performance);
+        EXPECT_TRUE(p1.log_protocol_messages == p2.log_protocol_messages);
+        EXPECT_TRUE(p1.verbosity == p2.verbosity);
+        EXPECT_TRUE(p1.wait_time == p2.wait_time);
+        EXPECT_TRUE(p1.init_wait_time == p2.init_wait_time);
+        EXPECT_TRUE(p1.idle_session_wait_time == p2.idle_session_wait_time);
+        EXPECT_TRUE(p1.read_only_mode == p2.read_only_mode);
+        EXPECT_TRUE(p1.enable_scripting == p2.enable_scripting);
+        EXPECT_TRUE(p1.controller_deployment == p2.controller_deployment);
+        EXPECT_TRUE(p1.browser == p2.browser);
+        EXPECT_TRUE(p1.no_user_config == p2.no_user_config);
+        EXPECT_TRUE(p1.no_system_config == p2.no_system_config);
+        if (!p1.command_line_settings.empty() || !p2.command_line_settings.empty()) {
+            EXPECT_TRUE(p1.command_line_settings == p2.command_line_settings);
+        }
+        EXPECT_TRUE(p1.system_settings_json_exists == p2.system_settings_json_exists);
+        EXPECT_TRUE(p1.user_settings_json_exists == p2.user_settings_json_exists);
+        EXPECT_TRUE(p1.user_directory == p2.user_directory);
+        if (!p1.warning_msgs.empty() || !p2.warning_msgs.empty()) {
+            EXPECT_TRUE(p1.warning_msgs == p2.warning_msgs);
+        }
+        std::vector<std::string> debug_msgs;
+        if (!p1.debug_msgs.empty() || !p2.debug_msgs.empty()) {
+            EXPECT_TRUE(p1.debug_msgs == p2.debug_msgs);
+        }
+    }
+
 private:
     fs::path working_directory;
 };
@@ -87,9 +139,9 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
 
 TEST_F(ProgramSettingsTest, EmptyArugments) {
     auto settings = SettingsFromVector({"carta_backend"});
-    EXPECT_TRUE(settings == default_settings);
+    CheckConsistency(settings, default_settings);
     settings = SettingsFromVector({"carta_backend", ""});
-    EXPECT_TRUE(settings == default_settings);
+    CheckConsistency(settings, default_settings);
     ASSERT_THROW(settings = SettingsFromVector({"carta_backend", "--top_level_folder"}), cxxopts::OptionException);
 }
 
