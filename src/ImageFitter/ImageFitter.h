@@ -139,9 +139,9 @@ private:
     GeneratorProgressCallback _progress_callback;
 
     /**
-     * @brief Calculate the number of NaN values in the image data.
+     * @brief Calculate the number of NaN values and standard deviation of the image data.
      */
-    void CalculateNanNum();
+    void CalculateNanNumAndStd();
     /**
      * @brief Set initial fitting parameters for the fitting.
      * @param initial_values Initial fitting parameters
