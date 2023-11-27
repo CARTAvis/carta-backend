@@ -23,7 +23,7 @@ float* ChannelImageCache::GetChannelImageCache(int z, int stokes) {
 }
 
 float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
-    return _channel_data[_width * y + x];
+    return _channel_data[(_width * y) + x];
 }
 
 void ChannelImageCache::ValidateChannelImageCache() {

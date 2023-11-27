@@ -27,7 +27,7 @@ public:
     float* AllocateData(int stokes, size_t data_size) override;
     float* GetChannelImageCache(int z, int stokes) override;
 
-    float GetValue(int x, int y, int z, int stokes) override;
+    inline float GetValue(int x, int y, int z, int stokes) override;
 
     virtual void ValidateChannelImageCache() override;
     virtual void InvalidateChannelImageCache() override;

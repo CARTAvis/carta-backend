@@ -30,7 +30,7 @@ public:
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
-    float GetValue(int x, int y, int z, int stokes) override;
+    inline float GetValue(int x, int y, int z, int stokes) override;
 
     bool DataExist(int stokes) const override {
         return _stokes_data.count(stokes);

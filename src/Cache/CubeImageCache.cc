@@ -29,7 +29,7 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes) {
         _computed_stokes_channel = z;
 
         auto stokes_type = StokesTypes[stokes];
-        size_t start_idx = z * _width * _height;
+        size_t start_idx = _width * _height * z;
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
 #pragma omp parallel for
@@ -77,13 +77,17 @@ float* CubeImageCache::GetChannelImageCache(int z, int stokes) {
         return _computed_stokes_channel_data[stokes].get();
     }
 
-    return _stokes_data[stokes].get() + _width * _height * z;
+    return _stokes_data[stokes].get() + (_width * _height * z);
 }
 
 float CubeImageCache::GetValue(int x, int y, int z, int stokes) {
-    size_t idx = _width * _height * z + _width * y + x;
+    size_t idx = (_width * _height * z) + (_width * y) + x;
 
     if (IsComputedStokes(stokes)) {
+        if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
+            return _computed_stokes_channel_data[stokes][(_width * y) + x];
+        }
+
         auto stokes_type = StokesTypes[stokes];
 
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
