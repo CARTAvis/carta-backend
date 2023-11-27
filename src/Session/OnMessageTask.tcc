@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__ONMESSAGETASK_TCC_
-#define CARTA_BACKEND__ONMESSAGETASK_TCC_
+#ifndef CARTA_SRC_SESSION_ONMESSAGETASK_TCC_
+#define CARTA_SRC_SESSION_ONMESSAGETASK_TCC_
 
 namespace carta {
 
@@ -53,4 +53,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__ONMESSAGETASK_TCC_
+#endif // CARTA_SRC_SESSION_ONMESSAGETASK_TCC_

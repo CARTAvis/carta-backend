@@ -8,8 +8,8 @@
  *  Utilities for working with authentication tokens.
  */
 
-#ifndef CARTA_BACKEND__UTIL_TOKEN_H_
-#define CARTA_BACKEND__UTIL_TOKEN_H_
+#ifndef CARTA_SRC_UTIL_TOKEN_H_
+#define CARTA_SRC_UTIL_TOKEN_H_
 
 #include <uWebSockets/HttpContext.h>
 #include <string>
@@ -26,4 +26,4 @@ std::string NewAuthToken();
  */
 bool ValidateAuthToken(uWS::HttpRequest* http_request, const std::string& required_token);
 
-#endif // CARTA_BACKEND__UTIL_TOKEN_H_
+#endif // CARTA_SRC_UTIL_TOKEN_H_

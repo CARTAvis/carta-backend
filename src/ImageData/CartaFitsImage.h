@@ -7,8 +7,8 @@
 //# CartaFitsImage.h : FITS Image class derived from casacore::ImageInterface for images not supported by casacore,
 //# including compressed and Int64
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
-#define CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
+#ifndef CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_
+#define CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_
 
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/images/Images/ImageInfo.h>
@@ -125,4 +125,4 @@ private:
 
 #include "CartaFitsImage.tcc"
 
-#endif // CARTA_BACKEND_IMAGEDATA_CARTAFITSIMAGE_H_
+#endif // CARTA_SRC_IMAGEDATA_CARTAFITSIMAGE_H_

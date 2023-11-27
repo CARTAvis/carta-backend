@@ -6,8 +6,8 @@
 
 //# CartaHdf5Image.h : HDF5 Image class derived from casacore::ImageInterface
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CARTAHDF5IMAGE_H_
-#define CARTA_BACKEND_IMAGEDATA_CARTAHDF5IMAGE_H_
+#ifndef CARTA_SRC_IMAGEDATA_CARTAHDF5IMAGE_H_
+#define CARTA_SRC_IMAGEDATA_CARTAHDF5IMAGE_H_
 
 #include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/HDF5/HDF5File.h>
@@ -85,4 +85,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CARTAHDF5IMAGE_H_
+#endif // CARTA_SRC_IMAGEDATA_CARTAHDF5IMAGE_H_

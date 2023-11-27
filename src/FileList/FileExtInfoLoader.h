@@ -6,8 +6,8 @@
 
 //# FileExtInfoLoader.h: load FileInfoExtended fields for all supported file types
 
-#ifndef CARTA_BACKEND__FILELIST_FILEEXTINFOLOADER_H_
-#define CARTA_BACKEND__FILELIST_FILEEXTINFOLOADER_H_
+#ifndef CARTA_SRC_FILELIST_FILEEXTINFOLOADER_H_
+#define CARTA_SRC_FILELIST_FILEEXTINFOLOADER_H_
 
 #include <map>
 #include <string>
@@ -79,4 +79,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_
+#endif // CARTA_SRC_FILELIST_FILEEXTINFOLOADER_H_

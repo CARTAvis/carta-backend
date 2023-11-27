@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef __SESSION_CONTEXT_H__
-#define __SESSION_CONTEXT_H__
+#ifndef CARTA_SRC_SESSION_SESSIONCONTEXT_H_
+#define CARTA_SRC_SESSION_SESSIONCONTEXT_H_
 
 namespace carta {
 
@@ -30,4 +30,4 @@ private:
 
 } // namespace carta
 
-#endif // __SESSION_CONTEXT_H__
+#endif // CARTA_SRC_SESSION_SESSIONCONTEXT_H_

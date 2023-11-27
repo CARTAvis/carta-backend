@@ -8,8 +8,8 @@
 // Created by angus on 2019/09/23.
 //
 
-#ifndef CARTA_BACKEND__SMOOTHING_H_
-#define CARTA_BACKEND__SMOOTHING_H_
+#ifndef CARTA_SRC_DATASTREAM_SMOOTHING_H_
+#define CARTA_SRC_DATASTREAM_SMOOTHING_H_
 
 #include <cstdint>
 #include <limits>
@@ -77,4 +77,4 @@ void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width,
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__SMOOTHING_H_
+#endif // CARTA_SRC_DATASTREAM_SMOOTHING_H_

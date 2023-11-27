@@ -6,8 +6,8 @@
 
 //# RegionImportExport.h: handle region import/export in CRTF and DS9 formats
 
-#ifndef CARTA_BACKEND_REGION_REGIONIMPORTEXPORT_H_
-#define CARTA_BACKEND_REGION_REGIONIMPORTEXPORT_H_
+#ifndef CARTA_SRC_REGION_REGIONIMPORTEXPORT_H_
+#define CARTA_SRC_REGION_REGIONIMPORTEXPORT_H_
 
 #include <carta-protobuf/defs.pb.h>
 #include <casacore/casa/Arrays/IPosition.h>
@@ -116,4 +116,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_REGIONIMPORTEXPORT_H_
+#endif // CARTA_SRC_REGION_REGIONIMPORTEXPORT_H_

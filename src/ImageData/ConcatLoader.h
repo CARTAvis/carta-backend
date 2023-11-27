@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_CONCATLOADER_H_
+#define CARTA_SRC_IMAGEDATA_CONCATLOADER_H_
 
 #include <casacore/casa/Json/JsonKVMap.h>
 #include <casacore/casa/Json/JsonParser.h>
@@ -44,4 +44,4 @@ void ConcatLoader::AllocateImage(const std::string& /*hdu*/) {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_CONCATLOADER_H_
