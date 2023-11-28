@@ -64,6 +64,8 @@ public:
         return _beam_area;
     }
 
+    static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
+
 protected:
     enum ImageCacheType _type;
 

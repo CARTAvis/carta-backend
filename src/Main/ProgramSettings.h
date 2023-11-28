@@ -60,7 +60,7 @@ struct ProgramSettings {
     bool read_only_mode = false;
     bool enable_scripting = false;
     bool controller_deployment = false;
-    int full_image_cache_size_available = FULL_IMAGE_CACHE_SIZE_AVAILABLE;
+    int full_image_cache_size_available = FULL_IMAGE_CACHE_SIZE_AVAILABLE; // MB
 
     std::string browser;
 

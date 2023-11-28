@@ -8,6 +8,7 @@
 
 #include "Logger/Logger.h"
 #include "Util/Stokes.h"
+#include "Util/System.h"
 
 float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
 std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
@@ -38,6 +39,24 @@ void ImageCache::LoadCachedPointSpatialData(
         }
     } else {
         spdlog::error("Unknown point spatial profile config: {}", config);
+    }
+}
+
+void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg) {
+    if (full_image_cache_size_available > 0) {
+        // Check if required full image cache hits the upper limit based on the total system memory
+        int memory_upper_limit = GetTotalSystemMemory() * 9 / 10;
+        if (full_image_cache_size_available > memory_upper_limit) {
+            spdlog::warn("Full image cache {} MB is greater than the system upper limit {} MB, reset it to {} MB.",
+                full_image_cache_size_available, memory_upper_limit, memory_upper_limit);
+            full_image_cache_size_available = memory_upper_limit;
+        }
+
+        // Set the global variable for full image cache
+        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+        FULL_IMAGE_CACHE_SIZE_AVAILABLE = full_image_cache_size_available;
+        ulock_full_image_cache_size_available.unlock();
+        msg += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
     }
 }
 
