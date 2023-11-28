@@ -25,22 +25,20 @@ public:
     ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth);
     virtual ~ImageCache() = default;
 
-    virtual float* AllocateData(int stokes, size_t data_size);
-    virtual float* GetChannelImageCache(int z, int stokes);
+    virtual float* AllocateData(int stokes, size_t data_size) = 0;
+    virtual float* GetChannelImageCache(int z, int stokes) = 0;
+    virtual float GetValue(int x, int y, int z, int stokes) = 0;
 
-    virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
+    virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
     virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);
-    virtual float GetValue(int x, int y, int z, int stokes);
-
-    virtual void LoadCachedPointSpatialData(
-        std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
-
-    virtual bool DataExist(int stokes) const;
-
-    virtual void ValidateChannelImageCache();
-    virtual void InvalidateChannelImageCache();
+        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
+    virtual bool DataExist(int stokes) const = 0;
     virtual bool ChannelImageCacheValid() const = 0;
+
+    virtual void ValidateChannelImageCache() = 0;
+    virtual void InvalidateChannelImageCache() = 0;
+
+    void LoadCachedPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
 
     ImageCacheType Type() const {
         return _type;

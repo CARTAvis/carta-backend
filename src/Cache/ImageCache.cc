@@ -22,27 +22,6 @@ ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t 
       _stokes_v(-1),
       _beam_area(DOUBLE_NAN) {}
 
-float* ImageCache::AllocateData(int stokes, size_t data_size) {
-    return nullptr;
-}
-
-float* ImageCache::GetChannelImageCache(int z, int stokes) {
-    return nullptr;
-}
-
-float ImageCache::GetValue(int x, int y, int z, int stokes) {
-    return FLOAT_NAN;
-}
-
-bool ImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
-    return false;
-}
-
-bool ImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    return false;
-}
-
 void ImageCache::LoadCachedPointSpatialData(
     std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) {
     profile.reserve(end - start);
@@ -58,13 +37,5 @@ void ImageCache::LoadCachedPointSpatialData(
         spdlog::error("Unknown point spatial profile config: {}", config);
     }
 }
-
-bool ImageCache::DataExist(int stokes) const {
-    return false;
-}
-
-void ImageCache::ValidateChannelImageCache() {}
-
-void ImageCache::InvalidateChannelImageCache() {}
 
 } // namespace carta

@@ -22,8 +22,26 @@ float* ChannelImageCache::GetChannelImageCache(int z, int stokes) {
     return _channel_data.get();
 }
 
+bool ChannelImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
+    return false;
+}
+
+bool ChannelImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes,
+    const casacore::ArrayLattice<casacore::Bool>& mask, const casacore::IPosition& origin,
+    std::map<CARTA::StatsType, std::vector<double>>& profiles) {
+    return false;
+}
+
 float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
     return _channel_data[(_width * y) + x];
+}
+
+bool ChannelImageCache::DataExist(int stokes) const {
+    return false;
+}
+
+bool ChannelImageCache::ChannelImageCacheValid() const {
+    return _channel_image_cache_valid;
 }
 
 void ChannelImageCache::ValidateChannelImageCache() {
@@ -32,10 +50,6 @@ void ChannelImageCache::ValidateChannelImageCache() {
 
 void ChannelImageCache::InvalidateChannelImageCache() {
     _channel_image_cache_valid = false;
-}
-
-bool ChannelImageCache::ChannelImageCacheValid() const {
-    return _channel_image_cache_valid;
 }
 
 } // namespace carta

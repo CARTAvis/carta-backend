@@ -118,6 +118,10 @@ float CubeImageCache::GetValue(int x, int y, int z, int stokes) {
     return _stokes_data[stokes][idx];
 }
 
+bool CubeImageCache::DataExist(int stokes) const {
+    return _stokes_data.count(stokes);
+}
+
 bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
     int x, y;
     point.ToIndex(x, y);
@@ -207,5 +211,13 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
     }
     return false;
 }
+
+bool CubeImageCache::ChannelImageCacheValid() const {
+    return true;
+}
+
+void CubeImageCache::ValidateChannelImageCache() {}
+
+void CubeImageCache::InvalidateChannelImageCache() {}
 
 } // namespace carta

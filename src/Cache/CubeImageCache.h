@@ -26,19 +26,16 @@ public:
 
     float* AllocateData(int stokes, size_t data_size) override;
     float* GetChannelImageCache(int z, int stokes) override;
+    inline float GetValue(int x, int y, int z, int stokes) override;
 
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
-    inline float GetValue(int x, int y, int z, int stokes) override;
+    bool DataExist(int stokes) const override;
+    bool ChannelImageCacheValid() const override;
 
-    bool DataExist(int stokes) const override {
-        return _stokes_data.count(stokes);
-    }
-
-    bool ChannelImageCacheValid() const override {
-        return true;
-    }
+    void ValidateChannelImageCache() override;
+    void InvalidateChannelImageCache() override;
 
 private:
     // Current channel of computed stokes image cache
