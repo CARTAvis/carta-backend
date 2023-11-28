@@ -134,7 +134,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
     EXPECT_EQ(settings.idle_session_wait_time, -1);
-    EXPECT_EQ(settings.full_image_cache, 0);
+    EXPECT_EQ(settings.full_image_cache_size_available, 0);
 }
 
 TEST_F(ProgramSettingsTest, EmptyArugments) {
@@ -149,7 +149,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --omp_threads 10"
         " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode "
-        "--enable_scripting --full_image_cache 1000");
+        "--enable_scripting --full_image_cache_size_available 1000");
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
@@ -164,14 +164,14 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     EXPECT_EQ(settings.debug_no_auth, true);
     EXPECT_EQ(settings.read_only_mode, true);
     EXPECT_EQ(settings.enable_scripting, true);
-    EXPECT_EQ(settings.full_image_cache, 1000);
+    EXPECT_EQ(settings.full_image_cache_size_available, 1000);
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesShort) {
-    auto settings = SettingsFromString("carta_backend -p 1234 -t 10 --full_image_cache 1000");
+    auto settings = SettingsFromString("carta_backend -p 1234 -t 10 --full_image_cache_size_available 1000");
     EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.omp_thread_count, 10);
-    EXPECT_EQ(settings.full_image_cache, 1000);
+    EXPECT_EQ(settings.full_image_cache_size_available, 1000);
 }
 
 TEST_F(ProgramSettingsTest, OverrideDeprecatedRoot) {
@@ -298,7 +298,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
         "initial_timeout": 11,
         "read_only_mode": true,
         "enable_scripting": true,
-        "full_image_cache": 1000
+        "full_image_cache_size_available": 1000
     })";
     nlohmann::json j = nlohmann::json::parse(json_string);
 
@@ -318,7 +318,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLongJSON) {
     EXPECT_EQ(settings.init_wait_time, 11);
     EXPECT_EQ(settings.read_only_mode, true);
     EXPECT_EQ(settings.enable_scripting, true);
-    EXPECT_EQ(settings.full_image_cache, 1000);
+    EXPECT_EQ(settings.full_image_cache_size_available, 1000);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
@@ -339,7 +339,7 @@ TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithGoodFields) {
     EXPECT_EQ(j["frontend_folder"], "/var");
     EXPECT_EQ(j["read_only_mode"], true);
     EXPECT_EQ(j["enable_scripting"], true);
-    EXPECT_EQ(j["full_image_cache"], 1000);
+    EXPECT_EQ(j["full_image_cache_size_available"], 1000);
 }
 
 TEST_F(ProgramSettingsTest, ValidateJSONFromFileWithBadFields) {
@@ -389,7 +389,7 @@ TEST_F(ProgramSettingsTest, TestDefaultsFallbackFromBadSettings) {
     EXPECT_EQ(settings.init_wait_time, -1);
     EXPECT_EQ(settings.read_only_mode, false);
     EXPECT_EQ(settings.enable_scripting, false);
-    EXPECT_EQ(settings.full_image_cache, 0);
+    EXPECT_EQ(settings.full_image_cache_size_available, 0);
 }
 
 TEST_F(ProgramSettingsTest, TestFileQueryStringEmptyFiles) {

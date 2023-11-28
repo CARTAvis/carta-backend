@@ -59,7 +59,7 @@ struct ProgramSettings {
     bool read_only_mode = false;
     bool enable_scripting = false;
     bool controller_deployment = false;
-    int full_image_cache = FULL_IMAGE_CACHE;
+    int full_image_cache_size_available = FULL_IMAGE_CACHE_SIZE_AVAILABLE;
 
     std::string browser;
 
@@ -80,7 +80,7 @@ struct ProgramSettings {
         {"exit_timeout", &wait_time},
         {"initial_timeout", &init_wait_time},
         {"idle_timeout", &idle_session_wait_time},
-        {"full_image_cache", &full_image_cache}
+        {"full_image_cache_size_available", &full_image_cache_size_available}
     };
 
     std::unordered_map<std::string, bool*> bool_keys_map{

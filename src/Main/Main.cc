@@ -24,7 +24,7 @@
 #include <casacore/casa/Logging/LogIO.h>
 #include <casacore/casa/Logging/NullLogSink.h>
 
-float FULL_IMAGE_CACHE = 0; // MB
+float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
 
 int GetTotalSystemMemory() {
     long pages = sysconf(_SC_PHYS_PAGES);
@@ -174,18 +174,18 @@ int main(int argc, char* argv[]) {
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
-            if (settings.full_image_cache > 0) {
+            if (settings.full_image_cache_size_available > 0) {
                 // Check if required full image cache hits the upper limit based on the total system memory
                 int memory_upper_limit = GetTotalSystemMemory() * 9 / 10;
-                if (settings.full_image_cache > memory_upper_limit) {
+                if (settings.full_image_cache_size_available > memory_upper_limit) {
                     spdlog::warn("Full image cache {} MB is greater than the system upper limit {} MB, reset it to {} MB.",
-                        settings.full_image_cache, memory_upper_limit, memory_upper_limit);
-                    settings.full_image_cache = memory_upper_limit;
+                        settings.full_image_cache_size_available, memory_upper_limit, memory_upper_limit);
+                    settings.full_image_cache_size_available = memory_upper_limit;
                 }
 
                 // Set the global variable for full image cache
-                FULL_IMAGE_CACHE = settings.full_image_cache;
-                start_info += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE);
+                FULL_IMAGE_CACHE_SIZE_AVAILABLE = settings.full_image_cache_size_available;
+                start_info += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
             }
             spdlog::info(start_info);
 

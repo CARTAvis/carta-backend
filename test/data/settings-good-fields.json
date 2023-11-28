@@ -12,5 +12,5 @@
     "initial_timeout": 11,
     "read_only_mode": true,
     "enable_scripting": true,
-    "full_image_cache": 1000
+    "full_image_cache_size_available": 1000
 }
