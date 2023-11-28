@@ -13,10 +13,6 @@
 // version
 #define VERSION_ID "4.0.0-rc.0"
 
-// Global variable
-extern float FULL_IMAGE_CACHE_SIZE_AVAILABLE; // MB
-extern std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
-
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
 std::string OutputOfCommand(const char* command);

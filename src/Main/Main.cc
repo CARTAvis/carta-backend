@@ -24,9 +24,6 @@
 #include <casacore/casa/Logging/LogIO.h>
 #include <casacore/casa/Logging/NullLogSink.h>
 
-float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
-std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
-
 int GetTotalSystemMemory() {
     long pages = sysconf(_SC_PHYS_PAGES);
     long page_size = sysconf(_SC_PAGE_SIZE);

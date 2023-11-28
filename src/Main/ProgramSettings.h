@@ -15,6 +15,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "Cache/ImageCache.h"
 #include "Logger/Logger.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"

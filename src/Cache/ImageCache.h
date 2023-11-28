@@ -16,6 +16,10 @@
 #include <unordered_map>
 #include <vector>
 
+// Global variable
+extern float FULL_IMAGE_CACHE_SIZE_AVAILABLE; // MB
+extern std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
+
 namespace carta {
 
 enum ImageCacheType { Cube, Channel };

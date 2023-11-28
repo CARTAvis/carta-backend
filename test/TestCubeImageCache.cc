@@ -14,9 +14,6 @@
 #include "Util/App.h"
 #include "Util/Message.h"
 
-float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0;
-std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
-
 using namespace carta;
 
 static const std::string IMAGE_OPTS = "-s 0 -n row column -d 10";

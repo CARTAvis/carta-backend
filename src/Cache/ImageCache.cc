@@ -9,6 +9,9 @@
 #include "Logger/Logger.h"
 #include "Util/Stokes.h"
 
+float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
+std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
+
 namespace carta {
 
 ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth)
