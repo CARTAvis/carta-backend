@@ -15,11 +15,12 @@ std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
 
 namespace carta {
 
-ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth)
+ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth, size_t num_stokes)
     : _type(type),
       _width(width),
       _height(height),
       _depth(depth),
+      _num_stokes(num_stokes),
       _stokes_i(-1),
       _stokes_q(-1),
       _stokes_u(-1),
@@ -58,6 +59,21 @@ void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_av
         ulock_full_image_cache_size_available.unlock();
         msg += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
     }
+}
+
+float ImageCache::ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes) {
+    float image_cubes_size = width * height * depth * num_stokes * sizeof(float);
+
+    // Conservatively estimate the number of computed stokes will be generated
+    int num_computed_stokes = 0;
+    if (num_stokes >= 4) {
+        num_computed_stokes = 5;
+    } else if (num_stokes == 3) {
+        num_computed_stokes = 4;
+    } else if (num_stokes == 2) {
+        num_computed_stokes = 2;
+    }
+    return (image_cubes_size + num_computed_stokes * width * height * sizeof(float)) / 1.0e6; // MB
 }
 
 } // namespace carta

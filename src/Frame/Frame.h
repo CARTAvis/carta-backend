@@ -222,8 +222,6 @@ public:
         std::vector<float>& data, int& downsampled_width, int& downsampled_height, int z, int stokes, CARTA::ImageBounds& bounds, int mip);
     bool CalculateVectorField(const std::function<void(CARTA::VectorOverlayTileData&)>& callback);
 
-    float MemorySize() const;             // MB
-    float MemorySizeOfWholeImage() const; // MB
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point);
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles);

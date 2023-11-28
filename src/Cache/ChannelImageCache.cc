@@ -10,8 +10,8 @@
 
 namespace carta {
 
-ChannelImageCache::ChannelImageCache(size_t width, size_t height, size_t depth)
-    : ImageCache(ImageCacheType::Channel, width, height, depth), _channel_data(nullptr), _channel_image_cache_valid(false) {}
+ChannelImageCache::ChannelImageCache(size_t width, size_t height, size_t depth, size_t num_stokes)
+    : ImageCache(ImageCacheType::Channel, width, height, depth, num_stokes), _channel_data(nullptr), _channel_image_cache_valid(false) {}
 
 float* ChannelImageCache::AllocateData(int stokes, size_t data_size) {
     _channel_data = std::make_unique<float[]>(data_size);
@@ -34,6 +34,10 @@ bool ChannelImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, i
 
 float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
     return _channel_data[(_width * y) + x];
+}
+
+float ChannelImageCache::ImageCacheSize() const {
+    return 0;
 }
 
 bool ChannelImageCache::DataExist(int stokes) const {

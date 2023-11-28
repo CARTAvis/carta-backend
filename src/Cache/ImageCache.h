@@ -26,12 +26,13 @@ enum ImageCacheType { Cube, Channel };
 
 class ImageCache {
 public:
-    ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth);
+    ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth, size_t num_stokes);
     virtual ~ImageCache() = default;
 
     virtual float* AllocateData(int stokes, size_t data_size) = 0;
     virtual float* GetChannelImageCache(int z, int stokes) = 0;
     virtual float GetValue(int x, int y, int z, int stokes) = 0;
+    virtual float ImageCacheSize() const = 0; // MB
 
     virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
     virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
@@ -65,6 +66,7 @@ public:
     }
 
     static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
+    static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
 protected:
     enum ImageCacheType _type;
@@ -73,6 +75,7 @@ protected:
     size_t _width;
     size_t _height;
     size_t _depth;
+    size_t _num_stokes;
 
     int _stokes_i; // stokes type "I" index
     int _stokes_q; // stokes type "Q" index

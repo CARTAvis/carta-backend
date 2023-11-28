@@ -22,11 +22,12 @@ namespace carta {
 
 class CubeImageCache : public ImageCache {
 public:
-    CubeImageCache(size_t width, size_t height, size_t depth);
+    CubeImageCache(size_t width, size_t height, size_t depth, size_t num_stokes);
 
     float* AllocateData(int stokes, size_t data_size) override;
     float* GetChannelImageCache(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) override;
+    float ImageCacheSize() const override;
 
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

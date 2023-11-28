@@ -86,13 +86,14 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
 
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
     if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= MemorySizeOfWholeImage()) {
+        auto image_memory_size = ImageCache::ImageMemorySize(_width, _height, _depth, _num_stokes);
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= image_memory_size) {
             std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-            FULL_IMAGE_CACHE_SIZE_AVAILABLE -= MemorySizeOfWholeImage();
+            FULL_IMAGE_CACHE_SIZE_AVAILABLE -= image_memory_size;
             ulock_full_image_cache_size_available.unlock();
 
             // Create an image cache for the whole image data
-            _image_cache = std::make_unique<CubeImageCache>(_width, _height, _depth);
+            _image_cache = std::make_unique<CubeImageCache>(_width, _height, _depth, _num_stokes);
 
             spdlog::info("Cache the whole image data.");
             for (int stokes = 0; stokes < _num_stokes; ++stokes) {
@@ -111,13 +112,13 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
             // Get beam area
             _image_cache->BeamArea() = _loader->CalculateBeamArea();
         } else if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
-            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", MemorySizeOfWholeImage());
+            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", image_memory_size);
         }
     }
 
     if (!_image_cache) {
         // By default, the image cache is per channel, if it is not assigned as for the whole image data
-        _image_cache = std::make_unique<ChannelImageCache>(_width, _height, _depth);
+        _image_cache = std::make_unique<ChannelImageCache>(_width, _height, _depth, _num_stokes);
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -349,6 +350,11 @@ void Frame::WaitForTaskCancellation() {
     _connected = false; // file closed
     StopMomentCalc();
     std::unique_lock lock(GetActiveTaskMutex());
+
+    // Update the availability of full image cache size
+    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+    FULL_IMAGE_CACHE_SIZE_AVAILABLE += _image_cache->ImageCacheSize();
+    ulock_full_image_cache_size_available.unlock();
 }
 
 bool Frame::IsConnected() {
@@ -2492,26 +2498,6 @@ float* Frame::GetImageData(int z, int stokes) {
         stokes = _stokes_index;
     }
     return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelImageCache(z, stokes) : nullptr;
-}
-
-float Frame::MemorySize() const {
-    return _image_cache->Type() == ImageCacheType::Cube ? MemorySizeOfWholeImage() : 0;
-}
-
-float Frame::MemorySizeOfWholeImage() const {
-    float image_cubes_size = _width * _height * _depth * _num_stokes * sizeof(float);
-
-    // Conservatively estimate the number of computed stokes will be generated
-    int num_computed_stokes = 0;
-    if (_num_stokes >= 4) {
-        num_computed_stokes = 5;
-    } else if (_num_stokes == 3) {
-        num_computed_stokes = 4;
-    } else if (_num_stokes == 2) {
-        num_computed_stokes = 2;
-    }
-
-    return (image_cubes_size + num_computed_stokes * _width * _height * sizeof(float)) / 1.0e6; // MB
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
