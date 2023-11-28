@@ -435,7 +435,7 @@ bool Frame::FillImageCache(int stokes) {
         // Fill channel image cache
 
         // Exit early *after* acquiring lock if the cache has already been loaded by another thread
-        if (_image_cache->ChannelImageCacheValid()) {
+        if (ImageCacheAvailable()) {
             return true;
         }
 
@@ -470,7 +470,7 @@ void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {
 
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid || !_image_cache->ChannelImageCacheValid()) {
+    if (!_valid || !ImageCacheAvailable()) {
         return false;
     }
 
@@ -633,7 +633,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     if (mip > 1 && !IsComputedStokes(_stokes_index)) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _z_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (!_image_cache->ChannelImageCacheValid() && _loader->UseTileCache()) {
+    } else if (!ImageCacheAvailable() && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
         tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
         if (tile_data_ptr) {
@@ -1122,7 +1122,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     float cursor_value_with_current_stokes(0.0);
 
     // Get the cursor value with current stokes
-    if (_image_cache->ChannelImageCacheValid()) {
+    if (ImageCacheAvailable()) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
         cursor_value_with_current_stokes = GetValue(x, y, _z_index, _stokes_index);
@@ -2528,8 +2528,14 @@ float Frame::GetValue(int x, int y, int z, int stokes) {
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {
+    if (z == CURRENT_Z) {
+        z = _z_index;
+    }
+    if (stokes == CURRENT_STOKES) {
+        stokes = _stokes_index;
+    }
     return (_image_cache->Type() == ImageCacheType::Channel && z == _z_index && stokes == _stokes_index &&
-               _image_cache->ChannelImageCacheValid()) ||
+               _image_cache->CachedChannelDataAvailable()) ||
            _image_cache->Type() == ImageCacheType::Cube;
 }
 

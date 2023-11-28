@@ -32,7 +32,7 @@ public:
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
     bool DataExist(int stokes) const override;
-    bool ChannelImageCacheValid() const override;
+    bool CachedChannelDataAvailable() const override;
 
     void ValidateChannelImageCache() override;
     void InvalidateChannelImageCache() override;
