@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__COMMON_TEST_UTILITIES_H_
-#define CARTA_BACKEND__COMMON_TEST_UTILITIES_H_
+#ifndef CARTA_TEST_COMMONTESTUTILITIES_H_
+#define CARTA_TEST_COMMONTESTUTILITIES_H_
 
 #include <unordered_set>
 
@@ -100,4 +100,4 @@ bool CmpHistograms(const carta::Histogram& hist1, const carta::Histogram& hist2)
 
 #include "CommonTestUtilities.tcc"
 
-#endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_H_
+#endif // CARTA_TEST_COMMONTESTUTILITIES_H_

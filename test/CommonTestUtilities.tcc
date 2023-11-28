@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__COMMON_TEST_UTILITIES_TCC_
-#define CARTA_BACKEND__COMMON_TEST_UTILITIES_TCC_
+#ifndef CARTA_TEST_COMMONTESTUTILITIES_TCC_
+#define CARTA_TEST_COMMONTESTUTILITIES_TCC_
 
 template <typename T>
 std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile) {
@@ -20,4 +20,4 @@ std::vector<T> GetSpectralProfileValues(const CARTA::SpectralProfile& profile) {
     return values;
 }
 
-#endif // CARTA_BACKEND__COMMON_TEST_UTILITIES_TCC_
+#endif // CARTA_TEST_COMMONTESTUTILITIES_TCC_

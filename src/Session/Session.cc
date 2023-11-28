@@ -41,58 +41,6 @@
 
 using namespace carta;
 
-LoaderCache::LoaderCache(int capacity) : _capacity(capacity){};
-
-std::shared_ptr<FileLoader> LoaderCache::Get(const std::string& filename, const std::string& directory) {
-    std::unique_lock<std::mutex> guard(_loader_cache_mutex);
-    auto key = GetKey(filename, directory);
-
-    // We have a cached loader, but the file has changed
-    if ((_map.find(key) != _map.end()) && _map[key] && _map[key]->ImageUpdated()) {
-        _map.erase(key);
-        _queue.remove(key);
-    }
-
-    // We don't have a cached loader
-    if (_map.find(key) == _map.end()) {
-        // Create the loader -- don't block while doing this
-        std::shared_ptr<FileLoader> loader_ptr;
-        guard.unlock();
-        loader_ptr = std::shared_ptr<FileLoader>(FileLoader::GetLoader(filename, directory));
-        guard.lock();
-
-        // Check if the loader was added in the meantime
-        if (_map.find(key) == _map.end()) {
-            // Evict oldest loader if necessary
-            if (_map.size() == _capacity) {
-                _map.erase(_queue.back());
-                _queue.pop_back();
-            }
-
-            // Insert the new loader
-            _map[key] = loader_ptr;
-            _queue.push_front(key);
-        }
-    } else {
-        // Touch the cache entry
-        _queue.remove(key);
-        _queue.push_front(key);
-    }
-
-    return _map[key];
-}
-
-void LoaderCache::Remove(const std::string& filename, const std::string& directory) {
-    std::unique_lock<std::mutex> guard(_loader_cache_mutex);
-    auto key = GetKey(filename, directory);
-    _map.erase(key);
-    _queue.remove(key);
-}
-
-std::string LoaderCache::GetKey(const std::string& filename, const std::string& directory) {
-    return (directory.empty() ? filename : fmt::format("{}/{}", directory, filename));
-}
-
 volatile int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
@@ -362,9 +310,8 @@ bool Session::FillFileInfo(
     // Resolve filename and fill file info submessage
     bool file_info_ok(false);
 
-    fullname = GetResolvedFilename(_top_level_folder, folder, filename);
+    fullname = GetResolvedFilename(_top_level_folder, folder, filename, message);
     if (fullname.empty()) {
-        message = fmt::format("File {} does not exist.", filename);
         return file_info_ok;
     }
 
@@ -523,18 +470,17 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (lel_expr) {
         // filename field is LEL expression
-        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "");
-        auto loader = _loaders.Get(filename, dir_path);
-
-        try {
-            loader->OpenFile(hdu);
-
-            auto image = loader->GetImage();
-            success = OnOpenFile(file_id, filename, image, &ack);
-        } catch (const casacore::AipsError& err) {
-            _loaders.Remove(filename, dir_path);
-            success = false;
-            err_message = err.getMesg();
+        auto dir_path = GetResolvedFilename(_top_level_folder, directory, "", err_message);
+        if (!dir_path.empty()) {
+            auto loader = _loaders.Get(filename, dir_path);
+            try {
+                loader->OpenFile(hdu);
+                auto image = loader->GetImage();
+                success = OnOpenFile(file_id, filename, image, &ack);
+            } catch (const casacore::AipsError& err) {
+                _loaders.Remove(filename, dir_path);
+                err_message = err.getMesg();
+            }
         }
     } else {
         ack.set_file_id(file_id);
@@ -908,10 +854,10 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::string region_file; // name or contents
         if (import_file) {
             // check that file can be opened
-            region_file = GetResolvedFilename(_top_level_folder, directory, filename);
-            casacore::File ccfile(region_file);
-            if (!ccfile.exists() || !ccfile.isReadable()) {
-                auto import_ack = Message::ImportRegionAck(false, "Import region failed: cannot open file.");
+            std::string error;
+            region_file = GetResolvedFilename(_top_level_folder, directory, filename, error);
+            if (region_file.empty()) {
+                auto import_ack = Message::ImportRegionAck(false, "Import region failed: " + error);
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
@@ -2440,8 +2386,12 @@ std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp(
 }
 
 void Session::CloseCachedImage(const std::string& directory, const std::string& file) {
-    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file);
-    for (auto& frame : _frames) {
-        frame.second->CloseCachedImage(fullname);
+    std::string message;
+    std::string fullname = GetResolvedFilename(_top_level_folder, directory, file, message);
+
+    if (!fullname.empty()) {
+        for (auto& frame : _frames) {
+            frame.second->CloseCachedImage(fullname);
+        }
     }
 }

@@ -1,23 +1,56 @@
 macro(install_uWebSockets)
+    # Avoid the warning about DOWNLOAD_EXTRACT_TIMESTAMP
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+        cmake_policy(SET CMP0135 NEW)
+    endif()
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLIBUS_NO_SSL")
+    INCLUDE(FetchContent)
 
-    include_directories(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src)
-    include_directories(${CMAKE_SOURCE_DIR}/third-party/uWebSockets/src)
+    # Build uSocket
+    SET(USOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uSockets)
 
-    set(USOCKETS_SOURCE_FILES
-            ${SOURCE_FILES}
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/crypto/openssl.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/crypto/wolfssl.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing/epoll_kqueue.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing/gcd.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/eventing/libuv.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/bsd.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/context.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/loop.c
-            ${CMAKE_SOURCE_DIR}/third-party/uWebSockets/uSockets/src/socket.c)
+    FetchContent_Declare(
+            uSockets-build
+            URL https://github.com/uNetworking/uSockets/archive/refs/tags/v0.8.6.zip
+            SOURCE_DIR ${USOCKETS_SOURCE_DIR}
+    )
 
-    add_library(uSockets ${USOCKETS_SOURCE_FILES})
+    FetchContent_GetProperties(uSockets-build)
+    if (NOT uSockets-build_POPULATED)
+        FetchContent_Populate(uSockets-build)
+    endif ()
+
+    INCLUDE_DIRECTORIES(${USOCKETS_SOURCE_DIR}/src)
+
+    AUX_SOURCE_DIRECTORY(${USOCKETS_SOURCE_DIR}/src USOCKETS_FILES)
+    AUX_SOURCE_DIRECTORY(${USOCKETS_SOURCE_DIR}/src/crypto USOCKETS_CRYPTO_FILES)
+    AUX_SOURCE_DIRECTORY(${USOCKETS_SOURCE_DIR}/src/eventing USOCKETS_EVENTING_FILES)
+    AUX_SOURCE_DIRECTORY(${USOCKETS_SOURCE_DIR}/src/internal USOCKETS_INTERNAL_FILES)
+    AUX_SOURCE_DIRECTORY(${USOCKETS_SOURCE_DIR}/src/io_uring USOCKETS_IO_URING_FILES)
+
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLIBUS_NO_SSL")
+
+    ADD_LIBRARY(uSockets
+            ${USOCKETS_FILES}
+            ${USOCKETS_CRYPTO_FILES}
+            ${USOCKETS_EVENTING_FILES}
+            ${USOCKETS_INTERNAL_FILES}
+            ${USOCKETS_IO_URING_FILES})
+
+    # Build uWebSockets
+    SET(UWEBSOCKETS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/third-party/uWebSockets)
+
+    FetchContent_Declare(
+            uWebSockets-build
+            URL https://github.com/uNetworking/uWebSockets/archive/refs/tags/v20.46.0.zip
+            SOURCE_DIR ${UWEBSOCKETS_SOURCE_DIR}
+    )
+
+    FetchContent_GetProperties(uWebSockets-build)
+    if (NOT uWebSockets-build_POPULATED)
+        FetchContent_Populate(uWebSockets-build)
+    endif ()
+
+    INCLUDE_DIRECTORIES(${UWEBSOCKETS_SOURCE_DIR}/src)
 
 endmacro()
-

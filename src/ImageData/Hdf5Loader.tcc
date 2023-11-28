@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
-#define CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
+#ifndef CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
+#define CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
 
 #include "Hdf5Loader.h"
 
@@ -66,4 +66,4 @@ std::unique_ptr<casacore::ArrayBase> Hdf5Loader::GetStatsDataTyped(FileInfo::Dat
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
+#endif // CARTA_SRC_IMAGEDATA_HDF5LOADER_TCC_
