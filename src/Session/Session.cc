@@ -644,7 +644,9 @@ void Session::DeleteFrame(int file_id) {
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
             frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+            std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
             FULL_IMAGE_CACHE_SIZE_AVAILABLE += frame.second->MemorySize();
+            ulock_full_image_cache_size_available.unlock();
             frame.second.reset(); // delete Frame
         }
         _frames.clear();
@@ -652,7 +654,9 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
         FULL_IMAGE_CACHE_SIZE_AVAILABLE += _frames[file_id]->MemorySize();
+        ulock_full_image_cache_size_available.unlock();
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);

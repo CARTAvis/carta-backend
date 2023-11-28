@@ -87,7 +87,9 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
     if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= MemorySizeOfWholeImage()) {
+            std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
             FULL_IMAGE_CACHE_SIZE_AVAILABLE -= MemorySizeOfWholeImage();
+            ulock_full_image_cache_size_available.unlock();
 
             // Create an image cache for the whole image data
             _image_cache = std::make_unique<CubeImageCache>(_width, _height, _depth);

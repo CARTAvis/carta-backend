@@ -25,6 +25,7 @@
 #include <casacore/casa/Logging/NullLogSink.h>
 
 float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
+std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
 
 int GetTotalSystemMemory() {
     long pages = sysconf(_SC_PHYS_PAGES);
@@ -184,7 +185,9 @@ int main(int argc, char* argv[]) {
                 }
 
                 // Set the global variable for full image cache
+                std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
                 FULL_IMAGE_CACHE_SIZE_AVAILABLE = settings.full_image_cache_size_available;
+                ulock_full_image_cache_size_available.unlock();
                 start_info += fmt::format(" Total amount of full image cache {} MB.", FULL_IMAGE_CACHE_SIZE_AVAILABLE);
             }
             spdlog::info(start_info);

@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND__UTIL_APP_H_
 #define CARTA_BACKEND__UTIL_APP_H_
 
+#include <mutex>
 #include <string>
 
 // version
@@ -14,6 +15,7 @@
 
 // Global variable
 extern float FULL_IMAGE_CACHE_SIZE_AVAILABLE; // MB
+extern std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
 
 bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
