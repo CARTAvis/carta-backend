@@ -4,16 +4,13 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_APP_H_
-#define CARTA_BACKEND__UTIL_APP_H_
+#include "System.h"
 
-#include <string>
+#include <unistd.h>
 
-// version
-#define VERSION_ID "4.0.0-rc.0"
-
-bool FindExecutablePath(std::string& path);
-std::string GetReleaseInformation();
-std::string OutputOfCommand(const char* command);
-
-#endif // CARTA_BACKEND__UTIL_APP_H_
+int GetTotalSystemMemory() {
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    unsigned long long memory_in_bytes = pages * page_size; // Bytes
+    return (int)(memory_in_bytes / 1e6);                    // MB
+}

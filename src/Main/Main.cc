@@ -18,18 +18,12 @@
 #include "ThreadingManager/ThreadingManager.h"
 #include "Util/App.h"
 #include "Util/FileSystem.h"
+#include "Util/System.h"
 #include "Util/Token.h"
 #include "WebBrowser.h"
 
 #include <casacore/casa/Logging/LogIO.h>
 #include <casacore/casa/Logging/NullLogSink.h>
-
-int GetTotalSystemMemory() {
-    long pages = sysconf(_SC_PHYS_PAGES);
-    long page_size = sysconf(_SC_PAGE_SIZE);
-    unsigned long long memory_in_bytes = pages * page_size; // Bytes
-    return (int)(memory_in_bytes / 1e6);                    // MB
-}
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {

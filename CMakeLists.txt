@@ -255,6 +255,7 @@ set(SOURCE_FILES
         src/Util/Message.cc
         src/Util/Stokes.cc
         src/Util/String.cc
+        src/Util/System.cc
         src/Util/Token.cc
         src/ImageFitter/ImageFitter.cc)
 
