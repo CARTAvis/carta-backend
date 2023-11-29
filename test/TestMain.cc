@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     carta::ThreadManager::SetThreadLimit(omp_threads);
 
     ProgramSettings::GetInstance().user_directory = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX;
-    carta::logger::InitLogger(settings);
+    carta::logger::InitLogger();
 
     int run_all_tests = RUN_ALL_TESTS();
 

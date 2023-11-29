@@ -13,7 +13,9 @@
 namespace carta {
 namespace logger {
 
-void InitLogger(const ::carta::ProgramSettings& settings) {
+void InitLogger() {
+    auto& settings = ProgramSettings::GetInstance();
+
     // Set the stdout/stderr console
     auto console_sink = std::make_shared<spdlog::sinks::carta_sink>();
     console_sink->set_pattern(CARTA_LOGGER_PATTERN);
@@ -106,7 +108,8 @@ void InitLogger(const ::carta::ProgramSettings& settings) {
     spdlog::flush_every(std::chrono::seconds(3));
 }
 
-void LogReceivedEventType(const ::carta::ProgramSettings& settings, const CARTA::EventType& event_type) {
+void LogReceivedEventType(const CARTA::EventType& event_type) {
+    auto& settings = ProgramSettings::GetInstance();
     if (settings.log_protocol_messages) {
         auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
         if (!event_name.empty()) {
@@ -117,7 +120,8 @@ void LogReceivedEventType(const ::carta::ProgramSettings& settings, const CARTA:
     }
 }
 
-void LogSentEventType(const ::carta::ProgramSettings& settings, const CARTA::EventType& event_type) {
+void LogSentEventType(const CARTA::EventType& event_type) {
+    auto& settings = ProgramSettings::GetInstance();
     if (settings.log_protocol_messages) {
         auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
         if (!event_name.empty()) {

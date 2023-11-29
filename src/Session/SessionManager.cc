@@ -149,7 +149,7 @@ void SessionManager::OnMessage(WSType* ws, std::string_view sv_message, uWS::OpC
             int event_length = sv_message.length() - sizeof(EventHeader);
 
             CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
-            logger::LogReceivedEventType(_settings, event_type);
+            logger::LogReceivedEventType(event_type);
 
             auto event_type_name = CARTA::EventType_Name(CARTA::EventType(event_type));
 
