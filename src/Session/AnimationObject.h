@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__ANIMATIONOBJECT_H_
-#define CARTA_BACKEND__ANIMATIONOBJECT_H_
+#ifndef CARTA_SRC_SESSION_ANIMATIONOBJECT_H_
+#define CARTA_SRC_SESSION_ANIMATIONOBJECT_H_
 
 #include <chrono>
 #include <iostream>
@@ -113,4 +113,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__ANIMATIONOBJECT_H_
+#endif // CARTA_SRC_SESSION_ANIMATIONOBJECT_H_

@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
-#define CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
+#ifndef CARTA_SRC_IMAGEGENERATORS_PVGENERATOR_H_
+#define CARTA_SRC_IMAGEGENERATORS_PVGENERATOR_H_
 
 #include <casacore/images/Images/TempImage.h>
 #include <casacore/lattices/LRegions/LCRegion.h>
@@ -49,4 +49,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEGENERATORS_PVGENERATOR_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_PVGENERATOR_H_

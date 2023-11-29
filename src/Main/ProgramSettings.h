@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_MAIN_PROGRAMSETTINGS_H_
-#define CARTA_BACKEND_SRC_MAIN_PROGRAMSETTINGS_H_
+#ifndef CARTA_SRC_MAIN_PROGRAMSETTINGS_H_
+#define CARTA_SRC_MAIN_PROGRAMSETTINGS_H_
 
 #include <iostream>
 #include <string>
@@ -122,15 +122,6 @@ struct ProgramSettings {
     void SetSettingsFromJSON(const nlohmann::json& j);
     void PushFilePaths();
 
-    // TODO: this is outdated. It's used by the equality operator, which is used by a test.
-    auto GetTuple() const {
-        return std::tie(help, version, port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder, no_http,
-            no_browser, no_log, log_performance, log_protocol_messages, debug_no_auth, controller_deployment, verbosity, wait_time,
-            init_wait_time, idle_session_wait_time);
-    }
-    bool operator!=(const ProgramSettings& rhs) const;
-    bool operator==(const ProgramSettings& rhs) const;
-
     std::vector<std::string> warning_msgs;
     std::vector<std::string> debug_msgs;
     void FlushMessages() {
@@ -141,4 +132,4 @@ struct ProgramSettings {
     }
 };
 } // namespace carta
-#endif // CARTA_BACKEND_SRC_MAIN_PROGRAMSETTINGS_H_
+#endif // CARTA_SRC_MAIN_PROGRAMSETTINGS_H_

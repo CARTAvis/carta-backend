@@ -37,7 +37,6 @@ find_program(CONVERTER, fits2idia)
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
 set(TEST_SOURCES
         CommonTestUtilities.cc
-        BackendModel.cc
         TestBlockSmooth.cc
         TestContour.cc
         TestExprImage.cc
@@ -48,7 +47,6 @@ set(TEST_SOURCES
         TestHdf5Attributes.cc
         TestHdf5Image.cc
         TestHistogram.cc
-        TestIcd.cc
         TestImageFitting.cc
 		TestLineSpatialProfiles.cc
         TestMain.cc

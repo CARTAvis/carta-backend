@@ -253,7 +253,7 @@ TEST_F(ImageFittingTest, FittingWithFov) {
     fixed_params.push_back(true);
     SetInitialValues(gaussian_model);
     SetFixedParams(fixed_params);
-    SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 64, 64}, 10);
+    SetFov(CARTA::RegionType::RECTANGLE, {63.5, 63.5, 96, 96}, 10);
     FitImageWithFov(gaussian_model, 0);
 }
 

@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_LOGGER_CARTALOGSINK_H_
-#define CARTA_BACKEND_LOGGER_CARTALOGSINK_H_
+#ifndef CARTA_SRC_LOGGER_CARTALOGSINK_H_
+#define CARTA_SRC_LOGGER_CARTALOGSINK_H_
 
 #include <casacore/casa/Logging/LogSinkInterface.h>
 
@@ -32,4 +32,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_LOGGER_LOGGER_H_
+#endif // CARTA_SRC_LOGGER_CARTALOGSINK_H_

@@ -6,8 +6,8 @@
 
 //# FileInfoLoader.h: load FileInfo fields for given file
 
-#ifndef CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_
-#define CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_
+#ifndef CARTA_SRC_FILELIST_FILEINFOLOADER_H_
+#define CARTA_SRC_FILELIST_FILEINFOLOADER_H_
 
 #include <string>
 
@@ -32,4 +32,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_
+#endif // CARTA_SRC_FILELIST_FILEINFOLOADER_H_

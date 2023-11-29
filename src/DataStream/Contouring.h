@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__CONTOURING_H_
-#define CARTA_BACKEND__CONTOURING_H_
+#ifndef CARTA_SRC_DATASTREAM_CONTOURING_H_
+#define CARTA_SRC_DATASTREAM_CONTOURING_H_
 
 #include <cstdint>
 #include <functional>
@@ -25,4 +25,4 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__CONTOURING_H_
+#endif // CARTA_SRC_DATASTREAM_CONTOURING_H_

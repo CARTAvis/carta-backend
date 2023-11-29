@@ -6,8 +6,8 @@
 
 // # Session.h: representation of a client connected to a server; processes requests from frontend
 
-#ifndef CARTA_BACKEND__SESSION_H_
-#define CARTA_BACKEND__SESSION_H_
+#ifndef CARTA_SRC_SESSION_SESSION_H_
+#define CARTA_SRC_SESSION_SESSION_H_
 
 #include <atomic>
 #include <cstdint>
@@ -24,6 +24,7 @@
 #include <casacore/casa/aips.h>
 
 #include "AnimationObject.h"
+#include "Cache/LoaderCache.h"
 #include "CursorSettings.h"
 #include "FileList/FileListHandler.h"
 #include "Frame/Frame.h"
@@ -47,21 +48,6 @@ typedef std::function<void()> ScriptingSessionClosedCallback;
 struct PerSocketData {
     uint32_t session_id;
     string address;
-};
-
-// Cache of loaders for reading images from disk.
-class LoaderCache {
-public:
-    LoaderCache(int capacity);
-    std::shared_ptr<FileLoader> Get(const std::string& filename, const std::string& directory = "");
-    void Remove(const std::string& filename, const std::string& directory = "");
-
-private:
-    std::string GetKey(const std::string& filename, const std::string& directory);
-    int _capacity;
-    std::unordered_map<std::string, std::shared_ptr<FileLoader>> _map;
-    std::list<std::string> _queue;
-    std::mutex _loader_cache_mutex;
 };
 
 class Session {
@@ -358,4 +344,4 @@ protected:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__SESSION_H_
+#endif // CARTA_SRC_SESSION_SESSION_H_

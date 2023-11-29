@@ -6,8 +6,8 @@
 
 //# CartaMiriadImage.h : MIRIAD Image class to support masks
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CARTAMIRIADIMAGE_H_
-#define CARTA_BACKEND_IMAGEDATA_CARTAMIRIADIMAGE_H_
+#ifndef CARTA_SRC_IMAGEDATA_CARTAMIRIADIMAGE_H_
+#define CARTA_SRC_IMAGEDATA_CARTAMIRIADIMAGE_H_
 
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/MIRIADImage.h>
@@ -62,4 +62,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CARTAMIRIADIMAGE_H_
+#endif // CARTA_SRC_IMAGEDATA_CARTAMIRIADIMAGE_H_

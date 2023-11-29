@@ -193,6 +193,7 @@ set(LINK_LIBS
 set(SOURCE_FILES
         ${SOURCE_FILES}
 	third-party/pugixml/src/pugixml.cpp
+        src/Cache/LoaderCache.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc

@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_SESSIONMANAGER_WEBBROWSER_H_
-#define CARTA_BACKEND_SRC_SESSIONMANAGER_WEBBROWSER_H_
+#ifndef CARTA_SRC_MAIN_WEBBROWSER_H_
+#define CARTA_SRC_MAIN_WEBBROWSER_H_
 
 #include <string>
 #include <vector>
@@ -36,4 +36,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_SRC_SESSIONMANAGER_WEBBROWSER_H_
+#endif // CARTA_SRC_MAIN_WEBBROWSER_H_
