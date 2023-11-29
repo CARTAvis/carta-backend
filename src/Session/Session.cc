@@ -53,7 +53,7 @@ Session::Session(uWS::WebSocket<false, true, PerSocketData>* ws, uWS::Loop* loop
       _loop(loop),
       _id(id),
       _address(address),
-      _table_controller(std::make_unique<TableController>(ProgramSettings::GetInstance())),
+      _table_controller(std::make_unique<TableController>()),
       _region_handler(nullptr),
       _file_list_handler(file_list_handler),
       _sync_id(0),

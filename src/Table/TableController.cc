@@ -19,7 +19,7 @@
 
 using namespace carta;
 
-TableController::TableController(ProgramSettings& settings) : _settings(settings) {}
+TableController::TableController() : _settings(ProgramSettings::GetInstance()) {}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();
