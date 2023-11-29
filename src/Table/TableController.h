@@ -16,6 +16,7 @@
 #include <carta-protobuf/catalog_list.pb.h>
 #include <carta-protobuf/open_catalog_file.pb.h>
 
+#include "Main/ProgramSettings.h"
 #include "Table.h"
 #include "Util/FileSystem.h"
 
@@ -32,7 +33,7 @@ struct TableViewCache {
 
 class TableController {
 public:
-    TableController() {}
+    TableController(ProgramSettings& settings);
     void OnFileListRequest(const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response);
     void OnFileInfoRequest(const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response);
     void OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
@@ -60,6 +61,7 @@ private:
     volatile bool _stop_getting_file_list;
     volatile bool _first_report_made;
     std::function<void(CARTA::ListProgress)> _progress_callback;
+    ProgramSettings& _settings;
 };
 } // namespace carta
 #endif // CARTA_BACKEND_TABLE_TABLECONTROLLER_H_

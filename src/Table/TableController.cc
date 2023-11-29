@@ -19,6 +19,8 @@
 
 using namespace carta;
 
+TableController::TableController(ProgramSettings& settings) : _settings(settings) {}
+
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();
     int num_preview_rows(open_file_request.preview_data_size());
@@ -183,7 +185,7 @@ void TableController::OnFilterRequest(
 
 void TableController::OnFileListRequest(
     const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response) {
-    fs::path root_path(ProgramSettings::GetInstance().top_level_folder);
+    fs::path root_path(_settings.top_level_folder);
     fs::path file_path = GetPath(file_list_request.directory());
     std::error_code error_code;
 
@@ -398,10 +400,10 @@ bool TableController::FilterParamsChanged(const std::vector<CARTA::FilterConfig>
     return false;
 }
 fs::path TableController::GetPath(std::string directory, std::string name) {
-    fs::path file_path(ProgramSettings::GetInstance().top_level_folder);
+    fs::path file_path(_settings.top_level_folder);
     if (directory == "$BASE") {
         // Replace $BASE macro with the starting folder
-        file_path /= ProgramSettings::GetInstance().starting_folder;
+        file_path /= _settings.starting_folder;
     } else {
         // Strip meaningless directory paths
         if (directory == "." || directory == "./") {
