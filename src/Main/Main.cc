@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
         file_list_handler = std::make_shared<FileListHandler>(settings.top_level_folder, settings.starting_folder);
 
         // Session manager
-        session_manager = make_shared<SessionManager>(auth_token, file_list_handler);
+        session_manager = make_shared<SessionManager>(settings, auth_token, file_list_handler);
         carta::OnMessageTask::SetSessionManager(session_manager);
 
         // HTTP server
