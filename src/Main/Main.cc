@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
             exit(0);
         }
 
-        carta::logger::InitLogger();
+        carta::logger::InitLogger(settings);
         settings.FlushMessages(); // flush log messages produced during Program Settings setup
 
         // Send casacore log messages (global and local) to sink.
