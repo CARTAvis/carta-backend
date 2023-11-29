@@ -13,7 +13,7 @@
 namespace carta {
 namespace logger {
 
-void InitLogger() {
+void InitLogger(const ::carta::ProgramSettings& settings) {
     // Set the stdout/stderr console
     auto console_sink = std::make_shared<spdlog::sinks::carta_sink>();
     console_sink->set_pattern(CARTA_LOGGER_PATTERN);
@@ -24,8 +24,8 @@ void InitLogger() {
 
     // Set a log file with its full name, maximum size and the number of rotated files
     std::string log_fullname;
-    if (!ProgramSettings::GetInstance().no_log) {
-        log_fullname = (ProgramSettings::GetInstance().user_directory / "log/carta.log").string();
+    if (!settings.no_log) {
+        log_fullname = (settings.user_directory / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_formatter(
             std::make_unique<spdlog::pattern_formatter>(CARTA_FILE_LOGGER_PATTERN, spdlog::pattern_time_type::utc));
@@ -39,7 +39,7 @@ void InitLogger() {
     default_logger->flush_on(spdlog::level::err);
 
     // Set the stdout logger level according to the verbosity number
-    switch (ProgramSettings::GetInstance().verbosity) {
+    switch (settings.verbosity) {
         case 0:
             default_logger->set_level(spdlog::level::off);
             break;
@@ -70,11 +70,11 @@ void InitLogger() {
     // Set as the default logger
     spdlog::set_default_logger(default_logger);
 
-    if (!ProgramSettings::GetInstance().no_log) {
+    if (!settings.no_log) {
         spdlog::info("Writing to the log file: {}", log_fullname);
     }
 
-    if (ProgramSettings::GetInstance().log_performance) {
+    if (settings.log_performance) {
         // Set the performance console
         auto perf_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         perf_console_sink->set_formatter(std::make_unique<spdlog::pattern_formatter>(PERF_PATTERN, spdlog::pattern_time_type::utc));
@@ -85,8 +85,8 @@ void InitLogger() {
 
         // Set a log file with its full name, maximum size and the number of rotated files
         std::string perf_log_fullname;
-        if (!ProgramSettings::GetInstance().no_log) {
-            perf_log_fullname = (ProgramSettings::GetInstance().user_directory / "log/performance.log").string();
+        if (!settings.no_log) {
+            perf_log_fullname = (settings.user_directory / "log/performance.log").string();
             auto perf_log_file_sink =
                 std::make_shared<spdlog::sinks::rotating_file_sink_mt>(perf_log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
             perf_log_file_sink->set_formatter(std::make_unique<spdlog::pattern_formatter>(PERF_PATTERN, spdlog::pattern_time_type::utc));
@@ -106,8 +106,8 @@ void InitLogger() {
     spdlog::flush_every(std::chrono::seconds(3));
 }
 
-void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (ProgramSettings::GetInstance().log_protocol_messages) {
+void LogReceivedEventType(const ::carta::ProgramSettings& settings, const CARTA::EventType& event_type) {
+    if (settings.log_protocol_messages) {
         auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
         if (!event_name.empty()) {
             spdlog::debug("[protocol] <== {}", event_name);
@@ -117,8 +117,8 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
     }
 }
 
-void LogSentEventType(const CARTA::EventType& event_type) {
-    if (ProgramSettings::GetInstance().log_protocol_messages) {
+void LogSentEventType(const ::carta::ProgramSettings& settings, const CARTA::EventType& event_type) {
+    if (settings.log_protocol_messages) {
         auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
         if (!event_name.empty()) {
             spdlog::debug("[protocol] ==> {}", event_name);

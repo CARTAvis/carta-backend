@@ -1952,7 +1952,7 @@ bool Session::SendVectorFieldData(int file_id) {
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
-    logger::LogSentEventType(event_type);
+    logger::LogSentEventType(_settings, event_type);
 
     size_t message_length = message.ByteSizeLong();
     size_t required_size = message_length + sizeof(EventHeader);

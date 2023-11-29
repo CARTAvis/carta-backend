@@ -109,10 +109,12 @@ private:
 } // namespace spdlog
 
 namespace carta {
+class ProgramSettings;
+
 namespace logger {
-void InitLogger();
-void LogReceivedEventType(const CARTA::EventType& event_type);
-void LogSentEventType(const CARTA::EventType& event_type);
+void InitLogger(const ::carta::ProgramSettings& settings);
+void LogReceivedEventType(const ::carta::ProgramSettings& settings, const CARTA::EventType& event_type);
+void LogSentEventType(const ::carta::ProgramSettings& settings, const CARTA::EventType& event_type);
 void FlushLogFile();
 } // namespace logger
 } // namespace carta
