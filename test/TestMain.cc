@@ -46,10 +46,11 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    ProgramSettings::GetInstance().verbosity = result["verbosity"].as<int>();
-    ProgramSettings::GetInstance().no_log = result["no_log"].as<bool>();
-    ProgramSettings::GetInstance().log_performance = result["log_performance"].as<bool>();
-    ProgramSettings::GetInstance().log_protocol_messages = result["log_protocol_messages"].as<bool>();
+    auto& settings = ProgramSettings::GetInstance();
+    settings.verbosity = result["verbosity"].as<int>();
+    settings.no_log = result["no_log"].as<bool>();
+    settings.log_performance = result["log_performance"].as<bool>();
+    settings.log_protocol_messages = result["log_protocol_messages"].as<bool>();
     omp_threads = result["omp_threads"].as<int>();
 
     if (omp_threads < 0) {
