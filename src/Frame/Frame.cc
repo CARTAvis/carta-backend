@@ -88,10 +88,6 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
         auto image_memory_size = ImageCache::ImageMemorySize(_width, _height, _depth, _num_stokes);
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= image_memory_size) {
-            std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-            FULL_IMAGE_CACHE_SIZE_AVAILABLE -= image_memory_size;
-            ulock_full_image_cache_size_available.unlock();
-
             // Create an image cache for the whole image data
             _image_cache = std::make_unique<CubeImageCache>(_width, _height, _depth, _num_stokes);
 
@@ -350,11 +346,6 @@ void Frame::WaitForTaskCancellation() {
     _connected = false; // file closed
     StopMomentCalc();
     std::unique_lock lock(GetActiveTaskMutex());
-
-    // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-    FULL_IMAGE_CACHE_SIZE_AVAILABLE += _image_cache->ImageCacheSize();
-    ulock_full_image_cache_size_available.unlock();
 }
 
 bool Frame::IsConnected() {

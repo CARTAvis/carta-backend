@@ -36,10 +36,6 @@ float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
     return _channel_data[(_width * y) + x];
 }
 
-float ChannelImageCache::ImageCacheSize() const {
-    return 0;
-}
-
 bool ChannelImageCache::DataExist(int stokes) const {
     return false;
 }

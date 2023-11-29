@@ -11,7 +11,19 @@
 namespace carta {
 
 CubeImageCache::CubeImageCache(size_t width, size_t height, size_t depth, size_t num_stokes)
-    : ImageCache(ImageCacheType::Cube, width, height, depth, num_stokes), _computed_stokes_channel(-1) {}
+    : ImageCache(ImageCacheType::Cube, width, height, depth, num_stokes), _computed_stokes_channel(-1) {
+    // Update the availability of full image cache size
+    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+    FULL_IMAGE_CACHE_SIZE_AVAILABLE -= ImageMemorySize(_width, _height, _depth, _num_stokes);
+    ulock_full_image_cache_size_available.unlock();
+}
+
+CubeImageCache::~CubeImageCache() {
+    // Update the availability of full image cache size
+    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+    FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, _num_stokes);
+    ulock_full_image_cache_size_available.unlock();
+}
 
 float* CubeImageCache::AllocateData(int stokes, size_t data_size) {
     _stokes_data[stokes] = std::make_unique<float[]>(data_size);
@@ -116,10 +128,6 @@ float CubeImageCache::GetValue(int x, int y, int z, int stokes) {
     }
 
     return _stokes_data[stokes][idx];
-}
-
-float CubeImageCache::ImageCacheSize() const {
-    return ImageCache::ImageMemorySize(_width, _height, _depth, _num_stokes);
 }
 
 bool CubeImageCache::DataExist(int stokes) const {
