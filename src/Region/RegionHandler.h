@@ -6,8 +6,8 @@
 
 // RegionHandler.h: class for handling requirements and data streams for regions
 
-#ifndef CARTA_BACKEND_REGION_REGIONHANDLER_H_
-#define CARTA_BACKEND_REGION_REGIONHANDLER_H_
+#ifndef CARTA_SRC_REGION_REGIONHANDLER_H_
+#define CARTA_SRC_REGION_REGIONHANDLER_H_
 
 #include <vector>
 
@@ -219,4 +219,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_REGIONHANDLER_H_
+#endif // CARTA_SRC_REGION_REGIONHANDLER_H_

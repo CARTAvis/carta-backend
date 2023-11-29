@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_STRING_H_
-#define CARTA_BACKEND__UTIL_STRING_H_
+#ifndef CARTA_SRC_UTIL_STRING_H_
+#define CARTA_SRC_UTIL_STRING_H_
 
 #include <string>
 #include <vector>
@@ -27,4 +27,4 @@ bool ConstantTimeStringCompare(const std::string& a, const std::string& b);
 // Convert string to integer, return whether success
 bool StringToInt(const std::string& input, int& i);
 
-#endif // CARTA_BACKEND__UTIL_STRING_H_
+#endif // CARTA_SRC_UTIL_STRING_H_

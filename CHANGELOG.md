@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Move the loader cache to separate files ([#1021](https://github.com/CARTAvis/carta-backend/issues/1021)).
 * Improve the code style in HTTP server ([#1260](https://github.com/CARTAvis/carta-backend/issues/1260)).
 * Remove program settings equality operators ([#1001](https://github.com/CARTAvis/carta-backend/issues/1001)).
+* Normalize the style of guard names in header files ([#1023](https://github.com/CARTAvis/carta-backend/issues/1023)).
 * Store global settings in a singleton class ([#1302](https://github.com/CARTAvis/carta-backend/issues/1302)).
 
 ### Fixed

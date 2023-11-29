@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__COMPRESSION_H_
-#define CARTA_BACKEND__COMPRESSION_H_
+#ifndef CARTA_SRC_DATASTREAM_COMPRESSION_H_
+#define CARTA_SRC_DATASTREAM_COMPRESSION_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -24,4 +24,4 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided = false);
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__COMPRESSION_H_
+#endif // CARTA_SRC_DATASTREAM_COMPRESSION_H_

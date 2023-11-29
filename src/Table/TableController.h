@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
-#define CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
+#ifndef CARTA_SRC_TABLE_TABLECONTROLLER_H_
+#define CARTA_SRC_TABLE_TABLECONTROLLER_H_
 
 #include <functional>
 #include <string>
@@ -64,4 +64,4 @@ private:
     ProgramSettings& _settings;
 };
 } // namespace carta
-#endif // CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
+#endif // CARTA_SRC_TABLE_TABLECONTROLLER_H_

@@ -6,8 +6,8 @@
 
 //# OnMessageTask.h: dequeues messages and calls appropriate Session handlers
 
-#ifndef CARTA_BACKEND__ONMESSAGETASK_H_
-#define CARTA_BACKEND__ONMESSAGETASK_H_
+#ifndef CARTA_SRC_SESSION_ONMESSAGETASK_H_
+#define CARTA_SRC_SESSION_ONMESSAGETASK_H_
 
 #include <string>
 #include <tuple>
@@ -120,4 +120,4 @@ public:
 
 #include "OnMessageTask.tcc"
 
-#endif // CARTA_BACKEND__ONMESSAGETASK_H_
+#endif // CARTA_SRC_SESSION_ONMESSAGETASK_H_

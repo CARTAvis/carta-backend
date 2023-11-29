@@ -6,8 +6,8 @@
 
 // # Session.h: representation of a client connected to a server; processes requests from frontend
 
-#ifndef CARTA_BACKEND__SESSION_H_
-#define CARTA_BACKEND__SESSION_H_
+#ifndef CARTA_SRC_SESSION_SESSION_H_
+#define CARTA_SRC_SESSION_SESSION_H_
 
 #include <atomic>
 #include <cstdint>
@@ -334,4 +334,4 @@ protected:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__SESSION_H_
+#endif // CARTA_SRC_SESSION_SESSION_H_
