@@ -18,7 +18,7 @@ float* ChannelImageCache::AllocateData(int stokes, size_t data_size) {
     return _channel_data.get();
 }
 
-float* ChannelImageCache::GetChannelImageCache(int z, int stokes) {
+float* ChannelImageCache::GetChannelData(int z, int stokes) {
     return _channel_data.get();
 }
 

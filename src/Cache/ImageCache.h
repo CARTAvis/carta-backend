@@ -30,7 +30,7 @@ public:
     virtual ~ImageCache() = default;
 
     virtual float* AllocateData(int stokes, size_t data_size) = 0;
-    virtual float* GetChannelImageCache(int z, int stokes) = 0;
+    virtual float* GetChannelData(int z, int stokes) = 0;
     virtual float GetValue(int x, int y, int z, int stokes) = 0;
 
     virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;

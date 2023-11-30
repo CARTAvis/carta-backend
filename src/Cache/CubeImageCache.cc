@@ -30,7 +30,7 @@ float* CubeImageCache::AllocateData(int stokes, size_t data_size) {
     return _stokes_data[stokes].get();
 }
 
-float* CubeImageCache::GetChannelImageCache(int z, int stokes) {
+float* CubeImageCache::GetChannelData(int z, int stokes) {
     if (IsComputedStokes(stokes)) {
         if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
             return _computed_stokes_channel_data[stokes].get();

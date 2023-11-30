@@ -26,7 +26,7 @@ public:
     ~CubeImageCache() override;
 
     float* AllocateData(int stokes, size_t data_size) override;
-    float* GetChannelImageCache(int z, int stokes) override;
+    float* GetChannelData(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) override;
 
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;

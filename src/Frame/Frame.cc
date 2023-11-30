@@ -2488,7 +2488,7 @@ float* Frame::GetImageData(int z, int stokes) {
     if (stokes == CURRENT_STOKES) {
         stokes = _stokes_index;
     }
-    return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelImageCache(z, stokes) : nullptr;
+    return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelData(z, stokes) : nullptr;
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
