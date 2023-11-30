@@ -224,7 +224,7 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
     return false;
 }
 
-bool CubeImageCache::CachedChannelDataAvailable() const {
+bool CubeImageCache::CachedChannelDataAvailable(bool current_channel) const {
     return true;
 }
 

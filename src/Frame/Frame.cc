@@ -399,9 +399,7 @@ bool Frame::SetCursor(float x, float y) {
 }
 
 bool Frame::FillImageCache(int stokes) {
-    if (stokes == CURRENT_STOKES) {
-        stokes = _stokes_index;
-    }
+    stokes = (stokes == CURRENT_STOKES ? _stokes_index : stokes);
 
     auto load_image_data_to_cache = [&](int required_z) {
         StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(required_z), stokes);
@@ -2482,12 +2480,8 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 }
 
 float* Frame::GetImageData(int z, int stokes) {
-    if (z == CURRENT_Z) {
-        z = _z_index;
-    }
-    if (stokes == CURRENT_STOKES) {
-        stokes = _stokes_index;
-    }
+    z = (z == CURRENT_Z ? _z_index : z);
+    stokes = (stokes == CURRENT_STOKES ? _stokes_index : stokes);
     return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelData(z, stokes) : nullptr;
 }
 
@@ -2505,15 +2499,9 @@ float Frame::GetValue(int x, int y, int z, int stokes) {
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {
-    if (z == CURRENT_Z) {
-        z = _z_index;
-    }
-    if (stokes == CURRENT_STOKES) {
-        stokes = _stokes_index;
-    }
-    return (_image_cache->Type() == ImageCacheType::Channel && z == _z_index && stokes == _stokes_index &&
-               _image_cache->CachedChannelDataAvailable()) ||
-           _image_cache->Type() == ImageCacheType::Cube;
+    z = (z == CURRENT_Z ? _z_index : z);
+    stokes = (stokes == CURRENT_STOKES ? _stokes_index : stokes);
+    return _image_cache->CachedChannelDataAvailable(z == _z_index && stokes == _stokes_index);
 }
 
 } // namespace carta

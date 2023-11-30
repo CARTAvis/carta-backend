@@ -40,8 +40,8 @@ bool ChannelImageCache::DataExist(int stokes) const {
     return false;
 }
 
-bool ChannelImageCache::CachedChannelDataAvailable() const {
-    return _channel_image_cache_valid;
+bool ChannelImageCache::CachedChannelDataAvailable(bool current_channel) const {
+    return current_channel && _channel_image_cache_valid;
 }
 
 void ChannelImageCache::ValidateChannelImageCache() {
