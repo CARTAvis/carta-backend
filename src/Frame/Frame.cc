@@ -85,36 +85,25 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
-    if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
-        auto image_memory_size = ImageCache::ImageMemorySize(_width, _height, _depth, _num_stokes);
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= image_memory_size) {
-            // Create an image cache for the whole image data
-            _image_cache = std::make_unique<CubeImageCache>(_width, _height, _depth, _num_stokes);
+    _image_cache = ImageCache::GetImageCache(_loader, _width, _height, _depth, _num_stokes);
 
-            spdlog::info("Cache the whole image data.");
-            for (int stokes = 0; stokes < _num_stokes; ++stokes) {
-                if (!FillImageCache(stokes)) {
-                    return;
-                }
+    if (_image_cache->Type() == ImageCacheType::Cube) {
+        spdlog::info("Cache the whole image data.");
+        for (int stokes = 0; stokes < _num_stokes; ++stokes) {
+            if (!FillImageCache(stokes)) {
+                return;
             }
-
-            // Get stokes type indices
-            bool mute_err_msg(true);
-            GetStokesTypeIndex("I", _image_cache->StokesI(), mute_err_msg);
-            GetStokesTypeIndex("Q", _image_cache->StokesQ(), mute_err_msg);
-            GetStokesTypeIndex("U", _image_cache->StokesU(), mute_err_msg);
-            GetStokesTypeIndex("V", _image_cache->StokesV(), mute_err_msg);
-
-            // Get beam area
-            _image_cache->BeamArea() = _loader->CalculateBeamArea();
-        } else if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
-            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", image_memory_size);
         }
-    }
 
-    if (!_image_cache) {
-        // By default, the image cache is per channel, if it is not assigned as for the whole image data
-        _image_cache = std::make_unique<ChannelImageCache>(_width, _height, _depth, _num_stokes);
+        // Get stokes type indices
+        bool mute_err_msg(true);
+        GetStokesTypeIndex("I", _image_cache->StokesI(), mute_err_msg);
+        GetStokesTypeIndex("Q", _image_cache->StokesQ(), mute_err_msg);
+        GetStokesTypeIndex("U", _image_cache->StokesU(), mute_err_msg);
+        GetStokesTypeIndex("V", _image_cache->StokesV(), mute_err_msg);
+
+        // Get beam area
+        _image_cache->BeamArea() = _loader->CalculateBeamArea();
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps

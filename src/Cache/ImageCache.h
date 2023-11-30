@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND__FRAME_IMAGECACHE_H_
 #define CARTA_BACKEND__FRAME_IMAGECACHE_H_
 
+#include "ImageData/FileLoader.h"
 #include "Util/Image.h"
 
 #include <casacore/casa/Arrays/IPosition.h>
@@ -28,6 +29,12 @@ class ImageCache {
 public:
     ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth, size_t num_stokes);
     virtual ~ImageCache() = default;
+
+    static std::unique_ptr<ImageCache> GetImageCache(
+        std::shared_ptr<FileLoader> loader, size_t width, size_t height, size_t depth, size_t num_stokes);
+
+    static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
+    static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
     virtual float* AllocateData(int stokes, size_t data_size) = 0;
     virtual float* GetChannelData(int z, int stokes) = 0;
@@ -63,9 +70,6 @@ public:
     double& BeamArea() {
         return _beam_area;
     }
-
-    static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
-    static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
 protected:
     enum ImageCacheType _type;

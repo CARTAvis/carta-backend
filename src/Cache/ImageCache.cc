@@ -6,6 +6,8 @@
 
 #include "ImageCache.h"
 
+#include "ChannelImageCache.h"
+#include "CubeImageCache.h"
 #include "Logger/Logger.h"
 #include "Util/Stokes.h"
 #include "Util/System.h"
@@ -14,6 +16,21 @@ float FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0; // MB
 std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
 
 namespace carta {
+
+std::unique_ptr<ImageCache> ImageCache::GetImageCache(
+    std::shared_ptr<FileLoader> loader, size_t width, size_t height, size_t depth, size_t num_stokes) {
+    if (!(loader->UseTileCache() && loader->HasMip(2))) {
+        auto image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= image_memory_size) {
+            return std::make_unique<CubeImageCache>(width, height, depth, num_stokes);
+        }
+
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
+            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", image_memory_size);
+        }
+    }
+    return std::make_unique<ChannelImageCache>(width, height, depth, num_stokes);
+}
 
 ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth, size_t num_stokes)
     : _type(type),
