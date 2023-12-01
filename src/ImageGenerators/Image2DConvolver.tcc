@@ -7,8 +7,8 @@
 //
 // Re-write from the file: "carta-casacore/casa6/casa5/code/imageanalysis/ImageAnalysis/Image2DConvolver.tcc"
 //
-#ifndef CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
-#define CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_TCC_
+#ifndef CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_
+#define CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_
 
 #include "../Logger/Logger.h"
 #include "Util/Casacore.h"
@@ -744,4 +744,4 @@ void Image2DConvolver<T>::StopCalculation() {
     _stop = true;
 }
 
-#endif // CARTA_BACKEND__MOMENT_IMAGE2DCONVOLVER_H_
+#endif // CARTA_SRC_IMAGEGENERATORS_IMAGE2DCONVOLVER_TCC_

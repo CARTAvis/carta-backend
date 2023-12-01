@@ -7,8 +7,8 @@
 //# Frame.h: represents an open image file.  Handles slicing data and region calculations
 //# (profiles, histograms, stats)
 
-#ifndef CARTA_BACKEND__FRAME_H_
-#define CARTA_BACKEND__FRAME_H_
+#ifndef CARTA_SRC_FRAME_FRAME_H_
+#define CARTA_SRC_FRAME_FRAME_H_
 
 #include <algorithm>
 #include <atomic>
@@ -344,4 +344,4 @@ protected:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FRAME_H_
+#endif // CARTA_SRC_FRAME_FRAME_H_

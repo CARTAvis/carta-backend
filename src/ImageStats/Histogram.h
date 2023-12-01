@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
-#define CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
+#ifndef CARTA_SRC_IMAGESTATS_HISTOGRAM_H_
+#define CARTA_SRC_IMAGESTATS_HISTOGRAM_H_
 
 #include "BasicStatsCalculator.h"
 
@@ -61,4 +61,4 @@ public:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
+#endif // CARTA_SRC_IMAGESTATS_HISTOGRAM_H_

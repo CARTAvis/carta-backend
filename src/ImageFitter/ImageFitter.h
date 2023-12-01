@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEFITTER_IMAGEFITTER_H_
-#define CARTA_BACKEND_IMAGEFITTER_IMAGEFITTER_H_
+#ifndef CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
+#define CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_
 
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlinear.h>
@@ -242,4 +242,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEFITTER_IMAGEFITTER_H_
+#endif // CARTA_SRC_IMAGEFITTER_IMAGEFITTER_H_

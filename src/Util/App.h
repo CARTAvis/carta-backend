@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_APP_H_
-#define CARTA_BACKEND__UTIL_APP_H_
+#ifndef CARTA_SRC_UTIL_APP_H_
+#define CARTA_SRC_UTIL_APP_H_
 
 #include <string>
 
@@ -16,4 +16,4 @@ bool FindExecutablePath(std::string& path);
 std::string GetReleaseInformation();
 std::string OutputOfCommand(const char* command);
 
-#endif // CARTA_BACKEND__UTIL_APP_H_
+#endif // CARTA_SRC_UTIL_APP_H_

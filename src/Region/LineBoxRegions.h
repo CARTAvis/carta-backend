@@ -6,8 +6,8 @@
 
 // LineBoxRegions.h: class to approximate line with width as series of box regions
 
-#ifndef CARTA_BACKEND_REGION_LINEBOXREGIONS_H_
-#define CARTA_BACKEND_REGION_LINEBOXREGIONS_H_
+#ifndef CARTA_SRC_REGION_LINEBOXREGIONS_H_
+#define CARTA_SRC_REGION_LINEBOXREGIONS_H_
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
@@ -55,4 +55,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_LINEBOXREGIONS_H_
+#endif // CARTA_SRC_REGION_LINEBOXREGIONS_H_

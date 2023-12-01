@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__CURSORSETTINGS_H_
-#define CARTA_BACKEND__CURSORSETTINGS_H_
+#ifndef CARTA_SRC_SESSION_CURSORSETTINGS_H_
+#define CARTA_SRC_SESSION_CURSORSETTINGS_H_
 
 #include <mutex>
 #include <unordered_map>
@@ -41,4 +41,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__CURSORSETTINGS_H_
+#endif // CARTA_SRC_SESSION_CURSORSETTINGS_H_

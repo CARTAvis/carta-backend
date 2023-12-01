@@ -4,7 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#pragma once
+#ifndef CARTA_SRC_THREADINGMANAGER_CONCURRENCY_H_
+#define CARTA_SRC_THREADINGMANAGER_CONCURRENCY_H_
 
 #include <condition_variable>
 #include <iostream>
@@ -186,3 +187,5 @@ private:
 };
 
 } // namespace carta
+
+#endif // CARTA_SRC_THREADINGMANAGER_CONCURRENCY_H_

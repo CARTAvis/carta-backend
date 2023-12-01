@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_FILE_H_
-#define CARTA_BACKEND__UTIL_FILE_H_
+#ifndef CARTA_SRC_UTIL_FILE_H_
+#define CARTA_SRC_UTIL_FILE_H_
 
 #include <carta-protobuf/enums.pb.h>
 
@@ -36,4 +36,4 @@ bool IsGzMagicNumber(uint32_t magic_number);
 int GetNumItems(const std::string& path);
 fs::path SearchPath(std::string filename);
 
-#endif // CARTA_BACKEND__UTIL_FILE_H_
+#endif // CARTA_SRC_UTIL_FILE_H_

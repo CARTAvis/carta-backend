@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__UTIL_IMAGE_H_
-#define CARTA_BACKEND__UTIL_IMAGE_H_
+#ifndef CARTA_SRC_UTIL_IMAGE_H_
+#define CARTA_SRC_UTIL_IMAGE_H_
 
 #include <cmath>
 #include <functional>
@@ -126,4 +126,4 @@ struct PointXy {
     }
 };
 
-#endif // CARTA_BACKEND__UTIL_IMAGE_H_
+#endif // CARTA_SRC_UTIL_IMAGE_H_

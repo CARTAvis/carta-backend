@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__REQUIREMENTSCACHE_H_
-#define CARTA_BACKEND__REQUIREMENTSCACHE_H_
+#ifndef CARTA_SRC_CACHE_REQUIREMENTSCACHE_H_
+#define CARTA_SRC_CACHE_REQUIREMENTSCACHE_H_
 
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
@@ -223,4 +223,4 @@ struct StatsCache {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__REQUIREMENTSCACHE_H_
+#endif // CARTA_SRC_CACHE_REQUIREMENTSCACHE_H_

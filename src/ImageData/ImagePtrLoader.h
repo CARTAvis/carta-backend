@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_IMAGEPTRLOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_IMAGEPTRLOADER_H_
+#ifndef CARTA_SRC_IMAGEDATA_IMAGEPTRLOADER_H_
+#define CARTA_SRC_IMAGEDATA_IMAGEPTRLOADER_H_
 
 #include "FileLoader.h"
 
@@ -34,4 +34,4 @@ void ImagePtrLoader::AllocateImage(const std::string& /*hdu*/) {}
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_IMAGEPTRLOADER_H_
+#endif // CARTA_SRC_IMAGEDATA_IMAGEPTRLOADER_H_

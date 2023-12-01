@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__IMAGEDATA_STOKESFILESCONNECTOR_H_
-#define CARTA_BACKEND__IMAGEDATA_STOKESFILESCONNECTOR_H_
+#ifndef CARTA_SRC_IMAGEDATA_STOKESFILESCONNECTOR_H_
+#define CARTA_SRC_IMAGEDATA_STOKESFILESCONNECTOR_H_
 
 #include <carta-protobuf/concat_stokes_files.pb.h>
 #include <casacore/images/Images/ExtendImage.h>
@@ -36,4 +36,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__IMAGEDATA_STOKESFILESCONNECTOR_H_
+#endif // CARTA_SRC_IMAGEDATA_STOKESFILESCONNECTOR_H_

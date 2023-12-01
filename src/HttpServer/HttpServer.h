@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
-#define CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
+#ifndef CARTA_SRC_HTTPSERVER_HTTPSERVER_H_
+#define CARTA_SRC_HTTPSERVER_HTTPSERVER_H_
 
 #include <chrono>
 #include <string>
@@ -101,4 +101,4 @@ private:
 };
 
 } // namespace carta
-#endif // CARTA_BACKEND_SRC_HTTPSERVER_HTTPSERVER_H_
+#endif // CARTA_SRC_HTTPSERVER_HTTPSERVER_H_

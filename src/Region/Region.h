@@ -6,8 +6,8 @@
 
 //# Region.h: class for managing 2D region parameters
 
-#ifndef CARTA_BACKEND_REGION_REGION_H_
-#define CARTA_BACKEND_REGION_REGION_H_
+#ifndef CARTA_SRC_REGION_REGION_H_
+#define CARTA_SRC_REGION_REGION_H_
 
 #include <atomic>
 #include <shared_mutex>
@@ -246,4 +246,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_REGION_H_
+#endif // CARTA_SRC_REGION_REGION_H_
