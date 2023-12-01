@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__FRAME_IMAGECACHE_H_
-#define CARTA_BACKEND__FRAME_IMAGECACHE_H_
+#ifndef CARTA_SRC_CACHE_IMAGECACHE_H_
+#define CARTA_SRC_CACHE_IMAGECACHE_H_
 
 #include "ImageData/FileLoader.h"
 #include "Util/Image.h"
@@ -89,4 +89,4 @@ protected:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__FRAME_IMAGECACHE_H_
+#endif // CARTA_SRC_CACHE_IMAGECACHE_H_
