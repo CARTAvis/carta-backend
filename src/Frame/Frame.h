@@ -24,6 +24,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
+#include "Frame/ImageStatus.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -100,14 +101,18 @@ public:
 
     // Image/Frame info
     casacore::IPosition ImageShape(const StokesSource& stokes_source = StokesSource());
-    size_t Width();     // length of x axis
-    size_t Height();    // length of y axis
-    size_t Depth();     // length of z axis
-    size_t NumStokes(); // if no stokes axis, nstokes=1
-    int CurrentZ();
-    int CurrentStokes();
-    int SpectralAxis();
-    int StokesAxis();
+    casacore::IPosition OriginalImageShape() const; // Image shape from the original file
+    size_t Width() const;                           // length of x axis
+    size_t Height() const;                          // length of y axis
+    size_t Depth() const;                           // length of z axis
+    size_t NumStokes() const;                       // if no stokes axis, number of stokes = 1
+    int XAxis() const;
+    int YAxis() const;
+    int ZAxis() const;
+    int SpectralAxis() const;
+    int StokesAxis() const;
+    int CurrentZ() const;
+    int CurrentStokes() const;
     bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set z and stokes ranges with full xy plane
@@ -289,12 +294,8 @@ protected:
     // Image loader for image type
     std::shared_ptr<FileLoader> _loader;
 
-    // Shape and axis info: X, Y, Z, Stokes
-    casacore::IPosition _image_shape;
-    int _x_axis, _y_axis, _z_axis; // X and Y are render axes, Z is depth axis (non-render axis) that is not stokes (if any)
-    int _spectral_axis, _stokes_axis;
-    int _z_index, _stokes_index; // current index
-    size_t _width, _height, _depth, _num_stokes;
+    // Image status
+    std::shared_ptr<ImageStatus> _status;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;

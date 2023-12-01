@@ -27,7 +27,7 @@ public:
         : Frame(session_id, loader, hdu, default_z) {}
     std::vector<float> GetImageDataPerChannel(int z, int stokes) {
         std::vector<float> results;
-        if ((_image_cache->Type() == ImageCacheType::Channel && z == _z_index && stokes == _stokes_index) ||
+        if ((_image_cache->Type() == ImageCacheType::Channel && z == CurrentZ() && stokes == CurrentStokes()) ||
             _image_cache->Type() == ImageCacheType::Cube) {
             auto* data = GetImageData(z, stokes);
             for (int i = 0; i < Width() * Height(); ++i) {
