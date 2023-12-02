@@ -167,6 +167,14 @@ bool LoaderHelper::GetStokesTypeIndex(const string& coordinate, int& stokes_inde
     return true;
 }
 
+bool LoaderHelper::TileCacheAvailable() {
+    return _loader->UseTileCache() && _loader->HasMip(2);
+}
+
+double LoaderHelper::GetBeamArea() {
+    return _loader->CalculateBeamArea();
+}
+
 // Image status parameters
 
 casacore::IPosition LoaderHelper::OriginalImageShape() const {

@@ -10,8 +10,8 @@
 
 namespace carta {
 
-ChannelImageCache::ChannelImageCache(size_t width, size_t height, size_t depth, size_t num_stokes)
-    : ImageCache(ImageCacheType::Channel, width, height, depth, num_stokes), _channel_data(nullptr), _channel_image_cache_valid(false) {}
+ChannelImageCache::ChannelImageCache(std::shared_ptr<LoaderHelper> loader_helper)
+    : ImageCache(ImageCacheType::Channel, loader_helper), _channel_data(nullptr), _channel_image_cache_valid(false) {}
 
 float* ChannelImageCache::AllocateData(int stokes, size_t data_size) {
     _channel_data = std::make_unique<float[]>(data_size);

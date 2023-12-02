@@ -71,7 +71,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _loader_helper = std::make_shared<LoaderHelper>(_loader, _status, _image_mutex);
 
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
-    _image_cache = ImageCache::GetImageCache(_loader, Width(), Height(), Depth(), NumStokes());
+    _image_cache = ImageCache::GetImageCache(_loader_helper);
 
     if (_image_cache->Type() == ImageCacheType::Cube) {
         spdlog::info("Cache the whole image data.");
@@ -80,20 +80,10 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
                 return;
             }
         }
-
-        // Get stokes type indices
-        bool mute_err_msg(true);
-        GetStokesTypeIndex("I", _image_cache->StokesI(), mute_err_msg);
-        GetStokesTypeIndex("Q", _image_cache->StokesQ(), mute_err_msg);
-        GetStokesTypeIndex("U", _image_cache->StokesU(), mute_err_msg);
-        GetStokesTypeIndex("V", _image_cache->StokesV(), mute_err_msg);
-
-        // Get beam area
-        _image_cache->BeamArea() = _loader->CalculateBeamArea();
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
-    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !FillImageCache()) {
+    if (!_loader_helper->TileCacheAvailable() && !FillImageCache()) {
         _open_image_error = fmt::format("Cannot load image data. Check log.");
         _valid = false;
         return;
@@ -268,7 +258,7 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
                 // invalidate the image cache
                 InvalidateImageCache();
 
-                if (!(_loader->UseTileCache() && _loader->HasMip(2)) || IsComputedStokes(CurrentStokes())) {
+                if (!_loader_helper->TileCacheAvailable() || IsComputedStokes(CurrentStokes())) {
                     // Reload the full channel cache for loaders which use it
                     FillImageCache();
                 } else {

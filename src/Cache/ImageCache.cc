@@ -17,32 +17,39 @@ std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
 
 namespace carta {
 
-std::unique_ptr<ImageCache> ImageCache::GetImageCache(
-    std::shared_ptr<FileLoader> loader, size_t width, size_t height, size_t depth, size_t num_stokes) {
-    if (!(loader->UseTileCache() && loader->HasMip(2))) {
-        auto image_memory_size = ImageCache::ImageMemorySize(width, height, depth, num_stokes);
+std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelper> loader_helper) {
+    if (!loader_helper->TileCacheAvailable()) {
+        auto image_memory_size = ImageCache::ImageMemorySize(
+            loader_helper->Width(), loader_helper->Height(), loader_helper->Depth(), loader_helper->NumStokes());
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= image_memory_size) {
-            return std::make_unique<CubeImageCache>(width, height, depth, num_stokes);
+            return std::make_unique<CubeImageCache>(loader_helper);
         }
 
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
             spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", image_memory_size);
         }
     }
-    return std::make_unique<ChannelImageCache>(width, height, depth, num_stokes);
+    return std::make_unique<ChannelImageCache>(loader_helper);
 }
 
-ImageCache::ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth, size_t num_stokes)
-    : _type(type),
-      _width(width),
-      _height(height),
-      _depth(depth),
-      _num_stokes(num_stokes),
-      _stokes_i(-1),
-      _stokes_q(-1),
-      _stokes_u(-1),
-      _stokes_v(-1),
-      _beam_area(DOUBLE_NAN) {}
+ImageCache::ImageCache(ImageCacheType type, std::shared_ptr<LoaderHelper> loader_helper)
+    : _type(type), _loader_helper(loader_helper), _stokes_i(-1), _stokes_q(-1), _stokes_u(-1), _stokes_v(-1), _beam_area(DOUBLE_NAN) {
+    // Get image size
+    _width = _loader_helper->Width();
+    _height = _loader_helper->Height();
+    _depth = _loader_helper->Depth();
+    _num_stokes = _loader_helper->NumStokes();
+
+    // Get stokes type indices
+    bool mute_err_msg(true);
+    _loader_helper->GetStokesTypeIndex("I", _stokes_i, mute_err_msg);
+    _loader_helper->GetStokesTypeIndex("Q", _stokes_q, mute_err_msg);
+    _loader_helper->GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
+    _loader_helper->GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
+
+    // Get beam area
+    _beam_area = _loader_helper->GetBeamArea();
+}
 
 void ImageCache::LoadCachedPointSpatialData(
     std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) {

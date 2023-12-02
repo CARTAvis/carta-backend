@@ -10,8 +10,8 @@
 
 namespace carta {
 
-CubeImageCache::CubeImageCache(size_t width, size_t height, size_t depth, size_t num_stokes)
-    : ImageCache(ImageCacheType::Cube, width, height, depth, num_stokes), _computed_stokes_channel(-1) {
+CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
+    : ImageCache(ImageCacheType::Cube, loader_helper), _computed_stokes_channel(-1) {
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE -= ImageMemorySize(_width, _height, _depth, _num_stokes);

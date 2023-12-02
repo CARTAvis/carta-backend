@@ -7,6 +7,8 @@
 #ifndef CARTA_SRC_CACHE_IMAGECACHE_H_
 #define CARTA_SRC_CACHE_IMAGECACHE_H_
 
+#include "Frame/ImageStatus.h"
+#include "Frame/LoaderHelper.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Image.h"
 
@@ -27,11 +29,10 @@ enum ImageCacheType { Cube, Channel };
 
 class ImageCache {
 public:
-    ImageCache(ImageCacheType type, size_t width, size_t height, size_t depth, size_t num_stokes);
+    ImageCache(ImageCacheType type, std::shared_ptr<LoaderHelper> loader_helper);
     virtual ~ImageCache() = default;
 
-    static std::unique_ptr<ImageCache> GetImageCache(
-        std::shared_ptr<FileLoader> loader, size_t width, size_t height, size_t depth, size_t num_stokes);
+    static std::unique_ptr<ImageCache> GetImageCache(std::shared_ptr<LoaderHelper> loader_helper);
 
     static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
@@ -55,24 +56,9 @@ public:
         return _type;
     }
 
-    int& StokesI() {
-        return _stokes_i;
-    }
-    int& StokesQ() {
-        return _stokes_q;
-    }
-    int& StokesU() {
-        return _stokes_u;
-    }
-    int& StokesV() {
-        return _stokes_v;
-    }
-    double& BeamArea() {
-        return _beam_area;
-    }
-
 protected:
     enum ImageCacheType _type;
+    std::shared_ptr<LoaderHelper> _loader_helper;
 
     // Cube image cache size
     size_t _width;

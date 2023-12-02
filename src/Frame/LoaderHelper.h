@@ -22,8 +22,9 @@ public:
     StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
+    bool TileCacheAvailable();
+    double GetBeamArea();
 
-private:
     casacore::IPosition OriginalImageShape() const;
     size_t Width() const;
     size_t Height() const;
@@ -37,6 +38,7 @@ private:
     int CurrentZ() const;
     int CurrentStokes() const;
 
+private:
     bool _valid;
     std::shared_ptr<FileLoader> _loader;
     std::shared_ptr<ImageStatus> _status;

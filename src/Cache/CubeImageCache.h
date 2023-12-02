@@ -22,7 +22,7 @@ namespace carta {
 
 class CubeImageCache : public ImageCache {
 public:
-    CubeImageCache(size_t width, size_t height, size_t depth, size_t num_stokes);
+    CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper);
     ~CubeImageCache() override;
 
     float* AllocateData(int stokes, size_t data_size) override;
