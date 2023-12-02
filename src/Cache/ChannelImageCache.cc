@@ -36,10 +36,6 @@ float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
     return _channel_data[(_width * y) + x];
 }
 
-bool ChannelImageCache::DataExist(int stokes) const {
-    return false;
-}
-
 bool ChannelImageCache::CachedChannelDataAvailable(bool current_channel) const {
     return current_channel && _channel_image_cache_valid;
 }

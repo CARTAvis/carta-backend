@@ -6,12 +6,40 @@
 
 #include "CubeImageCache.h"
 
+#include "Logger/Logger.h"
+#include "Timer/Timer.h"
 #include "Util/Stokes.h"
 
 namespace carta {
 
 CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(ImageCacheType::Cube, loader_helper), _computed_stokes_channel(-1) {
+    : ImageCache(ImageCacheType::Cube, loader_helper),
+      _stokes_i(-1),
+      _stokes_q(-1),
+      _stokes_u(-1),
+      _stokes_v(-1),
+      _beam_area(DOUBLE_NAN),
+      _computed_stokes_channel(-1) {
+    spdlog::info("Cache the whole image data.");
+    Timer t;
+    if (!_loader_helper->FillCubeImageCache(_stokes_data)) {
+        _valid = false;
+        return;
+    }
+    auto dt = t.Elapsed();
+    spdlog::performance("Load {}x{}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, _depth, dt.ms(),
+        (float)(_width * _height * _depth) / dt.us());
+
+    // Get stokes indices
+    bool mute_err_msg(true);
+    _loader_helper->GetStokesTypeIndex("I", _stokes_i, mute_err_msg);
+    _loader_helper->GetStokesTypeIndex("Q", _stokes_q, mute_err_msg);
+    _loader_helper->GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
+    _loader_helper->GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
+
+    // Get beam area
+    _beam_area = _loader_helper->GetBeamArea();
+
     // Update the availability of full image cache size
     std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
     FULL_IMAGE_CACHE_SIZE_AVAILABLE -= ImageMemorySize(_width, _height, _depth, _num_stokes);
@@ -20,9 +48,11 @@ CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
 
 CubeImageCache::~CubeImageCache() {
     // Update the availability of full image cache size
-    std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-    FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, _num_stokes);
-    ulock_full_image_cache_size_available.unlock();
+    if (_valid) {
+        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+        FULL_IMAGE_CACHE_SIZE_AVAILABLE += ImageMemorySize(_width, _height, _depth, _num_stokes);
+        ulock_full_image_cache_size_available.unlock();
+    }
 }
 
 float* CubeImageCache::AllocateData(int stokes, size_t data_size) {
@@ -128,10 +158,6 @@ float CubeImageCache::GetValue(int x, int y, int z, int stokes) {
     }
 
     return _stokes_data[stokes][idx];
-}
-
-bool CubeImageCache::DataExist(int stokes) const {
-    return _stokes_data.count(stokes);
 }
 
 bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {

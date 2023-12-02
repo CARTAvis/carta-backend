@@ -44,13 +44,14 @@ public:
     virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
     virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
-    virtual bool DataExist(int stokes) const = 0;
     virtual bool CachedChannelDataAvailable(bool current_channel) const = 0;
 
     virtual void ValidateChannelImageCache() = 0;
     virtual void InvalidateChannelImageCache() = 0;
 
     void LoadCachedPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
+
+    bool IsValid() const;
 
     ImageCacheType Type() const {
         return _type;
@@ -59,18 +60,13 @@ public:
 protected:
     enum ImageCacheType _type;
     std::shared_ptr<LoaderHelper> _loader_helper;
+    bool _valid;
 
     // Cube image cache size
     size_t _width;
     size_t _height;
     size_t _depth;
     size_t _num_stokes;
-
-    int _stokes_i; // stokes type "I" index
-    int _stokes_q; // stokes type "Q" index
-    int _stokes_u; // stokes type "U" index
-    int _stokes_v; // stokes type "V" index
-    double _beam_area;
 };
 
 } // namespace carta

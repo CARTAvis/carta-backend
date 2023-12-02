@@ -33,22 +33,17 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
 }
 
 ImageCache::ImageCache(ImageCacheType type, std::shared_ptr<LoaderHelper> loader_helper)
-    : _type(type), _loader_helper(loader_helper), _stokes_i(-1), _stokes_q(-1), _stokes_u(-1), _stokes_v(-1), _beam_area(DOUBLE_NAN) {
+    : _type(type), _loader_helper(loader_helper), _valid(true) {
+    if (!_loader_helper->IsValid()) {
+        _valid = false;
+        return;
+    }
+
     // Get image size
     _width = _loader_helper->Width();
     _height = _loader_helper->Height();
     _depth = _loader_helper->Depth();
     _num_stokes = _loader_helper->NumStokes();
-
-    // Get stokes type indices
-    bool mute_err_msg(true);
-    _loader_helper->GetStokesTypeIndex("I", _stokes_i, mute_err_msg);
-    _loader_helper->GetStokesTypeIndex("Q", _stokes_q, mute_err_msg);
-    _loader_helper->GetStokesTypeIndex("U", _stokes_u, mute_err_msg);
-    _loader_helper->GetStokesTypeIndex("V", _stokes_v, mute_err_msg);
-
-    // Get beam area
-    _beam_area = _loader_helper->GetBeamArea();
 }
 
 void ImageCache::LoadCachedPointSpatialData(
@@ -65,6 +60,10 @@ void ImageCache::LoadCachedPointSpatialData(
     } else {
         spdlog::error("Unknown point spatial profile config: {}", config);
     }
+}
+
+bool ImageCache::IsValid() const {
+    return _valid;
 }
 
 void ImageCache::AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg) {

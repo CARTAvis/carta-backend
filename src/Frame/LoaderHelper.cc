@@ -11,7 +11,7 @@
 using namespace carta;
 
 LoaderHelper::LoaderHelper(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageStatus> status, std::mutex& image_mutex)
-    : _loader(loader), _status(status), _image_mutex(image_mutex) {
+    : _loader(loader), _status(status), _valid(true), _image_mutex(image_mutex) {
     if (!_loader || !_status) {
         _valid = false;
         spdlog::error("Image loader helper is invalid!");
@@ -173,6 +173,27 @@ bool LoaderHelper::TileCacheAvailable() {
 
 double LoaderHelper::GetBeamArea() {
     return _loader->CalculateBeamArea();
+}
+
+bool LoaderHelper::FillCubeImageCache(std::unordered_map<int, std::unique_ptr<float[]>>& stokes_data) {
+    if (!stokes_data.empty()) {
+        stokes_data.clear();
+    }
+
+    for (int stokes = 0; stokes < NumStokes(); ++stokes) {
+        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
+        auto data_size = stokes_slicer.slicer.length().product();
+        stokes_data[stokes] = std::make_unique<float[]>(data_size);
+        if (!GetSlicerData(stokes_slicer, stokes_data[stokes].get())) {
+            spdlog::error("Loading cube image cache failed (stokes index: {}).", stokes);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool LoaderHelper::IsValid() const {
+    return _valid;
 }
 
 // Image status parameters

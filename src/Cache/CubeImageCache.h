@@ -32,13 +32,18 @@ public:
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
-    bool DataExist(int stokes) const override;
     bool CachedChannelDataAvailable(bool current_channel) const override;
 
     void ValidateChannelImageCache() override;
     void InvalidateChannelImageCache() override;
 
 private:
+    int _stokes_i; // stokes "I" index
+    int _stokes_q; // stokes "Q" index
+    int _stokes_u; // stokes "U" index
+    int _stokes_v; // stokes "V" index
+    double _beam_area;
+
     // Current channel of computed stokes image cache
     int _computed_stokes_channel;
 

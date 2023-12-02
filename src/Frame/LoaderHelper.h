@@ -24,6 +24,8 @@ public:
     bool GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg);
     bool TileCacheAvailable();
     double GetBeamArea();
+    bool FillCubeImageCache(std::unordered_map<int, std::unique_ptr<float[]>>& stokes_data);
+    bool IsValid() const;
 
     casacore::IPosition OriginalImageShape() const;
     size_t Width() const;

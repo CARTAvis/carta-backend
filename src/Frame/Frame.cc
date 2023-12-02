@@ -67,19 +67,17 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
-    // Create an image loader helper object
+    // Create an image loader helper
     _loader_helper = std::make_shared<LoaderHelper>(_loader, _status, _image_mutex);
 
-    // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
+    // Create an image cache
+    bool write_lock(true);
+    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     _image_cache = ImageCache::GetImageCache(_loader_helper);
+    cache_lock.release();
 
-    if (_image_cache->Type() == ImageCacheType::Cube) {
-        spdlog::info("Cache the whole image data.");
-        for (int stokes = 0; stokes < NumStokes(); ++stokes) {
-            if (!FillImageCache(stokes)) {
-                return;
-            }
-        }
+    if (!_image_cache->IsValid()) {
+        return;
     }
 
     // load full image cache for loaders that don't use the tile cache and mipmaps
@@ -302,20 +300,7 @@ bool Frame::FillImageCache(int stokes) {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
 
-    if (_image_cache->Type() == ImageCacheType::Cube) {
-        // Fill cube image cache
-        if (!_image_cache->DataExist(stokes) && !IsComputedStokes(stokes)) {
-            Timer t;
-            if (!load_image_data_to_cache(ALL_Z)) {
-                return false;
-            }
-            auto dt = t.Elapsed();
-            spdlog::performance("Load {}x{}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), Depth(), dt.ms(),
-                (float)(Width() * Height() * Depth()) / dt.us());
-        }
-    } else {
-        // Fill channel image cache
-
+    if (_image_cache->Type() == ImageCacheType::Channel) {
         // Exit early *after* acquiring lock if the cache has already been loaded by another thread
         if (ImageCacheAvailable()) {
             return true;
