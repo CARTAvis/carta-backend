@@ -38,6 +38,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _loader(loader),
       _tile_cache(0),
       _status(nullptr),
+      _loader_helper(nullptr),
       _image_cache(nullptr),
       _moment_generator(nullptr),
       _moment_name_index(0) {
@@ -60,11 +61,14 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
         return;
     }
 
-    // Get shape and axis values from the loader
+    // Create an image status object and get the image shape and axes from the loader
     _status = std::make_shared<ImageStatus>(session_id, _loader, default_z, _open_image_error);
     if (!_status->valid) {
         return;
     }
+
+    // Create an image loader helper object
+    _loader_helper = std::make_shared<LoaderHelper>(_loader, _status, _image_mutex);
 
     // Check whether to cache the whole image data, this is only for non-HDF5 or HDF5 files without tile cache and mip data
     _image_cache = ImageCache::GetImageCache(_loader, Width(), Height(), Depth(), NumStokes());
@@ -216,105 +220,11 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& z_range, int stokes) {
-    return GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
+    return _loader_helper->GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), z_range, stokes);
 }
 
 StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes) {
-    // Set stokes source for the image loader
-    StokesSource stokes_source(stokes, z_range, x_range, y_range);
-
-    // Slicer to apply z range and stokes to image shape
-    // Start with entire image
-    casacore::IPosition start(OriginalImageShape().size());
-    start = 0;
-    casacore::IPosition end(OriginalImageShape());
-    end -= 1; // last position, not length
-
-    // Slice x axis
-    if (XAxis() >= 0) {
-        int start_x(x_range.from), end_x(x_range.to);
-
-        // Normalize x constants
-        if (start_x == ALL_X) {
-            start_x = 0;
-        }
-        if (end_x == ALL_X) {
-            end_x = Width() - 1;
-        }
-
-        if (stokes_source.IsOriginalImage()) {
-            start(XAxis()) = start_x;
-            end(XAxis()) = end_x;
-        } else { // Reset the slice cut for the computed stokes image
-            start(XAxis()) = 0;
-            end(XAxis()) = end_x - start_x;
-        }
-    }
-
-    // Slice y axis
-    if (YAxis() >= 0) {
-        int start_y(y_range.from), end_y(y_range.to);
-
-        // Normalize y constants
-        if (start_y == ALL_Y) {
-            start_y = 0;
-        }
-        if (end_y == ALL_Y) {
-            end_y = Height() - 1;
-        }
-
-        if (stokes_source.IsOriginalImage()) {
-            start(YAxis()) = start_y;
-            end(YAxis()) = end_y;
-        } else { // Reset the slice cut for the computed stokes image
-            start(YAxis()) = 0;
-            end(YAxis()) = end_y - start_y;
-        }
-    }
-
-    // Slice z axis
-    if (ZAxis() >= 0) {
-        int start_z(z_range.from), end_z(z_range.to);
-
-        // Normalize z constants
-        if (start_z == ALL_Z) {
-            start_z = 0;
-        } else if (start_z == CURRENT_Z) {
-            start_z = CurrentZ();
-        }
-        if (end_z == ALL_Z) {
-            end_z = Depth() - 1;
-        } else if (end_z == CURRENT_Z) {
-            end_z = CurrentZ();
-        }
-
-        if (stokes_source.IsOriginalImage()) {
-            start(ZAxis()) = start_z;
-            end(ZAxis()) = end_z;
-        } else { // Reset the slice cut for the computed stokes image
-            start(ZAxis()) = 0;
-            end(ZAxis()) = end_z - start_z;
-        }
-    }
-
-    // Slice stokes axis
-    if (StokesAxis() >= 0) {
-        // Normalize stokes constant
-        _status->CheckCurrentStokes(stokes);
-
-        if (stokes_source.IsOriginalImage()) {
-            start(StokesAxis()) = stokes;
-            end(StokesAxis()) = stokes;
-        } else {
-            // Reset the slice cut for the computed stokes image
-            start(StokesAxis()) = 0;
-            end(StokesAxis()) = 0;
-        }
-    }
-
-    // slicer for image data
-    casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
-    return StokesSlicer(stokes_source, section);
+    return _loader_helper->GetImageSlicer(x_range, y_range, z_range, stokes);
 }
 
 bool Frame::CheckZ(int z) {
@@ -1693,13 +1603,7 @@ bool Frame::GetRegionData(const StokesRegion& stokes_region, std::vector<float>&
 }
 
 bool Frame::GetSlicerData(const StokesSlicer& stokes_slicer, float* data) {
-    // Get image data with a slicer applied
-    casacore::Array<float> tmp(stokes_slicer.slicer.length(), data, casacore::StorageInitPolicy::SHARE);
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool data_ok = _loader->GetSlice(tmp, stokes_slicer);
-    _loader->CloseImageIfUpdated();
-    ulock.unlock();
-    return data_ok;
+    return _loader_helper->GetSlicerData(stokes_slicer, data);
 }
 
 bool Frame::GetRegionStats(const StokesRegion& stokes_region, const std::vector<CARTA::StatsType>& required_stats, bool per_z,
@@ -2271,44 +2175,7 @@ casacore::Slicer Frame::GetExportRegionSlicer(const CARTA::SaveFile& save_file_m
 }
 
 bool Frame::GetStokesTypeIndex(const string& coordinate, int& stokes_index, bool mute_err_msg) {
-    // Coordinate could be profile (x, y, z), stokes string (I, Q, U), or combination (Ix, Qy)
-    bool is_stokes_string = StokesStringTypes.find(coordinate) != StokesStringTypes.end();
-    bool is_combination = (coordinate.size() > 1 && (coordinate.back() == 'x' || coordinate.back() == 'y' || coordinate.back() == 'z'));
-
-    if (is_combination || is_stokes_string) {
-        bool stokes_ok(false);
-
-        std::string stokes_string;
-        if (is_stokes_string) {
-            stokes_string = coordinate;
-        } else {
-            stokes_string = coordinate.substr(0, coordinate.size() - 1);
-        }
-
-        if (StokesStringTypes.count(stokes_string)) {
-            CARTA::PolarizationType stokes_type = StokesStringTypes[stokes_string];
-            if (_loader->GetStokesTypeIndex(stokes_type, stokes_index)) {
-                stokes_ok = true;
-            } else if (IsComputedStokes(stokes_string)) {
-                stokes_index = StokesStringTypes.at(stokes_string);
-                stokes_ok = true;
-            } else {
-                int assumed_stokes_index = (StokesValues[stokes_type] - 1) % 4;
-                if (NumStokes() > assumed_stokes_index) {
-                    stokes_index = assumed_stokes_index;
-                    stokes_ok = true;
-                    spdlog::warn("Can not get stokes index from the header. Assuming stokes {} index is {}.", stokes_string, stokes_index);
-                }
-            }
-        }
-        if (!stokes_ok && !mute_err_msg) {
-            spdlog::error("Spectral or spatial requirement {} failed: invalid stokes axis for image.", coordinate);
-            return false;
-        }
-    } else {
-        stokes_index = CurrentStokes(); // current stokes
-    }
-    return true;
+    return _loader_helper->GetStokesTypeIndex(coordinate, stokes_index, mute_err_msg);
 }
 
 std::string Frame::GetStokesType(int stokes_index) {

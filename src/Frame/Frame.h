@@ -25,6 +25,7 @@
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
 #include "Frame/ImageStatus.h"
+#include "Frame/LoaderHelper.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
 #include "ImageGenerators/ImageGenerator.h"
@@ -296,6 +297,9 @@ protected:
 
     // Image status
     std::shared_ptr<ImageStatus> _status;
+
+    // Image loader helper
+    std::shared_ptr<LoaderHelper> _loader_helper;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
