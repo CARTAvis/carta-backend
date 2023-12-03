@@ -10,9 +10,9 @@
 
 using namespace carta;
 
-LoaderHelper::LoaderHelper(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageStatus> status, std::mutex& image_mutex)
-    : _loader(loader), _status(status), _valid(true), _image_mutex(image_mutex) {
-    if (!_loader || !_status) {
+LoaderHelper::LoaderHelper(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> status, std::mutex& image_mutex)
+    : _loader(loader), _image_state(status), _valid(true), _image_mutex(image_mutex) {
+    if (!_loader || !_image_state) {
         _valid = false;
         spdlog::error("Image loader helper is invalid!");
     }
@@ -99,7 +99,7 @@ StokesSlicer LoaderHelper::GetImageSlicer(const AxisRange& x_range, const AxisRa
     // Slice stokes axis
     if (StokesAxis() >= 0) {
         // Normalize stokes constant
-        _status->CheckCurrentStokes(stokes);
+        _image_state->CheckCurrentStokes(stokes);
 
         if (stokes_source.IsOriginalImage()) {
             start(StokesAxis()) = stokes;
@@ -210,53 +210,53 @@ bool LoaderHelper::IsValid() const {
 // Image status parameters
 
 casacore::IPosition LoaderHelper::OriginalImageShape() const {
-    return _status->image_shape;
+    return _image_state->image_shape;
 }
 
 size_t LoaderHelper::Width() const {
-    return _status->width;
+    return _image_state->width;
 }
 
 size_t LoaderHelper::Height() const {
-    return _status->height;
+    return _image_state->height;
 }
 
 size_t LoaderHelper::Depth() const {
-    return _status->depth;
+    return _image_state->depth;
 }
 
 size_t LoaderHelper::NumStokes() const {
-    return _status->num_stokes;
+    return _image_state->num_stokes;
 }
 
 int LoaderHelper::XAxis() const {
-    return _status->x_axis;
+    return _image_state->x_axis;
 }
 
 int LoaderHelper::YAxis() const {
-    return _status->y_axis;
+    return _image_state->y_axis;
 }
 
 int LoaderHelper::ZAxis() const {
-    return _status->z_axis;
+    return _image_state->z_axis;
 }
 
 int LoaderHelper::SpectralAxis() const {
-    return _status->spectral_axis;
+    return _image_state->spectral_axis;
 }
 
 int LoaderHelper::StokesAxis() const {
-    return _status->stokes_axis;
+    return _image_state->stokes_axis;
 }
 
 int LoaderHelper::CurrentZ() const {
-    return _status->z;
+    return _image_state->z;
 }
 
 int LoaderHelper::CurrentStokes() const {
-    return _status->stokes;
+    return _image_state->stokes;
 }
 
 bool LoaderHelper::IsCurrentChannel(int& z, int& stokes) const {
-    return _status->IsCurrentChannel(z, stokes);
+    return _image_state->IsCurrentChannel(z, stokes);
 }

@@ -16,7 +16,7 @@
 
 namespace carta {
 
-struct ImageStatus {
+struct ImageState {
     // Image shape or sizes
     casacore::IPosition image_shape;
     size_t width;
@@ -37,7 +37,7 @@ struct ImageStatus {
 
     bool valid;
 
-    explicit ImageStatus(uint32_t session_id, std::shared_ptr<FileLoader> loader, int default_z, std::string& error);
+    explicit ImageState(uint32_t session_id, std::shared_ptr<FileLoader> loader, int default_z, std::string& error);
 
     void SetCurrentZ(int z_);
     void SetCurrentStokes(int stokes_);

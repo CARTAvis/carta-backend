@@ -4,12 +4,12 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "ImageStatus.h"
+#include "ImageState.h"
 #include "Logger/Logger.h"
 
 using namespace carta;
 
-ImageStatus::ImageStatus(uint32_t session_id, std::shared_ptr<FileLoader> loader, int default_z, std::string& error)
+ImageState::ImageState(uint32_t session_id, std::shared_ptr<FileLoader> loader, int default_z, std::string& error)
     : width(0),
       height(0),
       depth(1),
@@ -45,27 +45,27 @@ ImageStatus::ImageStatus(uint32_t session_id, std::shared_ptr<FileLoader> loader
     valid = true;
 }
 
-void ImageStatus::SetCurrentZ(int z_) {
+void ImageState::SetCurrentZ(int z_) {
     z = z_;
 }
 
-void ImageStatus::SetCurrentStokes(int stokes_) {
+void ImageState::SetCurrentStokes(int stokes_) {
     stokes = stokes_;
 }
 
-void ImageStatus::CheckCurrentZ(int& z_) const {
+void ImageState::CheckCurrentZ(int& z_) const {
     if (z_ == CURRENT_Z) {
         z_ = z;
     }
 }
 
-void ImageStatus::CheckCurrentStokes(int& stokes_) const {
+void ImageState::CheckCurrentStokes(int& stokes_) const {
     if (stokes_ == CURRENT_STOKES) {
         stokes_ = stokes;
     }
 }
 
-bool ImageStatus::IsCurrentChannel(int z_, int stokes_) const {
+bool ImageState::IsCurrentChannel(int z_, int stokes_) const {
     CheckCurrentZ(z_);
     CheckCurrentStokes(stokes_);
     return (z_ == z && stokes_ == stokes);

@@ -24,7 +24,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "DataStream/VectorField.h"
-#include "Frame/ImageStatus.h"
+#include "Frame/ImageState.h"
 #include "Frame/LoaderHelper.h"
 #include "ImageData/FileLoader.h"
 #include "ImageFitter/ImageFitter.h"
@@ -296,7 +296,7 @@ protected:
     std::shared_ptr<FileLoader> _loader;
 
     // Image status
-    std::shared_ptr<ImageStatus> _status;
+    std::shared_ptr<ImageState> _image_state;
 
     // Image loader helper
     std::shared_ptr<LoaderHelper> _loader_helper;

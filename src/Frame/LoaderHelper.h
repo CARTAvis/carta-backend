@@ -8,7 +8,7 @@
 #define CARTA_SRC_FRAME_LOADERHELPER_H_
 
 #include "ImageData/FileLoader.h"
-#include "ImageStatus.h"
+#include "ImageState.h"
 
 #include <memory>
 #include <string>
@@ -17,7 +17,7 @@ namespace carta {
 
 class LoaderHelper {
 public:
-    LoaderHelper(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageStatus> status, std::mutex& image_mutex);
+    LoaderHelper(std::shared_ptr<FileLoader> loader, std::shared_ptr<ImageState> status, std::mutex& image_mutex);
 
     StokesSlicer GetImageSlicer(const AxisRange& x_range, const AxisRange& y_range, const AxisRange& z_range, int stokes);
     bool GetSlicerData(const StokesSlicer& stokes_slicer, float* data);
@@ -45,7 +45,7 @@ public:
 private:
     bool _valid;
     std::shared_ptr<FileLoader> _loader;
-    std::shared_ptr<ImageStatus> _status;
+    std::shared_ptr<ImageState> _image_state;
     std::mutex& _image_mutex; // Reference of the image mutex for the file loader
 };
 

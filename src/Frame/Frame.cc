@@ -37,7 +37,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
       _valid(true),
       _loader(loader),
       _tile_cache(0),
-      _status(nullptr),
+      _image_state(nullptr),
       _loader_helper(nullptr),
       _image_cache(nullptr),
       _moment_generator(nullptr),
@@ -62,13 +62,13 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     }
 
     // Create an image status object and get the image shape and axes from the loader
-    _status = std::make_shared<ImageStatus>(session_id, _loader, default_z, _open_image_error);
-    if (!_status->valid) {
+    _image_state = std::make_shared<ImageState>(session_id, _loader, default_z, _open_image_error);
+    if (!_image_state->valid) {
         return;
     }
 
     // Create an image loader helper
-    _loader_helper = std::make_shared<LoaderHelper>(_loader, _status, _image_mutex);
+    _loader_helper = std::make_shared<LoaderHelper>(_loader, _image_state, _image_mutex);
 
     // Create an image cache
     bool write_lock(true);
@@ -148,51 +148,51 @@ casacore::IPosition Frame::ImageShape(const StokesSource& stokes_source) {
 }
 
 casacore::IPosition Frame::OriginalImageShape() const {
-    return _status->image_shape;
+    return _image_state->image_shape;
 }
 
 size_t Frame::Width() const {
-    return _status->width;
+    return _image_state->width;
 }
 
 size_t Frame::Height() const {
-    return _status->height;
+    return _image_state->height;
 }
 
 size_t Frame::Depth() const {
-    return _status->depth;
+    return _image_state->depth;
 }
 
 size_t Frame::NumStokes() const {
-    return _status->num_stokes;
+    return _image_state->num_stokes;
 }
 
 int Frame::XAxis() const {
-    return _status->x_axis;
+    return _image_state->x_axis;
 }
 
 int Frame::YAxis() const {
-    return _status->y_axis;
+    return _image_state->y_axis;
 }
 
 int Frame::ZAxis() const {
-    return _status->z_axis;
+    return _image_state->z_axis;
 }
 
 int Frame::SpectralAxis() const {
-    return _status->spectral_axis;
+    return _image_state->spectral_axis;
 }
 
 int Frame::StokesAxis() const {
-    return _status->stokes_axis;
+    return _image_state->stokes_axis;
 }
 
 int Frame::CurrentZ() const {
-    return _status->z;
+    return _image_state->z;
 }
 
 int Frame::CurrentStokes() const {
-    return _status->stokes;
+    return _image_state->stokes;
 }
 
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
@@ -250,8 +250,8 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
             bool z_ok(CheckZ(new_z));
             bool stokes_ok(CheckStokes(new_stokes));
             if (z_ok && stokes_ok) {
-                _status->SetCurrentZ(new_z);
-                _status->SetCurrentStokes(new_stokes);
+                _image_state->SetCurrentZ(new_z);
+                _image_state->SetCurrentStokes(new_stokes);
 
                 // invalidate the image cache
                 InvalidateImageCache();
@@ -2279,8 +2279,8 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 }
 
 float* Frame::GetImageData(int z, int stokes) {
-    _status->CheckCurrentZ(z);
-    _status->CheckCurrentStokes(stokes);
+    _image_state->CheckCurrentZ(z);
+    _image_state->CheckCurrentStokes(stokes);
     return _image_cache->GetChannelData(z, stokes);
 }
 

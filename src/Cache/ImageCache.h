@@ -7,7 +7,7 @@
 #ifndef CARTA_SRC_CACHE_IMAGECACHE_H_
 #define CARTA_SRC_CACHE_IMAGECACHE_H_
 
-#include "Frame/ImageStatus.h"
+#include "Frame/ImageState.h"
 #include "Frame/LoaderHelper.h"
 #include "ImageData/FileLoader.h"
 #include "Util/Image.h"
