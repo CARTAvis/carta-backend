@@ -15,13 +15,8 @@ namespace carta {
 ChannelImageCache::ChannelImageCache(std::shared_ptr<LoaderHelper> loader_helper)
     : ImageCache(loader_helper), _channel_data(nullptr), _channel_image_cache_valid(false) {}
 
-float* ChannelImageCache::AllocateData(int stokes, size_t data_size) {
-    _channel_data = std::make_unique<float[]>(data_size);
-    return _channel_data.get();
-}
-
 float* ChannelImageCache::GetChannelData(int z, int stokes) {
-    return _channel_data.get();
+    return CachedChannelDataAvailable(z, stokes) ? _channel_data.get() : nullptr;
 }
 
 bool ChannelImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
@@ -35,15 +30,15 @@ bool ChannelImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, i
 }
 
 float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
-    return _channel_data[(_width * y) + x];
+    return CachedChannelDataAvailable(z, stokes) ? _channel_data[(_width * y) + x] : FLOAT_NAN;
 }
 
-bool ChannelImageCache::CachedChannelDataAvailable(bool current_channel) const {
-    return current_channel && _channel_image_cache_valid;
+bool ChannelImageCache::CachedChannelDataAvailable(int z, int stokes) const {
+    return _loader_helper->IsCurrentChannel(z, stokes) && _channel_image_cache_valid;
 }
 
 bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
-    if (CachedChannelDataAvailable(_loader_helper->IsCurrentChannel(z, stokes))) {
+    if (CachedChannelDataAvailable(z, stokes)) {
         return true;
     }
 

@@ -55,11 +55,6 @@ CubeImageCache::~CubeImageCache() {
     }
 }
 
-float* CubeImageCache::AllocateData(int stokes, size_t data_size) {
-    _stokes_data[stokes] = std::make_unique<float[]>(data_size);
-    return _stokes_data[stokes].get();
-}
-
 float* CubeImageCache::GetChannelData(int z, int stokes) {
     if (IsComputedStokes(stokes)) {
         if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
@@ -250,7 +245,7 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
     return false;
 }
 
-bool CubeImageCache::CachedChannelDataAvailable(bool current_channel) const {
+bool CubeImageCache::CachedChannelDataAvailable(int z, int stokes) const {
     return true;
 }
 

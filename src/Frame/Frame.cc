@@ -2281,7 +2281,7 @@ bool Frame::DoVectorFieldCalculation(const std::function<void(CARTA::VectorOverl
 float* Frame::GetImageData(int z, int stokes) {
     _status->CheckCurrentZ(z);
     _status->CheckCurrentStokes(stokes);
-    return ImageCacheAvailable(z, stokes) ? _image_cache->GetChannelData(z, stokes) : nullptr;
+    return _image_cache->GetChannelData(z, stokes);
 }
 
 bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {
@@ -2294,11 +2294,11 @@ bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, c
 }
 
 float Frame::GetValue(int x, int y, int z, int stokes) {
-    return ImageCacheAvailable(z, stokes) ? _image_cache->GetValue(x, y, z, stokes) : FLOAT_NAN;
+    return _image_cache->GetValue(x, y, z, stokes);
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {
-    return _image_cache->CachedChannelDataAvailable(_status->IsCurrentChannel(z, stokes));
+    return _image_cache->CachedChannelDataAvailable(z, stokes);
 }
 
 } // namespace carta

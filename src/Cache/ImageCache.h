@@ -35,14 +35,13 @@ public:
     static void AssignFullImageCacheSizeAvailable(int& full_image_cache_size_available, std::string& msg);
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
-    virtual float* AllocateData(int stokes, size_t data_size) = 0;
     virtual float* GetChannelData(int z, int stokes) = 0;
     virtual float GetValue(int x, int y, int z, int stokes) = 0;
 
     virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
     virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
-    virtual bool CachedChannelDataAvailable(bool current_channel) const = 0;
+    virtual bool CachedChannelDataAvailable(int z, int stokes) const = 0;
 
     virtual bool UpdateChannelImageCache(int z, int stokes) = 0;
     virtual void InvalidateChannelImageCache() = 0;

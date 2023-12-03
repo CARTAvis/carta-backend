@@ -65,7 +65,7 @@ void ImageStatus::CheckCurrentStokes(int& stokes_) const {
     }
 }
 
-bool ImageStatus::IsCurrentChannel(int& z_, int& stokes_) const {
+bool ImageStatus::IsCurrentChannel(int z_, int stokes_) const {
     CheckCurrentZ(z_);
     CheckCurrentStokes(stokes_);
     return (z_ == z && stokes_ == stokes);

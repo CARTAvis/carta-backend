@@ -24,14 +24,13 @@ class ChannelImageCache : public ImageCache {
 public:
     ChannelImageCache(std::shared_ptr<LoaderHelper> loader_helper);
 
-    float* AllocateData(int stokes, size_t data_size) override;
     float* GetChannelData(int z, int stokes) override;
     inline float GetValue(int x, int y, int z, int stokes) override;
 
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
-    bool CachedChannelDataAvailable(bool current_channel) const override;
+    bool CachedChannelDataAvailable(int z, int stokes) const override;
 
     bool UpdateChannelImageCache(int z, int stokes) override;
     void InvalidateChannelImageCache() override;
