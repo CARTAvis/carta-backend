@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_SRC_FRAME_IMAGESTATUS_H_
-#define CARTA_SRC_FRAME_IMAGESTATUS_H_
+#ifndef CARTA_SRC_FRAME_IMAGESTATE_H_
+#define CARTA_SRC_FRAME_IMAGESTATE_H_
 
 #include "ImageData/FileLoader.h"
 
@@ -55,4 +55,4 @@ struct ImageState {
 
 } // namespace carta
 
-#endif // CARTA_SRC_FRAME_IMAGESTATUS_H_
+#endif // CARTA_SRC_FRAME_IMAGESTATE_H_
