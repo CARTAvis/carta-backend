@@ -39,6 +39,11 @@ struct ImageState {
 
     explicit ImageState(uint32_t session_id, std::shared_ptr<FileLoader> loader, int default_z, std::string& error);
 
+    bool CheckZ(int z_) const;
+    bool CheckStokes(int stokes_) const;
+
+    bool ZStokesChanged(int z_, int stokes_) const;
+
     void SetCurrentZ(int z_);
     void SetCurrentStokes(int stokes_);
 

@@ -45,6 +45,18 @@ ImageState::ImageState(uint32_t session_id, std::shared_ptr<FileLoader> loader, 
     valid = true;
 }
 
+bool ImageState::CheckZ(int z_) const {
+    return (z_ >= 0 && z_ < depth);
+}
+
+bool ImageState::CheckStokes(int stokes_) const {
+    return ((stokes_ >= 0 && stokes_ < num_stokes) || IsComputedStokes(stokes_));
+}
+
+bool ImageState::ZStokesChanged(int z_, int stokes_) const {
+    return (z_ != z || stokes_ != stokes);
+}
+
 void ImageState::SetCurrentZ(int z_) {
     z = z_;
 }

@@ -215,16 +215,16 @@ StokesSlicer Frame::GetImageSlicer(const AxisRange& x_range, const AxisRange& y_
     return _loader_helper->GetImageSlicer(x_range, y_range, z_range, stokes);
 }
 
-bool Frame::CheckZ(int z) {
-    return ((z >= 0) && (z < Depth()));
+bool Frame::CheckZ(int z) const {
+    return _image_state->CheckZ(z);
 }
 
-bool Frame::CheckStokes(int stokes) {
-    return (((stokes >= 0) && (stokes < NumStokes())) || IsComputedStokes(stokes));
+bool Frame::CheckStokes(int stokes) const {
+    return _image_state->CheckStokes(stokes);
 }
 
-bool Frame::ZStokesChanged(int z, int stokes) {
-    return (z != CurrentZ() || stokes != CurrentStokes());
+bool Frame::ZStokesChanged(int z, int stokes) const {
+    return _image_state->ZStokesChanged(z, stokes);
 }
 
 void Frame::WaitForTaskCancellation() {
