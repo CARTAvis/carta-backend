@@ -44,6 +44,8 @@ struct ImageStatus {
 
     void CheckCurrentZ(int& z_) const;
     void CheckCurrentStokes(int& stokes_) const;
+
+    bool IsCurrentChannel(int& z_, int& stokes_) const;
 };
 
 } // namespace carta

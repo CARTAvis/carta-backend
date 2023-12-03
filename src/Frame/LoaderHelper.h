@@ -25,6 +25,7 @@ public:
     bool TileCacheAvailable();
     double GetBeamArea();
     bool FillCubeImageCache(std::unordered_map<int, std::unique_ptr<float[]>>& stokes_data);
+    bool FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
     bool IsValid() const;
 
     casacore::IPosition OriginalImageShape() const;
@@ -39,6 +40,7 @@ public:
     int StokesAxis() const;
     int CurrentZ() const;
     int CurrentStokes() const;
+    bool IsCurrentChannel(int& z, int& stokes) const;
 
 private:
     bool _valid;

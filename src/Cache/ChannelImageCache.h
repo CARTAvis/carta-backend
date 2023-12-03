@@ -33,7 +33,7 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) override;
     bool CachedChannelDataAvailable(bool current_channel) const override;
 
-    void ValidateChannelImageCache() override;
+    bool UpdateChannelImageCache(int z, int stokes) override;
     void InvalidateChannelImageCache() override;
 
 private:

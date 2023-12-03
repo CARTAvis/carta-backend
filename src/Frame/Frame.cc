@@ -107,7 +107,7 @@ Frame::Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std:
     _loader->CloseImageIfUpdated();
 }
 
-bool Frame::IsValid() {
+bool Frame::IsValid() const {
     return _valid;
 }
 
@@ -283,40 +283,10 @@ bool Frame::SetCursor(float x, float y) {
     return changed;
 }
 
-bool Frame::FillImageCache(int stokes) {
-    _status->CheckCurrentStokes(stokes);
-
-    auto load_image_data_to_cache = [&](int required_z) {
-        StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(required_z), stokes);
-        auto image_data_size = stokes_slicer.slicer.length().product();
-        auto* image_data_ptr = _image_cache->AllocateData(stokes, image_data_size);
-        if (!image_data_ptr || !GetSlicerData(stokes_slicer, image_data_ptr)) {
-            spdlog::error("Session {}: {}", _session_id, "Loading image cache failed (z: {}, stokes: {})", required_z, stokes);
-            return false;
-        }
-        return true;
-    };
-
+bool Frame::FillImageCache() {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-
-    if (_image_cache->Type() == ImageCacheType::Channel) {
-        // Exit early *after* acquiring lock if the cache has already been loaded by another thread
-        if (ImageCacheAvailable()) {
-            return true;
-        }
-
-        Timer t;
-        if (!load_image_data_to_cache(CurrentZ())) {
-            return false;
-        }
-        auto dt = t.Elapsed();
-        spdlog::performance(
-            "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", Width(), Height(), dt.ms(), (float)(Width() * Height()) / dt.us());
-
-        _image_cache->ValidateChannelImageCache();
-    }
-    return true;
+    return _image_cache->UpdateChannelImageCache(CurrentZ(), CurrentStokes());
 }
 
 void Frame::InvalidateImageCache() {
@@ -2328,9 +2298,7 @@ float Frame::GetValue(int x, int y, int z, int stokes) {
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {
-    _status->CheckCurrentZ(z);
-    _status->CheckCurrentStokes(stokes);
-    return _image_cache->CachedChannelDataAvailable(z == CurrentZ() && stokes == CurrentStokes());
+    return _image_cache->CachedChannelDataAvailable(_status->IsCurrentChannel(z, stokes));
 }
 
 } // namespace carta

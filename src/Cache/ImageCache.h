@@ -25,11 +25,9 @@ extern std::mutex FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX;
 
 namespace carta {
 
-enum ImageCacheType { Cube, Channel };
-
 class ImageCache {
 public:
-    ImageCache(ImageCacheType type, std::shared_ptr<LoaderHelper> loader_helper);
+    ImageCache(std::shared_ptr<LoaderHelper> loader_helper);
     virtual ~ImageCache() = default;
 
     static std::unique_ptr<ImageCache> GetImageCache(std::shared_ptr<LoaderHelper> loader_helper);
@@ -46,19 +44,13 @@ public:
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) = 0;
     virtual bool CachedChannelDataAvailable(bool current_channel) const = 0;
 
-    virtual void ValidateChannelImageCache() = 0;
+    virtual bool UpdateChannelImageCache(int z, int stokes) = 0;
     virtual void InvalidateChannelImageCache() = 0;
 
     void LoadCachedPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
-
     bool IsValid() const;
 
-    ImageCacheType Type() const {
-        return _type;
-    }
-
 protected:
-    enum ImageCacheType _type;
     std::shared_ptr<LoaderHelper> _loader_helper;
     bool _valid;
 

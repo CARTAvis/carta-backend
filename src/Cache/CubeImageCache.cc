@@ -13,7 +13,7 @@
 namespace carta {
 
 CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(ImageCacheType::Cube, loader_helper),
+    : ImageCache(loader_helper),
       _stokes_i(-1),
       _stokes_q(-1),
       _stokes_u(-1),
@@ -254,7 +254,9 @@ bool CubeImageCache::CachedChannelDataAvailable(bool current_channel) const {
     return true;
 }
 
-void CubeImageCache::ValidateChannelImageCache() {}
+bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
+    return true;
+}
 
 void CubeImageCache::InvalidateChannelImageCache() {}
 

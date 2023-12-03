@@ -192,6 +192,17 @@ bool LoaderHelper::FillCubeImageCache(std::unordered_map<int, std::unique_ptr<fl
     return true;
 }
 
+bool LoaderHelper::FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes) {
+    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(z), stokes);
+    auto data_size = stokes_slicer.slicer.length().product();
+    channel_data = std::make_unique<float[]>(data_size);
+    if (!GetSlicerData(stokes_slicer, channel_data.get())) {
+        spdlog::error("Loading channel image cache failed (z: {}, stokes: {})", z, stokes);
+        return false;
+    }
+    return true;
+}
+
 bool LoaderHelper::IsValid() const {
     return _valid;
 }
@@ -244,4 +255,8 @@ int LoaderHelper::CurrentZ() const {
 
 int LoaderHelper::CurrentStokes() const {
     return _status->stokes;
+}
+
+bool LoaderHelper::IsCurrentChannel(int& z, int& stokes) const {
+    return _status->IsCurrentChannel(z, stokes);
 }

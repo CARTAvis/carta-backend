@@ -91,7 +91,7 @@ public:
     Frame(uint32_t session_id, std::shared_ptr<FileLoader> loader, const std::string& hdu, int default_z = DEFAULT_Z);
     ~Frame(){};
 
-    bool IsValid();
+    bool IsValid() const;
     std::string GetErrorMessage();
 
     // Get the full name of image file
@@ -241,7 +241,7 @@ protected:
     bool ZStokesChanged(int z, int stokes);
 
     // Cache image plane data for current z, stokes
-    bool FillImageCache(int stokes = CURRENT_STOKES);
+    bool FillImageCache();
     void InvalidateImageCache();
 
     // Downsampled data from image cache

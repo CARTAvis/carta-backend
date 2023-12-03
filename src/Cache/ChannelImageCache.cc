@@ -6,12 +6,14 @@
 
 #include "ChannelImageCache.h"
 
+#include "Logger/Logger.h"
+#include "Timer/Timer.h"
 #include "Util/Stokes.h"
 
 namespace carta {
 
 ChannelImageCache::ChannelImageCache(std::shared_ptr<LoaderHelper> loader_helper)
-    : ImageCache(ImageCacheType::Channel, loader_helper), _channel_data(nullptr), _channel_image_cache_valid(false) {}
+    : ImageCache(loader_helper), _channel_data(nullptr), _channel_image_cache_valid(false) {}
 
 float* ChannelImageCache::AllocateData(int stokes, size_t data_size) {
     _channel_data = std::make_unique<float[]>(data_size);
@@ -40,8 +42,21 @@ bool ChannelImageCache::CachedChannelDataAvailable(bool current_channel) const {
     return current_channel && _channel_image_cache_valid;
 }
 
-void ChannelImageCache::ValidateChannelImageCache() {
+bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
+    if (CachedChannelDataAvailable(_loader_helper->IsCurrentChannel(z, stokes))) {
+        return true;
+    }
+
+    Timer t;
+    if (!_loader_helper->FillChannelImageCache(_channel_data, z, stokes)) {
+        return false;
+    }
+    auto dt = t.Elapsed();
+    spdlog::performance(
+        "Load {}x{} image to cache in {:.3f} ms at {:.3f} MPix/s", _width, _height, dt.ms(), (float)(_width * _height) / dt.us());
+
     _channel_image_cache_valid = true;
+    return true;
 }
 
 void ChannelImageCache::InvalidateChannelImageCache() {

@@ -32,8 +32,7 @@ std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelp
     return std::make_unique<ChannelImageCache>(loader_helper);
 }
 
-ImageCache::ImageCache(ImageCacheType type, std::shared_ptr<LoaderHelper> loader_helper)
-    : _type(type), _loader_helper(loader_helper), _valid(true) {
+ImageCache::ImageCache(std::shared_ptr<LoaderHelper> loader_helper) : _loader_helper(loader_helper), _valid(true) {
     if (!_loader_helper->IsValid()) {
         _valid = false;
         return;
