@@ -27,6 +27,7 @@ public:
     bool FillCubeImageCache(std::unordered_map<int, std::unique_ptr<float[]>>& stokes_data);
     bool FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
     bool IsValid() const;
+    void SetImageChannels(int z, int stokes);
 
     casacore::IPosition OriginalImageShape() const;
     size_t Width() const;

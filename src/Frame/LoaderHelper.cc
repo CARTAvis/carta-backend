@@ -207,6 +207,11 @@ bool LoaderHelper::IsValid() const {
     return _valid;
 }
 
+void LoaderHelper::SetImageChannels(int z, int stokes) {
+    _image_state->SetCurrentZ(z);
+    _image_state->SetCurrentStokes(stokes);
+}
+
 // Image status parameters
 
 casacore::IPosition LoaderHelper::OriginalImageShape() const {

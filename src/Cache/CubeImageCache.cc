@@ -253,6 +253,8 @@ bool CubeImageCache::UpdateChannelImageCache(int z, int stokes) {
     return true;
 }
 
-void CubeImageCache::InvalidateChannelImageCache() {}
+void CubeImageCache::SetImageChannels(int z, int stokes) {
+    _loader_helper->SetImageChannels(z, stokes);
+}
 
 } // namespace carta

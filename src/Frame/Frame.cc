@@ -246,15 +246,14 @@ bool Frame::SetImageChannels(int new_z, int new_stokes, std::string& message) {
     if (!_valid) {
         message = "No file loaded";
     } else {
-        if ((new_z != CurrentZ()) || (new_stokes != CurrentStokes())) {
+        if (ZStokesChanged(new_z, new_stokes)) {
             bool z_ok(CheckZ(new_z));
             bool stokes_ok(CheckStokes(new_stokes));
             if (z_ok && stokes_ok) {
-                _image_state->SetCurrentZ(new_z);
-                _image_state->SetCurrentStokes(new_stokes);
-
-                // invalidate the image cache
-                InvalidateImageCache();
+                bool write_lock(true);
+                queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
+                _image_cache->SetImageChannels(new_z, new_stokes);
+                cache_lock.release();
 
                 if (!_loader_helper->TileCacheAvailable() || IsComputedStokes(CurrentStokes())) {
                     // Reload the full channel cache for loaders which use it
@@ -287,12 +286,6 @@ bool Frame::FillImageCache() {
     bool write_lock(true);
     queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
     return _image_cache->UpdateChannelImageCache(CurrentZ(), CurrentStokes());
-}
-
-void Frame::InvalidateImageCache() {
-    bool write_lock(true);
-    queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-    _image_cache->InvalidateChannelImageCache();
 }
 
 void Frame::GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes) {

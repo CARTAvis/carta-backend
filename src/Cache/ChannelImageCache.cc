@@ -54,8 +54,9 @@ bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
     return true;
 }
 
-void ChannelImageCache::InvalidateChannelImageCache() {
+void ChannelImageCache::SetImageChannels(int z, int stokes) {
     _channel_image_cache_valid = false;
+    _loader_helper->SetImageChannels(z, stokes);
 }
 
 } // namespace carta

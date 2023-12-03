@@ -34,7 +34,7 @@ public:
     bool CachedChannelDataAvailable(int z, int stokes) const override;
 
     bool UpdateChannelImageCache(int z, int stokes) override;
-    void InvalidateChannelImageCache() override;
+    void SetImageChannels(int z, int stokes) override;
 
 private:
     int _stokes_i; // stokes "I" index
