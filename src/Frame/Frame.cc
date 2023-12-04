@@ -233,7 +233,7 @@ void Frame::WaitForTaskCancellation() {
     std::unique_lock lock(GetActiveTaskMutex());
 }
 
-bool Frame::IsConnected() {
+bool Frame::IsConnected() const {
     return _connected; // whether file is to be closed
 }
 
@@ -666,7 +666,7 @@ bool Frame::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramDat
     return have_valid_histogram; // true if any histograms filled
 }
 
-int Frame::AutoBinSize() {
+int Frame::AutoBinSize() const {
     return int(std::max(sqrt(Width() * Height()), 2.0));
 }
 

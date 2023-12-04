@@ -171,7 +171,7 @@ public:
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void WaitForTaskCancellation();
     // Check flag if Frame is to be destroyed
-    bool IsConnected();
+    bool IsConnected() const;
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     std::shared_ptr<casacore::LCRegion> GetImageRegion(
@@ -251,7 +251,7 @@ protected:
     void GetZMatrix(std::vector<float>& z_matrix, size_t z, size_t stokes);
 
     // Histograms: z is single z index or ALL_Z for cube
-    int AutoBinSize();
+    int AutoBinSize() const;
     bool FillHistogramFromLoaderCache(int z, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
     bool FillHistogramFromFrameCache(
         int z, int stokes, int num_bins, const HistogramBounds& bounds, CARTA::Histogram* histogram);              // histogram message
