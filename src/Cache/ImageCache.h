@@ -36,7 +36,7 @@ public:
     static float ImageMemorySize(size_t width, size_t height, size_t depth, size_t num_stokes); // MB
 
     virtual float* GetChannelData(int z, int stokes) = 0;
-    virtual float GetValue(int x, int y, int z, int stokes) = 0;
+    virtual float GetValue(int x, int y, int z, int stokes) const = 0;
 
     virtual bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) = 0;
     virtual bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

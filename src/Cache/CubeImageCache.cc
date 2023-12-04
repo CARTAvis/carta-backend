@@ -117,42 +117,42 @@ float* CubeImageCache::GetChannelData(int z, int stokes) {
     return _stokes_data[stokes].get() + (_width * _height * z);
 }
 
-float CubeImageCache::GetValue(int x, int y, int z, int stokes) {
+float CubeImageCache::GetValue(int x, int y, int z, int stokes) const {
     size_t idx = (_width * _height * z) + (_width * y) + x;
 
     if (IsComputedStokes(stokes)) {
         if (_computed_stokes_channel_data.count(stokes) && _computed_stokes_channel == z) {
-            return _computed_stokes_channel_data[stokes][(_width * y) + x];
+            return _computed_stokes_channel_data.at(stokes)[(_width * y) + x];
         }
 
         auto stokes_type = StokesTypes[stokes];
 
         if (stokes_type == CARTA::PolarizationType::Ptotal) {
             if (_stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-                return CalcPtotal(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
+                return CalcPtotal(_stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx], _stokes_data.at(_stokes_v)[idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::Plinear) {
             if (_stokes_q > -1 && _stokes_u > -1) {
-                return CalcPlinear(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
+                return CalcPlinear(_stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::PFtotal) {
             if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1 && _stokes_v > -1) {
-                return CalcPFtotal(
-                    _stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx], _stokes_data[_stokes_v][idx]);
+                return CalcPFtotal(_stokes_data.at(_stokes_i)[idx], _stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx],
+                    _stokes_data.at(_stokes_v)[idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::PFlinear) {
             if (_stokes_i > -1 && _stokes_q > -1 && _stokes_u > -1) {
-                return CalcPFlinear(_stokes_data[_stokes_i][idx], _stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
+                return CalcPFlinear(_stokes_data.at(_stokes_i)[idx], _stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx]);
             }
         } else if (stokes_type == CARTA::PolarizationType::Pangle) {
             if (_stokes_q > -1 && _stokes_u > -1) {
-                return CalcPangle(_stokes_data[_stokes_q][idx], _stokes_data[_stokes_u][idx]);
+                return CalcPangle(_stokes_data.at(_stokes_q)[idx], _stokes_data.at(_stokes_u)[idx]);
             }
         }
         return FLOAT_NAN;
     }
 
-    return _stokes_data[stokes][idx];
+    return _stokes_data.at(stokes)[idx];
 }
 
 bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) {

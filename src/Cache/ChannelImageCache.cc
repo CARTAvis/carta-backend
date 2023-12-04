@@ -29,7 +29,7 @@ bool ChannelImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, i
     return false;
 }
 
-float ChannelImageCache::GetValue(int x, int y, int z, int stokes) {
+float ChannelImageCache::GetValue(int x, int y, int z, int stokes) const {
     return CachedChannelDataAvailable(z, stokes) ? _channel_data[(_width * y) + x] : FLOAT_NAN;
 }
 

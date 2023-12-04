@@ -26,7 +26,7 @@ public:
     ~CubeImageCache() override;
 
     float* GetChannelData(int z, int stokes) override;
-    inline float GetValue(int x, int y, int z, int stokes) override;
+    inline float GetValue(int x, int y, int z, int stokes) const override;
 
     bool LoadCachedPointSpectralData(std::vector<float>& profile, int stokes, PointXy point) override;
     bool LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
@@ -47,10 +47,10 @@ private:
     int _computed_stokes_channel;
 
     // Map of cube image cache, key is the stokes index
-    std::unordered_map<int, std::unique_ptr<float[]>> _stokes_data;
+    std::map<int, std::unique_ptr<float[]>> _stokes_data;
 
     // Map of computed stokes *channel* image cache, key is the computed stokes index
-    std::unordered_map<int, std::unique_ptr<float[]>> _computed_stokes_channel_data;
+    std::map<int, std::unique_ptr<float[]>> _computed_stokes_channel_data;
 };
 
 } // namespace carta

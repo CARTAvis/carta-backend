@@ -175,7 +175,7 @@ double LoaderHelper::GetBeamArea() {
     return _loader->CalculateBeamArea();
 }
 
-bool LoaderHelper::FillCubeImageCache(std::unordered_map<int, std::unique_ptr<float[]>>& stokes_data) {
+bool LoaderHelper::FillCubeImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data) {
     if (!stokes_data.empty()) {
         stokes_data.clear();
     }
