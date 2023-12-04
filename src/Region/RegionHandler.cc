@@ -2054,39 +2054,34 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, const Axis
         AxisRange partial_z_range(start_z, end_z);
 
         auto get_stokes_profiles_data = [&](ProfilesMap& tmp_partial_profiles, int tmp_stokes) {
+            // First try to get data from the image cache
+            if (_frames.at(file_id)->LoadCachedRegionSpectralData(partial_z_range, tmp_stokes, mask, xy_origin, tmp_partial_profiles)) {
+                return true;
+            }
+            // Try to get data from the casacore loader
             StokesRegion stokes_region;
             bool per_z(true); // Get per-z stats data for region for all stats (for cache)
             return (ApplyRegionToFile(region_id, file_id, partial_z_range, tmp_stokes, lc_region, stokes_region) &&
                     _frames.at(file_id)->GetRegionStats(stokes_region, _spectral_stats, per_z, tmp_partial_profiles));
         };
 
-        auto get_profiles_data_from_cache = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
-            int tmp_stokes;
-            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
-                    _frames.at(file_id)->LoadCachedRegionSpectralData(partial_z_range, tmp_stokes, mask, xy_origin, tmp_partial_profiles));
-        };
-
         auto get_profiles_data = [&](ProfilesMap& tmp_partial_profiles, std::string tmp_coordinate) {
             int tmp_stokes;
-            return (_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes) &&
-                    get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes));
+            // Get stokes index
+            if (!_frames.at(file_id)->GetStokesTypeIndex(tmp_coordinate, tmp_stokes)) {
+                return false;
+            }
+            return get_stokes_profiles_data(tmp_partial_profiles, tmp_stokes);
         };
 
         ProfilesMap partial_profiles;
         if (IsComputedStokes(stokes_index)) {
-            // For computed stokes
-            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data_from_cache)) {
-                if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
-                    return false;
-                }
+            if (!GetComputedStokesProfiles(partial_profiles, stokes_index, get_profiles_data)) {
+                return false;
             }
-        } else {
-            // For regular stokes I, Q, U, or V
-            // Use cube image cache if it is available, otherwise get image data from the disk
-            if (!_frames.at(file_id)->LoadCachedRegionSpectralData(partial_z_range, stokes_index, mask, xy_origin, partial_profiles)) {
-                if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
-                    return false;
-                }
+        } else { // For regular stokes I, Q, U, or V
+            if (!get_stokes_profiles_data(partial_profiles, stokes_index)) {
+                return false;
             }
         }
 

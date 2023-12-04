@@ -278,7 +278,6 @@ protected:
 
     // For image cache
     float* GetImageData(int z = CURRENT_Z, int stokes = CURRENT_STOKES);
-    float GetValue(int x, int y, int z, int stokes);
     bool ImageCacheAvailable(int z = CURRENT_Z, int stokes = CURRENT_STOKES) const;
 
     // Setup

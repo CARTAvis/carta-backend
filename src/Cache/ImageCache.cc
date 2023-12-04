@@ -46,7 +46,7 @@ ImageCache::ImageCache(std::shared_ptr<LoaderHelper> loader_helper) : _loader_he
 }
 
 void ImageCache::LoadCachedPointSpatialData(
-    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) {
+    std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) const {
     profile.reserve(end - start);
     if (config == 'x') {
         for (unsigned int i = start; i < end; ++i) {

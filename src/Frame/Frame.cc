@@ -955,7 +955,7 @@ bool Frame::FillSpatialProfileData(PointXy point, std::vector<CARTA::SetSpatialR
     if (ImageCacheAvailable()) {
         bool write_lock(false);
         queuing_rw_mutex_scoped cache_lock(&_cache_mutex, write_lock);
-        cursor_value_with_current_stokes = GetValue(x, y, CurrentZ(), CurrentStokes());
+        cursor_value_with_current_stokes = _image_cache->GetValue(x, y, CurrentZ(), CurrentStokes());
     } else if (_loader->UseTileCache()) {
         int tile_x = tile_index(x);
         int tile_y = tile_index(y);
@@ -2284,10 +2284,6 @@ bool Frame::LoadCachedPointSpectralData(std::vector<float>& profile, int stokes,
 bool Frame::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
     return _image_cache->LoadCachedRegionSpectralData(z_range, stokes, mask, origin, profiles);
-}
-
-float Frame::GetValue(int x, int y, int z, int stokes) {
-    return _image_cache->GetValue(x, y, z, stokes);
 }
 
 bool Frame::ImageCacheAvailable(int z, int stokes) const {

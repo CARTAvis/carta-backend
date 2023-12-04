@@ -46,7 +46,8 @@ public:
     virtual bool UpdateChannelImageCache(int z, int stokes) = 0;
     virtual void SetImageChannels(int z, int stokes) = 0;
 
-    void LoadCachedPointSpatialData(std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes);
+    void LoadCachedPointSpatialData(
+        std::vector<float>& profile, char config, PointXy point, size_t start, size_t end, int z, int stokes) const;
     bool IsValid() const;
 
 protected:
