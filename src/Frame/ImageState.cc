@@ -82,3 +82,8 @@ bool ImageState::IsCurrentChannel(int z_, int stokes_) const {
     CheckCurrentStokes(stokes_);
     return (z_ == z && stokes_ == stokes);
 }
+
+bool ImageState::IsCurrentStokes(int stokes_) const {
+    CheckCurrentStokes(stokes_);
+    return (stokes_ == stokes);
+}

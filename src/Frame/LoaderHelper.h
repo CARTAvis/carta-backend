@@ -26,6 +26,7 @@ public:
     double GetBeamArea();
     bool FillCubeImageCache(std::map<int, std::unique_ptr<float[]>>& stokes_data);
     bool FillChannelImageCache(std::unique_ptr<float[]>& channel_data, int z, int stokes);
+    bool FillStokesImageCache(std::unique_ptr<float[]>& stokes_data, int stokes);
     bool IsValid() const;
     void SetImageChannels(int z, int stokes);
 
@@ -41,7 +42,8 @@ public:
     int StokesAxis() const;
     int CurrentZ() const;
     int CurrentStokes() const;
-    bool IsCurrentChannel(int& z, int& stokes) const;
+    bool IsCurrentChannel(int z, int stokes) const;
+    bool IsCurrentStokes(int stokes) const;
 
 private:
     bool _valid;

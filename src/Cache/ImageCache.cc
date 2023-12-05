@@ -9,6 +9,7 @@
 #include "ChannelImageCache.h"
 #include "CubeImageCache.h"
 #include "Logger/Logger.h"
+#include "StokesImageCache.h"
 #include "Util/Stokes.h"
 #include "Util/System.h"
 
@@ -19,16 +20,25 @@ namespace carta {
 
 std::unique_ptr<ImageCache> ImageCache::GetImageCache(std::shared_ptr<LoaderHelper> loader_helper) {
     if (!loader_helper->TileCacheAvailable()) {
-        auto image_memory_size = ImageCache::ImageMemorySize(
+        auto full_image_memory_size = ImageCache::ImageMemorySize(
             loader_helper->Width(), loader_helper->Height(), loader_helper->Depth(), loader_helper->NumStokes());
-        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= image_memory_size) {
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= full_image_memory_size && loader_helper->NumStokes() > 1) {
+            spdlog::info("Cache full image data.");
             return std::make_unique<CubeImageCache>(loader_helper);
         }
 
+        auto single_stokes_image_memory_size =
+            ImageCache::ImageMemorySize(loader_helper->Width(), loader_helper->Height(), loader_helper->Depth(), 1);
+        if (FULL_IMAGE_CACHE_SIZE_AVAILABLE >= single_stokes_image_memory_size) {
+            spdlog::info("Cache single stokes image data.");
+            return std::make_unique<StokesImageCache>(loader_helper);
+        }
+
         if (FULL_IMAGE_CACHE_SIZE_AVAILABLE > 0) {
-            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", image_memory_size);
+            spdlog::info("Image too large ({:.0f} MB). Not cache the whole image data.", full_image_memory_size);
         }
     }
+    spdlog::info("Cache single channel image data.");
     return std::make_unique<ChannelImageCache>(loader_helper);
 }
 

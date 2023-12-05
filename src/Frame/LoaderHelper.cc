@@ -203,6 +203,17 @@ bool LoaderHelper::FillChannelImageCache(std::unique_ptr<float[]>& channel_data,
     return true;
 }
 
+bool LoaderHelper::FillStokesImageCache(std::unique_ptr<float[]>& stokes_data, int stokes) {
+    StokesSlicer stokes_slicer = GetImageSlicer(AxisRange(ALL_X), AxisRange(ALL_Y), AxisRange(ALL_Z), stokes);
+    auto data_size = stokes_slicer.slicer.length().product();
+    stokes_data = std::make_unique<float[]>(data_size);
+    if (!GetSlicerData(stokes_slicer, stokes_data.get())) {
+        spdlog::error("Loading cube image cache failed (stokes index: {}).", stokes);
+        return false;
+    }
+    return true;
+}
+
 bool LoaderHelper::IsValid() const {
     return _valid;
 }
@@ -262,6 +273,10 @@ int LoaderHelper::CurrentStokes() const {
     return _image_state->stokes;
 }
 
-bool LoaderHelper::IsCurrentChannel(int& z, int& stokes) const {
+bool LoaderHelper::IsCurrentChannel(int z, int stokes) const {
     return _image_state->IsCurrentChannel(z, stokes);
+}
+
+bool LoaderHelper::IsCurrentStokes(int stokes) const {
+    return _image_state->IsCurrentStokes(stokes);
 }

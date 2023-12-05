@@ -197,6 +197,7 @@ set(SOURCE_FILES
         src/Cache/CubeImageCache.cc
         src/Cache/ImageCache.cc
         src/Cache/LoaderCache.cc
+        src/Cache/StokesImageCache.cc
         src/Cache/TileCache.cc
         src/Cache/TilePool.cc
         src/DataStream/Compression.cc

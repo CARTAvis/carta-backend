@@ -44,6 +44,7 @@ bool ChannelImageCache::UpdateChannelImageCache(int z, int stokes) {
 
     Timer t;
     if (!_loader_helper->FillChannelImageCache(_channel_data, z, stokes)) {
+        _valid = false;
         return false;
     }
     auto dt = t.Elapsed();

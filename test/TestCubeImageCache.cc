@@ -42,6 +42,7 @@ public:
 class CubeImageCacheTest : public ::testing::Test, public ImageGenerator {
 public:
     enum FileType { FITS, HDF5 };
+    enum ImageCacheType { Cube, Channel, Stokes };
 
     static std::string GenerateFile(FileType file_type, std::string image_dims) {
         return file_type == FileType::FITS ? GeneratedFitsImagePath(image_dims, IMAGE_OPTS)
@@ -55,8 +56,31 @@ public:
         return {data.profiles(1), data.profiles(0)};
     }
 
+    static void SetFullImageCacheSizeAvailable(
+        const ImageCacheType& image_cache_type, int x_size, int y_size, int z_size, int stokes_size) {
+        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
+        if (image_cache_type == ImageCacheType::Cube) {
+            FULL_IMAGE_CACHE_SIZE_AVAILABLE = 2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION;
+        } else if (image_cache_type == ImageCacheType::Stokes) {
+            FULL_IMAGE_CACHE_SIZE_AVAILABLE = x_size * y_size * z_size * sizeof(float) / ONE_MILLION;
+        } else {
+            FULL_IMAGE_CACHE_SIZE_AVAILABLE = 0;
+        }
+        ulock_full_image_cache_size_available.unlock();
+    }
+
+    static std::string TextPrefix(const ImageCacheType& image_cache_type) {
+        if (image_cache_type == ImageCacheType::Cube) {
+            return "[w/ full cube image cache]";
+        }
+        if (image_cache_type == ImageCacheType::Stokes) {
+            return "[w/ stokes cube image cache]";
+        }
+        return "[w/ channel image cache]";
+    }
+
     static void SpatialProfile3D(
-        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, const ImageCacheType& image_cache_type) {
         if (dims.size() < 3) {
             return;
         }
@@ -65,17 +89,14 @@ public:
         int z_size = dims[2];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, 1);
         int default_channel(0);
 
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel));
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for creating a Frame object: {:.3f} ms.\n", file, prefix, dt.ms());
+        fmt::print("{}{} Elapsed time for creating a Frame object: {:.3f} ms.\n", file, TextPrefix(image_cache_type), dt.ms());
 
         std::unique_ptr<DataReader> reader;
         if (file_type == FileType::FITS) {
@@ -126,7 +147,7 @@ public:
     }
 
     static void SpatialProfile4D(const FileType file_type, const std::string& path_string, const std::vector<int>& dims,
-        std::string stokes_config, bool cube_image_cache) {
+        std::string stokes_config, const ImageCacheType& image_cache_type) {
         if (dims.size() < 4) {
             return;
         }
@@ -136,18 +157,15 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         int default_channel(0);
 
         Timer t;
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel));
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for creating the Frame object ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for creating the Frame object ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type), stokes_config,
+            dt.ms());
 
         std::unique_ptr<DataReader> reader;
         if (file_type == FileType::FITS) {
@@ -200,7 +218,7 @@ public:
     }
 
     static std::vector<CARTA::SpatialProfileData> GetSpatialProfile4D(const FileType file_type, const std::string& path_string,
-        const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+        const std::vector<int>& dims, std::string stokes_config, const ImageCacheType& image_cache_type) {
         if (dims.size() < 4) {
             return std::vector<CARTA::SpatialProfileData>();
         }
@@ -210,10 +228,7 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         int default_channel(0);
 
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", default_channel));
@@ -245,14 +260,14 @@ public:
 
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for getting cursor spatial profile ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for getting cursor spatial profile ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type),
+            stokes_config, dt.ms());
 
         return data_vec;
     }
 
     static std::vector<float> CursorSpectralProfile3D(
-        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, bool cube_image_cache) {
+        const FileType file_type, const std::string& path_string, const std::vector<int>& dims, const ImageCacheType& image_cache_type) {
         if (dims.size() < 3) {
             return std::vector<float>();
         }
@@ -261,9 +276,7 @@ public:
         int z_size = dims[2];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE = cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, 1);
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", 0));
 
         int x(4), y(6);
@@ -293,14 +306,13 @@ public:
             CURSOR_REGION_ID, stokes_changed);
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for getting cursor spectral profile: {:.3f} ms.\n", file, prefix, dt.ms());
+        fmt::print("{}{} Elapsed time for getting cursor spectral profile: {:.3f} ms.\n", file, TextPrefix(image_cache_type), dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
     static std::vector<float> CursorSpectralProfile4D(const FileType file_type, const std::string& path_string,
-        const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+        const std::vector<int>& dims, std::string stokes_config_z, const ImageCacheType& image_cache_type) {
         if (dims.size() < 4) {
             return std::vector<float>();
         }
@@ -310,10 +322,7 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         std::unique_ptr<Frame> frame(new Frame(0, loader, "0", 0));
 
         int x(4), y(6);
@@ -343,14 +352,14 @@ public:
             CURSOR_REGION_ID, stokes_changed);
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for getting cursor spectral profile ({}): {:.3f} ms.\n", file, prefix, stokes_config_z, dt.ms());
+        fmt::print("{}{} Elapsed time for getting cursor spectral profile ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type),
+            stokes_config_z, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
     static std::vector<float> PointRegionSpectralProfile(const FileType file_type, const std::string& path_string,
-        const std::vector<int>& dims, std::string stokes_config_z, bool cube_image_cache) {
+        const std::vector<int>& dims, std::string stokes_config_z, const ImageCacheType& image_cache_type) {
         if (dims.size() < 4) {
             return std::vector<float>();
         }
@@ -360,10 +369,7 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         auto frame = std::make_shared<Frame>(0, loader, "0", 0);
 
         int channel(5);
@@ -404,15 +410,14 @@ public:
             region_id, file_id, stokes_changed);
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print(
-            "{}{} Elapsed time for getting point region spectral profile ({}): {:.3f} ms.\n", file, prefix, stokes_config_z, dt.ms());
+        fmt::print("{}{} Elapsed time for getting point region spectral profile ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type),
+            stokes_config_z, dt.ms());
 
         return GetSpectralProfileValues<float>(spectral_profile);
     }
 
     static carta::Histogram CubeHistogram(const FileType file_type, const std::string& path_string, const std::vector<int>& dims,
-        std::string stokes_config, bool cube_image_cache) {
+        std::string stokes_config, const ImageCacheType& image_cache_type) {
         if (dims.size() < 4) {
             return carta::Histogram();
         }
@@ -422,10 +427,7 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         auto frame = std::make_shared<Frame>(0, loader, "0", 0);
 
         int channel(0);
@@ -468,14 +470,15 @@ public:
 
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for calculating cube histogram ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for calculating cube histogram ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type), stokes_config,
+            dt.ms());
 
         return cube_histogram;
     }
 
     static std::vector<CARTA::SpectralProfile> RegionSpectralProfile(const FileType file_type, const std::string& path_string,
-        const std::vector<int>& dims, const std::string& stokes_config_z, const CARTA::RegionType& region_type, bool cube_image_cache) {
+        const std::vector<int>& dims, const std::string& stokes_config_z, const CARTA::RegionType& region_type,
+        const ImageCacheType& image_cache_type) {
         if (dims.size() < 4) {
             return std::vector<CARTA::SpectralProfile>();
         }
@@ -485,10 +488,7 @@ public:
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         auto frame = std::make_shared<Frame>(0, loader, "0", 0);
 
         int channel(5);
@@ -533,10 +533,9 @@ public:
             region_id, file_id, stokes_changed);
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
         std::string type = region_type == CARTA::RegionType::RECTANGLE ? "rectangle" : "ellipse";
-        fmt::print(
-            "{}{} Elapsed time for getting {} region spectral profile ({}): {:.3f} ms.\n", file, prefix, type, stokes_config_z, dt.ms());
+        fmt::print("{}{} Elapsed time for getting {} region spectral profile ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type), type,
+            stokes_config_z, dt.ms());
 
         return spectral_profiles;
     }
@@ -581,17 +580,14 @@ public:
     }
 
     static std::vector<std::vector<float>> TestImagePixelData(const FileType file_type, const std::string& path_string,
-        const std::vector<int>& dims, std::string stokes_config, bool cube_image_cache) {
+        const std::vector<int>& dims, std::string stokes_config, const ImageCacheType& image_cache_type) {
         int x_size = dims[0];
         int y_size = dims[1];
         int z_size = dims[2];
         int stokes_size = dims[3];
 
         std::shared_ptr<carta::FileLoader> loader(carta::FileLoader::GetLoader(path_string));
-        std::unique_lock<std::mutex> ulock_full_image_cache_size_available(FULL_IMAGE_CACHE_SIZE_AVAILABLE_MUTEX);
-        FULL_IMAGE_CACHE_SIZE_AVAILABLE =
-            cube_image_cache ? std::ceil(2 * x_size * y_size * z_size * stokes_size * sizeof(float) / ONE_MILLION) : 0;
-        ulock_full_image_cache_size_available.unlock();
+        SetFullImageCacheSizeAvailable(image_cache_type, x_size, y_size, z_size, stokes_size);
         auto frame = std::make_shared<TestFrame>(0, loader, "0", 0);
 
         int channel(0);
@@ -610,8 +606,8 @@ public:
 
         auto dt = t.Elapsed();
         std::string file = file_type == FileType::FITS ? "[FITS]" : "[HDF5]";
-        std::string prefix = cube_image_cache ? "[w/ cube image cache]" : "[w/o cube image cache]";
-        fmt::print("{}{} Elapsed time for getting image pixel data ({}): {:.3f} ms.\n", file, prefix, stokes_config, dt.ms());
+        fmt::print("{}{} Elapsed time for getting image pixel data ({}): {:.3f} ms.\n", file, TextPrefix(image_cache_type), stokes_config,
+            dt.ms());
 
         return results;
     }
@@ -621,8 +617,9 @@ TEST_F(CubeImageCacheTest, SpatialProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
-    SpatialProfile3D(file_type, filename, IMAGE_DIMS, false);
-    SpatialProfile3D(file_type, filename, IMAGE_DIMS, true);
+    SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Channel);
+    SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Cube);
+    SpatialProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Stokes);
 }
 
 TEST_F(CubeImageCacheTest, SpatialProfile4D) {
@@ -631,14 +628,17 @@ TEST_F(CubeImageCacheTest, SpatialProfile4D) {
 
     std::vector<std::string> normal_stokes = {"I", "Q", "U", "V"};
     for (auto stokes : normal_stokes) {
-        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, false);
-        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, true);
+        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
+        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        SpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Stokes);
     }
 
     for (auto stokes : STOKES_TYPES) {
-        auto results1 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, false);
-        auto results2 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, true);
+        auto results1 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
+        auto results2 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto results3 = GetSpatialProfile4D(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Stokes);
         CmpSpatialProfiles(results1, results2);
+        CmpSpatialProfiles(results1, results3);
     }
 }
 
@@ -646,9 +646,11 @@ TEST_F(CubeImageCacheTest, CursorSpectralProfile3D) {
     FileType file_type = FileType::FITS;
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2]));
 
-    auto spectral_profile1 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, false);
-    auto spectral_profile2 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, true);
+    auto spectral_profile1 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Channel);
+    auto spectral_profile2 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Cube);
+    auto spectral_profile3 = CursorSpectralProfile3D(file_type, filename, IMAGE_DIMS, ImageCacheType::Stokes);
     CmpVectors(spectral_profile1, spectral_profile2);
+    CmpVectors(spectral_profile1, spectral_profile3);
 }
 
 TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
@@ -656,9 +658,11 @@ TEST_F(CubeImageCacheTest, CursorSpectralProfile4D) {
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", false);
-        auto spectral_profile2 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", true);
+        auto spectral_profile1 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Channel);
+        auto spectral_profile2 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Cube);
+        auto spectral_profile3 = CursorSpectralProfile4D(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Stokes);
         CmpVectors(spectral_profile1, spectral_profile2);
+        CmpVectors(spectral_profile1, spectral_profile3);
     }
 }
 
@@ -667,9 +671,11 @@ TEST_F(CubeImageCacheTest, PointRegionSpectralProfile) {
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", false);
-        auto spectral_profile2 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", true);
+        auto spectral_profile1 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Channel);
+        auto spectral_profile2 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Cube);
+        auto spectral_profile3 = PointRegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", ImageCacheType::Stokes);
         CmpVectors(spectral_profile1, spectral_profile2);
+        CmpVectors(spectral_profile1, spectral_profile3);
     }
 }
 
@@ -681,15 +687,19 @@ TEST_F(CubeImageCacheTest, CubeHistogram) {
     std::vector<std::string> computed_stokes = {"Ptotal", "PFtotal", "Plinear", "PFlinear", "Pangle"};
 
     for (auto stokes : normal_stokes) {
-        auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, false);
-        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, true);
+        auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
+        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto hist3 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Stokes);
         EXPECT_TRUE(CmpHistograms(hist1, hist2));
+        EXPECT_TRUE(CmpHistograms(hist1, hist3));
     }
 
     for (auto stokes : computed_stokes) {
-        auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, false);
-        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, true);
+        auto hist1 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
+        auto hist2 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto hist3 = CubeHistogram(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Stokes);
         EXPECT_TRUE(CmpHistograms(hist1, hist2, false));
+        EXPECT_TRUE(CmpHistograms(hist1, hist3, false));
     }
 }
 
@@ -699,9 +709,11 @@ TEST_F(CubeImageCacheTest, RectangleRegionSpectralProfile) {
     CARTA::RegionType region_type = CARTA::RegionType::RECTANGLE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, false);
-        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, true);
+        auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Channel);
+        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Cube);
+        auto spectral_profile3 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Stokes);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile3));
     }
 }
 
@@ -711,9 +723,11 @@ TEST_F(CubeImageCacheTest, EllipseRegionSpectralProfile) {
     CARTA::RegionType region_type = CARTA::RegionType::ELLIPSE;
 
     for (auto stokes : STOKES_TYPES) {
-        auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, false);
-        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, true);
+        auto spectral_profile1 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Channel);
+        auto spectral_profile2 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Cube);
+        auto spectral_profile3 = RegionSpectralProfile(file_type, filename, IMAGE_DIMS, stokes + "z", region_type, ImageCacheType::Stokes);
         EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile2));
+        EXPECT_TRUE(CmpSpectralProfiles(spectral_profile1, spectral_profile3));
     }
 }
 
@@ -722,10 +736,12 @@ TEST_F(CubeImageCacheTest, ImagePixelData) {
     std::string filename = GenerateFile(file_type, fmt::format("{} {} {} {}", IMAGE_DIMS[0], IMAGE_DIMS[1], IMAGE_DIMS[2], IMAGE_DIMS[3]));
 
     for (auto stokes : STOKES_TYPES) {
-        auto data1 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, false);
-        auto data2 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, true);
+        auto data1 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Channel);
+        auto data2 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Cube);
+        auto data3 = TestImagePixelData(file_type, filename, IMAGE_DIMS, stokes, ImageCacheType::Stokes);
         for (int i = 0; i < data1.size(); ++i) {
             CmpVectors(data1[i], data2[i]);
+            CmpVectors(data1[i], data3[i]);
         }
     }
 }

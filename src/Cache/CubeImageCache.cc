@@ -20,7 +20,6 @@ CubeImageCache::CubeImageCache(std::shared_ptr<LoaderHelper> loader_helper)
       _stokes_v(-1),
       _beam_area(DOUBLE_NAN),
       _computed_stokes_channel(-1) {
-    spdlog::info("Cache the whole image data.");
     Timer t;
     if (!_loader_helper->FillCubeImageCache(_stokes_data)) {
         _valid = false;
@@ -171,7 +170,9 @@ bool CubeImageCache::LoadCachedPointSpectralData(std::vector<float>& profile, in
 
 bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& profiles) {
-    if (!mask.shape().empty() && (_stokes_data.count(stokes) || IsComputedStokes(stokes))) {
+    // Region spectral profile for computed stokes can not be directly calculated from its pixel values. It is calculated from the
+    // combination of spectral profiles for stokes I, Q, U, or V.
+    if (!mask.shape().empty() && _stokes_data.count(stokes) && !IsComputedStokes(stokes)) {
         int x_min = origin(0);
         int y_min = origin(1);
         casacore::IPosition mask_shape(mask.shape());
@@ -207,7 +208,9 @@ bool CubeImageCache::LoadCachedRegionSpectralData(const AxisRange& z_range, int 
 
             for (int x = x_min; x < x_min + mask_width; ++x) {
                 for (int y = y_min; y < y_min + mask_height; ++y) {
-                    auto val = GetValue(x, y, z, stokes);
+                    // Get pixel value
+                    size_t idx = (_width * _height * z) + (_width * y) + x;
+                    auto val = _stokes_data.at(stokes)[idx];
                     if (!std::isnan(val) && mask.getAt(casacore::IPosition(2, x - x_min, y - y_min))) {
                         sum += val;
                         sum_sq += val * val;
