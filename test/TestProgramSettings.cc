@@ -149,7 +149,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
     auto settings = SettingsFromString(
         "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --omp_threads 10"
         " --top_level_folder /tmp --frontend_folder /var --exit_timeout 10 --initial_timeout 11 --debug_no_auth --read_only_mode "
-        "--enable_scripting --full_image_cache_size_available 1000");
+        "--enable_scripting --full_image_cache_size 1000");
     EXPECT_EQ(settings.verbosity, 6);
     EXPECT_EQ(settings.no_log, true);
     EXPECT_EQ(settings.no_http, true);
@@ -168,7 +168,7 @@ TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
 }
 
 TEST_F(ProgramSettingsTest, ExpectedValuesShort) {
-    auto settings = SettingsFromString("carta_backend -p 1234 -t 10 --full_image_cache_size_available 1000");
+    auto settings = SettingsFromString("carta_backend -p 1234 -t 10 --full_image_cache_size 1000");
     EXPECT_EQ(settings.port[0], 1234);
     EXPECT_EQ(settings.omp_thread_count, 10);
     EXPECT_EQ(settings.full_image_cache_size_available, 1000);
